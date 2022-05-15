@@ -1,3 +1,5 @@
+"use strict"
+
 import { buttonSystem, mouseSystem } from "./control.js"
 import { soundFile, soundSystem } from "./sound.js"
 import { imageFile } from "./image.js"
@@ -886,6 +888,7 @@ export class gameSystem{
     }
 
     this.userSystem.display()
+
   }
 
 }

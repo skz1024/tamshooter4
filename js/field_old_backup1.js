@@ -2,9 +2,8 @@ import { buttonSystem } from "./control.js"
 import { FieldData, ID, objectType, tamshooter4Data } from "./data.js"
 import { graphicSystem } from "./graphic.js"
 import { imageFile } from "./image.js"
-import { gameSystem, userSystem } from "./tamshooter4.js"
+import { userSystem } from "./tamshooter4.js"
 import { systemText } from "./text.js"
-import { collision } from "./data.js"
 
 
 /*
@@ -30,44 +29,196 @@ import { collision } from "./data.js"
 4-1. SystemObject = 시스템용도로 사용[FieldObject랑 차이 없음. 용도 구분을 위해 이름을 추가한 것]
  */
 
-class DamageObject extends FieldData {
-  constructor (x, y, attack = 0) {
-    super()
-    this.x = x
-    this.y = y
-    /** 데미지를 표시할 값 */ this.attack = attack
+
+
+
+/**
+ * 충돌 감지 함수
+ * @param {FieldObject} object1 
+ * @param {FieldObject} object2 
+ */
+export function collision (object1, object2) {
+  if(object1.x < object2.x + object2.width
+    && object1.x + object1.width > object2.x
+    && object1.y < object2.y + object2.height
+    && object1.y + object1.height > object2.y) {
+    return true
+  } else {
+    return false
+  }
+}
+
+
+
+/**
+ * 필드 오브젝트 (인터페이스 클래스)
+ * 참고: data.js의 FieldData랑 구조가 완전히 동일합니다.
+ */
+class FieldObject extends FieldData {
+  /**
+   * 경고: 이 함수는 직접 호출하지 마세요.  
+   * FieldObject constructor에서만 사용하는 함수입니다.  
+   * [로직 분리를 위해 만든 함수이므로 외부에서 사용을 금지합니다.]
+   */
+  constructorFieldObject (constObjectType, typeId) {
+    // 오브젝트 타입과 타입ID에 따라서, 거기에 맞는 객체를 생성합니다.
+    // 다만, 대부분은 개별적인 설정을 따름, 
+    /** 
+     * @type {FieldData}
+     */ 
+    let getData = null
+
+    if (constObjectType === objectType.WEAPON) {
+      getData = tamshooter4Data.getWeaponData(typeId)
+    } else if (constObjectType === objectType.ENEMY) {
+      getData = tamshooter4Data.getEnemyData(typeId)
+    }
+
+    // 얻은 데이터가 없으면 아무것도 처리하지 않고 함수를 리턴합니다.
+    if (getData === null) return
+
+    this.speedX = getData.speedX
+    this.speedY = getData.speedY
+    this.moveX = getData.moveX
+    this.moveY = getData.moveY
+
+    this.mainType = getData.mainType
+    this.subType = getData.subType
+    this.color = getData.color
+    this.width = getData.width
+    this.height = getData.height
+    this.attack = getData.attack
+    this.hp = getData.hp
+    this.hpMax = getData.hp
+
+    // 처리 함수 대입 (data.js에 있는 알고리즘을 직접 사용합니다.)
+    // (다만, call을 사용하지 않으면 현재 객체가 아닌, data의 객체 값을 변경하기 때문에, 
+    // 이와 같은 함수를 불러올 때는 process.call(this) 와 같이 사용해주어야 합니다.)
+    this.process = getData.process
+    this.display = getData.display
+    this.collisionProcess = getData.collisionProcess
+    this.processAttack = getData.processAttack
+
+    let targetClass = tamshooter4Data.temp()
+    this.targetClass = new targetClass()
+
+
   }
 
-  process () {
-    this.y -= 0.5
+  constructor (constObjectType, typeId, x = 0, y = 0) {
+    super()
 
-    if (this.elapsedFrame >= 60 || this.attack === 0) {
+    // 좌표 설정 및 속도 설정
+    // 오브젝트에 있는 값들을 전부 복사하지는 않습니다. 필요한 것만 값 복사를 합니다.
+    this.x = x
+    this.y = y
+
+    // 메인 타입 및 스탯 정보
+    this.objectType = constObjectType
+
+    switch (constObjectType) {
+      case objectType.WEAPON:
+      case objectType.ENEMY:
+        this.constructorFieldObject(constObjectType, typeId)
+        return
+      case objectType.PLAYER:
+      case objectType.EFFECT:
+        return
+      default: 
+        console.warn(systemText.fieldError.DIFFERENT_OBJECT_TYPE) 
+        return
+    }
+  }
+
+  /** 
+   * 외부[data.js]에서 가져오는 함수가 아닌, field에서 자체적으로 처리하는 함수입니다.  
+   * field에서만 처리해야 하는 로직이 있을 때 사용합니다. (예를 들어 특정 조건에서 오브젝트 삭제하기 등..., 적 체력 0 이하일때 적 죽이기등....)
+   */
+  fieldProcess () {
+    this.elapsedFrame++
+  }
+}
+
+/**
+ * 플레이어의 무기 오브젝트 (참고: 무기 = 총알, 다만 이 게임에서는 무기로 취급)
+ */
+class WeaponObject extends FieldObject {
+  constructor (typeId, x, y, attack = 1) {
+    super(objectType.WEAPON, typeId, x, y)
+    this.attack = attack
+
+    const getData = tamshooter4Data.getWeaponData(typeId)
+    this.isChaseType = getData.isChaseType
+    this.isChaseState = getData.isChasing
+    this.targetObject = getData.targetObject
+    this.chaseDelayCount = getData.chaseDelayCount
+    this.chaseDelay = getData.chaseDelay
+    this.chaseMissCount = 0
+    this.state = getData.state
+    this.repeatCount = getData.repeatCount
+    this.repeatDelay = getData.repeatDelay
+    this.repeatDelayCount = getData.repeatDelayCount
+  }
+
+  fieldProcess () {
+    super.fieldProcess()
+    if (this.elapsedFrame >= 360) {
       this.isDeleted = true
     }
   }
+}
 
-  display () {
-    const IMAGE = imageFile.damageFont
-    const NUMBER_WIDTH = 12
-    const NUMBER_HEIGHT = 12
-    const WIDTH = 10
-    const HEIGHT = 12
-    const attackText = this.attack + ''
-    for (let i = 0; i < attackText.length; i++) {
-      let number = attackText.charAt(i)
-      let outputX = this.x + (WIDTH * i)
-      graphicSystem.imageDisplay(IMAGE, number * NUMBER_WIDTH, 0, WIDTH, HEIGHT, outputX, this.y, WIDTH, HEIGHT)
+/**
+ * 적 오브젝트, 플레이어는 적을 죽일 수 있습니다.
+ */
+class EnemyObject extends FieldObject {
+  constructor (typeId, x, y) {
+    super(objectType.ENEMY, typeId, x, y)
+  }
+
+  fieldProcess () {
+    super.fieldProcess()
+
+    if (this.hp <= 0) {
+      this.isDeleted = true
     }
   }
+}
+
+/**
+ * 이펙트 오브젝트: 이펙트를 표시할 때 사용, 다른 오브젝트랑 상호작용하지 않음.
+ */
+class EffectObject extends FieldObject {
+  constructor (typeId, x, y, repeatCount = 0) {
+    super(objectType.EFFECT, typeId, x, y)
+    const getData = tamshooter4Data.getEffectData(typeId)
+
+    this.repeatCount = repeatCount
+    this.beforeAnimationDelay = getData.beforeAnimationDelay
+    this.afterAnimationDelay = getData.afterAnimationDelay
+    this.frameDelay = getData.frameDelay
+    this.width = getData.width
+    this.height = getData.height
+    this.frameWidth = getData.frameWidth
+    this.frameHeight = getData.frameHeight
+    this.outputHeight = getData.outputHeight
+    this.outputWidth = getData.outputWidth
+
+    this.process = getData.process
+    this.display = getData.display
+  }
+}
+
+class DamageObject extends FieldObject {
+
 }
 
 
 /**
  * 플레이어 오브젝트  
  * 플레이어를 직접 조종합니다.
- * 이 객체는 필드 상태에서 직접 생성해 만드는 객체이기 때문에 data.js에서 플레이어 데이터를 받아오지 않습니다.
  */
-class PlayerObject extends FieldData {
+class PlayerObject extends FieldObject {
   /** 플레이어 이미지 */ playerImage = imageFile.playerImage
 
   constructor () {
@@ -77,7 +228,6 @@ class PlayerObject extends FieldData {
 
     this.shield = 0
     this.shieldMax = 0
-    this.shieldRecovery = 0
     this.attackDelay = 0
     this.attackDelayCount = 0
   }
@@ -95,32 +245,7 @@ class PlayerObject extends FieldData {
     this.playerWeaponId = [ID.playerWeapon.multyshot, ID.playerWeapon.missile]
   }
 
-  addDamage (damage) {
-    if (this.shield >= damage) {
-      this.shield -= damage
-    } else if (this.shield < damage) {
-      damage -= this.shield
-      this.shield = 0
-      this.hp -= Math.floor(damage / 2)
-    }
-  }
-
-  addExp (score) {
-    userSystem.plusExp(score)
-  }
-
   process () {
-    this.processButton()
-    this.processAttack()
-    this.processSendUserStat()
-  }
-
-  processSendUserStat () {
-    userSystem.hp = this.hp
-    userSystem.shield = this.shield
-  }
-
-  processButton () {
     let buttonLeft = buttonSystem.getButtonDown(buttonSystem.BUTTON_LEFT)
     let buttonRight = buttonSystem.getButtonDown(buttonSystem.BUTTON_RIGHT)
     let buttonUp = buttonSystem.getButtonDown(buttonSystem.BUTTON_UP)
@@ -138,6 +263,8 @@ class PlayerObject extends FieldData {
         this.playerWeaponPosition = 0
       }
     }
+
+    this.processAttack()
   }
 
   processAttack () {
@@ -164,9 +291,9 @@ class PlayerObject extends FieldData {
  */
 export class fieldState {
   /** @type {PlayerObject} */ static playerObject = new PlayerObject()
-  /** @type {FieldData[]} */ static weaponObject = []
-  /** @type {FieldData[]} */ static enemyObject = []
-  /** @type {FieldData[]} */ static effectObject = []
+  /** @type {WeaponObject[]} */ static weaponObject = []
+  /** @type {EnemyObject[]} */ static enemyObject = []
+  /** @type {EffectObject[]} */ static effectObject = []
   /** @type {DamageObject[]} */ static damageObject = []
 
   static getPlayerObject () { return this.playerObject }
@@ -177,7 +304,7 @@ export class fieldState {
 
   /**
    * 랜덤한 적 객체를 얻습니다. 다만, 이 객체가 삭제 예정이라면 함수의 리턴값은 null이 됩니다.
-   * @returns 적 오브젝트
+   * @returns {EnemyObject} 적 오브젝트
    */
   static getRandomEnemyObject () {
     if (this.enemyObject.length === 0) return null
@@ -192,47 +319,47 @@ export class fieldState {
     }
   }
 
-  static createWeaponObject (typeId, x = 0, y = 0, attack = 1) {
-    let getClass = tamshooter4Data.getWeaponData(typeId)
-    if (getClass == null) return
+  /**
+   * 해당 함수는 사용 불가
+   * 필드상태에 새로운 객체를 생성합니다.  
+   * [playerObject는 생성 불가]
+   * @deprecated
+   * @param {string} constObjectType data.js 파일에 있는 objectType 클래스의 상수. string 값을 직접 넣지 마세요. 무조건, objecrType.FIELD 와 같은 형태로 값을 넣어야 합니다.
+   * @param {number} typeId data.js 파일에 있는 ID 클래스 내에 있는 상수 값을 넣어주세요.
+   * @param {number} x 생성할 x좌표
+   * @param {number} y 생성할 y좌표
+   * @param {etc}
+   */
+  static create (constObjectType, typeId, x, y, ...etc) {
+    return
+    // switch (constObjectType) {
+    //   case objectType.WEAPON:
+    //     this.weaponObject.push(new WeaponObject(typeId, x, y, ...etc))
+    //     break
+    //   case objectType.ENEMY:
+    //     this.enemyObject.push(new EnemyObject(typeId, x, y))
+    //     break
+    //   case objectType.EFFECT:
+    //     this.effectObject.push(new EffectObject(typeId, x, y, ...etc))
+    // }
+  }
 
-    let inputData = new getClass()
-    inputData.setPosition(x, y)
-    inputData.setOption(attack)
-    this.weaponObject.push(inputData)
+  static createWeaponObject (typeId, x, y, attack) {
+    this.weaponObject.push(new WeaponObject(typeId, x, y, attack))
   }
   
-  static createEnemyObject (typeId, x = 0, y = 0) {
-    let getClass = tamshooter4Data.getEnemyData(typeId)
-    if (getClass == null) return
-
-    let inputData = new getClass()
-    inputData.setPosition(x, y)
-    inputData.init()
-    this.enemyObject.push(inputData)
+  static createEnemyObject (typeId, x, y) {
+    this.enemyObject.push(new EnemyObject(typeId, x, y))
   }
 
-  static createEffectObject (typeId, x = 0, y = 0, repeatCount = 0, beforeDelay = 0) {
-    let getClass = tamshooter4Data.getEffectData(typeId)
-    if (getClass == null) return
-
-    let inputData = new getClass()
-    inputData.setPosition(x, y)
-    // inputData.setOption(width, height)
-    this.effectObject.push(inputData)
-  }
-
-  static createDamageObject (x = 0, y = 0, attack = 1) {
-    let inputData = new DamageObject(x, y, attack)
-    this.damageObject.push(inputData)
+  static createEffectObject (typeId, x, y, repeatCount, beforeDelay) {
+    this.effectObject.push(new EffectObject(typeId, x, y, repeatCount, beforeDelay))
   }
 
   static process () {
     this.processPlayerObject()
     this.processWeaponObject()
     this.processEnemyObject()
-    this.processDamageObject()
-    this.processEffectObject()
   }
 
   static processPlayerObject () {
@@ -242,8 +369,9 @@ export class fieldState {
   static processWeaponObject () {
     for (let i = 0; i < this.weaponObject.length; i++) {
       let currentObject = this.weaponObject[i]
-      currentObject.process()
+      currentObject.process(currentObject)
       currentObject.fieldProcess()
+      currentObject.processAttack.call(currentObject)
 
       if (currentObject.isDeleted) {
         this.weaponObject.splice(i, 1)
@@ -254,7 +382,7 @@ export class fieldState {
   static processEnemyObject () {
     for (let i = 0; i < this.enemyObject.length; i++) {
       let currentObject = this.enemyObject[i]
-      currentObject.process(currentObject)
+      currentObject.process.call(currentObject)
       currentObject.fieldProcess()
       
       if (currentObject.isDeleted) {
@@ -263,39 +391,10 @@ export class fieldState {
     }
   }
 
-  static processDamageObject () {
-    for (let i = 0; i < this.damageObject.length; i++) {
-      let currentDamage = this.damageObject[i]
-
-      currentDamage.process()
-      currentDamage.fieldProcess()
-
-      if (currentDamage.isDeleted) {
-        this.damageObject.splice(i, 1)
-      }
-    }
-  }
-
-  
-  static processEffectObject () {
-    for (let i = 0; i < this.effectObject.length; i++) {
-      let currentEffect = this.effectObject[i]
-
-      currentEffect.process()
-      currentEffect.fieldProcess()
-
-      if (currentEffect.isDeleted) {
-        this.effectObject.splice(i, 1)
-      }
-    }
-  }
-
   static display () {
-    this.displayEffectObject()
+    this.displayPlayerObject()
     this.displayWeaponObject()
     this.displayEnemyObject()
-    this.displayDamageObject()
-    this.displayPlayerObject()
   }
 
   static displayPlayerObject () {
@@ -312,7 +411,7 @@ export class fieldState {
     for (let i = 0; i < this.enemyObject.length; i++) {
       let currentEnemy = this.enemyObject[i]
 
-      currentEnemy.display()
+      currentEnemy.display.call(currentEnemy)
       this.displayEnemyHpMeter(currentEnemy)
     }
   }
@@ -329,27 +428,6 @@ export class fieldState {
 
     graphicSystem.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height, currentEnemy.width, 2, 'red')
     graphicSystem.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height, meterWidth, 2, 'green')
-  }
-
-  static displayDamageObject () {
-    for (let i = 0; i < this.damageObject.length; i++) {
-      let currentDamage = this.damageObject[i]
-
-      currentDamage.display()
-    }
-  }
-
-  static displayEffectObject () {
-    // 참고: 이펙트는 투명도 50%가 적용됩니다. 100%은 눈아픔.
-    graphicSystem.setAlpha(0.7)
-    
-    for (let i = 0; i < this.effectObject.length; i++) {
-      let currentEffect = this.effectObject[i]
-
-      currentEffect.display()
-    }
-
-    graphicSystem.setAlpha(1)
   }
 }
 
@@ -383,7 +461,7 @@ export class fieldSystem {
     if (this.fieldTime.frame === 1 && fieldState.enemyObject.length < 10) {
       let enemyX = Math.random() * 300 + 200
       let enemyY = Math.random() * 200 + 100
-      fieldState.createEnemyObject(ID.enemy.testAttack, enemyX, enemyY)
+      fieldState.createEnemyObject(ID.enemy.test, enemyX, enemyY)
     }
 
   }

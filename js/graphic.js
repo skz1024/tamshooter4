@@ -263,6 +263,15 @@ export class graphicSystem {
     this.context.stroke()
   }
 
+  /**
+   * 투명도 조절
+   * @param {number} value 0 ~ 1 사이의 값 (0: 투명, 1: 불투명)
+   */
+  static setAlpha (value) {
+    if (value >= 0 && value <= 1) {
+      this.context.globalAlpha = value
+    }
+  }
 
 }
 graphicSystem.init()
