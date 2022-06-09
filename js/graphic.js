@@ -255,7 +255,7 @@ export class graphicSystem {
    * @param {string} color 선의 색깔, 기본값 black(검정)
    */
   static fillLine (x1, y1, x2, y2, color = 'black') {
-    this.context.strokeStyle = 'black'
+    this.context.strokeStyle = color
     this.context.beginPath()
     this.context.lineWidth = 2
     this.context.moveTo(x1, y1)

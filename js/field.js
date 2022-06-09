@@ -1,3 +1,5 @@
+"use strict"
+
 import { buttonSystem } from "./control.js"
 import { FieldData, ID, objectType, tamshooter4Data } from "./data.js"
 import { graphicSystem } from "./graphic.js"
@@ -80,6 +82,7 @@ class PlayerObject extends FieldData {
     this.shieldRecovery = 0
     this.attackDelay = 0
     this.attackDelayCount = 0
+    this.debug = false
   }
 
   init () {
@@ -91,8 +94,11 @@ class PlayerObject extends FieldData {
     this.hp = getData.hp
     this.shield = getData.shield
     this.shieldMax = getData.shieldMax
-    this.playerWeaponPosition = 0
-    this.playerWeaponId = [ID.playerWeapon.multyshot, ID.playerWeapon.missile]
+    this.playerWeaponId = [ID.playerWeapon.multyshot, 
+      ID.playerWeapon.missile, ID.playerWeapon.arrow, ID.playerWeapon.laser, ID.playerWeapon.sapia,
+      ID.playerWeapon.parapo
+    ]
+    this.playerWeaponPosition = this.playerWeaponId.length - 1
   }
 
   addDamage (damage) {
@@ -111,8 +117,29 @@ class PlayerObject extends FieldData {
 
   process () {
     this.processButton()
-    this.processAttack()
     this.processSendUserStat()
+
+    if (this.debug) {
+      this.processDebug()
+    } else {
+      this.processAttack()
+    }
+  }
+
+  processDebug () {
+    if (fieldState.weaponObject.length <= 1) {
+      fieldState.createWeaponObject(ID.weapon.laserBlue, this.x, this.y)
+    }
+
+    this.displayDebug()
+  }
+
+  displayDebug () {
+    if (fieldState.weaponObject[fieldState.weaponObject.length - 1] == null) return
+    graphicSystem.fillText(fieldState.weaponObject[fieldState.weaponObject.length - 1].x + ', ' + fieldState.weaponObject[fieldState.weaponObject.length - 1].y, 0, 100)
+
+    if (fieldState.weaponObject[0].targetObject == null) return
+    console.log(fieldState.weaponObject[0].x + ', ' + fieldState.weaponObject[0].y + ', ' + fieldState.weaponObject[0].targetObject.x + ', ' + fieldState.weaponObject[0].targetObject.y)
   }
 
   processSendUserStat () {
@@ -126,6 +153,7 @@ class PlayerObject extends FieldData {
     let buttonUp = buttonSystem.getButtonDown(buttonSystem.BUTTON_UP)
     let buttonDown = buttonSystem.getButtonDown(buttonSystem.BUTTON_DOWN)
     let buttonA = buttonSystem.getButtonInput(buttonSystem.BUTTON_A)
+    let buttonB = buttonSystem.getButtonInput(buttonSystem.BUTTON_B)
 
     if (buttonLeft) this.x -= 8
     if (buttonRight) this.x += 8
@@ -137,6 +165,10 @@ class PlayerObject extends FieldData {
       if (this.playerWeaponPosition >= this.playerWeaponId.length) {
         this.playerWeaponPosition = 0
       }
+    }
+
+    if (buttonB) {
+      this.debug = true
     }
   }
 
@@ -157,6 +189,8 @@ class PlayerObject extends FieldData {
   display () {
     graphicSystem.imageDisplay(this.playerImage, this.x, this.y)
   }
+
+  
 }
 
 /**
@@ -168,6 +202,23 @@ export class fieldState {
   /** @type {FieldData[]} */ static enemyObject = []
   /** @type {FieldData[]} */ static effectObject = []
   /** @type {DamageObject[]} */ static damageObject = []
+  
+  /** 
+   * 다음 생성할 오브젝트의 Id  
+   * 중복 구분 용도로 사용 (경고: 이 변수를 직접 대입하지 말고, getNextCreateId 함수를 사용하세요.)
+   * @type {number} 
+   */ 
+  static nextCreateId = 0
+
+  /**
+   * 다음 생성할 오브젝트의 Id를 얻습니다.
+   * @returns {number} nextCreateId
+   */
+  static getNextCreateId () {
+    this.nextCreateId += 1 // 한번 생성할 때마다 id 1씩 증가
+
+    return this.nextCreateId
+  }
 
   static getPlayerObject () { return this.playerObject }
   static getPlayerWeaponObject () { return this.weaponObject }
@@ -192,11 +243,15 @@ export class fieldState {
     }
   }
 
-  static createWeaponObject (typeId, x = 0, y = 0, attack = 1) {
+  /**
+   * @param {number} attack 공격력 (반드시 정수여야 함. Math.floor 연산 회피를 위해 여기서는 검사하지 않음.)
+   */
+  static createWeaponObject (typeId, x = 0, y = 0, attack = 1, ...addOption) {
     let getClass = tamshooter4Data.getWeaponData(typeId)
     if (getClass == null) return
 
-    let inputData = new getClass()
+    let inputData = new getClass(addOption)
+    inputData.createId = this.getNextCreateId()
     inputData.setPosition(x, y)
     inputData.setOption(attack)
     this.weaponObject.push(inputData)
@@ -207,16 +262,18 @@ export class fieldState {
     if (getClass == null) return
 
     let inputData = new getClass()
+    inputData.createId = this.getNextCreateId()
     inputData.setPosition(x, y)
     inputData.init()
     this.enemyObject.push(inputData)
   }
 
-  static createEffectObject (typeId, x = 0, y = 0, repeatCount = 0, beforeDelay = 0) {
+  static createEffectObject (typeId, x = 0, y = 0, repeatCount = 0, beforeDelay = 0, ...option) {
     let getClass = tamshooter4Data.getEffectData(typeId)
     if (getClass == null) return
 
-    let inputData = new getClass()
+    let inputData = new getClass(option)
+    inputData.createId = this.getNextCreateId()
     inputData.setPosition(x, y)
     // inputData.setOption(width, height)
     this.effectObject.push(inputData)
@@ -224,6 +281,7 @@ export class fieldState {
 
   static createDamageObject (x = 0, y = 0, attack = 1) {
     let inputData = new DamageObject(x, y, attack)
+    inputData.createId = this.getNextCreateId()
     this.damageObject.push(inputData)
   }
 
@@ -292,8 +350,8 @@ export class fieldState {
 
   static display () {
     this.displayEffectObject()
-    this.displayWeaponObject()
     this.displayEnemyObject()
+    this.displayWeaponObject()
     this.displayDamageObject()
     this.displayPlayerObject()
   }
@@ -340,7 +398,7 @@ export class fieldState {
   }
 
   static displayEffectObject () {
-    // 참고: 이펙트는 투명도 50%가 적용됩니다. 100%은 눈아픔.
+    // 참고: 이펙트는 투명도 70%가 적용됩니다. 100%은 눈아픔.
     graphicSystem.setAlpha(0.7)
     
     for (let i = 0; i < this.effectObject.length; i++) {
