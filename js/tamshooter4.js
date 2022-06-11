@@ -908,6 +908,7 @@ function animation (timestamp) {
   * then = timestamp - (elapsed % fpsInterval) 계산을 공통적으로 하는것 같습니다.
   * 어쨋든, 이 게임은 모니터 환경에 상관없이 초당 60fps로만 실행됩니다.
   * 이 설정을 바꾸는 것은 게임 규칙 위반입니다. 임의로 수정하지 마세요.
+  * 기본값: 16.6 = 60fps
   */
   let fpsInterval = 16.6 // 1seconds 60fps limit, do not exceed 60fps!
 

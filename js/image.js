@@ -20,6 +20,8 @@ export class imageFile {
     sapia: new Image(),
     parapo: new Image(),
     parapoEffect: new Image(),
+    blaster: new Image(),
+    sidewave: new Image(),
   }
 
   static enemy = {
@@ -43,6 +45,8 @@ imageFile.weapon.laser.src = './image/weapon/laser.png'
 imageFile.weapon.sapia.src = './image/weapon/sapia.png'
 imageFile.weapon.parapo.src = './image/weapon/parapo.png'
 imageFile.weapon.parapoEffect.src = './image/weapon/parapoEffect.png'
+imageFile.weapon.blaster.src = './image/weapon/blaster.png'
+imageFile.weapon.sidewave.src = './image/weapon/sidewave.png'
 
 // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
 // 그러므로 svg 파일은 게임 내에서 사용되지 않습니다.

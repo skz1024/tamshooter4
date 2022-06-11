@@ -5,8 +5,8 @@ import { graphicSystem } from "./graphic.js"
 import { imageFile } from "./image.js"
 
 /**
- * 공통적으로 사용하는 객체 ID [주의: ID 값들은 실수로! 중복될 수 있음.]  
- * 가능하면, ID 값은 서로 달라야 합니다. (실수가 아니라면...)
+ * 공통적으로 사용하는 객체 ID
+ * ID 값은 서로 달라야 합니다. (사람이 실수한게 아니라면...)
  */
 export class ID {
   static playerWeapon = {
@@ -17,25 +17,25 @@ export class ID {
     laser:10004,
     sapia:10005,
     parapo:10006,
+    blaster:10007,
+    sidewave:10008,
   }
 
   static weapon = {
     unused:0,
     multyshot:11010,
-    multyshotHoming:11011,
-    multyshotSideUp:11012,
-    multyshotSideDown:11013,
     missile:11020,
-    missileUp:11021,
-    missileDown:11022,
+    missileRocket:11021,
     arrow:11030,
-    arrowDown:11031,
     laser:11040,
     laserBlue:11041,
     sapia:11050,
     sapiaShot:11051,
     parapo:11060,
     parapoShockWave:11061,
+    blaster:11070,
+    blasterMini:11071,
+    sidewave:11080,
   }
   
   static enemy = {
@@ -260,7 +260,7 @@ export class collisionOBB {
  */
 class DelayData {
   constructor (delay) {
-    /** 지연시간 */ this.value = delay
+    /** 지연시간 */ this.delay = delay
     /** 지연시간을 계산하는 카운터 */ this.count = 0
   }
 
@@ -278,7 +278,7 @@ class DelayData {
       this.count++
     }
 
-    if (this.count >= this.value) {
+    if (this.count >= this.delay) {
       if (reset) {
         this.count = 0
       }
@@ -299,19 +299,19 @@ class EnimationData {
    * 에니메이션 데이터를 생성합니다.  
    * 경고: 불규칙 크기의 에니메이션을 사용하진 마세요. 이 경우, 예상하지 못한 버그가 발생합니다.
    * @param {Image} image HTML 이미지
-   * @param {number} silceStartX 이미지의 시작지점 X좌표
+   * @param {number} silceStartX 이미지의 시작지점 X좌표 (경고: sliceStartX는 0을 권장, 아니라면, 1줄에 모든 에니메이션 프레임을 배치할 것, 이렇게 안하면, 출력 순서가 꼬일 수 있음.)
    * @param {number} silceStartY 이미지의 시작지점 Y좌표
    * @param {number} frameWidth 프레임 너비
    * @param {number} frameHeight 프레임 높이
    * @param {number} frameCount 프레임 개수
-   * @param {number} frameDelay 프레임 지연시간
-   * @param {number} frameRepeat 프레임 반복횟수, -1로 설정하면 무한반복, 0일경우 반복 없음
+   * @param {number} frameDelay 다음 프레임 재생까지의 지연시간, 기본값 1 (즉, 초당 30프레임, 0일경우 60프레임, 정수만 사용 가능)
+   * @param {number} frameRepeat 프레임 반복횟수, -1로 설정하면 무한반복, 기본값 1(1번 반복), 0으로 설정할경우 버그 및 에니메이션이 잘릴 수 있음.
    * @param {number} outputWidth 출력 너비 >> 기본값: 프레임 너비 (이 숫자는 canvas 성능 문제때문에, 가급적 변경하지 않는게 좋습니다.)
    * @param {number} outputHeight 출력 높이 >> 기본값: 프레임 높이 (이 숫자는 canvas 성능 문제때문에, 가급적 변경하지 않는게 좋습니다.)
    */
   constructor (
     image = null, silceStartX = 0, silceStartY = 0, frameWidth = 0, frameHeight = 0, 
-    frameCount = 0, frameDelay = 0, frameRepeat = 0, 
+    frameCount = 0, frameDelay = 1, frameRepeat = 1, 
     outputWidth = frameWidth, outputHeight = frameHeight) {
     /** 이미지 */ this.image = image
     /** 이미지의 에니메이션 프레임 시작지점 X위치, 기본값 = 0 */ this.sliceStartX = silceStartX
@@ -319,10 +319,10 @@ class EnimationData {
     /** 에니메이션 프레임의 너비 */ this.frameWidth = frameWidth
     /** 에니메이션 프레임의 높이 */ this.frameHeight = frameHeight
     /** 에니메이션 프레임의 총 카운트 수 */ this.frameCount = frameCount
-    /** 에니메이션 현재 프레임 */ this.currentFrame = 0
+    /** 에니메이션이 총 진행된 프레임 수(지연시간과 관계없음) */ this.elapsedFrame = 0
     /** 에니메이션 반복 횟수 (-1: 무제한) */ this.frameRepeat = frameRepeat
     /** 에니메이션 반복 횟수 카운트 */ this.frameRepeatCount = 0
-    /** 에니메이션의 총 최대 프레임 수(프레임 개수 * 프레임 반복 수) */ this.maxFrame = this.frameCount * this.frameRepeat
+    /** 에니메이션의 총 최대 프레임 수(프레임 개수 * 프레임 반복 횟수) */ this.maxFrame = this.frameCount * this.frameRepeat
     /** 에니메이션의 출력할 너비 */ this.outputWidth = outputWidth
     /** 에니메이션의 출력할 높이 */ this.outputHeight = outputHeight
 
@@ -335,7 +335,7 @@ class EnimationData {
 
     /** 
      * 에니메이션이 끝났는지의 여부  
-     * 이 값이 true라면, 무슨 짓을 해도 에니메이션은 출력되지 않습니다.
+     * 이 값이 true라면, 무슨 짓을 해도 에니메이션은 출력되지 않습니다. 
      */ 
     this.finished = false
   }
@@ -348,11 +348,11 @@ class EnimationData {
     if (this.frameDelay !== null && !this.frameDelay.check()) return
     if (this.finished) return
     
-    this.currentFrame++ // 현재 프레임 증가
+    this.elapsedFrame++ // 진행된 프레임 증가
 
-    // frameRepeat가 0보다 클 때(-1이하는 무한반복)
+    // frameRepeat가 0이상일 때 (-1이하는 무한반복)
     // 현재 프레임이 최대 프레임 이상이면, 에니메이션은 전부 출력된 것이므로 종료됩니다.
-    if (this.frameRepeat >= 0 && this.currentFrame >= this.maxFrame) {
+    if (this.frameRepeat >= 0 && this.elapsedFrame >= this.maxFrame) {
       if (this.frameRepeatCount < this.frameRepeat) {
         this.frameRepeatCount++
       } else {
@@ -363,13 +363,14 @@ class EnimationData {
 
   /** 에니메이션 다시 시작 */
   reset () {
-    this.currentFrame = 0 // 현재 에니메이션 프레임은 0으로 리셋
+    this.elapsedFrame = 0 // 현재 에니메이션 프레임은 0으로 리셋
     this.finished = false // 에니메이션이 재시작되어 종료된 것이 아니므로 finished가 false입니다.
+    this.frameRepeatCount = 0 // 프레임 반복한 횟수 카운트 0으로 재설정
   }
 
   /** 
    * 에니메이션 출력 함수 (반드시 출력할 좌표를 입력해 주세요!)  
-   * 경고: 프레임은 고정된 크기를 사용합니다. 가변적인 크기를 사용하면 버그가 발생할 수 있음.
+   * 경고: 에니메이션 프레임은 고정된 크기를 사용합니다. 가변적인 크기를 사용하면 버그가 발생할 수 있음.
    * @param {number} x 출력할 에니메이션의 x좌표
    * @param {number} y 출력할 에니메이션의 y좌표
    */
@@ -378,21 +379,29 @@ class EnimationData {
     if (this.image == null) return
 
     if (x == null || y == null) {
+      // 의도적인 버그 방지용 경고 문구
       console.warn('좌표가 입력되지 않았습니다. 에니메이션 출력은 무시됩니다.')
       return
     }
 
-    // 자른 프레임 번호, 이미지를 어디서부터 잘라야 할 지를 결정합니다.
-    let sliceFrame = this.currentFrame % this.frameCount
+    // 자른 프레임 번호
+    // 진행된 프레임이 최대 프레임 이상일 때(에니메이션이 무한 반복 한 경우), 나머지 계산을 해서 어느 프레임 번호를 출력해야 할지를 결정합니다.
+    let sliceFrame = this.elapsedFrame % this.frameCount
+    
+    // 라인 최대 프레임 (한 줄에 몇개의 프레임이 있을 수 있는가?)
+    // 참고: 조심해야 할 것은, 다음 줄로 넘어갈 때, 0좌표가 아닌 sliceStartX에서부터 시작합니다.
+    // 즉 다음 줄로 넘어갈 때, 맨 왼쪽부터 프레임 위치를 계산하는게 아니고 시작지점부터 출력 위치를 계산합니다.
+    let lineMaxFrame = Math.floor((this.image.width - this.sliceStartX) / this.frameWidth)
 
-    // 자른 프레임 라인, 이미지를 어디서부터 잘라야 할 지를 결정하지만, 이것은 Y좌표를 정하는데 쓰입니다.
-    // 한 줄에 10개가 있고, 총 프레임이 20일때, 슬라이스 라인은 2가 됩니다.
+    // 자른 프레임 라인, 이미지의 Y좌표를 어디서부터 잘라야 할 지를 결정합니다.
+    // 프레임이 여러 줄로 배치되어있을 때, 몇번째 줄의 프레임을 가져올 것인지 결정합니다.
+    // 한 줄에 10개가 있고, 총 프레임이 20일때, 슬라이스 프레임이 13이면, 슬라이스 라인은 1이 됩니다.
     // 다만, 크기를 이용해서 예측하기 때문에 한줄로 나열하지 않거나 크기가 불규칙하면 버그가 생김.
-    let sliceLine = Math.round(this.frameCount / this.frameWidth)
+    let sliceLine = Math.floor(sliceFrame / lineMaxFrame)
 
     // 이미지 파일 내부에서 가져올 프레임 위치 계산
     let sliceX = this.sliceStartX + (sliceFrame * this.frameWidth) % this.image.width
-    let sliceY = this.sliceStartY + (sliceLine* this.frameHeight)
+    let sliceY = this.sliceStartY + (sliceLine * this.frameHeight)
 
     // 이미지 출력
     graphicSystem.imageDisplay(this.image, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight)
@@ -401,11 +410,14 @@ class EnimationData {
   /**
    * 생각해보니, 프로세스(처리)와 디스플레이(출력)을 한꺼번에 하는게 더 좋겠네요.
    * 이 기능은 process 함수의 기능과 display 함수의 기능을 수행합니다.  
-   * display 역할을 수행해야 하므로 반드시 출력할 x, y좌표를 입력해 주세요!
+   * display 역할을 수행해야 하므로 반드시 출력할 x, y좌표를 입력해 주세요!  
+   * 참고: 이 함수는 display 쪽에서 사용해야 합니다. (data 내부의 로직과 관계 없으므로.)
    * @param {number} x 출력할 에니메이션의 x좌표
    * @param {number} y 출력할 에니메이션의 y좌표
    */
-  processAndDisplay (x, y) {
+  displayAndProcess (x, y) {
+    // 참고: 함수 이름은 display쪽에서 사용하라고 의도적으로 displayAnd... 로 지었습니다.
+    // 다만, 실제 처리는, process를 먼저 진행하고 출력합니다.
     this.process()
     this.display(x, y)
   }
@@ -484,7 +496,7 @@ export class FieldData {
     this.isDeleted = false
 
     // 에니메이션 용도
-    /** 현재까지 진행된 에니메이션 총 프레임 */ this.enimationFrame = 0
+    /** 현재까지 진행된 에니메이션의 총 프레임 */ this.enimationFrame = 0
     /** 
      * 에니메이션 객체: 이 객체는 EnimationData를 생성하여 이용합니다.
      * @type {EnimationData}
@@ -542,7 +554,7 @@ class WeaponData extends FieldData {
 
     /** 
      * 공격 반복 횟수: 적을 여러번 때리거나, 또는 여러번 공격할 때 사용, 기본값: 1  
-     * 경고: 기본값 0이라면, 무기가 즉시 사라질 수 있음.
+     * 경고: 기본값 0이라면, 공격횟수가 0인 것으로 취급해 무기가 즉시 사라질 수 있음.
      */ 
     this.repeatCount = 1
     /** 
@@ -577,17 +589,17 @@ class WeaponData extends FieldData {
    * 무기가 적을 타격하여 데미지를 주는 함수입니다.  
    * 아직까지는, 무기의 공격력 만큼만 적의 체력을 감소시키는 역할만 합니다.  
    * 절대로, 다른 곳에서 적의 체력을 직접 감소시키지 마세요!
-   * @param {FieldData} target 총돌한 객체(어떤게 충돌했는지는 field에서 검사합니다.)
+   * @param {FieldData} hitedTarget 총돌하여 데미지를 받을 객체(반드시 적일 필요는 없음.)
    */
-  damageProcess (target) {
+  damageProcess (hitedTarget) {
     // 기본적으로 무기와 적의 충돌은 무기의 공격력 만큼 적의 체력을 감소합니다.
     let damage = this.attack
     if (damage < 1) {
       damage = 1
     }
 
-    target.hp -= damage
-    fieldState.createDamageObject(target.x, target.y, damage)
+    hitedTarget.hp -= damage
+    fieldState.createDamageObject(hitedTarget.x, hitedTarget.y, damage)
   }
 
   /**
@@ -600,7 +612,8 @@ class WeaponData extends FieldData {
 
   /**
    * 무기는 적 오브젝트를 공격합니다. 이것은 무기와 적과의 상호작용을 처리하는 함수입니다.  
-   * process는 무기의 로직 처리이고, processAttack는 무기가 적을 공격하기 위한 로직을 작성합니다.
+   * process는 무기의 로직 처리이고, processAttack는 무기가 적을 공격하기 위한 로직을 작성합니다.  
+   * 반복 횟수에 대한 고려를 하지 않고, 새로 알고리즘을 작성하지 않는다면, 일반적인 무기는 
    */
   processAttack () {
     let enemyObject = fieldState.getEnemyObject()
@@ -613,10 +626,11 @@ class WeaponData extends FieldData {
       if (collision(this, currentEnemy)) {
         // 충돌한 경우, 충돌한 상태에서의 로직을 처리
         this.damageProcess(currentEnemy)
+        this.repeatCount-- // 무기 반복횟수 1회 감소
 
-        // 적을 공격 성공한 시점에서 충돌 처리 후 함수는 종료되고, 해당 객체는 즉시 삭제됩니다.
-        // 자기 자신은 null을 해봤자 의미없으므로, isDelete변수값을 이용해 field에서 삭제되도록 합니다.
-        this.isDeleted = true
+        // 적을 공격 성공한 시점에서 충돌 처리 후 함수는 종료되고, 무기 반복횟수 1이 감소합니다.
+        // 기본적으로 무기 반복횟수는 1이므로, 적을 한번 타격 후 삭제됩니다.
+        // 무기 삭제 여부는 process 함수에서 처리합니다.
         return 
       }
     }
@@ -698,9 +712,12 @@ class WeaponData extends FieldData {
     }
   }
 
+  /**
+   * 기본적인 무기 객체 출력 함수 (다만, 대부분은 재작성하게 됨. 무기마다 출력해야 하는 부분이 달라서...)
+   */
   display () {
     if (this.enimation) {
-      this.enimation.processAndDisplay(this.x, this.y)
+      this.enimation.displayAndProcess(this.x, this.y)
     } else if (this.image) {
       graphicSystem.imageDisplay(this.image, this.x, this.y)
     }
@@ -708,14 +725,18 @@ class WeaponData extends FieldData {
 }
 
 class MultyshotData extends WeaponData {
-  constructor () {
+  /**
+   * optionList
+   * 0. speedY = 0, 1. chase(추적) = flase
+   */
+  constructor (option = [0, false]) {
     super()
     this.mainType = 'multyshot'
     this.subType = 'multyshot'
     this.id = ID.weapon.multyshot
-    this.width = 10
-    this.height = 4
-    this.color = 'orange'
+    this.width = 40
+    this.height = 8
+    this.color = 'brown'
 
     this.moveX = 20
     this.moveY = 0
@@ -723,6 +744,23 @@ class MultyshotData extends WeaponData {
     this.speedY = 0
     this.direction = ''
     this.image = imageFile.weapon.multyshot
+
+    // 옵션에 따른 추가 설정
+    if (option.length === 1) {
+      this.speedY = option[0]
+    } else if (option.length === 2) {
+      this.speedY = option[0]
+      this.isChaseType = option[1]
+    }
+
+    // 옵션에 따른 색깔 설정
+    if (this.isChaseType) {
+      this.color = 'blue' // 추적 타입은 무조건 파랑색
+    } else if (this.speedY === 0) {
+      this.color = 'brown' // y축 속도가 0이면 갈색
+    } else {
+      this.color = 'green' // y축 속도가 있으면 초록색
+    }
   }
 
   display () {
@@ -748,30 +786,6 @@ class MultyshotData extends WeaponData {
   }
 }
 
-class MultyshotSideUp extends MultyshotData {
-  constructor () {
-    super()
-    this.color = 'green'
-    this.speedY = 2
-  }
-}
-
-class MultyshotSideDown extends MultyshotData {
-  constructor () {
-    super()
-    this.color = 'green'
-    this.speedY = -2
-  }
-}
-
-class MultyshotHoming extends MultyshotData {
-  constructor () {
-    super()
-    this.color = 'blue'
-    this.isChaseType = true
-  }
-}
-
 class MissileData extends WeaponData {
   constructor () {
     super()
@@ -785,7 +799,7 @@ class MissileData extends WeaponData {
     this.repeatCount = 5
     this.repeatDelay = new DelayData(6)
     this.state = 'normal'
-    this.enimation = new EnimationData(imageFile.weapon.missile, 0, 0, 40, 20, 8, 0, -1)
+    this.enimation = new EnimationData(imageFile.weapon.missile, 0, 0, 40, 20, 8, 2, -1)
   }
 
   /**
@@ -805,7 +819,7 @@ class MissileData extends WeaponData {
 
   display () {
     if (this.state === 'normal' && this.enimation != null) {
-      this.enimation.processAndDisplay(this.x, this.y)
+      this.enimation.displayAndProcess(this.x, this.y)
     }
   }
 
@@ -817,19 +831,6 @@ class MissileData extends WeaponData {
       this.processAttackNormal()
     } else if (this.state === 'splash' && this.repeatDelay.check()) {
       this.processAttackSplash()
-    }
-
-    // 이 함수에서 무기가 삭제됨.
-    this.repeatCountCheck()
-  }
-
-  /**
-   * 반복카운트가 0이되면 모든 공격을 끝냈으므로, 더이상 무기의 효과를 발동시키지 않습니다.
-   * 이것은, 반복카운트가 0이 됨을 체크하는 것입니다.
-   */
-  repeatCountCheck () {
-    if (this.repeatCount <= 0) {
-      this.isDeleted = true
     }
   }
 
@@ -861,7 +862,7 @@ class MissileData extends WeaponData {
    */
   processAttackSplash () {
     let enemyObject = fieldState.getEnemyObject()
-    this.repeatCount--
+    this.repeatCount-- // 스플래시 공격을 할 때마다 반복 횟수 감소
     let splashArea = this.getSplashArea()
     fieldState.createEffectObject(ID.effect.missile, splashArea.x, splashArea.y)
 
@@ -877,11 +878,15 @@ class MissileData extends WeaponData {
   }
 }
 
-class MissileUp extends MissileData {
-  constructor () {
+class MissileRocket extends MissileData {
+  /**
+   * option list
+   * 0. speedY
+   */
+  constructor (option = [2]) {
     super()
-    this.subType = 'missileB'
-    this.id = ID.weapon.missileUp
+    this.subType = 'missileRocket'
+    this.id = ID.weapon.missileRocket
     this.isChaseType = false
     this.width = 40
     this.height = 20
@@ -890,33 +895,33 @@ class MissileUp extends MissileData {
     this.state = 'splashB'
     this.repeatCount = 6
     this.repeatDelay = new DelayData(8)
-    this.enimation = new EnimationData(imageFile.weapon.missileB, 0, 0, 40, 20, 6, 0, -1)
+    this.enimation = new EnimationData(imageFile.weapon.missileB, 0, 0, 40, 20, 6, 2, -1)
+
+    // 무기에 따른 옵션 설정
+    if (option.length === 1) {
+      this.speedY = option[0]
+    }
   }
 
   processAttack () {
     if (this.repeatDelay.check()) {
       this.processAttackSplash()
     }
-
-    this.repeatCountCheck()
   }
 
   display () {
-    if (this.enimation != null) {
-      this.enimation.processAndDisplay(this.x, this.y)
+    if (this.enimation) {
+      this.enimation.displayAndProcess(this.x, this.y)
     }
   }
 }
 
-class MissileDown extends MissileUp {
-  constructor () {
-    super()
-    this.speedY = 2
-  }
-}
-
 class Arrow extends WeaponData {
-  constructor () {
+  /**
+   * option list  
+   * 0. speedY (참고: 이 값이 음수면 갈색이고, 양수면 초록색입니다.)
+   */
+  constructor (option = [2]) {
     super()
     this.mainType = 'bounce'
     this.subType = 'arrow'
@@ -927,8 +932,21 @@ class Arrow extends WeaponData {
     this.height = 20
     this.bounceMaxCount = 6
     this.bounceCount = 0
+    this.enimation = null
     this.color = 'brown'
-    this.enimation = new EnimationData(imageFile.weapon.arrow, 0, 0, 20, 20, 7, 0, -1)
+
+    // 무기에 따른 옵션 설정
+    if (option.length === 1) {
+      if (option[0] < 0) {
+        this.color = 'brown'
+        this.enimation = new EnimationData(imageFile.weapon.arrow, 0, 0, 20, 20, 7, 4, -1)
+        this.speedY = option[0]
+      } else if (option[0] > 0) {
+        this.color = 'green'
+        this.enimation = new EnimationData(imageFile.weapon.arrow, 0, 20, 20, 20, 7, 4, -1)
+        this.speedY = option[0]
+      }
+    }
   }
 
   processMove () {
@@ -967,15 +985,6 @@ class Arrow extends WeaponData {
     if (this.bounceCount > this.bounceMaxCount) {
       this.isDeleted = true
     }
-  }
-}
-
-class ArrowDown extends Arrow {
-  constructor () {
-    super()
-    this.speedY = -4
-    this.color = 'green'
-    this.enimation = new EnimationData(imageFile.weapon.arrow, 0, 20, 20, 20, 7, 0, -1)
   }
 }
 
@@ -1336,7 +1345,11 @@ class LaserBlue extends Laser {
 }
 
 class Sapia extends WeaponData {
-  constructor (sapiaShotAttack) {
+  /**
+   * option list  
+   * 0. sapiaShotAttack 사피아샷의 공격력
+   */
+  constructor (option = [352]) {
     super()
     this.mainType = 'sapia'
     this.subType = 'sapia'
@@ -1347,7 +1360,7 @@ class Sapia extends WeaponData {
     this.repeatCount = 4
     this.repeatDelay = new DelayData(10)
     this.isChaseType = true
-    this.sapiaShotAttack = sapiaShotAttack
+    this.sapiaShotAttack = option = [100]
   }
 
   processMove () {
@@ -1514,12 +1527,13 @@ class Parapo extends WeaponData {
     this.mainType = 'parapo'
     this.subType = 'parapo'
     this.repeatCount = 2
-    this.repeatDelay = new DelayData(4)
+    this.repeatDelay = new DelayData(8)
     this.image = imageFile.weapon.parapo
+    this.id = ID.weapon.parapo
     this.width = 45
     this.height = 20
     this.isChaseType = true
-    this.enimation = new EnimationData(this.image, 0, 0, this.width, this.height, 14, 0, -1)
+    this.enimation = new EnimationData(this.image, 0, 0, this.width, this.height, 14, 2, -1)
   }
   
   processAttack () {
@@ -1535,7 +1549,7 @@ class Parapo extends WeaponData {
       // 각각의 적마다 충돌 검사
       if (collision(this, currentEnemy)) {
         /*
-         * 적이랑 충돌했을 때, 충격파 추가로 발사(실제 타격데미지도 있긴 하지만...)
+         * 적이랑 충돌했을 때, 충격파 추가로 발사
          * 충격파는, 적의 중심 위치를 기준으로 4개의 방향으로 타격합니다.
          * 파라보 자체의 데미지는 없음. (공격력만 있고, 충격파로 데미지를 줌)
          * 좌표값 상세 [참고: c -> enemy center]
@@ -1567,7 +1581,7 @@ class ParapoShockwave extends Parapo {
     this.subType = 'shockwave'
     this.repeatCount = 2
     this.repeatDelay = new DelayData(12)
-    this.repeatDelay.count = this.repeatDelay.value // 즉시 카운트 채우기
+    this.repeatDelay.count = this.repeatDelay.delay // 즉시 카운트 채우기
     this.width = 100
     this.height = 100
     this.speedX = 0
@@ -1606,6 +1620,62 @@ class ParapoShockwave extends Parapo {
     // 아무것도 보여주지 않음.
   }
 }
+
+class Blaster extends WeaponData {
+  constructor () {
+    super()
+    this.mainType = 'blaster'
+    this.subType = 'blaster'
+    this.width = 36
+    this.height = 36
+    this.image = imageFile.weapon.blaster
+    this.speedX = 24
+    this.speedY = 0
+  }
+
+  display () {
+    graphicSystem.imageDisplay(this.image, 0, 0, this.width, this.height, this.x, this.y, this.width, this.height)
+  }
+}
+
+class BlasterMini extends Blaster {
+  constructor () {
+    super()
+    this.subType = 'blastermini'
+    this.width = 18
+    this.height = 18
+    this.isChaseType = true
+  }
+
+  display () {
+    const BLASTER_WIDTH = 36
+    graphicSystem.imageDisplay(this.image, BLASTER_WIDTH, 0, this.width, this.height, this.x, this.y, this.width, this.height)
+  }
+}
+
+class Sidewave extends WeaponData {
+  /**
+   * 옵션 목록  
+   * 0. speedY = 0, 1. direction = 'right'
+   */
+  constructor (option = [0, 'right']) {
+    super()
+    this.mainType = 'sidewave'
+    this.subType = 'sidewave'
+    this.width = 12
+    this.height = 60
+    this.speedY = option[0]
+    this.speedX = 11
+
+    if (option[1] === 'left') {
+      this.enimation = new EnimationData(imageFile.weapon.sidewave, 0, 0, this.width, this.height, 8, 5, -1)
+      this.speedX = -this.speedX
+    } else {
+      this.enimation = new EnimationData(imageFile.weapon.sidewave, 0, this.height, this.width, this.height, 8, 5, -1)
+    }
+  }
+}
+
 
 /**
  * 플레이어 무기 데이터 (이 클래스는 static 클래스입니다.)  
@@ -1657,40 +1727,36 @@ class ParapoShockwave extends Parapo {
    */
   static getShotAttack (baseAttack, multiple = 1) {
     let secondPerCount = 60 / this.delay
-    let totalMultiple = this.shotCount * this.attackCount
-    let resultAttack = baseAttack / (secondPerCount * totalMultiple)
-    return Math.floor(resultAttack * multiple)
-  }
-
-  static getShotMultipleAttack () {
-    let secondPerCount = 60 / this.delay
-    let totalMultiple = this.shotCount * this.attackCount
-    return secondPerCount / totalMultiple
+    let totalDivied = this.shotCount * this.attackCount
+    let totalMultiple = (this.attackPercent / 100) * multiple
+    let resultAttack = (baseAttack * totalMultiple) / (secondPerCount * totalDivied)
+    return Math.floor(resultAttack)
   }
 }
 
 
 class PlayerMultyshot extends PlayerWeaponData {
   // 단순한 무기라, 따로 추가로 계산할 요소는 거의 없음
-  static delay = 6
+  static delay = 10
   static attackPercent = 100
-  static shotCount = 5
+  static shotCount = 6
 
   static create (attack, x, y) {
-    // 샷 카운트: 5, 초당 10회 = 총 발사 수 50
+    // 샷 카운트: 6, 초당 6회 = 총 발사 수 36
     const shotAttack = this.getShotAttack(attack)
 
-    fieldState.createWeaponObject(ID.weapon.multyshot, x, y, shotAttack)
-    fieldState.createWeaponObject(ID.weapon.multyshot, x, y, shotAttack)
-    fieldState.createWeaponObject(ID.weapon.multyshotSideUp, x, y - 5, shotAttack)
-    fieldState.createWeaponObject(ID.weapon.multyshotSideDown, x, y + 5, shotAttack)
-    fieldState.createWeaponObject(ID.weapon.multyshotHoming, x - 5, y, shotAttack)
+    fieldState.createWeaponObject(ID.weapon.multyshot, x, y + 10, shotAttack)
+    fieldState.createWeaponObject(ID.weapon.multyshot, x, y - 10, shotAttack)
+    fieldState.createWeaponObject(ID.weapon.multyshot, x, y - 5, shotAttack, -3)
+    fieldState.createWeaponObject(ID.weapon.multyshot, x, y + 5, shotAttack, 3)
+    fieldState.createWeaponObject(ID.weapon.multyshot, x - 15, y - 15, shotAttack, 0, true)
+    fieldState.createWeaponObject(ID.weapon.multyshot, x - 15, y + 15, shotAttack, 0, true)
   }
 }
 
 class PlayerMissile extends PlayerWeaponData {
   static missile = new MissileData()
-  static missileB = new MissileUp()
+  static missileB = new MissileRocket()
 
   // 참고, 복잡한 무기의 경우, 해당 무기의 정보를 가져와서 계산합니다.
   // 이렇게 안하면, 나중에 밸런스 수정할 때 여러개의 코드를 수정해야 할 수도 있습니다.
@@ -1708,20 +1774,20 @@ class PlayerMissile extends PlayerWeaponData {
 
     fieldState.createWeaponObject(ID.weapon.missile, x, y - 5, shotAttack)
     fieldState.createWeaponObject(ID.weapon.missile, x, y + 5, shotAttack)
-    fieldState.createWeaponObject(ID.weapon.missileUp, x + 10, y - 5, shotAttack)
-    fieldState.createWeaponObject(ID.weapon.missileDown, x + 10, y + 5, shotAttack)
+    fieldState.createWeaponObject(ID.weapon.missileRocket, x + 10, y - 5, shotAttack, -2)
+    fieldState.createWeaponObject(ID.weapon.missileRocket, x + 10, y + 5, shotAttack, 2)
   }
 }
 
 class PlayerArrow extends PlayerWeaponData {
   static delay = 10
   static shotCount = 2
-  static attackPercent = 100
+  static attackPercent = 104
   static create (attack, x, y) {
     const shotAttack = this.getShotAttack(attack)
 
-    fieldState.createWeaponObject(ID.weapon.arrow, x, y, shotAttack)
-    fieldState.createWeaponObject(ID.weapon.arrowDown, x, y, shotAttack)
+    fieldState.createWeaponObject(ID.weapon.arrow, x, y - 10, shotAttack, 5)
+    fieldState.createWeaponObject(ID.weapon.arrow, x, y - 10, shotAttack, -5)
   }
 }
 
@@ -1729,7 +1795,7 @@ class PlayerLaser extends PlayerWeaponData {
   static laser = new Laser()
   static delay = 20
   static shotCount = 4
-  static attackPercent = 100
+  static attackPercent = 110
   static attackCount = this.laser.repeatCount
 
   static create (attack, x, y) {
@@ -1766,6 +1832,7 @@ class PlayerParapo extends PlayerWeaponData {
   static shockWave = new ParapoShockwave()
   static shotCount = 4
   static delay = 60
+  static attackPercent = 95
 
   // 공격 개수 = 파라포 반복 * 4(왼쪽, 오른쪽, 위, 아래) * 쇼크웨이브 반복
   // 공격 개수가 4배인것을 이 정보에 저장했기 때문에, 무기 알고리즘 내에서 추가적인 공격력 정보를 넣을 필요는 없습니다.
@@ -1777,6 +1844,39 @@ class PlayerParapo extends PlayerWeaponData {
     fieldState.createWeaponObject(ID.weapon.parapo, x, y, shotAttack)
     fieldState.createWeaponObject(ID.weapon.parapo, x, y, shotAttack)
     fieldState.createWeaponObject(ID.weapon.parapo, x, y, shotAttack)
+  }
+}
+
+class PlayerBlaster extends PlayerWeaponData {
+  static shotCount = 2
+  static delay = 6
+  static attackPercent = 110
+
+  static create (attack, x, y) {
+    const shotAttack = this.getShotAttack(attack, 1.2)
+    const miniAttack = this.getShotAttack(attack, 0.8)
+
+    fieldState.createWeaponObject(ID.weapon.blaster, x, y - 18, shotAttack)
+    fieldState.createWeaponObject(ID.weapon.blasterMini, x, y, miniAttack)
+  }
+}
+
+class PlayerSidewave extends PlayerWeaponData {
+  static shotCount = 8
+  static delay = 15
+  static attackPercent = 110
+  static create (attack, x, y) {
+    const shotAttack = this.getShotAttack(attack)
+    // 플레이어 중앙에서 발사하게 하고 싶어, 무기를 사용할 y좌표를 30(무기의 크기)만큼 마이너스 했습니다.
+    fieldState.createWeaponObject(ID.weapon.sidewave, x, y + 12 - 30, shotAttack, 2, 'right')
+    fieldState.createWeaponObject(ID.weapon.sidewave, x, y + 8 - 30, shotAttack, 1, 'right')
+    fieldState.createWeaponObject(ID.weapon.sidewave, x, y + 4 - 30, shotAttack, 0.5, 'right')
+    fieldState.createWeaponObject(ID.weapon.sidewave, x, y - 4 - 30, shotAttack,-0.5, 'right')
+    fieldState.createWeaponObject(ID.weapon.sidewave, x, y - 8 - 30, shotAttack,-1, 'right')
+    fieldState.createWeaponObject(ID.weapon.sidewave, x, y - 12 - 30, shotAttack,-2, 'right')
+
+    fieldState.createWeaponObject(ID.weapon.sidewave, x, y + 4 - 30, shotAttack, 1, 'left')
+    fieldState.createWeaponObject(ID.weapon.sidewave, x, y - 4 - 30, shotAttack,-1, 'left')
   }
 }
 
@@ -1864,7 +1964,7 @@ class EffectData extends FieldData {
 
   display () {
     if (this.enimation != null) {
-      this.enimation.processAndDisplay(this.x, this.y)
+      this.enimation.displayAndProcess(this.x, this.y)
     }
   }
 }
@@ -1874,7 +1974,7 @@ class MissileEffect extends EffectData {
     super()
     this.width = 100
     this.height = 100
-    this.enimation = new EnimationData(imageFile.weapon.missileEffect, 0, 0, 100, 100, 10, 2, 1)
+    this.enimation = new EnimationData(imageFile.weapon.missileEffect, 0, 0, 100, 100, 10, 2)
   }
 }
 
@@ -1895,7 +1995,7 @@ class ParapoEffect extends EffectData {
       case 'down': directionPosition = 300; break
     }
 
-    this.enimation = new EnimationData(imageFile.weapon.parapoEffect, 0, directionPosition, 100, 100, 10, 2, 1)
+    this.enimation = new EnimationData(imageFile.weapon.parapoEffect, 0, directionPosition, 100, 100, 10, 2)
   }
 }
 
@@ -2096,6 +2196,8 @@ export class tamshooter4Data {
       case ID.playerWeapon.laser: return PlayerLaser
       case ID.playerWeapon.sapia: return PlayerSapia
       case ID.playerWeapon.parapo: return PlayerParapo
+      case ID.playerWeapon.blaster: return PlayerBlaster
+      case ID.playerWeapon.sidewave: return PlayerSidewave
       default: return null
     }
   }
@@ -2108,20 +2210,18 @@ export class tamshooter4Data {
   static getWeaponData (weaponId) {
     switch (weaponId) {
       case ID.weapon.multyshot: return MultyshotData
-      case ID.weapon.multyshotHoming: return MultyshotHoming
-      case ID.weapon.multyshotSideDown: return MultyshotSideDown
-      case ID.weapon.multyshotSideUp: return MultyshotSideUp
       case ID.weapon.missile: return MissileData
-      case ID.weapon.missileUp: return MissileUp
-      case ID.weapon.missileDown: return MissileDown
+      case ID.weapon.missileRocket: return MissileRocket
       case ID.weapon.arrow: return Arrow
-      case ID.weapon.arrowDown: return ArrowDown
       case ID.weapon.laser: return Laser
       case ID.weapon.laserBlue: return LaserBlue
       case ID.weapon.sapia: return Sapia
       case ID.weapon.sapiaShot: return SapiaShot
       case ID.weapon.parapo: return Parapo
       case ID.weapon.parapoShockWave: return ParapoShockwave
+      case ID.weapon.blaster: return Blaster
+      case ID.weapon.blasterMini: return BlasterMini
+      case ID.weapon.sidewave: return Sidewave
       default: return null
     }
   }

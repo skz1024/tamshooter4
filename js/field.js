@@ -96,9 +96,10 @@ class PlayerObject extends FieldData {
     this.shieldMax = getData.shieldMax
     this.playerWeaponId = [ID.playerWeapon.multyshot, 
       ID.playerWeapon.missile, ID.playerWeapon.arrow, ID.playerWeapon.laser, ID.playerWeapon.sapia,
-      ID.playerWeapon.parapo
+      ID.playerWeapon.parapo, ID.playerWeapon.blaster, ID.playerWeapon.sidewave
     ]
     this.playerWeaponPosition = this.playerWeaponId.length - 1
+    this.playerWeaponDelayCount = [0, 0, 0, 0, 0, 0, 0, 0]
   }
 
   addDamage (damage) {
@@ -179,10 +180,10 @@ class PlayerObject extends FieldData {
     const getWeaponData = tamshooter4Data.getPlayerWeaponData(this.playerWeaponId[this.playerWeaponPosition])
     if (getWeaponData == null) return
     
-    this.attackDelayCount++
-    if (this.attackDelayCount >= getWeaponData.delay) {
+    this.playerWeaponDelayCount[this.playerWeaponPosition]++
+    if (this.playerWeaponDelayCount[this.playerWeaponPosition] >= getWeaponData.delay) {
       getWeaponData.create(this.attack, centerX, centerY)
-      this.attackDelayCount -= getWeaponData.delay
+      this.playerWeaponDelayCount[this.playerWeaponPosition] -= getWeaponData.delay
     }
   }
 
