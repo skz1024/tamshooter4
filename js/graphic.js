@@ -51,8 +51,8 @@ export class graphicSystem {
    * @param {number} wordHeight 글자높이
    */
   static digitalFontDisplay (inputText, x = 0, y = 0, wordWidth = 20, wordHeight = 30) {
-    // null 또는 비어있는 값 넣지 마라
-    if (!inputText) return
+    // null 값 넣지 마라
+    if (inputText == null) return
 
     // 원할한 출력을 위해 string 형태로 변경
     if (typeof inputText === 'number') inputText = inputText + ''
@@ -67,20 +67,20 @@ export class graphicSystem {
     for (let i = 0; i < inputText.length; i++) {
       let word = inputText.charAt(i)
       let wordPosition = -1
-      let imageTarget = imageFile.digitalNumber
+      let imageTarget = imageFile.system.digitalNumber
 
       if (word >= '0' && word <= '9') {
         // 0 ~ 9 사이일경우
         wordPosition = Number(word)
-        imageTarget = imageFile.digitalNumber
+        imageTarget = imageFile.system.digitalNumber
       } else if (word >= 'a' && word <= 'z') {
         // alphabet 소문자
         wordPosition = word.charCodeAt() - 'a'.charCodeAt()
-        imageTarget = imageFile.digitalAlphabet
+        imageTarget = imageFile.system.digitalAlphabet
       } else if (word >= 'A' && word <= 'Z') {
         // alphabet 대문자
         wordPosition = word.charCodeAt() - 'A'.charCodeAt()
-        imageTarget = imageFile.digitalAlphabet
+        imageTarget = imageFile.system.digitalAlphabet
       } else {
         // 이외 특수기호: -, +, /, ., :
         switch (word) {
@@ -91,7 +91,7 @@ export class graphicSystem {
           case ':': wordPosition = 14; break
           default: continue // 참고: 아무런 단어도 해당되지 않으면 루프를 건너뜀
         }
-        imageTarget = imageFile.digitalNumber
+        imageTarget = imageFile.system.digitalNumber
       }
 
       if (wordPosition >= 0) {

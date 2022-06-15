@@ -33,10 +33,10 @@ export class buttonSystem {
   /** 메뉴에선 취소버튼. 게임 내에선 일시정지 */ static BUTTON_ESC = 1
   /** 메뉴에선 결정버튼, A버튼, 게임 내에선 무기 on/off */ static BUTTON_A = 2
   /** 메뉴에선 취소버튼, B버튼, 게임 내에선 무기 변경 */ static BUTTON_B = 3
-  /** 스킬1 버튼, X버튼 */ static BUTTON_SKILL1 = 4
-  /** 스킬2 버튼, Y버튼 */ static BUTTON_SKILL2 = 5
-  /** 스킬3 버튼, 아마도 L버튼 */ static BUTTON_SKILL3 = 6
-  /** 스킬4 버튼, 아마도 R버튼 */ static BUTTON_SKILL4 = 7
+  /** 스킬1 버튼, X버튼 */ static BUTTON_SKILL0 = 4
+  /** 스킬2 버튼, Y버튼 */ static BUTTON_SKILL1 = 5
+  /** 스킬3 버튼, 아마도 L버튼 */ static BUTTON_SKILL2 = 6
+  /** 스킬4 버튼, 아마도 R버튼 */ static BUTTON_SKILL3 = 7
   /** 화살표키 왼쪽, 왼쪽 버튼 */ static BUTTON_LEFT = 8
   /** 화살표키 오른쪽 , 오른쪽 버튼 */ static BUTTON_RIGHT = 9
   /** 화살표키 위쪽, 왼쪽 버튼 */ static BUTTON_UP = 10

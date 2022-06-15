@@ -49,7 +49,7 @@ class DamageObject extends FieldData {
   }
 
   display () {
-    const IMAGE = imageFile.damageFont
+    const IMAGE = imageFile.system.damageFont
     const NUMBER_WIDTH = 12
     const NUMBER_HEIGHT = 12
     const WIDTH = 10
@@ -70,7 +70,7 @@ class DamageObject extends FieldData {
  * 이 객체는 필드 상태에서 직접 생성해 만드는 객체이기 때문에 data.js에서 플레이어 데이터를 받아오지 않습니다.
  */
 class PlayerObject extends FieldData {
-  /** 플레이어 이미지 */ playerImage = imageFile.playerImage
+  /** 플레이어 이미지 */ playerImage = imageFile.system.playerImage
 
   constructor () {
     super(objectType.PLAYER, 0, 300, 200)
@@ -88,6 +88,8 @@ class PlayerObject extends FieldData {
   init () {
     this.x = 300
     this.y = 200
+    this.centerX = this.x + (this.width / 2)
+    this.centerY = this.y + (this.height / 2)
     
     const getData = userSystem.getPlayerObjectData()
     this.attack = getData.attack
@@ -96,10 +98,17 @@ class PlayerObject extends FieldData {
     this.shieldMax = getData.shieldMax
     this.playerWeaponId = [ID.playerWeapon.multyshot, 
       ID.playerWeapon.missile, ID.playerWeapon.arrow, ID.playerWeapon.laser, ID.playerWeapon.sapia,
-      ID.playerWeapon.parapo, ID.playerWeapon.blaster, ID.playerWeapon.sidewave
+      ID.playerWeapon.parapo, ID.playerWeapon.blaster, ID.playerWeapon.sidewave,
+      ID.playerWeapon.unused
     ]
     this.playerWeaponPosition = this.playerWeaponId.length - 1
-    this.playerWeaponDelayCount = [0, 0, 0, 0, 0, 0, 0, 0]
+    this.playerWeaponDelayCount = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    this.skill = [
+      {id:ID.playerSkill.sapia, coolTimeFrame:0, repeatCount:0, delayCount:0},
+      {id:ID.playerSkill.parapo, coolTimeFrame:0, repeatCount:0, delayCount:0},
+      {id:ID.playerSkill.blaster, coolTimeFrame:0, repeatCount:0, delayCount:0},
+      {id:ID.playerSkill.sidewave, coolTimeFrame:0, repeatCount:0, delayCount:0},
+    ]
   }
 
   addDamage (damage) {
@@ -121,17 +130,58 @@ class PlayerObject extends FieldData {
     this.processSendUserStat()
 
     if (this.debug) {
-      this.processDebug()
+      // this.processDebug()
     } else {
       this.processAttack()
+      this.processSkill()
+    }
+  }
+
+  useSkill (skillPosition) {
+    let getId = this.skill[skillPosition].id
+    let getSkill = tamshooter4Data.getPlayerSkillData(getId)
+    if (getSkill == null) return // 스킬이 없다면 무시
+
+    // 쿨타임 계산해서, 쿨타임이 남아있으면, 무시
+    let leftCoolTime = this.skill[skillPosition].coolTimeFrame
+    if (leftCoolTime > 0) return
+
+    // 스킬 사용
+    this.skill[skillPosition].repeatCount += getSkill.repeatCount // 스킬 반복 횟수를 증가시켜 여러번 무기가 발사되게 처리
+    this.skill[skillPosition].coolTimeFrame += getSkill.getCoolTimeFrame() // 쿨타임 추가 (단위가 프레임이므로, 쿨타임 시간에 60을 곱함)
+    
+    // 스킬에 사용된 무기가 즉시 발사되도록, 딜레이카운트를 채워줌(딜레이 이상이여야 무기 발사됨)
+    // 다만 beforeDelay가 있을경우, 미리 delayCount에서 해당 수치만큼 감소
+    this.skill[skillPosition].delayCount += getSkill.delay - getSkill.beforeDelay
+
+    // 스킬 사운드 출력
+    getSkill.useSoundPlay()
+  }
+
+  processSkill () {
+    for (let i = 0; i < this.skill.length; i++) {
+      let currentSkill = this.skill[i] // 루프 i값에 따른 현재 스킬
+
+      if (currentSkill.coolTimeFrame > 0) { // 스킬 쿨타임이 0보다 클 때
+        currentSkill.coolTimeFrame-- // 스킬 쿨타임프레임 감소
+      }
+
+      // 만약 스킬 반복횟수가 없다면, 스킬을 사용하지 않은것이므로 무시
+      if (currentSkill.repeatCount <= 0) continue
+
+      let getSkill = tamshooter4Data.getPlayerSkillData(currentSkill.id)
+      if (getSkill == null) continue // 스킬이 없다면 무시
+
+      currentSkill.delayCount++ // 스킬 딜레이카운트 증가
+      if (currentSkill.delayCount >= getSkill.delay) { // 딜레이카운트카 스킬 딜레이를 넘어가면 무기 생성
+        getSkill.create(this.centerX, this.centerY, this.attack)
+        currentSkill.delayCount -= getSkill.delay // 스킬 딜레이카운트 감소
+        currentSkill.repeatCount-- // 반복횟수 1회 감소
+      }
     }
   }
 
   processDebug () {
-    if (fieldState.weaponObject.length <= 1) {
-      fieldState.createWeaponObject(ID.weapon.laserBlue, this.x, this.y)
-    }
-
     this.displayDebug()
   }
 
@@ -146,6 +196,11 @@ class PlayerObject extends FieldData {
   processSendUserStat () {
     userSystem.hp = this.hp
     userSystem.shield = this.shield
+    for (let i = 0; i < 4; i++) {
+      userSystem.skill[i].coolTime = Math.ceil(this.skill[i].coolTimeFrame / 60)
+      userSystem.skill[i].id = this.skill[i].id
+    }
+
   }
 
   processButton () {
@@ -155,11 +210,18 @@ class PlayerObject extends FieldData {
     let buttonDown = buttonSystem.getButtonDown(buttonSystem.BUTTON_DOWN)
     let buttonA = buttonSystem.getButtonInput(buttonSystem.BUTTON_A)
     let buttonB = buttonSystem.getButtonInput(buttonSystem.BUTTON_B)
-
+    let buttonSkill0 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL0)
+    let buttonSkill1 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL1)
+    let buttonSkill2 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL2)
+    let buttonSkill3 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL3)
+    
     if (buttonLeft) this.x -= 8
     if (buttonRight) this.x += 8
     if (buttonDown) this.y += 8
     if (buttonUp) this.y -= 8
+
+    this.centerX = this.x + (this.width / 2)
+    this.centerY = this.y + (this.height / 2)
 
     if (buttonA) {
       this.playerWeaponPosition++
@@ -169,28 +231,44 @@ class PlayerObject extends FieldData {
     }
 
     if (buttonB) {
-      this.debug = true
+      if (this.skill[0].id === ID.playerSkill.multyshot) {
+        this.skill = [
+          {id:ID.playerSkill.sapia, coolTimeFrame:0, repeatCount:0, delayCount:0},
+          {id:ID.playerSkill.parapo, coolTimeFrame:0, repeatCount:0, delayCount:0},
+          {id:ID.playerSkill.blaster, coolTimeFrame:0, repeatCount:0, delayCount:0},
+          {id:ID.playerSkill.sidewave, coolTimeFrame:0, repeatCount:0, delayCount:0},
+        ]
+      } else if (this.skill[0].id === ID.playerSkill.sapia) {
+        this.skill = [
+          {id:ID.playerSkill.multyshot, coolTimeFrame:0, repeatCount:0, delayCount:0},
+          {id:ID.playerSkill.missile, coolTimeFrame:0, repeatCount:0, delayCount:0},
+          {id:ID.playerSkill.arrow, coolTimeFrame:0, repeatCount:0, delayCount:0},
+          {id:ID.playerSkill.laser, coolTimeFrame:0, repeatCount:0, delayCount:0},
+        ]
+      }
     }
+
+    if (buttonSkill0) this.useSkill(0)
+    if (buttonSkill1) this.useSkill(1)
+    if (buttonSkill2) this.useSkill(2)
+    if (buttonSkill3) this.useSkill(3)
   }
 
   processAttack () {
-    const centerX = this.x + Math.floor(this.width / 2)
-    const centerY = this.y + Math.floor(this.height / 2)
-
     const getWeaponData = tamshooter4Data.getPlayerWeaponData(this.playerWeaponId[this.playerWeaponPosition])
     if (getWeaponData == null) return
     
     this.playerWeaponDelayCount[this.playerWeaponPosition]++
     if (this.playerWeaponDelayCount[this.playerWeaponPosition] >= getWeaponData.delay) {
-      getWeaponData.create(this.attack, centerX, centerY)
+      getWeaponData.create(this.attack, this.centerX, this.centerY)
       this.playerWeaponDelayCount[this.playerWeaponPosition] -= getWeaponData.delay
     }
   }
 
   display () {
     graphicSystem.imageDisplay(this.playerImage, this.x, this.y)
+    graphicSystem.digitalFontDisplay('B BUTTON. X KEY TO CHANGE SKILL', 0, 80)
   }
-
   
 }
 
@@ -439,10 +517,16 @@ export class fieldSystem {
     fieldState.process()
     this.processFieldTime()
 
-    if (this.fieldTime.frame === 1 && fieldState.enemyObject.length < 10) {
+    // if (this.fieldTime.frame === 1 && fieldState.enemyObject.length < 10) {
+    //   let enemyX = Math.random() * 300 + 200
+    //   let enemyY = Math.random() * 200 + 100
+    //   fieldState.createEnemyObject(ID.enemy.testAttack, enemyX, enemyY)
+    // }
+
+    if (fieldState.enemyObject.length === 0) {
       let enemyX = Math.random() * 300 + 200
       let enemyY = Math.random() * 200 + 100
-      fieldState.createEnemyObject(ID.enemy.testAttack, enemyX, enemyY)
+      fieldState.createEnemyObject(ID.enemy.testShowDamageEnemy, enemyX, enemyY)
     }
 
   }

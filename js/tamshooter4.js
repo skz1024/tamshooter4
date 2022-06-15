@@ -266,10 +266,10 @@ class MainSystem extends MenuSystem {
     const buttonInputDown = buttonSystem.getButtonInput(buttonSystem.BUTTON_DOWN)
 
     if (buttonInputUp && this.cursorPosition > 0) {
-      soundSystem.play(soundFile.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
       this.cursorPosition--
     } else if (buttonInputDown && this.cursorPosition < this.menuList.length - 1) {
-      soundSystem.play(soundFile.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
       this.cursorPosition++
     } 
   }
@@ -283,7 +283,7 @@ class MainSystem extends MenuSystem {
     }
 
     // 사운드 출력
-    soundSystem.play(soundFile.systemSelect)
+    soundSystem.play(soundFile.system.systemSelect)
   }
   
   process () {
@@ -339,10 +339,10 @@ class OptionSystem extends MenuSystem {
     const buttonInputDown = buttonSystem.getButtonInput(buttonSystem.BUTTON_DOWN)
 
     if (buttonInputUp && this.cursorPosition > 0) {
-      soundSystem.play(soundFile.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
       this.cursorPosition--
     } else if (buttonInputDown && this.cursorPosition < this.menuList.length - 1) {
-      soundSystem.play(soundFile.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
       this.cursorPosition++
     }
   }
@@ -362,7 +362,7 @@ class OptionSystem extends MenuSystem {
   processCancel () {
     if (!this.canceledCheck()) return
 
-    soundSystem.play(soundFile.systemBack)
+    soundSystem.play(soundFile.system.systemBack)
     gameSystem.statusId = gameSystem.STATUS_MAIN
   }
 
@@ -417,24 +417,24 @@ class RoundSelectSystem extends MenuSystem {
     if (this.cursorPosition >= 0 && this.cursorPosition <= 9) {
       if (buttonDown) {
         this.cursorPosition += 10
-        soundSystem.play(soundFile.systemCursor)
+        soundSystem.play(soundFile.system.systemCursor)
       } else if (buttonLeft && this.cursorRound > this.MIN_ROUND) {
         this.cursorRound--
-        soundSystem.play(soundFile.systemCursor)
+        soundSystem.play(soundFile.system.systemCursor)
       } else if (buttonRight && this.cursorRound < this.MAX_ROUND) {
         this.cursorRound++
-        soundSystem.play(soundFile.systemCursor)
+        soundSystem.play(soundFile.system.systemCursor)
       }
     } else if (this.cursorPosition >= 10 && this.cursorPosition <= 19) {
       if (buttonLeft && this.cursorPosition > 10) {
         this.cursorPosition--
-        soundSystem.play(soundFile.systemCursor)
+        soundSystem.play(soundFile.system.systemCursor)
       } else if (buttonRight && this.cursorPosition < 19) {
         this.cursorPosition++
-        soundSystem.play(soundFile.systemCursor)
+        soundSystem.play(soundFile.system.systemCursor)
       } else if (buttonUp) {
         this.cursorPosition -= 10
-        soundSystem.play(soundFile.systemCursor)
+        soundSystem.play(soundFile.system.systemCursor)
       }
     }
   }
@@ -443,7 +443,7 @@ class RoundSelectSystem extends MenuSystem {
     if (!this.canceledCheck()) return
 
     gameSystem.statusId = gameSystem.STATUS_MAIN
-    soundSystem.play(soundFile.systemBack)
+    soundSystem.play(soundFile.system.systemBack)
   }
 
   processSelect () {
@@ -596,10 +596,10 @@ export class userSystem {
   }
 
   static skill = [
-    {coolTime:0},
-    {coolTime:0},
-    {coolTime:0},
-    {coolTime:0}
+    {coolTime:0, id:0},
+    {coolTime:0, id:0},
+    {coolTime:0, id:0},
+    {coolTime:0, id:0}
   ]
 
   /**
@@ -644,8 +644,8 @@ export class userSystem {
     // 레이어 구성은 x: 0, y: 540, w: 800, h:60 을 기준으로 상하좌우 4등분 되어있습니다.
     // 한 레이어당 공간은 400, 30 을 차지합니다. 따라서 총 레이어는 2개입니다.
     // 검은색 선으로 각 레이어를 구분하였습니다.
-    const LEFT_X = 0
-    const RIGHT_X = graphicSystem.CANVAS_WIDTH_HALF
+    const LEFT_X = 0 + 5
+    const RIGHT_X = graphicSystem.CANVAS_WIDTH_HALF + 5
     const LAYER1_Y = 540
     const LAYER1_DIGITAL_Y = LAYER1_Y + 5
     const LAYER2_Y = 570
@@ -654,12 +654,12 @@ export class userSystem {
     const LAYER_WIDTH = graphicSystem.CANVAS_WIDTH_HALF
 
     // 레이어 색칠하기
-    graphicSystem.fillRect(LEFT_X, LAYER1_Y, graphicSystem.CANVAS_WIDTH_HALF, LAYER_HEIGHT , 'lightgrey')
-    graphicSystem.fillRect(RIGHT_X, LAYER1_Y, graphicSystem.CANVAS_WIDTH_HALF, LAYER_HEIGHT, 'lightgrey')
-    graphicSystem.fillRect(LEFT_X, LAYER2_Y, graphicSystem.CANVAS_WIDTH_HALF, LAYER_HEIGHT, 'lightgrey')
+    graphicSystem.fillRect(0, LAYER1_Y, graphicSystem.CANVAS_WIDTH_HALF, LAYER_HEIGHT , 'lightgrey')
+    graphicSystem.fillRect(graphicSystem.CANVAS_WIDTH_HALF, LAYER1_Y, graphicSystem.CANVAS_WIDTH_HALF, LAYER_HEIGHT, 'lightgrey')
+    graphicSystem.fillRect(0, LAYER2_Y, graphicSystem.CANVAS_WIDTH_HALF, LAYER_HEIGHT, 'lightgrey')
 
     // x축 레이어 구분선
-    graphicSystem.fillLine(LEFT_X, LAYER2_Y, graphicSystem.CANVAS_WIDTH, LAYER2_Y)
+    graphicSystem.fillLine(0, LAYER2_Y, graphicSystem.CANVAS_WIDTH, LAYER2_Y)
 
     // y축 레이어 구분선
     graphicSystem.fillLine(graphicSystem.CANVAS_WIDTH_HALF, LAYER1_Y, graphicSystem.CANVAS_WIDTH_HALF, graphicSystem.CANVAS_HEIGHT)
@@ -678,16 +678,38 @@ export class userSystem {
     const expPercent = this.exp / this.getExpMax()
     graphicSystem.gradientDisplay(0, LAYER2_Y, LAYER_WIDTH * expPercent, LAYER_HEIGHT, '#FDC830', '#F37335')
 
+    // 스킬 인터페이스
+    // 참고로 스킬은 쿨타임이 남아있으면, 남은 쿨타임 시간을 표시하고, 아닐경우 스킬 아이콘을 출력합니다.
+    for (let i = 0; i < 4; i++) {
+      const SKILL_NUMBER_WIDTH = 20
+      const SKILL_NUMBER_HEIGHT = 20
+      const BUTTON_X = RIGHT_X + (100 * i)
+      const SKILL_X = BUTTON_X + 25
+      const ICON_WIDTH = 40
+      const ICON_HEIGHT = 20
+      if (this.skill[i].coolTime >= 1) {
+        graphicSystem.imageDisplay(imageFile.system.skillNumber, SKILL_NUMBER_WIDTH * i, SKILL_NUMBER_HEIGHT, SKILL_NUMBER_WIDTH, SKILL_NUMBER_HEIGHT, BUTTON_X, LAYER1_DIGITAL_Y, SKILL_NUMBER_WIDTH, SKILL_NUMBER_HEIGHT)
+        graphicSystem.digitalFontDisplay(this.skill[i].coolTime, SKILL_X, LAYER1_DIGITAL_Y, 12, 20) // 스킬 쿨타임 시간
+      } else {
+        graphicSystem.imageDisplay(imageFile.system.skillNumber, SKILL_NUMBER_WIDTH * i, 0, SKILL_NUMBER_WIDTH, SKILL_NUMBER_HEIGHT, BUTTON_X, LAYER1_DIGITAL_Y, SKILL_NUMBER_WIDTH, SKILL_NUMBER_HEIGHT)
+        if (this.skill[i].id != 0) {
+          let skillNumber = this.skill[i].id - 15000 // 스킬의 ID는 15001부터 시작이라, 15000을 빼면, 스킬 번호값을 얻을 수 있음.
+          let skillXLine = skillNumber % 10
+          let skillYLine = Math.floor(skillNumber / 10)
+          graphicSystem.imageDisplay(imageFile.system.skillIcon, skillXLine * ICON_WIDTH, skillYLine * ICON_HEIGHT, ICON_WIDTH, ICON_HEIGHT, SKILL_X, LAYER1_DIGITAL_Y, ICON_WIDTH, ICON_HEIGHT)
+        }
+        // 스킬 아이콘
+      }
+    }
+
     // 인터페이스에 출력할 텍스트 입력
     const hpText = ' ' + this.hp + ' + ' + this.shield + '/' + this.shieldMax
     const shieldText = ''
-    const skillCoolTimeText = this.skill[0].coolTime + '. '
     const lvText = 'lv.' + this.lv + ': ' + this.exp + '/' + this.expTable[this.lv]
     const statusText = ''
 
     graphicSystem.digitalFontDisplay(hpText, LEFT_X, LAYER1_Y) // 유저의 체력 정보
     graphicSystem.digitalFontDisplay(shieldText, HP_WIDTH, LAYER1_Y)
-    graphicSystem.digitalFontDisplay(skillCoolTimeText, RIGHT_X, LAYER1_DIGITAL_Y, 12, 20) // 스킬 남은 시간 표시
     graphicSystem.digitalFontDisplay(lvText, LEFT_X, LAYER2_DIGITAL_Y, 12, 20) // 유저의 레벨과 경험치
     graphicSystem.digitalFontDisplay(statusText, RIGHT_X, LAYER2_DIGITAL_Y, 12, 20) // 현재 라운드 정보
   }

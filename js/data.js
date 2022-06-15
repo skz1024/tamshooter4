@@ -3,6 +3,7 @@
 import { fieldState } from "./field.js"
 import { graphicSystem } from "./graphic.js"
 import { imageFile } from "./image.js"
+import { soundFile, soundSystem } from "./sound.js"
 
 /**
  * 공통적으로 사용하는 객체 ID
@@ -21,6 +22,19 @@ export class ID {
     sidewave:10008,
   }
 
+  static playerSkill = {
+    unused:0,
+    skillNumberStart:15000,
+    multyshot:15001,
+    missile:15002,
+    arrow:15003,
+    laser:15004,
+    sapia:15005,
+    parapo:15006,
+    blaster:15007,
+    sidewave:15008,
+  }
+
   static weapon = {
     unused:0,
     multyshot:11010,
@@ -36,17 +50,30 @@ export class ID {
     blaster:11070,
     blasterMini:11071,
     sidewave:11080,
+
+    // skill
+    skillMultyshot:16001,
+    skillMissile:16002,
+    skillArrow:16003,
+    skillLaser:16004,
+    skillSapia:16005,
+    skillParapo:16006,
+    skillBlaster:16007,
+    skillSidewave:16008,
   }
   
   static enemy = {
     unused:0,
     test:20001,
     testAttack:20002,
+    testShowDamageEnemy:20003,
   }
 
   static effect = {
     missile:40000,
-    parapo:40004,
+    parapo:40001,
+    skillMissile:40002,
+    skillParapo:40003,
   }
 
   static sprite = {
@@ -512,8 +539,19 @@ export class FieldData {
   }
 
   /** 오브젝트의 로직 처리 함수 (각 객체마다 다름, 직접 구현 필요) */ process () {}
-  /** 오브젝트의 이미지 출력 함수 (각 객체마다 다름, 직접 구현 필요) */ display () {}
-
+  /** 
+   * 오브젝트의 이미지 출력 함수 (각 객체마다 다름, 직접 구현 필요)  
+   * 이 함수는 기본값이 존재하지만, 만약 display() 재정의로 이 기본함수를 사용할 수 없게 된다면, 
+   * display() 함수를 재작성 할 때 FildData 클래스의 함수인 defaultDisplay() 를 사용해주세요.
+   */ 
+  display () {
+    if (this.enimation) { // 에니메이션이 있는 경우 (이 경우에는 이미지 출력이 무시됨.)
+      this.enimation.displayAndProcess(this.x, this.y)
+    } else if (this.image) { // 이미지가 있는 경우
+      graphicSystem.imageDisplay(this.image, this.x, this.y)
+    }
+    // 두개 다 없으면 아무것도 안보임.
+  }
 
   /**
    * fieldState에서 사용하는 모든 오브젝트에 대한 공통 로직  
@@ -535,6 +573,18 @@ export class FieldData {
     this.y = y
     this.z = z
   }
+
+  /**
+   * 만약 이런저런 상속으로 인해서, fieldData가 가지고 있는 display함수를 사용하고 싶다면, 이 static 함수를 사용하세요.  
+   * display 함수를 재작성한 후, defaultDisplay() 함수를 실행하면 됩니다. (인수는 필요 없음.)
+   */
+  defaultDisplay () {
+    if (this.enimation) {
+      this.enimation.displayAndProcess(this.x, this.y)
+    } else if (this.image) {
+      graphicSystem.imageDisplay(this.image, this.x, this.y)
+    }
+  }
 }
 
 class WeaponData extends FieldData {
@@ -542,6 +592,7 @@ class WeaponData extends FieldData {
     super()
     /** 공격력(해당 오브젝트의 공격력) */ this.attack = 1
     /** 해당 객체의 기본 오브젝트 타입(임의 수정 불가능) */ this.objectType = objectType.WEAPON
+    /** 기본 속도값 */ this.speedX = 10
 
     // 추적 오브젝트 여부
     /** 적을 추적하는지의 여부(데이터 객체에서 주로 사용) true일경우 적을 추적하는 무기임. */ this.isChaseType = false
@@ -564,11 +615,21 @@ class WeaponData extends FieldData {
     this.repeatDelay = null
   }
 
+  /**
+   * 무기의 처리 프로세스  
+   * 특별한 일이 아니라면, 이 함수는 임의 수정하거나 상속받지 마세요.
+   */
   process () {
     this.processMove()
     this.processChase()
     this.processAttack()
+    this.processDeleteCheck()
+  }
 
+  /**
+   * 정해진 조건이 되면 무기를 삭제합니다.
+   */
+  processDeleteCheck () {
     // 무기가 정상적으로 처리되지 않고 오랫동안 남아있을 때를 대비해 삭제하는 요소
     // 그리고 남은 반복 횟수가 0이하인 경우는 해당 무기를 사용할 수 없으므로 삭제됨
     if (this.repeatCount <= 0 || this.elapsedFrame >= 420) {
@@ -711,17 +772,6 @@ class WeaponData extends FieldData {
       this.speedY = 0
     }
   }
-
-  /**
-   * 기본적인 무기 객체 출력 함수 (다만, 대부분은 재작성하게 됨. 무기마다 출력해야 하는 부분이 달라서...)
-   */
-  display () {
-    if (this.enimation) {
-      this.enimation.displayAndProcess(this.x, this.y)
-    } else if (this.image) {
-      graphicSystem.imageDisplay(this.image, this.x, this.y)
-    }
-  }
 }
 
 class MultyshotData extends WeaponData {
@@ -800,6 +850,7 @@ class MissileData extends WeaponData {
     this.repeatDelay = new DelayData(6)
     this.state = 'normal'
     this.enimation = new EnimationData(imageFile.weapon.missile, 0, 0, 40, 20, 8, 2, -1)
+    this.splashEffectId = ID.effect.missile
   }
 
   /**
@@ -864,7 +915,7 @@ class MissileData extends WeaponData {
     let enemyObject = fieldState.getEnemyObject()
     this.repeatCount-- // 스플래시 공격을 할 때마다 반복 횟수 감소
     let splashArea = this.getSplashArea()
-    fieldState.createEffectObject(ID.effect.missile, splashArea.x, splashArea.y)
+    fieldState.createEffectObject(this.splashEffectId, splashArea.x, splashArea.y)
 
     // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
     for (let i = 0; i < enemyObject.length; i++) {
@@ -876,6 +927,7 @@ class MissileData extends WeaponData {
       }
     }
   }
+
 }
 
 class MissileRocket extends MissileData {
@@ -1667,7 +1719,7 @@ class Sidewave extends WeaponData {
     this.speedY = option[0]
     this.speedX = 11
 
-    if (option[1] === 'left') {
+    if (option.length === 2 && option[1] === 'left') {
       this.enimation = new EnimationData(imageFile.weapon.sidewave, 0, 0, this.width, this.height, 8, 5, -1)
       this.speedX = -this.speedX
     } else {
@@ -1676,6 +1728,353 @@ class Sidewave extends WeaponData {
   }
 }
 
+class SkillMultyshot extends WeaponData {
+  constructor () {
+    // 기본적으로 skillMultyshot은 적을 추적함.
+    // 다만 그외의 다른 특징 없음
+    super()
+    this.mainType = 'skill'
+    this.subType = 'multyshot'
+    this.id = ID.weapon.skillMultyshot
+    this.width = 60
+    this.height = 12
+    this.isChaseType = true
+    this.image = imageFile.weapon.skillMultyshot
+  }
+}
+
+class SkillMissile extends MissileData {
+  constructor () {
+    super()
+    this.mainType = 'skill'
+    this.subType = 'missile'
+    this.id = ID.weapon.skillMissile
+    this.width = 60
+    this.height = 30
+    this.enimation = new EnimationData(imageFile.weapon.skillMissile, 0, 0, this.width, this.height, 10, 3, -1)
+    this.repeatCount = 10
+    this.repeatDelay = new DelayData(6)
+    this.splashEffectId = ID.effect.skillMissile
+  }
+
+  getSplashArea () {
+    return {
+      x: this.x - 100,
+      y: this.y - 100,
+      width: 200,
+      height: 200
+    }
+  }
+
+  processAttackNormal () {
+    let enemyObject = fieldState.getEnemyObject()
+
+    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
+    for (let i = 0; i < enemyObject.length; i++) {
+      let currentEnemy = enemyObject[i]
+
+      // 각각의 적마다 충돌 검사
+      if (collision(this, currentEnemy)) {
+        // 하나라도 충돌했다면, 이 함수를 종료하고, 다음 프레임에서 스플래시공격을 함.
+        // 그리고, 그 즉시 미사일은 움직이지 않습니다.
+        this.state = 'splash'
+        this.speedX = 0
+        this.speedY = 0
+        this.isChaseType = false
+        soundSystem.play(soundFile.skill.skillMissileHit) // 스킬 무기는 적을 타격한 순간 폭발음을 사용한다.
+        return
+      }
+    }
+  }
+}
+
+class SkillArrow extends Arrow {
+  // Arrow를 상속받아서, 그대로 옵션으로 활용
+  constructor (option = [2]) {
+    super(option)
+    this.mainType = 'skill'
+    this.subType = 'arrow'
+    this.color = 'purple'
+    this.id = ID.weapon.skillArrow
+    this.width = 70
+    this.height = 70
+    this.speedX = 16
+    this.repeatCount = 4
+    this.bounceMaxCount = 12
+    this.enimation = new EnimationData(imageFile.weapon.skillArrow, 0, 0, this.width, this.height, 7, 5, -1)
+  }
+
+  processAttack () {
+    // skillArrow는 관통 효과가 존재하지만, 동시에 2마리 이상 때리지 못함.
+    let enemyObject = fieldState.getEnemyObject()
+    let maxAttackCount = 0 // 최대 공격횟수 제한 카운트
+    const MAX_LIMIT = 2 // 1회당 최대 공격횟수는 2회
+
+    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
+    for (let i = 0; i < enemyObject.length; i++) {
+      let currentEnemy = enemyObject[i]
+
+      // 각각의 적마다 충돌 검사
+      if (collision(this, currentEnemy)) {
+        // 충돌한 경우, 충돌한 상태에서의 로직을 처리
+        // 한번 적을 공격할 때마다 반복 카운트 1 감소
+        this.damageProcess(currentEnemy)
+        this.repeatCount--
+        maxAttackCount++ // 공격횟수 증가
+        if (maxAttackCount >= MAX_LIMIT) {
+          return // 공격횟수 제한 초과시 함수 강제종료
+        }
+      }
+    }
+  }
+}
+
+class SkillLaser extends WeaponData {
+  constructor () {
+    super()
+    this.mainType = 'skill'
+    this.subType = 'laser'
+    this.id = ID.weapon.skillLaser
+    this.width = 800
+    this.height = 200
+    this.image = imageFile.weapon.skillLaser
+    this.speedX = 0
+    this.speedY = 0
+    this.repeatCount = 60
+    this.repeatDelay = new DelayData(4)
+  }
+
+  // 이 레이저는 왼쪽에서 나온다음, x축이 0위치로 고정되고, y축은 플레이어를 따라다닙니다.
+  processMove () {
+    if (this.elapsedFrame <= 10) {
+      this.x = -this.width + (this.width / 10 * this.elapsedFrame)
+    } else {
+      this.x = 0
+    }
+
+    this.y = fieldState.getPlayerObject().centerY - (this.height / 2)
+  }
+
+  processAttack () {
+    // 4프레임당 한번만 공격함. 따라서 반복 대기시간이 넘어가지 않는다면, 함수 강제 종료.
+    // 참고로 레이저가 화면 안으로 이동되는 동안은 타격판정 없음.
+    if (this.elapsedFrame <= 10) return
+    if (!this.repeatDelay.check()) return
+
+    // 반복카운트는 공격할 때마다 줄어듬
+    // (기존 레이저는 적을 타격할 때마다 줄어들지만, 공격할때마다 줄어드는것은 아님)
+    this.repeatCount--
+
+    // 레이저는 기준 로직과 약간 다름
+    let enemyObject = fieldState.getEnemyObject()
+
+    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
+    for (let i = 0; i < enemyObject.length; i++) {
+      let currentEnemy = enemyObject[i]
+
+      // 각각의 적마다 충돌 검사
+      if (collision(this, currentEnemy)) {
+        // 충돌한 경우, 충돌한 상태에서의 로직을 처리
+        // 최대 적 타격수에 제한 없음. (미사일과 동일)
+        this.damageProcess(currentEnemy)
+        
+        // 반복 카운트가 0이되면, 상속받은 process 로직에 의해서 삭제됨.
+        // 기존 레이저랑 다르게 여기서 삭제할 필요가 없음.
+      }
+    }
+  }
+
+  display () {
+    // 레이저 사라지는 효과 구현을 위해서, 알파값 변경
+    // 서서히 사라지게 하는 공식? 난 모르므로, 노가다로 작성한다. (... 이게 무슨)
+    let alpha = [0, 0.1, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    if (this.repeatCount < alpha.length && this.repeatCount >= 0) {
+      graphicSystem.setAlpha(alpha[this.repeatCount]) // 투명값 설정
+    }
+    super.display()
+    graphicSystem.setAlpha(1) // 투명값 해제
+  }
+}
+
+class SkillSapia extends Sapia {
+  constructor () {
+    super()
+    this.mainType = 'skill'
+    this.subType = 'sapia'
+    this.id = ID.weapon.skillSapia
+    this.width = 100
+    this.height = 100
+    this.enimationSapiaRect = new EnimationData(imageFile.weapon.skillSapia, 0, 0, this.width, this.height, 5, 4, -1)
+    this.enimationSapiaCircle = new EnimationData(imageFile.weapon.skillSapia, 0, this.height, this.width, this.height, 5, 4, -1)
+    this.isChaseType = true
+    this.repeatCount = 40
+    this.repeatDelay = new DelayData(6)
+  }
+
+  processAttack () {
+    // 2프레임당 한번만 공격함. 따라서 반복 대기시간이 넘어가지 않는다면, 함수 강제 종료.
+    if (!this.repeatDelay.check()) return
+
+    // 적 객체 얻어오기
+    let enemyObject = fieldState.getEnemyObject()
+    const ATTACK_MAX_COUNT = 4 // 공격 최대 카운트 제한
+    let attackCount = 0 // 공격 카운트
+    this.repeatCount-- // 반복 횟수 1 감소
+
+    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
+    for (let i = 0; i < enemyObject.length; i++) {
+      let currentEnemy = enemyObject[i]
+
+      // 각각의 적마다 충돌 검사
+      if (collision(this, currentEnemy)) {
+        // 충돌한 경우, 충돌한 상태에서의 로직을 처리
+        // 한번 적을 공격할 때마다 반복 카운트 1 감소
+        this.damageProcess(currentEnemy)
+        attackCount++
+
+        // 공격 최대 제한 횟수가 초과한다면, 함수는 강제 종료
+        if (attackCount >= ATTACK_MAX_COUNT) {
+          return 
+        }
+      }
+    }
+  }
+
+  display () {
+    // 사피아 스킬은, 2종류의 에니메이션을 동시에 출력합니다.
+    // 그래봤자, 네모와 동그라미를 동시에 출력하는게 전부입니다.
+    if (this.enimationSapiaRect && this.enimationSapiaCircle) {
+      this.enimationSapiaRect.displayAndProcess(this.x, this.y)
+      this.enimationSapiaCircle.displayAndProcess(this.x, this.y)
+    }
+  }
+}
+
+class SkillParapo extends Parapo {
+  constructor () {
+    super()
+    this.mainType = 'skill'
+    this.subType = 'parapo'
+    this.id = ID.weapon.skillParapo
+    this.width = 120
+    this.height = 120
+    this.isChaseType = true
+    this.speedX = 4
+    this.speedY = 0
+    this.state = 'normal'
+    this.repeatCount = 1 // 참고: 이 스킬은 파라포 무기와 다르게 반복횟수가 1입니다.
+  }
+
+  processMove () {
+    if (this.targetObject) {
+      this.x = this.targetObject.x + (this.targetObject.width / 2)
+      this.y = this.targetObject.y + (this.targetObject.height / 2)
+    }
+  }
+
+  processAttack () {
+    // 파라포스킬은 무기가 적에게 닿았다면 충격파 공격을 시도합니다.
+    // 기존 파라포 무기는 이 역할이 나뉘어져있으나, 파라포 스킬은 미사일처럼 충격파와 일반 공격 기능이 합쳐져 있습니다.
+    // 다만 추적중인 적이 있고, 그 추적중인 적이랑 충돌했다면 즉시 충격파를 발사합니다.
+    
+    if (this.state === 'normal') {
+      this.processAttackNormal()
+    } else if (this.state === 'shockwave') {
+      this.processAttackShockwave()
+    }
+  }
+
+  processAttackNormal () {
+    // 적 객체 얻어오기
+    let enemyObject = fieldState.getEnemyObject()
+
+    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
+    for (let i = 0; i < enemyObject.length; i++) {
+      let currentEnemy = enemyObject[i]
+
+      // 각각의 적마다 충돌 검사
+      if (collision(this, currentEnemy)) {
+        // 충돌한 경우, 충돌한 상태에서의 로직을 처리
+        // 한번 적을 공격할 때마다 반복 카운트 1 감소
+        this.state = 'shockwave'
+      }
+    }
+  }
+
+  processAttackShockwave () {
+    // 적 객체 얻어오기
+    let enemyObject = fieldState.getEnemyObject()
+    this.repeatCount-- // 반복횟수 감소 (반복횟수를 감소시키지 않으면 무한공격을 할 수 있음.)
+    soundSystem.play(soundFile.skill.skillParapoHit) // 타격 사운드
+    
+    // 충격파 범위
+    let shockwaveArea = { 
+      x: this.x - 60,
+      y: this.y - 60,
+      width: 60,
+      height: 60
+    }
+    if (!this.targetObject) {
+      shockwaveArea.x = this.x
+      shockwaveArea.y = this.y
+      shockwaveArea.width = 120
+      shockwaveArea.height = 120
+    }
+
+    // 충격파 이펙트
+    fieldState.createEffectObject(ID.effect.skillParapo, shockwaveArea.x, shockwaveArea.y)
+
+    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
+    for (let i = 0; i < enemyObject.length; i++) {
+      let currentEnemy = enemyObject[i]
+
+      // 각각의 적마다 충돌 검사
+      if (collision(shockwaveArea, currentEnemy)) {
+        // 충돌한 경우, 충돌한 상태에서의 로직을 처리
+        // 한번 적을 공격할 때마다 반복 카운트 1 감소
+        this.damageProcess(currentEnemy)
+      }
+    }
+  }
+
+  display () {
+    // 아무것도 안보임
+  }
+}
+
+class SkillBlaster extends Blaster {
+  constructor () {
+    super()
+    this.mainType = 'skill'
+    this.subType = 'blaster'
+    this.id = ID.weapon.skillBlaster
+    this.width = 36
+    this.height = 36
+    this.image = imageFile.weapon.skillBlaster
+    this.speedX = 32
+
+    // 희한하게도, 이 무기는 직선에서 약간 벗어나있음.
+    this.speedY = -0.2 + Math.random () * 0.4
+  }
+
+  display () {
+    this.defaultDisplay()
+  }
+}
+
+class SkillSidewave extends Sidewave {
+  constructor (option = [0, 'right']) {
+    super()
+    this.mainType = 'skill'
+    this.subType = 'blaster'
+    this.id = ID.weapon.skillSidewave
+    this.speedX = 22
+    this.speedY = option[0]
+    this.width = 36
+    this.height = 120
+    this.enimation = new EnimationData(imageFile.weapon.skillSidewave, 0, 0, this.width, this.height, 5, 6, -1)
+  }
+}
 
 /**
  * 플레이어 무기 데이터 (이 클래스는 static 클래스입니다.)  
@@ -1698,10 +2097,10 @@ class Sidewave extends WeaponData {
   static shotCount = 1
 
   /** 
-   * 초당 공격력 반영 비율: 기본값 100%  
+   * 초당 공격력 반영 비율: 기본값 1  
    * 참고: 최종 공격력은 소수점 버림하여 계산합니다.
    */ 
-  static attackPercent = 100
+  static attackMultiple = 1
 
   /**
    * 무기에 따른 공격횟수 (발사 횟수랑 다르고, 무기 객체가 공격하는 횟수임.)  
@@ -1713,7 +2112,7 @@ class Sidewave extends WeaponData {
   /**
    * 무기 생성 함수: 이 로직에서만 무기를 생성해 주세요.  
    * 그리고 무기 생성은 fieldState.createWeapon 함수를 사용합니다.  
-   * 경고: 이 함수를 한번 사용했을 때 attackPercent만큼 공격력을 가진 무기 객체가 발사되어야 합니다.  
+   * 경고: 이 함수를 한번 사용했을 때 attackMultiple만큼 공격력을 가진 무기 객체가 발사되어야 합니다.  
    * 즉 create함수가 무기를 1개 생성한다면, 생성한 무기의 공격력의 %는 100%가 되어야 합니다.
    */
   static create (attack, x, y) {}
@@ -1728,7 +2127,7 @@ class Sidewave extends WeaponData {
   static getShotAttack (baseAttack, multiple = 1) {
     let secondPerCount = 60 / this.delay
     let totalDivied = this.shotCount * this.attackCount
-    let totalMultiple = (this.attackPercent / 100) * multiple
+    let totalMultiple = this.attackMultiple * multiple
     let resultAttack = (baseAttack * totalMultiple) / (secondPerCount * totalDivied)
     return Math.floor(resultAttack)
   }
@@ -1738,7 +2137,7 @@ class Sidewave extends WeaponData {
 class PlayerMultyshot extends PlayerWeaponData {
   // 단순한 무기라, 따로 추가로 계산할 요소는 거의 없음
   static delay = 10
-  static attackPercent = 100
+  static attackMultiple = 1
   static shotCount = 6
 
   static create (attack, x, y) {
@@ -1761,7 +2160,7 @@ class PlayerMissile extends PlayerWeaponData {
   // 참고, 복잡한 무기의 경우, 해당 무기의 정보를 가져와서 계산합니다.
   // 이렇게 안하면, 나중에 밸런스 수정할 때 여러개의 코드를 수정해야 할 수도 있습니다.
   static delay = 30
-  static attackPercent = 80
+  static attackMultiple = 0.8
   static shotCount = 4
   // 공격 카운트: (미사일 반복 수 + 미사일B 반복 수) / 2 (단, 소수점 버림...)
   // 실제로, 미사일 반복 수는 5이고, 미사일B는 6이라... 5.5가 되어야 하나, 소수점을 버림하므로 5임.
@@ -1782,7 +2181,7 @@ class PlayerMissile extends PlayerWeaponData {
 class PlayerArrow extends PlayerWeaponData {
   static delay = 10
   static shotCount = 2
-  static attackPercent = 104
+  static attackMultiple = 1.04
   static create (attack, x, y) {
     const shotAttack = this.getShotAttack(attack)
 
@@ -1795,7 +2194,7 @@ class PlayerLaser extends PlayerWeaponData {
   static laser = new Laser()
   static delay = 20
   static shotCount = 4
-  static attackPercent = 110
+  static attackMultiple = 1.1
   static attackCount = this.laser.repeatCount
 
   static create (attack, x, y) {
@@ -1814,7 +2213,7 @@ class PlayerSapia extends PlayerWeaponData {
   static sapia = new Sapia()
   static delay = 40
   static shotCount = 3
-  static attackPercent = 100
+  static attackMultiple = 1
   static attackCount = this.sapia.repeatCount // 사피아(30%) + 시파이샷(70%)
   
   static create (attack, x, y) {
@@ -1832,7 +2231,7 @@ class PlayerParapo extends PlayerWeaponData {
   static shockWave = new ParapoShockwave()
   static shotCount = 4
   static delay = 60
-  static attackPercent = 95
+  static attackMultiple = 0.9
 
   // 공격 개수 = 파라포 반복 * 4(왼쪽, 오른쪽, 위, 아래) * 쇼크웨이브 반복
   // 공격 개수가 4배인것을 이 정보에 저장했기 때문에, 무기 알고리즘 내에서 추가적인 공격력 정보를 넣을 필요는 없습니다.
@@ -1850,7 +2249,7 @@ class PlayerParapo extends PlayerWeaponData {
 class PlayerBlaster extends PlayerWeaponData {
   static shotCount = 2
   static delay = 6
-  static attackPercent = 110
+  static attackMultiple = 1.1
 
   static create (attack, x, y) {
     const shotAttack = this.getShotAttack(attack, 1.2)
@@ -1864,7 +2263,7 @@ class PlayerBlaster extends PlayerWeaponData {
 class PlayerSidewave extends PlayerWeaponData {
   static shotCount = 8
   static delay = 15
-  static attackPercent = 110
+  static attackMultiple = 1.1
   static create (attack, x, y) {
     const shotAttack = this.getShotAttack(attack)
     // 플레이어 중앙에서 발사하게 하고 싶어, 무기를 사용할 y좌표를 30(무기의 크기)만큼 마이너스 했습니다.
@@ -1880,6 +2279,252 @@ class PlayerSidewave extends PlayerWeaponData {
   }
 }
 
+class PlayerSKillData {
+  /**
+   * 스킬의 공격력 배율 (기본값 1)  
+   * 이 배율이 높을수록 해당 스킬은 더 높은 데미지를 줄 수 있음.
+   */
+  static attackMultiple = 1
+
+  /**
+   * 스킬의 기준 공격력 배율 값 (값 변경 불가능)  
+   * 이 게임에서는 shotDamage(1) + skillDamage(0.8 * 4) = Total(4.2)의 구성이 기본입니다.  
+   * 대략적인 데미지 비율은, shot(약 23.2%) + skill(약 76.8%) 입니다.
+   */
+  static BASE_MULTIPLE = 0.8
+
+  /**
+   * 스킬을 사용하고 스킬에 대한 무기 발사를 1회 반복할 때, 동시에 발사되는 개수
+   */
+  static shotCount = 1
+
+  /**
+   * 스킬을 사용하고, 무기 발사를 반복하는 횟수
+   */
+  static repeatCount = 1
+
+  /**
+   * 각 무기당 공격 횟수 (일부 무기는 적을 여러번 공격할 수 있음.)
+   */
+  static attackCount = 1
+
+  /**
+   * 스킬의 쿨타임  
+   * 참고: 스킬들은 쿨타임 시간만큼의 초당 데미지를 수 초내에 주는 방식입니다.  
+   * 예를들어, 20초짜리 스킬은 20초분량의 데미지를 줍니다. 다만, 스킬 지속시간이 굉장히 짧으므로
+   * 순간적으로 주는 데미지가 많아보입니다.  
+   * 스킬 시간과 쿨타임의 관계의 기준은 이렇습니다.  
+   * 쿨타임: 20초, 24초, 25초, 28초, 30초
+   * 유지시간: 2~3초, 3~4초, 3~4초, 4~5초, 4~5초
+   */
+  static coolTime = 20
+
+  /**
+   * 스킬을 사용하고, 무기가 반복적으로 작업하기까지의 지연프레임
+   */
+  static delay = 60
+
+  /**
+   * 스킬이 바로 나가는게 아니라, 대기 시간 이후에 나간다면, 이 값을 설정해주세요. 단위는 프레임입니다.
+   * 1초 = 60프레임
+   */
+  static beforeDelay = 0
+
+  /** 
+   * 스킬 사용 사운드 
+   * @type {Audio} 
+   */ 
+  static useSound = null
+
+  /** 
+   * 스킬을 사용한 후 한번 반복할 때 나오는 샷 사운드 
+   * @type {Audio} 
+   */ 
+  static shotSound = null
+
+  /**
+   * 스킬을 사용할 때 무기를 생성하는 함수
+   * @param {number} attack 플레이어의 공격력
+   * @param {number} x 스킬의 x좌표
+   * @param {number} y 스킬의 y좌표
+   */
+  static create (attack, x, y) {
+
+  }
+
+  /**
+   * 한 발당 샷의 공격력을 얻습니다. 모든 공격력은 소수점 버림  
+   * 참고: 무기랑 공격 계산식이 약간 다릅니다.(자세한건 코드 주석 참고)  
+   * @param {number} baseAttack 유저의 공격력
+   * @param {number} multiple 무기 공격이 여러종류가 합쳐질때, 배율 비중을 나눠주기 위해 사용하는 변수
+   * @returns 
+   */
+  static getShotAttack (baseAttack, multiple = 1) {
+    // 기본 공식 (최종 결과값은 소수점 버림)
+    // 최종 공격력 = (유저 공격력 / (샷 횟수 * 반복 횟수)) * (공격력 배율 * 쿨타임 * 기본 배율 0.8)
+    // totalDivied = 샷 횟수 * 반복횟수 // 유저 공격력을 나눠야 하는 값
+    // totalMultiple = 공격배율 * 배율 * 기본배율 * 쿨타임 // 총 배율 값입니다.
+    // resultAttack = (유저 공격력 * 총 배율) / 나누는 값
+  
+    let totalDivied = this.shotCount * this.repeatCount * this.attackCount
+    let totalMultiple = this.attackMultiple * multiple * this.BASE_MULTIPLE * this.coolTime
+    let resultAttack = (baseAttack * totalMultiple) / totalDivied
+    return Math.floor(resultAttack)
+  }
+
+  static useSoundPlay () {
+    if (this.useSound) {
+      soundSystem.play(this.useSound)
+    }
+  }
+
+  static shotSoundPlay () {
+    if (this.shotSound) {
+      soundSystem.play(this.shotSound)
+    }
+  }
+
+  /**
+   * 쿨타임을 프레임단위로 변환해 리턴(coolTime은 초 단위이므로, frame단위로 변경해줘야 할 때 이 함수슬 쓰세요.)
+   */
+  static getCoolTimeFrame () {
+    return this.coolTime * 60
+  }
+}
+
+class PlayerSkillMultyshot extends PlayerSKillData {
+  static attackMultiple = 1
+  static coolTime = 20
+  static repeatCount = 30
+  static delay = 6
+  static shotCount = 5
+  static useSound = soundFile.skill.skillMultyshotUse
+  static shotSound = soundFile.skill.skillMultyshotShot
+  static beforeDelay = 30
+
+  static create (x, y, attack) {
+    this.shotSoundPlay()
+    const shotAttack = this.getShotAttack(attack)
+    fieldState.createWeaponObject(ID.weapon.skillMultyshot, x, y + 60, shotAttack)
+    fieldState.createWeaponObject(ID.weapon.skillMultyshot, x, y + 30, shotAttack)
+    fieldState.createWeaponObject(ID.weapon.skillMultyshot, x, y, shotAttack)
+    fieldState.createWeaponObject(ID.weapon.skillMultyshot, x, y - 30, shotAttack)
+    fieldState.createWeaponObject(ID.weapon.skillMultyshot, x, y - 60, shotAttack)
+  }
+}
+
+class PlayerSkillMissile extends PlayerSKillData {
+  static missile = new SkillMissile()
+  static attackMultiple = 1.2
+  static coolTime = 24
+  static repeatCount = 4
+  static delay = 20
+  static shotCount = 2
+  static shotSound = soundFile.skill.skillMissileShot
+  static attackCount = this.missile.repeatCount
+
+  static create (x, y, attack) {
+    this.shotSoundPlay()
+    const shotAttack = this.getShotAttack(attack)
+    fieldState.createWeaponObject(ID.weapon.skillMissile, x - 60, y - 60, shotAttack)
+    fieldState.createWeaponObject(ID.weapon.skillMissile, x + 60, y - 60, shotAttack)
+  }
+}
+
+class PlayerSkillArrow extends PlayerSKillData {
+  static arrow = new SkillArrow()
+  static attackMultiple = 1.2
+  static coolTime = 20
+  static repeatCount = 20
+  static delay = 9
+  static shotCount = 2
+  static shotSound = soundFile.skill.skillArrowShot
+  static attackCount = this.arrow.repeatCount
+
+  static create (x, y, attack) {
+    this.shotSoundPlay()
+    const shotAttack = this.getShotAttack(attack)
+    fieldState.createWeaponObject(ID.weapon.skillArrow, x, y - 35, shotAttack, 7)
+    fieldState.createWeaponObject(ID.weapon.skillArrow, x, y - 35, shotAttack, -7)
+  }
+}
+
+class PlayerSkillLaser extends PlayerSKillData {
+  static laser = new SkillLaser()
+  static attackMultiple = 0.8
+  static coolTime = 24
+  static shotSound = soundFile.skill.skillLaserShot
+  static attackCount = this.laser.repeatCount
+
+  static create(x, y, attack) {
+    this.shotSoundPlay()
+    const shotAttack = this.getShotAttack(attack)
+    fieldState.createWeaponObject(ID.weapon.skillLaser, x, y, shotAttack)
+  }
+}
+
+class PlayerSkillSapia extends PlayerSKillData {
+  static sapia = new SkillSapia()
+  static attackMultiple = 1.1
+  static coolTime = 24
+  static useSound = soundFile.skill.skillSapiaWeapon
+  static attackCount = this.sapia.repeatCount
+  static shotCount = 6
+  static delay = 60
+
+  static create(x, y, attack) {
+    const shotAttack = this.getShotAttack(attack)
+    for (let i = 0; i < 6; i++) {
+      fieldState.createWeaponObject(ID.weapon.skillSapia, x, y, shotAttack)
+    }
+  }
+}
+
+class PlayerSkillParapo extends PlayerSKillData {
+  static parapo = new SkillParapo()
+  static attackMultiple = 0.9
+  static coolTime = 24
+  static delay = 10
+  static repeatCount = 24
+
+  static create(x, y, attack) {
+    const shotAttack = this.getShotAttack(attack)
+    fieldState.createWeaponObject(ID.weapon.skillParapo, x, y, shotAttack)
+  }
+}
+
+class PlayerSkillBlaster extends PlayerSKillData {
+  static attackMultiple = 1.6
+  static coolTime = 28
+  static delay = 4
+  static repeatCount = 40
+  static shotCount = 2
+  static shotSound = soundFile.skill.skillBlasterShot
+
+  static create(x, y, attack) {
+    this.shotSoundPlay()
+    const shotAttack = this.getShotAttack(attack)
+    fieldState.createWeaponObject(ID.weapon.skillBlaster, x, y + 10, shotAttack)
+    fieldState.createWeaponObject(ID.weapon.skillBlaster, x, y - 10, shotAttack)
+  }
+}
+
+class PlayerSkillSidewave extends PlayerSKillData {
+  static attackMultiple = 1.2
+  static coolTime = 20
+  static delay = 7
+  static repeatCount = 24
+  static shotCount = 3
+  static shotSound = soundFile.skill.skillSidewaveShot
+
+  static create(x, y, attack) {
+    this.shotSoundPlay()
+    const shotAttack = this.getShotAttack(attack)
+    fieldState.createWeaponObject(ID.weapon.skillSidewave, x, y, shotAttack, -7)
+    fieldState.createWeaponObject(ID.weapon.skillSidewave, x, y, shotAttack, 0)
+    fieldState.createWeaponObject(ID.weapon.skillSidewave, x, y, shotAttack, 7)
+  }
+}
 
 /**
  * 이펙트 데이터  
@@ -1978,6 +2623,15 @@ class MissileEffect extends EffectData {
   }
 }
 
+class SkillMissileEffect extends EffectData {
+  constructor () {
+    super()
+    this.width = 200
+    this.height = 200
+    this.enimation = new EnimationData(imageFile.weapon.skillMissileEffect, 0, 0, this.width, this.height, 10, 2, 1)
+  }
+}
+
 class ParapoEffect extends EffectData {
   /**
    * 옵션:  
@@ -1996,6 +2650,15 @@ class ParapoEffect extends EffectData {
     }
 
     this.enimation = new EnimationData(imageFile.weapon.parapoEffect, 0, directionPosition, 100, 100, 10, 2)
+  }
+}
+
+class SkillParapoEffect extends EffectData {
+  constructor () {
+    super()
+    this.width = 120
+    this.height = 120
+    this.enimation = new EnimationData(imageFile.weapon.skillParapoEffect, 0, 0, this.width, this.height, 10, 2)
   }
 }
 
@@ -2151,7 +2814,7 @@ class TestEnemy extends EnemyData {
 class TestAttackEnemy extends EnemyData {
   constructor () {
     super()
-    this.hp = 20000
+    this.hp = 80000
     this.score = 400
     this.width = 48
     this.height = 48
@@ -2160,7 +2823,25 @@ class TestAttackEnemy extends EnemyData {
     this.image = imageFile.enemyTemp
     this.speedX = -1
   }
+}
 
+class TestShowDamageEnemy extends EnemyData {
+  constructor () {
+    super()
+    this.hp = 1000000
+    this.score = 1000
+    this.width = 48
+    this.height = 48
+    this.attack = 0
+    this.isPossibleExit = false
+    this.image = imageFile.enemyTemp
+    this.speedX = 0
+  }
+
+  display () {
+    super.display()
+    graphicSystem.digitalFontDisplay('totaldamage: ' + (1000000 - this.hp), 0, 40)
+  }
 }
 
 class Donggeurami extends EnemyData {
@@ -2203,6 +2884,24 @@ export class tamshooter4Data {
   }
 
   /**
+   * 플레이어 스킬 데이터를 가져옵니다. 리턴되는 클래스는 static 클래스이므로, 따로 인스턴스를 생성하지 마세요.
+   * @param {ID} id ID 클래스가 가지고 있는 상수 값을 넣어주세요.  
+   * @returns {PlayerSKillData} playerWeapon의 클래스, 값이 없다면 null
+   */
+  static getPlayerSkillData (id) {
+    switch(id) {
+      case ID.playerSkill.multyshot: return PlayerSkillMultyshot
+      case ID.playerSkill.missile: return PlayerSkillMissile
+      case ID.playerSkill.arrow: return PlayerSkillArrow
+      case ID.playerSkill.laser: return PlayerSkillLaser
+      case ID.playerSkill.sapia: return PlayerSkillSapia
+      case ID.playerSkill.parapo: return PlayerSkillParapo
+      case ID.playerSkill.blaster: return PlayerSkillBlaster
+      case ID.playerSkill.sidewave: return PlayerSkillSidewave
+    }
+  }
+
+  /**
    * 무기 데이터 클래스를 가져옵니다. fieldState에서 사용하려면 따로 인스턴스를 생성해주세요.
    * @param {ID} weaponId ID 클래스가 가지고 있는 상수 값을 넣어주세요.
    * @returns {WeaponData}  weaponData 클래스, 만약 해당하는 값이 없다면 null
@@ -2222,6 +2921,16 @@ export class tamshooter4Data {
       case ID.weapon.blaster: return Blaster
       case ID.weapon.blasterMini: return BlasterMini
       case ID.weapon.sidewave: return Sidewave
+
+      // skill
+      case ID.weapon.skillMultyshot: return SkillMultyshot
+      case ID.weapon.skillMissile: return SkillMissile
+      case ID.weapon.skillArrow: return SkillArrow
+      case ID.weapon.skillLaser: return SkillLaser
+      case ID.weapon.skillSapia: return SkillSapia
+      case ID.weapon.skillParapo: return SkillParapo
+      case ID.weapon.skillBlaster: return SkillBlaster
+      case ID.weapon.skillSidewave: return SkillSidewave
       default: return null
     }
   }
@@ -2235,6 +2944,7 @@ export class tamshooter4Data {
     switch (enemyId) {
       case ID.enemy.test: return TestEnemy
       case ID.enemy.testAttack: return TestAttackEnemy
+      case ID.enemy.testShowDamageEnemy: return TestShowDamageEnemy
       default: return null
     }
   }
@@ -2248,6 +2958,8 @@ export class tamshooter4Data {
     switch (effectId) {
       case ID.effect.missile: return MissileEffect
       case ID.effect.parapo: return ParapoEffect
+      case ID.effect.skillMissile: return SkillMissileEffect
+      case ID.effect.skillParapo: return SkillParapoEffect
     }
   }
 }
