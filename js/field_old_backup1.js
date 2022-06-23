@@ -1,10 +1,9 @@
-import { buttonSystem } from "./control.js"
-import { FieldData, ID, objectType, tamshooter4Data } from "./data.js"
-import { graphicSystem } from "./graphic.js"
-import { imageFile } from "./image.js"
-import { userSystem } from "./tamshooter4.js"
-import { systemText } from "./text.js"
-
+import { buttonSystem } from './control.js'
+import { FieldData, ID, objectType, tamshooter4Data } from './data.js'
+import { graphicSystem } from './graphic.js'
+import { imageFile } from './image.js'
+import { userSystem } from './tamshooter4.js'
+import { systemText } from './text.js'
 
 /*
 오브젝트 목록
@@ -29,26 +28,21 @@ import { systemText } from "./text.js"
 4-1. SystemObject = 시스템용도로 사용[FieldObject랑 차이 없음. 용도 구분을 위해 이름을 추가한 것]
  */
 
-
-
-
 /**
  * 충돌 감지 함수
- * @param {FieldObject} object1 
- * @param {FieldObject} object2 
+ * @param {FieldObject} object1
+ * @param {FieldObject} object2
  */
 export function collision (object1, object2) {
-  if(object1.x < object2.x + object2.width
-    && object1.x + object1.width > object2.x
-    && object1.y < object2.y + object2.height
-    && object1.y + object1.height > object2.y) {
+  if (object1.x < object2.x + object2.width &&
+    object1.x + object1.width > object2.x &&
+    object1.y < object2.y + object2.height &&
+    object1.y + object1.height > object2.y) {
     return true
   } else {
     return false
   }
 }
-
-
 
 /**
  * 필드 오브젝트 (인터페이스 클래스)
@@ -56,16 +50,16 @@ export function collision (object1, object2) {
  */
 class FieldObject extends FieldData {
   /**
-   * 경고: 이 함수는 직접 호출하지 마세요.  
-   * FieldObject constructor에서만 사용하는 함수입니다.  
+   * 경고: 이 함수는 직접 호출하지 마세요.
+   * FieldObject constructor에서만 사용하는 함수입니다.
    * [로직 분리를 위해 만든 함수이므로 외부에서 사용을 금지합니다.]
    */
   constructorFieldObject (constObjectType, typeId) {
     // 오브젝트 타입과 타입ID에 따라서, 거기에 맞는 객체를 생성합니다.
-    // 다만, 대부분은 개별적인 설정을 따름, 
-    /** 
+    // 다만, 대부분은 개별적인 설정을 따름,
+    /**
      * @type {FieldData}
-     */ 
+     */
     let getData = null
 
     if (constObjectType === objectType.WEAPON) {
@@ -92,17 +86,15 @@ class FieldObject extends FieldData {
     this.hpMax = getData.hp
 
     // 처리 함수 대입 (data.js에 있는 알고리즘을 직접 사용합니다.)
-    // (다만, call을 사용하지 않으면 현재 객체가 아닌, data의 객체 값을 변경하기 때문에, 
+    // (다만, call을 사용하지 않으면 현재 객체가 아닌, data의 객체 값을 변경하기 때문에,
     // 이와 같은 함수를 불러올 때는 process.call(this) 와 같이 사용해주어야 합니다.)
     this.process = getData.process
     this.display = getData.display
     this.collisionProcess = getData.collisionProcess
     this.processAttack = getData.processAttack
 
-    let targetClass = tamshooter4Data.temp()
+    const targetClass = tamshooter4Data.temp()
     this.targetClass = new targetClass()
-
-
   }
 
   constructor (constObjectType, typeId, x = 0, y = 0) {
@@ -124,14 +116,13 @@ class FieldObject extends FieldData {
       case objectType.PLAYER:
       case objectType.EFFECT:
         return
-      default: 
-        console.warn(systemText.fieldError.DIFFERENT_OBJECT_TYPE) 
-        return
+      default:
+        console.warn(systemText.fieldError.DIFFERENT_OBJECT_TYPE)
     }
   }
 
-  /** 
-   * 외부[data.js]에서 가져오는 함수가 아닌, field에서 자체적으로 처리하는 함수입니다.  
+  /**
+   * 외부[data.js]에서 가져오는 함수가 아닌, field에서 자체적으로 처리하는 함수입니다.
    * field에서만 처리해야 하는 로직이 있을 때 사용합니다. (예를 들어 특정 조건에서 오브젝트 삭제하기 등..., 적 체력 0 이하일때 적 죽이기등....)
    */
   fieldProcess () {
@@ -213,9 +204,8 @@ class DamageObject extends FieldObject {
 
 }
 
-
 /**
- * 플레이어 오브젝트  
+ * 플레이어 오브젝트
  * 플레이어를 직접 조종합니다.
  */
 class PlayerObject extends FieldObject {
@@ -235,7 +225,7 @@ class PlayerObject extends FieldObject {
   init () {
     this.x = 300
     this.y = 200
-    
+
     const getData = userSystem.getPlayerObjectData()
     this.attack = getData.attack
     this.hp = getData.hp
@@ -246,11 +236,11 @@ class PlayerObject extends FieldObject {
   }
 
   process () {
-    let buttonLeft = buttonSystem.getButtonDown(buttonSystem.BUTTON_LEFT)
-    let buttonRight = buttonSystem.getButtonDown(buttonSystem.BUTTON_RIGHT)
-    let buttonUp = buttonSystem.getButtonDown(buttonSystem.BUTTON_UP)
-    let buttonDown = buttonSystem.getButtonDown(buttonSystem.BUTTON_DOWN)
-    let buttonA = buttonSystem.getButtonInput(buttonSystem.BUTTON_A)
+    const buttonLeft = buttonSystem.getButtonDown(buttonSystem.BUTTON_LEFT)
+    const buttonRight = buttonSystem.getButtonDown(buttonSystem.BUTTON_RIGHT)
+    const buttonUp = buttonSystem.getButtonDown(buttonSystem.BUTTON_UP)
+    const buttonDown = buttonSystem.getButtonDown(buttonSystem.BUTTON_DOWN)
+    const buttonA = buttonSystem.getButtonInput(buttonSystem.BUTTON_A)
 
     if (buttonLeft) this.x -= 8
     if (buttonRight) this.x += 8
@@ -273,7 +263,7 @@ class PlayerObject extends FieldObject {
 
     const getWeaponData = tamshooter4Data.getPlayerWeaponData(this.playerWeaponId[this.playerWeaponPosition])
     if (getWeaponData == null) return
-    
+
     this.attackDelayCount++
     if (this.attackDelayCount >= getWeaponData.delay) {
       getWeaponData.create(this.attack, centerX, centerY)
@@ -309,8 +299,8 @@ export class fieldState {
   static getRandomEnemyObject () {
     if (this.enemyObject.length === 0) return null
 
-    let randomNumber = Math.floor(Math.random() * this.enemyObject.length)
-    let targetEnemy = this.enemyObject[randomNumber]
+    const randomNumber = Math.floor(Math.random() * this.enemyObject.length)
+    const targetEnemy = this.enemyObject[randomNumber]
 
     if (targetEnemy.isDeleted) {
       return null
@@ -321,7 +311,7 @@ export class fieldState {
 
   /**
    * 해당 함수는 사용 불가
-   * 필드상태에 새로운 객체를 생성합니다.  
+   * 필드상태에 새로운 객체를 생성합니다.
    * [playerObject는 생성 불가]
    * @deprecated
    * @param {string} constObjectType data.js 파일에 있는 objectType 클래스의 상수. string 값을 직접 넣지 마세요. 무조건, objecrType.FIELD 와 같은 형태로 값을 넣어야 합니다.
@@ -331,7 +321,7 @@ export class fieldState {
    * @param {etc}
    */
   static create (constObjectType, typeId, x, y, ...etc) {
-    return
+
     // switch (constObjectType) {
     //   case objectType.WEAPON:
     //     this.weaponObject.push(new WeaponObject(typeId, x, y, ...etc))
@@ -347,7 +337,7 @@ export class fieldState {
   static createWeaponObject (typeId, x, y, attack) {
     this.weaponObject.push(new WeaponObject(typeId, x, y, attack))
   }
-  
+
   static createEnemyObject (typeId, x, y) {
     this.enemyObject.push(new EnemyObject(typeId, x, y))
   }
@@ -368,7 +358,7 @@ export class fieldState {
 
   static processWeaponObject () {
     for (let i = 0; i < this.weaponObject.length; i++) {
-      let currentObject = this.weaponObject[i]
+      const currentObject = this.weaponObject[i]
       currentObject.process(currentObject)
       currentObject.fieldProcess()
       currentObject.processAttack.call(currentObject)
@@ -381,10 +371,10 @@ export class fieldState {
 
   static processEnemyObject () {
     for (let i = 0; i < this.enemyObject.length; i++) {
-      let currentObject = this.enemyObject[i]
+      const currentObject = this.enemyObject[i]
       currentObject.process.call(currentObject)
       currentObject.fieldProcess()
-      
+
       if (currentObject.isDeleted) {
         this.enemyObject.splice(i, 1)
       }
@@ -409,7 +399,7 @@ export class fieldState {
 
   static displayEnemyObject () {
     for (let i = 0; i < this.enemyObject.length; i++) {
-      let currentEnemy = this.enemyObject[i]
+      const currentEnemy = this.enemyObject[i]
 
       currentEnemy.display.call(currentEnemy)
       this.displayEnemyHpMeter(currentEnemy)
@@ -424,7 +414,7 @@ export class fieldState {
       enemyHpPercent = 0
     }
 
-    let meterWidth = Math.floor(enemyHpPercent * currentEnemy.width)
+    const meterWidth = Math.floor(enemyHpPercent * currentEnemy.width)
 
     graphicSystem.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height, currentEnemy.width, 2, 'red')
     graphicSystem.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height, meterWidth, 2, 'green')
@@ -434,9 +424,9 @@ export class fieldState {
 export class fieldSystem {
   static fieldTime = {
     frame: 0,
-    second: 0,
+    second: 0
   }
-  
+
   static isFieldStart = false
   static fieldStart () {
     if (!this.isFieldStart) {
@@ -459,11 +449,10 @@ export class fieldSystem {
     this.processFieldTime()
 
     if (this.fieldTime.frame === 1 && fieldState.enemyObject.length < 10) {
-      let enemyX = Math.random() * 300 + 200
-      let enemyY = Math.random() * 200 + 100
+      const enemyX = Math.random() * 300 + 200
+      const enemyY = Math.random() * 200 + 100
       fieldState.createEnemyObject(ID.enemy.test, enemyX, enemyY)
     }
-
   }
 
   static display () {

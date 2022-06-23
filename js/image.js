@@ -33,11 +33,11 @@ export class imageFile {
     skillSapia: new Image(),
     skillParapoEffect: new Image(),
     skillBlaster: new Image(),
-    skillSidewave: new Image(),
+    skillSidewave: new Image()
   }
 
   static enemy = {
-    spaceEnemy: new Image(),
+    spaceEnemy: new Image()
 
   }
 }
@@ -81,26 +81,25 @@ imageFile.enemy.spaceEnemy.src = './image/enemy/spaceEnemy.png'
 // 그러므로 svg 파일은 게임 내에서 사용되지 않습니다.
 // imageFile.DIGITAL_VECTOR_UNUSED.src = 'numbervector.svg'
 
-
 export class imageDataInfo {
   static spaceEnemy = {
-    rocketBlue: {x: 0, y: 0, width: 60, height: 24, frame: 5},
-    rocketRed: {x: 0, y: 25, width: 60, height: 24, frame: 5},
-    rocketBlueBig: {x: 0, y: 50, width: 120, height: 48, frame: 5},
-    rocketRedBig: {x: 0, y: 100, width: 120, height: 48, frame: 5},
-    greenCar: {x: 300, y: 0, width: 70, height: 38, frame: 6},
-    spaceLight: {x: 600, y: 50, width: 20, height: 20, frame: 8},
-    blueSqaure: {x: 0, y: 150, width: 60, height: 60, frame: 4},
-    blueAttack: {x: 240, y: 150, width: 60, height: 60, frame: 3},
-    purpleEnergy: {x: 500, y: 150, width: 40, height: 45, frame: 7},
-    susong: {x: 0, y: 210, width: 160, height: 80, frame: 5},
-    gamjigi: {x: 0, y: 290, width: 55, height: 55, frame: 8},
-    comet: {x: 0, y: 350, width: 35, height: 35, frame: 6},
-    meteorite1: {x: 450, y: 290, width: 50, height: 50, frame: 1},
-    meteorite2: {x: 500, y: 290, width: 50, height: 50, frame: 1},
-    meteorite3: {x: 550, y: 290, width: 50, height: 50, frame: 1},
-    meteorite4: {x: 600, y: 290, width: 70, height: 50, frame: 1},
-    meteorite5: {x: 670, y: 290, width: 80, height: 50, frame: 1},
+    rocketBlue: { x: 0, y: 0, width: 60, height: 24, frame: 5 },
+    rocketRed: { x: 0, y: 25, width: 60, height: 24, frame: 5 },
+    rocketBlueBig: { x: 0, y: 50, width: 120, height: 48, frame: 5 },
+    rocketRedBig: { x: 0, y: 100, width: 120, height: 48, frame: 5 },
+    greenCar: { x: 300, y: 0, width: 70, height: 38, frame: 6 },
+    spaceLight: { x: 600, y: 50, width: 20, height: 20, frame: 8 },
+    blueSqaure: { x: 0, y: 150, width: 60, height: 60, frame: 4 },
+    blueAttack: { x: 240, y: 150, width: 60, height: 60, frame: 3 },
+    purpleEnergy: { x: 500, y: 150, width: 40, height: 45, frame: 7 },
+    susong: { x: 0, y: 210, width: 160, height: 80, frame: 5 },
+    gamjigi: { x: 0, y: 290, width: 30, height: 50, frame: 1 },
+    comet: { x: 50, y: 290, width: 35, height: 35, frame: 6 },
+    meteorite1: { x: 450, y: 290, width: 50, height: 50, frame: 1 },
+    meteorite2: { x: 500, y: 290, width: 50, height: 50, frame: 1 },
+    meteorite3: { x: 550, y: 290, width: 50, height: 50, frame: 1 },
+    meteorite4: { x: 600, y: 290, width: 70, height: 50, frame: 1 },
+    meteorite5: { x: 670, y: 290, width: 80, height: 45, frame: 1 }
 
     // {x: 0, y: 0, width: 0, height: 0, frame: 1},
   }

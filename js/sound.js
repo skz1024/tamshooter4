@@ -8,7 +8,8 @@ export class soundFile {
     systemCursor: new Audio('./sound/systemCursor.mp3'),
     systemEnter: new Audio('./sound/systemEnter.mp3'),
     systemSelect: new Audio('./sound/systemSelect.mp3'),
-    systemScore: new Audio('./sound/systemScore.mp3')
+    systemScore: new Audio('./sound/systemScore.mp3'),
+    systemLevelUp: new Audio('./sound/systemLevelUp.mp3')
   }
 
   static skill = {

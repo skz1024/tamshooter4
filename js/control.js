@@ -11,16 +11,16 @@
   SKILL1 ~ 4: 스킬 사용(4개의 버튼, 기본값은 아마도 X, Y, L, R),
   systemEnter, systemEsc: 일시정지
 
-  참고사항  
-  SYSTEM과 BUTTON은 서로 다른 개념의 버튼입니다. SYSTEM은 메뉴 선택에, 
+  참고사항
+  SYSTEM과 BUTTON은 서로 다른 개념의 버튼입니다. SYSTEM은 메뉴 선택에,
   변수를 직접 수정하지 말고, set함수를 활용하세요. 안그러면 유지보수가 어렵습니다.
   함수에 대한 설명은 각 함수의 주석 설명을 참고하세요.
 */
 export class buttonSystem {
-  /** 
+  /**
    * 시스템 키: 결정 버튼, BUTTON_ENTER 와 BUTTON_A 랑 같은 키 입니다.
    * 편의상 메뉴 선택에는 BUTTON_A 와 BUTTON_ENTER가 같은 역할을 수행합니다.
-   */ 
+   */
   static BUTTON_MENU_SELECT = 19
 
   /**
@@ -41,25 +41,25 @@ export class buttonSystem {
   /** 화살표키 오른쪽 , 오른쪽 버튼 */ static BUTTON_RIGHT = 9
   /** 화살표키 위쪽, 왼쪽 버튼 */ static BUTTON_UP = 10
   /** 화살표키 아래쪽, 아래쪽 버튼 */ static BUTTON_DOWN = 11
-  
+
   /**
    * 키바인드맵(keybindmap) 의 기본값
    */
   static DEFAULT_KEYBINDMAP = ['Enter', 'Escape', 'z', 'x', 'a', 's', 'd', 'f', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']
 
   static ERROR_MESSAGE_BUTTON_OUT_OF_INDEX = '잘못된 버튼의 인덱스가 입력되었습니다. 가능하면 buttonSystem 클래스 내부에 있는 상수 값을 인덱스로 사용하세요.'
-  
+
   /**
    * keyBindMap: 버튼에 인덱스에 대응되는 키 값의 배열
    */
   static _keyBindMap = this.DEFAULT_KEYBINDMAP.slice()
-  
+
   // 자바스크립트에서 새로운 배열을 for문 없이 초기화해서 생성하려면
   // new Array(배열 길이).fill(값) 의 형태를 사용해야 합니다.
   static _isButtonInput = new Array(this.DEFAULT_KEYBINDMAP.length).fill(false)
   static _isButtonDown = new Array(this.DEFAULT_KEYBINDMAP.length).fill(false)
   static _isButtonDelay = new Array(this.DEFAULT_KEYBINDMAP.length).fill(0)
-  static _isButtonDelayCount =new Array(this.DEFAULT_KEYBINDMAP.length).fill(0)
+  static _isButtonDelayCount = new Array(this.DEFAULT_KEYBINDMAP.length).fill(0)
 
   /**
    * 키 바인드 맵을 설정합니다.
@@ -72,7 +72,7 @@ export class buttonSystem {
     } else if (typeof buttonIndex === 'object') {
       this._keyBindMap = buttonIndex
     } else {
-      throw '함수에 값이 필요합니다. button(버튼)의 index(인덱스) 또는 keyBindMap의 배열 객체를 지정하세요.'
+      throw new Error('함수에 값이 필요합니다. button(버튼)의 index(인덱스) 또는 keyBindMap의 배열 객체를 지정하세요.')
     }
   }
 
@@ -89,7 +89,7 @@ export class buttonSystem {
    * @param {number} buttonIndex
    */
   static buttonInput (buttonIndex) {
-    if (buttonIndex != -1 && buttonIndex < this._isButtonInput.length) {
+    if (buttonIndex !== -1 && buttonIndex < this._isButtonInput.length) {
       this._isButtonInput[buttonIndex] = true
     } else {
       throw new Error(this.ERROR_MESSAGE_BUTTON_OUT_OF_INDEX)
@@ -98,10 +98,10 @@ export class buttonSystem {
 
   /**
    * 버튼이 입력중인지를 확인합니다. 버튼을 누르는동안 계속 인식합니다.
-   * @param {number} buttonIndex 
+   * @param {number} buttonIndex
    */
   static buttonDown (buttonIndex) {
-    if (buttonIndex != -1 && buttonIndex < this._isButtonInput.length) {
+    if (buttonIndex !== -1 && buttonIndex < this._isButtonInput.length) {
       this._isButtonDown[buttonIndex] = true
     } else {
       throw new Error(this.ERROR_MESSAGE_BUTTON_OUT_OF_INDEX)
@@ -110,10 +110,10 @@ export class buttonSystem {
 
   /**
    * 버튼이 떼어졌는지(눌렀다 뗀거)를 확인합니다. 버튼을 떼어있는동안 계속 인식합니다.
-   * @param {*} buttonIndex 
+   * @param {*} buttonIndex
    */
   static buttonUp (buttonIndex) {
-    if (buttonIndex != -1 && buttonIndex < this._isButtonDown.length) {
+    if (buttonIndex !== -1 && buttonIndex < this._isButtonDown.length) {
       this._isButtonDown[buttonIndex] = false
     } else {
       throw new Error(this.ERROR_MESSAGE_BUTTON_OUT_OF_INDEX)
@@ -121,8 +121,8 @@ export class buttonSystem {
   }
 
   /**
-   * 현재 버튼이 한번 누른건지 확인합니다. input기 때문에 한번 true를 리턴하면 
-   * 그 다음에 또 버튼을 누르지 않는이상 false가 리턴됩니다. 즉, 한번만 누른걸 감지합니다.  
+   * 현재 버튼이 한번 누른건지 확인합니다. input기 때문에 한번 true를 리턴하면
+   * 그 다음에 또 버튼을 누르지 않는이상 false가 리턴됩니다. 즉, 한번만 누른걸 감지합니다.
    * BUTTON_MENU로 시작하는 index값을 넣으면 해당하는 기능과 연결된 버튼을 확인합니다.
    * @param {number} buttonIndex buttonSystem.상수값인덱스
    * @returns true or false (참 또는 거짓 값)
@@ -150,7 +150,7 @@ export class buttonSystem {
       }
     } else if (buttonIndex < this._keyBindMap.length) {
       // 키 바인드 인덱스에 해당하는 배열일경우
-      let result = this._isButtonInput[buttonIndex]
+      const result = this._isButtonInput[buttonIndex]
       if (result) {
         this._isButtonInput[buttonIndex] = false
         return true
@@ -193,8 +193,8 @@ export class buttonSystem {
    * @param {Event.key} key 자바스크립트 이벤트 객체의 key값
    */
   static keyDown (key) {
-    let keyBindIndex = this._keyBindMap.indexOf(key)
-    if (keyBindIndex != -1) {
+    const keyBindIndex = this._keyBindMap.indexOf(key)
+    if (keyBindIndex !== -1) {
       this.buttonDown(keyBindIndex)
     }
   }
@@ -203,11 +203,11 @@ export class buttonSystem {
    * keyInput 이므로 buttonInput랑 같은 개념입니다.
    * 키를 누르면 해당하는 keyBindMap에 따라 버튼을 누르게 됩니다.
    * 잘못된 키가 입력되어도 오류메세지는 없고 아무런 일도 수행되지 않습니다.
-   * @param {*} key 
+   * @param {*} key
    */
   static keyInput (key) {
-    let keyBindIndex = this._keyBindMap.indexOf(key)
-    if (keyBindIndex != -1) {
+    const keyBindIndex = this._keyBindMap.indexOf(key)
+    if (keyBindIndex !== -1) {
       this.buttonInput(keyBindIndex)
     }
   }
@@ -218,8 +218,8 @@ export class buttonSystem {
    * 잘못된 키가 입력되어도 오류메세지는 없고 아무런 일도 수행되지 않습니다.
    */
   static keyUp (key) {
-    let keyBindIndex = this._keyBindMap.indexOf(key)
-    if (keyBindIndex != -1) {
+    const keyBindIndex = this._keyBindMap.indexOf(key)
+    if (keyBindIndex !== -1) {
       this.buttonUp(keyBindIndex)
     }
   }

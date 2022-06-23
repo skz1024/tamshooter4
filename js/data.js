@@ -1,9 +1,9 @@
-"use strict"
+'use strict'
 
-import { fieldState } from "./field.js"
-import { graphicSystem } from "./graphic.js"
-import { imageDataInfo, imageFile } from "./image.js"
-import { soundFile, soundSystem } from "./sound.js"
+import { fieldState } from './field.js'
+import { graphicSystem } from './graphic.js'
+import { imageDataInfo, imageFile } from './image.js'
+import { soundFile, soundSystem } from './sound.js'
 
 /**
  * 공통적으로 사용하는 객체 ID
@@ -11,62 +11,62 @@ import { soundFile, soundSystem } from "./sound.js"
  */
 export class ID {
   static playerWeapon = {
-    unused:0,
-    multyshot:10001,
-    missile:10002,
-    arrow:10003,
-    laser:10004,
-    sapia:10005,
-    parapo:10006,
-    blaster:10007,
-    sidewave:10008,
+    unused: 0,
+    multyshot: 10001,
+    missile: 10002,
+    arrow: 10003,
+    laser: 10004,
+    sapia: 10005,
+    parapo: 10006,
+    blaster: 10007,
+    sidewave: 10008
   }
 
   static playerSkill = {
-    unused:0,
-    skillNumberStart:15000,
-    multyshot:15001,
-    missile:15002,
-    arrow:15003,
-    laser:15004,
-    sapia:15005,
-    parapo:15006,
-    blaster:15007,
-    sidewave:15008,
+    unused: 0,
+    skillNumberStart: 15000,
+    multyshot: 15001,
+    missile: 15002,
+    arrow: 15003,
+    laser: 15004,
+    sapia: 15005,
+    parapo: 15006,
+    blaster: 15007,
+    sidewave: 15008
   }
 
   static weapon = {
-    unused:0,
-    multyshot:11010,
-    missile:11020,
-    missileRocket:11021,
-    arrow:11030,
-    laser:11040,
-    laserBlue:11041,
-    sapia:11050,
-    sapiaShot:11051,
-    parapo:11060,
-    parapoShockWave:11061,
-    blaster:11070,
-    blasterMini:11071,
-    sidewave:11080,
+    unused: 0,
+    multyshot: 11010,
+    missile: 11020,
+    missileRocket: 11021,
+    arrow: 11030,
+    laser: 11040,
+    laserBlue: 11041,
+    sapia: 11050,
+    sapiaShot: 11051,
+    parapo: 11060,
+    parapoShockWave: 11061,
+    blaster: 11070,
+    blasterMini: 11071,
+    sidewave: 11080,
 
     // skill
-    skillMultyshot:16001,
-    skillMissile:16002,
-    skillArrow:16003,
-    skillLaser:16004,
-    skillSapia:16005,
-    skillParapo:16006,
-    skillBlaster:16007,
-    skillSidewave:16008,
+    skillMultyshot: 16001,
+    skillMissile: 16002,
+    skillArrow: 16003,
+    skillLaser: 16004,
+    skillSapia: 16005,
+    skillParapo: 16006,
+    skillBlaster: 16007,
+    skillSidewave: 16008
   }
-  
+
   static enemy = {
-    unused:0,
-    test:20001,
-    testAttack:20002,
-    testShowDamageEnemy:20003,
+    unused: 0,
+    test: 20001,
+    testAttack: 20002,
+    testShowDamageEnemy: 20003,
     spaceEnemyLight: 20101,
     spaceEnemyRocket: 20102,
     spaceEnemyCar: 20103,
@@ -76,14 +76,14 @@ export class ID {
     spaceEnemySusong: 20107,
     spaceEnemyGamjigi: 20108,
     spaceEnemyComet: 20109,
-    spaceEnemyMeteorite: 20110,
+    spaceEnemyMeteorite: 20110
   }
 
   static effect = {
-    missile:40000,
-    parapo:40001,
-    skillMissile:40002,
-    skillParapo:40003,
+    missile: 40000,
+    parapo: 40001,
+    skillMissile: 40002,
+    skillParapo: 40003
   }
 
   static sprite = {
@@ -91,10 +91,9 @@ export class ID {
   }
 }
 
-
 /**
- * 게임 field.js에서 사용하는 오브젝트 타입  
- * 절대로 string 값을 직접 넣지 말고, 이 상수 값을 사용하세요.  
+ * 게임 field.js에서 사용하는 오브젝트 타입
+ * 절대로 string 값을 직접 넣지 말고, 이 상수 값을 사용하세요.
  */
 export class objectType {
   static FIELD = 'field'
@@ -107,90 +106,89 @@ export class objectType {
 
 /**
  * 충돌 감지 함수
- * @param {FieldData} objectA 
- * @param {FieldData} objectB 
+ * @param {FieldData} objectA
+ * @param {FieldData} objectB
  */
- export function collision (objectA, objectB) {
-  if(objectA.x < objectB.x + objectB.width
-    && objectA.x + objectA.width > objectB.x
-    && objectA.y < objectB.y + objectB.height
-    && objectA.y + objectA.height > objectB.y) {
+export function collision (objectA, objectB) {
+  if (objectA.x < objectB.x + objectB.width &&
+    objectA.x + objectA.width > objectB.x &&
+    objectA.y < objectB.y + objectB.height &&
+    objectA.y + objectA.height > objectB.y) {
     return true
   } else {
     return false
   }
 }
 
-
 /**
- * 충돌 감지 함수(OBB 한정)를 클래스로 변경했습니다. 이유는, 내부적으로만 사용하는 함수가 너무 많습니다.  
+ * 충돌 감지 함수(OBB 한정)를 클래스로 변경했습니다. 이유는, 내부적으로만 사용하는 함수가 너무 많습니다.
  * 사각형 충돌 함수는 기존의 collision 함수를 그냥 사용합니다.
  */
 export class collisionClass {
   /**
-   * 충돌 감지 함수 그러나 회전한 사각형까지 제대로 충돌 감지 가능 (일부 객체에서 사용)  
+   * 충돌 감지 함수 그러나 회전한 사각형까지 제대로 충돌 감지 가능 (일부 객체에서 사용)
    * 다각형 충돌은 고려하지 않습니다. (모든 오브젝트는 사각형 판정)
-   * 참고: 이 게임에서는 내부적으로 사각형 충돌 판정을 사용합니다.  
-   * 따라서, 회전한 사각형을 판정하려면 이 함수를 사용해야 합니다. (회전은 사각형의 중심을 기준으로 회전)  
-   * 그러나, 이 함수는 꼭짓점, 모서리에 대한 추가 연산을 사용하기 때문에  
+   * 참고: 이 게임에서는 내부적으로 사각형 충돌 판정을 사용합니다.
+   * 따라서, 회전한 사각형을 판정하려면 이 함수를 사용해야 합니다. (회전은 사각형의 중심을 기준으로 회전)
+   * 그러나, 이 함수는 꼭짓점, 모서리에 대한 추가 연산을 사용하기 때문에
    * 복잡하고 더 많은 자원이 필요합니다. 따라서 필요한 경우에만 사용해주세요.
-   * 
-   * 이 코드는 이 사이트를 참고해 재구성한 후 리메이크 했습니다.  
+   *
+   * 이 코드는 이 사이트를 참고해 재구성한 후 리메이크 했습니다.
    * http://programmerart.weebly.com/separating-axis-theorem.html
-   * @param {FieldData} objectA 
-   * @param {FieldData} objectB 
+   * @param {FieldData} objectA
+   * @param {FieldData} objectB
    */
-  static collision (objectA, objectB) {
+  static collisionOBB (objectA, objectB) {
     // 각 오브젝트의 꼭짓점과 모서리를 계산합니다.
     // 자세한건, 각 함수의 내부 구현 참고... (내용이 너무 길어서 분리됨)
-    let vertexA = this.getVertex(objectA)
-    let vertexB = this.getVertex(objectB)
-    let edgeA = this.getEdge(vertexA)
-    let edgeB = this.getEdge(vertexB)
+    const vertexA = this.getVertex(objectA)
+    const vertexB = this.getVertex(objectB)
+    const edgeA = this.getEdge(vertexA)
+    const edgeB = this.getEdge(vertexB)
 
-    /* 
+    /*
      * 법선 벡터를 계산합니다. 해당 벡터(여기서는 모서리)의 수직인 방향의 벡터를 법선 벡터라 합니다.
      * 법선 벡터는, 현재 벡터의 좌표(x, y) 를 (-y, x)로 변환해 만듭니다.
      * 계산한 모든 법선 벡터를 prependicularStack에 추가합니다.
      * 도형이 사각형이라면, 사실 법선 벡터는 각 rect당 2개면 충분합니다. (0번 모서리, 1번 모서리)
      * 그래서 사각형의 변 개수의 절반 만큼 루프를 돌게 했습니다. (4번이 아닌 2번 루프)
      */
-    let perpendicularList = []; // 수직 벡터를 저장할 배열
-  
-    for(var i = 0; i < edgeA.length / 2; i++) {
-      perpendicularList.push({x: -edgeA[i].y, y: edgeA[i].x});
+    const perpendicularList = [] // 수직 벡터를 저장할 배열
+
+    for (let i = 0; i < edgeA.length / 2; i++) {
+      perpendicularList.push({ x: -edgeA[i].y, y: edgeA[i].x })
     }
 
     // vertexB도 마찬가지로 법선 벡터를 계산하고 prependicularStack에 추가합니다.
-    for(var i = 0; i < edgeB.length / 2; i++) {
-      perpendicularList.push({x: -edgeB[i].y, y: edgeB[i].x});
+    for (let i = 0; i < edgeB.length / 2; i++) {
+      perpendicularList.push({ x: -edgeB[i].y, y: edgeB[i].x })
     }
 
     // 이제 prependicularStack(법선 벡터 목록)에 있는 모든 법선벡터와 objectA, objectB에 있는 모든 변들을 조사합니다.
-    for(var i = 0; i < perpendicularList.length; i++) {
-      let distanceDot = 0; // 점과 점사이의 거리
-      let vertexAdistanceDot = [] // vertexA의 각 변과 법선에 따른 점과 점사이의 거리
-      let vertexBdistanceDot = [] // vertexB의 각 변과 법선에 따른 점과 점사이의 거리
+    for (let i = 0; i < perpendicularList.length; i++) {
+      let distanceDot = 0 // 점과 점사이의 거리
+      const vertexAdistanceDot = [] // vertexA의 각 변과 법선에 따른 점과 점사이의 거리
+      const vertexBdistanceDot = [] // vertexB의 각 변과 법선에 따른 점과 점사이의 거리
 
       // vertexA의 각 꼭짓점에 대해 법선 벡터의 점과 점사이의 거리를 구합니다.
-      for (var j = 0; j < vertexA.length; j++) {
+      for (let j = 0; j < vertexA.length; j++) {
         // 점과 점사이의 거리 = (vertexA의 j번째 꼭짓점 x * 법선벡터 i번째 x) + (vertexA의 j번째 꼭짓점 y * 법선벡터 i번째 y)
-        distanceDot = vertexA[j].x * perpendicularList[i].x + vertexA[j].y * perpendicularList[i].y;
+        distanceDot = vertexA[j].x * perpendicularList[i].x + vertexA[j].y * perpendicularList[i].y
         vertexAdistanceDot.push(distanceDot) // 점과 점사이의 거리값을 vertexAdistanceDot 배열에 추가
       }
 
       // vertexB도 vertexA랑 동일한 과정을 거칩니다.
-      for (var j = 0; j < vertexB.length; j++) {
-        distanceDot = vertexB[j].x * perpendicularList[i].x + vertexB[j].y * perpendicularList[i].y;
+      for (let j = 0; j < vertexB.length; j++) {
+        distanceDot = vertexB[j].x * perpendicularList[i].x + vertexB[j].y * perpendicularList[i].y
         vertexBdistanceDot.push(distanceDot) // 점과 점사이의 거리값을 vertexBdistanceDot 배열에 추가
       }
 
       // 아까 distanceDot에 추가한 값들을 이용하여, 각 선의 최대 최소 값을 알아냅니다.
       // 참고: Math.min, Math.max 같은 함수는 배열값을 받진 못하지만, apply나 ...(spread 얀신지)를 사용해 배열 원소의 값을 전부 넣어 비교할 수 있습니다.
-      let lineAmin = Math.min(...vertexAdistanceDot); // vertexA를 투영한 선의 최소 지점
-      let lineAmax = Math.max(...vertexAdistanceDot); // vertexA를 투영한 선의 최대 지점
-      let lineBmin = Math.min(...vertexBdistanceDot); // vertexB를 투영한 선의 최소 지점
-      let lineBmax = Math.max(...vertexBdistanceDot); // vertexB를 투영한 선의 최대 지점
+      const lineAmin = Math.min(...vertexAdistanceDot) // vertexA를 투영한 선의 최소 지점
+      const lineAmax = Math.max(...vertexAdistanceDot) // vertexA를 투영한 선의 최대 지점
+      const lineBmin = Math.min(...vertexBdistanceDot) // vertexB를 투영한 선의 최소 지점
+      const lineBmax = Math.max(...vertexBdistanceDot) // vertexB를 투영한 선의 최대 지점
 
       /*
       위에서 꼭짓점을 투영시키는 과정이 끝난다면, 이제 투영된 선들이 서로 겹치는지 분리되는지 확인합니다.
@@ -199,10 +197,10 @@ export class collisionClass {
       lineA 최소 지점과 lineB 최소 지점보다 같거나 lineA 최대 지점과 lineB 최대 지점이 같은 경우 // 서로 완전히 만남
       둘 중 한개의 조건이 맞으면, 서로의 선은 겹친것이므로, 다음 루프를 처리합니다.
       */
-      if( (lineAmin < lineBmax && lineAmin > lineBmin) || 
+      if ((lineAmin < lineBmax && lineAmin > lineBmin) ||
           (lineBmin < lineAmax && lineBmin > lineAmin) ||
-          (lineAmin === lineBmin && lineAmax === lineBmax) 
-        ) {
+          (lineAmin === lineBmin && lineAmax === lineBmax)
+      ) {
         continue // 다음 루프로...
       } else {
         // 선이 겹치치 않았다면, 두 도형은 분리되어 있기 때문에 충돌하지 않습니다.
@@ -218,21 +216,21 @@ export class collisionClass {
 
   /**
    * 꼭짓점을 얻습니다.
-   * @param {FieldData} objectA 
+   * @param {FieldData} objectA
    * @returns 꼭짓점 배열
    */
   static getVertex (objectA) {
-    let vertex = [] // 꼭짓점
+    const vertex = [] // 꼭짓점
 
     if (objectA.degree !== 0) {
       // 사각형이 회전한 경우
-      let radian = Math.PI / 180 * objectA.degree // 라디안 계산
-      let sin = Math.sin(radian) // 사인값
-      let cos = Math.cos(radian) // 코사인값
-      let halfWidth = objectA.width / 2 // 사각형의 절반 너비
-      let halfHeight = objectA.height / 2 // 사각형의 절반 높이
-  
-      /* 
+      const radian = Math.PI / 180 * objectA.degree // 라디안 계산
+      const sin = Math.sin(radian) // 사인값
+      const cos = Math.cos(radian) // 코사인값
+      const halfWidth = objectA.width / 2 // 사각형의 절반 너비
+      const halfHeight = objectA.height / 2 // 사각형의 절반 높이
+
+      /*
        * 각 꼭짓점을 계산합니다.
        * 사각형을 캔버스에 그릴 때 사각형을 중심에서 회전시키기 위해서
        * translate를 한만큼 캔버스의 원점을 이동시킨 후,
@@ -241,51 +239,51 @@ export class collisionClass {
        * 너무 자세한걸 주석에 적기는 어려우므로... 이점은 이해해 주세요.
        */
       vertex.push({
-        x: (-halfWidth * cos) - (-halfHeight * sin) + objectA.x + halfWidth, 
+        x: (-halfWidth * cos) - (-halfHeight * sin) + objectA.x + halfWidth,
         y: (-halfWidth * sin) + (-halfHeight * cos) + objectA.y + halfHeight
       })
       vertex.push({
-        x: ( halfWidth * cos) - ( halfHeight * sin) + objectA.x + halfWidth,
-        y: ( halfWidth * sin) + ( halfHeight * cos) + objectA.y + halfHeight
+        x: (halfWidth * cos) - (halfHeight * sin) + objectA.x + halfWidth,
+        y: (halfWidth * sin) + (halfHeight * cos) + objectA.y + halfHeight
       })
       vertex.push({
-        x: ( halfWidth * cos) - (-halfHeight * sin) + objectA.x + halfWidth,
-        y: ( halfWidth * sin) + (-halfHeight * cos) + objectA.y + halfHeight
+        x: (halfWidth * cos) - (-halfHeight * sin) + objectA.x + halfWidth,
+        y: (halfWidth * sin) + (-halfHeight * cos) + objectA.y + halfHeight
       })
       vertex.push({
-        x: (-halfWidth * cos) - ( halfHeight * sin) + objectA.x + halfWidth,
-        y: (-halfWidth * sin) + ( halfHeight * cos) + objectA.y + halfHeight
+        x: (-halfWidth * cos) - (halfHeight * sin) + objectA.x + halfWidth,
+        y: (-halfWidth * sin) + (halfHeight * cos) + objectA.y + halfHeight
       })
     } else {
-      vertex.push({x: objectA.x, y: objectA.y})
-      vertex.push({x: objectA.x + objectA.width, y: objectA.y})
-      vertex.push({x: objectA.x + objectA.width, y: objectA.y + objectA.height})
-      vertex.push({x: objectA.x, y: objectA.y + objectA.height})
+      vertex.push({ x: objectA.x, y: objectA.y })
+      vertex.push({ x: objectA.x + objectA.width, y: objectA.y })
+      vertex.push({ x: objectA.x + objectA.width, y: objectA.y + objectA.height })
+      vertex.push({ x: objectA.x, y: objectA.y + objectA.height })
     }
-  
+
     return vertex
   }
 
   /**
    * 모서리를 얻습니다. (꼭짓점 배열 필요)
    * @param {{x: number, y: number}[]} vertexList x, y좌표가 있는 꼭짓점의 배열
-   * @returns 
+   * @returns
    */
   static getEdge (vertexList) {
     // 모서리 계산: 현재 모서리 = (다음 꼭짓점 - 현재 꼭짓점)
     // 참고: 모든 오브젝트는 사각형으로 가정하므로, 이 반복문에서는 각 꼭짓점이 4개라고 가정합니다.
-    let edge = []
+    const edge = []
     for (let i = 0; i < vertexList.length; i++) {
       // 다음 번호 = (i + 1) % vertex의 개수
       // 이렇게 하는 이유는, 나머지 계산을 통해 0, 1, 2, 3, 0, 1 ... 순서로 번호를 정할 수 있기 때문입니다.
-      let nextNumber = (i + 1) % vertexList.length
+      const nextNumber = (i + 1) % vertexList.length
 
       // 모서리 계산
-      let setEdgeX = vertexList[nextNumber].x - vertexList[i].x
-      let setEdgeY = vertexList[nextNumber].y - vertexList[i].y
+      const setEdgeX = vertexList[nextNumber].x - vertexList[i].x
+      const setEdgeY = vertexList[nextNumber].y - vertexList[i].y
 
       // 새로운 모서리를 추가
-      edge.push({x: setEdgeX, y: setEdgeY})
+      edge.push({ x: setEdgeX, y: setEdgeY })
     }
 
     return edge
@@ -302,9 +300,9 @@ class DelayData {
   }
 
   /**
-   * 지연시간 확인 함수, 이 함수가 실행될 때마다 delayCount가 1씩 증가하고,  
-   * 지연시간 카운트가 지연시간 이상인지 확인해 그 결과를 리턴합니다.  
-   * 참고로, 카운트가 다 차면 카운트는 0으로 리셋됩니다.  
+   * 지연시간 확인 함수, 이 함수가 실행될 때마다 delayCount가 1씩 증가하고,
+   * 지연시간 카운트가 지연시간 이상인지 확인해 그 결과를 리턴합니다.
+   * 참고로, 카운트가 다 차면 카운트는 0으로 리셋됩니다.
    * 만약 카운터를 리셋시키기 싫다면, reset 변수에 false 값을 넣어주세요.
    * 만약 카운터를 증가시키기 싫다면, countUp 변수에 false 값을 넣어주세요.
    * @param {boolean} reset 카운터 리셋?, 기본값 true
@@ -327,13 +325,13 @@ class DelayData {
 }
 
 /**
- * 해당 데이터의 에니메이션 처리 객체  
- * 이 객체는 FieldData 내부에서 enimation 인스턴스를 생성하여 사용합니다.  
+ * 해당 데이터의 에니메이션 처리 객체
+ * 이 객체는 FieldData 내부에서 enimation 인스턴스를 생성하여 사용합니다.
  * 그래서, 이 객체의 기능 확장을 하는것이 아니라면, 이 클래스를 상속하지 마세요.
  */
 class EnimationData {
   /**
-   * 에니메이션 데이터를 생성합니다.  
+   * 에니메이션 데이터를 생성합니다.
    * 경고: 불규칙 크기의 에니메이션을 사용하진 마세요. 이 경우, 예상하지 못한 버그가 발생합니다.
    * @param {Image} image HTML 이미지
    * @param {number} silceStartX 이미지의 시작지점 X좌표 (경고: sliceStartX는 0을 권장, 아니라면, 1줄에 모든 에니메이션 프레임을 배치할 것, 이렇게 안하면, 출력 순서가 꼬일 수 있음.)
@@ -347,8 +345,8 @@ class EnimationData {
    * @param {number} outputHeight 출력 높이 >> 기본값: 프레임 높이 (이 숫자는 canvas 성능 문제때문에, 가급적 변경하지 않는게 좋습니다.)
    */
   constructor (
-    image = null, silceStartX = 0, silceStartY = 0, frameWidth = 0, frameHeight = 0, 
-    frameCount = 0, frameDelay = 1, frameRepeat = 1, 
+    image = null, silceStartX = 0, silceStartY = 0, frameWidth = 0, frameHeight = 0,
+    frameCount = 0, frameDelay = 1, frameRepeat = 1,
     outputWidth = frameWidth, outputHeight = frameHeight) {
     /** 이미지 */ this.image = image
     /** 이미지의 에니메이션 프레임 시작지점 X위치, 기본값 = 0 */ this.sliceStartX = silceStartX
@@ -363,28 +361,31 @@ class EnimationData {
     /** 에니메이션의 출력할 너비 */ this.outputWidth = outputWidth
     /** 에니메이션의 출력할 높이 */ this.outputHeight = outputHeight
 
-    /** 
-     * 에니메이션 프레임의 지연시간  
+    /**
+     * 에니메이션 프레임의 지연시간
      * 0이하인 경우 null, 1이상인 경우 지연시간 객체 추가
-     */ 
+     */
     this.frameDelay = null
     if (frameDelay >= 1) this.frameDelay = new DelayData(frameDelay)
 
-    /** 
-     * 에니메이션이 끝났는지의 여부  
-     * 이 값이 true라면, 무슨 짓을 해도 에니메이션은 출력되지 않습니다. 
-     */ 
+    /**
+     * 에니메이션이 끝났는지의 여부
+     * 이 값이 true라면, 무슨 짓을 해도 에니메이션은 출력되지 않습니다.
+     */
     this.finished = false
+
+    /** 이미지 뒤집기 */ this.flip = 0
+    /** 이미지 회전값 */ this.rotateDegree = 0
   }
 
-  /** 
-   * 에니메이션 처리 로직 
+  /**
+   * 에니메이션 처리 로직
    */
   process () {
     // 에니메이션 지연시간이 넘어가지 않았다면(null 체크 필수), 또는 에니메이션이 종료된경우 처리 로직 종료
     if (this.frameDelay !== null && !this.frameDelay.check()) return
     if (this.finished) return
-    
+
     this.elapsedFrame++ // 진행된 프레임 증가
 
     // frameRepeat가 0이상일 때 (-1이하는 무한반복)
@@ -405,8 +406,8 @@ class EnimationData {
     this.frameRepeatCount = 0 // 프레임 반복한 횟수 카운트 0으로 재설정
   }
 
-  /** 
-   * 에니메이션 출력 함수 (반드시 출력할 좌표를 입력해 주세요!)  
+  /**
+   * 에니메이션 출력 함수 (반드시 출력할 좌표를 입력해 주세요!)
    * 경고: 에니메이션 프레임은 고정된 크기를 사용합니다. 가변적인 크기를 사용하면 버그가 발생할 수 있음.
    * @param {number} x 출력할 에니메이션의 x좌표
    * @param {number} y 출력할 에니메이션의 y좌표
@@ -423,31 +424,35 @@ class EnimationData {
 
     // 자른 프레임 번호
     // 진행된 프레임이 최대 프레임 이상일 때(에니메이션이 무한 반복 한 경우), 나머지 계산을 해서 어느 프레임 번호를 출력해야 할지를 결정합니다.
-    let sliceFrame = this.elapsedFrame % this.frameCount
-    
+    const sliceFrame = this.elapsedFrame % this.frameCount
+
     // 라인 최대 프레임 (한 줄에 몇개의 프레임이 있을 수 있는가?)
     // 참고: 조심해야 할 것은, 다음 줄로 넘어갈 때, 0좌표가 아닌 sliceStartX에서부터 시작합니다.
     // 즉 다음 줄로 넘어갈 때, 맨 왼쪽부터 프레임 위치를 계산하는게 아니고 시작지점부터 출력 위치를 계산합니다.
-    let lineMaxFrame = Math.floor((this.image.width - this.sliceStartX) / this.frameWidth)
+    const lineMaxFrame = Math.floor((this.image.width - this.sliceStartX) / this.frameWidth)
 
     // 자른 프레임 라인, 이미지의 Y좌표를 어디서부터 잘라야 할 지를 결정합니다.
     // 프레임이 여러 줄로 배치되어있을 때, 몇번째 줄의 프레임을 가져올 것인지 결정합니다.
     // 한 줄에 10개가 있고, 총 프레임이 20일때, 슬라이스 프레임이 13이면, 슬라이스 라인은 1이 됩니다.
     // 다만, 크기를 이용해서 예측하기 때문에 한줄로 나열하지 않거나 크기가 불규칙하면 버그가 생김.
-    let sliceLine = Math.floor(sliceFrame / lineMaxFrame)
+    const sliceLine = Math.floor(sliceFrame / lineMaxFrame)
 
     // 이미지 파일 내부에서 가져올 프레임 위치 계산
-    let sliceX = this.sliceStartX + (sliceFrame * this.frameWidth) % this.image.width
-    let sliceY = this.sliceStartY + (sliceLine * this.frameHeight)
+    const sliceX = this.sliceStartX + (sliceFrame * this.frameWidth) % this.image.width
+    const sliceY = this.sliceStartY + (sliceLine * this.frameHeight)
 
     // 이미지 출력
-    graphicSystem.imageDisplay(this.image, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight)
+    if (this.flip || this.rotateDegree) {
+      graphicSystem.imageDisplay(this.image, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight, this.flip, this.rotateDegree)
+    } else {
+      graphicSystem.imageDisplay(this.image, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight)
+    }
   }
 
   /**
    * 생각해보니, 프로세스(처리)와 디스플레이(출력)을 한꺼번에 하는게 더 좋겠네요.
-   * 이 기능은 process 함수의 기능과 display 함수의 기능을 수행합니다.  
-   * display 역할을 수행해야 하므로 반드시 출력할 x, y좌표를 입력해 주세요!  
+   * 이 기능은 process 함수의 기능과 display 함수의 기능을 수행합니다.
+   * display 역할을 수행해야 하므로 반드시 출력할 x, y좌표를 입력해 주세요!
    * 참고: 이 함수는 display 쪽에서 사용해야 합니다. (data 내부의 로직과 관계 없으므로.)
    * @param {number} x 출력할 에니메이션의 x좌표
    * @param {number} y 출력할 에니메이션의 y좌표
@@ -460,23 +465,21 @@ class EnimationData {
   }
 }
 
-
-
 /**
- * 참고: 일부 오브젝트는 특이한 변수를 독자적으로 사용할 수 있습니다.  
- * 그러나 그것이 다른 오브젝트에게 영향을 주지 않고, 자바스크립트는 객체 속성 추가가 자유로우니 상관없습니다.  
+ * 참고: 일부 오브젝트는 특이한 변수를 독자적으로 사용할 수 있습니다.
+ * 그러나 그것이 다른 오브젝트에게 영향을 주지 않고, 자바스크립트는 객체 속성 추가가 자유로우니 상관없습니다.
  * 그리고, FieldState에서 사용하는 FieldObject는 FieldData에서 사용하는 변수와 완전히 일치합니다.
  * 따라서, data에서 사용하지 않는 변수들도 동시에 같이 사용함을 주의해주세요.
  */
 export class FieldData {
   constructor () {
     /**
-     * 오브젝트 타입 
+     * 오브젝트 타입
      * 사용자가 중간에 수정하는 것은 불가능 (무조건 생성할 때 값이 정해짐)
      * 필드 상태에서 오브젝트 타입을 구분할 때 사용
-     */ 
+     */
     this.objectType = objectType.FIELD
-  
+
     /** 타입 세부 구분용 */ this.mainType = ''
     /** 타입 세부 구분용 */ this.subType = ''
     /** 타입 세부 구분용 Id (Id는 number 입니다.) */ this.id = ''
@@ -497,21 +500,21 @@ export class FieldData {
     /** 이동 방향에 따른 이동 속도 x좌표 (소수점 허용) 이 값이 있다면, 이 값을 speed값보다 우선 적용(정확하겐 speed에 덮어 씌워짐) */ this.moveSpeedX = 0
     /** 이동 방향에 따른 이동 속도 y좌표 (소수점 허용) 이 값이 있다면, 이 값을 speed값보다 우선 적용(정확하겐 speed에 덮어 씌워짐) */ this.moveSpeedY = 0
     /** 회전한 각도 (일부 객체에서만 사용) */ this.degree = 0
-    /** 
+    /**
      * 이동 방향 설정은 가급적, setMoveDirection 함수를 사용하는것을 권장합니다. (이 변수를 바꿔도 되지만, 안정성이 떨어짐)
-     * 이동 방향 설정(left, right만 사용 가능) 이 값은 x축에만 영향을 줌, 기본값: left 
-     * left: + 일경우 왼쪽으로 이동, - 일경우 오른쪽으로 이동.   
-     * right: + 일경우 오른쪽으로 이동, - 일경우 왼쪽으로 이동.  
+     * 이동 방향 설정(left, right만 사용 가능) 이 값은 x축에만 영향을 줌, 기본값: left
+     * left: + 일경우 왼쪽으로 이동, - 일경우 오른쪽으로 이동.
+     * right: + 일경우 오른쪽으로 이동, - 일경우 왼쪽으로 이동.
      * 아무 값도 없다면 이 값을 적용하지 않음.
      * @type {string}
      */
     this.moveDirectionX = 'right'
-    
+
     /**
      * 이동 방향 설정은 가급적, setMoveDirection 함수를 사용하는것을 권장합니다. (이 변수를 바꿔도 되지만, 안정성이 떨어짐)
-     * 이동 방향 설정(up. down만 사용 가능) 이 값은 y축에만 영향을 줌. 기본값: down  
-     * up: + 일경우 위쪽으로 이동, - 일경우 아래쪽으로 이동  
-     * down: + 일경우 아래쪽으로 이동, - 일경우 위쪽으로 이동  
+     * 이동 방향 설정(up. down만 사용 가능) 이 값은 y축에만 영향을 줌. 기본값: down
+     * up: + 일경우 위쪽으로 이동, - 일경우 아래쪽으로 이동
+     * down: + 일경우 아래쪽으로 이동, - 일경우 위쪽으로 이동
      * @type {string}
      */
     this.moveDirectionY = 'down'
@@ -521,45 +524,45 @@ export class FieldData {
     /** 체력 */ this.hp = 0
     /** 체력 최대치 (아직 사용용도 미정) */ this.hpMax = this.hp
 
-    /** 
+    /**
      * 지연시간 객체(지연시간이 없으면 null)
-     * @type {DelayData} 
-     */ 
+     * @type {DelayData}
+     */
     this.delay = null
-    
+
     /** (적을 죽였을 때 얻는)점수 */ this.score = 0
 
     /** 해당 오브젝트가 생성된 후 진행된 시간(단위: 프레임) */ this.elapsedFrame = 0
 
     /**
-     * 만약 해당 오브젝트가 다른 오브젝트를 참고할 일이 있다면, 이 오브젝트에 다른 오브젝트의 정보를 저장합니다.  
+     * 만약 해당 오브젝트가 다른 오브젝트를 참고할 일이 있다면, 이 오브젝트에 다른 오브젝트의 정보를 저장합니다.
      * 만약 그 다른 오브젝트의 isDelete 값이 true
      */
     this.targetObject = null
 
     /**
-     * 만약, 이 값이 true라면, 해당 객체는 로직 처리가 끝난 후 필드에서 삭제됩니다.  
+     * 만약, 이 값이 true라면, 해당 객체는 로직 처리가 끝난 후 필드에서 삭제됩니다.
      * 데이터를 관리하는 곳에서, 필드 객체에 직접 개입 할 수 없기 때문에, 간접적으로 변수를 사용해
      * 필드에서의 삭제 여부를 판단합니다.
      */
     this.isDeleted = false
 
     /**
-     * 필드 객체가 사망했을 때 사용하는 변수, 다만... 적 외에는 잘 안쓰임(특히 무기...)  
+     * 필드 객체가 사망했을 때 사용하는 변수, 다만... 적 외에는 잘 안쓰임(특히 무기...)
      * 이 변수는 코드 자동완성의 편의를 위해 추가했습니다.
      */
     this.isDied = false
 
     // 에니메이션 용도
     /** 현재까지 진행된 에니메이션의 총 프레임 */ this.enimationFrame = 0
-    /** 
+    /**
      * 에니메이션 객체: 이 객체는 EnimationData를 생성하여 이용합니다.
      * @type {EnimationData}
-     */ 
+     */
     this.enimation = null
 
     /**
-     * HTML 이미지  
+     * HTML 이미지
      * 참고: 이미지는 보통 출력 용도로 사용
      * @type {Image | ImageBitmap}
      */
@@ -587,13 +590,13 @@ export class FieldData {
     }
   }
 
-  /** 
+  /**
    * 오브젝트의 로직 처리 함수 (각 객체마다 다를 수 있고, 이것은 기본적인 기능만 있습니다.)
-   */ 
+   */
   process () {
     this.processMove()
 
-    // 캔버스의 영역을 크게 벗어나면 해당 객체는 자동으로 삭제요청을 합니다. 
+    // 캔버스의 영역을 크게 벗어나면 해당 객체는 자동으로 삭제요청을 합니다.
     // isDeleted 가 true라면, fieldState에서 해당 객체를 삭제합니다.
     if (this.outAreaCheck()) {
       this.isDeleted = true
@@ -607,15 +610,15 @@ export class FieldData {
     // 이동 방향이 정해져 있는 경우, 방향에 따른 속도값을 speed에 대입합니다.
     // 이동 방향이 없다면, speed값을 그대로 이동속도에 사용합니다.
     if (this.moveDirectionX === 'left') {
-      this.speedX = -Math.abs(this.moveSpeedX)
+      this.speedX = -this.moveSpeedX
     } else if (this.moveDirectionX === 'right') {
-      this.speedX = Math.abs(this.moveSpeedX)
+      this.speedX = this.moveSpeedX
     }
 
     if (this.moveDirectionY === 'up') {
-      this.speedY = -Math.abs(this.moveSpeedY)
+      this.speedY = -this.moveSpeedY
     } else if (this.moveDirectionY === 'down') {
-      this.speedY = Math.abs(this.moveSpeedY)
+      this.speedY = this.moveSpeedY
     }
 
     // 이동 속도에 따른 좌표값 변경
@@ -623,12 +626,11 @@ export class FieldData {
     this.y += this.speedY
   }
 
-
-  /** 
-   * 오브젝트의 이미지 출력 함수 (각 객체마다 다름, 직접 구현 필요)  
-   * 이 함수는 기본값이 존재하지만, 만약 display() 재정의로 이 기본함수를 사용할 수 없게 된다면, 
+  /**
+   * 오브젝트의 이미지 출력 함수 (각 객체마다 다름, 직접 구현 필요)
+   * 이 함수는 기본값이 존재하지만, 만약 display() 재정의로 이 기본함수를 사용할 수 없게 된다면,
    * display() 함수를 재작성 할 때 FildData 클래스의 함수인 defaultDisplay() 를 사용해주세요.
-   */ 
+   */
   display () {
     if (this.enimation) { // 에니메이션이 있는 경우 (이 경우에는 이미지 출력이 무시됨.)
       this.enimation.displayAndProcess(this.x, this.y)
@@ -639,7 +641,7 @@ export class FieldData {
   }
 
   /**
-   * fieldState에서 사용하는 모든 오브젝트에 대한 공통 로직  
+   * fieldState에서 사용하는 모든 오브젝트에 대한 공통 로직
    * 이 함수를 재작성이 필요하다면, 이 함수(super.fieldProcess())를 반드시 호출해야합니다.
    */
   fieldProcess () {
@@ -650,10 +652,10 @@ export class FieldData {
    * 필드 객체가 캔버스의 영역을 크게 벗어났는지 확인합니다.
    */
   outAreaCheck () {
-    if (this.x < -graphicSystem.CANVAS_WIDTH 
-    || this.x > graphicSystem.CANVAS_WIDTH * 2 
-    || this.y < -graphicSystem.CANVAS_HEIGHT
-    || this.y > graphicSystem.CANVAS_HEIGHT * 2) {
+    if (this.x < -graphicSystem.CANVAS_WIDTH ||
+    this.x > graphicSystem.CANVAS_WIDTH * 2 ||
+    this.y < -graphicSystem.CANVAS_HEIGHT ||
+    this.y > graphicSystem.CANVAS_HEIGHT * 2) {
       return true
     } else {
       return false
@@ -674,7 +676,7 @@ export class FieldData {
   }
 
   /**
-   * 만약 이런저런 상속으로 인해서, fieldData가 가지고 있는 display함수를 사용하고 싶다면, 이 static 함수를 사용하세요.  
+   * 만약 이런저런 상속으로 인해서, fieldData가 가지고 있는 display함수를 사용하고 싶다면, 이 static 함수를 사용하세요.
    * display 함수를 재작성한 후, defaultDisplay() 함수를 실행하면 됩니다. (인수는 필요 없음.)
    */
   defaultDisplay () {
@@ -697,30 +699,30 @@ class WeaponData extends FieldData {
     /** 해당 객체의 기본 오브젝트 타입(임의 수정 불가능) */ this.objectType = objectType.WEAPON
     /** 무기의 기본 이동 방향 x축 = 오른쪽 */ this.moveDirectionX = 'right'
     /** 무기의 기본 이동 방향 y축 = 아래쪽 */ this.moveDirectionY = 'down'
-    
+
     // 추적 오브젝트 여부
     /** 적을 추적하는지의 여부(데이터 객체에서 주로 사용) true일경우 적을 추적하는 무기임. */ this.isChaseType = false
     /** 추적 실패 횟수: 이 숫자는 추적할 적이 없을 때 과도한 추적 알고리즘 사용을 막기 위해 실행됨. */ this.chaseMissCount = 0
-    /** 
-     * 필드객체에서 사용하는 변수, 어떤 적을 추적하는지를 객체로 가져옴  
-     * @type {EnemyData} 
-     */ 
+    /**
+     * 필드객체에서 사용하는 변수, 어떤 적을 추적하는지를 객체로 가져옴
+     * @type {EnemyData}
+     */
     this.targetObject = null
 
-    /** 
-     * 공격 반복 횟수: 적을 여러번 때리거나, 또는 여러번 공격할 때 사용, 기본값: 1  
+    /**
+     * 공격 반복 횟수: 적을 여러번 때리거나, 또는 여러번 공격할 때 사용, 기본값: 1
      * 경고: 기본값 0이라면, 공격횟수가 0인 것으로 취급해 무기가 즉시 사라질 수 있음.
-     */ 
+     */
     this.repeatCount = 1
-    
-    /** 
-     * 반복 딜레이 객체(딜레이가 없으면 null)  
+
+    /**
+     * 반복 딜레이 객체(딜레이가 없으면 null)
      * @type {DelayData}
-     */ 
+     */
     this.repeatDelay = null
 
     /**
-     * 무기를 사용한 횟수: repeatCount랑 다른 점은, repeatCount는 적을 타격하면 남은 반복횟수가 감소하지만,  
+     * 무기를 사용한 횟수: repeatCount랑 다른 점은, repeatCount는 적을 타격하면 남은 반복횟수가 감소하지만,
      * 이것은 무기가 공격하면 사용카운트가 증가합니다.
      */
     this.useCount = 0
@@ -730,26 +732,26 @@ class WeaponData extends FieldData {
      */
     this.useMaxCount = 0
 
-    /** 
-     * 한번 공격에 적을 여러개 때릴 수 있는지에 대한 여부  
+    /**
+     * 한번 공격에 적을 여러개 때릴 수 있는지에 대한 여부
      * 스플래시 형태의 공격이 아니라면 이 값은 false입니다.
-     * 자세하게 말하면 스플래시, 충격파의 경우 동시에 여러 적을 때리므로 true입니다.  
-     * 그러나 관통은 동시에 여러 적을 때리긴 하지만 스플래시 공격이 아니라, 
-     * 무기가 한번 타격하면 공격횟수를 소모하므로 따라서 false입니다.  
+     * 자세하게 말하면 스플래시, 충격파의 경우 동시에 여러 적을 때리므로 true입니다.
+     * 그러나 관통은 동시에 여러 적을 때리긴 하지만 스플래시 공격이 아니라,
+     * 무기가 한번 타격하면 공격횟수를 소모하므로 따라서 false입니다.
      * @type {boolean}
-     */ 
+     */
     this.isMultiTarget = false
 
-    /** 
+    /**
      * 멀티타겟인경우 한번 공격당 최대 타겟 제한 수: 기본값 20, -1일경우 무제한
      * 멀티타겟이 아닐경우, 공격 시도한 해당 프레임의 동시 공격 제한 수
      * @type {number}
-     */ 
+     */
     this.maxTarget = 20
   }
 
   /**
-   * 무기의 처리 프로세스  
+   * 무기의 처리 프로세스
    * 이 함수는 임의로 수정하지 마세요. Weapon 객체가 공통으로 사용해야 합니다.
    */
   process () {
@@ -780,8 +782,8 @@ class WeaponData extends FieldData {
   }
 
   /**
-   * 무기가 적을 타격하여 데미지를 주는 함수입니다.  
-   * 아직까지는, 무기의 공격력 만큼만 적의 체력을 감소시키는 역할만 합니다.  
+   * 무기가 적을 타격하여 데미지를 주는 함수입니다.
+   * 아직까지는, 무기의 공격력 만큼만 적의 체력을 감소시키는 역할만 합니다.
    * 절대로, 다른 곳에서 적의 체력을 직접 감소시키지 마세요!
    * @param {FieldData} hitedTarget 총돌하여 데미지를 받을 객체(반드시 적일 필요는 없음.)
    */
@@ -797,7 +799,7 @@ class WeaponData extends FieldData {
   }
 
   /**
-   * 무기는 적 오브젝트를 공격합니다. processAttack 함수는 무기가 적을 공격하기 위한 로직을 작성합니다.  
+   * 무기는 적 오브젝트를 공격합니다. processAttack 함수는 무기가 적을 공격하기 위한 로직을 작성합니다.
    * 이 함수에서 공격횟수를 소모하고, 적을 공격하기 위해서는 이 함수 내부에서 hitObjectProgress를 사용해야 합니다.
    */
   processAttack () {
@@ -805,16 +807,16 @@ class WeaponData extends FieldData {
   }
 
   /**
-   * 해당 무기 판정에 따른, 정해진 공격 범위를 기준으로 공격된 적들을 확인하는 함수입니다.  
-   * 기본적으로 무기는 충돌 처리 후 적을 때린 시점에서 반복횟수가 감소하여 나중에 자동으로 삭제됩니다.  
-   * 다만 공격방식이 좀 다른 무기들은, 로직 처리가 약간 다릅니다. 스플래시는 공격 1회당 반복횟수가 1회 감소하고, 
-   * 일반 무기는 타격 1회당 반복횟수가 1회 감소합니다. [예를 들어 미사일은 8번 공격하지만, 레이저는 20번 타격, 멀티샷은 1회 타격]  
+   * 해당 무기 판정에 따른, 정해진 공격 범위를 기준으로 공격된 적들을 확인하는 함수입니다.
+   * 기본적으로 무기는 충돌 처리 후 적을 때린 시점에서 반복횟수가 감소하여 나중에 자동으로 삭제됩니다.
+   * 다만 공격방식이 좀 다른 무기들은, 로직 처리가 약간 다릅니다. 스플래시는 공격 1회당 반복횟수가 1회 감소하고,
+   * 일반 무기는 타격 1회당 반복횟수가 1회 감소합니다. [예를 들어 미사일은 8번 공격하지만, 레이저는 20번 타격, 멀티샷은 1회 타격]
    * 모든 반복횟수를 소모하였다면, 무기는 process함수에서 자동으로 삭제됩니다.
    * 참고로 공격범위가 지정되지 않으면, 현재 무기의 객체 범위를 그대로 사용합니다.
    * @param {{x: number, y: number, width: number, height: number}} attackArea 공격 범위
    */
-  processHitObject (attackArea = {x: this.x, y: this.y, width: this.width, height: this.height}) {
-    let enemyObject = fieldState.getEnemyObject() // 적 오브젝트
+  processHitObject (attackArea = { x: this.x, y: this.y, width: this.width, height: this.height }) {
+    const enemyObject = fieldState.getEnemyObject() // 적 오브젝트
     let hitCount = 0 // 적을 총 때린 횟수
 
     if (this.isMultiTarget) {
@@ -823,7 +825,7 @@ class WeaponData extends FieldData {
 
       // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
       for (let i = 0; i < enemyObject.length; i++) {
-        let currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
+        const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
         if (currentEnemy.isDied) continue // 적이 죽은경우 무시
 
         // 각각의 적마다 충돌 검사
@@ -840,10 +842,10 @@ class WeaponData extends FieldData {
       }
     } else {
       // 멀티타겟이 아닌 경우, 기본적으로 무기는 1개체당 1대를 때릴 수 있음. (repeatCount가 있다면 그 횟수만큼 적을 때림)
-      
+
       // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
       for (let i = 0; i < enemyObject.length; i++) {
-        let currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
+        const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
         if (currentEnemy.isDied) continue // 적이 죽은경우 무시
 
         // 각각의 적마다 충돌 검사
@@ -864,9 +866,9 @@ class WeaponData extends FieldData {
 
   /**
    * 무기에 타겟이 존재할 때, 해당 타켓이랑 충돌했는지 확인합니다.
-   * @param {{x: number, y: number, width: number, height: number}} attackArea 
+   * @param {{x: number, y: number, width: number, height: number}} attackArea
    */
-  targetEnemyHitedCheck (attackArea = {x: this.x, y: this.y, width: this.width, height: this.height}) {
+  targetEnemyHitedCheck (attackArea = { x: this.x, y: this.y, width: this.width, height: this.height }) {
     if (this.targetObject) {
       if (collision(attackArea, this.targetObject)) {
         return true
@@ -881,11 +883,11 @@ class WeaponData extends FieldData {
    * @param {{x: number, y: number, width: number, height: number}} attackArea 공격 범위
    * @returns {boolean}
    */
-  enemyHitedCheck (attackArea = {x: this.x, y: this.y, width: this.width, height: this.height}) {
-    let enemyObject = fieldState.getEnemyObject() // 적 오브젝트 가져오기
+  enemyHitedCheck (attackArea = { x: this.x, y: this.y, width: this.width, height: this.height }) {
+    const enemyObject = fieldState.getEnemyObject() // 적 오브젝트 가져오기
 
     for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
+      const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
       if (currentEnemy.isDied) continue // 적이 죽은경우 무시
 
       // 각각의 적마다 충돌 검사
@@ -905,12 +907,12 @@ class WeaponData extends FieldData {
    * @param {number} maxCount 최대 개수
    * @returns {EnemyData[]}
    */
-  getEnemyHitObject (attackArea = {x: this.x, y: this.y, width: this.width, height: this.height}, maxCount = -1) {
-    let hitEnemyList = []
-    let enemyObject = fieldState.getEnemyObject() // 적 오브젝트 가져오기
+  getEnemyHitObject (attackArea = { x: this.x, y: this.y, width: this.width, height: this.height }, maxCount = -1) {
+    const hitEnemyList = []
+    const enemyObject = fieldState.getEnemyObject() // 적 오브젝트 가져오기
 
     for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
+      const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
       if (currentEnemy.isDied) continue // 적이 죽은경우 무시
 
       // 각각의 적마다 충돌 검사
@@ -932,12 +934,12 @@ class WeaponData extends FieldData {
   }
 
   /**
-   * 이 함수는, OBB 충돌 감지를 할 때 사용하는 함수입니다.  
+   * 이 함수는, OBB 충돌 감지를 할 때 사용하는 함수입니다.
    * hitObject가 두 종류로 나뉘어진건, OBB충돌범위에 몇가지 정보가 더 필요하기 때문입니다.
    * @param {{x: number, y: number, width: number, height: number, degree: number}} attackArea 공격 범위
    */
   processHitObjectOBBCollision (attackArea = null) {
-    let enemyObject = fieldState.getEnemyObject() // 적 오브젝트
+    const enemyObject = fieldState.getEnemyObject() // 적 오브젝트
     let hitCount = 0 // 적을 총 때린 횟수
     if (attackArea == null) return
 
@@ -947,7 +949,7 @@ class WeaponData extends FieldData {
 
       // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
       for (let i = 0; i < enemyObject.length; i++) {
-        let currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
+        const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
         if (currentEnemy.isDied) continue // 적이 죽은경우 무시
 
         // 각각의 적마다 충돌 검사
@@ -964,14 +966,14 @@ class WeaponData extends FieldData {
       }
     } else {
       // 멀티타겟이 아닌 경우, 기본적으로 무기는 1개체당 1대를 때릴 수 있음. (repeatCount가 있다면 그 횟수만큼 적을 때림)
-      
+
       // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-       for (let i = 0; i < enemyObject.length; i++) {
-        let currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
+      for (let i = 0; i < enemyObject.length; i++) {
+        const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
         if (currentEnemy.isDied) continue // 적이 죽은경우 무시
 
         // 각각의 적마다 충돌 검사
-        if (collisionClass.collision(attackArea, currentEnemy)) {
+        if (collisionClass.collisionOBB(attackArea, currentEnemy)) {
           // 충돌한 경우, 충돌한 상태에서의 로직을 처리
           this.damageProcess(currentEnemy)
           hitCount++ // 적을 때린 횟수 1회 증가
@@ -1015,7 +1017,6 @@ class WeaponData extends FieldData {
       // 죽은 적도 더이상 추적하지 않음
       if (this.targetDeletedOrDiedCheck()) {
         this.targetObject = null
-        return
       } else {
         // 그 외의 경우는 적을 정상적으로 추적
         this.processChaseEnemy()
@@ -1032,7 +1033,6 @@ class WeaponData extends FieldData {
         this.isChasing = false
         this.speedX = 20
         this.speedY = 0
-        return
       }
     }
   }
@@ -1043,41 +1043,43 @@ class WeaponData extends FieldData {
   processChaseEnemy () {
     // 이 함수를 사용하기 전에 targetObject가 null이아님을 확인했으므로 여기서는 따로 null 검사를 하진 않습니다.
     // 현재 오브젝트와 타겟 오브젝트의 center(중심 좌표)를 계산하여 거리 차이를 알아냅니다.
-    let targetCenterX = this.targetObject.x + Math.floor(this.targetObject.width / 2)
-    let targetCenterY = this.targetObject.y + Math.floor(this.targetObject.height / 2)
-    let centerX = this.x + Math.floor(this.width / 2)
-    let centerY = this.y + Math.floor(this.height / 2)
+    const targetCenterX = this.targetObject.x + Math.floor(this.targetObject.width / 2)
+    const targetCenterY = this.targetObject.y + Math.floor(this.targetObject.height / 2)
+    const centerX = this.x + Math.floor(this.width / 2)
+    const centerY = this.y + Math.floor(this.height / 2)
 
-    let distanceX = targetCenterX - centerX
-    let distanceY = targetCenterY - centerY
+    const distanceX = targetCenterX - centerX
+    const distanceY = targetCenterY - centerY
 
     // 남은 거리의 1/10 만큼, 해당 오브젝트를 이동시킵니다.
     this.speedX = Math.floor(distanceX / 10)
     this.speedY = Math.floor(distanceY / 10)
 
     // 각 타겟의 이동 속도값(절대값으로 얻음)
-    let absTargetSpeedX = Math.abs(this.targetObject.speedX)
-    let absTargetSpeedY = Math.abs(this.targetObject.speedY)
+    const absTargetSpeedX = Math.abs(this.targetObject.speedX)
+    const absTargetSpeedY = Math.abs(this.targetObject.speedY)
+    const minSpeedX = (this.elapsedFrame / 20) + absTargetSpeedX
+    const minSpeedY = (this.elapsedFrame / 20) + absTargetSpeedY
 
     // 속도 보정: 적 이동속도보다 빨리 무기가 움직여야함.
-    if(this.speedX <= 0 && this.speedX > -absTargetSpeedX) {
-      this.speedX = -absTargetSpeedX - 1
-    } else if(this.speedX > 0 && this.speedX < absTargetSpeedX) {
-      this.speedX = absTargetSpeedX + 1
+    if (this.speedX <= 0 && this.speedX > -minSpeedX) {
+      this.speedX = -minSpeedX - 1
+    } else if (this.speedX > 0 && this.speedX < minSpeedX) {
+      this.speedX = minSpeedX + 1
     }
 
-    if(this.speedY <= 0 && this.speedY > -absTargetSpeedY) {
-      this.speedY = -absTargetSpeedY - 1
-    } else if(this.speedY > 0 && this.speedY < absTargetSpeedY) {
-      this.speedY = absTargetSpeedY + 1
+    if (this.speedY <= 0 && this.speedY > -minSpeedY) {
+      this.speedY = -minSpeedY - 1
+    } else if (this.speedY > 0 && this.speedY < minSpeedY) {
+      this.speedY = minSpeedY + 1
     }
 
     // 적과의 거리가 짧을 경우, 강제로 해당 위치로 이동합니다.
-    if(Math.abs(distanceX) <= 20) {
+    if (Math.abs(distanceX) <= 20) {
       this.x = targetCenterX
     }
 
-    if(Math.abs(distanceY) <= 20) {
+    if (Math.abs(distanceY) <= 20) {
       this.y = targetCenterY
       this.speedY = 0
     }
@@ -1127,11 +1129,11 @@ class MultyshotData extends WeaponData {
     let outputLine = 0 // 레이저를 출력할 이미지 내부에서 몇 번째 줄에 있냐를 표시
 
     switch (this.color) {
-      case 'green': 
-        outputLine = 1; 
+      case 'green':
+        outputLine = 1
         break
-      case 'blue': 
-        outputLine = 2;
+      case 'blue':
+        outputLine = 2
         break
       case 'orange':
       default:
@@ -1152,7 +1154,7 @@ class MissileData extends WeaponData {
     this.isChaseType = true
     this.width = 40
     this.height = 20
-    this.movespeedX = 12
+    this.moveSpeedX = 12
     this.repeatCount = 5
     this.repeatDelay = new DelayData(6)
     this.isMultiTarget = true
@@ -1163,10 +1165,10 @@ class MissileData extends WeaponData {
   }
 
   /**
-   * 스플래시 영역을 얻습니다.  
-   * 오브젝트의 속성을 추가하지 않고, 굳이 이런 함수를 만든 이유는, 
+   * 스플래시 영역을 얻습니다.
+   * 오브젝트의 속성을 추가하지 않고, 굳이 이런 함수를 만든 이유는,
    * 현재 위치에 따라 스플래시 영역이 변경되기 때문입니다.
-   * @returns 
+   * @returns
    */
   getSplashArea () {
     return {
@@ -1210,7 +1212,7 @@ class MissileData extends WeaponData {
    * 스플래시 공격에 대한 로직 처리
    */
   processAttackSplash () {
-    let splashArea = this.getSplashArea()
+    const splashArea = this.getSplashArea()
     fieldState.createEffectObject(this.splashEffectId, splashArea.x, splashArea.y)
     this.processHitObject(splashArea)
   }
@@ -1241,6 +1243,10 @@ class MissileRocket extends MissileData {
     }
   }
 
+  process () {
+    super.process()
+  }
+
   processAttack () {
     if (this.repeatDelay.check()) {
       this.processAttackSplash()
@@ -1256,16 +1262,16 @@ class MissileRocket extends MissileData {
 
 class Arrow extends WeaponData {
   /**
-   * option list  
-   * 0. movespeedY (참고: 이 값이 음수면 갈색이고, 양수면 초록색입니다.)
+   * option list
+   * 0. moveSpeedY (참고: 이 값이 음수면 갈색이고, 양수면 초록색입니다.)
    */
   constructor (option = [2]) {
     super()
     this.mainType = 'bounce'
     this.subType = 'arrow'
     this.id = ID.weapon.arrow
-    this.movespeedY = 4
-    this.movespeedX = 17
+    this.moveSpeedY = 4
+    this.moveSpeedX = 17
     this.width = 20
     this.height = 20
     this.bounceMaxCount = 6
@@ -1278,11 +1284,11 @@ class Arrow extends WeaponData {
       if (option[0] < 0) {
         this.color = 'brown'
         this.enimation = new EnimationData(imageFile.weapon.arrow, 0, 0, 20, 20, 7, 4, -1)
-        this.movespeedY = option[0]
+        this.moveSpeedY = option[0]
       } else if (option[0] > 0) {
         this.color = 'green'
         this.enimation = new EnimationData(imageFile.weapon.arrow, 0, 20, 20, 20, 7, 4, -1)
-        this.movespeedY = option[0]
+        this.moveSpeedY = option[0]
       }
     }
   }
@@ -1300,21 +1306,21 @@ class Arrow extends WeaponData {
     // 벽에 튕길경우, bounceCount가 1증가합니다.
     if (this.x < 0) {
       this.x = 0
-      this.movespeedX = Math.abs(this.movespeedX)
+      this.moveSpeedX = Math.abs(this.moveSpeedX)
       this.bounceCount++
     } else if (this.x > graphicSystem.CANVAS_WIDTH) {
       this.x = graphicSystem.CANVAS_WIDTH
-      this.movespeedX = -Math.abs(this.movespeedX)
+      this.moveSpeedX = -Math.abs(this.moveSpeedX)
       this.bounceCount++
     }
 
     if (this.y < 0) {
       this.y = 0
-      this.movespeedY = Math.abs(this.movespeedY)
+      this.moveSpeedY = Math.abs(this.moveSpeedY)
       this.bounceCount++
     } else if (this.y > graphicSystem.CANVAS_HEIGHT) {
       this.y = graphicSystem.CANVAS_HEIGHT
-      this.movespeedY = -Math.abs(this.movespeedY)
+      this.moveSpeedY = -Math.abs(this.moveSpeedY)
       this.bounceCount++
     }
 
@@ -1336,8 +1342,8 @@ class Laser extends WeaponData {
     this.subType = 'laser'
     this.id = ID.weapon.laser
     this.baseSpeed = 11
-    this.movespeedX = this.baseSpeed
-    this.movespeedY = 0
+    this.moveSpeedX = this.baseSpeed
+    this.moveSpeedY = 0
     this.baseWidth = 160
     this.baseHeight = 80
     this.width = 160
@@ -1373,8 +1379,8 @@ class LaserBlue extends Laser {
     // 참고: 이 레이저는 곧바로 추적하진 않습니다.
     // 그렇다고 isChaseType을 바꾸는것은 직관적이지 않으므로, 임시로 true로 지정 후,
     // processChase 함수를 다시 작성해 로직을 처리합니다.
-    this.isChaseType = true 
-    
+    this.isChaseType = true
+
     // 방향 관련 변수들, 레이저는 8번 이상 방향을 바꿀 수 없습니다.
     // X축 따로, Y축 따로 판단해서 방향 변수가 변경되는지 확인합니다.
     this.directionChangeCount = 0
@@ -1391,7 +1397,7 @@ class LaserBlue extends Laser {
   }
 
   /**
-   * 레이저는 다른 무기들과 추적 방식이 약간 다릅니다.  
+   * 레이저는 다른 무기들과 추적 방식이 약간 다릅니다.
    * 적어도 일정 시간이 지나야 추적을 시작합니다.
    */
   processChase () {
@@ -1436,9 +1442,9 @@ class LaserBlue extends Laser {
     let laserAreaOBB
 
     // 레이저 공격에 따른 영역 설정
-    if ( 
+    if (
       (this.xDirection === 'right' && this.yDirection === 'up') ||
-      (this.xDirection === 'left' && this.yDirection === 'down') ) {
+      (this.xDirection === 'left' && this.yDirection === 'down')) {
       laserAreaOBB = {
         x: this.x,
         y: this.y,
@@ -1464,27 +1470,27 @@ class LaserBlue extends Laser {
   processMove () {
     // X축 방향을 살펴보면서, X축 방향에 따른 속도를 변경합니다.
     if (this.xDirection === 'left') {
-      this.movespeedX = -this.baseSpeed
+      this.moveSpeedX = -this.baseSpeed
     } else if (this.xDirection === 'right') {
-      this.movespeedX = this.baseSpeed
+      this.moveSpeedX = this.baseSpeed
     } else {
-      this.movespeedX = 0
+      this.moveSpeedX = 0
     }
 
     // Y축도 마찬가지
     if (this.yDirection === 'up') {
-      this.movespeedY = -this.baseSpeed
+      this.moveSpeedY = -this.baseSpeed
     } else if (this.yDirection === 'down') {
-      this.movespeedY = this.baseSpeed
+      this.moveSpeedY = this.baseSpeed
     } else {
-      this.movespeedY = 0
+      this.moveSpeedY = 0
     }
 
     // 단, X축과 Y축 모두 멈춰있을 경우, 레이저는 강제로 오른쪽 방향으로 이동합니다.
     // 여기서는 방향 변경 카운트를 세진 않음.
-    if (this.movespeedX === 0 && this.movespeedY === 0) {
+    if (this.moveSpeedX === 0 && this.moveSpeedY === 0) {
       this.xDirection = 'right'
-      this.movespeedX = this.baseSpeed
+      this.moveSpeedX = this.baseSpeed
     }
 
     // 레이저는 이동할 때, centerX, centerY(중심 위치)를 기준으로 이동합니다.
@@ -1495,8 +1501,8 @@ class LaserBlue extends Laser {
       this.laserCenterY = this.y + (this.height / 2)
     }
 
-    this.laserCenterX += this.movespeedX
-    this.laserCenterY += this.movespeedY
+    this.laserCenterX += this.moveSpeedX
+    this.laserCenterY += this.moveSpeedY
     if (this.xDirection !== '' && this.yDirection === '') {
       // x축은 방향이 있고, y축은 방향이 없다면 가로 방향입니다.
       this.x = this.laserCenterX - (this.width / 2)
@@ -1516,10 +1522,10 @@ class LaserBlue extends Laser {
     const scopeSize = 4 // 레이저의 대략적인 추적 범위
     let isXDirectionChanged = false // X축의 방향은 변경되었습니까?
     let isYDirectionChanged = false // y축의 방향은 변경되었습니까?
-    let halfWidth = this.width / 2
-    let halfHeight = this.height / 2
-    let centerX = this.x + halfWidth // 레이저의 중심 x좌표
-    let centerY = this.y + halfHeight // 레이저의 중심 y좌표
+    const halfWidth = this.width / 2
+    const halfHeight = this.height / 2
+    const centerX = this.x + halfWidth // 레이저의 중심 x좌표
+    const centerY = this.y + halfHeight // 레이저의 중심 y좌표
 
     // 적과의 X축 비교
     if (centerX + scopeSize < this.targetObject.x) {
@@ -1573,10 +1579,15 @@ class LaserBlue extends Laser {
       }
     }
 
-    // 방향 변경 여부를 살펴봅니다. 
+    // 방향 변경 여부를 살펴봅니다.
     // X축 또는 Y축 중 한개라도 방향이 변경되었다면, 방향 변경 카운트 1 증가합니다.
     if (isXDirectionChanged || isYDirectionChanged) {
       this.directionChangeCount++
+      if (isXDirectionChanged && !isYDirectionChanged) {
+        this.y = this.targetObject.y + (this.targetObject.width / 2)
+      } else if (!isXDirectionChanged && isYDirectionChanged) {
+        this.x = this.targetObject.x + (this.targetObject.height / 2)
+      }
     }
 
     // 방향을 여러번 변경했다면, chaseType이 false로 변경되어 더이상 적을 추적하지 않습니다.
@@ -1627,7 +1638,7 @@ class LaserBlue extends Laser {
       case 0: case 4: // up, down
         graphicSystem.imageDisplay(this.image, SLICE_UPDOWN_X, SLICE_Y, HEIGHT, WIDTH, this.x, this.y, HEIGHT, WIDTH)
         break
-      case 1: case 5: 
+      case 1: case 5:
         graphicSystem.imageDisplay(this.image, SLICE_DIAGONAL_RIGHT_X, SLICE_Y, WIDTH_DIAGONAL, HEIGHT_DIAGONAL, this.x, this.y, WIDTH_DIAGONAL, HEIGHT_DIAGONAL)
         break
       case 2: case 6: // left, right
@@ -1642,7 +1653,7 @@ class LaserBlue extends Laser {
 
 class Sapia extends WeaponData {
   /**
-   * option list  
+   * option list
    * 0. sapiaShotAttack 사피아샷의 공격력
    */
   constructor (option = [352]) {
@@ -1699,22 +1710,21 @@ class Sapia extends WeaponData {
     if (this.targetObject != null) {
       if (this.targetObject.isDeleted || this.targetObject.isDied) {
         this.targetObject = null
-        return
       }
     } else {
       // targetObject가 없다면, 새로운 적을 찾음
-      let enemyObject = fieldState.getEnemyObject()
+      const enemyObject = fieldState.getEnemyObject()
 
       // 감지 범위
-      let detectArea = this.getDetectArea()
+      const detectArea = this.getDetectArea()
 
       // 랜덤한 적을 타격하기 위해...
       // 밑에 for문이 두개 있는 까닭은 randomIndex 적이 영역 내에 없을 때 다른 모든 적을 검색하기 위해서입니다.
-      let randomIndex = Math.floor(Math.random() * enemyObject.length)
-  
+      const randomIndex = Math.floor(Math.random() * enemyObject.length)
+
       // randomIndex부터 맨 끝번호까지 적이 영역 내에 있는지 검사
       for (let i = randomIndex; i < enemyObject.length; i++) {
-        let currentEnemy = enemyObject[i]
+        const currentEnemy = enemyObject[i]
         if (collision(detectArea, currentEnemy)) {
           this.targetObject = currentEnemy
           return
@@ -1722,8 +1732,8 @@ class Sapia extends WeaponData {
       }
 
       // 그리고, 0번부터 randomIndex까지 적이 영역 내에 있는지 검사
-      for (let i = 0; i <randomIndex; i++) {
-        let currentEnemy = enemyObject[i]
+      for (let i = 0; i < randomIndex; i++) {
+        const currentEnemy = enemyObject[i]
         if (collision(detectArea, currentEnemy)) {
           this.targetObject = currentEnemy
           return
@@ -1731,11 +1741,11 @@ class Sapia extends WeaponData {
       }
     }
   }
-  
+
   /**
    * 사피아샷이 계속 늘어나는걸 막기 위해, 공격 로직을 subType별로 분리하였습니다.
-   * 사피아샷은 일반 오브젝트랑 공격방식이 똑같습니다.  
-   * 그러나, 사피아는 사피아샷을 추가 생성하기 때문에, 사피아샷의 공격방식을 분리하지 않으면 
+   * 사피아샷은 일반 오브젝트랑 공격방식이 똑같습니다.
+   * 그러나, 사피아는 사피아샷을 추가 생성하기 때문에, 사피아샷의 공격방식을 분리하지 않으면
    * 엄청난 수의 사피아샷이 증가합니다. (공포의 렉)
    */
   processAttack () {
@@ -1754,8 +1764,8 @@ class Sapia extends WeaponData {
     this.repeatCount--
 
     // 플레이어의 위치 (사피아샷은 플레이어 위치에서 발사됩니다.)
-    let playerX = fieldState.getPlayerObject().x
-    let playerY = fieldState.getPlayerObject().y
+    const playerX = fieldState.getPlayerObject().x
+    const playerY = fieldState.getPlayerObject().y
 
     // 타겟팅 된 오브젝트가 있을 경우 적을 타격
     if (this.targetObject) {
@@ -1787,28 +1797,28 @@ class SapiaShot extends Sapia {
     this.height = 26
     this.targetX = option[0]
     this.targetY = option[1]
-    this.movespeedX = 0
-    this.movespeedY = 0
+    this.moveSpeedX = 0
+    this.moveSpeedY = 0
   }
 
   processMove () {
     // 이동 속도 강제 지정
     // 생성자에서 하지 않는 이유는, 현재 좌표값을 생성 당시에는 모르기 때문
-    // 대신에, movespeedX와 movespeedY를 0으로 초기화한 것으로, 이동 속도가 없을 때,
+    // 대신에, moveSpeedX와 moveSpeedY를 0으로 초기화한 것으로, 이동 속도가 없을 때,
     // 적과 사피아샷의 위치를 기준으로 이동속도 설정
-    if (this.movespeedX === 0 && this.movespeedY === 0) {
-      this.movespeedX = (this.targetX - this.x) / 20
-      this.movespeedY = (this.targetY - this.y) / 20
-      let minSpeed = 10 // 최소 이동속도(절댓값, 부호 무시)
+    if (this.moveSpeedX === 0 && this.moveSpeedY === 0) {
+      this.moveSpeedX = (this.targetX - this.x) / 20
+      this.moveSpeedY = (this.targetY - this.y) / 20
+      const minSpeed = 10 // 최소 이동속도(절댓값, 부호 무시)
 
       // 만약 한쪽 방향이라도 속도가 minSpeed이하라면 (절댓값으로 계산, 부호 무시)
-      if (Math.abs(this.movespeedX) <= minSpeed || Math.abs(this.movespeedY) <= minSpeed) {
+      if (Math.abs(this.moveSpeedX) <= minSpeed || Math.abs(this.moveSpeedY) <= minSpeed) {
         // 두개 모두 속도가 3 이상이 될 때까지, 나누기 속도값을 1씩 내려서 반복하여 계산
         // 다만, diviedSpeed가 1 이하면, 그냥 대충 대입하고 끝냄 (? 1나누기면 어차피 직접 적에게 닿는거 아님?)
         for (let divideSpeed = 20; divideSpeed >= 2; divideSpeed--) {
-          this.movespeedX = (this.targetX - this.x) / divideSpeed
-          this.movespeedY = (this.targetY - this.y) / divideSpeed
-          if(Math.abs(this.movespeedX) > minSpeed || Math.abs(this.movespeedY) > minSpeed) break
+          this.moveSpeedX = (this.targetX - this.x) / divideSpeed
+          this.moveSpeedY = (this.targetY - this.y) / divideSpeed
+          if (Math.abs(this.moveSpeedX) > minSpeed || Math.abs(this.moveSpeedY) > minSpeed) break
         }
       }
     }
@@ -1836,9 +1846,9 @@ class Parapo extends WeaponData {
     this.isChaseType = true
     this.enimation = new EnimationData(this.image, 0, 0, this.width, this.height, 14, 2, -1)
   }
-  
+
   processAttack () {
-    let hitEnemyList = this.getEnemyHitObject(undefined, 1)
+    const hitEnemyList = this.getEnemyHitObject(undefined, 1)
     if (hitEnemyList) {
       /*
       * 적이랑 충돌했을 때, 충격파 추가로 발사
@@ -1848,11 +1858,11 @@ class Parapo extends WeaponData {
       * left: (cx - 100, cy - 50), right: (cx, cy - 50)
       * up: (cx - 50, cy - 100), down: (cx - 50, cy)
       */
-      let hitEnemy = hitEnemyList[0]
-      let enemyCenterX = hitEnemy.x + (hitEnemy.width / 2)
-      let enemyCenterY = hitEnemy.y + (hitEnemy.height / 2)
-      let shockWaveSize = 100
-      let shockWaveSizeHalf = shockWaveSize / 2
+      const hitEnemy = hitEnemyList[0]
+      const enemyCenterX = hitEnemy.x + (hitEnemy.width / 2)
+      const enemyCenterY = hitEnemy.y + (hitEnemy.height / 2)
+      const shockWaveSize = 100
+      const shockWaveSizeHalf = shockWaveSize / 2
       fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX - shockWaveSize, enemyCenterY - shockWaveSizeHalf, this.attack, 'left')
       fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX, enemyCenterY - shockWaveSizeHalf, this.attack, 'right')
       fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX - shockWaveSizeHalf, enemyCenterY - shockWaveSize, this.attack, 'up')
@@ -1864,7 +1874,7 @@ class Parapo extends WeaponData {
 
 class ParapoShockwave extends Parapo {
   /**
-   * 옵션:  
+   * 옵션:
    * 0. direction(방향)
    */
   constructor (option = ['']) {
@@ -1872,8 +1882,8 @@ class ParapoShockwave extends Parapo {
     this.subType = 'shockwave'
     this.width = 100
     this.height = 100
-    this.movespeedX = 0
-    this.movespeedY = 0
+    this.moveSpeedX = 0
+    this.moveSpeedY = 0
     this.moveDirectionX = option[0]
     this.isChaseType = false // 이 무기는 움직이지 않기 때문에 적을 추적하지 않습니다.
     this.isMultiTarget = true // 스플래시처럼 다수 타격
@@ -1899,8 +1909,8 @@ class Blaster extends WeaponData {
     this.width = 36
     this.height = 36
     this.image = imageFile.weapon.blaster
-    this.movespeedX = 24
-    this.movespeedY = 0
+    this.moveSpeedX = 24
+    this.moveSpeedY = 0
   }
 
   display () {
@@ -1925,8 +1935,8 @@ class BlasterMini extends Blaster {
 
 class Sidewave extends WeaponData {
   /**
-   * 옵션 목록  
-   * 0. movespeedY = 0, 1. direction = 'right'
+   * 옵션 목록
+   * 0. moveSpeedY = 0, 1. direction = 'right'
    */
   constructor (option = [0, 'right']) {
     super()
@@ -1934,12 +1944,12 @@ class Sidewave extends WeaponData {
     this.subType = 'sidewave'
     this.width = 12
     this.height = 60
-    this.movespeedY = option[0]
-    this.movespeedX = 11
+    this.moveSpeedY = option[0]
+    this.moveSpeedX = 11
 
     if (option.length === 2 && option[1] === 'left') {
       this.enimation = new EnimationData(imageFile.weapon.sidewave, 0, 0, this.width, this.height, 8, 5, -1)
-      this.movespeedX = -this.movespeedX
+      this.moveSpeedX = -this.moveSpeedX
     } else {
       this.enimation = new EnimationData(imageFile.weapon.sidewave, 0, this.height, this.width, this.height, 8, 5, -1)
     }
@@ -2005,7 +2015,7 @@ class SkillArrow extends Arrow {
     this.id = ID.weapon.skillArrow
     this.width = 70
     this.height = 70
-    this.movespeedX = 16
+    this.moveSpeedX = 16
     this.repeatCount = 4
     this.bounceMaxCount = 12
     this.enimation = new EnimationData(imageFile.weapon.skillArrow, 0, 0, this.width, this.height, 7, 5, -1)
@@ -2022,8 +2032,8 @@ class SkillLaser extends WeaponData {
     this.width = 800
     this.height = 200
     this.image = imageFile.weapon.skillLaser
-    this.movespeedX = 0
-    this.movespeedY = 0
+    this.moveSpeedX = 0
+    this.moveSpeedY = 0
     this.repeatCount = 60
     this.repeatDelay = new DelayData(4)
     this.isMultiTarget = true
@@ -2053,7 +2063,7 @@ class SkillLaser extends WeaponData {
   display () {
     // 레이저 사라지는 효과 구현을 위해서, 알파값 변경
     // 서서히 사라지게 하는 공식? 난 모르므로, 노가다로 작성한다. (... 이게 무슨)
-    let alpha = [0, 0.1, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    const alpha = [0, 0.1, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
     if (this.repeatCount < alpha.length && this.repeatCount >= 0) {
       graphicSystem.setAlpha(alpha[this.repeatCount]) // 투명값 설정
     }
@@ -2083,7 +2093,7 @@ class SkillSapia extends Sapia {
   /**
    * 감지 범위 얻기
    */
-   getDetectArea () {
+  getDetectArea () {
     return {
       x: this.x - 600,
       y: this.y - 300,
@@ -2120,8 +2130,8 @@ class SkillParapo extends Parapo {
     this.width = 240
     this.height = 240
     this.isChaseType = true
-    this.movespeedX = 4
-    this.movespeedY = 0
+    this.moveSpeedX = 4
+    this.moveSpeedY = 0
     this.state = 'normal'
     this.repeatCount = 1 // 참고: 이 스킬은 파라포 무기와 다르게 반복횟수가 1입니다.
     this.maxTarget = 16
@@ -2139,7 +2149,7 @@ class SkillParapo extends Parapo {
     // 파라포스킬은 무기가 적에게 닿았다면 충격파 공격을 시도합니다.
     // 기존 파라포 무기는 이 역할이 나뉘어져있으나, 파라포 스킬은 미사일처럼 충격파와 일반 공격 기능이 합쳐져 있습니다.
     // 다만 추적중인 적이 있고, 그 추적중인 적이랑 충돌했다면 즉시 충격파를 발사합니다.
-    
+
     if (this.state === 'normal') {
       this.processAttackNormal()
     } else if (this.state === 'shockwave') {
@@ -2156,9 +2166,9 @@ class SkillParapo extends Parapo {
   processAttackShockwave () {
     // 적 객체 얻어오기
     soundSystem.play(soundFile.skill.skillParapoHit) // 타격 사운드
-    
+
     // 충격파 범위
-    let shockwaveArea = { 
+    const shockwaveArea = {
       x: this.x - (this.width / 2),
       y: this.y - (this.height / 2),
       width: this.width,
@@ -2190,10 +2200,10 @@ class SkillBlaster extends Blaster {
     this.width = 36
     this.height = 36
     this.image = imageFile.weapon.skillBlaster
-    this.movespeedX = 32
+    this.moveSpeedX = 32
 
     // 희한하게도, 이 무기는 직선에서 약간 벗어나있음.
-    this.movespeedY = -0.2 + Math.random () * 0.4
+    this.moveSpeedY = -0.2 + Math.random() * 0.4
   }
 
   display () {
@@ -2207,8 +2217,8 @@ class SkillSidewave extends Sidewave {
     this.mainType = 'skill'
     this.subType = 'blaster'
     this.id = ID.weapon.skillSidewave
-    this.movespeedX = 22
-    this.movespeedY = option[0]
+    this.moveSpeedX = 22
+    this.moveSpeedY = option[0]
     this.width = 36
     this.height = 120
     this.enimation = new EnimationData(imageFile.weapon.skillSidewave, 0, 0, this.width, this.height, 5, 6, -1)
@@ -2216,61 +2226,61 @@ class SkillSidewave extends Sidewave {
 }
 
 /**
- * 플레이어 무기 데이터 
- * 참고: 기본 스펙은 다음과 같습니다.  
- * 1초당 100% 공격력이 기준값  
- * 나머지 무기는 이 공격력 %를 바꿈으로써 밸런스를 조절할 계획  
+ * 플레이어 무기 데이터
+ * 참고: 기본 스펙은 다음과 같습니다.
+ * 1초당 100% 공격력이 기준값
+ * 나머지 무기는 이 공격력 %를 바꿈으로써 밸런스를 조절할 계획
  * 경고: 저 수치는 명시적인 수치이지만, create함수에서 무조건 참고하지 않을 수도 있음.
  */
- class PlayerWeaponData {
+class PlayerWeaponData {
   constructor () {
-    /** 
-     * 샷 한번 발사에 지연시간(프레임)  
+    /**
+     * 샷 한번 발사에 지연시간(프레임)
      * 해당 프레임만큼 지연 후 다음 무기를 발사 할 수 있음.
      */
     this.delay = 60
 
-    /** 
-     * 한번 무기를 발사할 때 동시에 발사되는 개수  
+    /**
+     * 한번 무기를 발사할 때 동시에 발사되는 개수
      * 2 이상일 경우, 동시에 2발을 발사한다는 뜻
-     */ 
+     */
     this.shotCount = 1
 
-    /** 
-     * 실제 공격력 반영 배율: 기본값 1  
+    /**
+     * 실제 공격력 반영 배율: 기본값 1
      * 일부 무기는 밸런스 특성상 공격력 반영 비율이 높거나 낮을 수 있음.
      * 참고: 최종 공격력은 소수점 버림하여 계산합니다.
-     */ 
+     */
     this.attackMultiple = 1
 
     /**
-     * 무기에 따른 공격횟수 (발사 횟수랑 다르고, 무기 객체가 공격하는 횟수임.)  
+     * 무기에 따른 공격횟수 (발사 횟수랑 다르고, 무기 객체가 공격하는 횟수임.)
      * (명시적인 수치이나, 제작자의 실수로 로직과 다른 값이 명시될 수 있음.)
      */
     this.attackCount = 1
   }
 
   /**
-   * 무기 생성 함수: 이 로직에서만 무기를 생성해 주세요.  
-   * 그리고 무기 생성은 fieldState.createWeapon 함수를 사용합니다.  
-   * 경고: 이 함수를 한번 사용했을 때 attackMultiple만큼 공격력을 가진 무기 객체가 발사되어야 합니다.  
+   * 무기 생성 함수: 이 로직에서만 무기를 생성해 주세요.
+   * 그리고 무기 생성은 fieldState.createWeapon 함수를 사용합니다.
+   * 경고: 이 함수를 한번 사용했을 때 attackMultiple만큼 공격력을 가진 무기 객체가 발사되어야 합니다.
    * 즉 create함수가 무기를 1개 생성한다면, 생성한 무기의 공격력의 %는 100%가 되어야 합니다.
    * @param {number} attack 플레이어의 공격력
    */
   create (attack, x, y) {}
 
   /**
-   * 플레이어의 공격력을 기준으로 각 샷 공격력을 계산하는 함수  
+   * 플레이어의 공격력을 기준으로 각 샷 공격력을 계산하는 함수
    * 일반적인 경우는, 모든 샷의 공격력이 동일하지만, 일부 무기는 아닐 수도 있으며,
    * 이 경우 다른 방식으로 밸런스에 맞춰 계산해야 합니다.
    * @param {number} baseAttack 기준 공격력
    * @param {number} multiple 배율 (최종 공격력의 배율)
    */
   getShotAttack (baseAttack, multiple = 1) {
-    let secondPerCount = 60 / this.delay
-    let totalDivied = this.shotCount * this.attackCount
-    let totalMultiple = this.attackMultiple * multiple
-    let resultAttack = (baseAttack * totalMultiple) / (secondPerCount * totalDivied)
+    const secondPerCount = 60 / this.delay
+    const totalDivied = this.shotCount * this.attackCount
+    const totalMultiple = this.attackMultiple * multiple
+    const resultAttack = (baseAttack * totalMultiple) / (secondPerCount * totalDivied)
     return Math.floor(resultAttack)
   }
 }
@@ -2367,8 +2377,8 @@ class PlayerLaser extends PlayerWeaponData {
 
   create (attack, x, y) {
     const shotAttack = this.getShotAttack(attack)
-    let randomY1 = -20 + (Math.random() * 40)
-    let randomY2 = -20 + (Math.random() * 40)
+    const randomY1 = -20 + (Math.random() * 40)
+    const randomY2 = -20 + (Math.random() * 40)
 
     fieldState.createWeaponObject(ID.weapon.laser, x, y + randomY1 + 10, shotAttack)
     fieldState.createWeaponObject(ID.weapon.laser, x, y + randomY2 - 10, shotAttack)
@@ -2389,7 +2399,7 @@ class PlayerSapia extends PlayerWeaponData {
     this.attackMultiple = 1
     this.attackCount = this.sapia.repeatCount
   }
-  
+
   create (attack, x, y) {
     // 사피아(30%) + 시파이샷(70%) 의 조합
     const shotAttack = this.getShotAttack(attack, 0.3)
@@ -2464,12 +2474,12 @@ class PlayerSidewave extends PlayerWeaponData {
     fieldState.createWeaponObject(ID.weapon.sidewave, x, y + 12 - 30, shotAttack, 2, 'right')
     fieldState.createWeaponObject(ID.weapon.sidewave, x, y + 8 - 30, shotAttack, 1, 'right')
     fieldState.createWeaponObject(ID.weapon.sidewave, x, y + 4 - 30, shotAttack, 0.5, 'right')
-    fieldState.createWeaponObject(ID.weapon.sidewave, x, y - 4 - 30, shotAttack,-0.5, 'right')
-    fieldState.createWeaponObject(ID.weapon.sidewave, x, y - 8 - 30, shotAttack,-1, 'right')
-    fieldState.createWeaponObject(ID.weapon.sidewave, x, y - 12 - 30, shotAttack,-2, 'right')
+    fieldState.createWeaponObject(ID.weapon.sidewave, x, y - 4 - 30, shotAttack, -0.5, 'right')
+    fieldState.createWeaponObject(ID.weapon.sidewave, x, y - 8 - 30, shotAttack, -1, 'right')
+    fieldState.createWeaponObject(ID.weapon.sidewave, x, y - 12 - 30, shotAttack, -2, 'right')
 
     fieldState.createWeaponObject(ID.weapon.sidewave, x, y + 4 - 30, shotAttack, 1, 'left')
-    fieldState.createWeaponObject(ID.weapon.sidewave, x, y - 4 - 30, shotAttack,-1, 'left')
+    fieldState.createWeaponObject(ID.weapon.sidewave, x, y - 4 - 30, shotAttack, -1, 'left')
   }
 }
 
@@ -2479,14 +2489,14 @@ class PlayerSidewave extends PlayerWeaponData {
 class PlayerSKillData {
   constructor () {
     /**
-     * 스킬의 공격력 배율 (기본값 1)  
+     * 스킬의 공격력 배율 (기본값 1)
      * 이 배율이 높을수록 해당 스킬은 더 높은 데미지를 줄 수 있음.
      */
     this.attackMultiple = 1
 
     /**
-     * 스킬의 기준 공격력 배율 값 (값 변경 불가능)  
-     * 이 게임에서는 shotDamage(1) + skillDamage(0.8 * 4) = Total(4.2)의 구성이 기본입니다.  
+     * 스킬의 기준 공격력 배율 값 (값 변경 불가능)
+     * 이 게임에서는 shotDamage(1) + skillDamage(0.8 * 4) = Total(4.2)의 구성이 기본입니다.
      * 대략적인 데미지 비율은, shot(약 23.2%) + skill(약 76.8%) 입니다.
      */
     this.BASE_MULTIPLE = 0.8
@@ -2507,13 +2517,13 @@ class PlayerSKillData {
     this.attackCount = 1
 
     /**
-     * 스킬의 쿨타임  
-     * 참고: 스킬들은 쿨타임 시간만큼의 초당 데미지를 수 초내에 주는 방식입니다.  
+     * 스킬의 쿨타임
+     * 참고: 스킬들은 쿨타임 시간만큼의 초당 데미지를 수 초내에 주는 방식입니다.
      * 예를들어, 20초짜리 스킬은 20초분량의 데미지를 줍니다. 다만, 스킬 지속시간이 굉장히 짧으므로
-     * 순간적으로 주는 데미지가 많습니다.  
-     * 스킬 시간과 쿨타임의 관계의 기준은 이렇습니다. (일부 무기는 예외)  
+     * 순간적으로 주는 데미지가 많습니다.
+     * 스킬 시간과 쿨타임의 관계의 기준은 이렇습니다. (일부 무기는 예외)
      * 쿨타임: 20초, 24초, 25초, 28초, 30초
-     * 유지시간: 2~3초, 3~4초, 3~4초, 4~5초, 4~5초 
+     * 유지시간: 2~3초, 3~4초, 3~4초, 4~5초, 4~5초
      */
     this.coolTime = 20
 
@@ -2528,15 +2538,15 @@ class PlayerSKillData {
      */
     this.beforeDelay = 0
 
-    /** 
-     * 스킬 사용 사운드 
-     * @type {Audio} 
-     */ 
+    /**
+     * 스킬 사용 사운드
+     * @type {Audio}
+     */
     this.useSound = null
 
-    /** 
-     * 스킬을 사용한 후 한번 반복할 때 나오는 샷 사운드 
-     * @type {Audio} 
+    /**
+     * 스킬을 사용한 후 한번 반복할 때 나오는 샷 사운드
+     * @type {Audio}
      */
     this.shotSound = null
   }
@@ -2553,10 +2563,10 @@ class PlayerSKillData {
 
   /**
    * 한 발당 샷의 공격력을 얻습니다. 공격력 계산의 최종 결과값은 소수점 버림
-   * 참고: 무기랑 공격 계산식이 약간 다릅니다.(자세한건 코드 주석 참고)  
+   * 참고: 무기랑 공격 계산식이 약간 다릅니다.(자세한건 코드 주석 참고)
    * @param {number} baseAttack 유저의 공격력
    * @param {number} multiple 무기 공격이 여러종류가 합쳐질때, 배율 비중을 나눠주기 위해 사용하는 변수
-   * @returns 
+   * @returns
    */
   getShotAttack (baseAttack, multiple = 1) {
     // 기본 공식 (최종 결과값은 소수점 버림)
@@ -2564,10 +2574,10 @@ class PlayerSKillData {
     // totalDivied = 샷 횟수 * 반복횟수 // 유저 공격력을 나눠야 하는 값
     // totalMultiple = 공격배율 * 배율 * 기본배율 * 쿨타임 // 총 배율 값입니다.
     // resultAttack = (유저 공격력 * 총 배율) / 나누는 값
-  
-    let totalDivied = this.shotCount * this.repeatCount * this.attackCount
-    let totalMultiple = this.attackMultiple * multiple * this.BASE_MULTIPLE * this.coolTime
-    let resultAttack = (baseAttack * totalMultiple) / totalDivied
+
+    const totalDivied = this.shotCount * this.repeatCount * this.attackCount
+    const totalMultiple = this.attackMultiple * multiple * this.BASE_MULTIPLE * this.coolTime
+    const resultAttack = (baseAttack * totalMultiple) / totalDivied
     return Math.floor(resultAttack)
   }
 
@@ -2685,7 +2695,7 @@ class PlayerSkillLaser extends PlayerSKillData {
     this.attackCount = this.laser.repeatCount
   }
 
-  create(x, y, attack) {
+  create (x, y, attack) {
     this.shotSoundPlay()
     const shotAttack = this.getShotAttack(attack)
     fieldState.createWeaponObject(ID.weapon.skillLaser, x, y, shotAttack)
@@ -2707,7 +2717,7 @@ class PlayerSkillSapia extends PlayerSKillData {
     this.delay = 60
   }
 
-  create(x, y, attack) {
+  create (x, y, attack) {
     const shotAttack = this.getShotAttack(attack)
     for (let i = 0; i < 6; i++) {
       fieldState.createWeaponObject(ID.weapon.skillSapia, x, y, shotAttack)
@@ -2728,7 +2738,7 @@ class PlayerSkillParapo extends PlayerSKillData {
     this.repeatCount = 24
   }
 
-  create(x, y, attack) {
+  create (x, y, attack) {
     const shotAttack = this.getShotAttack(attack)
     fieldState.createWeaponObject(ID.weapon.skillParapo, x, y, shotAttack)
   }
@@ -2749,7 +2759,7 @@ class PlayerSkillBlaster extends PlayerSKillData {
     this.blaster = new SkillBlaster()
   }
 
-  create(x, y, attack) {
+  create (x, y, attack) {
     this.shotSoundPlay()
     const shotAttack = this.getShotAttack(attack)
     const halfHeight = this.blaster.height / 2
@@ -2773,7 +2783,7 @@ class PlayerSkillSidewave extends PlayerSKillData {
     this.shotSound = soundFile.skill.skillSidewaveShot
   }
 
-  create(x, y, attack) {
+  create (x, y, attack) {
     this.shotSoundPlay()
     const shotAttack = this.getShotAttack(attack)
     const halfHeight = this.sidewave.height / 2
@@ -2784,33 +2794,33 @@ class PlayerSkillSidewave extends PlayerSKillData {
 }
 
 /**
- * 이펙트 데이터  
- * 기본 규칙: 이펙트는 한번만 모든 에니메이션 프레임을 번갈아 출력하고 사라집니다.  
+ * 이펙트 데이터
+ * 기본 규칙: 이펙트는 한번만 모든 에니메이션 프레임을 번갈아 출력하고 사라집니다.
  * 예를들어, missileEffect의 경우, 해당 이펙트는 총 10프레임이며, 이 10프레임이 전부 출력되면 그 다음 프레임에 사라집니다.
  */
 class EffectData extends FieldData {
   constructor () {
     super()
-    /** 
-     * 이전 딜레이, 이펙트가 생성된 후 에니메이션이 재생되기 위한 대기시간,  
+    /**
+     * 이전 딜레이, 이펙트가 생성된 후 에니메이션이 재생되기 위한 대기시간,
      * 만약 beforeAnimationDelay가 60이라면, 60frame(1초) 후에 이펙트의 에니메이션을 재생합니다.
-     */ 
+     */
     this.beforeAnimationDelay = 0
 
     /**
-     * 이후 딜레이, 이펙트의 에니메이션이 종료된 후 이 시간 후에 오브젝트가 삭제됩니다.  
+     * 이후 딜레이, 이펙트의 에니메이션이 종료된 후 이 시간 후에 오브젝트가 삭제됩니다.
      * 해당 이펙트는 마지막 프레임 모습을 한 상태로 정해진 시간 동안 남겨집니다.
      */
     this.afterAnimationDelay = 0
 
     /**
-     * 다음 에니메이션 프레임으로 넘어가기 위한 지연시간 객체(프레임), 기본값 0  
+     * 다음 에니메이션 프레임으로 넘어가기 위한 지연시간 객체(프레임), 기본값 0
      * 지연시간이 0일경우 null
      */
     this.frameDelay = null
 
     /**
-     * 이미지 파일 내에 있는 각 애니메이션 프레임의 길이  
+     * 이미지 파일 내에 있는 각 애니메이션 프레임의 길이
      * 이 값이 0일경우, 이미지 전체 길이를 출력한다.
      */
     this.frameWidth = 0
@@ -2844,7 +2854,7 @@ class EffectData extends FieldData {
     if (this.enimation == null) return
 
     if (this.enimation.finished) {
-      // 만약, 에니메이션 재생이 끝났다면, afterAnimationDelay가 있는지 확인하고, 
+      // 만약, 에니메이션 재생이 끝났다면, afterAnimationDelay가 있는지 확인하고,
       // 있다면 해당 변수값을 감소시킴(그만큼 다음 작업이 지연됨)
       if (this.afterAnimationDelay >= 1) {
         this.afterAnimationDelay--
@@ -2891,7 +2901,7 @@ class SkillMissileEffect extends EffectData {
 
 class ParapoEffect extends EffectData {
   /**
-   * 옵션:  
+   * 옵션:
    * 0. direction
    */
   constructor (option = ['']) {
@@ -2923,32 +2933,34 @@ class EnemyData extends FieldData {
   constructor () {
     super()
     /**
-     * 점수 공식에 대해: 미정 (일단, 적 체력의 1% 인데 이게 확실한것이 아님)  
+     * 점수 공식에 대해: 미정 (일단, 적 체력의 1% 인데 이게 확실한것이 아님)
      * 다만 일부 적들은 다를 수 있음. 그건 각 적의 설명을 참고하세요.
      */
     this.score = 100
     this.isInited = false
     this.attack = 0
 
+    this.moveDirectionX = 'left'
+
     /** 죽었는지 체크 */ this.isDied = false
-    /** 
-     * 죽은 후 삭제되기까지의 지연시간 
+    /**
+     * 죽은 후 삭제되기까지의 지연시간
      * @type {DelayData}
-     */ 
+     */
     this.dieAfterDeleteDelay = null
 
-    /** 
-     * 충돌 지연시간  
-     * (참고: 적이 플레이어에 닿았다면 60프레임 이후 다시 플레이어를 타격할 수 있습니다.) 
+    /**
+     * 충돌 지연시간
+     * (참고: 적이 플레이어에 닿았다면 60프레임 이후 다시 플레이어를 타격할 수 있습니다.)
      * @type {DelayData}
-     */ 
+     */
     this.collisionDelay = new DelayData(60)
     this.collisionDelay.count = this.collisionDelay.delay / 2 // 생성하자마자 즉시 공격하게끔 만듬 그러나 약간의 지연시간은 존재
 
     /**
      * 적이 화면 바깥 일정 영역을 넘어간다면, 제거 대기시간이 추가되고,
      * 일정 시간을 넘어가면 해당 적은 조건에 상관없이 강제로 사라집니다.
-     * 기준값은 5초(300 프레임)입니다.  
+     * 기준값은 5초(300 프레임)입니다.
      * 참고로 이 변수의 check 함수를 사욯라 때 인수값으로 (reset: false, countUp: false) 를 넣어주세요.
      * @type {DelayData}
      */
@@ -2961,9 +2973,9 @@ class EnemyData extends FieldData {
   }
 
   /**
-   * 충돌 영역 얻기.  
-   * 무기와 다르게 적의 충돌 영역은 여러개입니다. 물론 하나일 수도 있습니다.  
-   * 충돌 영역은 배열로 리턴되므로 참고해주세요.  
+   * 충돌 영역 얻기.
+   * 무기와 다르게 적의 충돌 영역은 여러개입니다. 물론 하나일 수도 있습니다.
+   * 충돌 영역은 배열로 리턴되므로 참고해주세요.
    * 충돌 영역은 이 함수를 재정의해서 설정해주세요.
    * 다만, 이 방식은 회전한 사각형을 판정할 순 없기 때문에, 회전한 사각형까지 판정하려면 다른 함수를 사용해야 합니다.
    * 그러나, 이것은 일부 적에 한정되는 상황이므로, 해당하는 일부 적의 알고리즘을 살펴봐주세요.
@@ -2996,8 +3008,8 @@ class EnemyData extends FieldData {
     }
   }
 
-  /** 
-   * 적 오브젝트를 생성할 때 쓰이는 자동 초기화 함수  
+  /**
+   * 적 오브젝트를 생성할 때 쓰이는 자동 초기화 함수
    * 이 함수는 오브젝트를 생성한 직후 추가로 실행해 주세요. (생성자 안에다가 넣으면 제대로 초기화되지 않음.)
    * 사용용도: hpMax값 체크 (다만 이건 임시로 하는것.)
    */
@@ -3028,7 +3040,7 @@ class EnemyData extends FieldData {
    */
   processPossibleExit () {
     if (this.isPossibleExit) return // 적이 화면 바깥으로 나갈 수 없는 경우만 처리합니다. 그래서 나갈 수 있으면 함수 종료
-    
+
     // 방향이 있을 때는, 방향만 변경하지만, 방향이 없을때는, 속도값을 반전시킵니다.
     if (this.x < 0) {
       this.x = 0
@@ -3043,7 +3055,7 @@ class EnemyData extends FieldData {
       this.x = graphicSystem.CANVAS_WIDTH
       if (this.moveDirectionX === 'left') {
         this.moveDirectionX = 'right'
-      } else if (this.moveDirectionX ===' right') {
+      } else if (this.moveDirectionX === ' right') {
         this.moveDirectionX = 'left'
       } else {
         this.speedX = -Math.abs(this.speedX)
@@ -3077,18 +3089,18 @@ class EnemyData extends FieldData {
   processExitToReset () {
     if (!this.isExitToReset) return // 적이 나가면 리셋되지 않는경우 함수 종료
 
-    let scopeSize = 50
+    const scopeSize = 50
 
     // 이동 방향이 왼쪽이거나, speedX값이 음수이면, 왼쪽 영역 바깥으로 이동하는것입니다. 반대 방향도 마찬가지
-    if ((this.speedX < 0 || this.moveDirectionX === 'left') && this.x - this.width < -scopeSize) {
+    if ((this.speedX < 0 || this.moveDirectionX === 'left') && this.x + this.width < -scopeSize) {
       this.x = graphicSystem.CANVAS_WIDTH + this.width + scopeSize
-    } else if ((this.speedX > 0 || this.moveDirectionX === 'right') && this.x + this.width > graphicSystem.CANVAS_WIDTH + scopeSize) {
+    } else if ((this.speedX > 0 || this.moveDirectionX === 'right') && this.x > graphicSystem.CANVAS_WIDTH + scopeSize) {
       this.x = 0 - this.width - scopeSize
     }
 
-    if ((this.speedY < 0 || this.moveDirectionY === 'up') && this.y - this.height < -scopeSize) {
+    if ((this.speedY < 0 || this.moveDirectionY === 'up') && this.y + this.height < -scopeSize) {
       this.y = graphicSystem.CANVAS_HEIGHT + this.height + scopeSize
-    } else if ((this.speedY > 0 || this.moveDirectionY === 'down') && this.y + this.height > graphicSystem.CANVAS_HEIGHT + scopeSize) {
+    } else if ((this.speedY > 0 || this.moveDirectionY === 'down') && this.y > graphicSystem.CANVAS_HEIGHT + scopeSize) {
       this.y = 0 - this.height - scopeSize
     }
   }
@@ -3105,13 +3117,13 @@ class EnemyData extends FieldData {
   }
 
   /**
-   * 플레이어와의 충돌 함수  
+   * 플레이어와의 충돌 함수
    * 참고: 적이 플레이어랑 부딪힌다면 1초 후에 다시 공격할 수 있습니다.
    */
   processPlayerCollision () {
     if (this.collisionDelay.check(false)) {
-      let player = fieldState.getPlayerObject()
-      let enemy = this.getCollisionArea() // 적은 따로 충돌 영역을 얻습니다.
+      const player = fieldState.getPlayerObject()
+      const enemy = this.getCollisionArea() // 적은 따로 충돌 영역을 얻습니다.
 
       for (let i = 0; i < enemy.length; i++) {
         if (collision(enemy[i], player)) {
@@ -3124,7 +3136,7 @@ class EnemyData extends FieldData {
   }
 
   /**
-   * 적이 죽었는지를 확인하는 함수  
+   * 적이 죽었는지를 확인하는 함수
    * 일단 한번 죽었다면, 재생성이 아닌 이상 부활은 불가능합니다.
    */
   processDieCheck () {
@@ -3136,8 +3148,8 @@ class EnemyData extends FieldData {
   }
 
   /**
-   * 적이 죽은 후에, 어떻게 할 것인지를 결정하는 함수.  
-   * 기본적으로는 적이 죽은 후 딜레이를 확인해서, 딜레이 시간동안은 적이 남아있습니다.  
+   * 적이 죽은 후에, 어떻게 할 것인지를 결정하는 함수.
+   * 기본적으로는 적이 죽은 후 딜레이를 확인해서, 딜레이 시간동안은 적이 남아있습니다.
    * 참고: 이 상태 그대로 적용했을 때, 무기가 죽은 적을 지속적으로 공격할 수도 있습니다. 이 문제는 추후 수정할 계획입니다.
    */
   processDieAfter () {
@@ -3154,11 +3166,11 @@ class EnemyData extends FieldData {
    * 만약 그렇다면, 영역에 벗어나있는 시간을 추가하고, 이 시간이 10초(600프레임)이 되면 삭제합니다.
    */
   processOutAreaCheck () {
-    let player = fieldState.getPlayerObject()
-    if (this.x <= player.x - 1600 
-     || this.x >= player.x + 1600
-     || this.y <= player.y - 1200
-     || this.y >= player.y + 1200 ) {
+    const player = fieldState.getPlayerObject()
+    if (this.x <= player.x - 1600 ||
+     this.x >= player.x + 1600 ||
+     this.y <= player.y - 1200 ||
+     this.y >= player.y + 1200) {
       this.outAreaDeleteDelay.count++
     } else {
       this.outAreaDeleteDelay.count--
@@ -3169,7 +3181,6 @@ class EnemyData extends FieldData {
     }
   }
 }
-
 
 /**
  * 테스트용 적
@@ -3195,7 +3206,7 @@ class TestAttackEnemy extends EnemyData {
     this.attack = 10
     this.isPossibleExit = false
     this.image = imageFile.enemyTemp
-    this.movespeedX = -1
+    this.moveSpeedX = -1
   }
 }
 
@@ -3209,20 +3220,12 @@ class TestShowDamageEnemy extends EnemyData {
     this.attack = 0
     this.isPossibleExit = false
     this.image = imageFile.enemyTemp
-    this.movespeedX = 0
+    this.moveSpeedX = 0
   }
 
   display () {
     super.display()
     graphicSystem.digitalFontDisplay('totaldamage: ' + (1000000 - this.hp), 0, 40)
-  }
-}
-
-// round 1-1 적(참고: 모든 적들은 다른 라운드에도 나올 수도 있음.)
-class SpaceEnemy extends EnemyData {
-  constructor () {
-    super()
-    this.image = imageFile.enemy.spaceEnemy
   }
 }
 
@@ -3245,7 +3248,7 @@ class SpaceEnemyLight extends EnemyData {
   }
 
   display () {
-    let alpha = (this.dieAfterDeleteDelay.delay - this.dieAfterDeleteDelay.count) / this.dieAfterDeleteDelay.delay
+    const alpha = (this.dieAfterDeleteDelay.delay - this.dieAfterDeleteDelay.count) / this.dieAfterDeleteDelay.delay
     graphicSystem.setAlpha(alpha)
     graphicSystem.imageDisplay(this.image, this.imageData.x + (this.colorNumber * this.imageData.width), this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height)
     graphicSystem.setAlpha(1)
@@ -3256,7 +3259,7 @@ class SpaceEnemyRocket extends EnemyData {
   /**
    * 옵션의 배열 첫번째 인수에 아무 값이나 넣으면, 로켓이 빨간색으로 변경,
    * 옵션의 배열 두번째 인수에 아무 값이나 넣으면, 로켓의 크기가 커짐,
-   * 옵션에 따라 로켓의 체력과 점수가 변화 (공격력은 차이 없음)  
+   * 옵션에 따라 로켓의 체력과 점수가 변화 (공격력은 차이 없음)
    * 경고: 한번 설정된 값은 바꿀 수 없음. 바꾸고싶다면 죽이고 다시 만들어야함.
    * @param {string[]} option 옵션(인수는 상관없고, 크기만 바꾸고 싶다면, 첫번째 인수에 undefined를 넣을것)
    */
@@ -3264,8 +3267,8 @@ class SpaceEnemyRocket extends EnemyData {
     super()
     // 이렇게 설정된 이유는, option 배열의 개수가 가변적이기 때문입니다. 따라서 각 원소가 있는지를 확인해야 합니다.
     // 원소가 존재하면 색깔은 빨간색, 크기는 커집니다. (인수의 값은 아무거나 상관없음)
-    let isChangeColor = option.length >= 1 && option[0] != null ? true : false
-    let isChangeSize = option.length >= 2 && option[1] != null ? true : false
+    const isChangeColor = !!(option.length >= 1 && option[0] != null)
+    const isChangeSize = !!(option.length >= 2 && option[1] != null)
 
     this.image = imageFile.enemy.spaceEnemy
     this.imageData = null
@@ -3273,7 +3276,7 @@ class SpaceEnemyRocket extends EnemyData {
       this.imageData = imageDataInfo.spaceEnemy.rocketBlue
       this.hp = 1200
       this.score = 12
-    } else if(!isChangeColor && isChangeSize) {
+    } else if (!isChangeColor && isChangeSize) {
       this.imageData = imageDataInfo.spaceEnemy.rocketBlueBig
       this.hp = 2400
       this.score = 24
@@ -3286,7 +3289,7 @@ class SpaceEnemyRocket extends EnemyData {
       this.hp = 3200
       this.score = 32
     }
-    
+
     if (isChangeColor) {
       this.color = 'blue'
     } else {
@@ -3301,7 +3304,7 @@ class SpaceEnemyRocket extends EnemyData {
     this.isPossibleExit = true
     this.isExitToReset = true
     this.attack = 17
-    
+
     this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, 4, -1)
   }
 
@@ -3329,11 +3332,10 @@ class spaceEnemyCar extends EnemyData {
   }
 
   processMove () {
-    let playerObject = fieldState.getPlayerObject()
-    let playerX = playerObject.x
-    let playerY = playerObject.y
-    let playerWidth = playerObject.width
-    let playerHeight = playerObject.height
+    const playerObject = fieldState.getPlayerObject()
+    const playerX = playerObject.x
+    const playerY = playerObject.y
+    const playerHeight = playerObject.height
 
     // 차는 이동할때, 플레이어의 y축이 비슷한 위치에 있고, 플레이어 x축 보다 차 x축이 오른쪽에 있을 때, 플레이어가 있는 왼쪽으로 빠르게 이동합니다.
     // 차는 오른쪽으로는 이동하지 않습니다.
@@ -3383,7 +3385,7 @@ class SpaceEnemySquare extends EnemyData {
     this.MOVE_STOP_FRAME = 180
     this.moveDelay = new DelayData(240)
     this.moveDelay.count = this.moveDelay.delay
-    this.finishPosition = {x: 0, y: 0}
+    this.finishPosition = { x: 0, y: 0 }
     this.setMoveDirection() // 이동 방향 설정 안함
   }
 
@@ -3422,23 +3424,25 @@ class SpaceEnemyAttack extends EnemyData {
     this.score = 19
     this.attack = 11
     this.boostCount = 0
-    this.moveSpeedY = 0
+    this.moveSpeedY = Math.random() * 2 - 1
 
     this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, 8, -1)
   }
 
   processMove () {
     this.boostCount++
-    if (this.boostCount <= 60) {
-      this.moveSpeedX = (this.boostCount / 20)
-    } else if (this.boostCount <= 120) {
-      this.moveSpeedX = (this.boostCount / 10) + 3
+    if (this.boostCount <= 120) {
+      this.moveSpeedX = (this.boostCount / 40)
+    } else if (this.boostCount <= 240) {
+      this.moveSpeedX = (this.boostCount / 20) + 2
     } else {
-      this.moveSpeedX = 15
+      this.moveSpeedX = 10
     }
 
-    if (this.x >= graphicSystem.CANVAS_WIDTH && this.boostCount >= 60) {
+    if (this.x + this.width < 0 && this.boostCount >= 120) {
       this.boostCount = 0
+      this.x = graphicSystem.CANVAS_WIDTH + this.width
+      this.moveSpeedY = Math.random() * 2 - 1
     }
 
     super.processMove()
@@ -3453,49 +3457,267 @@ class SpaceEnemyEnergy extends EnemyData {
     this.hp = 4400
     this.score = 44
     this.boostCount = 0
-    this.moveDelay = new DelayData(120)
-    this.moveDelay.count = 120
+    this.moveDelay = new DelayData(180)
+    this.moveDelay.count = 240
     this.state = 'normal'
     this.moveDirectionX = 'left'
+    this.moveSpeedX = 4
+    this.moveSpeedY = 4
+    this.baseSpeedX = this.moveSpeedX
+    this.baseSpeedY = this.moveSpeedY
+    this.setMoveDirection()
   }
 
   processMove () {
+    // 이동방식: 자유로운 이동, 그러나 속도가 서서히 증가하고 서서히 감소하는 방식
+    // sin값을 사용하여 부드러운 움직임을 구현, 참고로 sin 0도 ~ 180도가 0 ~ 1 ~ 0 이므로, 180도만큼만 사용
+    const sin = Math.sin(Math.PI / 180 * this.moveDelay.count)
+
+    // 참고: 이동 방향이 없기 때문에, moveSpeed값은 실제 이동에 영향을 주지 못함.
+    this.speedX = sin * this.moveSpeedX
+    this.speedY = sin * this.moveSpeedY
+
     if (this.moveDelay.check()) {
-      if (this.state === 'normal') {
-        this.state = 'boost'
-        this.moveDirectionX = Math.floor(Math.random() * 2) === 1 ? 'left' : 'right'
+      this.moveSpeedX = (Math.random() * this.baseSpeedX * 2) - (this.baseSpeedX)
+      this.moveSpeedY = (Math.random() * this.baseSpeedY * 2) - (this.baseSpeedY)
+
+      // 생성한지 20초 이내라면 화면 바깥을 넘어갔다면, 화면 안쪽으로 오도록 유도한다.
+      if (this.elapsedFrame <= 1800) {
+        if (this.x < 40) {
+          this.moveSpeedX = Math.abs(this.moveSpeedX)
+        } else if (this.x > graphicSystem.CANVAS_WIDTH - 40) {
+          this.moveSpeedX = -Math.abs(this.moveSpeedX)
+        }
+
+        if (this.y < 40) {
+          this.moveSpeedY = Math.abs(this.moveSpeedX)
+        } else if (this.y > graphicSystem.CANVAS_HEIGHT - 40) {
+          this.moveSpeedY = -Math.abs(this.moveSpeedY)
+        }
       } else {
-        this.state = 'normal'
+        this.speedX = 5
+        this.speedY = 0
       }
     }
 
-    if (this.state === 'normal') {
-      this.boostCount--
-      if (this.boostCount < 0) this.boostCount = 0
-    } else {
-      this.boostCount++
-      if (this.boostCount > 120) this.boostCount = 120
-    }
-
-    this.moveSpeedX = 1 + (this.boostCount / 10)
     super.processMove()
   }
 }
 
 class SpaceEnemySusong extends EnemyData {
+  constructor () {
+    super()
+    this.autoSetImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.susong, 2)
+    this.attack = 20
+    this.hp = 10000
+    this.score = 100
+    this.boostCount = 0
+    this.moveDelay = new DelayData(240)
+    this.state = 'move'
+    this.moveDirectionX = 'left'
+    this.isExitToReset = true
+  }
 
+  processMove () {
+    if (this.moveDelay.check()) {
+      if (this.state === 'stop') {
+        // 멈춘 상태에서는 방향을 랜덤하게 설정
+        this.moveDirectionX = Math.random() * 1 < 0.5 ? 'left' : 'right'
+      }
+
+      // 20% 확률로 멈춤
+      this.state = Math.random() * 1 < 0.8 ? 'move' : 'stop'
+    }
+
+    if (this.state === 'move' && this.boostCount < 120) {
+      this.boostCount++ // 이동 상태에서는 서서히 속도 증가
+    } else if (this.state === 'stop' && this.boostCount > 0) {
+      this.boostCount-- // 멈춤 상태에서는 서서히 속도 감소
+    }
+
+    this.moveSpeedX = (this.boostCount / 60)
+    super.processMove()
+  }
+
+  display () {
+    if (this.state === 'move' || this.boostCount >= 0) {
+      if (this.moveDirectionX === 'right') {
+        this.enimation.flip = 1
+        this.enimation.displayAndProcess(this.x, this.y)
+      } else {
+        this.enimation.flip = 0
+        this.enimation.displayAndProcess(this.x, this.y)
+      }
+    } else {
+      if (this.moveDirectionX === 'right') {
+        graphicSystem.imageDisplay(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height, 1)
+      } else {
+        graphicSystem.imageDisplay(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height)
+      }
+    }
+  }
 }
 
 class SpaceEnemyGamjigi extends EnemyData {
+  constructor () {
+    super()
+    this.autoSetImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.gamjigi)
+    this.hp = 2800
+    this.score = 28
+    this.boostCount = 0
+    this.degree = 0
+    this.attack = 16
+    this.moveDelay = new DelayData(300)
+    this.setMoveDirection()
+    this.state = 'chase'
+  }
 
+  processMove () {
+    // 이동 지연시간마다 추적할지 말지를 설정
+    if (this.moveDelay.check()) {
+      this.state = Math.random() * 1 < 0.5 ? 'normal' : 'chase'
+    }
+
+    // 추적 상태에서는 플레이어를 따라다님
+    if (this.state === 'chase') {
+      const playerX = fieldState.getPlayerObject().centerX
+      const playerY = fieldState.getPlayerObject().centerY
+      const distanceX = playerX - this.x
+      const distanceY = playerY - this.y
+      const atangent = Math.atan2(distanceY, distanceX)
+      this.degree = atangent * (180 / Math.PI)
+
+      this.speedX = distanceX / 200
+      this.speedY = distanceY / 200
+    } else {
+      // 보통 상태에서는 카운트가 더 빨리 올라서, 상태 변환을 빨리 하도록 합니다.
+      this.moveDelay.count += 2
+    }
+
+    if (this.speedX > 2) {
+      this.speedX = 2
+    } else if (this.speedX < -2) {
+      this.speedX = -2
+    }
+
+    if (this.speedY > 2) {
+      this.speedY = 2
+    } else if (this.speedY < -2) {
+      this.speedY = -2
+    }
+
+    super.processMove()
+  }
+
+  processPlayerCollision () {
+    if (this.collisionDelay.check(false)) {
+      this.collisionDelay.count = 0
+      const player = fieldState.getPlayerObject()
+      if (collisionClass.collisionOBB(player, this)) {
+        player.addDamage(this.attack)
+      }
+    }
+  }
+
+  display () {
+    if (this.image) {
+      graphicSystem.imageDisplay(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height, 0, this.degree)
+    }
+  }
 }
 
 class SpaceEnemyComet extends EnemyData {
+  constructor () {
+    super()
+    this.autoSetImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.comet, 2)
+    this.hp = 1900
+    this.score = 19
+    this.attack = 10
+    this.boostCount = 0
+    this.moveSpeedX = 1
+    this.moveSpeedY = Math.random() * 4 + 2
+    this.isExitToReset = true
 
+    this.moveDirectionY = Math.random() * 1 < 0.5 ? 'up' : 'down'
+  }
+
+  processMove () {
+    this.boostCount++
+    if (this.boostCount > 120) {
+      this.boostCount = 120
+    }
+
+    this.moveSpeedX = 1 + (this.boostCount / 20)
+    super.processMove()
+  }
 }
 
 class SpaceEnemyMeteorite extends EnemyData {
+  /**
+   * @param {*} option 옵션: 운석번호 (1 ~ 5)
+   */
+  constructor (option) {
+    super()
 
+    let meteoriteNumber = 1
+    if (option.length >= 1 && option[0] >= 1 && option[0] <= 5) {
+      meteoriteNumber = option[0]
+    }
+
+    this.meteoriteNumber = meteoriteNumber
+    this.image = imageFile.enemy.spaceEnemy
+    this.isExitToReset = true
+
+    switch (meteoriteNumber) {
+      case 1:
+        this.hp = 4000
+        this.attack = 15
+        this.score = 40
+        this.autoSetImageData(this.image, imageDataInfo.spaceEnemy.meteorite1)
+        break
+      case 2:
+        this.hp = 4800
+        this.attack = 16
+        this.score = 48
+        this.autoSetImageData(this.image, imageDataInfo.spaceEnemy.meteorite2)
+        break
+      case 3:
+        this.hp = 5600
+        this.attack = 17
+        this.score = 56
+        this.autoSetImageData(this.image, imageDataInfo.spaceEnemy.meteorite3)
+        break
+      case 4:
+        this.hp = 8000
+        this.attack = 18
+        this.score = 80
+        this.autoSetImageData(this.image, imageDataInfo.spaceEnemy.meteorite4)
+        break
+      case 5:
+        this.hp = 8800
+        this.attack = 18
+        this.score = 88
+        this.autoSetImageData(this.image, imageDataInfo.spaceEnemy.meteorite5)
+        break
+    }
+
+    this.setMoveDirection()
+    this.speedX = Math.random() * 4 - 2
+    this.speedY = Math.random() * 4 - 2
+    this.state = Math.random() * 1 < 0.5 ? 'rotate' : 'normal'
+  }
+
+  processMove () {
+    if (this.state === 'rotate') {
+      this.degree++
+    }
+
+    super.processMove()
+  }
+
+  display () {
+    graphicSystem.imageDisplay(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height, 0, this.degree)
+  }
 }
 
 class Donggeurami extends EnemyData {
@@ -3514,10 +3736,9 @@ class Donggeurami extends EnemyData {
 }
 
 /**
- * tamshooter4의 데이터 모음  
+ * tamshooter4의 데이터 모음
  */
 export class tamshooter4Data {
-
   static pWeapon = {
     multyshot: new PlayerMultyshot(),
     missile: new PlayerMissile(),
@@ -3542,7 +3763,7 @@ export class tamshooter4Data {
 
   /**
    * 플레이어 무기 데이터를 가져옵니다. 이미 만들어진 객체이므로, 따로 인스턴스를 생성하지 마세요.
-   * @param {ID} id ID 클래스가 가지고 있는 상수 값을 넣어주세요.  
+   * @param {ID} id ID 클래스가 가지고 있는 상수 값을 넣어주세요.
    * @returns {PlayerWeaponData} playerWeapon의 클래스, 값이 없다면 null
    */
   static getPlayerWeaponData (id) {
@@ -3561,11 +3782,11 @@ export class tamshooter4Data {
 
   /**
    * 플레이어 스킬 데이터를 가져옵니다. 이미 만들어진 객체이므로 따로 인스턴스를 생성하지 마세요.
-   * @param {ID} id ID 클래스가 가지고 있는 상수 값을 넣어주세요.  
+   * @param {ID} id ID 클래스가 가지고 있는 상수 값을 넣어주세요.
    * @returns {PlayerSKillData} playerWeapon의 클래스, 값이 없다면 null
    */
   static getPlayerSkillData (id) {
-    switch(id) {
+    switch (id) {
       case ID.playerSkill.multyshot: return this.pSkill.multyshot
       case ID.playerSkill.missile: return this.pSkill.missile
       case ID.playerSkill.arrow: return this.pSkill.arrow
@@ -3612,7 +3833,7 @@ export class tamshooter4Data {
   }
 
   /**
-   * 적 데이터를 가져옵니다.  
+   * 적 데이터를 가져옵니다.
    * @param {ID} enemyId  ID 클래스가 가지고 있는 상수 값을 넣어주세요.
    * @returns {EnemyData} enemyData 클래스, 값이 없다면 null
    */
@@ -3621,7 +3842,7 @@ export class tamshooter4Data {
       case ID.enemy.test: return TestEnemy
       case ID.enemy.testAttack: return TestAttackEnemy
       case ID.enemy.testShowDamageEnemy: return TestShowDamageEnemy
-      
+
       // r1: space enemy
       case ID.enemy.spaceEnemyLight: return SpaceEnemyLight
       case ID.enemy.spaceEnemyRocket: return SpaceEnemyRocket
@@ -3638,9 +3859,9 @@ export class tamshooter4Data {
   }
 
   /**
-   * 이펙트 데이터를 가져옵니다.  
+   * 이펙트 데이터를 가져옵니다.
    * ID 클래스가 가지고 있는 상수 값을 넣어주세요.
-   * @param {ID} effectId 
+   * @param {ID} effectId
    */
   static getEffectData (effectId) {
     switch (effectId) {
@@ -3651,4 +3872,3 @@ export class tamshooter4Data {
     }
   }
 }
-

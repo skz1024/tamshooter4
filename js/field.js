@@ -1,13 +1,11 @@
-"use strict"
+'use strict'
 
-import { buttonSystem } from "./control.js"
-import { FieldData, ID, objectType, tamshooter4Data } from "./data.js"
-import { graphicSystem } from "./graphic.js"
-import { imageFile } from "./image.js"
-import { gameSystem, userSystem } from "./tamshooter4.js"
-import { systemText } from "./text.js"
-import { collision } from "./data.js"
-
+import { buttonSystem } from './control.js'
+import { FieldData, ID, objectType, tamshooter4Data } from './data.js'
+import { graphicSystem } from './graphic.js'
+import { imageFile } from './image.js'
+import { userSystem } from './tamshooter4.js'
+// import { systemText } from './text.js'
 
 /*
 오브젝트 목록
@@ -56,16 +54,15 @@ class DamageObject extends FieldData {
     const HEIGHT = 12
     const attackText = this.attack + ''
     for (let i = 0; i < attackText.length; i++) {
-      let number = attackText.charAt(i)
-      let outputX = this.x + (WIDTH * i)
-      graphicSystem.imageDisplay(IMAGE, number * NUMBER_WIDTH, 0, WIDTH, HEIGHT, outputX, this.y, WIDTH, HEIGHT)
+      const number = attackText.charAt(i)
+      const outputX = this.x + (WIDTH * i)
+      graphicSystem.imageDisplay(IMAGE, number * NUMBER_WIDTH, 0, NUMBER_WIDTH, NUMBER_HEIGHT, outputX, this.y, WIDTH, HEIGHT)
     }
   }
 }
 
-
 /**
- * 플레이어 오브젝트  
+ * 플레이어 오브젝트
  * 플레이어를 직접 조종합니다.
  * 이 객체는 필드 상태에서 직접 생성해 만드는 객체이기 때문에 data.js에서 플레이어 데이터를 받아오지 않습니다.
  */
@@ -90,13 +87,13 @@ class PlayerObject extends FieldData {
     this.y = 200
     this.centerX = this.x + (this.width / 2)
     this.centerY = this.y + (this.height / 2)
-    
+
     const getData = userSystem.getPlayerObjectData()
     this.attack = getData.attack
     this.hp = getData.hp
     this.shield = getData.shield
     this.shieldMax = getData.shieldMax
-    this.playerWeaponId = [ID.playerWeapon.multyshot, 
+    this.playerWeaponId = [ID.playerWeapon.multyshot,
       ID.playerWeapon.missile, ID.playerWeapon.arrow, ID.playerWeapon.laser, ID.playerWeapon.sapia,
       ID.playerWeapon.parapo, ID.playerWeapon.blaster, ID.playerWeapon.sidewave,
       ID.playerWeapon.unused
@@ -104,10 +101,10 @@ class PlayerObject extends FieldData {
     this.playerWeaponPosition = this.playerWeaponId.length - 1
     this.playerWeaponDelayCount = [0, 0, 0, 0, 0, 0, 0, 0, 0]
     this.skill = [
-      {id:ID.playerSkill.sapia, coolTimeFrame:0, repeatCount:0, delayCount:0},
-      {id:ID.playerSkill.parapo, coolTimeFrame:0, repeatCount:0, delayCount:0},
-      {id:ID.playerSkill.blaster, coolTimeFrame:0, repeatCount:0, delayCount:0},
-      {id:ID.playerSkill.sidewave, coolTimeFrame:0, repeatCount:0, delayCount:0},
+      { id: ID.playerSkill.sapia, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+      { id: ID.playerSkill.parapo, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+      { id: ID.playerSkill.blaster, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+      { id: ID.playerSkill.sidewave, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 }
     ]
   }
 
@@ -138,18 +135,18 @@ class PlayerObject extends FieldData {
   }
 
   useSkill (skillPosition) {
-    let getId = this.skill[skillPosition].id
-    let getSkill = tamshooter4Data.getPlayerSkillData(getId)
+    const getId = this.skill[skillPosition].id
+    const getSkill = tamshooter4Data.getPlayerSkillData(getId)
     if (getSkill == null) return // 스킬이 없다면 무시
 
     // 쿨타임 계산해서, 쿨타임이 남아있으면, 무시
-    let leftCoolTime = this.skill[skillPosition].coolTimeFrame
+    const leftCoolTime = this.skill[skillPosition].coolTimeFrame
     if (leftCoolTime > 0) return
 
     // 스킬 사용
     this.skill[skillPosition].repeatCount += getSkill.repeatCount // 스킬 반복 횟수를 증가시켜 여러번 무기가 발사되게 처리
     this.skill[skillPosition].coolTimeFrame += getSkill.getCoolTimeFrame() // 쿨타임 추가 (단위가 프레임이므로, 쿨타임 시간에 60을 곱함)
-    
+
     // 스킬에 사용된 무기가 즉시 발사되도록, 딜레이카운트를 채워줌(딜레이 이상이여야 무기 발사됨)
     // 다만 beforeDelay가 있을경우, 미리 delayCount에서 해당 수치만큼 감소
     this.skill[skillPosition].delayCount += getSkill.delay - getSkill.beforeDelay
@@ -160,7 +157,7 @@ class PlayerObject extends FieldData {
 
   processSkill () {
     for (let i = 0; i < this.skill.length; i++) {
-      let currentSkill = this.skill[i] // 루프 i값에 따른 현재 스킬
+      const currentSkill = this.skill[i] // 루프 i값에 따른 현재 스킬
 
       if (currentSkill.coolTimeFrame > 0) { // 스킬 쿨타임이 0보다 클 때
         currentSkill.coolTimeFrame-- // 스킬 쿨타임프레임 감소
@@ -169,7 +166,7 @@ class PlayerObject extends FieldData {
       // 만약 스킬 반복횟수가 없다면, 스킬을 사용하지 않은것이므로 무시
       if (currentSkill.repeatCount <= 0) continue
 
-      let getSkill = tamshooter4Data.getPlayerSkillData(currentSkill.id)
+      const getSkill = tamshooter4Data.getPlayerSkillData(currentSkill.id)
       if (getSkill == null) continue // 스킬이 없다면 무시
 
       currentSkill.delayCount++ // 스킬 딜레이카운트 증가
@@ -200,21 +197,20 @@ class PlayerObject extends FieldData {
       userSystem.skill[i].coolTime = Math.ceil(this.skill[i].coolTimeFrame / 60)
       userSystem.skill[i].id = this.skill[i].id
     }
-
   }
 
   processButton () {
-    let buttonLeft = buttonSystem.getButtonDown(buttonSystem.BUTTON_LEFT)
-    let buttonRight = buttonSystem.getButtonDown(buttonSystem.BUTTON_RIGHT)
-    let buttonUp = buttonSystem.getButtonDown(buttonSystem.BUTTON_UP)
-    let buttonDown = buttonSystem.getButtonDown(buttonSystem.BUTTON_DOWN)
-    let buttonA = buttonSystem.getButtonInput(buttonSystem.BUTTON_A)
-    let buttonB = buttonSystem.getButtonInput(buttonSystem.BUTTON_B)
-    let buttonSkill0 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL0)
-    let buttonSkill1 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL1)
-    let buttonSkill2 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL2)
-    let buttonSkill3 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL3)
-    
+    const buttonLeft = buttonSystem.getButtonDown(buttonSystem.BUTTON_LEFT)
+    const buttonRight = buttonSystem.getButtonDown(buttonSystem.BUTTON_RIGHT)
+    const buttonUp = buttonSystem.getButtonDown(buttonSystem.BUTTON_UP)
+    const buttonDown = buttonSystem.getButtonDown(buttonSystem.BUTTON_DOWN)
+    const buttonA = buttonSystem.getButtonInput(buttonSystem.BUTTON_A)
+    const buttonB = buttonSystem.getButtonInput(buttonSystem.BUTTON_B)
+    const buttonSkill0 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL0)
+    const buttonSkill1 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL1)
+    const buttonSkill2 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL2)
+    const buttonSkill3 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL3)
+
     if (buttonLeft) this.x -= 8
     if (buttonRight) this.x += 8
     if (buttonDown) this.y += 8
@@ -233,17 +229,17 @@ class PlayerObject extends FieldData {
     if (buttonB) {
       if (this.skill[0].id === ID.playerSkill.multyshot) {
         this.skill = [
-          {id:ID.playerSkill.sapia, coolTimeFrame:0, repeatCount:0, delayCount:0},
-          {id:ID.playerSkill.parapo, coolTimeFrame:0, repeatCount:0, delayCount:0},
-          {id:ID.playerSkill.blaster, coolTimeFrame:0, repeatCount:0, delayCount:0},
-          {id:ID.playerSkill.sidewave, coolTimeFrame:0, repeatCount:0, delayCount:0},
+          { id: ID.playerSkill.sapia, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+          { id: ID.playerSkill.parapo, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+          { id: ID.playerSkill.blaster, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+          { id: ID.playerSkill.sidewave, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 }
         ]
       } else if (this.skill[0].id === ID.playerSkill.sapia) {
         this.skill = [
-          {id:ID.playerSkill.multyshot, coolTimeFrame:0, repeatCount:0, delayCount:0},
-          {id:ID.playerSkill.missile, coolTimeFrame:0, repeatCount:0, delayCount:0},
-          {id:ID.playerSkill.arrow, coolTimeFrame:0, repeatCount:0, delayCount:0},
-          {id:ID.playerSkill.laser, coolTimeFrame:0, repeatCount:0, delayCount:0},
+          { id: ID.playerSkill.multyshot, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+          { id: ID.playerSkill.missile, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+          { id: ID.playerSkill.arrow, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+          { id: ID.playerSkill.laser, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 }
         ]
       }
     }
@@ -257,7 +253,7 @@ class PlayerObject extends FieldData {
   processAttack () {
     const getWeaponData = tamshooter4Data.getPlayerWeaponData(this.playerWeaponId[this.playerWeaponPosition])
     if (getWeaponData == null) return
-    
+
     this.playerWeaponDelayCount[this.playerWeaponPosition]++
     if (this.playerWeaponDelayCount[this.playerWeaponPosition] >= getWeaponData.delay) {
       getWeaponData.create(this.attack, this.centerX, this.centerY)
@@ -269,7 +265,6 @@ class PlayerObject extends FieldData {
     graphicSystem.imageDisplay(this.playerImage, this.x, this.y)
     graphicSystem.digitalFontDisplay('B BUTTON. X KEY TO CHANGE SKILL', 0, 80)
   }
-  
 }
 
 /**
@@ -281,12 +276,12 @@ export class fieldState {
   /** @type {FieldData[]} */ static enemyObject = []
   /** @type {FieldData[]} */ static effectObject = []
   /** @type {DamageObject[]} */ static damageObject = []
-  
-  /** 
-   * 다음 생성할 오브젝트의 Id  
+
+  /**
+   * 다음 생성할 오브젝트의 Id
    * 중복 구분 용도로 사용 (경고: 이 변수를 직접 대입하지 말고, getNextCreateId 함수를 사용하세요.)
-   * @type {number} 
-   */ 
+   * @type {number}
+   */
   static nextCreateId = 0
 
   /**
@@ -312,8 +307,8 @@ export class fieldState {
   static getRandomEnemyObject () {
     if (this.enemyObject.length === 0) return null
 
-    let randomNumber = Math.floor(Math.random() * this.enemyObject.length)
-    let targetEnemy = this.enemyObject[randomNumber]
+    const randomNumber = Math.floor(Math.random() * this.enemyObject.length)
+    const targetEnemy = this.enemyObject[randomNumber]
 
     if (targetEnemy.isDeleted || targetEnemy.isDied) {
       return null
@@ -326,21 +321,21 @@ export class fieldState {
    * @param {number} attack 공격력 (반드시 정수여야 함. Math.floor 연산 회피를 위해 여기서는 검사하지 않음.)
    */
   static createWeaponObject (typeId, x = 0, y = 0, attack = 1, ...addOption) {
-    let getClass = tamshooter4Data.getWeaponData(typeId)
-    if (getClass == null) return
+    const GetClass = tamshooter4Data.getWeaponData(typeId)
+    if (GetClass == null) return
 
-    let inputData = new getClass(addOption)
+    const inputData = new GetClass(addOption)
     inputData.createId = this.getNextCreateId()
     inputData.setPosition(x, y)
     inputData.setOption(attack)
     this.weaponObject.push(inputData)
   }
-  
-  static createEnemyObject (typeId, x = 0, y = 0) {
-    let getClass = tamshooter4Data.getEnemyData(typeId)
-    if (getClass == null) return
 
-    let inputData = new getClass()
+  static createEnemyObject (typeId, x = 0, y = 0, ...option) {
+    const GetClass = tamshooter4Data.getEnemyData(typeId)
+    if (GetClass == null) return
+
+    const inputData = new GetClass(option)
     inputData.createId = this.getNextCreateId()
     inputData.setPosition(x, y)
     inputData.init()
@@ -348,10 +343,10 @@ export class fieldState {
   }
 
   static createEffectObject (typeId, x = 0, y = 0, repeatCount = 0, beforeDelay = 0, ...option) {
-    let getClass = tamshooter4Data.getEffectData(typeId)
-    if (getClass == null) return
+    const GetClass = tamshooter4Data.getEffectData(typeId)
+    if (GetClass == null) return
 
-    let inputData = new getClass(option)
+    const inputData = new GetClass(option)
     inputData.createId = this.getNextCreateId()
     inputData.setPosition(x, y)
     // inputData.setOption(width, height)
@@ -359,7 +354,7 @@ export class fieldState {
   }
 
   static createDamageObject (x = 0, y = 0, attack = 1) {
-    let inputData = new DamageObject(x, y, attack)
+    const inputData = new DamageObject(x, y, attack)
     inputData.createId = this.getNextCreateId()
     this.damageObject.push(inputData)
   }
@@ -378,7 +373,7 @@ export class fieldState {
 
   static processWeaponObject () {
     for (let i = 0; i < this.weaponObject.length; i++) {
-      let currentObject = this.weaponObject[i]
+      const currentObject = this.weaponObject[i]
       currentObject.process()
       currentObject.fieldProcess()
 
@@ -390,10 +385,10 @@ export class fieldState {
 
   static processEnemyObject () {
     for (let i = 0; i < this.enemyObject.length; i++) {
-      let currentObject = this.enemyObject[i]
+      const currentObject = this.enemyObject[i]
       currentObject.process(currentObject)
       currentObject.fieldProcess()
-      
+
       if (currentObject.isDeleted) {
         this.enemyObject.splice(i, 1)
       }
@@ -402,7 +397,7 @@ export class fieldState {
 
   static processDamageObject () {
     for (let i = 0; i < this.damageObject.length; i++) {
-      let currentDamage = this.damageObject[i]
+      const currentDamage = this.damageObject[i]
 
       currentDamage.process()
       currentDamage.fieldProcess()
@@ -413,10 +408,9 @@ export class fieldState {
     }
   }
 
-  
   static processEffectObject () {
     for (let i = 0; i < this.effectObject.length; i++) {
-      let currentEffect = this.effectObject[i]
+      const currentEffect = this.effectObject[i]
 
       currentEffect.process()
       currentEffect.fieldProcess()
@@ -441,13 +435,13 @@ export class fieldState {
 
   static displayWeaponObject () {
     for (let i = 0; i < this.weaponObject.length; i++) {
-      this.weaponObject[i].display.call(this.weaponObject[i])
+      this.weaponObject[i].display.call()
     }
   }
 
   static displayEnemyObject () {
     for (let i = 0; i < this.enemyObject.length; i++) {
-      let currentEnemy = this.enemyObject[i]
+      const currentEnemy = this.enemyObject[i]
 
       currentEnemy.display()
       this.displayEnemyHpMeter(currentEnemy)
@@ -464,7 +458,7 @@ export class fieldState {
       enemyHpPercent = 0
     }
 
-    let meterWidth = Math.floor(enemyHpPercent * currentEnemy.width)
+    const meterWidth = Math.floor(enemyHpPercent * currentEnemy.width)
 
     graphicSystem.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height, currentEnemy.width, 2, 'red')
     graphicSystem.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height, meterWidth, 2, 'green')
@@ -472,7 +466,7 @@ export class fieldState {
 
   static displayDamageObject () {
     for (let i = 0; i < this.damageObject.length; i++) {
-      let currentDamage = this.damageObject[i]
+      const currentDamage = this.damageObject[i]
 
       currentDamage.display()
     }
@@ -481,9 +475,9 @@ export class fieldState {
   static displayEffectObject () {
     // 참고: 이펙트는 투명도 70%가 적용됩니다. 100%은 눈아픔.
     graphicSystem.setAlpha(0.7)
-    
+
     for (let i = 0; i < this.effectObject.length; i++) {
-      let currentEffect = this.effectObject[i]
+      const currentEffect = this.effectObject[i]
 
       currentEffect.display()
     }
@@ -495,9 +489,9 @@ export class fieldState {
 export class fieldSystem {
   static fieldTime = {
     frame: 0,
-    second: 0,
+    second: 0
   }
-  
+
   static isFieldStart = false
   static fieldStart () {
     if (!this.isFieldStart) {
@@ -525,16 +519,11 @@ export class fieldSystem {
     //   fieldState.createEnemyObject(ID.enemy.testAttack, enemyX, enemyY)
     // }
 
-    // if (fieldState.enemyObject.length <= 2) {
-    //   let enemyX = Math.random() * 300 + 200
-    //   let enemyY = Math.random() * 200 + 100
-    //   fieldState.createEnemyObject(ID.enemy.spaceEnemyAttack, enemyX, enemyY)
-    // }
-
-    if (fieldState.weaponObject.length < 1) {
-      fieldState.createWeaponObject(ID.weapon.missileRocket, 0, 400, 1000, 1)
+    if (fieldState.enemyObject.length <= 11) {
+      const enemyX = Math.random() * 300 + 200
+      const enemyY = Math.random() * 200 + 100
+      fieldState.createEnemyObject(ID.enemy.spaceEnemyMeteorite, enemyX, enemyY, Math.floor(Math.random() * 10))
     }
-
   }
 
   static display () {

@@ -1,19 +1,16 @@
-"use strict"
+import { buttonSystem, mouseSystem } from './control.js'
+import { soundFile, soundSystem } from './sound.js'
+import { imageFile } from './image.js'
+import { fieldSystem } from './field.js'
+import { graphicSystem } from './graphic.js'
 
 /** HTML 캔버스 */
-let canvas = document.getElementById('canvas')
+const canvas = document.getElementById('canvas')
 
-import { buttonSystem, mouseSystem } from "./control.js"
-import { soundFile, soundSystem } from "./sound.js"
-import { imageFile } from "./image.js"
-import { fieldSystem } from "./field.js"
-import { graphicSystem } from "./graphic.js"
-
-
-/** 프레임카운트 */ 
+/** 프레임카운트 */
 let frameCount = 0
 
-/** 현재 프레임 */ 
+/** 현재 프레임 */
 let currentFps = 0
 
 /** 프레임 카운트 1초마다 리셋, 해당 함수는 setInterval(fpsCheck, 1000) 에 의해 실행됨 */
@@ -23,11 +20,10 @@ function fpsCheck () {
 }
 setInterval(fpsCheck, 1000)
 
-
 class BoxObject {
   /**
    * 클릭 가능한 BoxObject입니다. 사실상 tamshooter4의 오브젝트 본체
-   * @param {number} x Box의 x좌표 
+   * @param {number} x Box의 x좌표
    * @param {number} y Box의 y좌표
    * @param {number} width Box의 길이
    * @param {number} height Box의 높이
@@ -54,19 +50,18 @@ class BoxObject {
 
   /**
    * 박스가 마우스 위에 있는지 충돌 여부를 검사
-   * @param {*} mouseX 
-   * @param {*} mouseY 
-   * @returns 
+   * @param {*} mouseX
+   * @param {*} mouseY
+   * @returns
    */
   collision (mouseX, mouseY) {
-    if ( (this.x <= mouseX && this.x + this.width >= mouseX) 
-    && (this.y <= mouseY && this.y + this.height >= mouseY) ) {
+    if ((this.x <= mouseX && this.x + this.width >= mouseX) &&
+    (this.y <= mouseY && this.y + this.height >= mouseY)) {
       return true
     } else {
       return false
     }
   }
-
 
   displayBackGround () {
     graphicSystem.fillRect(this.x, this.y, this.width, this.height, this.borderColor)
@@ -111,28 +106,26 @@ class BoxObject {
       this.clicked = false
     }
   }
-
 }
 
 /**
  * 메뉴 시스템 인터페이스 (아마도 모든 메뉴는 이 클래스르 상속받아서 구현해야합니다.)
  * 함수의 기능은 상속받는쪽에서 구현해주세요. 부모 함수는 아무런 기능이 없습니다.
  */
- class MenuSystem {
+class MenuSystem {
   /** 커서가 가ㅣ키는 박스 번호의 값 */ cursorPosition = 0
   /** 메뉴 선택 여부(ENTER키나 결정버튼(A버튼) 사용) */ selected = false
   /** 취소 선택 여부(ESC키나 취소버튼(B버튼) 사용) */ canceled = false
-  
-  /** 메뉴에 표시되는 리스트 (박스오브젝트) 
-   * @type {BoxObject[]}  
+
+  /** 메뉴에 표시되는 리스트 (박스오브젝트)
+   * @type {BoxObject[]}
    */
   menuList = []
 
-  
-  /** 
-   * 로직 처리 함수 (화면 출력을 여기에 출력하면 안됩니다.)  
+  /**
+   * 로직 처리 함수 (화면 출력을 여기에 출력하면 안됩니다.)
    * 특별한 일이 없는 경우 process() 함수를 재정의할 필요는 없습니다.
-   */ 
+   */
   process () {
     this.processButton()
     this.processMouse()
@@ -141,11 +134,11 @@ class BoxObject {
     this.processCancel()
   }
 
-  /** 
-   * 로직 처리 - 버튼 입력을 받았을 때 로직을 짜는 함수입니다.  
+  /**
+   * 로직 처리 - 버튼 입력을 받았을 때 로직을 짜는 함수입니다.
    * 주의 해야 할 점은, 결정버튼을 눌렀을 때의 처리 결과는 processSelect에서 처리해야 하고,
-   * 뤼소버튼을 눌렀을 때의 로직 처리 결과는 processCancel에서 처리해야 합니다.  
-   * menuSystem의 processButton 에는 select 버튼과 cancel 버튼을 눌렀을 때 
+   * 뤼소버튼을 눌렀을 때의 로직 처리 결과는 processCancel에서 처리해야 합니다.
+   * menuSystem의 processButton 에는 select 버튼과 cancel 버튼을 눌렀을 때
    * 각각 selected 와 canceled 변수의 값을 true로 만듭니다.
    * 만약 이 함수를 상속받는다면 super.processButton()를 호출하고 그 밑에 로직을 구현해주세요.
    */
@@ -157,11 +150,11 @@ class BoxObject {
     }
   }
 
-  /** 
-   * 로직 처리 - 마우스 입력  
+  /**
+   * 로직 처리 - 마우스 입력
    * 만약 이 함수를 상속받는다면 super.processMouse()를 호출하고 그 밑에 로직을 구현해주세요.
    * 부모 함수의 역할은 menuList에 박스가 눌려졌는지를 확인합니다.
-   */ 
+   */
   processMouse () {
     if (!mouseSystem.getMouseDown()) return
 
@@ -169,7 +162,7 @@ class BoxObject {
     const mouseY = mouseSystem.getMousePosition().y
 
     for (let i = 0; i < this.menuList.length; i++) {
-      let currentBox = this.menuList[i]
+      const currentBox = this.menuList[i]
       if (currentBox.collision(mouseX, mouseY)) {
         this.cursorPosition = i
         this.selected = true
@@ -182,7 +175,7 @@ class BoxObject {
    */
   processFocus () {
     for (let i = 0; i < this.menuList.length; i++) {
-      if (this.cursorPosition == i) {
+      if (this.cursorPosition === i) {
         this.menuList[i].focus = true
       } else {
         this.menuList[i].focus = false
@@ -191,10 +184,10 @@ class BoxObject {
   }
 
   /**
-   * 로직 처리 - 메뉴 선택  
+   * 로직 처리 - 메뉴 선택
    * 이 함수를 재작성할경우, 맨 처음에 if (!this.selectedCheck()) return 문을 넣어주세요.
    * 왜냐하면 중복선택을 방지하기 위함입니다. 부모 함수의 원본에 구현된 로직 코드를 참고해주세요.
-   */ 
+   */
   processSelect () {
     // 이와 같은 로직을 사용하면, selected가 false일때 이 함수는 실행되지 않습니다.
     if (!this.selectedCheck()) return
@@ -206,7 +199,7 @@ class BoxObject {
 
     // 그러나 이 함수를 호출할 때 절대 이 방식을 사용하지마세요. 비직관적입니다.
     // 구조상 재귀호출 될 염려는 없으므로, 일단은 냅두겠습니다.
-    if(this.selectedCheck()) this.processSelect()
+    if (this.selectedCheck()) this.processSelect()
   }
 
   /**
@@ -223,13 +216,13 @@ class BoxObject {
   }
 
   /**
-   * 로직 처리 - 취소 선택(B버튼 또는 ESC버튼을 누른 경우)  
+   * 로직 처리 - 취소 선택(B버튼 또는 ESC버튼을 누른 경우)
    * 이 함수를 재작성할경우, 맨 처음에 if (!this.canceledCheck()) return 문을 넣어주세요.
-   * 왜냐하면 중복취소을 방지하기 위함입니다. 그 외의 나머지는 processSelected랑 구조가 동일하므로 
+   * 왜냐하면 중복취소을 방지하기 위함입니다. 그 외의 나머지는 processSelected랑 구조가 동일하므로
    * processSelected 함수를 살펴보세요.
    */
   processCancel () {
-    if (!this.canceledCheck()) return
+    // if (!this.canceledCheck()) return
   }
 
   /**
@@ -247,7 +240,6 @@ class BoxObject {
 
   /** 화면 출력 함수 (로직을 여기에 처리하면 안됩니다.) */ display () {}
 }
-
 
 class MainSystem extends MenuSystem {
   /** 메뉴: 라운드 선택 */ MENU_ROUND_SELECT = 0
@@ -274,7 +266,7 @@ class MainSystem extends MenuSystem {
     } else if (buttonInputDown && this.cursorPosition < this.menuList.length - 1) {
       soundSystem.play(soundFile.system.systemCursor)
       this.cursorPosition++
-    } 
+    }
   }
 
   processSelect () {
@@ -288,7 +280,7 @@ class MainSystem extends MenuSystem {
     // 사운드 출력
     soundSystem.play(soundFile.system.systemSelect)
   }
-  
+
   process () {
     this.processMouse()
     this.processButton()
@@ -299,7 +291,7 @@ class MainSystem extends MenuSystem {
   display () {
     graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT, '#78b3f2', '#d2dff6')
     graphicSystem.imageDisplay(imageFile.tamshooter4Title, 0, 0, 515, 89, 0, 0, 515, 89, 2, 20)
-    
+
     for (let i = 0; i < this.menuList.length; i++) {
       this.menuList[i].display()
     }
@@ -307,7 +299,6 @@ class MainSystem extends MenuSystem {
     graphicSystem.fillText('cursorPosition: ' + this.cursorPosition, 0, 400)
   }
 }
-
 
 class OptionSystem extends MenuSystem {
   MENU_BACK = 0
@@ -317,7 +308,7 @@ class OptionSystem extends MenuSystem {
   MENU_RESULT_AUTO_SKIP = 4
 
   optionValue = [null, true, true, true, true]
-  
+
   constructor () {
     super()
     const MENU_X = 400
@@ -329,7 +320,7 @@ class OptionSystem extends MenuSystem {
     const startColor = '#FCCF31'
     const endColor = '#F55555'
     const focusColor = '#763E14'
-    
+
     for (let i = 0; i < boxText.length; i++) {
       this.menuList[i] = new BoxObject(MENU_X, MENU_Y + (MENU_LINE_Y * i), MENU_WIDTH, MENU_HEIGHT, boxText[i], startColor, endColor, focusColor)
     }
@@ -371,7 +362,7 @@ class OptionSystem extends MenuSystem {
 
   display () {
     graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT, '#78b3f2', '#d2dff6')
-    
+
     for (let i = 0; i < this.menuList.length; i++) {
       this.menuList[i].display()
     }
@@ -382,7 +373,6 @@ class OptionSystem extends MenuSystem {
  * 메뉴: 라운드 시스템
  */
 class RoundSelectSystem extends MenuSystem {
-
   /** 커서 라운드 */ cursorRound = 1
   /** 최소 라운드: 게임은 1라운드부터 시작 */ MIN_ROUND = 1
   /** 최대 라운드: 8 */ MAX_ROUND = 8
@@ -402,7 +392,7 @@ class RoundSelectSystem extends MenuSystem {
   }
 
   processButton () {
-    /* 
+    /*
     cursorPosition의 범위
     0 ~ 9: 메인 라운드 선택 (어떤 포지션에 있든 상관없음.)
     10 ~ 19: 서브 라운드 선택
@@ -479,11 +469,10 @@ class RoundSelectSystem extends MenuSystem {
   }
 
   displayInfo () {
-    graphicSystem.strokeRect(400, 160, 400, 80,'pink')
+    graphicSystem.strokeRect(400, 160, 400, 80, 'pink')
     graphicSystem.fillText('ROUND: ' + this.menuList[this.cursorPosition].text, 400, 160, 400)
   }
 }
-
 
 /**
  * 유저 정보 (static 클래스)
@@ -500,12 +489,12 @@ export class userSystem {
   /**
    * 경험치 테이블
    */
-  static expTable = [  0, // lv 0
+  static expTable = [0, // lv 0
     181100, 181200, 181300, 181400, 181500, 181600, 181700, 181800, 181900, 182000, // lv 1 ~ 10
-    255500, 256000, 256500, 257000, 257500, 258000, 258500, 259000, 259500, 260000, // lv 11 ~ 20
+    255500, 256000, 256500, 257000, 257500, 258000, 258500, 259000, 259500, 260000 // lv 11 ~ 20
   ]
 
-  /** 총 플레이 타임 에 관한 정보 */ 
+  /** 총 플레이 타임 에 관한 정보 */
   static playTime = {
     FPS: 60,
     frame: 0,
@@ -521,15 +510,15 @@ export class userSystem {
     },
     process: function () {
       this.frame++
-      if(this.frame >= this.FPS){
+      if (this.frame >= this.FPS) {
         this.frame -= 60
         this.second++
       }
-      if(this.second >= 60){
+      if (this.second >= 60) {
         this.second -= 60
         this.minute++
       }
-      if(this.minute >= 60){
+      if (this.minute >= 60) {
         this.minute -= 60
         this.hour++
       }
@@ -579,7 +568,7 @@ export class userSystem {
   }
 
   /**
-   * 유저의 startDate를 수정하는 함수  
+   * 유저의 startDate를 수정하는 함수
    * 아무 인수도 없으면 현재 날짜로 설정됩니다.
    * @param {number} year 해당 년도, 만약 이 값이 없다면 현재 날짜로 startDate를 자동 설정합니다.
    */
@@ -599,21 +588,21 @@ export class userSystem {
   }
 
   static skill = [
-    {coolTime:0, id:0},
-    {coolTime:0, id:0},
-    {coolTime:0, id:0},
-    {coolTime:0, id:0}
+    { coolTime: 0, id: 0 },
+    { coolTime: 0, id: 0 },
+    { coolTime: 0, id: 0 },
+    { coolTime: 0, id: 0 }
   ]
 
   /**
    * 경험치 추가 함수
    * exp 값을 직접 조정하지 마세요.
-   * @param {number} value 경험치 값 
+   * @param {number} value 경험치 값
    */
   static plusExp (value) {
     this.exp += value
     const maxLevel = this.expTable.length - 1 // 최대 배열길이 - 1이 최대 레벨
-    
+
     // 레벨업 체크
     if (this.lv < maxLevel) {
       let levelUpSound = false
@@ -621,6 +610,10 @@ export class userSystem {
         this.exp -= this.expTable[this.lv]
         this.lv++
         levelUpSound = true
+      }
+
+      if (levelUpSound) {
+        soundSystem.play(soundFile.system.systemLevelUp)
       }
     }
   }
@@ -657,7 +650,7 @@ export class userSystem {
     const LAYER_WIDTH = graphicSystem.CANVAS_WIDTH_HALF
 
     // 레이어 색칠하기
-    graphicSystem.fillRect(0, LAYER1_Y, graphicSystem.CANVAS_WIDTH_HALF, LAYER_HEIGHT , 'lightgrey')
+    graphicSystem.fillRect(0, LAYER1_Y, graphicSystem.CANVAS_WIDTH_HALF, LAYER_HEIGHT, 'lightgrey')
     graphicSystem.fillRect(graphicSystem.CANVAS_WIDTH_HALF, LAYER1_Y, graphicSystem.CANVAS_WIDTH_HALF, LAYER_HEIGHT, 'lightgrey')
     graphicSystem.fillRect(0, LAYER2_Y, graphicSystem.CANVAS_WIDTH_HALF, LAYER_HEIGHT, 'lightgrey')
 
@@ -695,10 +688,10 @@ export class userSystem {
         graphicSystem.digitalFontDisplay(this.skill[i].coolTime, SKILL_X, LAYER1_DIGITAL_Y, 12, 20) // 스킬 쿨타임 시간
       } else {
         graphicSystem.imageDisplay(imageFile.system.skillNumber, SKILL_NUMBER_WIDTH * i, 0, SKILL_NUMBER_WIDTH, SKILL_NUMBER_HEIGHT, BUTTON_X, LAYER1_DIGITAL_Y, SKILL_NUMBER_WIDTH, SKILL_NUMBER_HEIGHT)
-        if (this.skill[i].id != 0) {
-          let skillNumber = this.skill[i].id - 15000 // 스킬의 ID는 15001부터 시작이라, 15000을 빼면, 스킬 번호값을 얻을 수 있음.
-          let skillXLine = skillNumber % 10
-          let skillYLine = Math.floor(skillNumber / 10)
+        if (this.skill[i].id !== 0) {
+          const skillNumber = this.skill[i].id - 15000 // 스킬의 ID는 15001부터 시작이라, 15000을 빼면, 스킬 번호값을 얻을 수 있음.
+          const skillXLine = skillNumber % 10
+          const skillYLine = Math.floor(skillNumber / 10)
           graphicSystem.imageDisplay(imageFile.system.skillIcon, skillXLine * ICON_WIDTH, skillYLine * ICON_HEIGHT, ICON_WIDTH, ICON_HEIGHT, SKILL_X, LAYER1_DIGITAL_Y, ICON_WIDTH, ICON_HEIGHT)
         }
         // 스킬 아이콘
@@ -728,14 +721,11 @@ export class userSystem {
   }
 }
 
-
-
-
 /**
  * 게임 시스템 (거의 모든 로직을 처리), 경고: new 키워드로 인스턴스를 생성하지 마세요.
  * 이건 단일 클래스입니다.
  */
-export class gameSystem{
+export class gameSystem {
   /** 게임 상태 ID */ static statusId = 0
   /** 상태: 메인 */ static STATUS_MAIN = 0
   /** 상태: 게임 옵션 */ static STATUS_OPTION = 1
@@ -751,52 +741,53 @@ export class gameSystem{
   /** 옵션 시스템 */ static optionSystem = new OptionSystem()
   /** 라운드 선택 시스템 */ static roundSelectSystem = new RoundSelectSystem()
 
-  /** 
-   * 저장하거나 불러올 때 localStorage 에서 사용하는 키 이름 (임의로 변경 금지)  
-   * 각 키 별로, 저장 데이터 형식과 저장 목적에 대해 자세히 설명되어있습니다.  
+  /**
+   * 저장하거나 불러올 때 localStorage 에서 사용하는 키 이름 (임의로 변경 금지)
+   * 각 키 별로, 저장 데이터 형식과 저장 목적에 대해 자세히 설명되어있습니다.
    * 대부분의 저장 형식에서 구분자를 ,(쉼표) 로 사용합니다.
    */
   static saveKey = {
-    /** 
-     * 게임에서 저장된 데이터가 있는지 확인  
+    /**
+     * 게임에서 저장된 데이터가 있는지 확인
      * 주의: localStoarge를 통해서 받아오는 값은 string입니다. 그래서 'false'값을 저장해도 Boolean('false')를 해서
-     * 값을 불러와봐야 어차피 true값이 됩니다.(자바스크립트는 문자열에 값이 있으면 true입니다.)  
+     * 값을 불러와봐야 어차피 true값이 됩니다.(자바스크립트는 문자열에 값이 있으면 true입니다.)
      * 이때문에 saveFlag의 값은 'true'로 저장하고, 만약 저장된 데이터가 없으면 null입니다.
      */
     saveFlag: 'saveFlag',
 
-    /** 
-     * 플레이 시간  
-     * 저장 형식: hour,minute,second,frame 의 문자열 (구분자: ,(쉼표))  
+    /**
+     * 플레이 시간
+     * 저장 형식: hour,minute,second,frame 의 문자열 (구분자: ,(쉼표))
      * 예시: 14,23,7,56 -> 14:23:7 56frame
-     */ 
+     */
     playTime: 'playTime',
 
     /**
-     * (게임 첫 시작)시작 날짜 및 시간 
-     * 저장 형식: year,month,date,hour,minute,second 의 문자열 (구분자: ,(쉼표))  
+     * (게임 첫 시작)시작 날짜 및 시간
+     * 저장 형식: year,month,date,hour,minute,second 의 문자열 (구분자: ,(쉼표))
      * 예시: 2022,03,11,16,26,33 -> 2022/03/11 16:26:33
      */
     startDate: 'startDate',
 
     /**
-     * 저장 시점의 날짜 및 시간  
-     * 저장 형식은 startDate랑 동일  
-     * 저장 형식: year,month,date,hour,minute,second 의 문자열 (구분자: ,(쉼표))  
+     * 저장 시점의 날짜 및 시간
+     * 저장 형식은 startDate랑 동일
+     * 저장 형식: year,month,date,hour,minute,second 의 문자열 (구분자: ,(쉼표))
      * 예시: 2022,03,11,16,26,33 -> 2022/03/11 16:26:33
      */
     saveDate: 'saveDate'
   }
+
   /** 저장 지연 시간을 카운트 하는 변수 */ static saveDelayCount = 0
-  /** 
+  /**
    * 게임 실행시 불러오기는 단 한번만 합니다.
-   * 기본값: false, 한번 로드했다면 true.  
+   * 기본값: false, 한번 로드했다면 true.
    * 참고로 새로고침을 한다면 게임을 재실행하기 때문에 불러오기도 합니다.
-   */ 
+   */
   static initLoad = false
 
   /**
-   * 저장 기능은, 1초에 한번씩 진행됩니다. 달래아 - 지연(시간)  
+   * 저장 기능은, 1초에 한번씩 진행됩니다. 달래아 - 지연(시간)
    * 이 게임 내에서는, 지연 시간을 딜레이란 단어로 표기합니다.
    */
   static processSave () {
@@ -827,8 +818,6 @@ export class gameSystem{
     const playTime = this.userSystem.playTime
     const playTimeString = playTime.hour + ',' + playTime.minute + ',' + playTime.second
     localStorage.setItem(this.saveKey.playTime, playTimeString)
-
-    
   }
 
   /**
@@ -870,9 +859,9 @@ export class gameSystem{
 
     graphicSystem.digitalFontDisplay(year + '/' + month + '/' + day + ' ' + hour + ':' + minute + ':' + second, 0, 480)
   }
-  
+
   /**
-   * 게임에 관한 모든 처리는 여기서 진행합니다.  
+   * 게임에 관한 모든 처리는 여기서 진행합니다.
    * [process 함수 내에서 출력과 관련됨 모든 함수 사용금지]
    */
   static process () {
@@ -891,7 +880,7 @@ export class gameSystem{
   }
 
   /**
-   * 게임에 관한 모든 출력은 여기서 진행합니다.  
+   * 게임에 관한 모든 출력은 여기서 진행합니다.
    * [display 함수 내에세 게임에 관한 모든 처리 금지, 출력 함수만 사용하세요.]
    */
   static display () {
@@ -905,7 +894,7 @@ export class gameSystem{
       case this.STATUS_ROUNDSELECT: this.roundSelectSystem.display(); break
       case this.STATUS_FIELD: this.fieldSystem.display(); break
     }
-    
+
     // 메인 화면 또는 옵션 화면일때만, 시간 표시
     if (this.statusId === this.STATUS_MAIN || this.statusId === this.STATUS_OPTION) {
       graphicSystem.digitalFontDisplay('FPS: ' + currentFps, 0, 240, 40, 60)
@@ -913,21 +902,18 @@ export class gameSystem{
     }
 
     this.userSystem.display()
-
   }
-
 }
-
 
 // 게임에 관한 출력과 로직 처리는 animation함수에서 진행합니다.
 // 그러나 실제로는 gameSystem.process() 와 gameSystem.display()만 사용합니다.
 
-/** animation함수에서 사용하는 다음 시간 확인 용도  */ 
+/** animation함수에서 사용하는 다음 시간 확인 용도  */
 let thenAnimationTime = 0
 
 /** 브라우저의 requsetAnimation을 사용하기 위해 만든 에니메이션 함수입니다. */
 function animation (timestamp) {
-  /* 
+  /*
   * 에니메이션의 출력 프레임을 60fps로 고정시키기 위해 다음과 같은 알고리즘을 적용하였습니다.
   * 사실 원리는 모르겠지만, 이전 시간을 기준으로 다음 프레임을 계산할 때
   * then = timestamp - (elapsed % fpsInterval) 계산을 공통적으로 하는것 같습니다.
@@ -935,7 +921,7 @@ function animation (timestamp) {
   * 이 설정을 바꾸는 것은 게임 규칙 위반입니다. 임의로 수정하지 마세요.
   * 기본값: 16.6 = 60fps
   */
-  let fpsInterval = 16.6 // 1seconds 60fps limit, do not exceed 60fps!
+  const fpsInterval = 16.6 // 1seconds 60fps limit, do not exceed 60fps!
 
   // 진행시간 = 타임스탬프 - 그 다음 시간
   const elapsed = timestamp - thenAnimationTime
@@ -946,15 +932,14 @@ function animation (timestamp) {
     // 해당 에니메이션 로직 실행
     gameSystem.process() // 게임 처리 함수
     gameSystem.display() // 게임 출력 함수 (...)
-    
-    // 사실 이렇게 된건 firefox의 setInterval이 느리게 작동하기 때문이다. 
+
+    // 사실 이렇게 된건 firefox의 setInterval이 느리게 작동하기 때문이다.
     // 어쩔수 없이 requsetAnimationFrame을 사용해야 한다.
   }
 
   requestAnimationFrame(animation)
 }
 requestAnimationFrame(animation)
-
 
 // 마우스와 키보드 이벤트 처리
 canvas.addEventListener('mousedown', (e) => {
@@ -972,7 +957,7 @@ canvas.addEventListener('mouseup', () => {
 addEventListener('keydown', (e) => {
   buttonSystem.keyInput(e.key)
   buttonSystem.keyDown(e.key)
-  
+
   // 새로고침 기능, 개발자 도구 이외의 다른 기능은 막습니다.
   if (e.key !== 'F5' && e.key !== 'F12') {
     e.preventDefault()
