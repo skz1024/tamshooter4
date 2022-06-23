@@ -25,7 +25,7 @@ export class systemText {
     BUTTON_OUT_OF_INDEX: '잘못된 버튼의 인덱스가 입력되었습니다. 가능하면 buttonSystem 클래스 내부에 있는 상수 값을 인덱스로 사용하세요.'
   }
   static graphicError = {
-    IMAGE_DISPLAY_ERROR: 'imageDisplay의 함수는 필요한 인자 개수가 3, 5, 9개입니다. imageDisplay 함수의 코드를 살펴보세요.'
+    IMAGE_DISPLAY_ERROR: 'imageDisplay의 함수는 필요한 인자 개수가 3, 5, 9, 10~12개입니다. imageDisplay 함수의 코드를 살펴보세요.'
   }
   static gameError = {
     

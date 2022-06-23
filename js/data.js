@@ -2,7 +2,7 @@
 
 import { fieldState } from "./field.js"
 import { graphicSystem } from "./graphic.js"
-import { imageFile } from "./image.js"
+import { imageDataInfo, imageFile } from "./image.js"
 import { soundFile, soundSystem } from "./sound.js"
 
 /**
@@ -67,6 +67,16 @@ export class ID {
     test:20001,
     testAttack:20002,
     testShowDamageEnemy:20003,
+    spaceEnemyLight: 20101,
+    spaceEnemyRocket: 20102,
+    spaceEnemyCar: 20103,
+    spaceEnemySquare: 20104,
+    spaceEnemyAttack: 20105,
+    spaceEnemyEnergy: 20106,
+    spaceEnemySusong: 20107,
+    spaceEnemyGamjigi: 20108,
+    spaceEnemyComet: 20109,
+    spaceEnemyMeteorite: 20110,
   }
 
   static effect = {
@@ -116,7 +126,7 @@ export class objectType {
  * 충돌 감지 함수(OBB 한정)를 클래스로 변경했습니다. 이유는, 내부적으로만 사용하는 함수가 너무 많습니다.  
  * 사각형 충돌 함수는 기존의 collision 함수를 그냥 사용합니다.
  */
-export class collisionOBB {
+export class collisionClass {
   /**
    * 충돌 감지 함수 그러나 회전한 사각형까지 제대로 충돌 감지 가능 (일부 객체에서 사용)  
    * 다각형 충돌은 고려하지 않습니다. (모든 오브젝트는 사각형 판정)
@@ -484,15 +494,27 @@ export class FieldData {
     /** 프레임당 x좌표 이동 속도 (소수점 허용) */ this.speedX = 0
     /** 프레임당 y좌표 이동 속도 (소수점 허용) */ this.speedY = 0
     /** 프레임당 z좌표 이동 속도 (소수점 허용), (z좌표는 일반적으로 사용하지 않습니다.) */ this.speedZ = 0
-    /** 이동 방향에 따른 이동 속도 x좌표 (소수점 허용) */ this.moveX = 1
-    /** 이동 방향에 따른 이동 속도 y좌표[speedY랑 동일] (소수점 허용) */ this.moveY = 0
+    /** 이동 방향에 따른 이동 속도 x좌표 (소수점 허용) 이 값이 있다면, 이 값을 speed값보다 우선 적용(정확하겐 speed에 덮어 씌워짐) */ this.moveSpeedX = 0
+    /** 이동 방향에 따른 이동 속도 y좌표 (소수점 허용) 이 값이 있다면, 이 값을 speed값보다 우선 적용(정확하겐 speed에 덮어 씌워짐) */ this.moveSpeedY = 0
     /** 회전한 각도 (일부 객체에서만 사용) */ this.degree = 0
     /** 
-    * 이동 방향 설정(left, right만 사용 가능) y좌표는 방향에 따른 영향 없음.  
-    * left: + 일경우 왼쪽으로 이동, - 일경우 오른쪽으로 이동.   
-    * right: + 일경우 오른쪽으로 이동, - 일경우 왼쪽으로 이동.  
-    */ 
-    this.direction = 'left'
+     * 이동 방향 설정은 가급적, setMoveDirection 함수를 사용하는것을 권장합니다. (이 변수를 바꿔도 되지만, 안정성이 떨어짐)
+     * 이동 방향 설정(left, right만 사용 가능) 이 값은 x축에만 영향을 줌, 기본값: left 
+     * left: + 일경우 왼쪽으로 이동, - 일경우 오른쪽으로 이동.   
+     * right: + 일경우 오른쪽으로 이동, - 일경우 왼쪽으로 이동.  
+     * 아무 값도 없다면 이 값을 적용하지 않음.
+     * @type {string}
+     */
+    this.moveDirectionX = 'right'
+    
+    /**
+     * 이동 방향 설정은 가급적, setMoveDirection 함수를 사용하는것을 권장합니다. (이 변수를 바꿔도 되지만, 안정성이 떨어짐)
+     * 이동 방향 설정(up. down만 사용 가능) 이 값은 y축에만 영향을 줌. 기본값: down  
+     * up: + 일경우 위쪽으로 이동, - 일경우 아래쪽으로 이동  
+     * down: + 일경우 아래쪽으로 이동, - 일경우 위쪽으로 이동  
+     * @type {string}
+     */
+    this.moveDirectionY = 'down'
 
     /** 공격력 */ this.attack = 0
     /** 방어력 */ this.defense = 0
@@ -522,6 +544,12 @@ export class FieldData {
      */
     this.isDeleted = false
 
+    /**
+     * 필드 객체가 사망했을 때 사용하는 변수, 다만... 적 외에는 잘 안쓰임(특히 무기...)  
+     * 이 변수는 코드 자동완성의 편의를 위해 추가했습니다.
+     */
+    this.isDied = false
+
     // 에니메이션 용도
     /** 현재까지 진행된 에니메이션의 총 프레임 */ this.enimationFrame = 0
     /** 
@@ -533,12 +561,69 @@ export class FieldData {
     /**
      * HTML 이미지  
      * 참고: 이미지는 보통 출력 용도로 사용
-     * @type {Image}
+     * @type {Image | ImageBitmap}
      */
     this.image = null
+
+    /**
+     * 이미지 데이터, 이 값은 특수한 경우에 주로 사용[여러개의 오브젝트가 그려져있는 이미지를 자를 때 주로 사용]
+     * @type {{x: number, y: number, width: number, height: number, frame: number}} ImageData의 변수값
+     */
+    this.imageData = null
   }
 
-  /** 오브젝트의 로직 처리 함수 (각 객체마다 다름, 직접 구현 필요) */ process () {}
+  /**
+   * 이동 방향 설정, x축, y축 동시 설정 가능, 이동 방향을 없앨거면, 공백 '' 을 넣어주세요.
+   * @param {string} xDirection x축 방향, 'left', 'right', ''(방향 없음) 사용 가능
+   * @param {string} yDirection y축 방향, 'up', 'down', ''(방향 없음) 사용 가능
+   */
+  setMoveDirection (xDirection = '', yDirection = '') {
+    if (xDirection === '' || xDirection === 'left' || xDirection === 'right') {
+      this.moveDirectionX = xDirection
+    }
+
+    if (xDirection === '' || yDirection === 'up' || yDirection === 'down') {
+      this.moveDirectionY = yDirection
+    }
+  }
+
+  /** 
+   * 오브젝트의 로직 처리 함수 (각 객체마다 다를 수 있고, 이것은 기본적인 기능만 있습니다.)
+   */ 
+  process () {
+    this.processMove()
+
+    // 캔버스의 영역을 크게 벗어나면 해당 객체는 자동으로 삭제요청을 합니다. 
+    // isDeleted 가 true라면, fieldState에서 해당 객체를 삭제합니다.
+    if (this.outAreaCheck()) {
+      this.isDeleted = true
+    }
+  }
+
+  /**
+   * 객체를 이동시킵니다.
+   */
+  processMove () {
+    // 이동 방향이 정해져 있는 경우, 방향에 따른 속도값을 speed에 대입합니다.
+    // 이동 방향이 없다면, speed값을 그대로 이동속도에 사용합니다.
+    if (this.moveDirectionX === 'left') {
+      this.speedX = -Math.abs(this.moveSpeedX)
+    } else if (this.moveDirectionX === 'right') {
+      this.speedX = Math.abs(this.moveSpeedX)
+    }
+
+    if (this.moveDirectionY === 'up') {
+      this.speedY = -Math.abs(this.moveSpeedY)
+    } else if (this.moveDirectionY === 'down') {
+      this.speedY = Math.abs(this.moveSpeedY)
+    }
+
+    // 이동 속도에 따른 좌표값 변경
+    this.x += this.speedX
+    this.y += this.speedY
+  }
+
+
   /** 
    * 오브젝트의 이미지 출력 함수 (각 객체마다 다름, 직접 구현 필요)  
    * 이 함수는 기본값이 존재하지만, 만약 display() 재정의로 이 기본함수를 사용할 수 없게 된다면, 
@@ -562,6 +647,20 @@ export class FieldData {
   }
 
   /**
+   * 필드 객체가 캔버스의 영역을 크게 벗어났는지 확인합니다.
+   */
+  outAreaCheck () {
+    if (this.x < -graphicSystem.CANVAS_WIDTH 
+    || this.x > graphicSystem.CANVAS_WIDTH * 2 
+    || this.y < -graphicSystem.CANVAS_HEIGHT
+    || this.y > graphicSystem.CANVAS_HEIGHT * 2) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+  /**
    * fieldState에서 오브젝트를 클래스를 이용해 생성하면 좌표값은 0, 0이되기 때문에,
    * 원하는 좌표에 설정하기 위한 함수를 사용해 좌표를 정해주어야 합니다.
    * @param {number} x x좌표
@@ -582,7 +681,11 @@ export class FieldData {
     if (this.enimation) {
       this.enimation.displayAndProcess(this.x, this.y)
     } else if (this.image) {
-      graphicSystem.imageDisplay(this.image, this.x, this.y)
+      if (this.imageData) {
+        graphicSystem.imageDisplay(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height)
+      } else {
+        graphicSystem.imageDisplay(this.image, this.x, this.y)
+      }
     }
   }
 }
@@ -592,14 +695,15 @@ class WeaponData extends FieldData {
     super()
     /** 공격력(해당 오브젝트의 공격력) */ this.attack = 1
     /** 해당 객체의 기본 오브젝트 타입(임의 수정 불가능) */ this.objectType = objectType.WEAPON
-    /** 기본 속도값 */ this.speedX = 10
-
+    /** 무기의 기본 이동 방향 x축 = 오른쪽 */ this.moveDirectionX = 'right'
+    /** 무기의 기본 이동 방향 y축 = 아래쪽 */ this.moveDirectionY = 'down'
+    
     // 추적 오브젝트 여부
     /** 적을 추적하는지의 여부(데이터 객체에서 주로 사용) true일경우 적을 추적하는 무기임. */ this.isChaseType = false
     /** 추적 실패 횟수: 이 숫자는 추적할 적이 없을 때 과도한 추적 알고리즘 사용을 막기 위해 실행됨. */ this.chaseMissCount = 0
     /** 
      * 필드객체에서 사용하는 변수, 어떤 적을 추적하는지를 객체로 가져옴  
-     * @type {FieldData} 
+     * @type {EnemyData} 
      */ 
     this.targetObject = null
 
@@ -608,16 +712,45 @@ class WeaponData extends FieldData {
      * 경고: 기본값 0이라면, 공격횟수가 0인 것으로 취급해 무기가 즉시 사라질 수 있음.
      */ 
     this.repeatCount = 1
+    
     /** 
      * 반복 딜레이 객체(딜레이가 없으면 null)  
      * @type {DelayData}
      */ 
     this.repeatDelay = null
+
+    /**
+     * 무기를 사용한 횟수: repeatCount랑 다른 점은, repeatCount는 적을 타격하면 남은 반복횟수가 감소하지만,  
+     * 이것은 무기가 공격하면 사용카운트가 증가합니다.
+     */
+    this.useCount = 0
+
+    /**
+     * 무기 최대 사용 카운트, 일반적으로 사용하지 않는 변수라, 기본값은 0
+     */
+    this.useMaxCount = 0
+
+    /** 
+     * 한번 공격에 적을 여러개 때릴 수 있는지에 대한 여부  
+     * 스플래시 형태의 공격이 아니라면 이 값은 false입니다.
+     * 자세하게 말하면 스플래시, 충격파의 경우 동시에 여러 적을 때리므로 true입니다.  
+     * 그러나 관통은 동시에 여러 적을 때리긴 하지만 스플래시 공격이 아니라, 
+     * 무기가 한번 타격하면 공격횟수를 소모하므로 따라서 false입니다.  
+     * @type {boolean}
+     */ 
+    this.isMultiTarget = false
+
+    /** 
+     * 멀티타겟인경우 한번 공격당 최대 타겟 제한 수: 기본값 20, -1일경우 무제한
+     * 멀티타겟이 아닐경우, 공격 시도한 해당 프레임의 동시 공격 제한 수
+     * @type {number}
+     */ 
+    this.maxTarget = 20
   }
 
   /**
    * 무기의 처리 프로세스  
-   * 특별한 일이 아니라면, 이 함수는 임의 수정하거나 상속받지 마세요.
+   * 이 함수는 임의로 수정하지 마세요. Weapon 객체가 공통으로 사용해야 합니다.
    */
   process () {
     this.processMove()
@@ -632,7 +765,7 @@ class WeaponData extends FieldData {
   processDeleteCheck () {
     // 무기가 정상적으로 처리되지 않고 오랫동안 남아있을 때를 대비해 삭제하는 요소
     // 그리고 남은 반복 횟수가 0이하인 경우는 해당 무기를 사용할 수 없으므로 삭제됨
-    if (this.repeatCount <= 0 || this.elapsedFrame >= 420) {
+    if (this.repeatCount <= 0 || this.elapsedFrame >= 360) {
       this.isDeleted = true
     }
   }
@@ -664,37 +797,206 @@ class WeaponData extends FieldData {
   }
 
   /**
-   * 이동에 관한 로직(process에서 사용)
+   * 무기는 적 오브젝트를 공격합니다. processAttack 함수는 무기가 적을 공격하기 위한 로직을 작성합니다.  
+   * 이 함수에서 공격횟수를 소모하고, 적을 공격하기 위해서는 이 함수 내부에서 hitObjectProgress를 사용해야 합니다.
    */
-  processMove () {
-    this.x += this.speedX
-    this.y += this.speedY
+  processAttack () {
+    this.processHitObject()
   }
 
   /**
-   * 무기는 적 오브젝트를 공격합니다. 이것은 무기와 적과의 상호작용을 처리하는 함수입니다.  
-   * process는 무기의 로직 처리이고, processAttack는 무기가 적을 공격하기 위한 로직을 작성합니다.  
-   * 반복 횟수에 대한 고려를 하지 않고, 새로 알고리즘을 작성하지 않는다면, 일반적인 무기는 
+   * 해당 무기 판정에 따른, 정해진 공격 범위를 기준으로 공격된 적들을 확인하는 함수입니다.  
+   * 기본적으로 무기는 충돌 처리 후 적을 때린 시점에서 반복횟수가 감소하여 나중에 자동으로 삭제됩니다.  
+   * 다만 공격방식이 좀 다른 무기들은, 로직 처리가 약간 다릅니다. 스플래시는 공격 1회당 반복횟수가 1회 감소하고, 
+   * 일반 무기는 타격 1회당 반복횟수가 1회 감소합니다. [예를 들어 미사일은 8번 공격하지만, 레이저는 20번 타격, 멀티샷은 1회 타격]  
+   * 모든 반복횟수를 소모하였다면, 무기는 process함수에서 자동으로 삭제됩니다.
+   * 참고로 공격범위가 지정되지 않으면, 현재 무기의 객체 범위를 그대로 사용합니다.
+   * @param {{x: number, y: number, width: number, height: number}} attackArea 공격 범위
    */
-  processAttack () {
-    let enemyObject = fieldState.getEnemyObject()
+  processHitObject (attackArea = {x: this.x, y: this.y, width: this.width, height: this.height}) {
+    let enemyObject = fieldState.getEnemyObject() // 적 오브젝트
+    let hitCount = 0 // 적을 총 때린 횟수
 
-    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-    for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i]
+    if (this.isMultiTarget) {
+      // 멀티타겟인 경우, 한번 공격당 무기의 repeatCount 1회 감소
+      this.repeatCount--
 
-      // 각각의 적마다 충돌 검사
-      if (collision(this, currentEnemy)) {
-        // 충돌한 경우, 충돌한 상태에서의 로직을 처리
-        this.damageProcess(currentEnemy)
-        this.repeatCount-- // 무기 반복횟수 1회 감소
+      // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
+      for (let i = 0; i < enemyObject.length; i++) {
+        let currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
+        if (currentEnemy.isDied) continue // 적이 죽은경우 무시
 
-        // 적을 공격 성공한 시점에서 충돌 처리 후 함수는 종료되고, 무기 반복횟수 1이 감소합니다.
-        // 기본적으로 무기 반복횟수는 1이므로, 적을 한번 타격 후 삭제됩니다.
-        // 무기 삭제 여부는 process 함수에서 처리합니다.
-        return 
+        // 각각의 적마다 충돌 검사
+        if (collision(attackArea, currentEnemy)) {
+          // 충돌한 경우, 충돌한 상태에서의 로직을 처리
+          this.damageProcess(currentEnemy)
+          hitCount++ // 적을 때린 횟수 1회 증가
+
+          // 만약 적을 때린 횟수가 최대 제한을 초과하면 함수 종료
+          if (hitCount >= this.maxTarget) {
+            return
+          }
+        }
+      }
+    } else {
+      // 멀티타겟이 아닌 경우, 기본적으로 무기는 1개체당 1대를 때릴 수 있음. (repeatCount가 있다면 그 횟수만큼 적을 때림)
+      
+      // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
+      for (let i = 0; i < enemyObject.length; i++) {
+        let currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
+        if (currentEnemy.isDied) continue // 적이 죽은경우 무시
+
+        // 각각의 적마다 충돌 검사
+        if (collision(attackArea, currentEnemy)) {
+          // 충돌한 경우, 충돌한 상태에서의 로직을 처리
+          this.damageProcess(currentEnemy)
+          hitCount++ // 적을 때린 횟수 1회 증가
+          this.repeatCount-- // 만약 적을 때렸다면, 무기의 반복 횟수를 감소시킵니다.
+
+          // 만약 적을 때린 횟수가 최대 제한을 초과하면 또는 repeatCount가 0이면 함수 종료
+          if (hitCount >= this.maxTarget || this.repeatCount <= 0) {
+            return
+          }
+        }
       }
     }
+  }
+
+  /**
+   * 무기에 타겟이 존재할 때, 해당 타켓이랑 충돌했는지 확인합니다.
+   * @param {{x: number, y: number, width: number, height: number}} attackArea 
+   */
+  targetEnemyHitedCheck (attackArea = {x: this.x, y: this.y, width: this.width, height: this.height}) {
+    if (this.targetObject) {
+      if (collision(attackArea, this.targetObject)) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  /**
+   * 적이 무기와 충돌했는지 확인. 데미지 처리는 하지 않습니다.
+   * @param {{x: number, y: number, width: number, height: number}} attackArea 공격 범위
+   * @returns {boolean}
+   */
+  enemyHitedCheck (attackArea = {x: this.x, y: this.y, width: this.width, height: this.height}) {
+    let enemyObject = fieldState.getEnemyObject() // 적 오브젝트 가져오기
+
+    for (let i = 0; i < enemyObject.length; i++) {
+      let currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
+      if (currentEnemy.isDied) continue // 적이 죽은경우 무시
+
+      // 각각의 적마다 충돌 검사
+      // 적들 중 하나라도 충돌했다면, true
+      if (collision(attackArea, currentEnemy)) {
+        return true
+      }
+    }
+
+    // 어떠한 적도 충돌하지 않았다면 false
+    return false
+  }
+
+  /**
+   * 무기랑 충돌한 모든 적 객체를 가져옵니다. (최대개수가 정해지지 않은경우 해댕하는 모든 객체를 가져옴)
+   * @param {{x: number, y: number, width: number, height: number}} attackArea 공격 범위
+   * @param {number} maxCount 최대 개수
+   * @returns {EnemyData[]}
+   */
+  getEnemyHitObject (attackArea = {x: this.x, y: this.y, width: this.width, height: this.height}, maxCount = -1) {
+    let hitEnemyList = []
+    let enemyObject = fieldState.getEnemyObject() // 적 오브젝트 가져오기
+
+    for (let i = 0; i < enemyObject.length; i++) {
+      let currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
+      if (currentEnemy.isDied) continue // 적이 죽은경우 무시
+
+      // 각각의 적마다 충돌 검사
+      // 적들 중 하나라도 충돌했다면, true
+      if (collision(attackArea, currentEnemy)) {
+        hitEnemyList.push(currentEnemy)
+        if (maxCount >= 0 && hitEnemyList.length >= maxCount) {
+          break // for문 종료
+        }
+      }
+    }
+
+    // 어떠한 적도 충돌하지 않았다면 false
+    if (hitEnemyList.length >= 1) {
+      return hitEnemyList
+    } else {
+      return null
+    }
+  }
+
+  /**
+   * 이 함수는, OBB 충돌 감지를 할 때 사용하는 함수입니다.  
+   * hitObject가 두 종류로 나뉘어진건, OBB충돌범위에 몇가지 정보가 더 필요하기 때문입니다.
+   * @param {{x: number, y: number, width: number, height: number, degree: number}} attackArea 공격 범위
+   */
+  processHitObjectOBBCollision (attackArea = null) {
+    let enemyObject = fieldState.getEnemyObject() // 적 오브젝트
+    let hitCount = 0 // 적을 총 때린 횟수
+    if (attackArea == null) return
+
+    if (this.isMultiTarget) {
+      // 멀티타겟인 경우, 한번 공격당 무기의 repeatCount 1회 감소
+      this.repeatCount--
+
+      // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
+      for (let i = 0; i < enemyObject.length; i++) {
+        let currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
+        if (currentEnemy.isDied) continue // 적이 죽은경우 무시
+
+        // 각각의 적마다 충돌 검사
+        if (collisionClass(attackArea, currentEnemy)) {
+          // 충돌한 경우, 충돌한 상태에서의 로직을 처리
+          this.damageProcess(currentEnemy)
+          hitCount++ // 적을 때린 횟수 1회 증가
+
+          // 만약 적을 때린 횟수가 최대 제한을 초과하면 함수 종료
+          if (hitCount >= this.this.maxTarget) {
+            return
+          }
+        }
+      }
+    } else {
+      // 멀티타겟이 아닌 경우, 기본적으로 무기는 1개체당 1대를 때릴 수 있음. (repeatCount가 있다면 그 횟수만큼 적을 때림)
+      
+      // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
+       for (let i = 0; i < enemyObject.length; i++) {
+        let currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
+        if (currentEnemy.isDied) continue // 적이 죽은경우 무시
+
+        // 각각의 적마다 충돌 검사
+        if (collisionClass.collision(attackArea, currentEnemy)) {
+          // 충돌한 경우, 충돌한 상태에서의 로직을 처리
+          this.damageProcess(currentEnemy)
+          hitCount++ // 적을 때린 횟수 1회 증가
+          this.repeatCount-- // 만약 적을 때렸다면, 무기의 반복 횟수를 감소시킵니다.
+
+          // 만약 적을 때린 횟수가 최대 제한을 초과하면 또는 repeatCount가 0이면 함수 종료
+          if (hitCount >= this.maxTarget || this.repeatCount <= 0) {
+            return
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * 현재 타겟이 죽어있거나 삭제되었는지를 확인합니다. 다만 타겟이 없으면 무조건 false 리턴
+   */
+  targetDeletedOrDiedCheck () {
+    if (this.targetObject) {
+      if (this.targetObject.isDeleted || this.targetObject.isDied) {
+        return true
+      }
+    }
+
+    return false
   }
 
   /**
@@ -704,10 +1006,14 @@ class WeaponData extends FieldData {
     // 추적 타입이 아닌 경우 함수 종료 (아무것도 하지 않음)
     if (!this.isChaseType) return
 
+    // 추적은 속도값을 이용해서 적을 추적하므로, 이동 방향은 정하지 않음.
+    this.setMoveDirection()
+
     // 추적하는 오브젝트가 있을 경우
     if (this.targetObject != null) {
       // 추적하는 오브젝트가 있지만, 삭제된경우에는 해당 오브젝트를 더이상 추적하지 않고 함수를 종료
-      if (this.targetObject.isDeleted) {
+      // 죽은 적도 더이상 추적하지 않음
+      if (this.targetDeletedOrDiedCheck()) {
         this.targetObject = null
         return
       } else {
@@ -749,25 +1055,29 @@ class WeaponData extends FieldData {
     this.speedX = Math.floor(distanceX / 10)
     this.speedY = Math.floor(distanceY / 10)
 
-    // 속도 보정
-    if(this.speedX <= 0 && this.speedX > -4) {
-      this.speedX = -4
-    } else if(this.speedX > 0 && this.speedX < 4) {
-      this.speedX = 4
+    // 각 타겟의 이동 속도값(절대값으로 얻음)
+    let absTargetSpeedX = Math.abs(this.targetObject.speedX)
+    let absTargetSpeedY = Math.abs(this.targetObject.speedY)
+
+    // 속도 보정: 적 이동속도보다 빨리 무기가 움직여야함.
+    if(this.speedX <= 0 && this.speedX > -absTargetSpeedX) {
+      this.speedX = -absTargetSpeedX - 1
+    } else if(this.speedX > 0 && this.speedX < absTargetSpeedX) {
+      this.speedX = absTargetSpeedX + 1
     }
 
-    if(this.speedY <= 0 && this.speedY > -4) {
-      this.speedY = -4
-    } else if(this.speedY > 0 && this.speedY < 4) {
-      this.speedY = 4
+    if(this.speedY <= 0 && this.speedY > -absTargetSpeedY) {
+      this.speedY = -absTargetSpeedY - 1
+    } else if(this.speedY > 0 && this.speedY < absTargetSpeedY) {
+      this.speedY = absTargetSpeedY + 1
     }
 
     // 적과의 거리가 짧을 경우, 강제로 해당 위치로 이동합니다.
-    if(Math.abs(distanceX) <= 4) {
+    if(Math.abs(distanceX) <= 20) {
       this.x = targetCenterX
     }
 
-    if(Math.abs(distanceY) <= 4) {
+    if(Math.abs(distanceY) <= 20) {
       this.y = targetCenterY
       this.speedY = 0
     }
@@ -788,25 +1098,22 @@ class MultyshotData extends WeaponData {
     this.height = 8
     this.color = 'brown'
 
-    this.moveX = 20
-    this.moveY = 0
-    this.speedX = 20
-    this.speedY = 0
-    this.direction = ''
+    this.moveSpeedX = 20
+    this.moveSpeedY = 0
     this.image = imageFile.weapon.multyshot
 
     // 옵션에 따른 추가 설정
     if (option.length === 1) {
-      this.speedY = option[0]
+      this.moveSpeedY = option[0]
     } else if (option.length === 2) {
-      this.speedY = option[0]
+      this.moveSpeedY = option[0]
       this.isChaseType = option[1]
     }
 
     // 옵션에 따른 색깔 설정
     if (this.isChaseType) {
       this.color = 'blue' // 추적 타입은 무조건 파랑색
-    } else if (this.speedY === 0) {
+    } else if (this.moveSpeedY === 0) {
       this.color = 'brown' // y축 속도가 0이면 갈색
     } else {
       this.color = 'green' // y축 속도가 있으면 초록색
@@ -845,9 +1152,11 @@ class MissileData extends WeaponData {
     this.isChaseType = true
     this.width = 40
     this.height = 20
-    this.speedX = 12
+    this.movespeedX = 12
     this.repeatCount = 5
     this.repeatDelay = new DelayData(6)
+    this.isMultiTarget = true
+    this.maxTarget = 100
     this.state = 'normal'
     this.enimation = new EnimationData(imageFile.weapon.missile, 0, 0, 40, 20, 8, 2, -1)
     this.splashEffectId = ID.effect.missile
@@ -886,25 +1195,14 @@ class MissileData extends WeaponData {
   }
 
   /**
-   * 일반 공격에 대한 처리, 적을 타격하는 순간 스플래시 모드로 변경
+   * 일반 공격에 대한 처리, 아무나 적을 타격하는 순간 스플래시 모드로 변경
    */
   processAttackNormal () {
-    let enemyObject = fieldState.getEnemyObject()
-
-    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-    for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i]
-
-      // 각각의 적마다 충돌 검사
-      if (collision(this, currentEnemy)) {
-        // 하나라도 충돌했다면, 이 함수를 종료하고, 다음 프레임에서 스플래시공격을 함.
-        // 그리고, 그 즉시 미사일은 움직이지 않습니다.
-        this.state = 'splash'
-        this.speedX = 0
-        this.speedY = 0
-        this.isChaseType = false
-        return
-      }
+    if (this.enemyHitedCheck()) {
+      this.state = 'splash'
+      this.speedX = 0
+      this.speedY = 0
+      this.isChaseType = false
     }
   }
 
@@ -912,22 +1210,10 @@ class MissileData extends WeaponData {
    * 스플래시 공격에 대한 로직 처리
    */
   processAttackSplash () {
-    let enemyObject = fieldState.getEnemyObject()
-    this.repeatCount-- // 스플래시 공격을 할 때마다 반복 횟수 감소
     let splashArea = this.getSplashArea()
     fieldState.createEffectObject(this.splashEffectId, splashArea.x, splashArea.y)
-
-    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-    for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i]
-
-      // 각각의 적마다 충돌 검사
-      if (collision(splashArea, currentEnemy)) {
-        this.damageProcess(currentEnemy)
-      }
-    }
+    this.processHitObject(splashArea)
   }
-
 }
 
 class MissileRocket extends MissileData {
@@ -942,8 +1228,8 @@ class MissileRocket extends MissileData {
     this.isChaseType = false
     this.width = 40
     this.height = 20
-    this.speedX = 12
-    this.speedY = -2
+    this.moveSpeedX = 12
+    this.moveSpeedY = -2
     this.state = 'splashB'
     this.repeatCount = 6
     this.repeatDelay = new DelayData(8)
@@ -951,7 +1237,7 @@ class MissileRocket extends MissileData {
 
     // 무기에 따른 옵션 설정
     if (option.length === 1) {
-      this.speedY = option[0]
+      this.moveSpeedY = option[0]
     }
   }
 
@@ -971,15 +1257,15 @@ class MissileRocket extends MissileData {
 class Arrow extends WeaponData {
   /**
    * option list  
-   * 0. speedY (참고: 이 값이 음수면 갈색이고, 양수면 초록색입니다.)
+   * 0. movespeedY (참고: 이 값이 음수면 갈색이고, 양수면 초록색입니다.)
    */
   constructor (option = [2]) {
     super()
     this.mainType = 'bounce'
     this.subType = 'arrow'
     this.id = ID.weapon.arrow
-    this.speedY = 4
-    this.speedX = 17
+    this.movespeedY = 4
+    this.movespeedX = 17
     this.width = 20
     this.height = 20
     this.bounceMaxCount = 6
@@ -992,11 +1278,11 @@ class Arrow extends WeaponData {
       if (option[0] < 0) {
         this.color = 'brown'
         this.enimation = new EnimationData(imageFile.weapon.arrow, 0, 0, 20, 20, 7, 4, -1)
-        this.speedY = option[0]
+        this.movespeedY = option[0]
       } else if (option[0] > 0) {
         this.color = 'green'
         this.enimation = new EnimationData(imageFile.weapon.arrow, 0, 20, 20, 20, 7, 4, -1)
-        this.speedY = option[0]
+        this.movespeedY = option[0]
       }
     }
   }
@@ -1014,21 +1300,21 @@ class Arrow extends WeaponData {
     // 벽에 튕길경우, bounceCount가 1증가합니다.
     if (this.x < 0) {
       this.x = 0
-      this.speedX = Math.abs(this.speedX)
+      this.movespeedX = Math.abs(this.movespeedX)
       this.bounceCount++
     } else if (this.x > graphicSystem.CANVAS_WIDTH) {
       this.x = graphicSystem.CANVAS_WIDTH
-      this.speedX = -Math.abs(this.speedX)
+      this.movespeedX = -Math.abs(this.movespeedX)
       this.bounceCount++
     }
 
     if (this.y < 0) {
       this.y = 0
-      this.speedY = Math.abs(this.speedY)
+      this.movespeedY = Math.abs(this.movespeedY)
       this.bounceCount++
     } else if (this.y > graphicSystem.CANVAS_HEIGHT) {
       this.y = graphicSystem.CANVAS_HEIGHT
-      this.speedY = -Math.abs(this.speedY)
+      this.movespeedY = -Math.abs(this.movespeedY)
       this.bounceCount++
     }
 
@@ -1050,14 +1336,14 @@ class Laser extends WeaponData {
     this.subType = 'laser'
     this.id = ID.weapon.laser
     this.baseSpeed = 11
-    this.speedX = this.baseSpeed
-    this.speedY = 0
+    this.movespeedX = this.baseSpeed
+    this.movespeedY = 0
     this.baseWidth = 160
     this.baseHeight = 80
     this.width = 160
     this.height = 20
-    this.repeatCount = 10
-    this.direction = 'right'
+    this.repeatCount = 5
+    this.moveDirectionX = 'right'
     this.image = imageFile.weapon.laser
     this.repeatDelay = new DelayData(2)
   }
@@ -1066,27 +1352,7 @@ class Laser extends WeaponData {
     // 2프레임당 한번만 공격함. 따라서 반복 대기시간이 넘어가지 않는다면, 함수 강제 종료.
     if (!this.repeatDelay.check()) return
 
-    // 레이저는 기준 로직과 약간 다름
-    let enemyObject = fieldState.getEnemyObject()
-
-    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-    for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i]
-
-      // 각각의 적마다 충돌 검사
-      if (collision(this, currentEnemy)) {
-        // 충돌한 경우, 충돌한 상태에서의 로직을 처리
-        // 한번 적을 공격할 때마다 반복 카운트 1 감소
-        this.damageProcess(currentEnemy)
-        this.repeatCount--
-
-        // 반복 카운트가 0이되면, 더이상 공격은 진행되지 않고, 레이저는 삭제됩니다.
-        if (this.repeatCount < 0) {
-          this.isDeleted = true
-          return 
-        }
-      }
-    }
+    this.processHitObject()
   }
 
   display () {
@@ -1167,80 +1433,58 @@ class LaserBlue extends Laser {
     // 2프레임당 한번만 공격함. 따라서 반복 대기시간이 넘어가지 않는다면, 함수 강제 종료.
     if (!this.repeatDelay.check()) return
 
-    let enemyObject = fieldState.getEnemyObject()
+    let laserAreaOBB
 
-    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-    for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i]
-
-      if ( 
-        (this.xDirection === 'right' && this.yDirection === 'up') ||
-        (this.xDirection === 'left' && this.yDirection === 'down') ) {
-        let laserAreaOBB = {
-          x: this.x,
-          y: this.y,
-          width: this.baseWidth,
-          height: this.baseHeight,
-          degree: 135
-        }
-        if (collisionOBB.collision(laserAreaOBB, currentEnemy)) {
-          this.damageProcess(currentEnemy)
-          this.repeatCount--
-        }
-      } else if (
-        (this.xDirection === 'right' && this.yDirection === 'down') ||
-        (this.xDirection === 'left' && this.yDirection === 'up')) {
-        let laserAreaOBB = {
-          x: this.x,
-          y: this.y,
-          width: this.baseWidth,
-          height: this.baseHeight,
-          degree: 45
-        }
-        if (collisionOBB.collision(laserAreaOBB, currentEnemy)) {
-          this.damageProcess(currentEnemy)
-          this.repeatCount--
-        }
-      } else {
-        // 각각의 적마다 충돌 검사
-        if (collision(this, currentEnemy)) {
-          this.damageProcess(currentEnemy)
-          this.repeatCount--
-        }
+    // 레이저 공격에 따른 영역 설정
+    if ( 
+      (this.xDirection === 'right' && this.yDirection === 'up') ||
+      (this.xDirection === 'left' && this.yDirection === 'down') ) {
+      laserAreaOBB = {
+        x: this.x,
+        y: this.y,
+        width: this.baseWidth,
+        height: this.baseHeight,
+        degree: 135
       }
-
-      // 반복 카운트가 0이되면, 더이상 공격은 진행되지 않고, 레이저는 삭제됩니다.
-      if (this.repeatCount < 0) {
-        this.isDeleted = true
-        return 
-      } 
+    } else if (
+      (this.xDirection === 'right' && this.yDirection === 'down') ||
+      (this.xDirection === 'left' && this.yDirection === 'up')) {
+      laserAreaOBB = {
+        x: this.x,
+        y: this.y,
+        width: this.baseWidth,
+        height: this.baseHeight,
+        degree: 45
+      }
     }
+
+    this.processHitObjectOBBCollision(laserAreaOBB)
   }
 
   processMove () {
     // X축 방향을 살펴보면서, X축 방향에 따른 속도를 변경합니다.
     if (this.xDirection === 'left') {
-      this.speedX = -this.baseSpeed
+      this.movespeedX = -this.baseSpeed
     } else if (this.xDirection === 'right') {
-      this.speedX = this.baseSpeed
+      this.movespeedX = this.baseSpeed
     } else {
-      this.speedX = 0
+      this.movespeedX = 0
     }
 
     // Y축도 마찬가지
     if (this.yDirection === 'up') {
-      this.speedY = -this.baseSpeed
+      this.movespeedY = -this.baseSpeed
     } else if (this.yDirection === 'down') {
-      this.speedY = this.baseSpeed
+      this.movespeedY = this.baseSpeed
     } else {
-      this.speedY = 0
+      this.movespeedY = 0
     }
 
     // 단, X축과 Y축 모두 멈춰있을 경우, 레이저는 강제로 오른쪽 방향으로 이동합니다.
     // 여기서는 방향 변경 카운트를 세진 않음.
-    if (this.speedX === 0 && this.speedY === 0) {
+    if (this.movespeedX === 0 && this.movespeedY === 0) {
       this.xDirection = 'right'
-      this.speedX = this.baseSpeed
+      this.movespeedX = this.baseSpeed
     }
 
     // 레이저는 이동할 때, centerX, centerY(중심 위치)를 기준으로 이동합니다.
@@ -1251,8 +1495,8 @@ class LaserBlue extends Laser {
       this.laserCenterY = this.y + (this.height / 2)
     }
 
-    this.laserCenterX += this.speedX
-    this.laserCenterY += this.speedY
+    this.laserCenterX += this.movespeedX
+    this.laserCenterY += this.movespeedY
     if (this.xDirection !== '' && this.yDirection === '') {
       // x축은 방향이 있고, y축은 방향이 없다면 가로 방향입니다.
       this.x = this.laserCenterX - (this.width / 2)
@@ -1269,7 +1513,7 @@ class LaserBlue extends Laser {
   }
 
   processChaseEnemy () {
-    const scopeSize = 20 // 레이저의 대략적인 추적 범위
+    const scopeSize = 4 // 레이저의 대략적인 추적 범위
     let isXDirectionChanged = false // X축의 방향은 변경되었습니까?
     let isYDirectionChanged = false // y축의 방향은 변경되었습니까?
     let halfWidth = this.width / 2
@@ -1432,6 +1676,18 @@ class Sapia extends WeaponData {
   }
 
   /**
+   * 감지 범위 얻기
+   */
+  getDetectArea () {
+    return {
+      x: this.x - 300,
+      y: this.y - 200,
+      width: 600,
+      height: 400
+    }
+  }
+
+  /**
    * 사피아는, chase방식이 다른 무기와는 완전히 다릅니다.
    * 먼저, 영역을 설정하고, 영역 내에 적이 있는지 살펴봅니다.
    */
@@ -1441,7 +1697,7 @@ class Sapia extends WeaponData {
 
     // targetObject가 null이 아닐 경우, 정상적으로 적을 추적
     if (this.targetObject != null) {
-      if (this.targetObject.isDeleted) {
+      if (this.targetObject.isDeleted || this.targetObject.isDied) {
         this.targetObject = null
         return
       }
@@ -1450,12 +1706,7 @@ class Sapia extends WeaponData {
       let enemyObject = fieldState.getEnemyObject()
 
       // 감지 범위
-      let detectArea = {
-        x: this.x - 300,
-        y: this.y - 200,
-        width: 600,
-        height: 400
-      }
+      let detectArea = this.getDetectArea()
 
       // 랜덤한 적을 타격하기 위해...
       // 밑에 for문이 두개 있는 까닭은 randomIndex 적이 영역 내에 없을 때 다른 모든 적을 검색하기 위해서입니다.
@@ -1536,28 +1787,28 @@ class SapiaShot extends Sapia {
     this.height = 26
     this.targetX = option[0]
     this.targetY = option[1]
-    this.speedX = 0
-    this.speedY = 0
+    this.movespeedX = 0
+    this.movespeedY = 0
   }
 
   processMove () {
     // 이동 속도 강제 지정
     // 생성자에서 하지 않는 이유는, 현재 좌표값을 생성 당시에는 모르기 때문
-    // 대신에, speedX와 speedY를 0으로 초기화한 것으로, 이동 속도가 없을 때,
+    // 대신에, movespeedX와 movespeedY를 0으로 초기화한 것으로, 이동 속도가 없을 때,
     // 적과 사피아샷의 위치를 기준으로 이동속도 설정
-    if (this.speedX === 0 && this.speedY === 0) {
-      this.speedX = (this.targetX - this.x) / 20
-      this.speedY = (this.targetY - this.y) / 20
-      let minSpeed = 4 // 최소 이동속도(절댓값, 부호 무시)
+    if (this.movespeedX === 0 && this.movespeedY === 0) {
+      this.movespeedX = (this.targetX - this.x) / 20
+      this.movespeedY = (this.targetY - this.y) / 20
+      let minSpeed = 10 // 최소 이동속도(절댓값, 부호 무시)
 
       // 만약 한쪽 방향이라도 속도가 minSpeed이하라면 (절댓값으로 계산, 부호 무시)
-      if (Math.abs(this.speedX) <= minSpeed || Math.abs(this.speedY) <= minSpeed) {
+      if (Math.abs(this.movespeedX) <= minSpeed || Math.abs(this.movespeedY) <= minSpeed) {
         // 두개 모두 속도가 3 이상이 될 때까지, 나누기 속도값을 1씩 내려서 반복하여 계산
         // 다만, diviedSpeed가 1 이하면, 그냥 대충 대입하고 끝냄 (? 1나누기면 어차피 직접 적에게 닿는거 아님?)
         for (let divideSpeed = 20; divideSpeed >= 2; divideSpeed--) {
-          this.speedX = (this.targetX - this.x) / divideSpeed
-          this.speedY = (this.targetY - this.y) / divideSpeed
-          if(Math.abs(this.speedX) > minSpeed || Math.abs(this.speedY) > minSpeed) break
+          this.movespeedX = (this.targetX - this.x) / divideSpeed
+          this.movespeedY = (this.targetY - this.y) / divideSpeed
+          if(Math.abs(this.movespeedX) > minSpeed || Math.abs(this.movespeedY) > minSpeed) break
         }
       }
     }
@@ -1578,8 +1829,6 @@ class Parapo extends WeaponData {
     super()
     this.mainType = 'parapo'
     this.subType = 'parapo'
-    this.repeatCount = 2
-    this.repeatDelay = new DelayData(8)
     this.image = imageFile.weapon.parapo
     this.id = ID.weapon.parapo
     this.width = 45
@@ -1589,36 +1838,26 @@ class Parapo extends WeaponData {
   }
   
   processAttack () {
-    // 공격 지연시간 확인하고 지연시간 미만이면 함수 강제종료
-    if (!this.repeatDelay.check()) return
-
-    let enemyObject = fieldState.getEnemyObject()
-
-    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-    for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i]
-
-      // 각각의 적마다 충돌 검사
-      if (collision(this, currentEnemy)) {
-        /*
-         * 적이랑 충돌했을 때, 충격파 추가로 발사
-         * 충격파는, 적의 중심 위치를 기준으로 4개의 방향으로 타격합니다.
-         * 파라보 자체의 데미지는 없음. (공격력만 있고, 충격파로 데미지를 줌)
-         * 좌표값 상세 [참고: c -> enemy center]
-         * left: (cx - 100, cy - 50), right: (cx, cy - 50)
-         * up: (cx - 50, cy - 100), down: (cx - 50, cy)
-         */
-        let enemyCenterX = currentEnemy.x + (currentEnemy.width / 2)
-        let enemyCenterY = currentEnemy.y + (currentEnemy.height / 2)
-        let shockWaveSize = 100
-        let shockWaveSizeHalf = shockWaveSize / 2
-        fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX - shockWaveSize, enemyCenterY - shockWaveSizeHalf, this.attack, 'left')
-        fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX, enemyCenterY - shockWaveSizeHalf, this.attack, 'right')
-        fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX - shockWaveSizeHalf, enemyCenterY - shockWaveSize, this.attack, 'up')
-        fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX - shockWaveSizeHalf, enemyCenterY, this.attack, 'down')
-        this.repeatCount--
-        return
-      }
+    let hitEnemyList = this.getEnemyHitObject(undefined, 1)
+    if (hitEnemyList) {
+      /*
+      * 적이랑 충돌했을 때, 충격파 추가로 발사
+      * 충격파는, 적의 중심 위치를 기준으로 4개의 방향으로 타격합니다.
+      * 파라보 자체의 데미지는 없음. (공격력만 있고, 충격파로 데미지를 줌)
+      * 좌표값 상세 [참고: c -> enemy center]
+      * left: (cx - 100, cy - 50), right: (cx, cy - 50)
+      * up: (cx - 50, cy - 100), down: (cx - 50, cy)
+      */
+      let hitEnemy = hitEnemyList[0]
+      let enemyCenterX = hitEnemy.x + (hitEnemy.width / 2)
+      let enemyCenterY = hitEnemy.y + (hitEnemy.height / 2)
+      let shockWaveSize = 100
+      let shockWaveSizeHalf = shockWaveSize / 2
+      fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX - shockWaveSize, enemyCenterY - shockWaveSizeHalf, this.attack, 'left')
+      fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX, enemyCenterY - shockWaveSizeHalf, this.attack, 'right')
+      fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX - shockWaveSizeHalf, enemyCenterY - shockWaveSize, this.attack, 'up')
+      fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX - shockWaveSizeHalf, enemyCenterY, this.attack, 'down')
+      this.repeatCount--
     }
   }
 }
@@ -1631,41 +1870,20 @@ class ParapoShockwave extends Parapo {
   constructor (option = ['']) {
     super()
     this.subType = 'shockwave'
-    this.repeatCount = 2
-    this.repeatDelay = new DelayData(12)
-    this.repeatDelay.count = this.repeatDelay.delay // 즉시 카운트 채우기
     this.width = 100
     this.height = 100
-    this.speedX = 0
-    this.speedY = 0
-    this.direction = option[0]
+    this.movespeedX = 0
+    this.movespeedY = 0
+    this.moveDirectionX = option[0]
     this.isChaseType = false // 이 무기는 움직이지 않기 때문에 적을 추적하지 않습니다.
+    this.isMultiTarget = true // 스플래시처럼 다수 타격
+    this.maxTarget = 4
   }
 
   processAttack () {
-    if (!this.repeatDelay.check()) return
-
     this.repeatCount--
-    fieldState.createEffectObject(ID.effect.parapo, this.x, this.y, 0, 0, this.direction)
-
-    let enemyObject = fieldState.getEnemyObject()
-    let maxCombo = 4 // 한번 공격에 적을 때릴 수 있는 수 제한
-
-    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-    for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i]
-
-      // 각각의 적마다 충돌 검사
-      if (collision(this, currentEnemy)) {
-        this.damageProcess(currentEnemy)
-        maxCombo-- // 적 공격 가능횟수 1회 감소
-
-        // 한번 공격에 적을 너무 많이 때리면 리턴
-        if (maxCombo <= 0) {
-          return
-        }
-      }
-    }
+    fieldState.createEffectObject(ID.effect.parapo, this.x, this.y, 0, 0, this.moveDirectionX)
+    this.processHitObject()
   }
 
   display () {
@@ -1681,8 +1899,8 @@ class Blaster extends WeaponData {
     this.width = 36
     this.height = 36
     this.image = imageFile.weapon.blaster
-    this.speedX = 24
-    this.speedY = 0
+    this.movespeedX = 24
+    this.movespeedY = 0
   }
 
   display () {
@@ -1708,7 +1926,7 @@ class BlasterMini extends Blaster {
 class Sidewave extends WeaponData {
   /**
    * 옵션 목록  
-   * 0. speedY = 0, 1. direction = 'right'
+   * 0. movespeedY = 0, 1. direction = 'right'
    */
   constructor (option = [0, 'right']) {
     super()
@@ -1716,12 +1934,12 @@ class Sidewave extends WeaponData {
     this.subType = 'sidewave'
     this.width = 12
     this.height = 60
-    this.speedY = option[0]
-    this.speedX = 11
+    this.movespeedY = option[0]
+    this.movespeedX = 11
 
     if (option.length === 2 && option[1] === 'left') {
       this.enimation = new EnimationData(imageFile.weapon.sidewave, 0, 0, this.width, this.height, 8, 5, -1)
-      this.speedX = -this.speedX
+      this.movespeedX = -this.movespeedX
     } else {
       this.enimation = new EnimationData(imageFile.weapon.sidewave, 0, this.height, this.width, this.height, 8, 5, -1)
     }
@@ -1767,23 +1985,12 @@ class SkillMissile extends MissileData {
   }
 
   processAttackNormal () {
-    let enemyObject = fieldState.getEnemyObject()
+    super.processAttackNormal()
 
-    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-    for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i]
-
-      // 각각의 적마다 충돌 검사
-      if (collision(this, currentEnemy)) {
-        // 하나라도 충돌했다면, 이 함수를 종료하고, 다음 프레임에서 스플래시공격을 함.
-        // 그리고, 그 즉시 미사일은 움직이지 않습니다.
-        this.state = 'splash'
-        this.speedX = 0
-        this.speedY = 0
-        this.isChaseType = false
-        soundSystem.play(soundFile.skill.skillMissileHit) // 스킬 무기는 적을 타격한 순간 폭발음을 사용한다.
-        return
-      }
+    // 스킬 무기는 적을 타격한 순간 폭발음을 사용한다. 그렇다고, attackNormal을 재작성하는것은 귀찮으므로
+    // 대신 여기서 스플래시로 스테이트가 변경된 경우 적을 타격하여 스테이트가 변경된 것이므로 스킬 사운드를 출력한다.
+    if (this.state === 'splash') {
+      soundSystem.play(soundFile.skill.skillMissileHit)
     }
   }
 }
@@ -1798,34 +2005,11 @@ class SkillArrow extends Arrow {
     this.id = ID.weapon.skillArrow
     this.width = 70
     this.height = 70
-    this.speedX = 16
+    this.movespeedX = 16
     this.repeatCount = 4
     this.bounceMaxCount = 12
     this.enimation = new EnimationData(imageFile.weapon.skillArrow, 0, 0, this.width, this.height, 7, 5, -1)
-  }
-
-  processAttack () {
-    // skillArrow는 관통 효과가 존재하지만, 동시에 2마리 이상 때리지 못함.
-    let enemyObject = fieldState.getEnemyObject()
-    let maxAttackCount = 0 // 최대 공격횟수 제한 카운트
-    const MAX_LIMIT = 2 // 1회당 최대 공격횟수는 2회
-
-    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-    for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i]
-
-      // 각각의 적마다 충돌 검사
-      if (collision(this, currentEnemy)) {
-        // 충돌한 경우, 충돌한 상태에서의 로직을 처리
-        // 한번 적을 공격할 때마다 반복 카운트 1 감소
-        this.damageProcess(currentEnemy)
-        this.repeatCount--
-        maxAttackCount++ // 공격횟수 증가
-        if (maxAttackCount >= MAX_LIMIT) {
-          return // 공격횟수 제한 초과시 함수 강제종료
-        }
-      }
-    }
+    this.maxTarget = 2
   }
 }
 
@@ -1838,10 +2022,12 @@ class SkillLaser extends WeaponData {
     this.width = 800
     this.height = 200
     this.image = imageFile.weapon.skillLaser
-    this.speedX = 0
-    this.speedY = 0
+    this.movespeedX = 0
+    this.movespeedY = 0
     this.repeatCount = 60
     this.repeatDelay = new DelayData(4)
+    this.isMultiTarget = true
+    this.maxTarget = 50
   }
 
   // 이 레이저는 왼쪽에서 나온다음, x축이 0위치로 고정되고, y축은 플레이어를 따라다닙니다.
@@ -1861,27 +2047,7 @@ class SkillLaser extends WeaponData {
     if (this.elapsedFrame <= 10) return
     if (!this.repeatDelay.check()) return
 
-    // 반복카운트는 공격할 때마다 줄어듬
-    // (기존 레이저는 적을 타격할 때마다 줄어들지만, 공격할때마다 줄어드는것은 아님)
-    this.repeatCount--
-
-    // 레이저는 기준 로직과 약간 다름
-    let enemyObject = fieldState.getEnemyObject()
-
-    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-    for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i]
-
-      // 각각의 적마다 충돌 검사
-      if (collision(this, currentEnemy)) {
-        // 충돌한 경우, 충돌한 상태에서의 로직을 처리
-        // 최대 적 타격수에 제한 없음. (미사일과 동일)
-        this.damageProcess(currentEnemy)
-        
-        // 반복 카운트가 0이되면, 상속받은 process 로직에 의해서 삭제됨.
-        // 기존 레이저랑 다르게 여기서 삭제할 필요가 없음.
-      }
-    }
+    this.processHitObject()
   }
 
   display () {
@@ -1908,36 +2074,31 @@ class SkillSapia extends Sapia {
     this.enimationSapiaCircle = new EnimationData(imageFile.weapon.skillSapia, 0, this.height, this.width, this.height, 5, 4, -1)
     this.isChaseType = true
     this.repeatCount = 40
+    this.useMaxCount = this.repeatCount
     this.repeatDelay = new DelayData(6)
+    this.maxTarget = 4
+    this.callCount = 0
+  }
+
+  /**
+   * 감지 범위 얻기
+   */
+   getDetectArea () {
+    return {
+      x: this.x - 600,
+      y: this.y - 300,
+      width: 1200,
+      height: 600
+    }
   }
 
   processAttack () {
     // 2프레임당 한번만 공격함. 따라서 반복 대기시간이 넘어가지 않는다면, 함수 강제 종료.
     if (!this.repeatDelay.check()) return
 
-    // 적 객체 얻어오기
-    let enemyObject = fieldState.getEnemyObject()
-    const ATTACK_MAX_COUNT = 4 // 공격 최대 카운트 제한
-    let attackCount = 0 // 공격 카운트
-    this.repeatCount-- // 반복 횟수 1 감소
-
-    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-    for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i]
-
-      // 각각의 적마다 충돌 검사
-      if (collision(this, currentEnemy)) {
-        // 충돌한 경우, 충돌한 상태에서의 로직을 처리
-        // 한번 적을 공격할 때마다 반복 카운트 1 감소
-        this.damageProcess(currentEnemy)
-        attackCount++
-
-        // 공격 최대 제한 횟수가 초과한다면, 함수는 강제 종료
-        if (attackCount >= ATTACK_MAX_COUNT) {
-          return 
-        }
-      }
-    }
+    this.processHitObject()
+    this.useCount++
+    this.repeatCount = this.useMaxCount - this.useCount // 반복횟수 강제 재조정
   }
 
   display () {
@@ -1956,13 +2117,15 @@ class SkillParapo extends Parapo {
     this.mainType = 'skill'
     this.subType = 'parapo'
     this.id = ID.weapon.skillParapo
-    this.width = 120
-    this.height = 120
+    this.width = 240
+    this.height = 240
     this.isChaseType = true
-    this.speedX = 4
-    this.speedY = 0
+    this.movespeedX = 4
+    this.movespeedY = 0
     this.state = 'normal'
     this.repeatCount = 1 // 참고: 이 스킬은 파라포 무기와 다르게 반복횟수가 1입니다.
+    this.maxTarget = 16
+    this.isMultiTarget = true
   }
 
   processMove () {
@@ -1985,34 +2148,21 @@ class SkillParapo extends Parapo {
   }
 
   processAttackNormal () {
-    // 적 객체 얻어오기
-    let enemyObject = fieldState.getEnemyObject()
-
-    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-    for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i]
-
-      // 각각의 적마다 충돌 검사
-      if (collision(this, currentEnemy)) {
-        // 충돌한 경우, 충돌한 상태에서의 로직을 처리
-        // 한번 적을 공격할 때마다 반복 카운트 1 감소
-        this.state = 'shockwave'
-      }
+    if (this.enemyHitedCheck()) {
+      this.state = 'shockwave'
     }
   }
 
   processAttackShockwave () {
     // 적 객체 얻어오기
-    let enemyObject = fieldState.getEnemyObject()
-    this.repeatCount-- // 반복횟수 감소 (반복횟수를 감소시키지 않으면 무한공격을 할 수 있음.)
     soundSystem.play(soundFile.skill.skillParapoHit) // 타격 사운드
     
     // 충격파 범위
     let shockwaveArea = { 
-      x: this.x - 60,
-      y: this.y - 60,
-      width: 60,
-      height: 60
+      x: this.x - (this.width / 2),
+      y: this.y - (this.height / 2),
+      width: this.width,
+      height: this.height
     }
     if (!this.targetObject) {
       shockwaveArea.x = this.x
@@ -2023,18 +2173,7 @@ class SkillParapo extends Parapo {
 
     // 충격파 이펙트
     fieldState.createEffectObject(ID.effect.skillParapo, shockwaveArea.x, shockwaveArea.y)
-
-    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-    for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i]
-
-      // 각각의 적마다 충돌 검사
-      if (collision(shockwaveArea, currentEnemy)) {
-        // 충돌한 경우, 충돌한 상태에서의 로직을 처리
-        // 한번 적을 공격할 때마다 반복 카운트 1 감소
-        this.damageProcess(currentEnemy)
-      }
-    }
+    this.processHitObject(shockwaveArea) // 적 충돌 처리
   }
 
   display () {
@@ -2051,10 +2190,10 @@ class SkillBlaster extends Blaster {
     this.width = 36
     this.height = 36
     this.image = imageFile.weapon.skillBlaster
-    this.speedX = 32
+    this.movespeedX = 32
 
     // 희한하게도, 이 무기는 직선에서 약간 벗어나있음.
-    this.speedY = -0.2 + Math.random () * 0.4
+    this.movespeedY = -0.2 + Math.random () * 0.4
   }
 
   display () {
@@ -2068,8 +2207,8 @@ class SkillSidewave extends Sidewave {
     this.mainType = 'skill'
     this.subType = 'blaster'
     this.id = ID.weapon.skillSidewave
-    this.speedX = 22
-    this.speedY = option[0]
+    this.movespeedX = 22
+    this.movespeedY = option[0]
     this.width = 36
     this.height = 120
     this.enimation = new EnimationData(imageFile.weapon.skillSidewave, 0, 0, this.width, this.height, 5, 6, -1)
@@ -2077,54 +2216,57 @@ class SkillSidewave extends Sidewave {
 }
 
 /**
- * 플레이어 무기 데이터 (이 클래스는 static 클래스입니다.)  
+ * 플레이어 무기 데이터 
  * 참고: 기본 스펙은 다음과 같습니다.  
  * 1초당 100% 공격력이 기준값  
  * 나머지 무기는 이 공격력 %를 바꿈으로써 밸런스를 조절할 계획  
  * 경고: 저 수치는 명시적인 수치이지만, create함수에서 무조건 참고하지 않을 수도 있음.
  */
  class PlayerWeaponData {
-  /** 
-   * 샷 한번 발사에 지연시간(프레임)  
-   * 해당 프레임만큼 지연 후 다음 무기를 발사 할 수 있음.
-   */
-  static delay = 60
+  constructor () {
+    /** 
+     * 샷 한번 발사에 지연시간(프레임)  
+     * 해당 프레임만큼 지연 후 다음 무기를 발사 할 수 있음.
+     */
+    this.delay = 60
 
-  /** 
-   * 한번 무기를 발사할 때 동시에 발사되는 개수  
-   * 2 이상일 경우, 동시에 2발을 발사한다는 뜻
-   */ 
-  static shotCount = 1
+    /** 
+     * 한번 무기를 발사할 때 동시에 발사되는 개수  
+     * 2 이상일 경우, 동시에 2발을 발사한다는 뜻
+     */ 
+    this.shotCount = 1
 
-  /** 
-   * 초당 공격력 반영 비율: 기본값 1  
-   * 참고: 최종 공격력은 소수점 버림하여 계산합니다.
-   */ 
-  static attackMultiple = 1
+    /** 
+     * 실제 공격력 반영 배율: 기본값 1  
+     * 일부 무기는 밸런스 특성상 공격력 반영 비율이 높거나 낮을 수 있음.
+     * 참고: 최종 공격력은 소수점 버림하여 계산합니다.
+     */ 
+    this.attackMultiple = 1
 
-  /**
-   * 무기에 따른 공격횟수 (발사 횟수랑 다르고, 무기 객체가 공격하는 횟수임.)  
-   * (명시적인 수치이나, 제작자의 실수로 로직과 다른 값이 명시될 수 있음.)
-   */
-  static attackCount = 1
+    /**
+     * 무기에 따른 공격횟수 (발사 횟수랑 다르고, 무기 객체가 공격하는 횟수임.)  
+     * (명시적인 수치이나, 제작자의 실수로 로직과 다른 값이 명시될 수 있음.)
+     */
+    this.attackCount = 1
+  }
 
-  
   /**
    * 무기 생성 함수: 이 로직에서만 무기를 생성해 주세요.  
    * 그리고 무기 생성은 fieldState.createWeapon 함수를 사용합니다.  
    * 경고: 이 함수를 한번 사용했을 때 attackMultiple만큼 공격력을 가진 무기 객체가 발사되어야 합니다.  
    * 즉 create함수가 무기를 1개 생성한다면, 생성한 무기의 공격력의 %는 100%가 되어야 합니다.
+   * @param {number} attack 플레이어의 공격력
    */
-  static create (attack, x, y) {}
+  create (attack, x, y) {}
 
   /**
-   * 명시적인 수치를 기준으로 각 샷 공격력을 계산하는 함수  
+   * 플레이어의 공격력을 기준으로 각 샷 공격력을 계산하는 함수  
    * 일반적인 경우는, 모든 샷의 공격력이 동일하지만, 일부 무기는 아닐 수도 있으며,
    * 이 경우 다른 방식으로 밸런스에 맞춰 계산해야 합니다.
    * @param {number} baseAttack 기준 공격력
    * @param {number} multiple 배율 (최종 공격력의 배율)
    */
-  static getShotAttack (baseAttack, multiple = 1) {
+  getShotAttack (baseAttack, multiple = 1) {
     let secondPerCount = 60 / this.delay
     let totalDivied = this.shotCount * this.attackCount
     let totalMultiple = this.attackMultiple * multiple
@@ -2133,14 +2275,20 @@ class SkillSidewave extends Sidewave {
   }
 }
 
-
+/**
+ * 멀티샷: 기본 스타일 복합 무기
+ */
 class PlayerMultyshot extends PlayerWeaponData {
-  // 단순한 무기라, 따로 추가로 계산할 요소는 거의 없음
-  static delay = 10
-  static attackMultiple = 1
-  static shotCount = 6
+  constructor () {
+    super()
 
-  static create (attack, x, y) {
+    // 단순한 무기라, 따로 추가로 계산할 요소는 거의 없음
+    this.delay = 10
+    this.attackMultiple = 1
+    this.shotCount = 6
+  }
+
+  create (attack, x, y) {
     // 샷 카운트: 6, 초당 6회 = 총 발사 수 36
     const shotAttack = this.getShotAttack(attack)
 
@@ -2153,22 +2301,29 @@ class PlayerMultyshot extends PlayerWeaponData {
   }
 }
 
+/**
+ * 미사일: 스플래시 연타 공격
+ */
 class PlayerMissile extends PlayerWeaponData {
-  static missile = new MissileData()
-  static missileB = new MissileRocket()
+  constructor () {
+    super()
 
-  // 참고, 복잡한 무기의 경우, 해당 무기의 정보를 가져와서 계산합니다.
-  // 이렇게 안하면, 나중에 밸런스 수정할 때 여러개의 코드를 수정해야 할 수도 있습니다.
-  static delay = 30
-  static attackMultiple = 0.8
-  static shotCount = 4
-  // 공격 카운트: (미사일 반복 수 + 미사일B 반복 수) / 2 (단, 소수점 버림...)
-  // 실제로, 미사일 반복 수는 5이고, 미사일B는 6이라... 5.5가 되어야 하나, 소수점을 버림하므로 5임.
-  // 사실, 로켓은 총 데미지%에 약간 보너스가 있는셈 (미사일 대비 이론상 총데미지 120%)
-  static attackCount = Math.floor((this.missile.repeatCount + this.missileB.repeatCount) / 2)
+    // 참고, 복잡한 무기의 경우, 해당 무기의 정보를 가져와서 계산합니다.
+    // 이렇게 안하면, 나중에 밸런스 수정할 때 여러개의 코드를 수정해야 할 수도 있습니다.
+    this.missile = new MissileData()
+    this.missileRocket = new MissileRocket()
 
-  static create (attack, x, y) {
-    // 샷 카운트: 4, 초당 2회 = 총 발사 수 8
+    this.delay = 30
+    this.attackMultiple = 0.8 // 스플래시 패널티(1.0보다 낮으면 딜 효율이 감소)
+    this.shotCount = 4
+
+    // 공격 카운트: (미사일 반복 수 + 미사일B 반복 수) / 2 (단, 소수점 버림...)
+    // 실제로, 미사일 반복 수는 5이고, 미사일B는 6이라... 5.5가 되어야 하나, 소수점을 버림하므로 5임.
+    // 이렇게되면, 로켓은 총 데미지%에 약간 보너스가 있는셈 (미사일 대비 이론상 총데미지 120%)
+    this.attackCount = Math.floor((this.missile.repeatCount + this.missileRocket.repeatCount) / 2)
+  }
+
+  create (attack, x, y) {
     const shotAttack = this.getShotAttack(attack)
 
     fieldState.createWeaponObject(ID.weapon.missile, x, y - 5, shotAttack)
@@ -2178,11 +2333,18 @@ class PlayerMissile extends PlayerWeaponData {
   }
 }
 
+/**
+ * 애로우: 벽 튕기기(화면 크기 기준)
+ */
 class PlayerArrow extends PlayerWeaponData {
-  static delay = 10
-  static shotCount = 2
-  static attackMultiple = 1.04
-  static create (attack, x, y) {
+  constructor () {
+    super()
+    this.delay = 10
+    this.shotCount = 2
+    this.attackMultiple = 1.04 // 멀티샷보다 약간 높습니다. (멀티샷보다는 적을 잘 타격하지 못할 확률이 있기 때문)
+  }
+
+  create (attack, x, y) {
     const shotAttack = this.getShotAttack(attack)
 
     fieldState.createWeaponObject(ID.weapon.arrow, x, y - 10, shotAttack, 5)
@@ -2190,14 +2352,20 @@ class PlayerArrow extends PlayerWeaponData {
   }
 }
 
+/**
+ * 레이저: 관통(다만, 최대 횟수 이상은 공격 불가능)
+ */
 class PlayerLaser extends PlayerWeaponData {
-  static laser = new Laser()
-  static delay = 20
-  static shotCount = 4
-  static attackMultiple = 1.1
-  static attackCount = this.laser.repeatCount
+  constructor () {
+    super()
+    this.laser = new Laser()
+    this.delay = 20
+    this.shotCount = 4
+    this.attackMultiple = 1
+    this.attackCount = this.laser.repeatCount
+  }
 
-  static create (attack, x, y) {
+  create (attack, x, y) {
     const shotAttack = this.getShotAttack(attack)
     let randomY1 = -20 + (Math.random() * 40)
     let randomY2 = -20 + (Math.random() * 40)
@@ -2209,14 +2377,21 @@ class PlayerLaser extends PlayerWeaponData {
   }
 }
 
+/**
+ * 사피아: 추적
+ */
 class PlayerSapia extends PlayerWeaponData {
-  static sapia = new Sapia()
-  static delay = 40
-  static shotCount = 3
-  static attackMultiple = 1
-  static attackCount = this.sapia.repeatCount // 사피아(30%) + 시파이샷(70%)
+  constructor () {
+    super()
+    this.sapia = new Sapia()
+    this.delay = 40
+    this.shotCount = 3
+    this.attackMultiple = 1
+    this.attackCount = this.sapia.repeatCount
+  }
   
-  static create (attack, x, y) {
+  create (attack, x, y) {
+    // 사피아(30%) + 시파이샷(70%) 의 조합
     const shotAttack = this.getShotAttack(attack, 0.3)
     const sapiaShotAttack = this.getShotAttack(attack, 0.7)
 
@@ -2226,18 +2401,24 @@ class PlayerSapia extends PlayerWeaponData {
   }
 }
 
+/**
+ * 파라포: 충격파(스플래시랑 거의 비슷)
+ */
 class PlayerParapo extends PlayerWeaponData {
-  static parapo = new Parapo()
-  static shockWave = new ParapoShockwave()
-  static shotCount = 4
-  static delay = 60
-  static attackMultiple = 0.9
+  constructor () {
+    super()
+    this.parapo = new Parapo()
+    this.shockWave = new ParapoShockwave()
+    this.delay = 30
+    this.shotCount = 4
+    this.attackMultiple = 0.9 // 스플래시 패널티 (다만 미사일보다는 패널티가 약함)
 
-  // 공격 개수 = 파라포 반복 * 4(왼쪽, 오른쪽, 위, 아래) * 쇼크웨이브 반복
-  // 공격 개수가 4배인것을 이 정보에 저장했기 때문에, 무기 알고리즘 내에서 추가적인 공격력 정보를 넣을 필요는 없습니다.
-  static attackCount = this.parapo.repeatCount * 4 * this.shockWave.repeatCount
+    // 공격 개수 = 파라포 반복 * 4(왼쪽, 오른쪽, 위, 아래) * 쇼크웨이브 반복
+    // 공격 개수가 4배인것을 이 정보에 저장했기 때문에, 무기 알고리즘 내에서 추가적인 공격력 정보를 넣을 필요는 없습니다.
+    this.attackCount = 4
+  }
 
-  static create (attack, x, y) {
+  create (attack, x, y) {
     const shotAttack = this.getShotAttack(attack)
 
     fieldState.createWeaponObject(ID.weapon.parapo, x, y, shotAttack)
@@ -2246,12 +2427,18 @@ class PlayerParapo extends PlayerWeaponData {
   }
 }
 
+/**
+ * 블래스터: 높은 공격력 그러나 좁은 범위
+ */
 class PlayerBlaster extends PlayerWeaponData {
-  static shotCount = 2
-  static delay = 6
-  static attackMultiple = 1.1
+  constructor () {
+    super()
+    this.shotCount = 1.2
+    this.delay = 6
+    this.attackMultiple = 1.2 // 직선공격 한정이라 높은 공격력을 가짐, 다만 유도부분이 존재해 아주 높진 않음. 유도가 없었으면 아마 1.6이상?
+  }
 
-  static create (attack, x, y) {
+  create (attack, x, y) {
     const shotAttack = this.getShotAttack(attack, 1.2)
     const miniAttack = this.getShotAttack(attack, 0.8)
 
@@ -2260,11 +2447,18 @@ class PlayerBlaster extends PlayerWeaponData {
   }
 }
 
+/**
+ * 사이드웨이브: 퍼지는 형태(넓은 범위?)
+ */
 class PlayerSidewave extends PlayerWeaponData {
-  static shotCount = 8
-  static delay = 15
-  static attackMultiple = 1.1
-  static create (attack, x, y) {
+  constructor () {
+    super()
+    this.shotCount = 8
+    this.delay = 15
+    this.attackMultiple = 1.1 // 멀티샷보다는 적을 잘 못때리는 무기인듯?
+  }
+
+  create (attack, x, y) {
     const shotAttack = this.getShotAttack(attack)
     // 플레이어 중앙에서 발사하게 하고 싶어, 무기를 사용할 y좌표를 30(무기의 크기)만큼 마이너스 했습니다.
     fieldState.createWeaponObject(ID.weapon.sidewave, x, y + 12 - 30, shotAttack, 2, 'right')
@@ -2279,68 +2473,73 @@ class PlayerSidewave extends PlayerWeaponData {
   }
 }
 
+/**
+ * 플레이어 스킬 데이터
+ */
 class PlayerSKillData {
-  /**
-   * 스킬의 공격력 배율 (기본값 1)  
-   * 이 배율이 높을수록 해당 스킬은 더 높은 데미지를 줄 수 있음.
-   */
-  static attackMultiple = 1
+  constructor () {
+    /**
+     * 스킬의 공격력 배율 (기본값 1)  
+     * 이 배율이 높을수록 해당 스킬은 더 높은 데미지를 줄 수 있음.
+     */
+    this.attackMultiple = 1
 
-  /**
-   * 스킬의 기준 공격력 배율 값 (값 변경 불가능)  
-   * 이 게임에서는 shotDamage(1) + skillDamage(0.8 * 4) = Total(4.2)의 구성이 기본입니다.  
-   * 대략적인 데미지 비율은, shot(약 23.2%) + skill(약 76.8%) 입니다.
-   */
-  static BASE_MULTIPLE = 0.8
+    /**
+     * 스킬의 기준 공격력 배율 값 (값 변경 불가능)  
+     * 이 게임에서는 shotDamage(1) + skillDamage(0.8 * 4) = Total(4.2)의 구성이 기본입니다.  
+     * 대략적인 데미지 비율은, shot(약 23.2%) + skill(약 76.8%) 입니다.
+     */
+    this.BASE_MULTIPLE = 0.8
 
-  /**
-   * 스킬을 사용하고 스킬에 대한 무기 발사를 1회 반복할 때, 동시에 발사되는 개수
-   */
-  static shotCount = 1
+    /**
+     * 스킬을 사용하고 스킬에 대한 무기 발사를 1회 반복할 때, 동시에 발사되는 개수
+     */
+    this.shotCount = 1
 
-  /**
-   * 스킬을 사용하고, 무기 발사를 반복하는 횟수
-   */
-  static repeatCount = 1
+    /**
+     * 스킬을 사용하고, 무기 발사를 반복하는 횟수
+     */
+    this.repeatCount = 1
 
-  /**
-   * 각 무기당 공격 횟수 (일부 무기는 적을 여러번 공격할 수 있음.)
-   */
-  static attackCount = 1
+    /**
+     * 각 무기당 공격 횟수 (일부 무기는 적을 여러번 공격할 수 있음.)
+     */
+    this.attackCount = 1
 
-  /**
-   * 스킬의 쿨타임  
-   * 참고: 스킬들은 쿨타임 시간만큼의 초당 데미지를 수 초내에 주는 방식입니다.  
-   * 예를들어, 20초짜리 스킬은 20초분량의 데미지를 줍니다. 다만, 스킬 지속시간이 굉장히 짧으므로
-   * 순간적으로 주는 데미지가 많아보입니다.  
-   * 스킬 시간과 쿨타임의 관계의 기준은 이렇습니다.  
-   * 쿨타임: 20초, 24초, 25초, 28초, 30초
-   * 유지시간: 2~3초, 3~4초, 3~4초, 4~5초, 4~5초
-   */
-  static coolTime = 20
+    /**
+     * 스킬의 쿨타임  
+     * 참고: 스킬들은 쿨타임 시간만큼의 초당 데미지를 수 초내에 주는 방식입니다.  
+     * 예를들어, 20초짜리 스킬은 20초분량의 데미지를 줍니다. 다만, 스킬 지속시간이 굉장히 짧으므로
+     * 순간적으로 주는 데미지가 많습니다.  
+     * 스킬 시간과 쿨타임의 관계의 기준은 이렇습니다. (일부 무기는 예외)  
+     * 쿨타임: 20초, 24초, 25초, 28초, 30초
+     * 유지시간: 2~3초, 3~4초, 3~4초, 4~5초, 4~5초 
+     */
+    this.coolTime = 20
 
-  /**
-   * 스킬을 사용하고, 무기가 반복적으로 작업하기까지의 지연프레임
-   */
-  static delay = 60
+    /**
+     * 스킬을 사용하고, 무기가 반복적으로 작업하기까지의 지연프레임
+     */
+    this.delay = 60
 
-  /**
-   * 스킬이 바로 나가는게 아니라, 대기 시간 이후에 나간다면, 이 값을 설정해주세요. 단위는 프레임입니다.
-   * 1초 = 60프레임
-   */
-  static beforeDelay = 0
+    /**
+     * 스킬이 바로 나가는게 아니라, 대기 시간 이후에 나간다면, 이 값을 설정해주세요. 단위는 프레임입니다.
+     * 1초 = 60프레임
+     */
+    this.beforeDelay = 0
 
-  /** 
-   * 스킬 사용 사운드 
-   * @type {Audio} 
-   */ 
-  static useSound = null
+    /** 
+     * 스킬 사용 사운드 
+     * @type {Audio} 
+     */ 
+    this.useSound = null
 
-  /** 
-   * 스킬을 사용한 후 한번 반복할 때 나오는 샷 사운드 
-   * @type {Audio} 
-   */ 
-  static shotSound = null
+    /** 
+     * 스킬을 사용한 후 한번 반복할 때 나오는 샷 사운드 
+     * @type {Audio} 
+     */
+    this.shotSound = null
+  }
 
   /**
    * 스킬을 사용할 때 무기를 생성하는 함수
@@ -2348,18 +2547,18 @@ class PlayerSKillData {
    * @param {number} x 스킬의 x좌표
    * @param {number} y 스킬의 y좌표
    */
-  static create (attack, x, y) {
+  create (attack, x, y) {
 
   }
 
   /**
-   * 한 발당 샷의 공격력을 얻습니다. 모든 공격력은 소수점 버림  
+   * 한 발당 샷의 공격력을 얻습니다. 공격력 계산의 최종 결과값은 소수점 버림
    * 참고: 무기랑 공격 계산식이 약간 다릅니다.(자세한건 코드 주석 참고)  
    * @param {number} baseAttack 유저의 공격력
    * @param {number} multiple 무기 공격이 여러종류가 합쳐질때, 배율 비중을 나눠주기 위해 사용하는 변수
    * @returns 
    */
-  static getShotAttack (baseAttack, multiple = 1) {
+  getShotAttack (baseAttack, multiple = 1) {
     // 기본 공식 (최종 결과값은 소수점 버림)
     // 최종 공격력 = (유저 공격력 / (샷 횟수 * 반복 횟수)) * (공격력 배율 * 쿨타임 * 기본 배율 0.8)
     // totalDivied = 샷 횟수 * 반복횟수 // 유저 공격력을 나눠야 하는 값
@@ -2372,37 +2571,49 @@ class PlayerSKillData {
     return Math.floor(resultAttack)
   }
 
-  static useSoundPlay () {
+  /**
+   * 스킬을 사용할 때 나오는 사운드
+   */
+  useSoundPlay () {
     if (this.useSound) {
       soundSystem.play(this.useSound)
     }
   }
 
-  static shotSoundPlay () {
+  /**
+   * 스킬의 무기를 발사할 때 나오는 사운드
+   */
+  shotSoundPlay () {
     if (this.shotSound) {
       soundSystem.play(this.shotSound)
     }
   }
 
   /**
-   * 쿨타임을 프레임단위로 변환해 리턴(coolTime은 초 단위이므로, frame단위로 변경해줘야 할 때 이 함수슬 쓰세요.)
+   * 쿨타임을 프레임단위로 변환해 리턴(coolTime은 초 단위이므로, frame단위로 변환해줘야 할 때 이 함수슬 쓰세요.)
    */
-  static getCoolTimeFrame () {
+  getCoolTimeFrame () {
     return this.coolTime * 60
   }
 }
 
+/**
+ * 스킬 멀티샷: 다수 추적 샷 발사
+ */
 class PlayerSkillMultyshot extends PlayerSKillData {
-  static attackMultiple = 1
-  static coolTime = 20
-  static repeatCount = 30
-  static delay = 6
-  static shotCount = 5
-  static useSound = soundFile.skill.skillMultyshotUse
-  static shotSound = soundFile.skill.skillMultyshotShot
-  static beforeDelay = 30
+  constructor () {
+    super()
+    this.attackMultiple = 1
+    this.coolTime = 20
+    this.repeatCount = 30
+    this.delay = 6
+    this.shotCount = 5
+    this.useSound = soundFile.skill.skillMultyshotUse
+    this.shotSound = soundFile.skill.skillMultyshotShot
+    this.beforeDelay = 30
+  }
 
-  static create (x, y, attack) {
+  create (x, y, attack) {
     this.shotSoundPlay()
     const shotAttack = this.getShotAttack(attack)
     fieldState.createWeaponObject(ID.weapon.skillMultyshot, x, y + 60, shotAttack)
@@ -2413,17 +2624,23 @@ class PlayerSkillMultyshot extends PlayerSKillData {
   }
 }
 
+/**
+ * 스킬 미사일: 추적 스플래시 연타 공격
+ */
 class PlayerSkillMissile extends PlayerSKillData {
-  static missile = new SkillMissile()
-  static attackMultiple = 1.2
-  static coolTime = 24
-  static repeatCount = 4
-  static delay = 20
-  static shotCount = 2
-  static shotSound = soundFile.skill.skillMissileShot
-  static attackCount = this.missile.repeatCount
+  constructor () {
+    super()
+    this.missile = new SkillMissile()
+    this.attackMultiple = 1.2 // 미사일은 단기적으로 높은 데미지를 주지만, 범위가 한정되어있고, 발사 개체 수가 적기 때문에 데미지 보너스가 있음.
+    this.coolTime = 24
+    this.repeatCount = 4
+    this.delay = 20
+    this.shotCount = 2
+    this.shotSound = soundFile.skill.skillMissileShot
+    this.attackCount = this.missile.repeatCount
+  }
 
-  static create (x, y, attack) {
+  create (x, y, attack) {
     this.shotSoundPlay()
     const shotAttack = this.getShotAttack(attack)
     fieldState.createWeaponObject(ID.weapon.skillMissile, x - 60, y - 60, shotAttack)
@@ -2431,17 +2648,23 @@ class PlayerSkillMissile extends PlayerSKillData {
   }
 }
 
+/**
+ * 스킬 애로우: 벽 튕기기 강화
+ */
 class PlayerSkillArrow extends PlayerSKillData {
-  static arrow = new SkillArrow()
-  static attackMultiple = 1.2
-  static coolTime = 20
-  static repeatCount = 20
-  static delay = 9
-  static shotCount = 2
-  static shotSound = soundFile.skill.skillArrowShot
-  static attackCount = this.arrow.repeatCount
+  constructor () {
+    super()
+    this.arrow = new SkillArrow()
+    this.attackMultiple = 1.2
+    this.coolTime = 20
+    this.repeatCount = 20
+    this.delay = 9
+    this.shotCount = 2
+    this.shotSound = soundFile.skill.skillArrowShot
+    this.attackCount = this.arrow.repeatCount
+  }
 
-  static create (x, y, attack) {
+  create (x, y, attack) {
     this.shotSoundPlay()
     const shotAttack = this.getShotAttack(attack)
     fieldState.createWeaponObject(ID.weapon.skillArrow, x, y - 35, shotAttack, 7)
@@ -2449,30 +2672,42 @@ class PlayerSkillArrow extends PlayerSKillData {
   }
 }
 
+/**
+ * 스킬 레이저: 넓은 범위의 지속적인 관통 공격
+ */
 class PlayerSkillLaser extends PlayerSKillData {
-  static laser = new SkillLaser()
-  static attackMultiple = 0.8
-  static coolTime = 24
-  static shotSound = soundFile.skill.skillLaserShot
-  static attackCount = this.laser.repeatCount
+  constructor () {
+    super()
+    this.laser = new SkillLaser()
+    this.attackMultiple = 0.8
+    this.coolTime = 24
+    this.shotSound = soundFile.skill.skillLaserShot
+    this.attackCount = this.laser.repeatCount
+  }
 
-  static create(x, y, attack) {
+  create(x, y, attack) {
     this.shotSoundPlay()
     const shotAttack = this.getShotAttack(attack)
     fieldState.createWeaponObject(ID.weapon.skillLaser, x, y, shotAttack)
   }
 }
 
+/**
+ * 스킬 사피아: 추적범위가 넓어지고 동시에 스플래시 공격(다만 타격 최대 수는 낮음)
+ */
 class PlayerSkillSapia extends PlayerSKillData {
-  static sapia = new SkillSapia()
-  static attackMultiple = 1.1
-  static coolTime = 24
-  static useSound = soundFile.skill.skillSapiaWeapon
-  static attackCount = this.sapia.repeatCount
-  static shotCount = 6
-  static delay = 60
+  constructor () {
+    super()
+    this.sapia = new SkillSapia()
+    this.attackMultiple = 1.1
+    this.coolTime = 24
+    this.useSound = soundFile.skill.skillSapiaWeapon
+    this.attackCount = this.sapia.repeatCount
+    this.shotCount = 6
+    this.delay = 60
+  }
 
-  static create(x, y, attack) {
+  create(x, y, attack) {
     const shotAttack = this.getShotAttack(attack)
     for (let i = 0; i < 6; i++) {
       fieldState.createWeaponObject(ID.weapon.skillSapia, x, y, shotAttack)
@@ -2480,49 +2715,71 @@ class PlayerSkillSapia extends PlayerSKillData {
   }
 }
 
+/**
+ * 스킬 파라포: 강력한 충격파
+ */
 class PlayerSkillParapo extends PlayerSKillData {
-  static parapo = new SkillParapo()
-  static attackMultiple = 0.9
-  static coolTime = 24
-  static delay = 10
-  static repeatCount = 24
+  constructor () {
+    super()
+    this.parapo = new SkillParapo()
+    this.attackMultiple = 0.9
+    this.coolTime = 24
+    this.delay = 10
+    this.repeatCount = 24
+  }
 
-  static create(x, y, attack) {
+  create(x, y, attack) {
     const shotAttack = this.getShotAttack(attack)
     fieldState.createWeaponObject(ID.weapon.skillParapo, x, y, shotAttack)
   }
 }
 
+/**
+ * 스킬 블래스터: 순간적인 많은 데미지
+ */
 class PlayerSkillBlaster extends PlayerSKillData {
-  static attackMultiple = 1.6
-  static coolTime = 28
-  static delay = 4
-  static repeatCount = 40
-  static shotCount = 2
-  static shotSound = soundFile.skill.skillBlasterShot
+  constructor () {
+    super()
+    this.attackMultiple = 1.6
+    this.coolTime = 28
+    this.delay = 4
+    this.repeatCount = 40
+    this.shotCount = 2
+    this.shotSound = soundFile.skill.skillBlasterShot
+    this.blaster = new SkillBlaster()
+  }
 
-  static create(x, y, attack) {
+  create(x, y, attack) {
     this.shotSoundPlay()
     const shotAttack = this.getShotAttack(attack)
-    fieldState.createWeaponObject(ID.weapon.skillBlaster, x, y + 10, shotAttack)
-    fieldState.createWeaponObject(ID.weapon.skillBlaster, x, y - 10, shotAttack)
+    const halfHeight = this.blaster.height / 2
+    fieldState.createWeaponObject(ID.weapon.skillBlaster, x, y + 10 - halfHeight, shotAttack)
+    fieldState.createWeaponObject(ID.weapon.skillBlaster, x, y - 10 - halfHeight, shotAttack)
   }
 }
 
+/**
+ * 스킬 사이드웨이브: 사이드웨이브 무기의 강화
+ */
 class PlayerSkillSidewave extends PlayerSKillData {
-  static attackMultiple = 1.2
-  static coolTime = 20
-  static delay = 7
-  static repeatCount = 24
-  static shotCount = 3
-  static shotSound = soundFile.skill.skillSidewaveShot
+  constructor () {
+    super()
+    this.sidewave = new SkillSidewave()
+    this.attackMultiple = 1.2
+    this.coolTime = 20
+    this.delay = 7
+    this.repeatCount = 24
+    this.shotCount = 3
+    this.shotSound = soundFile.skill.skillSidewaveShot
+  }
 
-  static create(x, y, attack) {
+  create(x, y, attack) {
     this.shotSoundPlay()
     const shotAttack = this.getShotAttack(attack)
-    fieldState.createWeaponObject(ID.weapon.skillSidewave, x, y, shotAttack, -7)
-    fieldState.createWeaponObject(ID.weapon.skillSidewave, x, y, shotAttack, 0)
-    fieldState.createWeaponObject(ID.weapon.skillSidewave, x, y, shotAttack, 7)
+    const halfHeight = this.sidewave.height / 2
+    fieldState.createWeaponObject(ID.weapon.skillSidewave, x, y - halfHeight, shotAttack, -7)
+    fieldState.createWeaponObject(ID.weapon.skillSidewave, x, y - halfHeight, shotAttack, 0)
+    fieldState.createWeaponObject(ID.weapon.skillSidewave, x, y - halfHeight, shotAttack, 7)
   }
 }
 
@@ -2656,8 +2913,8 @@ class ParapoEffect extends EffectData {
 class SkillParapoEffect extends EffectData {
   constructor () {
     super()
-    this.width = 120
-    this.height = 120
+    this.width = 240
+    this.height = 240
     this.enimation = new EnimationData(imageFile.weapon.skillParapoEffect, 0, 0, this.width, this.height, 10, 2)
   }
 }
@@ -2666,7 +2923,7 @@ class EnemyData extends FieldData {
   constructor () {
     super()
     /**
-     * 점수 공식에 대해: 기본적으로 적의 체력의 1/100 = 1%  
+     * 점수 공식에 대해: 미정 (일단, 적 체력의 1% 인데 이게 확실한것이 아님)  
      * 다만 일부 적들은 다를 수 있음. 그건 각 적의 설명을 참고하세요.
      */
     this.score = 100
@@ -2674,27 +2931,69 @@ class EnemyData extends FieldData {
     this.attack = 0
 
     /** 죽었는지 체크 */ this.isDied = false
-    /** 죽은 후 삭제되기까지의 지연시간 */ this.dieAfterDeleteDelay = 0
-    /** 죽은 후 삭제되기까지의 지연시간 카운트 */ this.dieAfterDeleteDelayCount = 0
+    /** 
+     * 죽은 후 삭제되기까지의 지연시간 
+     * @type {DelayData}
+     */ 
+    this.dieAfterDeleteDelay = null
 
     /** 
      * 충돌 지연시간  
      * (참고: 적이 플레이어에 닿았다면 60프레임 이후 다시 플레이어를 타격할 수 있습니다.) 
+     * @type {DelayData}
      */ 
-    this.collisionDelay = 60
-    /** 충돌 지연시간 카운트 */ this.collisionDelayCount = 60
+    this.collisionDelay = new DelayData(60)
+    this.collisionDelay.count = this.collisionDelay.delay / 2 // 생성하자마자 즉시 공격하게끔 만듬 그러나 약간의 지연시간은 존재
 
     /**
      * 적이 화면 바깥 일정 영역을 넘어간다면, 제거 대기시간이 추가되고,
      * 일정 시간을 넘어가면 해당 적은 조건에 상관없이 강제로 사라집니다.
-     * 기준값은 10초(600 프레임)입니다.
+     * 기준값은 5초(300 프레임)입니다.  
+     * 참고로 이 변수의 check 함수를 사욯라 때 인수값으로 (reset: false, countUp: false) 를 넣어주세요.
+     * @type {DelayData}
      */
-    this.outAreaDeleteDelay = 600
-    /** 적 영역 바깥으로 갈 때 제거 대기시간 카운트 */ this.outAreaDeleteDelayCount = 0
+    this.outAreaDeleteDelay = new DelayData(300)
 
     /** 적이 화면 바깥으로 나갈 수 있는지의 여부 */ this.isPossibleExit = true
+    /** 적이 나간다면 위치가 리셋되는지의 여부 */ this.isExitToReset = false
 
     /** 이미지 */ this.image = null
+  }
+
+  /**
+   * 충돌 영역 얻기.  
+   * 무기와 다르게 적의 충돌 영역은 여러개입니다. 물론 하나일 수도 있습니다.  
+   * 충돌 영역은 배열로 리턴되므로 참고해주세요.  
+   * 충돌 영역은 이 함수를 재정의해서 설정해주세요.
+   * 다만, 이 방식은 회전한 사각형을 판정할 순 없기 때문에, 회전한 사각형까지 판정하려면 다른 함수를 사용해야 합니다.
+   * 그러나, 이것은 일부 적에 한정되는 상황이므로, 해당하는 일부 적의 알고리즘을 살펴봐주세요.
+   * @returns {{x: number, y: number, width: number, height: number}[]} 객체의 영역
+   */
+  getCollisionArea () {
+    return [{
+      x: this.x,
+      y: this.y,
+      width: this.width,
+      height: this.height
+    }]
+  }
+
+  /**
+   * 이미지와 이미지 데이터를 설정하고, 자동으로 에니메이션 설정을 합니다.
+   * @param {Image} image
+   * @param {{x: number, y: number, width: number, height: number, frame: number}} imageData
+   * @param {number} enimationDelay 에니메이션 딜레이(프레임 단위)
+   */
+  autoSetImageData (image, imageData, enimationDelay = 2) {
+    this.image = image
+    this.imageData = imageData
+    if (this.image == null || this.imageData == null) return
+
+    this.width = this.imageData.width
+    this.height = this.imageData.height
+    if (this.imageData.frame >= 2) {
+      this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, enimationDelay, -1)
+    }
   }
 
   /** 
@@ -2703,7 +3002,6 @@ class EnemyData extends FieldData {
    * 사용용도: hpMax값 체크 (다만 이건 임시로 하는것.)
    */
   init () {
-    // 초기화가 되었는데 또 초기화를 할 필요는 없잖아요? 무조건 함수 처리 취소
     if (this.isInited) return
 
     this.isInited = true
@@ -2711,11 +3009,13 @@ class EnemyData extends FieldData {
   }
 
   process () {
-    this.x += this.speedX
-    this.y += this.speedY
-    this.processPossibleExit()
-
-    this.processPlayerCollision()
+    // 적이 죽지 않았을 때 적과 관련된 행동 처리
+    if (!this.isDied) {
+      this.processMove()
+      this.processPossibleExit()
+      this.processExitToReset()
+      this.processPlayerCollision()
+    }
 
     // 적 죽었는지 체크
     this.processOutAreaCheck()
@@ -2723,45 +3023,110 @@ class EnemyData extends FieldData {
     this.processDieAfter()
   }
 
-  display () {
-    if (this.image != null) {
-      graphicSystem.imageDisplay(this.image, this.x, this.y)
-    }
-  }
-
+  /**
+   * 적이 나갈 수 있는지에 대한 함수 로직
+   */
   processPossibleExit () {
-    // 적이 화면 바깥으로 나갈 수 없는 경우만 처리합니다.
-    if (!this.isPossibleExit) {
-      if (this.x < 0) {
-        this.x = 0
+    if (this.isPossibleExit) return // 적이 화면 바깥으로 나갈 수 없는 경우만 처리합니다. 그래서 나갈 수 있으면 함수 종료
+    
+    // 방향이 있을 때는, 방향만 변경하지만, 방향이 없을때는, 속도값을 반전시킵니다.
+    if (this.x < 0) {
+      this.x = 0
+      if (this.moveDirectionX === 'left') {
+        this.moveDirectionX = 'right'
+      } else if (this.moveDirectionX === 'right') {
+        this.moveDirectionX = 'left'
+      } else {
         this.speedX = Math.abs(this.speedX)
-      } else if (this.x > graphicSystem.CANVAS_WIDTH) {
-        this.x = graphicSystem.CANVAS_WIDTH
+      }
+    } else if (this.x > graphicSystem.CANVAS_WIDTH) {
+      this.x = graphicSystem.CANVAS_WIDTH
+      if (this.moveDirectionX === 'left') {
+        this.moveDirectionX = 'right'
+      } else if (this.moveDirectionX ===' right') {
+        this.moveDirectionX = 'left'
+      } else {
         this.speedX = -Math.abs(this.speedX)
       }
+    }
 
-      if (this.y < 0) {
-        this.y = 0
+    if (this.y < 0) {
+      this.y = 0
+      if (this.moveDirectionY === 'up') {
+        this.moveDirectionY = 'down'
+      } else if (this.moveDirectionY === 'down') {
+        this.moveDirectionY = 'up'
+      } else {
         this.speedY = Math.abs(this.speedY)
-      } else if (this.y > graphicSystem.CANVAS_HEIGHT) {
-        this.y = graphicSystem.CANVAS_HEIGHT
+      }
+    } else if (this.y > graphicSystem.CANVAS_HEIGHT) {
+      this.y = graphicSystem.CANVAS_HEIGHT
+      if (this.moveDirectionY === 'up') {
+        this.moveDirectionY = 'down'
+      } else if (this.moveDirectionY === 'down') {
+        this.moveDirectionY = 'up'
+      } else {
         this.speedY = -Math.abs(this.speedY)
       }
     }
   }
 
-  processPlayerCollision () {
-    this.collisionDelayCount++
-    if (this.collisionDelayCount >= this.collisionDelay) {
-      let player = fieldState.getPlayerObject()
+  /**
+   * 나가면 적 위치를 다시 재조정
+   */
+  processExitToReset () {
+    if (!this.isExitToReset) return // 적이 나가면 리셋되지 않는경우 함수 종료
 
-      if (collision(this, player)) {
-        player.addDamage(this.attack)
-        this.collisionDelayCount = 0
+    let scopeSize = 50
+
+    // 이동 방향이 왼쪽이거나, speedX값이 음수이면, 왼쪽 영역 바깥으로 이동하는것입니다. 반대 방향도 마찬가지
+    if ((this.speedX < 0 || this.moveDirectionX === 'left') && this.x - this.width < -scopeSize) {
+      this.x = graphicSystem.CANVAS_WIDTH + this.width + scopeSize
+    } else if ((this.speedX > 0 || this.moveDirectionX === 'right') && this.x + this.width > graphicSystem.CANVAS_WIDTH + scopeSize) {
+      this.x = 0 - this.width - scopeSize
+    }
+
+    if ((this.speedY < 0 || this.moveDirectionY === 'up') && this.y - this.height < -scopeSize) {
+      this.y = graphicSystem.CANVAS_HEIGHT + this.height + scopeSize
+    } else if ((this.speedY > 0 || this.moveDirectionY === 'down') && this.y + this.height > graphicSystem.CANVAS_HEIGHT + scopeSize) {
+      this.y = 0 - this.height - scopeSize
+    }
+  }
+
+  /**
+   * 적이 화면 바깥에 있는지 없는지 알려줍니다.
+   */
+  viewAreaExitCheck () {
+    if (this.x - this.width < 0 || this.x + this.width > graphicSystem.CANVAS_WIDTH || this.y - this.height < 0 || this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+  /**
+   * 플레이어와의 충돌 함수  
+   * 참고: 적이 플레이어랑 부딪힌다면 1초 후에 다시 공격할 수 있습니다.
+   */
+  processPlayerCollision () {
+    if (this.collisionDelay.check(false)) {
+      let player = fieldState.getPlayerObject()
+      let enemy = this.getCollisionArea() // 적은 따로 충돌 영역을 얻습니다.
+
+      for (let i = 0; i < enemy.length; i++) {
+        if (collision(enemy[i], player)) {
+          player.addDamage(this.attack)
+          this.collisionDelay.count = 0 // 플레이어랑 충돌하면 충돌 딜레이카운트를 0으로 만듬
+          return
+        }
       }
     }
   }
 
+  /**
+   * 적이 죽었는지를 확인하는 함수  
+   * 일단 한번 죽었다면, 재생성이 아닌 이상 부활은 불가능합니다.
+   */
   processDieCheck () {
     if (this.isDied) return
     if (this.hp <= 0) {
@@ -2770,27 +3135,36 @@ class EnemyData extends FieldData {
     }
   }
 
+  /**
+   * 적이 죽은 후에, 어떻게 할 것인지를 결정하는 함수.  
+   * 기본적으로는 적이 죽은 후 딜레이를 확인해서, 딜레이 시간동안은 적이 남아있습니다.  
+   * 참고: 이 상태 그대로 적용했을 때, 무기가 죽은 적을 지속적으로 공격할 수도 있습니다. 이 문제는 추후 수정할 계획입니다.
+   */
   processDieAfter () {
     if (this.isDied) {
-      this.dieAfterDeleteDelayCount++
-      if (this.dieAfterDeleteDelayCount >= this.dieAfterDeleteDelay) {
+      // 적이 죽었을 때, 딜레이가 null 이거나, 딜레이가 있을 때 딜레이카운트를 다 채우면 그 때 삭제
+      if (this.dieAfterDeleteDelay == null || this.dieAfterDeleteDelay.check()) {
         this.isDeleted = true
       }
     }
   }
 
+  /**
+   * 적이 일정 영역으로 벗어났는지를 확인합니다.
+   * 만약 그렇다면, 영역에 벗어나있는 시간을 추가하고, 이 시간이 10초(600프레임)이 되면 삭제합니다.
+   */
   processOutAreaCheck () {
     let player = fieldState.getPlayerObject()
     if (this.x <= player.x - 1600 
      || this.x >= player.x + 1600
      || this.y <= player.y - 1200
      || this.y >= player.y + 1200 ) {
-      this.outAreaDeleteDelayCount++
+      this.outAreaDeleteDelay.count++
     } else {
-      this.outAreaDeleteDelayCount--
+      this.outAreaDeleteDelay.count--
     }
 
-    if (this.outAreaDeleteDelayCount >= this.outAreaDeleteDelay) {
+    if (this.outAreaDeleteDelay.check(false, false)) {
       this.isDeleted = true
     }
   }
@@ -2821,7 +3195,7 @@ class TestAttackEnemy extends EnemyData {
     this.attack = 10
     this.isPossibleExit = false
     this.image = imageFile.enemyTemp
-    this.speedX = -1
+    this.movespeedX = -1
   }
 }
 
@@ -2835,13 +3209,293 @@ class TestShowDamageEnemy extends EnemyData {
     this.attack = 0
     this.isPossibleExit = false
     this.image = imageFile.enemyTemp
-    this.speedX = 0
+    this.movespeedX = 0
   }
 
   display () {
     super.display()
     graphicSystem.digitalFontDisplay('totaldamage: ' + (1000000 - this.hp), 0, 40)
   }
+}
+
+// round 1-1 적(참고: 모든 적들은 다른 라운드에도 나올 수도 있음.)
+class SpaceEnemy extends EnemyData {
+  constructor () {
+    super()
+    this.image = imageFile.enemy.spaceEnemy
+  }
+}
+
+class SpaceEnemyLight extends EnemyData {
+  constructor () {
+    super()
+    this.colorNumber = Math.floor(Math.random() * 8)
+    this.image = imageFile.enemy.spaceEnemy
+    this.imageData = imageDataInfo.spaceEnemy.spaceLight
+    this.width = this.imageData.width
+    this.height = this.imageData.height
+    this.hp = 1000 + (this.colorNumber * 100)
+    this.score = 10 + this.colorNumber
+    this.dieAfterDeleteDelay = new DelayData(20)
+    this.moveSpeedX = Math.random() * 8 - 4
+    this.moveSpeedY = Math.random() * 8 - 4
+    this.isPossibleExit = true
+    this.isExitToReset = true
+    this.attack = 1
+  }
+
+  display () {
+    let alpha = (this.dieAfterDeleteDelay.delay - this.dieAfterDeleteDelay.count) / this.dieAfterDeleteDelay.delay
+    graphicSystem.setAlpha(alpha)
+    graphicSystem.imageDisplay(this.image, this.imageData.x + (this.colorNumber * this.imageData.width), this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height)
+    graphicSystem.setAlpha(1)
+  }
+}
+
+class SpaceEnemyRocket extends EnemyData {
+  /**
+   * 옵션의 배열 첫번째 인수에 아무 값이나 넣으면, 로켓이 빨간색으로 변경,
+   * 옵션의 배열 두번째 인수에 아무 값이나 넣으면, 로켓의 크기가 커짐,
+   * 옵션에 따라 로켓의 체력과 점수가 변화 (공격력은 차이 없음)  
+   * 경고: 한번 설정된 값은 바꿀 수 없음. 바꾸고싶다면 죽이고 다시 만들어야함.
+   * @param {string[]} option 옵션(인수는 상관없고, 크기만 바꾸고 싶다면, 첫번째 인수에 undefined를 넣을것)
+   */
+  constructor (option = []) {
+    super()
+    // 이렇게 설정된 이유는, option 배열의 개수가 가변적이기 때문입니다. 따라서 각 원소가 있는지를 확인해야 합니다.
+    // 원소가 존재하면 색깔은 빨간색, 크기는 커집니다. (인수의 값은 아무거나 상관없음)
+    let isChangeColor = option.length >= 1 && option[0] != null ? true : false
+    let isChangeSize = option.length >= 2 && option[1] != null ? true : false
+
+    this.image = imageFile.enemy.spaceEnemy
+    this.imageData = null
+    if (!isChangeColor && !isChangeSize) { // 색깔변경없고, 크기 변경없을경우, 파란색 작은 로켓이 기본값
+      this.imageData = imageDataInfo.spaceEnemy.rocketBlue
+      this.hp = 1200
+      this.score = 12
+    } else if(!isChangeColor && isChangeSize) {
+      this.imageData = imageDataInfo.spaceEnemy.rocketBlueBig
+      this.hp = 2400
+      this.score = 24
+    } else if (isChangeColor && !isChangeSize) {
+      this.imageData = imageDataInfo.spaceEnemy.rocketRed
+      this.hp = 1600
+      this.score = 16
+    } else {
+      this.imageData = imageDataInfo.spaceEnemy.rocketRedBig
+      this.hp = 3200
+      this.score = 32
+    }
+    
+    if (isChangeColor) {
+      this.color = 'blue'
+    } else {
+      this.color = 'red'
+    }
+
+    this.width = this.imageData.width
+    this.height = this.imageData.height
+
+    this.moveSpeedX = 4 + Math.random() * 2
+    this.moveSpeedY = 0
+    this.isPossibleExit = true
+    this.isExitToReset = true
+    this.attack = 17
+    
+    this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, 4, -1)
+  }
+
+  display () {
+    super.display()
+  }
+}
+
+class spaceEnemyCar extends EnemyData {
+  constructor () {
+    super()
+    this.image = imageFile.enemy.spaceEnemy
+    this.imageData = imageDataInfo.spaceEnemy.greenCar
+    this.width = this.imageData.width
+    this.height = this.imageData.height
+
+    this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, 2, -1)
+    this.state = 'normal'
+    this.boostCount = 0 // 자동차의 속도를 올리기 위한 변수
+    this.isPossibleExit = true
+    this.isExitToReset = true
+    this.hp = 2300
+    this.score = 23
+    this.attack = 9
+  }
+
+  processMove () {
+    let playerObject = fieldState.getPlayerObject()
+    let playerX = playerObject.x
+    let playerY = playerObject.y
+    let playerWidth = playerObject.width
+    let playerHeight = playerObject.height
+
+    // 차는 이동할때, 플레이어의 y축이 비슷한 위치에 있고, 플레이어 x축 보다 차 x축이 오른쪽에 있을 때, 플레이어가 있는 왼쪽으로 빠르게 이동합니다.
+    // 차는 오른쪽으로는 이동하지 않습니다.
+    if (playerY < this.y + this.height && playerY + playerHeight > this.y && playerX < this.x) {
+      this.boostCount++
+      this.state = 'boost'
+    } else {
+      this.state = 'normal'
+      this.boostCount--
+    }
+
+    // 차의 속도를 제한하기 위해 부스트카운트 값을 일정 값 범위 내로 제한합니다.
+    if (this.boostCount > 60) {
+      this.boostCount = 60
+    } else if (this.boostCount < 0) {
+      this.boostCount = 0
+    }
+
+    this.moveSpeedX = 2 + (this.boostCount / 4)
+    super.processMove()
+  }
+
+  display () {
+    // 이 차는, 주인공을 추적할때만 에니메이션이 재생되고, 아니면 에니메이션이 0프레임으로 고정됩니다.
+    if (this.enimation) {
+      if (this.state === 'normal') {
+        this.enimation.elapsedFrame = 0
+        this.enimation.display(this.x, this.y) // 에니메이션은 출력되지만, 로직이 처리되지 않아 다음 에니메이션이 진행되지 않음.
+      } else {
+        this.enimation.displayAndProcess(this.x, this.y)
+      }
+    }
+  }
+}
+
+class SpaceEnemySquare extends EnemyData {
+  constructor () {
+    super()
+    this.image = imageFile.enemy.spaceEnemy
+    this.imageData = imageDataInfo.spaceEnemy.blueSqaure
+    this.width = this.imageData.width
+    this.height = this.imageData.height
+    this.isPossibleExit = false
+    this.hp = 3000
+    this.score = 30
+    this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, 6, -1)
+    this.MOVE_STOP_FRAME = 180
+    this.moveDelay = new DelayData(240)
+    this.moveDelay.count = this.moveDelay.delay
+    this.finishPosition = {x: 0, y: 0}
+    this.setMoveDirection() // 이동 방향 설정 안함
+  }
+
+  resetFinishPosition () {
+    this.finishPosition.x = Math.floor(Math.random() * graphicSystem.CANVAS_WIDTH)
+    this.finishPosition.y = Math.floor(Math.random() * graphicSystem.CANVAS_HEIGHT)
+
+    this.speedX = (this.finishPosition.x - this.x) / this.moveDelay.delay
+    this.speedY = (this.finishPosition.y - this.y) / this.moveDelay.delay
+  }
+
+  processMove () {
+    // 이동딜레이 초반 60프레임동안 이동하고, 61 ~ 119프레임은 이동하지 않습니다.
+    // 120프레임이 되면 도착 지점이 재설정됩니다.
+    // 참고: moveDelay.check()를 첫번째 조건으로 설정해야, moveDelay값에 따른 잘못된 이동 버그를 막을 수 있습니다.
+    if (this.moveDelay.check()) {
+      this.resetFinishPosition()
+    } else if (this.moveDelay.count >= this.MOVE_STOP_FRAME) {
+      this.speedX = 0
+      this.speedY = 0
+    } else {
+      super.processMove()
+    }
+  }
+}
+
+class SpaceEnemyAttack extends EnemyData {
+  constructor () {
+    super()
+    this.image = imageFile.enemy.spaceEnemy
+    this.imageData = imageDataInfo.spaceEnemy.blueAttack
+    this.width = this.imageData.width
+    this.height = this.imageData.height
+
+    this.hp = 1900
+    this.score = 19
+    this.attack = 11
+    this.boostCount = 0
+    this.moveSpeedY = 0
+
+    this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, 8, -1)
+  }
+
+  processMove () {
+    this.boostCount++
+    if (this.boostCount <= 60) {
+      this.moveSpeedX = (this.boostCount / 20)
+    } else if (this.boostCount <= 120) {
+      this.moveSpeedX = (this.boostCount / 10) + 3
+    } else {
+      this.moveSpeedX = 15
+    }
+
+    if (this.x >= graphicSystem.CANVAS_WIDTH && this.boostCount >= 60) {
+      this.boostCount = 0
+    }
+
+    super.processMove()
+  }
+}
+
+class SpaceEnemyEnergy extends EnemyData {
+  constructor () {
+    super()
+    this.autoSetImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.purpleEnergy)
+    this.attack = 16
+    this.hp = 4400
+    this.score = 44
+    this.boostCount = 0
+    this.moveDelay = new DelayData(120)
+    this.moveDelay.count = 120
+    this.state = 'normal'
+    this.moveDirectionX = 'left'
+  }
+
+  processMove () {
+    if (this.moveDelay.check()) {
+      if (this.state === 'normal') {
+        this.state = 'boost'
+        this.moveDirectionX = Math.floor(Math.random() * 2) === 1 ? 'left' : 'right'
+      } else {
+        this.state = 'normal'
+      }
+    }
+
+    if (this.state === 'normal') {
+      this.boostCount--
+      if (this.boostCount < 0) this.boostCount = 0
+    } else {
+      this.boostCount++
+      if (this.boostCount > 120) this.boostCount = 120
+    }
+
+    this.moveSpeedX = 1 + (this.boostCount / 10)
+    super.processMove()
+  }
+}
+
+class SpaceEnemySusong extends EnemyData {
+
+}
+
+class SpaceEnemyGamjigi extends EnemyData {
+
+}
+
+class SpaceEnemyComet extends EnemyData {
+
+}
+
+class SpaceEnemyMeteorite extends EnemyData {
+
 }
 
 class Donggeurami extends EnemyData {
@@ -2864,40 +3518,62 @@ class Donggeurami extends EnemyData {
  */
 export class tamshooter4Data {
 
+  static pWeapon = {
+    multyshot: new PlayerMultyshot(),
+    missile: new PlayerMissile(),
+    arrow: new PlayerArrow(),
+    laser: new PlayerLaser(),
+    sapia: new PlayerSapia(),
+    parapo: new PlayerParapo(),
+    blaster: new PlayerBlaster(),
+    sidewave: new PlayerSidewave()
+  }
+
+  static pSkill = {
+    multyshot: new PlayerSkillMultyshot(),
+    missile: new PlayerSkillMissile(),
+    arrow: new PlayerSkillArrow(),
+    laser: new PlayerSkillLaser(),
+    sapia: new PlayerSkillSapia(),
+    parapo: new PlayerSkillParapo(),
+    blaster: new PlayerSkillBlaster(),
+    sidewave: new PlayerSkillSidewave()
+  }
+
   /**
-   * 플레이어 무기 데이터를 가져옵니다. 리턴되는 클래스는 static 클래스이므로, 따로 인스턴스를 생성하지 마세요.
+   * 플레이어 무기 데이터를 가져옵니다. 이미 만들어진 객체이므로, 따로 인스턴스를 생성하지 마세요.
    * @param {ID} id ID 클래스가 가지고 있는 상수 값을 넣어주세요.  
    * @returns {PlayerWeaponData} playerWeapon의 클래스, 값이 없다면 null
    */
   static getPlayerWeaponData (id) {
     switch (id) {
-      case ID.playerWeapon.multyshot: return PlayerMultyshot
-      case ID.playerWeapon.missile: return PlayerMissile
-      case ID.playerWeapon.arrow: return PlayerArrow
-      case ID.playerWeapon.laser: return PlayerLaser
-      case ID.playerWeapon.sapia: return PlayerSapia
-      case ID.playerWeapon.parapo: return PlayerParapo
-      case ID.playerWeapon.blaster: return PlayerBlaster
-      case ID.playerWeapon.sidewave: return PlayerSidewave
+      case ID.playerWeapon.multyshot: return this.pWeapon.multyshot
+      case ID.playerWeapon.missile: return this.pWeapon.missile
+      case ID.playerWeapon.arrow: return this.pWeapon.arrow
+      case ID.playerWeapon.laser: return this.pWeapon.laser
+      case ID.playerWeapon.sapia: return this.pWeapon.sapia
+      case ID.playerWeapon.parapo: return this.pWeapon.parapo
+      case ID.playerWeapon.blaster: return this.pWeapon.blaster
+      case ID.playerWeapon.sidewave: return this.pWeapon.sidewave
       default: return null
     }
   }
 
   /**
-   * 플레이어 스킬 데이터를 가져옵니다. 리턴되는 클래스는 static 클래스이므로, 따로 인스턴스를 생성하지 마세요.
+   * 플레이어 스킬 데이터를 가져옵니다. 이미 만들어진 객체이므로 따로 인스턴스를 생성하지 마세요.
    * @param {ID} id ID 클래스가 가지고 있는 상수 값을 넣어주세요.  
    * @returns {PlayerSKillData} playerWeapon의 클래스, 값이 없다면 null
    */
   static getPlayerSkillData (id) {
     switch(id) {
-      case ID.playerSkill.multyshot: return PlayerSkillMultyshot
-      case ID.playerSkill.missile: return PlayerSkillMissile
-      case ID.playerSkill.arrow: return PlayerSkillArrow
-      case ID.playerSkill.laser: return PlayerSkillLaser
-      case ID.playerSkill.sapia: return PlayerSkillSapia
-      case ID.playerSkill.parapo: return PlayerSkillParapo
-      case ID.playerSkill.blaster: return PlayerSkillBlaster
-      case ID.playerSkill.sidewave: return PlayerSkillSidewave
+      case ID.playerSkill.multyshot: return this.pSkill.multyshot
+      case ID.playerSkill.missile: return this.pSkill.missile
+      case ID.playerSkill.arrow: return this.pSkill.arrow
+      case ID.playerSkill.laser: return this.pSkill.laser
+      case ID.playerSkill.sapia: return this.pSkill.sapia
+      case ID.playerSkill.parapo: return this.pSkill.parapo
+      case ID.playerSkill.blaster: return this.pSkill.blaster
+      case ID.playerSkill.sidewave: return this.pSkill.sidewave
     }
   }
 
@@ -2945,6 +3621,18 @@ export class tamshooter4Data {
       case ID.enemy.test: return TestEnemy
       case ID.enemy.testAttack: return TestAttackEnemy
       case ID.enemy.testShowDamageEnemy: return TestShowDamageEnemy
+      
+      // r1: space enemy
+      case ID.enemy.spaceEnemyLight: return SpaceEnemyLight
+      case ID.enemy.spaceEnemyRocket: return SpaceEnemyRocket
+      case ID.enemy.spaceEnemyCar: return spaceEnemyCar
+      case ID.enemy.spaceEnemySquare: return SpaceEnemySquare
+      case ID.enemy.spaceEnemyAttack: return SpaceEnemyAttack
+      case ID.enemy.spaceEnemyEnergy: return SpaceEnemyEnergy
+      case ID.enemy.spaceEnemySusong: return SpaceEnemySusong
+      case ID.enemy.spaceEnemyGamjigi: return SpaceEnemyGamjigi
+      case ID.enemy.spaceEnemyComet: return SpaceEnemyComet
+      case ID.enemy.spaceEnemyMeteorite: return SpaceEnemyMeteorite
       default: return null
     }
   }

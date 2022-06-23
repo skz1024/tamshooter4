@@ -7,239 +7,44 @@
   <title>Document</title>
 </head>
 <body>
-  <canvas id="testCanvas" width="800" height="600"></canvas><br>
-  <button type="button" id="stopAnimation">버튼</button>
+  <canvas id="canvas" width="800" height="800"></canvas>
 </body>
 </html>
 <script>
-class Point {
-  constructor (x = 0, y = 0) {
-    this.x = x
-    this.y = y
-  }
-}
+// 회전하는 점의 좌표 구하기
+// let vectorA = {x: 230, y: 239}
+// let vectorB = {x: 176, y: 188}
+// let atan = Math.atan2(vectorB.y - vectorA.y, vectorB.x - vectorA.x)
+// let atanDegree = atan * 180 / Math.PI
+// document.write(atanDegree)
 
-class Polygon {
-  constructor (vertie = [], edge = []) {
-    this.vertext = verties
-    this.edge = edge
-  }
-}
+let image = new Image()
+image.src = 'image/title.png'
+let image2 = new Image()
+image2.src = './image/system/playerImage.png'
+let canvas = document.getElementById('canvas')
+let ctx = canvas.getContext('2d')
+let measure = ctx.measureText('왓더뻑point데스카')
 
-class Box {
-  constructor (x, y, width, height, color = 'black') {
-    this.x = x
-    this.y = y
-    this.width = width
-    this.height = height
-    this.vertex = []
-    this.vertex.push(new Point(this.x, this.y))
-    this.vertex.push(new Point(this.x + this.width, this.y))
-    this.vertex.push(new Point(this.x + this.width, this.y + this.height))
-    this.vertex.push(new Point(this.x, this.y + this.height))
 
-    this.edge = [] // 현재 꼭짓점에서 다음 꼭짓점까지의 거리
-    for (let i = 0; i < 4; i++) {
-      // 다음 vertex 번호입니다. 배열은 0 ~ 3까지 있고, 
-      // 3번에서 다음번은 4번이 아니라 0이 되야 하기 때문에 4로 나눈 나머지를 계산합니다.
-      // 그러면 0 -> 1 -> 2 -> 3 -> 0 순으로 계산할 수 있습니다.
-      let nextNumber = (i + 1) % 4
-
-      // 현재 꼭짓점에서 다음 꼭짓점 까지의 거리는
-      // (다음 꼭짓점의 좌표 - 현재 꼭짓점의 좌표)로 계산합니다.
-      let edgeX = this.vertex[nextNumber].x - this.vertex[i].x
-      let edgeY = this.vertex[nextNumber].y - this.vertex[i].y
-
-      // 아까 계산한 값을 edge에 추가합니다.
-      this.edge.push({x: edgeX, y: edgeY})
-    }
-
-    this.baseX = this.x
-    this.baseY = this.y
-    this.rotate = 0
-    this.centerX = this.x + (this.width / 2)
-    this.centerY = this.y + (this.height / 2)
-    this.color = color
-  }
-
-  display () {
-    context.fillStyle = this.color
-    let radian = this.rotate * Math.PI / 180
-    let halfWidth = Math.floor(this.width / 2)
-    let halfHeight = Math.floor(this.height / 2)
-    let sinValue = Math.sin(radian)
-    let cosValue = Math.cos(radian)
-    this.vertex[0].x = (-halfWidth * cosValue) - (-halfHeight * sinValue) + this.x + halfWidth
-    this.vertex[0].y = (-halfWidth * sinValue) + (-halfHeight * cosValue) + this.y + halfHeight
-    this.vertex[1].x = ( halfWidth * cosValue) - ( halfHeight * sinValue) + this.x + halfWidth
-    this.vertex[1].y = ( halfWidth * sinValue) + ( halfHeight * cosValue) + this.y + halfHeight
-    this.vertex[2].x = ( halfWidth * cosValue) - (-halfHeight * sinValue) + this.x + halfWidth
-    this.vertex[2].y = ( halfWidth * sinValue) + (-halfHeight * cosValue) + this.y + halfHeight
-    this.vertex[3].x = (-halfWidth * cosValue) - ( halfHeight * sinValue) + this.x + halfWidth
-    this.vertex[3].y = (-halfWidth * sinValue) + ( halfHeight * cosValue) + this.y + halfHeight
-
-    for (let i = 0; i < 4; i++) {
-      this.edge[i].x = this.vertex[(i + 1) % 4].x - this.vertex[i].x
-      this.edge[i].y = this.vertex[(i + 1) % 4].y - this.vertex[i].y
-    }
-
-    context.save()
-    context.translate(this.centerX, this.centerY)
-    context.rotate(radian)
-    context.fillRect(-halfWidth, -halfHeight, this.width, this.height)
-    context.restore()
-
-    let outputText = ''
-    for (let i = 0; i < this.vertex.length; i++) {
-      context.fillStyle = 'pink'
-      context.fillRect(this.vertex[i].x, this.vertex[i].y, 5, 5)
-      context.fillStyle = 'blue'
-      context.fillText(Math.round(this.vertex[i].x) + ', ' + Math.round(this.vertex[i].y), this.vertex[i].x, this.vertex[i].y)
-    }
-
-    for (let i = 0; i < this.edge.length; i++) {
-      context.fillStyle = 'lime'
-      context.fillRect(this.edge[i].x, this.edge[i].y, 5, 5)
-      context.fillStyle = 'mint'
-      context.fillText(Math.round(this.edge[i].x) + ', ' + Math.round(this.edge[i].y), this.x, 300 + (i * 30))
-    }
-  }
-}
-
-/**
- * http://programmerart.weebly.com/separating-axis-theorem.html
- */
-function SATLogic (polygonA, polygonB) {
-  var perpendicularLine = null;
-  var perpendicularStack = [];
-  var dot = 0;
-  var amin = null;
-  var amax = null;
-  var bmin = null;
-  var bmax = null;
+setTimeout(() => {
+  // ctx.scale(-1, 1)
+  // ctx.drawImage(image, -100, 0, -image.width, image.height)
+  // ctx.scale(-1, 1)
+  // ctx.drawImage(image, 0, 150, image.width, image.height)
+  // ctx.scale(1, -1)
+  // ctx.drawImage(image, 0, -300, image.width, -image.height)
+  // ctx.scale(1, -1)
   
-  // polygon A의 모든 모서리 길이를 기록합니다.
-  for(var i = 0; i < polygonA.edge.length; i++) {
-    perpendicularLine = new Point(-polygonA.edge[i].y, polygonA.edge[i].x);
-    perpendicularStack.push(perpendicularLine);
-  }
+  // ctx.scale(-1, -1)
+  // ctx.drawImage(image, -210, -230, -image.width, -image.height)
 
-  for(var i = 0; i < polygonB.edge.length; i++) {
-    perpendicularLine = new Point(-polygonB.edge[i].y,  polygonB.edge[i].x);
-    perpendicularStack.push(perpendicularLine);
-  }
+  ctx.rotate(Math.PI / 180 * 90)
+  ctx.translate(image.width / 2, image.height / 2)
+  ctx.drawImage(image, -image.width / 2, -image.height / 2, image.width, image.height)
 
-  for(var i = 0; i < perpendicularStack.length; i++) {
-    amin = null;
-    amax = null;
-    bmin = null;
-    bmax = null;
-    for (var j = 0; j < polygonA.vertex.length; j++) {
-      dot = polygonA.vertex[j].x * perpendicularStack[i].x + polygonA.vertex[j].y * perpendicularStack[i].y;
-      if (amax === null || dot > amax) {
-        amax = dot;
-      }
-      if (amin === null || dot < amin) {
-        amin = dot;
-      }
-    }
-    for (var j = 0; j < polygonB.vertex.length; j++) {
-      dot = polygonB.vertex[j].x * perpendicularStack[i].x + polygonB.vertex[j].y * perpendicularStack[i].y;
-      if(bmax === null || dot > bmax) {
-        bmax = dot;
-      }
-      if(bmin === null || dot < bmin) {
-        bmin = dot;
-      }
-    }
-
-    if((amin < bmax && amin > bmin) || (bmin < amax && bmin > amin)) {
-      continue;
-    } else {
-      return false;
-    }
-  }
-
-  return true
-}
-
-
-let RADIAN = Math.PI / 180
-let degreeValue = 0
-let boxA = new Box(100, 100, 100, 100)
-let boxB = new Box(200, 100, 100, 100, 'gold')
-let animationId = requestAnimationFrame(animation)
-let stopAnimationButton = document.getElementById('stopAnimation')
-stopAnimationButton.addEventListener('click', () => {
-  // cancelAnimationFrame(animationId)
-  boxA.rotate += 10
-  
-})
-boxB.rotate += 20
-let context = document.getElementById('testCanvas').getContext('2d')
-context.font = '20px 맑은고딕'
-
-function animation () {
-  context.clearRect(0, 0, 800, 600)
-  context.fillStyle = 'white'
-  context.fillRect(0, 0, 800, 600)
-  boxB.display()
-  boxA.display()
-
-  if (SATLogic(boxA, boxB)) {
-    context.fillStyle = 'black'
-    context.fillText('충돌', 0, 60)
-  }
-  
-  requestAnimationFrame(animation)
-}
-
-function translateTest () {
-  context.translate(100, 100)
-  context.fillRect(10, 10, 10, 10)
-  
-  context.translate(0, 0)
-  context.fillRect(10, 10, 10, 10)
-}
-
-
-function fillRectRotate (x = 0, y = 0, width = 1, height = 1, degree = 0) {
-  let radian = degree * Math.PI / 180 // 라디안 계산 (rotate 함수는 라디안 값을 사용해서 회전합니다.)
-  let halfWidth = Math.floor(width / 2) // 사각형의 절반 길이
-  let halfHeight = Math.floor(height / 2) // 사각형의 절반 높이
-  let centerX = x + halfWidth // 사각형 중심의 x좌표
-  let centerY = y + halfHeight // 사각형 중심의 y좌표
-
-  // 현재의 canvas 상태를 저장합니다. translate와 rotate 로 canvas가 변형되기 이전의 상태
-  context.save()
-
-  // 캔버스의 회전은 (0, 0) 좌표를 중심으로 회전하기 때문에, 
-  // 사각형을 기준으로 회전하기 위해서는 캔버스의 기준 좌표를 회전할 사각형의 중심으로 변경하여야 합니다.
-  // 따라서 translate 함수를 사용해 사각형의 중심 좌표로 캔버스의 기준점을 이동합니다.
-  context.translate(centerX, centerY)
-
-  // 그리고 rotate 함수를 통해 캔버스를 회전시킵니다. 
-  // 캔버스의 rotate 함수의 인수는 radian 각도를 사용하므로, radian 값을 넣어주세요.
-  // 캔버스는 시계방향으로 회전합니다.
-  context.rotate(radian)
-
-  // 사각형을 출력합니다. 그런데, 출력해야 할 좌표는 다음과 같습니다.
-  // 이렇게 된 이유는, 캔버스의 중심이 (0, 0) 이기 때문입니다.
-  // 그 때문에, 사각형을 원하는 위치에 제대로 출력하려면 사각형의 절반 크기 및 길이만큼 -xy축으로 이동시켜야 합니다.
-  context.fillStyle = 'black'
-  context.fillRect(-halfWidth, -halfHeight, width, height)
-  context.fillStyle = 'yellow'
-  context.fillRect(-halfWidth, -halfHeight, 4, 4)
-  context.fillText(`boxC: ${centerX - halfWidth}, ${centerY - halfHeight}`, 0, 0)
-
-  // 아직 끝난게 아닙니다. 캔버스의 상태가 변경되었기 때문에, 이후에 출력되는 모든 것도
-  // translate, rotate의 영향을 받습니다. 따라서 이 값들을 이전 설정으로 복원해야 합니다.
-  // 가장 간단한 방법은 canvas.restore() 함수를 통해 캔버스의 이전 상태로 되돌아 가는 것입니다.
-  // 그렇게 하기 싫다면, 아까의 역순으로 설정을 바꾸어주어야 합니다.
-  // rotate를 -radian 만큼 한 후, translate를 통해 -centerX, -centerY만큼 이동해야 초기 상태와 똑같아집니다.
-  // 그냥 복잡하니까 canvas.restore() 사용하세요.
-  context.restore()
-}
-
+  ctx.scale(-1, -1)
+  ctx.drawImage(image, -image.width / 2, -image.height / 2, image.width, image.height)
+}, 100)
 
 </script>

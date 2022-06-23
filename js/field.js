@@ -315,7 +315,7 @@ export class fieldState {
     let randomNumber = Math.floor(Math.random() * this.enemyObject.length)
     let targetEnemy = this.enemyObject[randomNumber]
 
-    if (targetEnemy.isDeleted) {
+    if (targetEnemy.isDeleted || targetEnemy.isDied) {
       return null
     } else {
       return this.enemyObject[randomNumber]
@@ -455,6 +455,8 @@ export class fieldState {
   }
 
   static displayEnemyHpMeter (currentEnemy) {
+    if (currentEnemy.isDied) return // 죽은 적은 체력 안보여줌
+
     let enemyHpPercent = currentEnemy.hp / currentEnemy.hpMax
     if (enemyHpPercent > 100) {
       enemyHpPercent = 100
@@ -523,10 +525,14 @@ export class fieldSystem {
     //   fieldState.createEnemyObject(ID.enemy.testAttack, enemyX, enemyY)
     // }
 
-    if (fieldState.enemyObject.length === 0) {
-      let enemyX = Math.random() * 300 + 200
-      let enemyY = Math.random() * 200 + 100
-      fieldState.createEnemyObject(ID.enemy.testShowDamageEnemy, enemyX, enemyY)
+    // if (fieldState.enemyObject.length <= 2) {
+    //   let enemyX = Math.random() * 300 + 200
+    //   let enemyY = Math.random() * 200 + 100
+    //   fieldState.createEnemyObject(ID.enemy.spaceEnemyAttack, enemyX, enemyY)
+    // }
+
+    if (fieldState.weaponObject.length < 1) {
+      fieldState.createWeaponObject(ID.weapon.missileRocket, 0, 400, 1000, 1)
     }
 
   }

@@ -1,5 +1,8 @@
 "use strict"
 
+/** HTML 캔버스 */
+let canvas = document.getElementById('canvas')
+
 import { buttonSystem, mouseSystem } from "./control.js"
 import { soundFile, soundSystem } from "./sound.js"
 import { imageFile } from "./image.js"
@@ -295,7 +298,7 @@ class MainSystem extends MenuSystem {
 
   display () {
     graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT, '#78b3f2', '#d2dff6')
-    graphicSystem.imageDisplay(imageFile.tamshooter4Title, 0, 0)
+    graphicSystem.imageDisplay(imageFile.tamshooter4Title, 0, 0, 515, 89, 0, 0, 515, 89, 2, 20)
     
     for (let i = 0; i < this.menuList.length; i++) {
       this.menuList[i].display()
