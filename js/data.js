@@ -1,9 +1,10 @@
 'use strict'
 
-import { fieldState } from './field.js'
+import { fieldState, fieldSystem } from './field.js'
 import { graphicSystem } from './graphic.js'
 import { imageDataInfo, imageFile } from './image.js'
 import { soundFile, soundSystem } from './sound.js'
+import { stringText } from './text.js'
 
 /**
  * 공통적으로 사용하는 객체 ID
@@ -88,6 +89,11 @@ export class ID {
 
   static sprite = {
 
+  }
+
+  static round = {
+    round1_1: 70011,
+    round1_2: 70012,
   }
 }
 
@@ -692,7 +698,7 @@ export class FieldData {
   }
 }
 
-class WeaponData extends FieldData {
+export class WeaponData extends FieldData {
   constructor () {
     super()
     /** 공격력(해당 오브젝트의 공격력) */ this.attack = 1
@@ -755,8 +761,8 @@ class WeaponData extends FieldData {
    * 이 함수는 임의로 수정하지 마세요. Weapon 객체가 공통으로 사용해야 합니다.
    */
   process () {
-    this.processMove()
     this.processChase()
+    this.processMove()
     this.processAttack()
     this.processDeleteCheck()
   }
@@ -1058,8 +1064,8 @@ class WeaponData extends FieldData {
     // 각 타겟의 이동 속도값(절대값으로 얻음)
     const absTargetSpeedX = Math.abs(this.targetObject.speedX)
     const absTargetSpeedY = Math.abs(this.targetObject.speedY)
-    const minSpeedX = (this.elapsedFrame / 20) + absTargetSpeedX
-    const minSpeedY = (this.elapsedFrame / 20) + absTargetSpeedY
+    let minSpeedX = (this.elapsedFrame / 20) + absTargetSpeedX
+    let minSpeedY = (this.elapsedFrame / 20) + absTargetSpeedY
 
     // 속도 보정: 적 이동속도보다 빨리 무기가 움직여야함.
     if (this.speedX <= 0 && this.speedX > -minSpeedX) {
@@ -1075,13 +1081,13 @@ class WeaponData extends FieldData {
     }
 
     // 적과의 거리가 짧을 경우, 강제로 해당 위치로 이동합니다.
-    if (Math.abs(distanceX) <= 20) {
+    // 진행시간이 빠르
+    if (Math.abs(distanceX) <= 20 + (this.elapsedFrame / 10)) {
       this.x = targetCenterX
     }
 
-    if (Math.abs(distanceY) <= 20) {
+    if (Math.abs(distanceY) <= 20 + (this.elapsedFrame / 10)) {
       this.y = targetCenterY
-      this.speedY = 0
     }
   }
 }
@@ -2232,7 +2238,7 @@ class SkillSidewave extends Sidewave {
  * 나머지 무기는 이 공격력 %를 바꿈으로써 밸런스를 조절할 계획
  * 경고: 저 수치는 명시적인 수치이지만, create함수에서 무조건 참고하지 않을 수도 있음.
  */
-class PlayerWeaponData {
+export class PlayerWeaponData {
   constructor () {
     /**
      * 샷 한번 발사에 지연시간(프레임)
@@ -2486,7 +2492,7 @@ class PlayerSidewave extends PlayerWeaponData {
 /**
  * 플레이어 스킬 데이터
  */
-class PlayerSKillData {
+export class PlayerSKillData {
   constructor () {
     /**
      * 스킬의 공격력 배율 (기본값 1)
@@ -2798,7 +2804,7 @@ class PlayerSkillSidewave extends PlayerSKillData {
  * 기본 규칙: 이펙트는 한번만 모든 에니메이션 프레임을 번갈아 출력하고 사라집니다.
  * 예를들어, missileEffect의 경우, 해당 이펙트는 총 10프레임이며, 이 10프레임이 전부 출력되면 그 다음 프레임에 사라집니다.
  */
-class EffectData extends FieldData {
+export class EffectData extends FieldData {
   constructor () {
     super()
     /**
@@ -2929,7 +2935,7 @@ class SkillParapoEffect extends EffectData {
   }
 }
 
-class EnemyData extends FieldData {
+export class EnemyData extends FieldData {
   constructor () {
     super()
     /**
@@ -3089,19 +3095,21 @@ class EnemyData extends FieldData {
   processExitToReset () {
     if (!this.isExitToReset) return // 적이 나가면 리셋되지 않는경우 함수 종료
 
-    const scopeSize = 50
+    // 참고: 감지 영역과 이동 위치가 일치하면, 맨 위와 맨 아래를 왔다갔다 할 수 있으므로 주의해주세요.
+    const scopeSize = 100 // 감지 영역
+    const moveAdjust = scopeSize / 2 // 이동 위치 조정
 
     // 이동 방향이 왼쪽이거나, speedX값이 음수이면, 왼쪽 영역 바깥으로 이동하는것입니다. 반대 방향도 마찬가지
     if ((this.speedX < 0 || this.moveDirectionX === 'left') && this.x + this.width < -scopeSize) {
-      this.x = graphicSystem.CANVAS_WIDTH + this.width + scopeSize
+      this.x = graphicSystem.CANVAS_WIDTH + this.width + moveAdjust
     } else if ((this.speedX > 0 || this.moveDirectionX === 'right') && this.x > graphicSystem.CANVAS_WIDTH + scopeSize) {
-      this.x = 0 - this.width - scopeSize
+      this.x = 0 - this.width - moveAdjust
     }
 
     if ((this.speedY < 0 || this.moveDirectionY === 'up') && this.y + this.height < -scopeSize) {
-      this.y = graphicSystem.CANVAS_HEIGHT + this.height + scopeSize
+      this.y = graphicSystem.CANVAS_HEIGHT + this.height + moveAdjust
     } else if ((this.speedY > 0 || this.moveDirectionY === 'down') && this.y > graphicSystem.CANVAS_HEIGHT + scopeSize) {
-      this.y = 0 - this.height - scopeSize
+      this.y = 0 - this.height - moveAdjust
     }
   }
 
@@ -3137,13 +3145,14 @@ class EnemyData extends FieldData {
 
   /**
    * 적이 죽었는지를 확인하는 함수
-   * 일단 한번 죽었다면, 재생성이 아닌 이상 부활은 불가능합니다.
+   * 일단 한번 죽었다면, 재생성이 아닌 이상 부활은 불가능합니다. 
+   * 적을 죽이면 경험치를 얻습니다.
    */
   processDieCheck () {
     if (this.isDied) return
     if (this.hp <= 0) {
       this.isDied = true
-      fieldState.playerObject.addExp(this.score)
+      fieldSystem.requestAddScore(this.score)
     }
   }
 
@@ -3735,6 +3744,194 @@ class Donggeurami extends EnemyData {
   }
 }
 
+
+
+export class RoundData {
+  constructor () {
+    /** (해당 라운드를 플레이 하기 위한) 필요 레벨, 필요 레벨 미만은 입장 불가 */ this.requireLevel = 0
+    /** (해당 라운드를 원할하게 플레이 할 수 있는) 권장 공격력, 입장은 상관 없음 */ this.recommandAttack = 0
+    /** 라운드 값을 텍스트로 표시 (예: 1-1), 영어와 숫자만 사용 가능 */ this.roundText = 'TEST'
+    /** 라운드 이름, text.js에서 값을 가져와서 입력하세요. */ this.roundName = stringText.dataRoundName.test
+    /** 라운드 종료 시간(이 시간이 되면 클리어), 단위: 초 */ this.finishTime = 999
+    /** 클리어 보너스 점수 */ this.clearBonus = 10000
+
+    /**
+     * 해당 라운드의 기본 배경 이미지 (배경은 언제든지 변경 가능)
+     * @type {Image}
+     */
+    this.backgroundImage = null
+    /** 배경을 변경할 때, 화면을 부드럽게 전환하기 위한 변수 */ this.backgroundFadeDownFrame = 120
+    this.backgroundX = 0
+    this.backgroundY = 0
+
+    /** 현재 시간의 프레임 */ this.currentTimeFrame = 0
+    /** 현재 시간, 기본값은 반드시 0이어야 합니다. */ this.currentTime = 0
+    /** 클리어 여부, 클리어가 되는 즉시 해당 라운드는 종료 */ this.isClear = false
+    
+  }
+
+  /**
+   * 해당 라운드가 클리어 되어있는지 확인.
+   * (참고: 라운드를 클리어하는 기본적인 기준은, currentTime이 finishTime 이상이여야 합니다.)
+   * 이것은, finishTime 시간만 넘어가면 적이 몇마리 있든 일단 클리어라는 뜻입니다.
+   */
+  clearCheck () {
+    if (this.currentTime >= this.finishTime) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+  requestClear () {
+
+  }
+
+  display () {
+    // 배경화면 이미지 출력 및 스크롤 효과, 배경이 없으면 아무것도 출력 안함.
+    if (this.backgroundImage) {
+      let image = this.backgroundImage
+      let imageWidth = this.backgroundImage.width
+      let imageHeight = this.backgroundImage.height
+      let canvasWidth = graphicSystem.CANVAS_WIDTH
+      let canvasHeight = graphicSystem.CANVAS_HEIGHT
+      let imageX = this.backgroundX
+      let imageY = this.backgroundY
+
+      if (imageX === 0 && imageY === 0) {
+        // 백그라운드의 좌표가 (0, 0) 일 때
+        // 참고: 이미지 크기를 전부 출력하는것이 아닌, 캔버스의 크기로만 출력됩니다.
+        // 캔버스보다 이미지가 작다면 나머지 부분은 그려지지 않습니다.
+        graphicSystem.imageDisplay(image, 0, 0, canvasWidth, canvasHeight, imageX, imageY, canvasWidth, canvasHeight)
+      } else if (imageX !== 0 && imageY === 0) {
+        // x축 좌표가 0이 아니고 y축 좌표가 0일 때 (수평 스크롤 포함)
+        // 만약 x축과 출력길이가 이미지 길이를 초과하면 배경을 2번에 나누어 출력됩니다.
+        if (imageX + canvasWidth >= imageWidth) {
+          let screenAWidth = imageWidth - imageX
+          let screenBWidth = canvasWidth - screenAWidth
+          graphicSystem.imageDisplay(image, imageX, 0, screenAWidth, canvasHeight, 0, 0, screenAWidth, canvasHeight)
+          graphicSystem.imageDisplay(image, 0, 0, screenBWidth, canvasHeight, screenAWidth, 0, screenBWidth, canvasHeight)
+        } else {
+          // 출력길이가 초과하지 않는다면, 좌표에 맞게 그대로 출력
+          graphicSystem.imageDisplay(image, imageX, imageY, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight)
+        }
+      } else if (imageX === 0 && imageY !== 0) {
+        // y축 좌표가 0이 아니고 x축 좌표는 0일 때 (수직 스크롤 포함)
+        // 스크롤 원리는 x축과 동일하다.
+        if (imageY + canvasHeight >= imageHeight) {
+          let screenAHeight = imageHeight - imageY
+          let screenBHeight = canvasHeight - screenAHeight
+          graphicSystem.imageDisplay(image, 0, imageY, canvasWidth, screenAHeight, 0, 0, canvasWidth, screenAHeight)
+          graphicSystem.imageDisplay(image, 0, 0, canvasWidth, screenBHeight, 0, screenAHeight, canvasWidth, screenBHeight)
+        } else {
+          // 출력길이가 초과하지 않는다면, 좌표에 맞게 그대로 출력
+          graphicSystem.imageDisplay(image, imageX, imageY, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight)
+        }
+      } else {
+        // x축과 y축이 모두 0이 아닌경우, (수직 + 수평 스크롤)
+        // 만약 어느 축도 이미지의 길이를 초과하지 않았다면, 그대로 이미지를 출력합니다.
+        if (imageX + canvasWidth <= imageWidth && imageY + canvasHeight <= imageHeight) {
+          graphicSystem.imageDisplay(image, imageX, imageY, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight)
+        } else {
+          // 어느 쪽도 초과라면 4번에 나누어져 출력
+          let screenBaseWidth = imageWidth - imageX
+          let screenBaseHeight = imageHeight - imageY
+          let screenExtendWidth = canvasWidth - screenBaseWidth
+          let screenExtendHeight = canvasHeight - screenBaseHeight
+
+          // 오류 방지를 위해 이미지를 자르는 사이즈가 0이 되지 않도록 조건을 정한 후 출력
+          // 첫번째 기본 이미지
+          if (screenBaseWidth !== 0 || screenBaseHeight !== 0) {
+            graphicSystem.imageDisplay(image, imageX, imageY, screenBaseWidth, screenBaseHeight, 0, 0, screenBaseWidth, screenBaseHeight)
+          }
+
+          // 두번째 x축 이미지 (첫번째 이미지를 기준으로 X축의 다른 위치[이미지가 스크롤 하면서 잘린 지점])
+          if (imageX + canvasWidth >= imageWidth && screenBaseWidth !== 0) {
+            graphicSystem.imageDisplay(image, 0, imageY, screenExtendWidth, screenBaseHeight, screenBaseWidth, 0, screenExtendWidth, screenBaseHeight)
+          }
+
+          // 세번째 y축 이미지 (첫번째 이미지를 기준으로 Y축 다른 위치[이미지가 스크롤 하면서 잘린 지점])
+          if (imageY + canvasHeight >= imageHeight && screenBaseHeight !== 0) {
+            graphicSystem.imageDisplay(image, imageX, 0, screenBaseWidth, screenExtendHeight, 0, screenBaseHeight, screenBaseWidth, screenExtendHeight)
+          }
+
+          // 네번째 x, y축 이미지 (첫번째 이미지를 기준으로 대각선에 위치)
+          if (screenBaseWidth !== 0 && screenBaseHeight !== 0) {
+            graphicSystem.imageDisplay(image, 0, 0, screenExtendWidth, screenExtendHeight, screenBaseWidth, screenBaseHeight, screenExtendWidth, screenExtendHeight)
+          }
+
+        }
+      }
+    }
+  }
+
+  process () {
+    this.processTime()
+    this.processRound()
+    this.processBackground()
+  }
+
+  processBackground () {
+    this.backgroundX += 0.2
+    if (this.backgroundX >= this.backgroundImage.width) {
+      this.backgroundX -= this.backgroundImage.width
+    }
+    this.backgroundY += 0.2
+    if (this.backgroundY >= this.backgroundImage.height) {
+      this.backgroundY -= this.backgroundImage.height
+    }
+  }
+
+  /**
+   * 라운드 진행에 관한 처리, 이 함수를 재정의 해서, 라운드의 구성을 작성합니다.
+   * (예를 들어, 적이 언제 어디서 나올것인지, 보스는 어느 시간에 나올것인지)
+   */
+  processRound () {
+
+  }
+
+  /**
+   * 시간 증가 처리
+   */
+  processTime () {
+    this.currentTimeFrame++
+    if (this.currentTimeFrame >= 60) {
+      this.currentTimeFrame -= 60
+      this.currentTime++
+    }
+  }
+
+  /**
+   * 적을 생성합니다.
+   */
+  createEnemy (enemyId, x = graphicSystem.CANVAS_WIDTH + 50, y = Math.random() * graphicSystem.CANVAS_HEIGHT) {
+    fieldState.createEnemyObject(enemyId, x, y)
+  }
+}
+
+class Round1_1 extends RoundData {
+  constructor () {
+    super()
+    this.roundName = stringText.dataRoundName.round1_1
+    this.roundText = '1-1'
+    this.recommandAttack = 10000
+    this.requireLevel = 1
+    this.finishTime = 20
+    this.clearBonus = 11600
+    this.backgroundImage = imageFile.round.round1_space
+  }
+
+  processRound () {
+    if (this.currentTimeFrame % 2 == 1) return
+
+    if (this.currentTime === 4 || this.currentTime === 8 || this.currentTime === 12) {
+      this.createEnemy(ID.enemy.spaceEnemyLight)
+    }
+  }
+}
+
+
+
 /**
  * tamshooter4의 데이터 모음
  */
@@ -3869,6 +4066,16 @@ export class tamshooter4Data {
       case ID.effect.parapo: return ParapoEffect
       case ID.effect.skillMissile: return SkillMissileEffect
       case ID.effect.skillParapo: return SkillParapoEffect
+    }
+  }
+
+  /**
+   * 라운드 데이터를 가져옵니다.
+   ID 클래스가 가지고 있는 상수 값을 넣어주세요.
+   */
+  static getRoundData (roundId) {
+    switch (roundId) {
+      case ID.round.round1_1: return Round1_1
     }
   }
 }

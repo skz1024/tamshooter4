@@ -9,7 +9,10 @@ export class soundFile {
     systemEnter: new Audio('./sound/systemEnter.mp3'),
     systemSelect: new Audio('./sound/systemSelect.mp3'),
     systemScore: new Audio('./sound/systemScore.mp3'),
-    systemLevelUp: new Audio('./sound/systemLevelUp.mp3')
+    systemLevelUp: new Audio('./sound/systemLevelUp.mp3'),
+    systemPause: new Audio('./sound/systemPause.mp3'),
+    systemRoundClear: new Audio('./sound/systemRoundClear.mp3'),
+    systemGameOver: new Audio('./sound/systemGameOver.mp3')
   }
 
   static skill = {
@@ -28,11 +31,14 @@ export class soundFile {
 
 export class soundSystem {
   /**
-   * 사운드 재생 함수 >> 주의: 절대로 audio객체의 play() 함수를 직접 호출하지 말고, 이 함수를 사용하세요.
-   * 안그러면 나중에 코드 관리하기 귀찮아집니다.
+   * 사운드 재생 함수 >> 주의: 절대로 audio객체의 play 함수를 직접 호출하지 말고, 이 함수를 사용하세요.
+   * 참고: 음악은, musicPlay 함수를 사용해주세요. play 함수는 효과음 전용입니다.
    * @param {Audio} soundFile soundFile 객체의 static 변수
    */
   static play (soundFile) {
+    // 사운드가 꺼질경우, 사운드를 출력하지 않음.
+    if (!this.soundOn) return
+    
     // 사운드가 정지 상태일때는 play() 함수를 호출합니다.
     // 그렇지 않으면 currentTime을 0으로 설정해서 처음부터 다시 재생합니다.
     // 절대로 pause() 를 호출한 직후 play() 를 호출하지 마세요. 이 경우 사운드 재생 오류가 발생합니다.
@@ -42,4 +48,13 @@ export class soundSystem {
       soundFile.currentTime = 0
     }
   }
+
+  static musicPlay (soundFile) {
+
+  }
+
+  static soundOn = true
+  static soundVolume = 1
+  static musicOn = true
+  static musicVolume = 1
 }

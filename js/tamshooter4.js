@@ -3,6 +3,7 @@ import { soundFile, soundSystem } from './sound.js'
 import { imageFile } from './image.js'
 import { fieldSystem } from './field.js'
 import { graphicSystem } from './graphic.js'
+import { ID } from './data.js'
 
 /** HTML 캔버스 */
 const canvas = document.getElementById('canvas')
@@ -273,8 +274,8 @@ class MainSystem extends MenuSystem {
     if (!this.selectedCheck()) return
 
     switch (this.cursorPosition) {
-      case this.MENU_OPTION: gameSystem.statusId = gameSystem.STATUS_OPTION; break
-      case this.MENU_ROUND_SELECT: gameSystem.statusId = gameSystem.STATUS_ROUNDSELECT; break
+      case this.MENU_OPTION: gameSystem.stateId = gameSystem.STATE_OPTION; break
+      case this.MENU_ROUND_SELECT: gameSystem.stateId = gameSystem.STATE_ROUNDSELECT; break
     }
 
     // 사운드 출력
@@ -357,7 +358,7 @@ class OptionSystem extends MenuSystem {
     if (!this.canceledCheck()) return
 
     soundSystem.play(soundFile.system.systemBack)
-    gameSystem.statusId = gameSystem.STATUS_MAIN
+    gameSystem.stateId = gameSystem.STATE_MAIN
   }
 
   display () {
@@ -435,14 +436,14 @@ class RoundSelectSystem extends MenuSystem {
   processCancel () {
     if (!this.canceledCheck()) return
 
-    gameSystem.statusId = gameSystem.STATUS_MAIN
+    gameSystem.stateId = gameSystem.STATE_MAIN
     soundSystem.play(soundFile.system.systemBack)
   }
 
   processSelect () {
     if (!this.selectedCheck()) return
 
-    gameSystem.statusId = gameSystem.STATUS_FIELD
+    fieldSystem.roundStart(ID.round.round1_1)
   }
 
   display () {
@@ -629,7 +630,7 @@ export class userSystem {
 
   static displayPlayTime () {
     const X = 0
-    const Y = 510
+    const Y = 510 + 5
     graphicSystem.digitalFontDisplay('PLAY TIME: ' + this.playTime.getTimeString(), X, Y)
   }
 
@@ -704,10 +705,10 @@ export class userSystem {
     const lvText = 'lv.' + this.lv + ': ' + this.exp + '/' + this.expTable[this.lv]
     const statusText = ''
 
-    graphicSystem.digitalFontDisplay(hpText, LEFT_X, LAYER1_Y) // 유저의 체력 정보
-    graphicSystem.digitalFontDisplay(shieldText, HP_WIDTH, LAYER1_Y)
-    graphicSystem.digitalFontDisplay(lvText, LEFT_X, LAYER2_DIGITAL_Y, 12, 20) // 유저의 레벨과 경험치
-    graphicSystem.digitalFontDisplay(statusText, RIGHT_X, LAYER2_DIGITAL_Y, 12, 20) // 현재 라운드 정보
+    graphicSystem.digitalFontDisplay(hpText, LEFT_X, LAYER1_DIGITAL_Y) // 유저의 체력 정보
+    graphicSystem.digitalFontDisplay(shieldText, HP_WIDTH, LAYER1_DIGITAL_Y)
+    graphicSystem.digitalFontDisplay(lvText, LEFT_X, LAYER2_DIGITAL_Y) // 유저의 레벨과 경험치
+    graphicSystem.digitalFontDisplay(statusText, RIGHT_X, LAYER2_DIGITAL_Y) // 현재 라운드 정보
   }
 
   static getPlayerObjectData () {
@@ -726,11 +727,11 @@ export class userSystem {
  * 이건 단일 클래스입니다.
  */
 export class gameSystem {
-  /** 게임 상태 ID */ static statusId = 0
-  /** 상태: 메인 */ static STATUS_MAIN = 0
-  /** 상태: 게임 옵션 */ static STATUS_OPTION = 1
-  /** 상태: 라운드선택 */ static STATUS_ROUNDSELECT = 11
-  /** 상태: 필드(게임 진행중) */ static STATUS_FIELD = 12
+  /** 게임 상태 ID */ static stateId = 0
+  /** 상태: 메인 */ static STATE_MAIN = 0
+  /** 상태: 게임 옵션 */ static STATE_OPTION = 1
+  /** 상태: 라운드선택 */ static STATE_ROUNDSELECT = 11
+  /** 상태: 필드(게임 진행중) */ static STATE_FIELD = 12
   /** 게임 첫 실행시 로드를 하기 위한 초기화 확인 변수 */ static isLoad = false
   /** 게임에서 저장된 데이터가 있는지 확인하는 localStorage 키 이름 */ static SAVE_FLAG = 'saveFlag'
 
@@ -868,11 +869,11 @@ export class gameSystem {
     frameCount++
     this.userSystem.process()
 
-    switch (this.statusId) {
-      case this.STATUS_MAIN: this.mainSystem.process(); break
-      case this.STATUS_OPTION: this.optionSystem.process(); break
-      case this.STATUS_ROUNDSELECT: this.roundSelectSystem.process(); break
-      case this.STATUS_FIELD: this.fieldSystem.process(); break
+    switch (this.stateId) {
+      case this.STATE_MAIN: this.mainSystem.process(); break
+      case this.STATE_OPTION: this.optionSystem.process(); break
+      case this.STATE_ROUNDSELECT: this.roundSelectSystem.process(); break
+      case this.STATE_FIELD: this.fieldSystem.process(); break
     }
 
     this.processSave()
@@ -888,16 +889,16 @@ export class gameSystem {
     graphicSystem.clearCanvas()
 
     // 화면 출력
-    switch (this.statusId) {
-      case this.STATUS_MAIN: this.mainSystem.display(); break
-      case this.STATUS_OPTION: this.optionSystem.display(); break
-      case this.STATUS_ROUNDSELECT: this.roundSelectSystem.display(); break
-      case this.STATUS_FIELD: this.fieldSystem.display(); break
+    switch (this.stateId) {
+      case this.STATE_MAIN: this.mainSystem.display(); break
+      case this.STATE_OPTION: this.optionSystem.display(); break
+      case this.STATE_ROUNDSELECT: this.roundSelectSystem.display(); break
+      case this.STATE_FIELD: this.fieldSystem.display(); break
     }
 
     // 메인 화면 또는 옵션 화면일때만, 시간 표시
-    if (this.statusId === this.STATUS_MAIN || this.statusId === this.STATUS_OPTION) {
-      graphicSystem.digitalFontDisplay('FPS: ' + currentFps, 0, 240, 40, 60)
+    if (this.stateId === this.STATE_MAIN || this.stateId === this.STATE_OPTION) {
+      graphicSystem.digitalFontDisplay('fps: ' + currentFps, 0, 420, 20)
       this.userSystem.displayPlayTime()
     }
 

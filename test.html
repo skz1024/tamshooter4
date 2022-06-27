@@ -11,40 +11,17 @@
 </body>
 </html>
 <script>
-// 회전하는 점의 좌표 구하기
-// let vectorA = {x: 230, y: 239}
-// let vectorB = {x: 176, y: 188}
-// let atan = Math.atan2(vectorB.y - vectorA.y, vectorB.x - vectorA.x)
-// let atanDegree = atan * 180 / Math.PI
-// document.write(atanDegree)
-
-let image = new Image()
-image.src = 'image/title.png'
-let image2 = new Image()
-image2.src = './image/system/playerImage.png'
 let canvas = document.getElementById('canvas')
 let ctx = canvas.getContext('2d')
-let measure = ctx.measureText('왓더뻑point데스카')
+let imageA = new Image()
+imageA.src = './image/system/fieldSystem.png'
+
 
 
 setTimeout(() => {
-  // ctx.scale(-1, 1)
-  // ctx.drawImage(image, -100, 0, -image.width, image.height)
-  // ctx.scale(-1, 1)
-  // ctx.drawImage(image, 0, 150, image.width, image.height)
-  // ctx.scale(1, -1)
-  // ctx.drawImage(image, 0, -300, image.width, -image.height)
-  // ctx.scale(1, -1)
-  
-  // ctx.scale(-1, -1)
-  // ctx.drawImage(image, -210, -230, -image.width, -image.height)
-
-  ctx.rotate(Math.PI / 180 * 90)
-  ctx.translate(image.width / 2, image.height / 2)
-  ctx.drawImage(image, -image.width / 2, -image.height / 2, image.width, image.height)
-
-  ctx.scale(-1, -1)
-  ctx.drawImage(image, -image.width / 2, -image.height / 2, image.width, image.height)
+  // ctx.drawImage(imageA, 0, 0, 400, 60, 200, 100, 400, 60) // clear
+  ctx.drawImage(imageA, 0, 120, 200, 60, 280, 100, 200, 60) // pause
+  ctx.drawImage(imageA, 450, 0, 120, 128, 300, 160, 120, 128) // menu
 }, 100)
 
 </script>

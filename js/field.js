@@ -1,10 +1,11 @@
 'use strict'
 
 import { buttonSystem } from './control.js'
-import { FieldData, ID, objectType, tamshooter4Data } from './data.js'
+import { EffectData, EnemyData, FieldData, ID, objectType, RoundData, tamshooter4Data, WeaponData } from './data.js'
 import { graphicSystem } from './graphic.js'
-import { imageFile } from './image.js'
-import { userSystem } from './tamshooter4.js'
+import { imageDataInfo, imageFile } from './image.js'
+import { soundFile, soundSystem } from './sound.js'
+import { gameSystem, userSystem } from './tamshooter4.js'
 // import { systemText } from './text.js'
 
 /*
@@ -30,23 +31,42 @@ import { userSystem } from './tamshooter4.js'
 4-1. SystemObject = 시스템용도로 사용[FieldObject랑 차이 없음. 용도 구분을 위해 이름을 추가한 것]
  */
 
-class DamageObject extends FieldData {
-  constructor (x, y, attack = 0) {
-    super()
+/**
+ * field에서 데미지를 표시하는 오브젝트입니다.
+ * 생성/삭제 방식이 아니라 Pool에서 자원을 가져와 사용하는 방식을 사용합니다.
+ */
+class DamageObject {
+  constructor () {
+    /** 표시할 x좌표 */ this.x = 0
+    /** 표시할 y좌표 */ this.y = 0
+    /** 데미지를 표시할 값 */ this.attack = 0
+    /** 진행된 프레임 */ this.elapsedFrame = 0
+    /** 사용 여부 */ this.isUsing = false
+    /** 생성 Id */ this.createId = 0
+  }
+
+  setData (x, y, attack) {
     this.x = x
     this.y = y
-    /** 데미지를 표시할 값 */ this.attack = attack
+    this.attack = attack
+    this.elapsedFrame = 0
+    this.isUsing = true
   }
 
   process () {
+    if (!this.isUsing) return
+
     this.y -= 0.5
+    this.elapsedFrame++
 
     if (this.elapsedFrame >= 60 || this.attack === 0) {
-      this.isDeleted = true
+      this.isUsing = false
     }
   }
 
   display () {
+    if (!this.isUsing) return
+
     const IMAGE = imageFile.system.damageFont
     const NUMBER_WIDTH = 12
     const NUMBER_HEIGHT = 12
@@ -73,16 +93,22 @@ class PlayerObject extends FieldData {
     super(objectType.PLAYER, 0, 300, 200)
     this.width = this.playerImage.width // 40
     this.height = this.playerImage.height // 20
+  }
 
+  /**
+   * 플레이어 정보 초기화 함수:
+   * 주의! 이 함수는 constructor 내부에서 사용할 수 없습니다.
+   * 왜냐하면 playerObject 데이터를 초기화 하지 않은 상태에서 불러오면 오류가 발생하기 때문입니다.
+   * 따라서, 이 함수는 보통 roundStart에서 호출합니다.
+   */
+  init () {
     this.shield = 0
     this.shieldMax = 0
     this.shieldRecovery = 0
     this.attackDelay = 0
     this.attackDelayCount = 0
     this.debug = false
-  }
 
-  init () {
     this.x = 300
     this.y = 200
     this.centerX = this.x + (this.width / 2)
@@ -272,9 +298,9 @@ class PlayerObject extends FieldData {
  */
 export class fieldState {
   /** @type {PlayerObject} */ static playerObject = new PlayerObject()
-  /** @type {FieldData[]} */ static weaponObject = []
-  /** @type {FieldData[]} */ static enemyObject = []
-  /** @type {FieldData[]} */ static effectObject = []
+  /** @type {WeaponData[]} */ static weaponObject = []
+  /** @type {EnemyData[]} */ static enemyObject = []
+  /** @type {EffectData[]} */ static effectObject = []
   /** @type {DamageObject[]} */ static damageObject = []
 
   /**
@@ -299,6 +325,20 @@ export class fieldState {
   static getEnemyObject () { return this.enemyObject }
   static getEffectObject () { return this.effectObject }
   static getDamageObject () { return this.damageObject }
+
+  /**
+   * fieldState에서 사용하는 모든 오브젝트를 리셋합니다.
+   * player는 초기화되고, weapon, enemy, effect는 전부 삭제되며, damage는 사용안함 처리합니다.
+   */
+  static allObjectReset () {
+    this.playerObject.init()
+    this.weaponObject.length = 0
+    this.enemyObject.length = 0
+    this.effectObject.length = 0
+    for (let i = 0; i < this.damageObject.length; i++) {
+      this.damageObject[i].isUsing = false
+    }
+  }
 
   /**
    * 랜덤한 적 객체를 얻습니다. 다만, 이 객체가 삭제 예정이라면 함수의 리턴값은 null이 됩니다.
@@ -353,10 +393,19 @@ export class fieldState {
     this.effectObject.push(inputData)
   }
 
+  static damageObjectNumber = 0
   static createDamageObject (x = 0, y = 0, attack = 1) {
-    const inputData = new DamageObject(x, y, attack)
-    inputData.createId = this.getNextCreateId()
-    this.damageObject.push(inputData)
+    if (this.damageObject.length < 100) {
+      this.damageObject.push(new DamageObject())
+    }
+
+    this.damageObjectNumber++
+    if (this.damageObjectNumber >= this.damageObject.length) {
+      this.damageObjectNumber = 0
+    }
+
+    this.damageObject[this.damageObjectNumber].setData(x, y, attack)
+    this.damageObject[this.damageObjectNumber].createId = this.getNextCreateId()
   }
 
   static process () {
@@ -398,13 +447,7 @@ export class fieldState {
   static processDamageObject () {
     for (let i = 0; i < this.damageObject.length; i++) {
       const currentDamage = this.damageObject[i]
-
       currentDamage.process()
-      currentDamage.fieldProcess()
-
-      if (currentDamage.isDeleted) {
-        this.damageObject.splice(i, 1)
-      }
     }
   }
 
@@ -435,7 +478,7 @@ export class fieldState {
 
   static displayWeaponObject () {
     for (let i = 0; i < this.weaponObject.length; i++) {
-      this.weaponObject[i].display.call()
+      this.weaponObject[i].display()
     }
   }
 
@@ -489,51 +532,308 @@ export class fieldState {
 export class fieldSystem {
   static fieldTime = {
     frame: 0,
-    second: 0
-  }
-
-  static isFieldStart = false
-  static fieldStart () {
-    if (!this.isFieldStart) {
-      fieldState.playerObject.init()
-      this.isFieldStart = true
+    second: 0,
+    process: function () {
+      this.fieldTime.frame++
+      if (this.fieldTime.frame >= 60) {
+        this.fieldTime.frame -= 60
+        this.fieldTime.second++
+      }
+    },
+    reset: function () {
+      this.frame = 0
+      this.second = 0
     }
   }
 
-  static processFieldTime () {
-    this.fieldTime.frame++
-    if (this.fieldTime.frame >= 60) {
-      this.fieldTime.frame -= 60
-      this.fieldTime.second++
+  /**
+   * 현재 진행되고 있는 라운드
+   * @type {RoundData}
+   */
+  static round = null
+
+  static stateId = 0
+  static STATE_NORMAL = 0
+  static STATE_PAUSE = 1
+  static STATE_ROUND_CLEAR = 2
+  static STATE_GAME_OVER = 3
+  static STATE_EXIT = 4
+
+  /** pause 상태일 때, 커서 번호 */ static cursor = 0
+  static exitDelayCount = 0
+  static EXIT_ROUND_CLEAR_DELAY = 360
+  static EXIT_GAME_OVER_DELAY = 360
+  static EXIT_FAST_DELAY = 180
+  static SCORE_ENIMATION_MAX_FRAME = 60
+  static SCORE_ENIMATION_INTERVAL = 4
+  static enimationFrame = 0
+  static score = 0
+
+  static requestAddScore (score) {
+    this.score += score
+    fieldState.playerObject.addExp(score)
+  }
+
+  /**
+   * 라운드를 시작합니다. 필드 초기화 작업 및 라운드 설정 작업을 진행합니다.
+   * 다만, 라운드가 없을경우, 라운드는 시작하지 않습니다.
+   */
+  static roundStart (roundId) {
+    const RoundClass = tamshooter4Data.getRoundData(roundId)
+    if (RoundClass == null) return
+
+    // 라운드 데이터
+    this.round = new RoundClass()
+
+    // 라운드가 시작되는 순간, 게임 상태가 필드로 변경되고, 게임이 시작됩니다.
+    // 이 과정에서 필드 데이터에 대해 초기화가 진행됩니다.
+    gameSystem.stateId = gameSystem.STATE_FIELD
+    this.fieldTime.frame = 0
+    this.fieldTime.second = 0
+    fieldState.allObjectReset()
+    this.stateId = this.STATE_NORMAL
+    this.cursor = 0
+    this.enimationFrame = 0
+    this.exitDelayCount = 0
+    this.score = 0
+  }
+
+  /**
+   * 라운드를 나갑니다. (processExit와는 다름)
+   * 플레이어가 게임을 일시정지 하고 메인 화면으로 나가가나, 라운드를 클리어 하거나, 게임오버 당했을 때
+   * exitDelay가 추가되고, 이 값이 일정량을 초과하면 roundExit 함수를 사용합니다.
+   * 필드 초기화는 하지 않습니다.
+   * 라운드를 나가면, 메인 화면으로 돌아갑니다.
+   * 다만 게임창을 닫을 경우에는 현재 상태가 임시 저장되기 때문에 라운드가 끝나지 않음.
+   */
+  static roundExit () {
+    gameSystem.stateId = gameSystem.STATE_MAIN
+  }
+
+  /**
+   * 점수 사운드 출력
+   */
+  static scoreSound () {
+    if (this.exitDelayCount < this.SCORE_ENIMATION_MAX_FRAME 
+      && this.exitDelayCount % this.SCORE_ENIMATION_INTERVAL === 0
+      && this.score >= 1) {
+      soundSystem.play(soundFile.system.systemScore)
     }
+  }
+
+  /**
+   * 일시 정지 상태에서의 처리
+   */
+  static processPause () {
+    const buttonDown = buttonSystem.getButtonInput(buttonSystem.BUTTON_DOWN)
+    const buttonUp = buttonSystem.getButtonInput(buttonSystem.BUTTON_UP)
+    const buttonA = buttonSystem.getButtonInput(buttonSystem.BUTTON_A)
+    const maxMenuNumber = 3
+
+    if (buttonUp && this.cursor > 0) {
+      this.cursor--
+      soundSystem.play(soundFile.system.systemCursor)
+    } else if (buttonDown && this.cursor < maxMenuNumber) {
+      this.cursor++
+      soundSystem.play(soundFile.system.systemCursor)
+    }
+
+    if (buttonA) {
+      switch (this.cursor) {
+        case 0:
+          this.stateId = this.STATE_NORMAL // pause 상태 해제
+          break
+        case 1:
+          soundSystem.soundOn = !soundSystem.soundOn
+          break
+        case 2:
+          soundSystem.musicOn = !soundSystem.musicOn
+          break
+        case 3:
+          this.stateId = this.STATE_EXIT // 라운드를 나감
+          break
+      }
+    }
+  }
+
+  static processExit () {
+    // 사용자가 나가면 현재까지 얻은 점수를 보여줌, 따로 출력할 배경 사운드는 없음
+    this.scoreSound()
+
+    this.enimationFrame++
+    this.exitDelayCount++
+
+    if (this.exitDelayCount >= this.EXIT_FAST_DELAY) {
+      this.roundExit()
+    }
+  }
+
+  static processRoundClear () {
+    // 라운드 클리어 사운드 재생 (딜레이카운트가 0일때만 재생해서 중복 재생 방지)
+    if (this.exitDelayCount === 0) {
+      soundSystem.play(soundFile.system.systemRoundClear)
+    }
+
+    this.scoreSound()
+
+    this.enimationFrame++
+    this.exitDelayCount++
+
+    if (this.exitDelayCount >= this.EXIT_ROUND_CLEAR_DELAY) {
+      this.roundExit()
+    }
+  }
+
+  static processGameOver () {
+    // 라운드 실패 사운드 재생 (딜레이카운트가 0일때만 재생해서 중복 재생 방지)
+    if (this.exitDelayCount === 0) {
+      soundSystem.play(soundFile.system.systemGameOver)
+    }
+
+    this.scoreSound()
+
+    this.enimationFrame++
+    this.exitDelayCount++
+
+    if (this.exitDelayCount >= this.EXIT_GAME_OVER_DELAY) {
+      this.roundExit()
+    }
+  }
+
+  static processNormal () {
+    const buttonPause = buttonSystem.getButtonInput(buttonSystem.BUTTON_ENTER)
+    if (buttonPause) {
+      soundSystem.play(soundFile.system.systemPause)
+      this.stateId = this.STATE_PAUSE
+    } else if (this.round.clearCheck()) {
+      this.stateId = this.STATE_ROUND_CLEAR
+    } else if (fieldState.playerObject.hp <= 0) {
+      this.stateId = this.STATE_GAME_OVER
+    }
+
+    fieldState.process()
+    this.round.process()
   }
 
   static process () {
-    this.fieldStart()
-    fieldState.process()
-    this.processFieldTime()
-
-    // if (this.fieldTime.frame === 1 && fieldState.enemyObject.length < 10) {
-    //   let enemyX = Math.random() * 300 + 200
-    //   let enemyY = Math.random() * 200 + 100
-    //   fieldState.createEnemyObject(ID.enemy.testAttack, enemyX, enemyY)
-    // }
-
-    if (fieldState.enemyObject.length <= 11) {
-      const enemyX = Math.random() * 300 + 200
-      const enemyY = Math.random() * 200 + 100
-      fieldState.createEnemyObject(ID.enemy.spaceEnemyMeteorite, enemyX, enemyY, Math.floor(Math.random() * 10))
+    switch (this.stateId) {
+      case this.STATE_PAUSE:
+        this.processPause()
+        break
+      case this.STATE_ROUND_CLEAR:
+        this.processRoundClear()
+        break
+      case this.STATE_GAME_OVER:
+        this.processGameOver()
+        break
+      case this.STATE_EXIT:
+        this.processExit()
+        break
+      default:
+        this.processNormal()
+        break
     }
   }
 
   static display () {
+    // 라운드, 필드스테이트, 필드데이터는 항상 출력됩니다.
+    if (this.round) this.round.display()
     fieldState.display()
     this.displayFieldData()
-    graphicSystem.digitalFontDisplay('weapon count: ' + fieldState.weaponObject.length, 0, 0)
+
+    switch (this.stateId) {
+      case this.STATE_PAUSE:
+        this.displayPause()
+        break
+      case this.STATE_ROUND_CLEAR:
+      case this.STATE_GAME_OVER:
+      case this.STATE_EXIT:
+        this.displayResult()
+        break
+    }
+  }
+
+  static displayPause () {
+    const image = imageFile.system.fieldSystem
+    const imageDataPause = imageDataInfo.fieldSystem.pause
+    const imageDataMenu = imageDataInfo.fieldSystem.menu
+    const imageDataArrow = imageDataInfo.fieldSystem.arrow
+    const imageDataChecked = imageDataInfo.fieldSystem.checked
+    const imageDataUnchecked = imageDataInfo.fieldSystem.unchecked
+    const imageDataSelected = imageDataInfo.fieldSystem.selected
+    const MID_X = (graphicSystem.CANVAS_WIDTH / 2) - (imageDataPause.width / 2)
+    const MID_Y = 100
+    const MENU_X = (graphicSystem.CANVAS_WIDTH / 2) - (imageDataMenu.width / 2)
+    const MENU_Y = 100 + imageDataInfo.fieldSystem.pause.height
+    const ARROW_X = MENU_X - imageDataArrow.width
+    const ARROW_Y = MENU_Y + (this.cursor * imageDataArrow.height)
+    const CHECK_X = MENU_X + imageDataMenu.width
+    const CHECK_SOUND_Y = MENU_Y + imageDataChecked.height
+    const CHECK_MUSIC_Y = MENU_Y + imageDataChecked.height * 2
+    const SELECT_X = MENU_X
+    const SELECT_Y = ARROW_Y
+    const SCORE_X = (graphicSystem.CANVAS_WIDTH / 2) - 200
+    const SCORE_Y = MENU_Y + imageDataMenu.height
+    const imageDataSoundOn = soundSystem.soundOn ? imageDataChecked : imageDataUnchecked // 사운드의 이미지데이터는 코드 길이를 줄이기 위해 체크/언체크에 따른 이미지 데이터를 대신 입력함
+    const imageDataMusicOn = soundSystem.musicOn ? imageDataChecked : imageDataUnchecked
+
+    graphicSystem.imageDisplay(image, imageDataPause.x, imageDataPause.y, imageDataPause.width, imageDataPause.height, MID_X, MID_Y, imageDataPause.width, imageDataPause.height)
+    graphicSystem.imageDisplay(image, imageDataMenu.x, imageDataMenu.y, imageDataMenu.width, imageDataMenu.height, MENU_X, MENU_Y, imageDataMenu.width, imageDataMenu.height)
+    graphicSystem.imageDisplay(image, imageDataArrow.x, imageDataArrow.y, imageDataArrow.width, imageDataArrow.height, ARROW_X, ARROW_Y, imageDataArrow.width, imageDataArrow.height)
+    graphicSystem.imageDisplay(image, imageDataSoundOn.x, imageDataSoundOn.y, imageDataSoundOn.width, imageDataSoundOn.height, CHECK_X, CHECK_SOUND_Y, imageDataSoundOn.width, imageDataSoundOn.height)
+    graphicSystem.imageDisplay(image, imageDataMusicOn.x, imageDataMusicOn.y, imageDataMusicOn.width, imageDataMusicOn.height, CHECK_X, CHECK_MUSIC_Y, imageDataMusicOn.width, imageDataMusicOn.height)
+    graphicSystem.imageDisplay(image, imageDataSelected.x, imageDataSelected.y, imageDataSelected.width, imageDataSelected.height, SELECT_X, SELECT_Y, imageDataSelected.width, imageDataSelected.height)
+    graphicSystem.fillRect(SCORE_X, SCORE_Y, 400, 30)
+    graphicSystem.digitalFontDisplay('score: ' + this.score, SCORE_X + 5, SCORE_Y + 5)
+  }
+
+  /**
+   * 결과 화면을 출력합니다. roundClear, gameOver, processExit 상태 모두 동일한 display 함수 사용
+   */
+  static displayResult () {
+    const image = imageFile.system.fieldSystem
+    let imageData
+    let titleX = 0
+    const titleY = 100
+    const TEXT_X = 200
+    const TEXT_Y = 200
+    const TEXT_HEIGHT = 22
+
+    switch (this.stateId) {
+      case this.STATE_ROUND_CLEAR:
+        imageData = imageDataInfo.fieldSystem.roundClear
+        break
+      case this.STATE_GAME_OVER:
+        imageData = imageDataInfo.fieldSystem.gameOver
+        break
+      default:
+        imageData = imageDataInfo.fieldSystem.result
+        break
+    }
+
+    titleX = (graphicSystem.CANVAS_WIDTH - imageData.width) / 2
+
+    let viewScore = this.score * (this.exitDelayCount / this.SCORE_ENIMATION_MAX_FRAME)
+    if (viewScore >= this.score) viewScore = this.score
+
+    graphicSystem.imageDisplay(image, imageData.x, imageData.y, imageData.width, imageData.height, titleX, titleY, imageData.width, imageData.height)
+    graphicSystem.fillRect(TEXT_X, TEXT_Y - 4, 400, TEXT_HEIGHT * 4, 'lime')
+    graphicSystem.digitalFontDisplay('field score: ' + Math.floor(viewScore), TEXT_X, TEXT_Y)
+    graphicSystem.digitalFontDisplay('clear bonus: ' + 0, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 1))
+    graphicSystem.digitalFontDisplay('-----------: ' + 0, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 2))
+    graphicSystem.digitalFontDisplay('total score: ', TEXT_X, TEXT_Y + (TEXT_HEIGHT * 3))
   }
 
   static displayFieldData () {
-    const LAYER_Y = 570 + 5
-    graphicSystem.digitalFontDisplay(`R:1-1, T:${this.fieldTime.second}/${132}`, graphicSystem.CANVAS_WIDTH_HALF + 5, LAYER_Y, 12, 20)
+    const LAYER_X = graphicSystem.CANVAS_WIDTH_HALF
+    const LAYER_Y = 570
+    const LAYER_DIGITAL_Y = 570 + 5
+    const HEIGHT = 30
+    const currentTime = this.round != null ? this.round.currentTime : '999'
+    const finishTime = this.round != null ? this.round.finishTime : '999'
+    const meterMultiple = currentTime / finishTime
+    graphicSystem.fillRect(LAYER_X, LAYER_Y, graphicSystem.CANVAS_WIDTH_HALF, HEIGHT, 'silver')
+    graphicSystem.fillRect(LAYER_X, LAYER_Y, graphicSystem.CANVAS_WIDTH_HALF * meterMultiple, HEIGHT, '#D5F5E3')
+    graphicSystem.digitalFontDisplay(`R:1-1, T:${currentTime}/${finishTime}`, LAYER_X + 5, LAYER_DIGITAL_Y)
   }
 }

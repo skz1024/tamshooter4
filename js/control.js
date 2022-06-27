@@ -52,14 +52,14 @@ export class buttonSystem {
   /**
    * keyBindMap: 버튼에 인덱스에 대응되는 키 값의 배열
    */
-  static _keyBindMap = this.DEFAULT_KEYBINDMAP.slice()
+  static #keyBindMap = this.DEFAULT_KEYBINDMAP.slice()
 
   // 자바스크립트에서 새로운 배열을 for문 없이 초기화해서 생성하려면
   // new Array(배열 길이).fill(값) 의 형태를 사용해야 합니다.
-  static _isButtonInput = new Array(this.DEFAULT_KEYBINDMAP.length).fill(false)
-  static _isButtonDown = new Array(this.DEFAULT_KEYBINDMAP.length).fill(false)
-  static _isButtonDelay = new Array(this.DEFAULT_KEYBINDMAP.length).fill(0)
-  static _isButtonDelayCount = new Array(this.DEFAULT_KEYBINDMAP.length).fill(0)
+  static #isButtonInput = new Array(this.DEFAULT_KEYBINDMAP.length).fill(false)
+  static #isButtonDown = new Array(this.DEFAULT_KEYBINDMAP.length).fill(false)
+  static #isButtonDelay = new Array(this.DEFAULT_KEYBINDMAP.length).fill(0)
+  static #isButtonDelayCount = new Array(this.DEFAULT_KEYBINDMAP.length).fill(0)
 
   /**
    * 키 바인드 맵을 설정합니다.
@@ -68,9 +68,9 @@ export class buttonSystem {
    */
   static setKeyBindMap (buttonIndex, key) {
     if (typeof buttonIndex === 'number') {
-      this._keyBindMap[buttonIndex] = key
+      this.#keyBindMap[buttonIndex] = key
     } else if (typeof buttonIndex === 'object') {
-      this._keyBindMap = buttonIndex
+      this.#keyBindMap = buttonIndex
     } else {
       throw new Error('함수에 값이 필요합니다. button(버튼)의 index(인덱스) 또는 keyBindMap의 배열 객체를 지정하세요.')
     }
@@ -81,16 +81,16 @@ export class buttonSystem {
    * @returns 현재 keyBindMap의 객체
    */
   static getKeyBindMap () {
-    return this._keyBindMap
+    return this.#keyBindMap
   }
 
   /**
    * 버튼이 입력되었는지를 확인합니다. buttonDown과는 다르게 버튼을 쭉 눌러도 한번만 인식합니다.
    * @param {number} buttonIndex
    */
-  static buttonInput (buttonIndex) {
-    if (buttonIndex !== -1 && buttonIndex < this._isButtonInput.length) {
-      this._isButtonInput[buttonIndex] = true
+  static setButtonInput (buttonIndex) {
+    if (buttonIndex !== -1 && buttonIndex < this.#isButtonInput.length) {
+      this.#isButtonInput[buttonIndex] = true
     } else {
       throw new Error(this.ERROR_MESSAGE_BUTTON_OUT_OF_INDEX)
     }
@@ -100,9 +100,9 @@ export class buttonSystem {
    * 버튼이 입력중인지를 확인합니다. 버튼을 누르는동안 계속 인식합니다.
    * @param {number} buttonIndex
    */
-  static buttonDown (buttonIndex) {
-    if (buttonIndex !== -1 && buttonIndex < this._isButtonInput.length) {
-      this._isButtonDown[buttonIndex] = true
+  static setButtonDown (buttonIndex) {
+    if (buttonIndex !== -1 && buttonIndex < this.#isButtonInput.length) {
+      this.#isButtonDown[buttonIndex] = true
     } else {
       throw new Error(this.ERROR_MESSAGE_BUTTON_OUT_OF_INDEX)
     }
@@ -110,11 +110,13 @@ export class buttonSystem {
 
   /**
    * 버튼이 떼어졌는지(눌렀다 뗀거)를 확인합니다. 버튼을 떼어있는동안 계속 인식합니다.
+   * 버튼이 뗀 상태에서는 input도 인식하지 않습니다.
    * @param {*} buttonIndex
    */
-  static buttonUp (buttonIndex) {
-    if (buttonIndex !== -1 && buttonIndex < this._isButtonDown.length) {
-      this._isButtonDown[buttonIndex] = false
+  static setButtonUp (buttonIndex) {
+    if (buttonIndex !== -1 && buttonIndex < this.#isButtonDown.length) {
+      this.#isButtonDown[buttonIndex] = false
+      this.#isButtonInput[buttonIndex] = false
     } else {
       throw new Error(this.ERROR_MESSAGE_BUTTON_OUT_OF_INDEX)
     }
@@ -132,27 +134,27 @@ export class buttonSystem {
 
     if (buttonIndex === this.BUTTON_MENU_SELECT) {
       // 메뉴 선택 버튼은 A버튼 또는 ENTER버튼입니다.
-      if (this._isButtonInput[this.BUTTON_A] || this._isButtonInput[this.BUTTON_ENTER]) {
-        this._isButtonInput[this.BUTTON_A] = false
-        this._isButtonInput[this.BUTTON_ENTER] = false
+      if (this.#isButtonInput[this.BUTTON_A] || this.#isButtonInput[this.BUTTON_ENTER]) {
+        this.#isButtonInput[this.BUTTON_A] = false
+        this.#isButtonInput[this.BUTTON_ENTER] = false
         return true
       } else {
         return false
       }
     } else if (buttonIndex === this.BUTTON_MENU_CANCEL) {
       // 메뉴 췻 버튼은 B버튼 또는 ESC버튼입니다.
-      if (this._isButtonInput[this.BUTTON_B] || this._isButtonInput[this.BUTTON_ESC]) {
-        this._isButtonInput[this.BUTTON_B] = false
-        this._isButtonInput[this.BUTTON_ESC] = false
+      if (this.#isButtonInput[this.BUTTON_B] || this.#isButtonInput[this.BUTTON_ESC]) {
+        this.#isButtonInput[this.BUTTON_B] = false
+        this.#isButtonInput[this.BUTTON_ESC] = false
         return true
       } else {
         return false
       }
-    } else if (buttonIndex < this._keyBindMap.length) {
+    } else if (buttonIndex < this.#keyBindMap.length) {
       // 키 바인드 인덱스에 해당하는 배열일경우
-      const result = this._isButtonInput[buttonIndex]
+      const result = this.#isButtonInput[buttonIndex]
       if (result) {
-        this._isButtonInput[buttonIndex] = false
+        this.#isButtonInput[buttonIndex] = false
         return true
       } else {
         return false
@@ -172,8 +174,8 @@ export class buttonSystem {
   static getButtonDown (buttonIndex) {
     if (buttonIndex === this.BUTTON_MENU_SELECT || buttonIndex === this.BUTTON_MENU_CANCEL) {
       return false
-    } else if (buttonIndex < this._isButtonDown.length) {
-      return this._isButtonDown[buttonIndex]
+    } else if (buttonIndex < this.#isButtonDown.length) {
+      return this.#isButtonDown[buttonIndex]
     }
   }
 
@@ -181,8 +183,8 @@ export class buttonSystem {
    * 버튼 Input 초기화 함수
    */
   static clearButtonInput () {
-    for (let i = 0; i < this._isButtonInput.length; i++) {
-      this._isButtonInput[i] = false
+    for (let i = 0; i < this.#isButtonInput.length; i++) {
+      this.#isButtonInput[i] = false
     }
   }
 
@@ -193,9 +195,9 @@ export class buttonSystem {
    * @param {Event.key} key 자바스크립트 이벤트 객체의 key값
    */
   static keyDown (key) {
-    const keyBindIndex = this._keyBindMap.indexOf(key)
+    const keyBindIndex = this.#keyBindMap.indexOf(key)
     if (keyBindIndex !== -1) {
-      this.buttonDown(keyBindIndex)
+      this.setButtonDown(keyBindIndex)
     }
   }
 
@@ -206,9 +208,9 @@ export class buttonSystem {
    * @param {*} key
    */
   static keyInput (key) {
-    const keyBindIndex = this._keyBindMap.indexOf(key)
+    const keyBindIndex = this.#keyBindMap.indexOf(key)
     if (keyBindIndex !== -1) {
-      this.buttonInput(keyBindIndex)
+      this.setButtonInput(keyBindIndex)
     }
   }
 
@@ -218,9 +220,9 @@ export class buttonSystem {
    * 잘못된 키가 입력되어도 오류메세지는 없고 아무런 일도 수행되지 않습니다.
    */
   static keyUp (key) {
-    const keyBindIndex = this._keyBindMap.indexOf(key)
+    const keyBindIndex = this.#keyBindMap.indexOf(key)
     if (keyBindIndex !== -1) {
-      this.buttonUp(keyBindIndex)
+      this.setButtonUp(keyBindIndex)
     }
   }
 }

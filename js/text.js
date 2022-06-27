@@ -18,7 +18,38 @@ export class stringText {
 
   static dataPlayerWeapon = {
     MULTYSHOT: '멀티샷 (multyshot)',
-    MISSILE: '미사일 (missile)'
+    MISSILE: '미사일 (missile)',
+    ARROW: '애로우 (arrow)',
+    LASER: '레이저 (laser)',
+    SAPIA: '사피아 (sapia)',
+  }
+
+  static dataRoundName = {
+    test: '테스트',
+    round1_1: '우주 여행',
+    round1_2: '운석 지대',
+    round1_3: '무인기 전투',
+    round1_4: '의식의 공간',
+    round1_5: '빨간색 운석 지대',
+    round1_6: '파란 행성 가는 길',
+    round2_1: '파란 행성 하늘',
+    round2_2: '동그라미 마을',
+    round2_3: '동그라미 마을 회관',
+    round2_4: '수많은 동그라미',
+    round2_5: '동그라미와 침입자 전투',
+    round2_6: '조용한 도로',
+    round3_1: '다운 타워 1',
+    round3_2: '다운 타워 2',
+    round3_3: '다운 타워의 침입자',
+    round3_4: '다운 타워 코어',
+    round3_5: '다운 타워 통로',
+    round3_6: '다운 타워 외벽',
+    round4_1: '스카이 랜드 - 하늘길',
+    round5_1: '추락지대',
+  }
+
+  static dataRoundInfo = {
+
   }
 }
 

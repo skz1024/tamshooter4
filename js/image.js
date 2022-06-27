@@ -3,12 +3,14 @@ export class imageFile {
   static enemyTemp = new Image()
 
   static system = {
-    digitalNumber: new Image(),
-    digitalAlphabet: new Image(),
+    bitmapFont: new Image(),
+    digitalFont20px: new Image(),
+    digitalFont12px: new Image(),
     damageFont: new Image(),
     playerImage: new Image(),
     skillNumber: new Image(),
-    skillIcon: new Image()
+    skillIcon: new Image(),
+    fieldSystem: new Image(),
   }
 
   static weapon = {
@@ -38,19 +40,26 @@ export class imageFile {
 
   static enemy = {
     spaceEnemy: new Image()
+  }
 
+  static round = {
+    roundIcon: new Image(),
+    round1_space: new Image(),
+    round1_meteorite: new Image(),
+    round1_redzone: new Image(),
   }
 }
 imageFile.tamshooter4Title.src = './image/title.png'
 imageFile.enemyTemp.src = './image/enemy/enemy12.png'
 
 // system
-imageFile.system.digitalNumber.src = './image/system/numbervector.png'
-imageFile.system.digitalAlphabet.src = './image/system/alphabetvector.png'
+imageFile.system.digitalFont20px.src = './image/system/digitalFont.png'
+imageFile.system.digitalFont12px.src = './image/system/digitalFontSmall.png'
 imageFile.system.playerImage.src = './image/system/playerImage.png'
 imageFile.system.damageFont.src = './image/system/damageFont.png'
 imageFile.system.skillNumber.src = './image/system/skillNumber.png'
 imageFile.system.skillIcon.src = './image/system/skillIcon.png'
+imageFile.system.fieldSystem.src = './image/system/fieldSystem.png'
 
 // weapon
 imageFile.weapon.multyshot.src = './image/weapon/multyshot.png'
@@ -77,6 +86,12 @@ imageFile.weapon.skillSidewave.src = './image/weapon/skillSidewave.png'
 // enemy
 imageFile.enemy.spaceEnemy.src = './image/enemy/spaceEnemy.png'
 
+// round
+imageFile.round.roundIcon.src = './image/round/roundIcon.png'
+imageFile.round.round1_space.src = './image/round/stars-g700d8fc30_1280.jpg'
+imageFile.round.round1_meteorite.src = './image/round/space-g26f4aa3b6_1920_2.jpg'
+imageFile.round.round1_redzone.src = './image/round/space-g26f4aa3b6_1920.jpg'
+
 // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
 // 그러므로 svg 파일은 게임 내에서 사용되지 않습니다.
 // imageFile.DIGITAL_VECTOR_UNUSED.src = 'numbervector.svg'
@@ -101,6 +116,18 @@ export class imageDataInfo {
     meteorite4: { x: 600, y: 290, width: 70, height: 50, frame: 1 },
     meteorite5: { x: 670, y: 290, width: 80, height: 45, frame: 1 }
 
-    // {x: 0, y: 0, width: 0, height: 0, frame: 1},
+    // { x: 0, y: 0, width: 0, height: 0, frame: 1 },
+  }
+
+  static fieldSystem = {
+    roundClear: { x: 0, y: 0, width: 400, height: 60 },
+    gameOver: { x: 0, y: 60, width: 320, height: 60 },
+    pause: { x: 0, y: 120, width: 200, height: 60 },
+    result: { x: 200, y: 120, width: 240, height: 60 },
+    menu: { x: 450, y: 0, width: 120, height: 128 },
+    selected: { x: 450, y: 128, width: 120, height: 32 },
+    unchecked: { x: 420, y: 0, width: 30, height: 32 },
+    checked: { x: 420, y: 32, width: 30, height: 32 },
+    arrow: { x: 420, y: 64, width: 30, height: 32 }
   }
 }

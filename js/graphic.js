@@ -175,24 +175,28 @@ export class graphicSystem {
 
   /**
    * 디지털 글자를 출력하는데 사용 (주로 인터페이스에 사용),
+   * 
    * 경고: A ~ Z, 0 ~ 9, -, +, ., :, / 문자를 표현 가능. 대/소문자는 상관없지만 가능하면 소문자를 사용해주세요.
+   * 
+   * 경고2: 크기를 늘릴 경우, 안티에일리싱 효과로 글자주위에 선이 칠해지는 경우가 있음.
    * @param {number | string} inputText 출력할 텍스트
    * @param {number} x x좌표
    * @param {number} y y좌표
-   * @param {number} wordWidth 글자길이
+   * @param {number} wordWidth 글자길이 (기본값: 12px, 20px)
    * @param {number} wordHeight 글자높이
    */
-  static digitalFontDisplay (inputText, x = 0, y = 0, wordWidth = 20, wordHeight = 30) {
+  static digitalFontDisplay (inputText, x = 0, y = 0, wordWidth = 12, wordHeight = wordWidth <= 12 ? 18 : 30) {
     if (inputText == null) return
 
     // 원할한 출력을 위해 string 형태로 변경
     if (typeof inputText === 'number') inputText = inputText + ''
 
-    /** @constant 디지털 이미지파일의 기본 글자길이 */
-    const DIGITAL_TEXT_WIDTH = 20
+    // 글자 길이에 따라서 출력하는 이미지가 달라집니다. 기본값은 12이고, 13 이상은 20px이미지를 확대축소합니다.
+    const image = wordWidth <= 12 ? imageFile.system.digitalFont12px : imageFile.system.digitalFont20px
 
-    /** @constant 디지털 이미지파일의 기본 글자높이 */
-    const DIGITAL_TEXT_HEIGHT = 30
+    // 글자 길이도 이미지 크기에 맞춰 달라집니다.
+    const DIGITAL_WIDTH = wordWidth <= 12 ? 12 : 20
+    const DIGITAL_HEIGHT = wordWidth <= 12 ? 18 : 30
 
     // 변형이 확인된경우, 캔버스를 변형하고 출력좌표를 변경합니다.
     if (this.checkTransform()) {
@@ -207,22 +211,21 @@ export class graphicSystem {
     for (let i = 0; i < inputText.length; i++) {
       const word = inputText.charAt(i)
       let wordPosition = -1
-      let imageTarget = imageFile.system.digitalNumber
+      let wordLine = 0
 
       if (word >= '0' && word <= '9') {
         // 0 ~ 9 사이일경우
+        wordLine = 1
         wordPosition = Number(word)
-        imageTarget = imageFile.system.digitalNumber
       } else if (word >= 'a' && word <= 'z') {
         // alphabet 소문자
         wordPosition = word.charCodeAt() - 'a'.charCodeAt()
-        imageTarget = imageFile.system.digitalAlphabet
       } else if (word >= 'A' && word <= 'Z') {
         // alphabet 대문자
         wordPosition = word.charCodeAt() - 'A'.charCodeAt()
-        imageTarget = imageFile.system.digitalAlphabet
       } else {
         // 이외 특수기호: -, +, /, ., :
+        wordLine = 1
         switch (word) {
           case '/': wordPosition = 10; break
           case '.': wordPosition = 11; break
@@ -231,23 +234,10 @@ export class graphicSystem {
           case ':': wordPosition = 14; break
           default: continue // 참고: 아무런 단어도 해당되지 않으면 루프를 건너뜀
         }
-        imageTarget = imageFile.system.digitalNumber
       }
 
       if (wordPosition >= 0) {
-        // 참고사항
-        // sliceWidth, sliceHeight는 1씩 빼줍니다. 그 이유는, 확대했을때 블러 처리에 의해 숫자에 선이 그려져 출력되어 그 문제를 해결하기 위해서입니다.
-        this.#context.drawImage(
-          imageTarget,
-          DIGITAL_TEXT_WIDTH * wordPosition,
-          0,
-          DIGITAL_TEXT_WIDTH - 1,
-          DIGITAL_TEXT_HEIGHT - 1,
-          x + (i * wordWidth),
-          y,
-          wordWidth,
-          wordHeight
-        )
+        this.#context.drawImage(image, DIGITAL_WIDTH * wordPosition, DIGITAL_HEIGHT * wordLine, DIGITAL_WIDTH, DIGITAL_HEIGHT, x + (i * wordWidth), y, wordWidth, wordHeight)
       }
     }
 
