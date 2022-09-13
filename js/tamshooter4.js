@@ -291,7 +291,7 @@ class MainSystem extends MenuSystem {
 
   display () {
     graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT, '#78b3f2', '#d2dff6')
-    graphicSystem.imageDisplay(imageFile.tamshooter4Title, 0, 0, 515, 89, 0, 0, 515, 89, 2, 20)
+    graphicSystem.imageDisplay(imageFile.tamshooter4Title, 0, 0)
 
     for (let i = 0; i < this.menuList.length; i++) {
       this.menuList[i].display()
@@ -303,27 +303,40 @@ class MainSystem extends MenuSystem {
 
 class OptionSystem extends MenuSystem {
   MENU_BACK = 0
-  MENU_MUSIC = 1
+  MENU_MASTER_VOLUME = 1
   MENU_SOUND = 2
-  MENU_SHOW_ENEMY_HP = 3
-  MENU_RESULT_AUTO_SKIP = 4
+  MENU_SOUND_VOLUME = 3
+  MENU_MUSIC = 4
+  MENU_MUSIC_VOLUME = 5
+  MENU_SHOW_ENEMY_HP = 6
+  MENU_RESULT_AUTO_SKIP = 7
+  MENU_SHOW_DAMAGE = 8
 
-  optionValue = [null, true, true, true, true]
+  optionDefaultValue = [null, 100, true, 100, true, 100, true, true, true]
+  optionValue = this.optionDefaultValue
+  boxText = ['<- back', 
+    'master volume (마스터 볼륨)',
+    'sound (효과음)',
+    'sound volume (사운드 볼륨)',
+    'music (음악)',
+    'music volume (음악 볼륨)',
+    'show enemy hp (적 체력 보여주기)',
+    'result auto skip (결과 자동 건너뛰기)',
+    'show damage (데미지 보여주기)']
 
   constructor () {
     super()
-    const MENU_X = 400
+    const MENU_X = 0
     const MENU_Y = 0
     const MENU_HEIGHT = 38
     const MENU_LINE_Y = 40
     const MENU_WIDTH = 390
-    const boxText = ['<- back', 'music', 'sound', 'show enemy hp(적 체력 보여주기)', 'result auto skip(결과 자동 스킵)']
     const startColor = '#FCCF31'
     const endColor = '#F55555'
     const focusColor = '#763E14'
 
-    for (let i = 0; i < boxText.length; i++) {
-      this.menuList[i] = new BoxObject(MENU_X, MENU_Y + (MENU_LINE_Y * i), MENU_WIDTH, MENU_HEIGHT, boxText[i], startColor, endColor, focusColor)
+    for (let i = 0; i < this.boxText.length; i++) {
+      this.menuList[i] = new BoxObject(MENU_X, MENU_Y + (MENU_LINE_Y * i), MENU_WIDTH, MENU_HEIGHT, this.boxText[i], startColor, endColor, focusColor)
     }
   }
 
@@ -332,6 +345,8 @@ class OptionSystem extends MenuSystem {
 
     const buttonInputUp = buttonSystem.getButtonInput(buttonSystem.BUTTON_UP)
     const buttonInputDown = buttonSystem.getButtonInput(buttonSystem.BUTTON_DOWN)
+    const buttonInputLeft = buttonSystem.getButtonInput(buttonSystem.BUTTON_LEFT)
+    const buttonInputRight = buttonSystem.getButtonInput(buttonSystem.BUTTON_RIGHT)
 
     if (buttonInputUp && this.cursorPosition > 0) {
       soundSystem.play(soundFile.system.systemCursor)
@@ -340,10 +355,100 @@ class OptionSystem extends MenuSystem {
       soundSystem.play(soundFile.system.systemCursor)
       this.cursorPosition++
     }
+
+    if (buttonInputLeft) {
+      switch (this.cursorPosition) {
+        case this.MENU_SOUND_VOLUME:
+          soundSystem.setOption(soundSystem.TYPE_SOUND_VOLUME, soundSystem.getOption().soundVolume - 10)
+          break
+        case this.MENU_MUSIC_VOLUME:
+          soundSystem.setOption(soundSystem.TYPE_MUSIC_VOLUME, soundSystem.getOption().musicVolume - 10)
+          break
+        case this.MENU_MASTER_VOLUME:
+          soundSystem.setOption(soundSystem.TYPE_MASTER_VOLUME, soundSystem.getOption().masterVolume - 10)
+          break
+        case this.MENU_BACK:
+          break
+        default:
+          this.selected = true
+          break
+      }
+    }
+
+    if (buttonInputRight) {
+      switch (this.cursorPosition) {
+        case this.MENU_SOUND_VOLUME:
+          soundSystem.setOption(soundSystem.TYPE_SOUND_VOLUME, soundSystem.getOption().soundVolume + 10)
+          break
+        case this.MENU_MUSIC_VOLUME:
+          soundSystem.setOption(soundSystem.TYPE_MUSIC_VOLUME, soundSystem.getOption().musicVolume + 10)
+          break
+        case this.MENU_MASTER_VOLUME:
+          soundSystem.setOption(soundSystem.TYPE_MASTER_VOLUME, soundSystem.getOption().masterVolume + 10)
+          break
+        case this.MENU_BACK:
+          break
+        default:
+          this.selected = true
+          break
+      }
+    }
+
+    // 사운드 출력
+    if (buttonInputLeft || buttonInputRight) {
+      switch (this.cursorPosition) {
+        case this.MENU_MASTER_VOLUME:
+        case this.MENU_SOUND_VOLUME:
+          soundSystem.play(soundFile.system.systemCursor)
+          break
+      }
+    }
   }
 
   process () {
     super.process()
+    this.processGetOption()
+  }
+
+  /**
+   * 옵션을 불러온 후 다른 객체에게 옵션값을 전달하고 반영할 때 사용하는 함수
+   */
+  loadOption (sendOptionValue) {
+    // 옵션 값을 정상적으로 반영하기 위해 형변환을 합니다.
+    for (let i = 0; i < sendOptionValue.length; i++) {
+      switch (i) {
+        case this.MENU_BACK:
+          // 뒤로 가기 옵션은 null값으로 처리함.
+          this.optionValue[i] = null
+          break
+        case this.MENU_SOUND:
+        case this.MENU_MUSIC:
+        case this.MENU_RESULT_AUTO_SKIP:
+        case this.MENU_SHOW_ENEMY_HP:
+        case this.MENU_SHOW_DAMAGE:
+          // boolean값으로 변환
+          this.optionValue[i] = Boolean(sendOptionValue[i])
+          break
+        default:
+          // 그외 나머지는 전부 number로 가정
+          this.optionValue[i] = Number(sendOptionValue[i])
+      }
+    }
+
+    soundSystem.setOption(soundSystem.TYPE_MASTER_VOLUME, this.optionValue[this.MENU_MASTER_VOLUME])
+    soundSystem.setOption(soundSystem.TYPE_SOUND_ON, this.optionValue[this.MENU_SOUND])
+    soundSystem.setOption(soundSystem.TYPE_SOUND_VOLUME, this.optionValue[this.MENU_SOUND_VOLUME])
+    soundSystem.setOption(soundSystem.TYPE_MUSIC_ON, this.optionValue[this.MENU_MUSIC])
+    soundSystem.setOption(soundSystem.TYPE_MUSIC_VOLUME, this.optionValue[this.MENU_MUSIC_VOLUME])
+  }
+  
+  processGetOption () {
+    let soundOption = soundSystem.getOption()
+    this.optionValue[this.MENU_MASTER_VOLUME] = soundOption.masterVolume
+    this.optionValue[this.MENU_SOUND] = soundOption.soundOn
+    this.optionValue[this.MENU_SOUND_VOLUME] = soundOption.soundVolume
+    this.optionValue[this.MENU_MUSIC] = soundOption.musicOn
+    this.optionValue[this.MENU_MUSIC_VOLUME] = soundOption.musicVolume
   }
 
   processSelect () {
@@ -351,6 +456,22 @@ class OptionSystem extends MenuSystem {
 
     switch (this.cursorPosition) {
       case this.MENU_BACK: this.canceled = true; break
+      case this.MENU_MASTER_VOLUME: soundSystem.setOption(soundSystem.TYPE_MASTER_VOLUME); break
+      case this.MENU_SOUND: soundSystem.setOption(soundSystem.TYPE_SOUND_ON); break
+      case this.MENU_SOUND_VOLUME: soundSystem.setOption(soundSystem.TYPE_SOUND_VOLUME); break
+      case this.MENU_MUSIC: soundSystem.setOption(soundSystem.TYPE_MUSIC_ON); break
+      case this.MENU_MUSIC_VOLUME: soundSystem.setOption(soundSystem.TYPE_MUSIC_VOLUME); break
+      case this.MENU_SHOW_ENEMY_HP: this.optionValue[this.MENU_SHOW_ENEMY_HP] = !this.optionValue[this.MENU_SHOW_ENEMY_HP]; break
+      case this.MENU_RESULT_AUTO_SKIP: this.optionValue[this.MENU_RESULT_AUTO_SKIP] = !this.optionValue[this.MENU_RESULT_AUTO_SKIP]; break
+      case this.MENU_SHOW_DAMAGE: this.optionValue[this.MENU_SHOW_DAMAGE] = !this.optionValue[this.MENU_SHOW_DAMAGE]; break
+    }
+
+    // 사운드 출력
+    switch (this.cursorPosition) {
+      case this.MENU_MASTER_VOLUME:
+      case this.MENU_SOUND_VOLUME:
+        soundSystem.play(soundFile.system.systemCursor)
+        break
     }
   }
 
@@ -366,6 +487,26 @@ class OptionSystem extends MenuSystem {
 
     for (let i = 0; i < this.menuList.length; i++) {
       this.menuList[i].display()
+      let imageOptionCheck = imageFile.system.optionCheck
+
+      // 두번째(1번) 메뉴부터 옵션 결과값이 쉽게 보여지도록 하얀색 박스 배경을 만듬.
+      if (i !== 0) {
+        graphicSystem.fillRect(this.menuList[i].x + this.menuList[i].width, this.menuList[i].y, 100, this.menuList[i].height, 'white')
+      }
+
+      // 옵션 값 종류에 따라 결과값 표시
+      switch (typeof this.optionValue[i]) {
+        case 'boolean':
+          if (this.optionValue[i] === true) {
+            graphicSystem.imageDisplay(imageOptionCheck, 0, imageOptionCheck.height / 2, imageOptionCheck.width, imageOptionCheck.height / 2, this.menuList[i].x + this.menuList[i].width, this.menuList[i].y, imageOptionCheck.width, imageOptionCheck.height / 2)
+          } else {
+            graphicSystem.imageDisplay(imageOptionCheck, 0, 0, imageOptionCheck.width, imageOptionCheck.height / 2, this.menuList[i].x + this.menuList[i].width, this.menuList[i].y, imageOptionCheck.width, imageOptionCheck.height / 2)
+          }
+          break
+        case 'number':
+          graphicSystem.digitalFontDisplay(this.optionValue[i], this.menuList[i].x + this.menuList[i].width, this.menuList[i].y)
+          break
+      }
     }
   }
 }
@@ -776,7 +917,12 @@ export class gameSystem {
      * 저장 형식: year,month,date,hour,minute,second 의 문자열 (구분자: ,(쉼표))
      * 예시: 2022,03,11,16,26,33 -> 2022/03/11 16:26:33
      */
-    saveDate: 'saveDate'
+    saveDate: 'saveDate',
+
+    /**
+     * 모든 옵션 값들을 저장합니다.
+     */
+    optionValue: 'optionValue'
   }
 
   /** 저장 지연 시간을 카운트 하는 변수 */ static saveDelayCount = 0
@@ -819,6 +965,10 @@ export class gameSystem {
     const playTime = this.userSystem.playTime
     const playTimeString = playTime.hour + ',' + playTime.minute + ',' + playTime.second
     localStorage.setItem(this.saveKey.playTime, playTimeString)
+
+    // 모든 옵션 값들 저장
+    const optionValue = this.optionSystem.optionValue
+    localStorage.setItem(this.saveKey.optionValue, optionValue)
   }
 
   /**
@@ -842,6 +992,10 @@ export class gameSystem {
     // 시작 날짜 및 시간 불러오기
     const startDate = localStorage.getItem(this.saveKey.startDate).split(',')
     this.userSystem.setStartDate(startDate[0], startDate[1], startDate[2], startDate[3], startDate[4], startDate[5])
+
+    // 옵션 값 불러오기
+    const optionValue = localStorage.getItem(this.saveKey.optionValue).split(',')
+    this.optionSystem.loadOption(optionValue)
   }
 
   static isDataReset = false

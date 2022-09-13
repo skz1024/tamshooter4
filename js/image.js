@@ -11,6 +11,7 @@ export class imageFile {
     skillNumber: new Image(),
     skillIcon: new Image(),
     fieldSystem: new Image(),
+    optionCheck: new Image(),
   }
 
   static weapon = {
@@ -60,6 +61,7 @@ imageFile.system.damageFont.src = './image/system/damageFont.png'
 imageFile.system.skillNumber.src = './image/system/skillNumber.png'
 imageFile.system.skillIcon.src = './image/system/skillIcon.png'
 imageFile.system.fieldSystem.src = './image/system/fieldSystem.png'
+imageFile.system.optionCheck.src = './image/system/optionCheck.png'
 
 // weapon
 imageFile.weapon.multyshot.src = './image/weapon/multyshot.png'

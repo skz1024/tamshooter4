@@ -716,6 +716,8 @@ export class fieldSystem {
   }
 
   static process () {
+    soundSystem.musicPlay(soundFile.music.test)
+
     switch (this.stateId) {
       case this.STATE_PAUSE:
         this.processPause()
