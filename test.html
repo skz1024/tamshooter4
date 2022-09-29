@@ -16,12 +16,54 @@ let ctx = canvas.getContext('2d')
 let imageA = new Image()
 imageA.src = './image/system/fieldSystem.png'
 
+let x = 100
+let y = 100
+let width = 60
+let height = 60
+
+function fillEllipse (x, y, width, height, rotate, color) {
+  ctx.beginPath()
+  let centerX = x + (width / 2)
+  let centerY = y + (height / 2)
+  ctx.fillStyle = color
+  ctx.ellipse(centerX, centerY, width / 2, height / 2, rotate, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.closePath()
+}
+
+ctx.fillStyle = 'green'
+ctx.fillRect(x, y, width, height)
+fillEllipse(x, y, width, height, 0, 'black')
+fillEllipse(x + 10, y + 10, width - 20, height - 20, 0, 'blue')
 
 
-setTimeout(() => {
-  // ctx.drawImage(imageA, 0, 0, 400, 60, 200, 100, 400, 60) // clear
-  ctx.drawImage(imageA, 0, 120, 200, 60, 280, 100, 200, 60) // pause
-  ctx.drawImage(imageA, 450, 0, 120, 128, 300, 160, 120, 128) // menu
-}, 100)
+class A {
+  constructor (n = 1) {
+    this.a = n
+  }
+
+  getClass () {
+    return new A()
+  }
+
+  static point = 888
+}
+
+class C {
+  constructor (a, b, c) {
+    this.a = a
+    this.b = b
+    this.c = c
+  }
+
+  getObject (a, b, c) {
+    return new C(this.a, this.b, this.c)
+  }
+}
+
+let a = new C(99, 55, 52)
+let b = a.getObject(44, 665, 642)
+
+
 
 </script>

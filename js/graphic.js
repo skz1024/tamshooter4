@@ -251,7 +251,7 @@ export class graphicSystem {
    * 이미지 출력용: 사실 context.drawImage함수랑 동일하지만 가능하다면 imageDisplay 함수를 사용하세요.
    * 이것은 유지보수를 간편하게 하고, 다른 코드로 이식할 때 간편하게 하기 위한 함수입니다.
    * 함수에 표시된 인수 목록은 9개 기준이며 인수가 3개일때(image, x, y) 5개일때(image, x, y, width, height) 입니다.
-   * 인수가 10개 ~ 12개 사이일경우, 플립, 회전, 알파값을 추가로 수정할 수 있습니다. 옵션이 설정될경우, 캔버스의 설정값은 무시도비니다.
+   * 인수가 10개 ~ 12개 사이일경우, 플립, 회전, 알파값을 추가로 수정할 수 있습니다. 옵션이 설정될경우, 캔버스의 설정값은 무시됩니다.
    * @param {Image} image 이미지(HTML element 또는 new Image()의 이미지 객체)
    * @param {number} sliceX 이미지를 자르기 위한 이미지 내부의 x좌표
    * @param {number} sliceY 이미지를 자르기 위한 이미지 내부의 y좌표
@@ -549,6 +549,30 @@ export class graphicSystem {
     this.#context.moveTo(x1, y1)
     this.#context.lineTo(x2, y2)
     this.#context.stroke()
+  }
+
+  /**
+   * 참고: 이 함수는 fillRect처럼 출력합니다. (따라서, x, y좌표는 중심좌표가 아닙니다.)
+   * @param {number} x 
+   * @param {number} y 
+   * @param {number} width 
+   * @param {number} height 
+   * @param {number} rotate 
+   * @param {number} color 
+   */
+  static fillEllipse (x, y, width, height, rotate = 0, color = 'black') {
+    // 원을 그리기 위해서는 beginPath로 선을 그릴 준비를 한 후에 그려야합니다.
+    // 원 도형을 직접 그리는 방법은 없습니다.
+
+    if (typeof rotate !== 'number') {
+      console.warn('경고: rotate값에 string을 사용할 수 없습니다. 착각하신건가요?')
+    }
+
+    this.#context.fillStyle = color
+    this.#context.beginPath()
+    this.#context.ellipse(x + (width / 2), y + (height / 2), width / 2, height / 2, rotate, 0, Math.PI * 2)
+    this.#context.fill()
+    this.#context.closePath()
   }
 }
 graphicSystem.init()

@@ -426,8 +426,12 @@ class OptionSystem extends MenuSystem {
         case this.MENU_RESULT_AUTO_SKIP:
         case this.MENU_SHOW_ENEMY_HP:
         case this.MENU_SHOW_DAMAGE:
-          // boolean값으로 변환
-          this.optionValue[i] = Boolean(sendOptionValue[i])
+          // boolean값으로 변환 (경고: Boolean 생성자로는 boolean값을 판단할 수 없음.)
+          if (sendOptionValue[i] === 'true') {
+            this.optionValue[i] = true
+          } else {
+            this.optionValue[i] = false
+          }
           break
         default:
           // 그외 나머지는 전부 number로 가정
@@ -515,9 +519,17 @@ class OptionSystem extends MenuSystem {
  * 메뉴: 라운드 시스템
  */
 class RoundSelectSystem extends MenuSystem {
+  CURSORMODE_MAIN = 1
+  CURSORMODE_SUB = 2
+
   /** 커서 라운드 */ cursorRound = 1
+  /** 커서 서브 라운드 */ cursorSubRound = 1
+  /** 커서 모드 */ cursorMode = this.CURSORMODE_MAIN
   /** 최소 라운드: 게임은 1라운드부터 시작 */ MIN_ROUND = 1
   /** 최대 라운드: 8 */ MAX_ROUND = 8
+  roundIcon = imageFile.roundIcon
+  roundIconData = { width: 60, height: 60 }
+
 
   constructor () {
     super()
@@ -534,13 +546,6 @@ class RoundSelectSystem extends MenuSystem {
   }
 
   processButton () {
-    /*
-    cursorPosition의 범위
-    0 ~ 9: 메인 라운드 선택 (어떤 포지션에 있든 상관없음.)
-    10 ~ 19: 서브 라운드 선택
-    20 ~ 29: 시크릿 라운드 선택 (없을 경우 선택 안됨)
-    커서가 이동할 수 없는 지점엔 이동할 수 없음.
-    */
     super.processButton()
 
     // 이 변수들은 버튼 입력 조건문을 간편하게 작성하기 위한 변수입니다.
@@ -549,60 +554,166 @@ class RoundSelectSystem extends MenuSystem {
     const buttonLeft = buttonSystem.getButtonInput(buttonSystem.BUTTON_LEFT)
     const buttonRight = buttonSystem.getButtonInput(buttonSystem.BUTTON_RIGHT)
 
-    if (this.cursorPosition >= 0 && this.cursorPosition <= 9) {
+    if (this.cursorMode === this.CURSORMODE_MAIN) {
       if (buttonDown) {
-        this.cursorPosition += 10
-        soundSystem.play(soundFile.system.systemCursor)
-      } else if (buttonLeft && this.cursorRound > this.MIN_ROUND) {
+        this.selected = true
+      } else if (buttonLeft && this.cursorRound > 0) {
         this.cursorRound--
         soundSystem.play(soundFile.system.systemCursor)
       } else if (buttonRight && this.cursorRound < this.MAX_ROUND) {
         this.cursorRound++
         soundSystem.play(soundFile.system.systemCursor)
       }
-    } else if (this.cursorPosition >= 10 && this.cursorPosition <= 19) {
-      if (buttonLeft && this.cursorPosition > 10) {
-        this.cursorPosition--
+    } else if (this.cursorMode === this.CURSORMODE_SUB) {
+      if (buttonLeft && this.cursorSubRound > 0) {
+        this.cursorSubRound--
         soundSystem.play(soundFile.system.systemCursor)
-      } else if (buttonRight && this.cursorPosition < 19) {
-        this.cursorPosition++
+      } else if (buttonRight && this.cursorSubRound < 9) {
+        this.cursorSubRound++
         soundSystem.play(soundFile.system.systemCursor)
       } else if (buttonUp) {
-        this.cursorPosition -= 10
+        this.canceled = true
         soundSystem.play(soundFile.system.systemCursor)
       }
+    }
+
+    // 버튼 조작이 끝날때마다 커서 위치를 변경합니다.
+    this.cursorPositionCalcuration()
+  }
+
+  processMouse () {
+    super.processMouse()
+    this.cursorRoundCalcuration()
+  }
+
+  process () {
+    super.process()
+  }
+
+  /**
+   * 현재 커서 라운드와 모드와 서브라운드를 기준으로 커서포지션을 계산합니다.
+   */
+  cursorPositionCalcuration () {
+    if (this.cursorMode === this.CURSORMODE_MAIN) {
+      this.cursorPosition = this.cursorRound
+    } else if (this.cursorMode === this.CURSORMODE_SUB) {
+      this.cursorPosition = this.cursorSubRound + 10
+    }
+  }
+
+  /**
+   * 현재 커서포지션을 기준으로 커서의 라운드와 서브라운드와 모드를 계산합니다.
+   */
+  cursorRoundCalcuration () {
+    if (this.cursorPosition <= 9) {
+      this.cursorMode = this.CURSORMODE_MAIN
+      this.cursorRound = this.cursorPosition
+    } else if (this.cursorPosition >= 10) {
+      this.cursorMode = this.CURSORMODE_SUB
+      this.cursorSubRound = this.cursorPosition - 10
     }
   }
 
   processCancel () {
     if (!this.canceledCheck()) return
 
-    gameSystem.stateId = gameSystem.STATE_MAIN
-    soundSystem.play(soundFile.system.systemBack)
+    if (this.cursorMode === this.CURSORMODE_MAIN) {
+      gameSystem.stateId = gameSystem.STATE_MAIN
+      soundSystem.play(soundFile.system.systemBack)
+    } else if (this.cursorMode === this.CURSORMODE_SUB) {
+      this.cursorMode = this.CURSORMODE_MAIN
+      soundSystem.play(soundFile.system.systemBack)
+    }
   }
 
   processSelect () {
     if (!this.selectedCheck()) return
 
-    fieldSystem.roundStart(ID.round.round1_1)
+    // 임시로 라운드 테이블은 여기서 구현합니다.
+    // 나중에 data.js쪽에 옮겨질 예정
+    const roundTableId = [
+      ID.round.round1_1,
+      ID.round.round1_2
+    ]
+
+    if (this.cursorMode === this.CURSORMODE_MAIN) {
+      if (this.cursorRound === 0) {
+        // 커서라운드가 0에 있으면 메인 메뉴로 되돌아갑니다.
+        this.canceled = true
+      } else {
+        this.cursorMode = this.CURSORMODE_SUB
+        soundSystem.play(soundFile.system.systemSelect)
+      }
+    } else if (this.cursorMode === this.CURSORMODE_SUB) {
+      fieldSystem.roundStart(roundTableId[this.cursorSubRound])
+      soundSystem.play(soundFile.system.systemEnter)
+    }
   }
 
   display () {
-    this.displayTitle()
     this.displayRound()
+    this.displaySubRound()
     this.displayWorld()
     this.displayInfo()
   }
 
-  displayTitle () {
+  displayRound () {
     for (let i = 0; i < 10; i++) {
+      // 참고: 선택된 라운드를 명확하게 표기하기 위하여, 현재 라운드가 선택되었다면(커서라운드가 서브모드)
+      // 선택된 현재라운드와 서브라운드를 모두 표시하게 합니다.
+      if (this.cursorMode === this.CURSORMODE_SUB) {
+        if (i === this.cursorRound) {
+          this.menuList[i].focus = true
+          this.menuList[i].focusColor = 'red'
+        } else {
+          this.menuList[i].focus = false
+          this.menuList[i].focusColor = 'blue'
+        }
+      } else if (this.cursorMode === this.CURSORMODE_MAIN && this.menuList[i].focusColor === 'red') {
+        this.menuList[i].focusColor = 'blue'
+      }
+
       this.menuList[i].display()
     }
   }
 
-  displayRound () {
-    for (let i = 10; i <= 25; i++) {
+  displaySubRound () {
+    for (let i = 10, n = 0; i <= 25; i++, n++) {
       this.menuList[i].display()
+      const iconNumberX = i - 10
+      const rectPlusSize = 5
+      const fontWidth = 12
+      const fontHeight = 20
+
+      if (i < 9 || i > 19) continue
+      // 각 라운드 아이콘의 이미지 출력
+      graphicSystem.imageDisplay(
+        this.roundIcon, 
+        iconNumberX * this.roundIconData.width, 
+        1 * this.roundIconData.height, 
+        this.roundIconData.width, 
+        this.roundIconData.height, 
+        this.menuList[i].x, 
+        this.menuList[i].y,
+        this.menuList[i].width,
+        this.menuList[i].height 
+      )
+
+      // 이미지에 가려져서 무엇이 선택되었는지 알기 어려우므로, 따로 사격형을 먼저 칠합니다.
+      if (this.cursorMode === this.CURSORMODE_SUB && this.cursorSubRound === n) {
+        graphicSystem.fillRect(
+          this.menuList[i].x - rectPlusSize, 
+          this.menuList[i].y - rectPlusSize,
+          this.menuList[i].width + (rectPlusSize * 2),
+          this.menuList[i].height + (rectPlusSize * 2), 
+          'blue',
+          0.4
+        )
+      }
+
+      // 글자를 표시할 사각형 출력 후, 글자 출력
+      graphicSystem.fillRect(this.menuList[i].x, this.menuList[i].y + (this.menuList[i].height - fontHeight), fontWidth * 3, fontHeight, 'white', 0.5)
+      graphicSystem.digitalFontDisplay('1-' + (iconNumberX + 1), this.menuList[i].x, this.menuList[i].y + (this.menuList[i].height - fontHeight))
     }
   }
 
@@ -627,6 +738,7 @@ export class userSystem {
   /** 체력 (100% 값처럼 취급됨.) 데미지 함수를 통해서만 변경해주세요. */ static hp = 100
   /** 체력 최대치 */ static hpMax = 100
   /** 공격력(초당) */ static attack = 10000
+  /** 데미지 경고 프레임 */ static damageWarningFrame = 0
 
   /**
    * 경험치 테이블
@@ -760,8 +872,17 @@ export class userSystem {
     }
   }
 
+  /**
+   * 데미지를 받으면 정해진 시간 동안 체력과 쉴드 색깔이 깜빡거립니다.
+   * @param {number} frameCount 
+   */
+  static setDamageWarningFrame (frameCount = 30) {
+    this.damageWarningFrame = frameCount
+  }
+
   static process () {
     this.playTime.process()
+    if (this.damageWarningFrame > 0) this.damageWarningFrame--
   }
 
   static display () {
@@ -802,19 +923,30 @@ export class userSystem {
     // y축 레이어 구분선
     graphicSystem.fillLine(graphicSystem.CANVAS_WIDTH_HALF, LAYER1_Y, graphicSystem.CANVAS_WIDTH_HALF, graphicSystem.CANVAS_HEIGHT)
 
-    // 체력 게이지 그라디언트 [하늘색]
+    const shieldDamageColorStartList = ['#ee9ca7', '#FFB75E', '#4B8AFC']
+    const shieldDamageColorEndList = ['#ffdde1', '#ED8F03', '#A7C6FF']
+    const hpDamageColorStartList = ['#93291E', '#f5af19', '#A99DB7']
+    const hpDamageColorEndList = ['#ED213A', '#f12711', '#8155C6']
     const hpPercent = this.hp / this.hpMax
     const HP_WIDTH = Math.floor(LAYER_WIDTH / 2) * hpPercent
-    graphicSystem.gradientDisplay(0, LAYER1_Y, HP_WIDTH, LAYER_HEIGHT, '#A99DB7', '#8155C6')
-
-    // 쉴드 게이지 그라디언트 [파란색]
     const shieldPercent = this.shield / this.shieldMax
     const SHIELD_WIDTH = Math.floor(LAYER_WIDTH / 2) * shieldPercent
-    graphicSystem.gradientDisplay(0 + HP_WIDTH, LAYER1_Y, SHIELD_WIDTH, LAYER_HEIGHT, '#4B8AFC', '#A7C6FF')
 
-    // 경험치 게이지 그라디언트
-    const expPercent = this.exp / this.getExpMax()
-    graphicSystem.gradientDisplay(0, LAYER2_Y, LAYER_WIDTH * expPercent, LAYER_HEIGHT, '#FDC830', '#F37335')
+    if (this.damageWarningFrame > 0) {
+      let targetFrame = this.damageWarningFrame % shieldDamageColorStartList.length
+
+      // 체력 게이지 그라디언트
+      graphicSystem.gradientDisplay(0, LAYER1_Y, HP_WIDTH, LAYER_HEIGHT, hpDamageColorStartList[targetFrame], hpDamageColorEndList[targetFrame])
+
+      // 쉴드 게이지 그라디언트
+      graphicSystem.gradientDisplay(0 + HP_WIDTH, LAYER1_Y, SHIELD_WIDTH, LAYER_HEIGHT, shieldDamageColorStartList[targetFrame], shieldDamageColorEndList[targetFrame])
+    } else {
+      // 체력 게이지 그라디언트 [파란색]
+      graphicSystem.gradientDisplay(0, LAYER1_Y, HP_WIDTH, LAYER_HEIGHT, '#A99DB7', '#8155C6')
+
+      // 쉴드 게이지 그라디언트 [하늘색]
+      graphicSystem.gradientDisplay(0 + HP_WIDTH, LAYER1_Y, SHIELD_WIDTH, LAYER_HEIGHT, '#4B8AFC', '#A7C6FF')
+    }
 
     // 스킬 인터페이스
     // 참고로 스킬은 쿨타임이 남아있으면, 남은 쿨타임 시간을 표시하고, 아닐경우 스킬 아이콘을 출력합니다.

@@ -43,7 +43,11 @@ export class soundFile {
     systemLevelUp: new Audio('./sound/systemLevelUp.mp3'),
     systemPause: new Audio('./sound/systemPause.mp3'),
     systemRoundClear: new Audio('./sound/systemRoundClear.mp3'),
-    systemGameOver: new Audio('./sound/systemGameOver.mp3')
+    systemGameOver: new Audio('./sound/systemGameOver.mp3'),
+    systemPlayerDamage: new Audio('./sound/systemPlayerDamage.mp3'),
+    systemPlayerDamageBig: new Audio('./sound/systemPlayerDamageBig.mp3'),
+    systemPlayerDamageDanger: new Audio('./sound/systemPlayerDamageDanger.mp3'),
+    systemPlayerDie: new Audio('./sound/systemPlayerDie.mp3')
   }
 
   static skill = {
@@ -59,8 +63,33 @@ export class soundFile {
     skillSidewaveShot: new Audio('./sound/skillSidewaveShot.mp3')
   }
 
+  static enemyDie = {
+    enemyDieMeteorite1: new Audio('./sound/enemyDieMeteorite1.mp3'),
+    enemyDieMeteorite2: new Audio('./sound/enemyDieMeteorite2.mp3'),
+    enemyDieMeteorite3: new Audio('./sound/enemyDieMeteorite3.mp3'),
+    enemyDieMeteorite4: new Audio('./sound/enemyDieMeteorite4.mp3'),
+    enemyDieMeteorite5: new Audio('./sound/enemyDieMeteorite5.mp3'),
+    enemyDieMeteoriteBomb: new Audio('./sound/enemyDieMeteoriteBomb.mp3'),
+    enemyDieMeteoriteStone: new Audio('./sound/enemyDieMeteoriteStone.mp3'),
+    enemyDieSpaceCar: new Audio('./sound/enemyDieSpaceCar.mp3'),
+    enemyDieSpaceComet: new Audio('./sound/enemyDieSpaceComet.mp3'),
+    enemyDieSpaceEnergy: new Audio('./sound/enemyDieSpaceEnergy.mp3'),
+    enemyDieSpaceGamjigi: new Audio('./sound/enemyDieSpaceGamjigi.mp3'),
+    enemyDieSpaceLight: new Audio('./sound/enemyDieSpaceLight.mp3'),
+    enemyDieSpaceRocket: new Audio('./sound/enemyDieSpaceRocket.mp3'),
+    enemyDieSpaceSmall: new Audio('./sound/enemyDieSpaceSmall.mp3'),
+    enemyDieSpaceSquare: new Audio('./sound/enemyDieSpaceSquare.mp3'),
+    enemyDieSpaceSusong: new Audio('./sound/enemyDieSpaceSusong.mp3'),
+  }
+
   static music = {
-    test: new Audio('./music/test.ogg')
+    music01_space_void: new Audio('./music/music01_space_void.ogg'),
+    music02_meteorite_zone_field: new Audio('./music/music02_meteorite_zone_field.ogg'),
+    music03_meteorite_zone_battle: new Audio('./music/music03_meteorite_zone_battle.ogg'),
+    music04_meteorite_zone_red: new Audio('./music/music04_meteorite_zone_red.ogg'),
+    music05_space_tour: new Audio('./music/music05_space_tour.ogg'),
+    music06_round1_boss_thema: new Audio('./music/music06_round1_boss_thema.ogg'),
+    music07_paran_planet_entry: new Audio('./music/music07_paran_planet_entry.ogg')
   }
 }
 
@@ -71,6 +100,10 @@ export class soundSystem {
   static musicGain = this.audioContext.createGain()
   static musicEchoGain = this.audioContext.createGain()
   static musicEchoDelay = this.audioContext.createDelay()
+  static currentMusic = null
+  static musicPaused = false
+  static soundOn = true
+  static musicOn = true
 
   /**
    * 사운드 시스템 초기화 함수. 해당 함수를 실행해야 제대로 사운드가 출력됩니다.
@@ -117,7 +150,13 @@ export class soundSystem {
     this.audioContext.createMediaElementSource(soundFile.skill.skillSidewaveShot).connect(this.soundGain)
 
     // 배경음악
-    this.audioContext.createMediaElementSource(soundFile.music.test).connect(this.musicGain)
+    this.audioContext.createMediaElementSource(soundFile.music.music01_space_void).connect(this.musicGain)
+    this.audioContext.createMediaElementSource(soundFile.music.music02_meteorite_zone_field).connect(this.musicGain)
+    this.audioContext.createMediaElementSource(soundFile.music.music03_meteorite_zone_battle).connect(this.musicGain)
+    this.audioContext.createMediaElementSource(soundFile.music.music04_meteorite_zone_red).connect(this.musicGain)
+    this.audioContext.createMediaElementSource(soundFile.music.music05_space_tour).connect(this.musicGain)
+    this.audioContext.createMediaElementSource(soundFile.music.music06_round1_boss_thema).connect(this.musicGain)
+    this.audioContext.createMediaElementSource(soundFile.music.music07_paran_planet_entry).connect(this.musicGain)
   }
 
 
@@ -256,21 +295,56 @@ export class soundSystem {
   }
 
   static musicPlay (soundFile) {
-    // 음악이 꺼질경우, 음악을 출력하지 않음.
-    if (!this.musicOn) return 
+    this.currentMusicChange(soundFile)
+    this.musicPaused = false // 음악 일시정지 상태를 해제
 
-    soundFile.loop = true
-    if (soundFile.paused) {
-      soundFile.play()
+    // 음악설정이 꺼져있는 경우, 음악을 출력하지 않음.
+    if (!this.musicOn) return
+  }
+
+  static currentMusicChange (soundFile) {
+    if (soundFile != null && this.currentMusic != soundFile) {
+      if (this.currentMusic != null) {
+        // 현재 음악이 있다면 현재 음악 일시 정지
+        this.currentMusic.pause()
+        this.currentMusic.currentTime = 0
+      }
+
+      // 새로운 파일로 교체
+      this.currentMusic = soundFile
+    }
+  }
+
+  static musicPause () {
+    this.musicPaused = true
+
+  }
+  static musicStop () {
+    if (this.currentMusic != null) {
+      this.currentMusic.pause()
+      this.currentMusic.currentTime = 0
+      this.currentMusic = null
+    }
+  }
+
+  static musicProcess () {
+    // 음악 설정이 꺼져있지만, 현재 음악이 재생중인경우, 강제로 해당 음악을 정지
+    if (!this.musicOn && this.currentMusic != null && !this.currentMusic.paused) {
+      this.currentMusic.pause()
     }
 
+    // 음악 설정이 켜져있는 경우
+    if (this.musicOn) {
+      // 음악이 일시정지되고, 음악이 있으며 음악이 재생중인경우 일시정지
+      if (this.musicPaused && this.currentMusic != null && !this.currentMusic.paused) {
+        this.currentMusic.pause()
+      } else if(!this.musicPaused && this.currentMusic != null && this.currentMusic.paused) {
+        // 음악이 정해져있으며, 플레이중이 아닐 때는 음악 재생
+        // 만약 음악파일이 null이면 음악과 관련된 처리를 하지 않음.
+        this.currentMusic.play()
+      }
+    }
   }
 
-  static musicStop () {
-
-  }
-
-  static soundOn = true
-  static musicOn = true
 }
 soundSystem.init()

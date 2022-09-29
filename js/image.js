@@ -1,6 +1,7 @@
 export class imageFile {
   static tamshooter4Title = new Image()
   static enemyTemp = new Image()
+  static roundIcon = new Image()
 
   static system = {
     bitmapFont: new Image(),
@@ -40,7 +41,15 @@ export class imageFile {
   }
 
   static enemy = {
-    spaceEnemy: new Image()
+    spaceEnemy: new Image(),
+    meteoriteEnemy: new Image()
+  }
+  
+  static enemyDie = {
+    enemyDieSpace: new Image(),
+    enemyDieSpaceComet: new Image(),
+    enemyDieSpaceGamjigi: new Image(),
+    enemyDieMeteorite: new Image(),
   }
 
   static round = {
@@ -51,7 +60,7 @@ export class imageFile {
   }
 }
 imageFile.tamshooter4Title.src = './image/title.png'
-imageFile.enemyTemp.src = './image/enemy/enemy12.png'
+imageFile.roundIcon.src = './image/round/roundIcon.png'
 
 // system
 imageFile.system.digitalFont20px.src = './image/system/digitalFont.png'
@@ -87,6 +96,13 @@ imageFile.weapon.skillSidewave.src = './image/weapon/skillSidewave.png'
 
 // enemy
 imageFile.enemy.spaceEnemy.src = './image/enemy/spaceEnemy.png'
+imageFile.enemy.meteoriteEnemy.src = './image/enemy/meteoriteEnemy.png'
+
+// enemyDie
+imageFile.enemyDie.enemyDieSpace.src = './image/enemy/enemyDieSpace.png'
+imageFile.enemyDie.enemyDieSpaceComet.src = './image/enemy/enemyDieSpaceComet.png'
+imageFile.enemyDie.enemyDieSpaceGamjigi.src = './image/enemy/enemyDieSpaceGamjigi.png'
+imageFile.enemyDie.enemyDieMeteorite.src = './image/enemy/enemyDieMeteorite.png'
 
 // round
 imageFile.round.roundIcon.src = './image/round/roundIcon.png'
@@ -98,6 +114,9 @@ imageFile.round.round1_redzone.src = './image/round/space-g26f4aa3b6_1920.jpg'
 // 그러므로 svg 파일은 게임 내에서 사용되지 않습니다.
 // imageFile.DIGITAL_VECTOR_UNUSED.src = 'numbervector.svg'
 
+/**
+ * imageData가 가지고 있는 정보입니다. imageDataInfo로 한것은 imageData로 하면 이름 충돌이 발생하기 때문입니다.
+ */
 export class imageDataInfo {
   static spaceEnemy = {
     rocketBlue: { x: 0, y: 0, width: 60, height: 24, frame: 5 },
@@ -121,6 +140,54 @@ export class imageDataInfo {
     // { x: 0, y: 0, width: 0, height: 0, frame: 1 },
   }
 
+  static meteoriteEnemy = {
+    class11: { x: 0, y: 0, width: 50, height: 50, frame: 1 },
+    class12: { x: 50, y: 0, width: 50, height: 50, frame: 1 },
+    class13: { x: 100, y: 0, width: 50, height: 50, frame: 1 },
+    class14: { x: 150, y: 0, width: 50, height: 50, frame: 1 },
+    class15: { x: 200, y: 0, width: 50, height: 50, frame: 1 },
+    class21: { x: 0, y: 50, width: 50, height: 50, frame: 1 },
+    class22: { x: 50, y: 50, width: 50, height: 50, frame: 1 },
+    class23: { x: 100, y: 50, width: 50, height: 50, frame: 1 },
+    class24: { x: 150, y: 50, width: 50, height: 50, frame: 1 },
+    class25: { x: 200, y: 50, width: 50, height: 50, frame: 1 },
+    class31: { x: 0, y: 100, width: 50, height: 50, frame: 1 },
+    class32: { x: 50, y: 100, width: 50, height: 50, frame: 1 },
+    class33: { x: 100, y: 100, width: 50, height: 50, frame: 1 },
+    class34: { x: 150, y: 100, width: 50, height: 50, frame: 1 },
+    class35: { x: 200, y: 100, width: 50, height: 50, frame: 1 },
+    whiteMeteo1: { x: 0, y: 150, width: 70, height: 50, frame: 1 },
+    whiteMeteo2: { x: 70, y: 150, width: 70, height: 50, frame: 1 },
+    whiteMeteo3: { x: 140, y: 150, width: 70, height: 50, frame: 1 },
+    whiteMeteo4: { x: 210, y: 150, width: 70, height: 50, frame: 1 },
+    whiteMeteo5: { x: 280, y: 150, width: 70, height: 50, frame: 1 },
+    blackMeteo1: { x: 0, y: 200, width: 80, height: 45, frame: 1 },
+    blackMeteo2: { x: 80, y: 200, width: 80, height: 45, frame: 1 },
+    blackMeteo3: { x: 160, y: 200, width: 80, height: 45, frame: 1 },
+    blackMeteo4: { x: 240, y: 200, width: 80, height: 45, frame: 1 },
+    blackMeteo5: { x: 320, y: 200, width: 80, height: 45, frame: 1 },
+    bomb: {x: 0, y: 250, width: 60, height: 60, frame: 8},
+    bombBig: {x: 0, y: 250, width: 60, height: 60, frame: 1},
+    stoneBrown: {x: 300, y: 0, width: 80, height: 80, frame: 1},
+    stoneBrownPiece1: {x: 300, y: 0, width: 40, height: 40, frame: 1},
+    stoneBrownPiece2: {x: 340, y: 0, width: 40, height: 40, frame: 1},
+    stoneBrownPiece3: {x: 340, y: 40, width: 40, height: 40, frame: 1},
+    stoneBrownPiece4: {x: 300, y: 40, width: 40, height: 40, frame: 1},
+    stoneBlack: {x: 400, y: 0, width: 80, height: 80, frame: 1},
+    stoneBlackPiece1: {x: 400, y: 0, width: 40, height: 40, frame: 1},
+    stoneBlackPiece2: {x: 440, y: 0, width: 40, height: 40, frame: 1},
+    stoneBlackPiece3: {x: 440, y: 40, width: 40, height: 40, frame: 1},
+    stoneBlackPiece4: {x: 400, y: 40, width: 40, height: 40, frame: 1},
+    stoneGreen: {x: 500, y: 0, width: 80, height: 80, frame: 1},
+    stoneGreenPiece1: {x: 500, y: 0, width: 40, height: 40, frame: 1},
+    stoneGreenPiece2: {x: 540, y: 0, width: 40, height: 40, frame: 1},
+    stoneGreenPiece3: {x: 540, y: 40, width: 40, height: 40, frame: 1},
+    stoneGreenPiece4: {x: 500, y: 40, width: 40, height: 40, frame: 1},
+    red1: {x: 400, y: 200, width: 50, height: 50, frame: 1},
+    red2: {x: 450, y: 200, width: 70, height: 50, frame: 1},
+    red3: {x: 520, y: 200, width: 80, height: 45, frame: 1},
+  }
+
   static fieldSystem = {
     roundClear: { x: 0, y: 0, width: 400, height: 60 },
     gameOver: { x: 0, y: 60, width: 320, height: 60 },
@@ -131,5 +198,39 @@ export class imageDataInfo {
     unchecked: { x: 420, y: 0, width: 30, height: 32 },
     checked: { x: 420, y: 32, width: 30, height: 32 },
     arrow: { x: 420, y: 64, width: 30, height: 32 }
+  }
+
+  static enemyDieSpace = {
+    enemyDieSpaceSquare: {x: 0, y: 0, width: 20, height: 20, frame: 10},
+    enemyDieSpaceRocket: {x: 0, y: 20, width: 20, height: 20, frame: 10},
+    enemyDieSpaceCar: {x: 0, y: 40, width: 20, height: 20, frame: 10},
+    enemyDieSpaceAttack: {x: 0, y: 60, width: 20, height: 20, frame: 10},
+    enemyDieSpaceEnergy: {x: 0, y: 80, width: 20, height: 20, frame: 10},
+    enemyDieSpaceSusong: {x: 0, y: 100, width: 20, height: 20, frame: 10},
+    enemyDieSpaceComet: {x: 0, y: 0, width: 35, height: 35, frame: 10},
+    enemyDieSpaceGamjigi: {x: 0, y: 0, width: 30, height: 50, frame: 10}
+  }
+
+  static enemyDieMeteorite = {
+    enemyDieMeteorite1: {x: 0, y: 0, width: 50, height: 50, frame: 10},
+    enemyDieMeteorite2: {x: 0, y: 50, width: 50, height: 50, frame: 10},
+    enemyDieMeteorite3: {x: 0, y: 100, width: 50, height: 50, frame: 10},
+    enemyDieMeteoriteWhite: {x: 0, y: 150, width: 50, height: 50, frame: 10},
+    enemyDieMeteoriteBlack: {x: 0, y: 200, width: 50, height: 50, frame: 10},
+  }
+}
+
+/**
+ * 이 클래스는 자동완성을 쉽게 하기 위해 만들어진 클래스입니다. 일반적인 용도로는 사용하지 않습니다.
+ * 해당 생성자를 사용하지 마세요.
+ */
+export class ImageDataObject {
+  constructor () {
+    this.x = 0
+    this.y = 0
+    this.width = 0
+    this.height = 0
+    this.frame = 10
+    throw new Error('이 클래스는 생성할 수 없습니다. This class cannot be created. ')
   }
 }

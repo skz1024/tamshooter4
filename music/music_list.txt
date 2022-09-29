@@ -3,9 +3,9 @@
 music list
 // round 1
 1. music01_space_void (round 1-1)
-2. music02_meteroite_zone_field (round 1-2 ~ 1-3), (optionbattle music)
-3. music03_meteroite_zone_battle (round 1-3 ~ 1-4), (optionbattle music)
-4. music04_meteroite_zone_red (round 1-5), (optionbattle music)
+2. music02_meteorite_zone_field (round 1-2 ~ 1-3), (optionbattle music)
+3. music03_meteorite_zone_battle (round 1-3 ~ 1-4), (optionbattle music)
+4. music04_meteorite_zone_red (round 1-5), (optionbattle music)
 5. music05_space_tour (round 1-6), (optionbattle music)
 6. music06_round1_boss_thema (round 1-1, 1-3, 1-4, 1-5)
 7. music07_planet_entry (round 1-6)

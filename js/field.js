@@ -1,7 +1,7 @@
 'use strict'
 
 import { buttonSystem } from './control.js'
-import { EffectData, EnemyData, FieldData, ID, objectType, RoundData, tamshooter4Data, WeaponData } from './data.js'
+import { EffectData, EnemyData, FieldData, ID, objectType, RoundData, tamshooter4Data, WeaponData, EnemyBulletData, CustomEffectData } from './data.js'
 import { graphicSystem } from './graphic.js'
 import { imageDataInfo, imageFile } from './image.js'
 import { soundFile, soundSystem } from './sound.js'
@@ -88,11 +88,14 @@ class DamageObject {
  */
 class PlayerObject extends FieldData {
   /** 플레이어 이미지 */ playerImage = imageFile.system.playerImage
+  playerImageData = {
+    x: 0, y: 0, width: 40, height: 20, frame: 3
+  }
 
   constructor () {
     super(objectType.PLAYER, 0, 300, 200)
-    this.width = this.playerImage.width // 40
-    this.height = this.playerImage.height // 20
+    this.width = this.playerImageData.width
+    this.height = this.playerImageData.height
   }
 
   /**
@@ -114,9 +117,12 @@ class PlayerObject extends FieldData {
     this.centerX = this.x + (this.width / 2)
     this.centerY = this.y + (this.height / 2)
 
+    this.damageEnimationCount = 0
+
     const getData = userSystem.getPlayerObjectData()
     this.attack = getData.attack
     this.hp = getData.hp
+    this.hpMax = getData.hpMax
     this.shield = getData.shield
     this.shieldMax = getData.shieldMax
     this.playerWeaponId = [ID.playerWeapon.multyshot,
@@ -134,14 +140,70 @@ class PlayerObject extends FieldData {
     ]
   }
 
+  damageSoundPlay (shieldDamage, hpDamage) {
+    const LOW_DAMAGE = 2
+    const MIDDLE_DAMAGE = 15
+    const HIGH_DAMAGE = 30
+    const HP_LOW_DAMAGE = 1
+    const HP_MIDDLE_DAMAGE = 7
+    const HP_HIGH_DAMAGE = 15
+
+    if (hpDamage >= 1) {
+      if (hpDamage >= HP_LOW_DAMAGE && hpDamage < HP_MIDDLE_DAMAGE) {
+        soundSystem.play(soundFile.system.systemPlayerDamage)
+      } else if (hpDamage >= HP_MIDDLE_DAMAGE && hpDamage < HP_HIGH_DAMAGE) {
+        soundSystem.play(soundFile.system.systemPlayerDamageBig)
+      } else if (hpDamage >= HP_HIGH_DAMAGE) {
+        soundSystem.play(soundFile.system.systemPlayerDamageDanger)
+      }
+    } else {
+      if (shieldDamage >= LOW_DAMAGE && shieldDamage < MIDDLE_DAMAGE) {
+        soundSystem.play(soundFile.system.systemPlayerDamage)
+      } else if (shieldDamage >= MIDDLE_DAMAGE && shieldDamage < HIGH_DAMAGE) {
+        soundSystem.play(soundFile.system.systemPlayerDamageBig)
+      } else if (shieldDamage >= HIGH_DAMAGE) {
+        soundSystem.play(soundFile.system.systemPlayerDamageDanger)
+      }
+    }
+  }
+
+  damageEnimationSet (shieldDamage, hpDamage) {
+    let damageFrame = (shieldDamage * 2) + (hpDamage * 4)
+    if (damageFrame > 180) {
+      damageFrame = 180
+    } else if (damageFrame < 10) {
+      damageFrame = 10
+    }
+
+    this.damageEnimationCount = damageFrame
+    userSystem.setDamageWarningFrame(damageFrame)
+  }
+
   addDamage (damage) {
+    let hpDamage = 0
+    let shieldDamage = 0
+
     if (this.shield >= damage) {
+      shieldDamage = damage
       this.shield -= damage
     } else if (this.shield < damage) {
-      damage -= this.shield
-      this.shield = 0
-      this.hp -= Math.floor(damage / 2)
+      if (this.shield >= 0) {
+        shieldDamage = this.shield
+        hpDamage = damage - shieldDamage
+        this.shield = 0
+        this.hp -= Math.floor(hpDamage / 2)
+      } else {
+        hpDamage = damage
+
+        // 만약 쉴드가 없는 상태에서 데미지를 받았다면 최소 1체력이 감소합니다.
+        // 이것은 1데미지로는 체력이 감소하지 않기 때문에 보정치를 넣은것입니다.
+        if (hpDamage < 0) hpDamage = 2
+        this.hp -= Math.floor(hpDamage / 2)
+      }
     }
+
+    this.damageSoundPlay(shieldDamage, hpDamage)
+    this.damageEnimationSet(shieldDamage, hpDamage)
   }
 
   addExp (score) {
@@ -157,6 +219,8 @@ class PlayerObject extends FieldData {
     } else {
       this.processAttack()
       this.processSkill()
+      this.processShield()
+      this.processDamage()
     }
   }
 
@@ -179,6 +243,28 @@ class PlayerObject extends FieldData {
 
     // 스킬 사운드 출력
     getSkill.useSoundPlay()
+  }
+
+  processDamage () {
+    if (this.damageEnimationCount > 0) {
+      this.damageEnimationCount--
+    }
+  }
+
+  processShield () {
+    const SHIELD_RECOVERY_POINT = 6000
+    this.shieldRecovery += 60
+
+    // 쉴드 회복 처리
+    if (this.shieldRecovery >= SHIELD_RECOVERY_POINT) {
+      this.shield++
+      this.shieldRecovery -= SHIELD_RECOVERY_POINT
+    }
+
+    // 쉴드 최대치 초과 금지
+    if (this.shield > this.shieldMax) {
+      this.shield = this.shieldMax
+    }
   }
 
   processSkill () {
@@ -288,8 +374,13 @@ class PlayerObject extends FieldData {
   }
 
   display () {
-    graphicSystem.imageDisplay(this.playerImage, this.x, this.y)
-    graphicSystem.digitalFontDisplay('B BUTTON. X KEY TO CHANGE SKILL', 0, 80)
+    if (this.damageEnimationCount > 0) {
+      let targetFrame = this.damageEnimationCount % this.playerImageData.frame
+      let frameSliceX = targetFrame * this.playerImageData.width
+      graphicSystem.imageDisplay(this.playerImage, frameSliceX, this.playerImageData.y, this.playerImageData.width, this.playerImageData.height, this.x, this.y, this.width, this.height)
+    } else {
+      graphicSystem.imageDisplay(this.playerImage, this.playerImageData.x, this.playerImageData.y, this.playerImageData.width, this.playerImageData.height, this.x, this.y, this.width, this.height)
+    }
   }
 }
 
@@ -302,6 +393,7 @@ export class fieldState {
   /** @type {EnemyData[]} */ static enemyObject = []
   /** @type {EffectData[]} */ static effectObject = []
   /** @type {DamageObject[]} */ static damageObject = []
+  /** @type {EnemyBulletData[]} */ static enemyBulletObject = []
 
   /**
    * 다음 생성할 오브젝트의 Id
@@ -325,6 +417,7 @@ export class fieldState {
   static getEnemyObject () { return this.enemyObject }
   static getEffectObject () { return this.effectObject }
   static getDamageObject () { return this.damageObject }
+  static getEnemyBulletObject () { return this.enemyBulletObject }
 
   /**
    * fieldState에서 사용하는 모든 오브젝트를 리셋합니다.
@@ -335,6 +428,7 @@ export class fieldState {
     this.weaponObject.length = 0
     this.enemyObject.length = 0
     this.effectObject.length = 0
+    this.enemyBulletObject.length = 0
     for (let i = 0; i < this.damageObject.length; i++) {
       this.damageObject[i].isUsing = false
     }
@@ -393,6 +487,18 @@ export class fieldState {
     this.effectObject.push(inputData)
   }
 
+  /**
+   * 커스텀 이펙트 오브젝트를 생성합니다.
+   * @param {CustomEffectData} customEffectObject 
+   */
+  static createEffectCustomObject (customEffectObject, x, y) {
+    if (customEffectObject == null) return
+
+    customEffectObject.createId = this.getNextCreateId()
+    customEffectObject.setPosition(x, y)
+    this.effectObject.push(customEffectObject)
+  }
+
   static damageObjectNumber = 0
   static createDamageObject (x = 0, y = 0, attack = 1) {
     if (this.damageObject.length < 100) {
@@ -408,12 +514,23 @@ export class fieldState {
     this.damageObject[this.damageObjectNumber].createId = this.getNextCreateId()
   }
 
+  static createEnemyBulletObject (typeId, x = 0, y = 0, attack = 1, ...option) {
+    const GetClass = tamshooter4Data.getEnemyBulletData(typeId)
+    if (GetClass == null) return
+
+    const inputData = new GetClass(option)
+    inputData.createId = this.getNextCreateId()
+    inputData.setPosition(x, y)
+    this.enemyBulletObject.push(inputData)
+  }
+
   static process () {
     this.processPlayerObject()
     this.processWeaponObject()
     this.processEnemyObject()
     this.processDamageObject()
     this.processEffectObject()
+    this.processEnemyBulletObject()
   }
 
   static processPlayerObject () {
@@ -464,9 +581,23 @@ export class fieldState {
     }
   }
 
+  static processEnemyBulletObject () {
+    for (let i = 0; i < this.enemyBulletObject.length; i++) {
+      const currentEnemyBullet = this.enemyBulletObject[i]
+
+      currentEnemyBullet.process()
+      currentEnemyBullet.fieldProcess()
+
+      if (currentEnemyBullet.isDeleted) {
+        this.enemyBulletObject.splice(i, 1)
+      }
+    }
+  }
+
   static display () {
     this.displayEffectObject()
     this.displayEnemyObject()
+    this.displayEnemyBulletObject()
     this.displayWeaponObject()
     this.displayDamageObject()
     this.displayPlayerObject()
@@ -526,6 +657,14 @@ export class fieldState {
     }
 
     graphicSystem.setAlpha(1)
+  }
+
+  static displayEnemyBulletObject () {
+    for (let i = 0; i < this.enemyBulletObject.length; i++) {
+      const currentEnemyBullet = this.enemyBulletObject[i]
+
+      currentEnemyBullet.display()
+    }
   }
 }
 
@@ -596,6 +735,8 @@ export class fieldSystem {
     this.enimationFrame = 0
     this.exitDelayCount = 0
     this.score = 0
+
+    soundSystem.musicPlay(this.round.music)
   }
 
   /**
@@ -629,6 +770,7 @@ export class fieldSystem {
     const buttonUp = buttonSystem.getButtonInput(buttonSystem.BUTTON_UP)
     const buttonA = buttonSystem.getButtonInput(buttonSystem.BUTTON_A)
     const maxMenuNumber = 3
+    soundSystem.musicPause() // 일시정지 상태에서는 음악이 재생되지 않음.
 
     if (buttonUp && this.cursor > 0) {
       this.cursor--
@@ -702,6 +844,7 @@ export class fieldSystem {
 
   static processNormal () {
     const buttonPause = buttonSystem.getButtonInput(buttonSystem.BUTTON_ENTER)
+
     if (buttonPause) {
       soundSystem.play(soundFile.system.systemPause)
       this.stateId = this.STATE_PAUSE
@@ -716,23 +859,28 @@ export class fieldSystem {
   }
 
   static process () {
-    soundSystem.musicPlay(soundFile.music.test)
+    soundSystem.musicProcess()
 
     switch (this.stateId) {
       case this.STATE_PAUSE:
         this.processPause()
+        soundSystem.musicPause()
         break
       case this.STATE_ROUND_CLEAR:
         this.processRoundClear()
+        soundSystem.musicStop()
         break
       case this.STATE_GAME_OVER:
         this.processGameOver()
+        soundSystem.musicStop()
         break
       case this.STATE_EXIT:
         this.processExit()
+        soundSystem.musicStop()
         break
       default:
         this.processNormal()
+        soundSystem.musicPlay()
         break
     }
   }
@@ -833,9 +981,10 @@ export class fieldSystem {
     const HEIGHT = 30
     const currentTime = this.round != null ? this.round.currentTime : '999'
     const finishTime = this.round != null ? this.round.finishTime : '999'
+    const plusTime = this.round != null ? this.round.plusTime : '0'
     const meterMultiple = currentTime / finishTime
     graphicSystem.fillRect(LAYER_X, LAYER_Y, graphicSystem.CANVAS_WIDTH_HALF, HEIGHT, 'silver')
     graphicSystem.fillRect(LAYER_X, LAYER_Y, graphicSystem.CANVAS_WIDTH_HALF * meterMultiple, HEIGHT, '#D5F5E3')
-    graphicSystem.digitalFontDisplay(`R:1-1, T:${currentTime}/${finishTime}`, LAYER_X + 5, LAYER_DIGITAL_Y)
+    graphicSystem.digitalFontDisplay(`R:1-1, T:${currentTime}/${finishTime} + ${plusTime}`, LAYER_X + 5, LAYER_DIGITAL_Y)
   }
 }
