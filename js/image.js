@@ -13,6 +13,7 @@ export class imageFile {
     skillIcon: new Image(),
     fieldSystem: new Image(),
     optionCheck: new Image(),
+    playerDie: new Image(),
   }
 
   static weapon = {
@@ -27,6 +28,7 @@ export class imageFile {
     parapoEffect: new Image(),
     blaster: new Image(),
     sidewave: new Image(),
+    subWeapon: new Image(),
 
     // skill
     skillMultyshot: new Image(),
@@ -71,6 +73,7 @@ imageFile.system.skillNumber.src = './image/system/skillNumber.png'
 imageFile.system.skillIcon.src = './image/system/skillIcon.png'
 imageFile.system.fieldSystem.src = './image/system/fieldSystem.png'
 imageFile.system.optionCheck.src = './image/system/optionCheck.png'
+imageFile.system.playerDie.src = './image/system/playerDie.png'
 
 // weapon
 imageFile.weapon.multyshot.src = './image/weapon/multyshot.png'
@@ -84,6 +87,9 @@ imageFile.weapon.parapo.src = './image/weapon/parapo.png'
 imageFile.weapon.parapoEffect.src = './image/weapon/parapoEffect.png'
 imageFile.weapon.blaster.src = './image/weapon/blaster.png'
 imageFile.weapon.sidewave.src = './image/weapon/sidewave.png'
+imageFile.weapon.subWeapon.src = './image/weapon/subWeapon.png'
+
+// weapon - skill
 imageFile.weapon.skillMultyshot.src = './image/weapon/skillMultyshot.png'
 imageFile.weapon.skillMissile.src = './image/weapon/skillMissile.png'
 imageFile.weapon.skillMissileEffect.src = './image/weapon/skillMissileEffect.png'
@@ -135,10 +141,10 @@ export class imageDataInfo {
     meteorite2: { x: 500, y: 290, width: 50, height: 50, frame: 1 },
     meteorite3: { x: 550, y: 290, width: 50, height: 50, frame: 1 },
     meteorite4: { x: 600, y: 290, width: 70, height: 50, frame: 1 },
-    meteorite5: { x: 670, y: 290, width: 80, height: 45, frame: 1 }
-
-    // { x: 0, y: 0, width: 0, height: 0, frame: 1 },
+    meteorite5: { x: 670, y: 290, width: 80, height: 45, frame: 1 },
+    bossSqaure: { x: 0, y: 340, width: 60, height: 60, frame: 8 }
   }
+  // { x: 0, y: 0, width: 0, height: 0, frame: 1 },
 
   static meteoriteEnemy = {
     class11: { x: 0, y: 0, width: 50, height: 50, frame: 1 },

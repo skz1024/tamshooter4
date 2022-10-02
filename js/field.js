@@ -111,6 +111,8 @@ class PlayerObject extends FieldData {
     this.attackDelay = 0
     this.attackDelayCount = 0
     this.debug = false
+    this.dieAfterDelayCount = 0
+    this.isDied = false
 
     this.x = 300
     this.y = 200
@@ -138,6 +140,7 @@ class PlayerObject extends FieldData {
       { id: ID.playerSkill.blaster, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
       { id: ID.playerSkill.sidewave, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 }
     ]
+    this.playerSubWeaponDelayCount = 0
   }
 
   damageSoundPlay (shieldDamage, hpDamage) {
@@ -211,16 +214,27 @@ class PlayerObject extends FieldData {
   }
 
   process () {
-    this.processButton()
     this.processSendUserStat()
 
-    if (this.debug) {
-      // this.processDebug()
-    } else {
+    if (!this.isDied) {
+      this.processButton()
       this.processAttack()
+      this.processSubAttack()
       this.processSkill()
       this.processShield()
       this.processDamage()
+    }
+    this.processDie()
+  }
+
+  processDie () {
+    if (this.hp <= 0 && !this.isDied) {
+      this.isDied = true
+      soundSystem.play(soundFile.system.systemPlayerDie)
+    }
+
+    if (this.isDied) {
+      this.dieAfterDelayCount++
     }
   }
 
@@ -373,13 +387,30 @@ class PlayerObject extends FieldData {
     }
   }
 
+  processSubAttack () {
+    const getWeaponData = tamshooter4Data.getPlayerWeaponData(ID.playerWeapon.subWeapon)
+    this.playerSubWeaponDelayCount++
+
+    if (this.playerSubWeaponDelayCount >= getWeaponData.delay) {
+      getWeaponData.create(this.attack, this.centerX, this.centerY)
+      this.playerSubWeaponDelayCount -= getWeaponData.delay
+    }
+  }
+
   display () {
-    if (this.damageEnimationCount > 0) {
-      let targetFrame = this.damageEnimationCount % this.playerImageData.frame
-      let frameSliceX = targetFrame * this.playerImageData.width
-      graphicSystem.imageDisplay(this.playerImage, frameSliceX, this.playerImageData.y, this.playerImageData.width, this.playerImageData.height, this.x, this.y, this.width, this.height)
+    if (this.isDied) {
+      if (this.dieAfterDelayCount <= 60) {
+        const dieImage = imageFile.system.playerDie
+        graphicSystem.imageDisplay(dieImage, (this.dieAfterDelayCount % 10) * 20, 0, 20, 20, this.x - 20, this.y - 20, this.width * 2, this.height * 2)
+      }
     } else {
-      graphicSystem.imageDisplay(this.playerImage, this.playerImageData.x, this.playerImageData.y, this.playerImageData.width, this.playerImageData.height, this.x, this.y, this.width, this.height)
+      if (this.damageEnimationCount > 0) {
+        let targetFrame = this.damageEnimationCount % this.playerImageData.frame
+        let frameSliceX = targetFrame * this.playerImageData.width
+        graphicSystem.imageDisplay(this.playerImage, frameSliceX, this.playerImageData.y, this.playerImageData.width, this.playerImageData.height, this.x, this.y, this.width, this.height)
+      } else {
+        graphicSystem.imageDisplay(this.playerImage, this.playerImageData.x, this.playerImageData.y, this.playerImageData.width, this.playerImageData.height, this.x, this.y, this.width, this.height)
+      }
     }
   }
 }
@@ -474,6 +505,21 @@ export class fieldState {
     inputData.setPosition(x, y)
     inputData.init()
     this.enemyObject.push(inputData)
+  }
+
+  /**
+   * 보스를 생성하는데, 해당 보스 적 객체의 데이터랑 연결할 수 있도록 return이 추가되었습니다.
+   */
+  static createEnemyBoss (typeId, x = 0, y = 0, ...option) {
+    const GetClass = tamshooter4Data.getEnemyData(typeId)
+    if (GetClass == null) return
+
+    const inputData = new GetClass(option)
+    inputData.createId = this.getNextCreateId()
+    inputData.setPosition(x, y)
+    inputData.init()
+    this.enemyObject.push(inputData)
+    return inputData // 보스로 생성된 적 객체는 리턴해서 객체를 가져올 수 있음.
   }
 
   static createEffectObject (typeId, x = 0, y = 0, repeatCount = 0, beforeDelay = 0, ...option) {
@@ -850,7 +896,7 @@ export class fieldSystem {
       this.stateId = this.STATE_PAUSE
     } else if (this.round.clearCheck()) {
       this.stateId = this.STATE_ROUND_CLEAR
-    } else if (fieldState.playerObject.hp <= 0) {
+    } else if (fieldState.playerObject.isDied && fieldState.playerObject.dieAfterDelayCount >= 120) {
       this.stateId = this.STATE_GAME_OVER
     }
 

@@ -20,7 +20,8 @@ export class ID {
     sapia: 10005,
     parapo: 10006,
     blaster: 10007,
-    sidewave: 10008
+    sidewave: 10008,
+    subWeapon: 10009
   }
 
   static playerSkill = {
@@ -51,6 +52,7 @@ export class ID {
     blaster: 11070,
     blasterMini: 11071,
     sidewave: 11080,
+    subWeapon: 11090,
 
     // skill
     skillMultyshot: 16001,
@@ -82,7 +84,7 @@ export class ID {
     meteoriteEnemyClass1: 20120,
     meteoriteEnemyClass2: 20121,
     meteoriteEnemyClass3: 20122,
-    meteoriteEnemyClass123Big: 20123,
+    meteoriteEnemyClass4: 20123,
     meteoriteEnemyWhiteMeteo: 20124,
     meteoriteEnemyBlackMeteo: 20125,
     meteoriteEnemyStone: 20130,
@@ -500,21 +502,6 @@ class EnimationData {
       graphicSystem.imageDisplay(this.image, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight)
     }
   }
-
-  /**
-   * 생각해보니, 프로세스(처리)와 디스플레이(출력)을 한꺼번에 하는게 더 좋겠네요.
-   * 이 기능은 process 함수의 기능과 display 함수의 기능을 수행합니다.
-   * display 역할을 수행해야 하므로 반드시 출력할 x, y좌표를 입력해 주세요!
-   * 참고: 이 함수는 display 쪽에서 사용해야 합니다. (data 내부의 로직과 관계 없으므로.)
-   * @param {number} x 출력할 에니메이션의 x좌표
-   * @param {number} y 출력할 에니메이션의 y좌표
-   */
-  displayAndProcess (x, y) {
-    // 참고: 함수 이름은 display쪽에서 사용하라고 의도적으로 displayAnd... 로 지었습니다.
-    // 다만, 실제 처리는, process를 먼저 진행하고 출력합니다.
-    this.process()
-    this.display(x, y)
-  }
 }
 
 /**
@@ -644,17 +631,43 @@ export class FieldData {
     }
   }
 
+  /** 랜덤하게 적 속도 결정 */
+  setRandomSpeed (maxX = 2, maxY = 2, isMinusRangeInclued = false) {
+    if (isMinusRangeInclued) {
+      this.moveSpeedX = (Math.random() * maxX) - (maxX * 2)
+      this.moveSpeedY = (Math.random() * maxY) - (maxY * 2)
+    } else {
+      this.moveSpeedX = Math.random() * maxX
+      this.moveSpeedY = Math.random() * maxY
+    }
+  }
+
+  /**
+   * 적 이동속도 결정
+   */
+  setMoveSpeed (moveSpeedX = 1, moveSpeedY = 1) {
+    this.moveSpeedX = moveSpeedX
+    this.moveSpeedY = moveSpeedY
+  }
+
   /**
    * 오브젝트의 로직 처리 함수 (각 객체마다 다를 수 있고, 이것은 기본적인 기능만 있습니다.)
    */
   process () {
     this.processMove()
+    this.processEnimation()
 
     // 캔버스의 영역을 크게 벗어나면 해당 객체는 자동으로 삭제요청을 합니다.
     // isDeleted 가 true라면, fieldState에서 해당 객체를 삭제합니다.
     if (this.outAreaCheck()) {
       this.isDeleted = true
     }
+  }
+
+  processEnimation () {
+    if (this.enimation == null) return
+    
+    this.enimation.process()
   }
 
   /**
@@ -730,7 +743,7 @@ export class FieldData {
    */
   defaultDisplay () {
     if (this.enimation) {
-      this.enimation.displayAndProcess(this.x, this.y)
+      this.enimation.display(this.x, this.y)
     } else if (this.image) {
       if (this.imageData) {
         if (this.degree !== 0 || this.flip !== 0) {
@@ -816,6 +829,7 @@ export class WeaponData extends FieldData {
     this.processMove()
     this.processAttack()
     this.processDeleteCheck()
+    this.processEnimation()
   }
 
   /**
@@ -1141,6 +1155,29 @@ export class WeaponData extends FieldData {
       this.y = targetCenterY
     }
   }
+
+  /**
+   * 적을 추적하긴 하지만, 지속적으로 추적하는게 아닌 생성 할 때만 추적하고, 무기는 직선을 그리듯이 이동함.
+   */
+  lineChase () {
+    let targetEnemy = fieldState.getRandomEnemyObject()
+    const MIN_SPEED = 10
+    if (targetEnemy != null) {
+      this.setMoveDirection() // 이동 방향 삭제
+      for (let divideSpeed = 20; divideSpeed > 2; divideSpeed--) {
+        this.speedX = (targetEnemy.x - this.x) / divideSpeed
+        this.speedY = (targetEnemy.y - this.y) / divideSpeed
+
+        if (Math.abs(this.speedX) >= MIN_SPEED && Math.abs(this.speedY) >= MIN_SPEED) {
+          break
+        }
+      }
+    } else {
+      this.setMoveDirection('right')
+      this.speedX = 20
+      this.speedY = 0
+    }
+  }
 }
 
 class MultyshotData extends WeaponData {
@@ -1176,6 +1213,12 @@ class MultyshotData extends WeaponData {
       this.color = 'brown' // y축 속도가 0이면 갈색
     } else {
       this.color = 'green' // y축 속도가 있으면 초록색
+    }
+
+    // 추적 타입인 경우, 추적 타입을 해제하고, 대신 선형태로 움직이도록 속도 재조정
+    if (this.isChaseType) {
+      this.isChaseType = false
+      this.lineChase()
     }
   }
 
@@ -1238,7 +1281,7 @@ class MissileData extends WeaponData {
 
   display () {
     if (this.state === 'normal' && this.enimation != null) {
-      this.enimation.displayAndProcess(this.x, this.y)
+      this.enimation.display(this.x, this.y)
     }
   }
 
@@ -1312,7 +1355,7 @@ class MissileRocket extends MissileData {
 
   display () {
     if (this.enimation) {
-      this.enimation.displayAndProcess(this.x, this.y)
+      this.enimation.display(this.x, this.y)
     }
   }
 }
@@ -1981,7 +2024,7 @@ class BlasterMini extends Blaster {
     this.subType = 'blastermini'
     this.width = 18
     this.height = 18
-    this.isChaseType = true
+    this.lineChase()
   }
 
   display () {
@@ -2010,6 +2053,18 @@ class Sidewave extends WeaponData {
     } else {
       this.enimation = new EnimationData(imageFile.weapon.sidewave, 0, this.height, this.width, this.height, 8, 5, -1)
     }
+  }
+}
+
+class SubWeapon extends WeaponData {
+  constructor () {
+    super()
+    this.image = imageFile.weapon.subWeapon
+    this.mainType = 'subweapon'
+    this.subType = 'subweapon'
+    this.width = 20
+    this.height = 20
+    this.isChaseType = true
   }
 }
 
@@ -2170,12 +2225,19 @@ class SkillSapia extends Sapia {
     this.repeatCount = this.useMaxCount - this.useCount // 반복횟수 강제 재조정
   }
 
+  processEnimation () {
+    if (this.enimationSapiaRect && this.enimationSapiaCircle) {
+      this.enimationSapiaRect.process()
+      this.enimationSapiaCircle.process()
+    }
+  }
+
   display () {
     // 사피아 스킬은, 2종류의 에니메이션을 동시에 출력합니다.
     // 그래봤자, 네모와 동그라미를 동시에 출력하는게 전부입니다.
     if (this.enimationSapiaRect && this.enimationSapiaCircle) {
-      this.enimationSapiaRect.displayAndProcess(this.x, this.y)
-      this.enimationSapiaCircle.displayAndProcess(this.x, this.y)
+      this.enimationSapiaRect.display(this.x, this.y)
+      this.enimationSapiaCircle.display(this.x, this.y)
     }
   }
 }
@@ -2502,7 +2564,7 @@ class PlayerParapo extends PlayerWeaponData {
 class PlayerBlaster extends PlayerWeaponData {
   constructor () {
     super()
-    this.shotCount = 1.2
+    this.shotCount = 2
     this.delay = 6
     this.attackMultiple = 1.2 // 직선공격 한정이라 높은 공격력을 가짐, 다만 유도부분이 존재해 아주 높진 않음. 유도가 없었으면 아마 1.6이상?
   }
@@ -2542,6 +2604,21 @@ class PlayerSidewave extends PlayerWeaponData {
   }
 }
 
+class PlayerSubWeapon extends PlayerWeaponData {
+  constructor () {
+    super()
+    this.shotCount = 2
+    this.delay = 30
+    this.attackMultiple = 0.2 // 서브웨폰의 기본 배율 0.2
+  }
+
+  create (attack, x, y) {
+    const shotAttack = this.getShotAttack(attack)
+    fieldState.createWeaponObject(ID.weapon.subWeapon, x, y - 12, shotAttack)
+    fieldState.createWeaponObject(ID.weapon.subWeapon, x, y + 12, shotAttack)
+  }
+}
+
 /**
  * 플레이어 스킬 데이터
  */
@@ -2555,8 +2632,8 @@ export class PlayerSKillData {
 
     /**
      * 스킬의 기준 공격력 배율 값 (값 변경 불가능)
-     * 이 게임에서는 shotDamage(1) + skillDamage(0.8 * 4) = Total(4.2)의 구성이 기본입니다.
-     * 대략적인 데미지 비율은, shot(약 23.2%) + skill(약 76.8%) 입니다.
+     * 이 게임에서는 shotDamage(1) + subShotDamage(0.4) + skillDamage(0.9 * 4) = Total(5)의 구성이 기본입니다.
+     * 대략적인 데미지 비율은, shot(약 23%) + skill(약 76%) 입니다.
      */
     this.BASE_MULTIPLE = 0.8
 
@@ -2973,7 +3050,7 @@ export class EffectData extends FieldData {
 
   display () {
     if (this.enimation != null) {
-      this.enimation.displayAndProcess(this.x, this.y)
+      this.enimation.display(this.x, this.y)
     } else {
       super.display()
     }
@@ -2985,7 +3062,7 @@ class MissileEffect extends EffectData {
     super()
     this.width = 100
     this.height = 100
-    this.enimation = new EnimationData(imageFile.weapon.missileEffect, 0, 0, 100, 100, 10, 2)
+    this.enimation = new EnimationData(imageFile.weapon.missileEffect, 0, 0, 100, 100, 10, 0)
   }
 }
 
@@ -2994,7 +3071,7 @@ class SkillMissileEffect extends EffectData {
     super()
     this.width = 200
     this.height = 200
-    this.enimation = new EnimationData(imageFile.weapon.skillMissileEffect, 0, 0, this.width, this.height, 10, 2, 1)
+    this.enimation = new EnimationData(imageFile.weapon.skillMissileEffect, 0, 0, this.width, this.height, 10, 0)
   }
 }
 
@@ -3015,7 +3092,7 @@ class ParapoEffect extends EffectData {
       case 'down': directionPosition = 300; break
     }
 
-    this.enimation = new EnimationData(imageFile.weapon.parapoEffect, 0, directionPosition, 100, 100, 10, 2)
+    this.enimation = new EnimationData(imageFile.weapon.parapoEffect, 0, directionPosition, 100, 100, 10, 1)
   }
 }
 
@@ -3024,7 +3101,7 @@ class SkillParapoEffect extends EffectData {
     super()
     this.width = 240
     this.height = 240
-    this.enimation = new EnimationData(imageFile.weapon.skillParapoEffect, 0, 0, this.width, this.height, 10, 2)
+    this.enimation = new EnimationData(imageFile.weapon.skillParapoEffect, 0, 0, this.width, this.height, 10, 1)
   }
 }
 
@@ -3172,24 +3249,13 @@ export class EnemyData extends FieldData {
     }]
   }
 
-  /** 랜덤하게 적 속도 결정 */
-  setRandomSpeed (maxX = 2, maxY = 2, isMinusRangeInclued = false) {
-    if (isMinusRangeInclued) {
-      this.moveSpeedX = (Math.random() * maxX) - (maxX * 2)
-      this.moveSpeedY = (Math.random() * maxY) - (maxY * 2)
-    } else {
-      this.moveSpeedX = Math.random() * maxX
-      this.moveSpeedY = Math.random() * maxY
-    }
-  }
-
   /**
    * 이미지와 이미지 데이터를 설정하고, 자동으로 에니메이션 설정을 합니다.
    * @param {Image} image
    * @param {ImageDataObject} imageData
    * @param {number} enimationDelay 에니메이션 딜레이(프레임 단위)
    */
-  autoSetImageData (image, imageData, enimationDelay = 2) {
+  setAutoImageData (image, imageData, enimationDelay = 1) {
     this.image = image
     this.imageData = imageData
     if (this.image == null || this.imageData == null) return
@@ -3199,6 +3265,26 @@ export class EnemyData extends FieldData {
     if (this.imageData.frame >= 2) {
       this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, enimationDelay, -1)
     }
+  }
+
+  setEnemyStat (hp = 1, score = 0, attack = 0) {
+    this.hp = hp
+    this.score = score
+    this.attack = attack
+  }
+
+  /**
+   * 적 죽음 사운드와 적 죽음 이펙트를 설정합니다. 이펙트는 반드시 CustomEffectData 클래스로 생성해야 합니다.
+   * @param {HTMLAudioElement} dieSound 
+   * @param {CustomEffectData} dieEffect 
+   */
+  setDieEffect (dieSound, dieEffect = null) {
+    if (dieEffect != null && dieEffect.constructor != CustomEffectData) {
+      console.warn('경고: dieEffect는 CustomEffectData 클래스를 사용해 데이터를 생성해야 합니다.')
+    }
+  
+    this.dieSound = dieSound
+    this.dieEffect = dieEffect
   }
 
   /**
@@ -3220,6 +3306,7 @@ export class EnemyData extends FieldData {
       this.processPossibleExit()
       this.processExitToReset()
       this.processPlayerCollision()
+      this.processEnimation()
     }
 
     // 적 죽었는지 체크
@@ -3498,18 +3585,13 @@ class SpaceEnemyLight extends EnemyData {
   constructor () {
     super()
     this.colorNumber = Math.floor(Math.random() * 8)
-    this.image = imageFile.enemy.spaceEnemy
-    this.imageData = imageDataInfo.spaceEnemy.spaceLight
-    this.width = this.imageData.width
-    this.height = this.imageData.height
-    this.hp = 3600 + (this.colorNumber * 200) // 3600 ~ 4400
-    this.score = 36 + (this.colorNumber * 2)
+    this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.spaceLight)
+    this.setEnemyStat(2000 + (this.colorNumber * 100), 20 + (this.colorNumber + 1), 1)
     this.dieAfterDeleteDelay = new DelayData(20)
     this.moveSpeedX = Math.random() * 8 - 4
     this.moveSpeedY = Math.random() * 8 - 4
     this.isPossibleExit = true
     this.isExitToReset = true
-    this.attack = 1
     this.dieSound = soundFile.enemyDie.enemyDieSpaceLight
   }
 
@@ -3522,83 +3604,30 @@ class SpaceEnemyLight extends EnemyData {
 }
 
 class SpaceEnemyRocket extends EnemyData {
-  /**
-   * 옵션의 배열 첫번째 인수에 아무 값이나 넣으면, 로켓이 빨간색으로 변경,
-   * 옵션의 배열 두번째 인수에 아무 값이나 넣으면, 로켓의 크기가 커짐,
-   * 옵션에 따라 로켓의 체력과 점수가 변화 (공격력은 차이 없음)
-   * 경고: 한번 설정된 값은 바꿀 수 없음. 바꾸고싶다면 죽이고 다시 만들어야함.
-   * @param {string[]} option 옵션(인수는 상관없고, 크기만 바꾸고 싶다면, 첫번째 인수에 undefined를 넣을것)
-   */
-  constructor (option = []) {
+  constructor () {
     super()
-    // 이렇게 설정된 이유는, option 배열의 개수가 가변적이기 때문입니다. 따라서 각 원소가 있는지를 확인해야 합니다.
-    // 원소가 존재하면 색깔은 빨간색, 크기는 커집니다. (인수의 값은 아무거나 상관없음)
-    const isChangeColor = !!(option.length >= 1 && option[0] != null)
-    const isChangeSize = !!(option.length >= 2 && option[1] != null)
+    this.setEnemyStat(4000, 40, 15)
 
-    this.image = imageFile.enemy.spaceEnemy
-    this.imageData = null
-    if (!isChangeColor && !isChangeSize) { // 색깔변경없고, 크기 변경없을경우, 파란색 작은 로켓이 기본값
-      this.imageData = imageDataInfo.spaceEnemy.rocketBlue
-      this.hp = 4200
-      this.score = 42
-    } else if (!isChangeColor && isChangeSize) {
-      this.imageData = imageDataInfo.spaceEnemy.rocketBlueBig
-      this.hp = 12400
-      this.score = 124
-    } else if (isChangeColor && !isChangeSize) {
-      this.imageData = imageDataInfo.spaceEnemy.rocketRed
-      this.hp = 4800
-      this.score = 48
-    } else {
-      this.imageData = imageDataInfo.spaceEnemy.rocketRedBig
-      this.hp = 13200
-      this.score = 132
-    }
-
-    if (isChangeColor) {
-      this.color = 'blue'
-    } else {
-      this.color = 'red'
-    }
-
-    this.width = this.imageData.width
-    this.height = this.imageData.height
-
-    this.moveSpeedX = 4 + Math.random() * 2
-    this.moveSpeedY = 0
+    // 로켓은 두종류의 이미지가 있고, 그 중 랜덤으로 선택
+    this.imageData = Math.random() * 1 < 0.5 ? imageDataInfo.spaceEnemy.rocketBlue : imageDataInfo.spaceEnemy.rocketRed
+    this.setAutoImageData(imageFile.enemy.spaceEnemy, this.imageData, 4)
+    this.setMoveSpeed(4 + Math.random() * 2, 0)
     this.isPossibleExit = true
     this.isExitToReset = true
-    this.attack = 17
-
-    this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, 4, -1)
-    this.dieSound = soundFile.enemyDie.enemyDieSpaceRocket
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceRocket, this.height, this.height, 3)
-  }
-
-  display () {
-    super.display()
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceRocket, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceRocket, this.height, this.height, 2))
   }
 }
 
 class SpaceEnemyCar extends EnemyData {
   constructor () {
     super()
-    this.image = imageFile.enemy.spaceEnemy
-    this.imageData = imageDataInfo.spaceEnemy.greenCar
-    this.width = this.imageData.width
-    this.height = this.imageData.height
-
-    this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, 2, -1)
-    this.dieSound = soundFile.enemyDie.enemyDieSpaceCar
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceCar, this.height, this.height, 3)
+    this.setEnemyStat(4800, 48, 14)
+    this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.greenCar, 4)
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceCar, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceCar, this.height, this.height, 2))
     this.state = 'normal'
     this.boostCount = 0 // 자동차의 속도를 올리기 위한 변수
     this.isPossibleExit = true
     this.isExitToReset = true
-    this.hp = 5600
-    this.score = 56
-    this.attack = 12
   }
 
   processMove () {
@@ -3635,7 +3664,7 @@ class SpaceEnemyCar extends EnemyData {
         this.enimation.elapsedFrame = 0
         this.enimation.display(this.x, this.y) // 에니메이션은 출력되지만, 로직이 처리되지 않아 다음 에니메이션이 진행되지 않음.
       } else {
-        this.enimation.displayAndProcess(this.x, this.y)
+        this.enimation.display(this.x, this.y)
       }
     }
   }
@@ -3644,17 +3673,10 @@ class SpaceEnemyCar extends EnemyData {
 class SpaceEnemySquare extends EnemyData {
   constructor () {
     super()
-    this.image = imageFile.enemy.spaceEnemy
-    this.imageData = imageDataInfo.spaceEnemy.blueSqaure
-    this.width = this.imageData.width
-    this.height = this.imageData.height
+    this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.blueSqaure, 4)
+    this.setEnemyStat(5000, 50, 16)
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceSquare, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceSquare, this.width, this.height, 2))
     this.isPossibleExit = false
-    this.hp = 6000
-    this.score = 60
-    this.attack = 16
-    this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, 6, -1)
-    this.dieSound = soundFile.enemyDie.enemyDieSpaceSquare
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceSquare, this.width, this.height, 3)
     this.MOVE_STOP_FRAME = 180
     this.moveDelay = new DelayData(240)
     this.moveDelay.count = this.moveDelay.delay
@@ -3688,20 +3710,11 @@ class SpaceEnemySquare extends EnemyData {
 class SpaceEnemyAttack extends EnemyData {
   constructor () {
     super()
-    this.image = imageFile.enemy.spaceEnemy
-    this.imageData = imageDataInfo.spaceEnemy.blueAttack
-    this.width = this.imageData.width
-    this.height = this.imageData.height
-
-    this.hp = 7900
-    this.score = 79
-    this.attack = 11
+    this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.blueAttack, 4)
+    this.setEnemyStat(4800, 48, 14)
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceSquare, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceAttack, this.width, this.height, 2))
     this.boostCount = 0
     this.moveSpeedY = Math.random() * 2 - 1
-
-    this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, 8, -1)
-    this.dieSound = soundFile.enemyDie.enemyDieSpaceSquare
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceAttack, this.width, this.height, 3)
   }
 
   processMove () {
@@ -3727,23 +3740,17 @@ class SpaceEnemyAttack extends EnemyData {
 class SpaceEnemyEnergy extends EnemyData {
   constructor () {
     super()
-    this.autoSetImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.purpleEnergy)
-    this.attack = 16
-    this.hp = 8400
-    this.score = 84
+    this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.purpleEnergy, 4)
+    this.setEnemyStat(6000, 60, 16)
+    this.setMoveSpeed(4, 4)
+    this.setMoveDirection()
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceEnergy, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceEnergy, this.width, this.height, 2))
     this.boostCount = 0
-    this.moveDelay = new DelayData(180)
-    this.moveDelay.count = 240
+    this.moveDelay = new DelayData(180) // 이 값이 180이 아니면, 오류가 발생할 수 있음. 속도를 계산하는 데 알고리즘상의 문제가 있음.
+    this.moveDelay.count = this.moveDelay.delay // 딜레이 즉시 발동을 위한 카운트 강제 증가
     this.state = 'normal'
-    this.moveDirectionX = 'left'
-    this.moveSpeedX = 4
-    this.moveSpeedY = 4
     this.baseSpeedX = this.moveSpeedX
     this.baseSpeedY = this.moveSpeedY
-    this.setMoveDirection()
-
-    this.dieSound = soundFile.enemyDie.enemyDieSpaceEnergy
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceEnergy, this.width, this.height, 3)
   }
 
   processMove () {
@@ -3759,22 +3766,16 @@ class SpaceEnemyEnergy extends EnemyData {
       this.moveSpeedX = (Math.random() * this.baseSpeedX * 2) - (this.baseSpeedX)
       this.moveSpeedY = (Math.random() * this.baseSpeedY * 2) - (this.baseSpeedY)
 
-      // 생성한지 20초 이내라면 화면 바깥을 넘어갔다면, 화면 안쪽으로 오도록 유도한다.
-      if (this.elapsedFrame <= 1800) {
-        if (this.x < 40) {
-          this.moveSpeedX = Math.abs(this.moveSpeedX)
-        } else if (this.x > graphicSystem.CANVAS_WIDTH - 40) {
-          this.moveSpeedX = -Math.abs(this.moveSpeedX)
-        }
+      if (this.x < 40) {
+        this.moveSpeedX = Math.abs(this.moveSpeedX)
+      } else if (this.x > graphicSystem.CANVAS_WIDTH - 40) {
+        this.moveSpeedX = -Math.abs(this.moveSpeedX)
+      }
 
-        if (this.y < 40) {
-          this.moveSpeedY = Math.abs(this.moveSpeedX)
-        } else if (this.y > graphicSystem.CANVAS_HEIGHT - 40) {
-          this.moveSpeedY = -Math.abs(this.moveSpeedY)
-        }
-      } else {
-        this.speedX = 5
-        this.speedY = 0
+      if (this.y < 40) {
+        this.moveSpeedY = Math.abs(this.moveSpeedX)
+      } else if (this.y > graphicSystem.CANVAS_HEIGHT - 40) {
+        this.moveSpeedY = -Math.abs(this.moveSpeedY)
       }
     }
 
@@ -3785,18 +3786,14 @@ class SpaceEnemyEnergy extends EnemyData {
 class SpaceEnemySusong extends EnemyData {
   constructor () {
     super()
-    this.autoSetImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.susong, 2)
-    this.attack = 20
-    this.hp = 30000
-    this.score = 300
+    this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.susong, 3)
+    this.setEnemyStat(20000, 200, 20)
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceSusong, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceSusong, this.width / 2, this.width / 2, 2, 2))
     this.boostCount = 0
     this.moveDelay = new DelayData(240)
     this.state = 'move'
     this.moveDirectionX = 'left'
     this.isExitToReset = true
-
-    this.dieSound = soundFile.enemyDie.enemyDieSpaceSusong
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceSusong, this.width / 2, this.width / 2, 2, 4)
   }
 
   processMove () {
@@ -3824,10 +3821,10 @@ class SpaceEnemySusong extends EnemyData {
     if (this.state === 'move' || this.boostCount >= 0) {
       if (this.moveDirectionX === 'right') {
         this.enimation.flip = 1
-        this.enimation.displayAndProcess(this.x, this.y)
+        this.enimation.display(this.x, this.y)
       } else {
         this.enimation.flip = 0
-        this.enimation.displayAndProcess(this.x, this.y)
+        this.enimation.display(this.x, this.y)
       }
     } else {
       if (this.moveDirectionX === 'right') {
@@ -3850,17 +3847,14 @@ class SpaceEnemySusong extends EnemyData {
 class SpaceEnemyGamjigi extends EnemyData {
   constructor () {
     super()
-    this.autoSetImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.gamjigi)
-    this.hp = 16800
-    this.score = 168
+    this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.gamjigi)
+    this.setEnemyStat(16000, 160, 16)
+    this.setMoveDirection()
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceGamjigi, new CustomEffectData(imageFile.enemyDie.enemyDieSpaceGamjigi, imageDataInfo.enemyDieSpace.enemyDieSpaceGamjigi, this.width, this.height, 3))
+    this.moveDelay = new DelayData(300)
     this.boostCount = 0
     this.degree = 0
-    this.attack = 16
-    this.moveDelay = new DelayData(300)
-    this.setMoveDirection()
     this.state = 'chase'
-    this.dieSound = soundFile.enemyDie.enemyDieSpaceGamjigi
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieSpaceGamjigi, imageDataInfo.enemyDieSpace.enemyDieSpaceGamjigi, this.width, this.height, 3)
   }
 
   processMove () {
@@ -3933,17 +3927,12 @@ class SpaceEnemyGamjigi extends EnemyData {
 class SpaceEnemyComet extends EnemyData {
   constructor () {
     super()
-    this.autoSetImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.comet, 2)
-    this.dieSound = soundFile.enemyDie.enemyDieSpaceComet
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieSpaceComet, imageDataInfo.enemyDieSpace.enemyDieSpaceComet, this.width, this.height, 4)
-    this.hp = 3200
-    this.score = 32
-    this.attack = 10
+    this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.comet, 2)
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceComet, new CustomEffectData(imageFile.enemyDie.enemyDieSpaceComet, imageDataInfo.enemyDieSpace.enemyDieSpaceComet, this.width, this.height, 4))
+    this.setEnemyStat(2800, 28, 4)
+    this.setMoveSpeed(1, Math.random() * 4 + 2)
     this.boostCount = 0
-    this.moveSpeedX = 1
-    this.moveSpeedY = Math.random() * 4 + 2
     this.isExitToReset = true
-
     this.moveDirectionY = Math.random() * 1 < 0.5 ? 'up' : 'down'
   }
 
@@ -3959,26 +3948,12 @@ class SpaceEnemyComet extends EnemyData {
 }
 
 class SpaceEnemyMeteorite extends EnemyData {
-  /**
-   * @param {*} option 옵션: 운석번호 (1 ~ 5)
-   */
-  constructor (option) {
+  constructor () {
     super()
 
-    let meteoriteNumber = 0
-    if (option.length >= 1 && option[0] >= 1 && option[0] <= 5) {
-      meteoriteNumber = option[0]
-    }
-
-    this.meteoriteNumber = meteoriteNumber
-    this.image = imageFile.enemy.spaceEnemy
-    this.isExitToReset = true
-
-    const widthList = [50, 50, 50, 70, 80]
-    const heightList = [50, 50, 50, 50, 45]
-    const hpList = [12000, 12800, 15600, 18000, 18800]
-    const attackList = [15, 16, 17, 18, 18]
-    const scoreList = [120, 128, 156, 180, 188]
+    const hpList = [12000, 12400, 12800, 13200, 13600]
+    const attackList = [16, 16, 16, 18, 18]
+    const scoreList = [120, 124, 128, 132, 136]
     const imageDataList = [
       imageDataInfo.spaceEnemy.meteorite1,
       imageDataInfo.spaceEnemy.meteorite2,
@@ -4000,20 +3975,20 @@ class SpaceEnemyMeteorite extends EnemyData {
       imageDataInfo.enemyDieMeteorite.enemyDieMeteoriteWhite,
       imageDataInfo.enemyDieMeteorite.enemyDieMeteoriteBlack,
     ]
-    
-    this.width = widthList[meteoriteNumber]
-    this.height = heightList[meteoriteNumber]
-    this.hp = hpList[meteoriteNumber]
-    this.attack = attackList[meteoriteNumber]
-    this.score = scoreList[meteoriteNumber]
-    this.imageData = imageDataList[meteoriteNumber]
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieMeteorite, dieEffectImageDataList[meteoriteNumber], this.width, this.height, 4)
-    this.dieSound = dieSoundList[meteoriteNumber]
 
+    // 운석 번호 설정(운석 번호에 따라 스탯과 이미지가 달라짐)
+    let meteoriteNumber = Math.floor(Math.random() * 5)
+    
+    this.setEnemyStat(hpList[meteoriteNumber], scoreList[meteoriteNumber], attackList[meteoriteNumber])
+    this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataList[meteoriteNumber])
+    this.setDieEffect(dieSoundList[meteoriteNumber], new CustomEffectData(imageFile.enemyDie.enemyDieMeteorite, dieEffectImageDataList[meteoriteNumber], this.width, this.height, 4))
     this.setMoveDirection()
+
     this.speedX = Math.random() * 4 - 2
     this.speedY = Math.random() * 4 - 2
     this.state = Math.random() * 1 < 0.5 ? 'rotate' : 'normal'
+
+    this.isExitToReset = true
   }
 
   processMove () {
@@ -4032,24 +4007,25 @@ class SpaceEnemyMeteorite extends EnemyData {
 class SpaceEnemyBoss extends EnemyData {
   constructor () {
     super()
-    this.image = imageFile.enemy.spaceEnemy
-    this.imageData = imageDataInfo.spaceEnemy.blueSqaure
+    
+    this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.bossSqaure, 6)
+    // 보스의 크기는 300x300, 이미지 자동설정 후에 크기를 설정하는 이유는, autoImageData함수가 크기를 자동으로 지정해두기 때문
     this.width = 300
     this.height = 300
-    this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, 2, -1, this.width, this.height)
+    this.setEnemyStat(1200000, 6000, 40)
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceCar, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceCar, this.width, this.height, 1, 12))
+
+    // 따라서 에니메이션의 출력 사이즈도 변경
+    this.enimation.setOutputSize(this.width, this.height)
+
     this.isPossibleExit = false
-    this.hp = 1260000
-    this.score = 6300
-    this.attack = 40
     this.MOVE_STOP_FRAME = 90
     this.moveDelay = new DelayData(90)
     this.finishPositionType = 'rightup'
     this.state = 'normal'
     this.setMoveDirection() // 이동 방향 설정 안함
     this.shakeTime = 0
-
-    this.dieSound = soundFile.enemyDie.enemyDieSpaceCar
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceCar, this.width, this.height, 1, 12)
+    this.dieAfterDeleteDelay = new DelayData(120)
   }
 
   processMove () {
@@ -4199,23 +4175,27 @@ class SpaceEnemyBoss extends EnemyData {
 
     super.processMove()
   }
+
+  processDieAfter () {
+    super.processDieAfter()
+    if (this.isDied && this.dieAfterDeleteDelay.divCheck(10)) {
+      soundSystem.play(this.dieSound)
+      fieldState.createEffectCustomObject(this.dieEffect, this.x + Math.random() * 40 - 80, this.y + Math.random() * 40 - 80)
+    }
+  }
+
+  display () {
+    if (!this.isDied) {
+      super.display()
+    }
+  }
 }
 
 class MeteoriteEnemyClass1 extends EnemyData {
   constructor () {
     super()
-
     // 제일 약한 소형 운석
-    // meteorite enemy base hp: 42000 / 20 = 2100
-    this.image = imageFile.enemy.meteoriteEnemy
-    this.width = 50
-    this.height = 50
-    this.moveSpeedX = (Math.random() * 8) - 4
-    this.moveSpeedY = (Math.random() * 8) - 4
-    this.isExitToReset = true
-    this.attack = 16
-    this.degree = Math.floor(Math.random() * 360)
-
+    const MAX_NUM = 5
     const imageDataTable = [
       imageDataInfo.meteoriteEnemy.class11,
       imageDataInfo.meteoriteEnemy.class12,
@@ -4223,8 +4203,8 @@ class MeteoriteEnemyClass1 extends EnemyData {
       imageDataInfo.meteoriteEnemy.class14,
       imageDataInfo.meteoriteEnemy.class15
     ]
-    const hpTable = [2100, 2300, 2500, 2700, 3000]
-    const scoreTable = [21, 23, 25, 27, 30]
+    const hpTable = [2200, 2400, 2600, 2800, 3000]
+    const scoreTable = [22, 24, 26, 28, 30]
     const dieSoundList = [
       soundFile.enemyDie.enemyDieMeteorite1,
       soundFile.enemyDie.enemyDieMeteorite2,
@@ -4233,30 +4213,22 @@ class MeteoriteEnemyClass1 extends EnemyData {
       soundFile.enemyDie.enemyDieMeteorite5
     ]
 
-    // 운석의 클래스 번호를 지정함
-    this.meteoriteNumber = Math.floor(Math.random() * 5)
-    this.imageData = imageDataTable[this.meteoriteNumber]
-    this.hp = hpTable[this.meteoriteNumber]
-    this.score = scoreTable[this.meteoriteNumber]
-    this.dieSound = dieSoundList[this.meteoriteNumber]
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteorite1, this.width, this.height, 4)
+    let meteoriteNumber = Math.floor(Math.random() * MAX_NUM)
+    let imageNumber = Math.floor(Math.random() * MAX_NUM)
+    let dieSoundNumber = Math.floor(Math.random() * MAX_NUM)
+
+    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataTable[imageNumber])
+    this.setEnemyStat(hpTable[meteoriteNumber], scoreTable[meteoriteNumber], 12)
+    this.setDieEffect(dieSoundList[dieSoundNumber], new CustomEffectData(imageFile.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteorite1, this.width, this.height, 1))
+    this.setMoveSpeed((Math.random() * 8) - 4, (Math.random() * 8) - 4)
+    this.isExitToReset = true
+    this.degree = Math.floor(Math.random() * 360)
   }
 }
 
 class MeteoriteEnemyClass2 extends EnemyData {
   constructor () {
     super()
-
-    // 소형 운석
-    // meteorite enemy base hp: 42000 / 10 = 4200
-    this.image = imageFile.enemy.meteoriteEnemy
-    this.width = 50
-    this.height = 50
-    this.moveSpeedX = (Math.random() * 6) - 3
-    this.moveSpeedY = (Math.random() * 6) - 3
-    this.isExitToReset = true
-    this.attack = 18
-    this.degree = Math.floor(Math.random() * 360)
 
     const imageDataTable = [
       imageDataInfo.meteoriteEnemy.class21,
@@ -4265,8 +4237,8 @@ class MeteoriteEnemyClass2 extends EnemyData {
       imageDataInfo.meteoriteEnemy.class24,
       imageDataInfo.meteoriteEnemy.class25
     ]
-    const hpTable = [4200, 4500, 4800, 5400, 6000]
-    const scoreTable = [42, 45, 48, 54, 60]
+    const hpTable = [4400, 4600, 4800, 5000, 5200,]
+    const scoreTable = [44, 46, 48, 50, 52]
     const dieSoundList = [
       soundFile.enemyDie.enemyDieMeteorite1,
       soundFile.enemyDie.enemyDieMeteorite2,
@@ -4275,29 +4247,22 @@ class MeteoriteEnemyClass2 extends EnemyData {
       soundFile.enemyDie.enemyDieMeteorite5
     ]
 
-    this.meteoriteNumber = Math.floor(Math.random() * 5)
-    this.imageData = imageDataTable[this.meteoriteNumber]
-    this.hp = hpTable[this.meteoriteNumber]
-    this.score = scoreTable[this.meteoriteNumber]
-    this.dieSound = dieSoundList[this.meteoriteNumber]
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteorite2, this.width, this.height, 4)
+    let meteoriteNumber = Math.floor(Math.random() * MAX_NUM)
+    let imageNumber = Math.floor(Math.random() * MAX_NUM)
+    let dieSoundNumber = Math.floor(Math.random() * MAX_NUM)
+
+    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataTable[imageNumber])
+    this.setEnemyStat(hpTable[meteoriteNumber], scoreTable[meteoriteNumber], 12)
+    this.setDieEffect(dieSoundList[dieSoundNumber], new CustomEffectData(imageFile.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteorite2, this.width, this.height, 1))
+    this.setMoveSpeed((Math.random() * 8) - 4, (Math.random() * 8) - 4)
+    this.isExitToReset = true
+    this.degree = Math.floor(Math.random() * 360)
   }
 }
 
 class MeteoriteEnemyClass3 extends EnemyData {
   constructor () {
     super()
-
-    // 강한 소형 운석
-    // meteorite enemy base hp: 42000 / 5 = 8400
-    this.image = imageFile.enemy.meteoriteEnemy
-    this.width = 50
-    this.height = 50
-    this.moveSpeedX = (Math.random() * 4) - 2
-    this.moveSpeedY = (Math.random() * 4) - 2
-    this.isExitToReset = true
-    this.attack = 20
-    this.degree = Math.floor(Math.random() * 360)
 
     const imageDataTable = [
       imageDataInfo.meteoriteEnemy.class31,
@@ -4306,8 +4271,8 @@ class MeteoriteEnemyClass3 extends EnemyData {
       imageDataInfo.meteoriteEnemy.class34,
       imageDataInfo.meteoriteEnemy.class35
     ]
-    const hpTable = [8400, 8600, 9000, 9800, 11000]
-    const scoreTable = [84, 86, 90, 98, 110]
+    const hpTable = [8800, 9000, 9200, 9400, 9600]
+    const scoreTable = [88, 90, 92, 94, 96]
     const dieSoundList = [
       soundFile.enemyDie.enemyDieMeteorite1,
       soundFile.enemyDie.enemyDieMeteorite2,
@@ -4316,30 +4281,23 @@ class MeteoriteEnemyClass3 extends EnemyData {
       soundFile.enemyDie.enemyDieMeteorite5
     ]
 
-    // 운석의 클래스 번호를 지정함
-    this.meteoriteNumber = Math.floor(Math.random() * 5)
-    this.imageData = imageDataTable[this.meteoriteNumber]
-    this.hp = hpTable[this.meteoriteNumber]
-    this.score = scoreTable[this.meteoriteNumber]
-    this.dieSound = dieSoundList[this.meteoriteNumber]
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteorite3, this.width, this.height, 4)
+    let meteoriteNumber = Math.floor(Math.random() * MAX_NUM)
+    let imageNumber = Math.floor(Math.random() * MAX_NUM)
+    let dieSoundNumber = Math.floor(Math.random() * MAX_NUM)
+
+    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataTable[imageNumber])
+    this.setEnemyStat(hpTable[meteoriteNumber], scoreTable[meteoriteNumber], 12)
+    this.setDieEffect(dieSoundList[dieSoundNumber], new CustomEffectData(imageFile.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteorite3, this.width, this.height, 1))
+    this.setMoveSpeed((Math.random() * 8) - 4, (Math.random() * 8) - 4)
+    this.isExitToReset = true
+    this.degree = Math.floor(Math.random() * 360)
   }
 }
 
-class MeteoriteEnemyClass123Big extends EnemyData {
+class MeteoriteEnemyClass4 extends EnemyData {
   constructor () {
     super()
-
-    // 강한 소형 운석
-    // meteorite enemy base hp: 8400 ~ 16800
-    this.image = imageFile.enemy.meteoriteEnemy
-    this.width = 100
-    this.height = 100
-    this.moveSpeedX = (Math.random() * 3) - 6
-    this.moveSpeedY = (Math.random() * 3) - 6
-    this.isExitToReset = true
-    this.attack = 20
-
+    const MAX_NUM = 5
     const imageDataTable = [
       imageDataInfo.meteoriteEnemy.class11,
       imageDataInfo.meteoriteEnemy.class13,
@@ -4351,8 +4309,8 @@ class MeteoriteEnemyClass123Big extends EnemyData {
       imageDataInfo.meteoriteEnemy.class33,
       imageDataInfo.meteoriteEnemy.class35,
     ]
-    const hpTable = [16800, 17200, 18000, 18800, 19200]
-    const scoreTable = [168, 172, 180, 188, 192]
+    const hpTable = [20000, 21200, 22400, 23600, 24000]
+    const scoreTable = [200, 212, 224, 236, 240]
     const dieSoundList = [
       soundFile.enemyDie.enemyDieMeteorite1,
       soundFile.enemyDie.enemyDieMeteorite2,
@@ -4360,17 +4318,23 @@ class MeteoriteEnemyClass123Big extends EnemyData {
       soundFile.enemyDie.enemyDieMeteorite4,
       soundFile.enemyDie.enemyDieMeteorite5
     ]
+    const dieEffectList = [
+      imageDataInfo.enemyDieMeteorite.enemyDieMeteorite1,
+      imageDataInfo.enemyDieMeteorite.enemyDieMeteorite2,
+      imageDataInfo.enemyDieMeteorite.enemyDieMeteorite3
+    ]
 
-    // 운석의 클래스 번호를 지정함
-    this.classNumber = Math.floor(Math.random() * 5)
-    this.hp = hpTable[this.classNumber]
-    this.score = scoreTable[this.classNumber]
+    let meteoriteNumber = Math.floor(Math.random() * MAX_NUM)
+    let imageNumber = Math.floor(Math.random() * imageDataTable.length)
+    let dieSoundNumber = Math.floor(Math.random() * MAX_NUM)
+    let dieEffectNumber = Math.floor(Math.random() * dieEffectList.length)
 
-    // 운석의 이미지 번호를 지정함
-    const imageNumber = Math.floor(Math.random() * imageDataTable.length)
-    const soundNumber = Math.floor(Math.random() * dieSoundList.length)
-    this.imageData = imageDataTable[imageNumber]
-    this.dieSound = dieSoundList[soundNumber]
+    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataTable[imageNumber])
+    this.setEnemyStat(hpTable[meteoriteNumber], scoreTable[meteoriteNumber], 12)
+    this.setDieEffect(dieSoundList[dieSoundNumber], new CustomEffectData(imageFile.enemyDie.enemyDieMeteorite, dieEffectList[dieEffectNumber], this.width, this.height, 1))
+    this.setMoveSpeed((Math.random() * 8) - 4, (Math.random() * 8) - 4)
+    this.isExitToReset = true
+    this.degree = Math.floor(Math.random() * 360)
 
   }  
 }
@@ -4384,33 +4348,17 @@ class MeteoriteEnemyWhiteMeteo extends EnemyData {
 
   constructor () {
     super()
-
-    // 중형 운석
-    // meteorite enemy base hp: 12000 (28% of 42000)
-    this.image = imageFile.enemy.meteoriteEnemy
-    this.width = 70
-    this.height = 50
-    this.attack = 22
-    this.moveSpeedX = (Math.random() * 2) - 1
-    this.moveSpeedY = (Math.random() * 2) - 1
-    this.maxMoveSpeedX = Math.random() * 3 + 1
-    this.maxMoveSpeedY = Math.random() * 3 + 1
-    this.baseMoveSpeedX = this.moveSpeedX
-    this.baseMoveSpeedY = this.moveSpeedY
-    this.isExitToReset = true
-    this.moveDelay = new DelayData(300)
-    this.state = ''
-
-    let imageDataTable = [
+    const MAX_NUM = 5
+    const imageDataTable = [
       imageDataInfo.meteoriteEnemy.whiteMeteo1,
       imageDataInfo.meteoriteEnemy.whiteMeteo2,
       imageDataInfo.meteoriteEnemy.whiteMeteo3,
       imageDataInfo.meteoriteEnemy.whiteMeteo4,
       imageDataInfo.meteoriteEnemy.whiteMeteo5
     ]
-    let hpTable = [10800, 11600, 12000, 12500, 13000]
-    let scoreTable = [108, 116, 120, 125, 130]
-    let moveDelayTable = [300, 240, 120, 180, 24]
+    const hpTable = [12000, 12400, 12800, 13200, 14000]
+    const scoreTable = [120, 124, 128, 132, 140]
+    const moveDelayTable = [300, 240, 120, 180, 24]
     const dieSoundTable = [
       soundFile.enemyDie.enemyDieMeteorite1,
       soundFile.enemyDie.enemyDieMeteorite2,
@@ -4419,22 +4367,24 @@ class MeteoriteEnemyWhiteMeteo extends EnemyData {
       soundFile.enemyDie.enemyDieMeteorite5
     ]
 
-
-    // 이 운석 한정으로, 타입이 부여됨.
-    // this.typeNumber = Math.floor(Math.random() * 5)
-    this.typeNumber = 3
-    this.hp = hpTable[this.typeNumber]
-    this.score = scoreTable[this.typeNumber]
-    this.moveDelay.delay = moveDelayTable[this.typeNumber]
-
-    // 이미지 데이터는 랜덤으로 지정되고, 여기서 이미지를 처리한다.
-    this.imageNumber = Math.floor(Math.random() * 5)
-    this.imageData = imageDataTable[this.imageNumber]
-
+    let imageNumber = Math.floor(Math.random() * MAX_NUM)
+    let statNumber = Math.floor(Math.random() * MAX_NUM)
     let soundNumber = Math.floor(Math.random() * dieSoundTable.length)
-    this.dieSound = dieSoundTable[soundNumber]
 
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteoriteWhite, this.width, this.height, 4)
+    // 중형 운석
+    // meteorite enemy base hp: 12000 (28% of 42000)
+    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataTable[imageNumber])
+    this.setEnemyStat(hpTable[statNumber], scoreTable[statNumber], 16)
+    this.setMoveSpeed((Math.random() * 2) - 1, (Math.random() * 2) - 1)
+    this.setDieEffect(dieSoundTable[soundNumber], new CustomEffectData(imageFile.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteoriteWhite, this.width, this.height, 1))
+    this.maxMoveSpeedX = Math.random() * 3 + 1
+    this.maxMoveSpeedY = Math.random() * 3 + 1
+    this.baseMoveSpeedX = this.moveSpeedX
+    this.baseMoveSpeedY = this.moveSpeedY
+    this.isExitToReset = true
+    this.moveDelay = new DelayData(300)
+    this.moveDelay.delay = moveDelayTable[statNumber]
+    this.state = ''
   }
 
   processMove () {
@@ -4727,40 +4677,25 @@ class MeteoriteEnemyBlackMeteo extends MeteoriteEnemyWhiteMeteo {
     // 운석 알고리즘이 whiteMeteo랑 동일하기 때문에, 해당 클래스를 상속받았습니다.
     // whiteMeteo랑 다른점은, 체력, 점수, 이미지 뿐입니다.
     super ()
-    // 중형 운석
-    // meteorite enemy base hp: 16800 (40% of 42000)
-    this.image = imageFile.enemy.meteoriteEnemy
-    this.width = 80
-    this.height = 45
-    this.attack = 22
-    this.state = ''
-
-    let imageDataTable = [
+    const MAX_NUM = 5
+    const imageDataTable = [
       imageDataInfo.meteoriteEnemy.blackMeteo1,
       imageDataInfo.meteoriteEnemy.blackMeteo2,
       imageDataInfo.meteoriteEnemy.blackMeteo3,
       imageDataInfo.meteoriteEnemy.blackMeteo4,
       imageDataInfo.meteoriteEnemy.blackMeteo5
     ]
-    let hpTable = [16800, 17700, 18800, 19900, 20000]
-    let scoreTable = [168, 177, 188, 199, 200]
-    let moveDelayTable = [300, 240, 120, 180, 24]
+    const hpTable = [14000, 14400, 14800, 15600, 16000]
+    const scoreTable = [140, 144, 148, 156, 160]
+    const moveDelayTable = [300, 240, 120, 180, 24]
 
-    // 이 운석 한정으로, 타입이 부여됨.
-    // whiteMeteo랑 다른 스탯들은 다시 대입해주어서 값을 갱신해야 합니다.
-    this.typeNumber = Math.floor(Math.random() * 5)
-    this.hp = hpTable[this.typeNumber]
-    this.score = scoreTable[this.typeNumber]
-    this.moveDelay.delay = moveDelayTable[this.typeNumber]
-
-    // 이미지 데이터는 랜덤으로 지정되고, 여기서 이미지를 처리한다.
-    this.imageNumber = Math.floor(Math.random() * 5)
-    this.imageData = imageDataTable[this.imageNumber]
-
+    let imageNumber = Math.floor(Math.random() * MAX_NUM)
+    let statNumber = Math.floor(Math.random() * MAX_NUM)
+    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataTable[imageNumber])
+    this.setEnemyStat(hpTable[statNumber], scoreTable[statNumber], 16)
     this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteoriteBlack, this.width, this.height, 4)
-    
-    // 참고로 사운드는 아까 상속받으면서 자동으로 설정되었으므로 여기서 다시 설정할 필요가 없습니다.
-
+    this.typeNumber = statNumber
+    this.moveDelay.delay = moveDelayTable[this.typeNumber]
   }
 }
 
@@ -4769,24 +4704,11 @@ class MeteoriteEnemyBomb extends EnemyData {
 
   constructor () {
     super()
-    // 폭발 운석
-    // hp 21000
-
-    this.hp = 21000
-    this.attack = 20
-    this.width = 60
-    this.height = 60
-    this.score = 210
-    this.autoSetImageData(imageFile.enemy.meteoriteEnemy, imageDataInfo.meteoriteEnemy.bomb, 4)
+    this.setEnemyStat(20000, 200, 20)
+    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataInfo.meteoriteEnemy.bomb)
+    this.setMoveSpeed(Math.random() * 3, Math.random() * 3)
     this.isExitToReset = true
-
-    this.moveSpeedX = Math.random() * 3
-    this.moveSpeedY = Math.random() * 3
     this.dieSound = soundFile.enemyDie.enemyDieMeteoriteBomb
-  }
-
-  process () {
-    super.process()
   }
 
   processDie () {
@@ -4804,7 +4726,15 @@ class MeteoriteEnemyBomb extends EnemyData {
 }
 
 class MeteoriteEnemyBombBig extends MeteoriteEnemyBomb {
+  constructor () {
+    super()
+    this.setEnemyStat(40000, 400, 20)
+    this.width = 120
+    this.height = 120
 
+    // 크기 수정에 따른 에니메이션 크기 수정
+    this.enimation.setOutputSize(this.width, this.height)
+  }
 }
 
 class EnemyBulletMeteoriteBomb extends EnemyBulletData {
@@ -4861,26 +4791,21 @@ class MeteoriteEnemyStone extends EnemyData {
 
   constructor () {
     super()
-    // 대형 운석
-    
-    this.hp = 42000
-    this.attack = 24
-    this.score = 420
-    this.setRandomSpeed(2, 2)
-    this.width = 80
-    this.height = 80
-    this.image = imageFile.enemy.meteoriteEnemy
-    this.isExitToReset = true
-    
     const imageDataList = [
       imageDataInfo.meteoriteEnemy.stoneBlack,
       imageDataInfo.meteoriteEnemy.stoneBrown,
       imageDataInfo.meteoriteEnemy.stoneGreen
     ]
-    let imageDataNumber = Math.floor(Math.random() * imageDataList.length)
+    let imageNumber = Math.floor(Math.random() * imageDataList.length)
     this.stoneType = imageDataNumber // 돌 타입 설정(이미지 차이만 있음.)
 
-    this.imageData = imageDataList[imageDataNumber]
+    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataList[imageNumber])
+    this.setEnemyStat(40000, 400, 20)
+    this.setRandomSpeed(2, 2)
+    this.width = 80
+    this.height = 80
+    this.image = 
+    this.isExitToReset = true
     this.dieSound = soundFile.enemyDie.enemyDieSpaceRocket
   }
 
@@ -4901,18 +4826,6 @@ class MeteoriteEnemyStone extends EnemyData {
 class MeteoriteEnemyStonePiece extends EnemyData {
   constructor (option = []) {
     super()
-
-    this.hp = 4200
-    this.attack = 16
-    this.score = 42
-    this.setRandomSpeed(4, 4)
-    this.width = 40
-    this.height = 40
-    this.image = imageFile.enemy.meteoriteEnemy
-    this.isExitToReset = true
-    this.dieEffect = new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceSquare, this.width, this.height, 4)
-    this.dieSound = soundFile.enemyDie.enemyDieSpaceSmall
-
     const imageDataList = [
       [
         imageDataInfo.meteoriteEnemy.stoneBlackPiece1,
@@ -4938,8 +4851,10 @@ class MeteoriteEnemyStonePiece extends EnemyData {
     this.stoneType = option.length > 0 ? option[0] : MeteoriteEnemyStone.TYPE_STONE_BLACK
     this.pieceNumber = option.length > 1 ? option[1] : 0
 
-    // 조각은 한 종류당 4개입니다. 그래서 stoneType에 4를 곱하고 pieceNumber를 더한 값의 이미지리스트데이터를 사용합니다.
-    this.imageData = imageDataList[this.stoneType][this.pieceNumber]
+    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataList[this.stoneType][this.pieceNumber])
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceSmall, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceSquare, this.width, this.height, 1))
+    this.setEnemyStat(4000, 40, 10)
+    this.setRandomSpeed(4, 4)
 
     // pieceNumber에 따라 이동 방향이 다릅니다.
     // 0: 왼쪽 위, 1: 오른쪽 위, 2: 오른쪽 아래, 3: 왼쪽 아래
@@ -4985,7 +4900,7 @@ class Donggeurami extends EnemyData {
 export class RoundData {
   constructor () {
     /** (해당 라운드를 플레이 하기 위한) 필요 레벨, 필요 레벨 미만은 입장 불가 */ this.requireLevel = 0
-    /** (해당 라운드를 원할하게 플레이 할 수 있는) 권장 공격력, 입장은 상관 없음 */ this.recommandAttack = 0
+    /** (해당 라운드를 원할하게 플레이 할 수 있는) 권장 공격력, 입장은 상관 없음 */ this.recommandPower = 0
     /** 라운드 값을 텍스트로 표시 (예: 1-1), 영어와 숫자만 사용 가능 */ this.roundText = 'TEST'
     /** 라운드 이름, text.js에서 값을 가져와서 입력하세요. */ this.roundName = stringText.dataRoundName.test
     /** 라운드 종료 시간(이 시간이 되면 클리어), 단위: 초 */ this.finishTime = 999
@@ -5011,6 +4926,24 @@ export class RoundData {
     /** 추가 시간, 현재 시간이 일시 정지된 시점에서 사용됨 */ this.plusTime = 0
     /** 추가 시간 프레임 */ this.plusTimeFrame = 0
     
+    /** 
+     * 현재 있는 보스 
+     * @type {FieldData}
+     */ 
+    this.currentBoss = null
+
+    /** 
+     * 보스의 데이터 
+     * @type {{enemyId: number, time: number, created: boolean}[]} 
+     */ this.bossData = []
+    /** 보스 모드(적용될 경우 적이 다 사라질때까지 시간이 멈춤) */ this.bossMode = false
+    /** 보스전 음악, 설정되지 않을경우 필드음악이 계속 재생됨.(음악이 꺼지진 않음.) */ this.bossMusic = null
+
+    /** 모든 페이즈가 끝나는 시간 (적 전부 죽었는지 확인) */ this.phaseEnd = 0
+  }
+
+  addBossData (enemyId, time) {
+    this.bossData.push({enemyId: enemyId, time: time, created: false})
   }
 
   /**
@@ -5030,88 +4963,147 @@ export class RoundData {
 
   }
 
-  display () {
+  displayBackground () {
     // 배경화면 이미지 출력 및 스크롤 효과, 배경이 없으면 아무것도 출력 안함.
-    if (this.backgroundImage) {
-      let image = this.backgroundImage
-      let imageWidth = this.backgroundImage.width
-      let imageHeight = this.backgroundImage.height
-      let canvasWidth = graphicSystem.CANVAS_WIDTH
-      let canvasHeight = graphicSystem.CANVAS_HEIGHT
-      let imageX = this.backgroundX
-      let imageY = this.backgroundY
+    if (this.backgroundImage == null) return
 
-      if (imageX === 0 && imageY === 0) {
-        // 백그라운드의 좌표가 (0, 0) 일 때
-        // 참고: 이미지 크기를 전부 출력하는것이 아닌, 캔버스의 크기로만 출력됩니다.
-        // 캔버스보다 이미지가 작다면 나머지 부분은 그려지지 않습니다.
-        graphicSystem.imageDisplay(image, 0, 0, canvasWidth, canvasHeight, imageX, imageY, canvasWidth, canvasHeight)
-      } else if (imageX !== 0 && imageY === 0) {
-        // x축 좌표가 0이 아니고 y축 좌표가 0일 때 (수평 스크롤 포함)
-        // 만약 x축과 출력길이가 이미지 길이를 초과하면 배경을 2번에 나누어 출력됩니다.
-        if (imageX + canvasWidth >= imageWidth) {
-          let screenAWidth = imageWidth - imageX
-          let screenBWidth = canvasWidth - screenAWidth
-          graphicSystem.imageDisplay(image, imageX, 0, screenAWidth, canvasHeight, 0, 0, screenAWidth, canvasHeight)
-          graphicSystem.imageDisplay(image, 0, 0, screenBWidth, canvasHeight, screenAWidth, 0, screenBWidth, canvasHeight)
-        } else {
-          // 출력길이가 초과하지 않는다면, 좌표에 맞게 그대로 출력
-          graphicSystem.imageDisplay(image, imageX, imageY, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight)
-        }
-      } else if (imageX === 0 && imageY !== 0) {
-        // y축 좌표가 0이 아니고 x축 좌표는 0일 때 (수직 스크롤 포함)
-        // 스크롤 원리는 x축과 동일하다.
-        if (imageY + canvasHeight >= imageHeight) {
-          let screenAHeight = imageHeight - imageY
-          let screenBHeight = canvasHeight - screenAHeight
-          graphicSystem.imageDisplay(image, 0, imageY, canvasWidth, screenAHeight, 0, 0, canvasWidth, screenAHeight)
-          graphicSystem.imageDisplay(image, 0, 0, canvasWidth, screenBHeight, 0, screenAHeight, canvasWidth, screenBHeight)
-        } else {
-          // 출력길이가 초과하지 않는다면, 좌표에 맞게 그대로 출력
-          graphicSystem.imageDisplay(image, imageX, imageY, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight)
-        }
+    let image = this.backgroundImage
+    let imageWidth = this.backgroundImage.width
+    let imageHeight = this.backgroundImage.height
+    let canvasWidth = graphicSystem.CANVAS_WIDTH
+    let canvasHeight = graphicSystem.CANVAS_HEIGHT
+    let imageX = this.backgroundX
+    let imageY = this.backgroundY
+
+    if (imageX === 0 && imageY === 0) {
+      // 백그라운드의 좌표가 (0, 0) 일 때
+      // 참고: 이미지 크기를 전부 출력하는것이 아닌, 캔버스의 크기로만 출력됩니다.
+      // 캔버스보다 이미지가 작다면 나머지 부분은 그려지지 않습니다.
+      graphicSystem.imageDisplay(image, 0, 0, canvasWidth, canvasHeight, imageX, imageY, canvasWidth, canvasHeight)
+    } else if (imageX !== 0 && imageY === 0) {
+      // x축 좌표가 0이 아니고 y축 좌표가 0일 때 (수평 스크롤 포함)
+      // 만약 x축과 출력길이가 이미지 길이를 초과하면 배경을 2번에 나누어 출력됩니다.
+      if (imageX + canvasWidth >= imageWidth) {
+        let screenAWidth = imageWidth - imageX
+        let screenBWidth = canvasWidth - screenAWidth
+        graphicSystem.imageDisplay(image, imageX, 0, screenAWidth, canvasHeight, 0, 0, screenAWidth, canvasHeight)
+        graphicSystem.imageDisplay(image, 0, 0, screenBWidth, canvasHeight, screenAWidth, 0, screenBWidth, canvasHeight)
       } else {
-        // x축과 y축이 모두 0이 아닌경우, (수직 + 수평 스크롤)
-        // 만약 어느 축도 이미지의 길이를 초과하지 않았다면, 그대로 이미지를 출력합니다.
-        if (imageX + canvasWidth <= imageWidth && imageY + canvasHeight <= imageHeight) {
-          graphicSystem.imageDisplay(image, imageX, imageY, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight)
-        } else {
-          // 어느 쪽도 초과라면 4번에 나누어져 출력
-          let screenBaseWidth = imageWidth - imageX
-          let screenBaseHeight = imageHeight - imageY
-          let screenExtendWidth = canvasWidth - screenBaseWidth
-          let screenExtendHeight = canvasHeight - screenBaseHeight
+        // 출력길이가 초과하지 않는다면, 좌표에 맞게 그대로 출력
+        graphicSystem.imageDisplay(image, imageX, imageY, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight)
+      }
+    } else if (imageX === 0 && imageY !== 0) {
+      // y축 좌표가 0이 아니고 x축 좌표는 0일 때 (수직 스크롤 포함)
+      // 스크롤 원리는 x축과 동일하다.
+      if (imageY + canvasHeight >= imageHeight) {
+        let screenAHeight = imageHeight - imageY
+        let screenBHeight = canvasHeight - screenAHeight
+        graphicSystem.imageDisplay(image, 0, imageY, canvasWidth, screenAHeight, 0, 0, canvasWidth, screenAHeight)
+        graphicSystem.imageDisplay(image, 0, 0, canvasWidth, screenBHeight, 0, screenAHeight, canvasWidth, screenBHeight)
+      } else {
+        // 출력길이가 초과하지 않는다면, 좌표에 맞게 그대로 출력
+        graphicSystem.imageDisplay(image, imageX, imageY, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight)
+      }
+    } else {
+      // x축과 y축이 모두 0이 아닌경우, (수직 + 수평 스크롤)
+      // 만약 어느 축도 이미지의 길이를 초과하지 않았다면, 그대로 이미지를 출력합니다.
+      if (imageX + canvasWidth <= imageWidth && imageY + canvasHeight <= imageHeight) {
+        graphicSystem.imageDisplay(image, imageX, imageY, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight)
+      } else {
+        // 어느 쪽도 초과라면 4번에 나누어져 출력
+        let screenBaseWidth = imageWidth - imageX
+        let screenBaseHeight = imageHeight - imageY
+        let screenExtendWidth = canvasWidth - screenBaseWidth
+        let screenExtendHeight = canvasHeight - screenBaseHeight
 
-          // 오류 방지를 위해 이미지를 자르는 사이즈가 0이 되지 않도록 조건을 정한 후 출력
-          // 첫번째 기본 이미지
-          if (screenBaseWidth !== 0 || screenBaseHeight !== 0) {
-            graphicSystem.imageDisplay(image, imageX, imageY, screenBaseWidth, screenBaseHeight, 0, 0, screenBaseWidth, screenBaseHeight)
-          }
-
-          // 두번째 x축 이미지 (첫번째 이미지를 기준으로 X축의 다른 위치[이미지가 스크롤 하면서 잘린 지점])
-          if (imageX + canvasWidth >= imageWidth && screenBaseWidth !== 0) {
-            graphicSystem.imageDisplay(image, 0, imageY, screenExtendWidth, screenBaseHeight, screenBaseWidth, 0, screenExtendWidth, screenBaseHeight)
-          }
-
-          // 세번째 y축 이미지 (첫번째 이미지를 기준으로 Y축 다른 위치[이미지가 스크롤 하면서 잘린 지점])
-          if (imageY + canvasHeight >= imageHeight && screenBaseHeight !== 0) {
-            graphicSystem.imageDisplay(image, imageX, 0, screenBaseWidth, screenExtendHeight, 0, screenBaseHeight, screenBaseWidth, screenExtendHeight)
-          }
-
-          // 네번째 x, y축 이미지 (첫번째 이미지를 기준으로 대각선에 위치)
-          if (screenBaseWidth !== 0 && screenBaseHeight !== 0) {
-            graphicSystem.imageDisplay(image, 0, 0, screenExtendWidth, screenExtendHeight, screenBaseWidth, screenBaseHeight, screenExtendWidth, screenExtendHeight)
-          }
-
+        // 오류 방지를 위해 이미지를 자르는 사이즈가 0이 되지 않도록 조건을 정한 후 출력
+        // 첫번째 기본 이미지
+        if (screenBaseWidth !== 0 || screenBaseHeight !== 0) {
+          graphicSystem.imageDisplay(image, imageX, imageY, screenBaseWidth, screenBaseHeight, 0, 0, screenBaseWidth, screenBaseHeight)
         }
+
+        // 두번째 x축 이미지 (첫번째 이미지를 기준으로 X축의 다른 위치[이미지가 스크롤 하면서 잘린 지점])
+        if (imageX + canvasWidth >= imageWidth && screenBaseWidth !== 0) {
+          graphicSystem.imageDisplay(image, 0, imageY, screenExtendWidth, screenBaseHeight, screenBaseWidth, 0, screenExtendWidth, screenBaseHeight)
+        }
+
+        // 세번째 y축 이미지 (첫번째 이미지를 기준으로 Y축 다른 위치[이미지가 스크롤 하면서 잘린 지점])
+        if (imageY + canvasHeight >= imageHeight && screenBaseHeight !== 0) {
+          graphicSystem.imageDisplay(image, imageX, 0, screenBaseWidth, screenExtendHeight, 0, screenBaseHeight, screenBaseWidth, screenExtendHeight)
+        }
+
+        // 네번째 x, y축 이미지 (첫번째 이미지를 기준으로 대각선에 위치)
+        if (screenBaseWidth !== 0 && screenBaseHeight !== 0) {
+          graphicSystem.imageDisplay(image, 0, 0, screenExtendWidth, screenExtendHeight, screenBaseWidth, screenBaseHeight, screenExtendWidth, screenExtendHeight)
+        }
+
       }
     }
+  }
+
+  display () {
+    this.displayBackground()
+    this.displayBossHp()
+  }
+
+  displayBossHp () {
+    if (this.currentBoss == null) return
+
+    let percent = this.currentBoss.hp / this.currentBoss.hpMax
+    graphicSystem.setAlpha(0.7)
+    graphicSystem.fillRect(0, 0, graphicSystem.CANVAS_WIDTH, 20, 'lightgrey')
+    if (percent >= 0.2) {
+      graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'yellow', 'orange')
+    } else {
+      graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'purple', 'red')
+    }
+    graphicSystem.setAlpha(1)
+    graphicSystem.digitalFontDisplay('boss hp: ' + this.currentBoss.hp + '/' + this.currentBoss.hpMax, 0, 0)
   }
 
   process () {
     this.processTime()
     this.processRound()
     this.processBackground()
+    this.processBoss()
+    this.phaseEndEnemyNothing()
+  }
+
+  processBoss () {
+    for (let i = 0; i < this.bossData.length; i++) {
+      // 보스 등장 조건이 맞지 않는 경우 continue (보스는 정해진 시간에만 등장)
+      // 현재 보스모드이거나 보스가 이미 만들어졌다면 continue (즉 생성 안함.)
+      if (this.currentTime !== this.bossData[i].time || this.currentTimeFrame !== 0) continue
+      if (this.bossMode || this.bossData[i].created) continue
+
+      // 보스 생성
+      this.createBoss(this.bossData[i].enemyId)
+
+      // 이미 보스를 생성했기 때문에 중복 보스 생성 방지를 위해 해당 값을 true로 변경
+      this.bossData[i].created = true
+
+      // 보스 모드 적용 및 보스 음악 재생
+      this.bossMode = true
+      soundSystem.musicPlay(this.bossMusic)
+    }
+
+    // 보스가 죽은경우, 현재 보스를 null로 처리한다. (보스 삭제)
+    if (this.currentBoss != null && this.currentBoss.isDied) {
+      this.currentBoss = null
+    }
+
+    if (this.bossMode) {
+      // 보스모드인경우, 적이 한마리라도 남아있다면 시간이 멈춤
+      // 적이 모두 없다면 보스 모드가 해제, 그리고 게임 음악이 꺼짐 (다시 키려면, 트리거를 넣어야 함.)
+      if (this.enemyNothingCheck()) {
+        this.bossMode = false
+        this.currentTimePaused = false
+        this.currentBoss = null // 현재 보스 삭제
+        soundSystem.musicStop()
+      } else {
+        this.currentTimePaused = true
+      }
+    }
   }
 
   processBackground () {
@@ -5152,7 +5144,33 @@ export class RoundData {
         this.currentTime++
       }
     }
+  }
 
+  /**
+   * 시간 확인 함수 (적 생성 용도로 사용)
+   * start이상 end이하일경우 true, 아닐경우 false
+   */
+  timeCheck (start, end = start, intervalFrame = 1) {
+    if (this.currentTime >= start && this.currentTime <= end && this.currentTimeTotalFrame % intervalFrame === 0) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+  /**
+   * 페이즈 종료 상태에서, 적이 전부 죽을 때까지 시간이 진행되지 않습니다.
+   */
+  phaseEndEnemyNothing () {
+    if (this.phaseEnd === 0) return
+
+    if (this.currentTime === this.phaseEnd) {
+      if (this.enemyNothingCheck()) {
+        this.currentTimePaused = false
+      } else {
+        this.currentTimePaused = true
+      }
+    }
   }
 
   enemyNothingCheck () {
@@ -5164,7 +5182,10 @@ export class RoundData {
     }
   }
 
-  showBossHp () {
+  /**
+   * 보스 체력 보여주기 용도, 다만 어떤 적의 체력을 보여주는지는 알 수 없음. (아직 미정, 특별한 경우에만 사용)
+   */
+  showEnemyHp () {
     // 첫번째 에너미 한정
     let enemy = fieldState.getEnemyObject()
     if (enemy[0] != null) {
@@ -5190,6 +5211,13 @@ export class RoundData {
   createEnemy (enemyId, x = graphicSystem.CANVAS_WIDTH + 50, y = Math.random() * graphicSystem.CANVAS_HEIGHT) {
     fieldState.createEnemyObject(enemyId, x, y)
   }
+
+  /**
+   * 보스를 생성합니다.
+   */
+  createBoss (enemyId, x = graphicSystem.CANVAS_WIDTH + 50, y = Math.random() * graphicSystem.CANVAS_HEIGHT) {
+    this.currentBoss = fieldState.createEnemyBoss(enemyId, x, y)
+  }
 }
 
 class Round1_1 extends RoundData {
@@ -5197,162 +5225,128 @@ class Round1_1 extends RoundData {
     super()
     this.roundName = stringText.dataRoundName.round1_1
     this.roundText = '1-1'
-    this.recommandAttack = 10000
+    this.recommandPower = 10000
     this.requireLevel = 1
     this.finishTime = 150
-    this.clearBonus = 11600
+    this.clearBonus = 24000
     this.backgroundImage = imageFile.round.round1_space
     this.music = soundFile.music.music01_space_void
+    this.addBossData(ID.enemy.spaceEnemyBoss, 145)
+    this.phaseEnd = 141
+    this.bossMusic = soundFile.music.music06_round1_boss_thema
+  }
+
+  processRoundPhase1 () {
+    if (this.timeCheck(2, 10, 10)) {
+      this.createEnemy(ID.enemy.spaceEnemyLight)
+    }
+  }
+
+  processRoundPhase2 () {
+    if (this.timeCheck(11, 30, 30)) {
+      this.createEnemy(ID.enemy.spaceEnemyLight)
+    }
+
+    if (this.timeCheck(11, 15, 30)) {
+      this.createEnemy(ID.enemy.spaceEnemyRocket)
+    } else if (this.timeCheck(16, 20, 30)) {
+      this.createEnemy(ID.enemy.spaceEnemyCar)
+    } else if (this.timeCheck(21, 25, 30)) {
+      this.createEnemy(ID.enemy.spaceEnemySquare)
+    } else if (this.timeCheck(26, 30, 30)) {
+      this.createEnemy(ID.enemy.spaceEnemyAttack)
+    }
+  }
+
+  processRoundPhase3 () {
+    if (this.timeCheck(31, 60, 60)) {
+      this.createEnemy(ID.enemy.spaceEnemyLight)
+    }
+
+    if (this.timeCheck(31, 35, 30)) {
+      this.createEnemy(ID.enemy.spaceEnemyEnergy)
+    }
+
+    // 일정 시간 간격으로 적 번호를 정하여 적을 생성한다.
+    if (this.timeCheck(36, 50, 30) || this.timeCheck(51, 60, 20)) {
+      const ENEMY_TYPE = 5
+      let targetNumber = Math.floor(Math.random() * ENEMY_TYPE)
+      switch (targetNumber) {
+        case 0: this.createEnemy(ID.enemy.spaceEnemyRocket); break
+        case 1: this.createEnemy(ID.enemy.spaceEnemyCar); break
+        case 2: this.createEnemy(ID.enemy.spaceEnemySquare); break
+        case 3: this.createEnemy(ID.enemy.spaceEnemyAttack); break
+        case 4: this.createEnemy(ID.enemy.spaceEnemyEnergy); break
+      }
+    }
+  }
+
+  processRoundPhase4 () {
+    // 혜성도 대거 등장하고, 빛들이 많아짐
+    if (this.timeCheck(61, 74, 15) || this.timeCheck(75, 90, 60)) {
+      this.createEnemy(ID.enemy.spaceEnemyLight)
+      this.createEnemy(ID.enemy.spaceEnemyComet)
+    }
+
+    // 그리고 곧이어 수송선도 등장
+    if (this.timeCheck(75, 90, 120)) {
+      this.createEnemy(ID.enemy.spaceEnemySusong)
+      this.createEnemy(ID.enemy.spaceEnemyGamjigi)
+    }
+  }
+
+  processRoundPhase5 () {
+    // 수송선과 감지기가 메인이 되고, 빛과 운석 비중이 줄어둠.
+    if (this.timeCheck(91, 120, 120)) {
+      this.createEnemy(ID.enemy.spaceEnemyLight)
+      this.createEnemy(ID.enemy.spaceEnemyComet)
+    }
+
+    if (this.timeCheck(91, 120, 180)) {
+      this.createEnemy(ID.enemy.spaceEnemySusong)
+      this.createEnemy(ID.enemy.spaceEnemyGamjigi)
+    }
+
+    if (this.timeCheck(91, 120, 120)) {
+      const ENEMY_TYPE = 5
+      let targetNumber = Math.floor(Math.random() * ENEMY_TYPE)
+      switch (targetNumber) {
+        case 0: this.createEnemy(ID.enemy.spaceEnemyRocket); break
+        case 1: this.createEnemy(ID.enemy.spaceEnemyCar); break
+        case 2: this.createEnemy(ID.enemy.spaceEnemySquare); break
+        case 3: this.createEnemy(ID.enemy.spaceEnemyAttack); break
+        case 4: this.createEnemy(ID.enemy.spaceEnemyEnergy); break
+      }
+    }
+  }
+
+  processRoundPhase6 () {
+    // 이제 수송선, 감지기, 운석만 등장...
+    if (this.timeCheck(121, 140, 240)) {
+      this.createEnemy(ID.enemy.spaceEnemySusong)
+      this.createEnemy(ID.enemy.spaceEnemyGamjigi)
+    }
+
+    if (this.timeCheck(121, 140, 90)) {
+      this.createEnemy(ID.enemy.spaceEnemyMeteorite)
+    }
   }
 
   processRound () {
-    // phase
-    // 1: (0 ~ 10), 2: (11 ~ 60), 3: (61 ~ 90), 4: (91 ~ 120), 5: (121 ~ 140), 6: (145)
-
-    // spacelight (phase 1 ~ 5)
-    if (this.currentTime >= 2 && this.currentTime <= 10) {
-      if (this.currentTimeTotalFrame % 10 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyLight)
-      }
-    } else if (this.currentTime >= 11 && this.currentTime <= 30) {
-      if (this.currentTimeTotalFrame % 30 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyLight)
-      }
-    } else if (this.currentTime >= 31 && this.currentTime <= 60) {
-      if (this.currentTimeTotalFrame % 60 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyLight)
-      }
-    } else if (this.currentTime >= 61 && this.currentTime <= 90) {
-      if (this.currentTimeTotalFrame % 90 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyLight)
-      }
-    } else if (this.currentTime >= 91 && this.currentTime <= 120) {
-      if (this.currentTimeTotalFrame % 120 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyLight)
-      }
-    } else if (this.currentTime >= 121 && this.currentTime <= 140) {
-      if (this.currentTimeTotalFrame % 60 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyLight)
-      }
-    } 
-
-    // comet (phase 3 ~ 5)
-    if (this.currentTime >= 61 && this.currentTime <= 90) {
-      if (this.currentTimeTotalFrame % 90 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyComet)
-      }
-    } else if (this.currentTime >= 91 && this.currentTime <= 120) {
-      if (this.currentTimeTotalFrame % 120 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyComet)
-      }
-    } else if (this.currentTime >= 121 && this.currentTime <= 140) {
-      if (this.currentTimeTotalFrame % 40 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyComet)
-      }
-    }
-
-    // phase 2 (10 ~ 60)
-    if (this.currentTime >= 10 && this.currentTime <= 20) {
-      if (this.currentTimeTotalFrame % 60 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyRocket)
-      }
-    } else if (this.currentTime >= 21 && this.currentTime <= 30) {
-      if (this.currentTimeTotalFrame % 60 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyCar)
-      }
-    } else if (this.currentTime >= 31 && this.currentTime <= 40) {
-      if (this.currentTimeTotalFrame % 60 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemySquare)
-      }
-    } else if (this.currentTime >= 41 && this.currentTime <= 50) {
-      if (this.currentTimeTotalFrame % 60 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyAttack)
-      }
-    } else if (this.currentTime >= 51 && this.currentTime <= 60) {
-      if (this.currentTimeTotalFrame % 60 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyEnergy)
-      }
-    }
-
-    // phase 3
-    if (this.currentTime >= 61 && this.currentTime <= 90) {
-      if (this.currentTimeTotalFrame % 200 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyRocket)
-      }
-
-      if (this.currentTimeTotalFrame % 220 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyCar)
-      }
-
-      if (this.currentTimeTotalFrame % 210 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemySquare)
-      }
-
-      if (this.currentTimeTotalFrame % 240 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyAttack)
-      }
-
-      if (this.currentTimeTotalFrame % 230 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyEnergy)
-      }
-    }
-
-    // phase 4
-    if (this.currentTime >= 91 && this.currentTime <= 120) {
-      if (this.currentTimeTotalFrame % 240 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemySusong)
-      }
-
-      if (this.currentTimeTotalFrame % 180 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyGamjigi)
-      }
-    }
-
-    // phase 5
-    if (this.currentTime >= 121 && this.currentTime <= 140) {
-      if (this.currentTimeTotalFrame % 120 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyMeteorite)
-      }
-
-      if (this.currentTimeTotalFrame % 240 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemyGamjigi)
-      }
-
-      if (this.currentTimeTotalFrame % 300 === 0) {
-        this.createEnemy(ID.enemy.spaceEnemySusong)
-      }
-    }
-
-    // phase 6
-    if (this.currentTime === 142) {
-      if (this.enemyNothingCheck()) {
-        this.currentTime++
-        this.currentTimePaused = false
-      } else {
-        this.currentTimePaused = true
-      }
-    }
-
-    if (this.currentTime === 144) {
-      this.currentTime++
-      this.createEnemy(ID.enemy.spaceEnemyBoss)
-      this.currentTimePaused = true
-      soundSystem.musicPlay(soundFile.music.music06_round1_boss_thema)
-    }
-
-    if (this.currentTime === 145) {
-      if (this.enemyNothingCheck()) {
-        this.currentTime++
-        this.currentTimePaused = false
-        soundSystem.musicStop()
-      }
-    }
-  }
-
-  display () {
-    super.display()
-    if (this.currentTime === 145) {
-      this.showBossHp()
+    // phase total 6
+    // 1: (0 ~ 10), 2: (11 ~ 30), 3: (31 ~ 60), 4: (61 ~ 90), 5: (91 ~ 120), 6: (121 ~ 140), boss: 145
+    if (this.timeCheck(0, 10)) {
+      this.processRoundPhase1()
+    } else if (this.timeCheck(11, 30)) {
+      this.processRoundPhase2()
+    } else if (this.timeCheck(31, 60)) {
+      this.processRoundPhase3()
+    } else if (this.timeCheck(61, 90)) {
+      this.processRoundPhase4()
+    } else if (this.timeCheck(91, 120)) {
+      this.processRoundPhase5()
+    } else if (this.timeCheck(121, 140)) {
+      this.processRoundPhase6()
     }
   }
 }
@@ -5362,7 +5356,7 @@ class Round1_2 extends RoundData {
     super()
     this.roundName = stringText.dataRoundName.round1_2
     this.roundText = '1-2'
-    this.recommandAttack = 10000
+    this.recommandPower = 10000
     this.requireLevel = 1
     this.finishTime = 180
     this.clearBonus = 12400
@@ -5375,7 +5369,7 @@ class Round1_2 extends RoundData {
     // 1: (0 ~ 20), 2: (21 ~ 40), 3: (41 ~ 60), 4: (61 ~ 80), 5: (81 ~ 140), 
     // 6: (141 ~ 160) 7: (161 ~ 180)
     if (this.currentTimeFrame % 60 === 0 && this.enemyNothingCheck()) {
-      this.createEnemy(ID.enemy.meteoriteEnemyClass1)
+      this.createEnemy(ID.enemy.spaceEnemyEnergy)
     }
 
     return
@@ -5411,7 +5405,8 @@ export class tamshooter4Data {
     sapia: new PlayerSapia(),
     parapo: new PlayerParapo(),
     blaster: new PlayerBlaster(),
-    sidewave: new PlayerSidewave()
+    sidewave: new PlayerSidewave(),
+    subWeapon: new PlayerSubWeapon()
   }
 
   static pSkill = {
@@ -5440,6 +5435,7 @@ export class tamshooter4Data {
       case ID.playerWeapon.parapo: return this.pWeapon.parapo
       case ID.playerWeapon.blaster: return this.pWeapon.blaster
       case ID.playerWeapon.sidewave: return this.pWeapon.sidewave
+      case ID.playerWeapon.subWeapon: return this.pWeapon.subWeapon
       default: return null
     }
   }
@@ -5482,6 +5478,7 @@ export class tamshooter4Data {
       case ID.weapon.blaster: return Blaster
       case ID.weapon.blasterMini: return BlasterMini
       case ID.weapon.sidewave: return Sidewave
+      case ID.weapon.subWeapon: return SubWeapon
 
       // skill
       case ID.weapon.skillMultyshot: return SkillMultyshot
@@ -5524,7 +5521,7 @@ export class tamshooter4Data {
       case ID.enemy.meteoriteEnemyClass1: return MeteoriteEnemyClass1
       case ID.enemy.meteoriteEnemyClass2: return MeteoriteEnemyClass2
       case ID.enemy.meteoriteEnemyClass3: return MeteoriteEnemyClass3
-      case ID.enemy.meteoriteEnemyClass123Big: return MeteoriteEnemyClass123Big
+      case ID.enemy.meteoriteEnemyClass4: return MeteoriteEnemyClass4
       case ID.enemy.meteoriteEnemyWhiteMeteo: return MeteoriteEnemyWhiteMeteo
       case ID.enemy.meteoriteEnemyBlackMeteo: return MeteoriteEnemyBlackMeteo
       case ID.enemy.meteoriteEnemyBomb: return MeteoriteEnemyBomb
