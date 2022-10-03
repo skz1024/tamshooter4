@@ -773,6 +773,8 @@ export class WeaponData extends FieldData {
     // 추적 오브젝트 여부
     /** 적을 추적하는지의 여부(데이터 객체에서 주로 사용) true일경우 적을 추적하는 무기임. */ this.isChaseType = false
     /** 추적 실패 횟수: 이 숫자는 추적할 적이 없을 때 과도한 추적 알고리즘 사용을 막기 위해 실행됨. */ this.chaseMissCount = 0
+    /** 선 단위 형태의 움직임 처리: 경고, 이것은 위치가 정해질 때 기준으로 추적하고, isChaseType이랑 같이 사용할 수는 없음. */ this.isLineChase = false
+
     /**
      * 필드객체에서 사용하는 변수, 어떤 적을 추적하는지를 객체로 가져옴
      * @type {EnemyData}
@@ -830,6 +832,18 @@ export class WeaponData extends FieldData {
     this.processAttack()
     this.processDeleteCheck()
     this.processEnimation()
+    this.processLineChase()
+  }
+
+  /**
+   * 라인 단위 추적(1회성)
+   * isChaseType이랑 같이 사용하는건 의미가 없음. 이 경우 lineChase가 처리되어도 다시 재추적하게됨.
+   */
+  processLineChase () {
+    if (!this.isLineChase) return
+
+    this.lineChase()
+    this.isLineChase = false
   }
 
   /**
@@ -1203,22 +1217,16 @@ class MultyshotData extends WeaponData {
       this.moveSpeedY = option[0]
     } else if (option.length === 2) {
       this.moveSpeedY = option[0]
-      this.isChaseType = option[1]
+      this.isLineChase = option[1]
     }
 
     // 옵션에 따른 색깔 설정
-    if (this.isChaseType) {
+    if (this.isLineChase) {
       this.color = 'blue' // 추적 타입은 무조건 파랑색
     } else if (this.moveSpeedY === 0) {
       this.color = 'brown' // y축 속도가 0이면 갈색
     } else {
       this.color = 'green' // y축 속도가 있으면 초록색
-    }
-
-    // 추적 타입인 경우, 추적 타입을 해제하고, 대신 선형태로 움직이도록 속도 재조정
-    if (this.isChaseType) {
-      this.isChaseType = false
-      this.lineChase()
     }
   }
 
@@ -4229,7 +4237,7 @@ class MeteoriteEnemyClass1 extends EnemyData {
 class MeteoriteEnemyClass2 extends EnemyData {
   constructor () {
     super()
-
+    const MAX_NUM = 5
     const imageDataTable = [
       imageDataInfo.meteoriteEnemy.class21,
       imageDataInfo.meteoriteEnemy.class22,
@@ -4263,7 +4271,7 @@ class MeteoriteEnemyClass2 extends EnemyData {
 class MeteoriteEnemyClass3 extends EnemyData {
   constructor () {
     super()
-
+    const MAX_NUM = 5
     const imageDataTable = [
       imageDataInfo.meteoriteEnemy.class31,
       imageDataInfo.meteoriteEnemy.class32,
@@ -4704,7 +4712,7 @@ class MeteoriteEnemyBomb extends EnemyData {
 
   constructor () {
     super()
-    this.setEnemyStat(20000, 200, 20)
+    this.setEnemyStat(10000, 100, 20)
     this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataInfo.meteoriteEnemy.bomb)
     this.setMoveSpeed(Math.random() * 3, Math.random() * 3)
     this.isExitToReset = true
@@ -4728,9 +4736,9 @@ class MeteoriteEnemyBomb extends EnemyData {
 class MeteoriteEnemyBombBig extends MeteoriteEnemyBomb {
   constructor () {
     super()
-    this.setEnemyStat(40000, 400, 20)
-    this.width = 120
-    this.height = 120
+    this.setEnemyStat(20000, 200, 20)
+    this.width = 160
+    this.height = 160
 
     // 크기 수정에 따른 에니메이션 크기 수정
     this.enimation.setOutputSize(this.width, this.height)
@@ -4788,6 +4796,7 @@ class MeteoriteEnemyStone extends EnemyData {
   static TYPE_STONE_BLACK = 0
   static TYPE_STONE_BROWN = 1
   static TYPE_STONE_GREEN = 2
+  static TYPE_STONE_MAX = 3
 
   constructor () {
     super()
@@ -4797,14 +4806,13 @@ class MeteoriteEnemyStone extends EnemyData {
       imageDataInfo.meteoriteEnemy.stoneGreen
     ]
     let imageNumber = Math.floor(Math.random() * imageDataList.length)
-    this.stoneType = imageDataNumber // 돌 타입 설정(이미지 차이만 있음.)
+    this.stoneType = imageNumber // 돌 타입 설정(이미지 차이만 있음.)
 
     this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataList[imageNumber])
     this.setEnemyStat(40000, 400, 20)
     this.setRandomSpeed(2, 2)
-    this.width = 80
-    this.height = 80
-    this.image = 
+    this.width = 160
+    this.height = 160
     this.isExitToReset = true
     this.dieSound = soundFile.enemyDie.enemyDieSpaceRocket
   }
@@ -4848,13 +4856,16 @@ class MeteoriteEnemyStonePiece extends EnemyData {
     ]
 
     // 돌 타입 설정
-    this.stoneType = option.length > 0 ? option[0] : MeteoriteEnemyStone.TYPE_STONE_BLACK
-    this.pieceNumber = option.length > 1 ? option[1] : 0
+    const pieceNumberMax = 4
+    this.stoneType = option.length > 0 ? option[0] : Math.floor(Math.random() * MeteoriteEnemyStone.TYPE_STONE_MAX)
+    this.pieceNumber = option.length > 1 ? option[1] : Math.floor(Math.random() * pieceNumberMax)
 
     this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataList[this.stoneType][this.pieceNumber])
     this.setDieEffect(soundFile.enemyDie.enemyDieSpaceSmall, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceSquare, this.width, this.height, 1))
     this.setEnemyStat(4000, 40, 10)
     this.setRandomSpeed(4, 4)
+    this.width = 80
+    this.height = 80
 
     // pieceNumber에 따라 이동 방향이 다릅니다.
     // 0: 왼쪽 위, 1: 오른쪽 위, 2: 오른쪽 아래, 3: 왼쪽 아래
@@ -4939,12 +4950,51 @@ export class RoundData {
     /** 보스 모드(적용될 경우 적이 다 사라질때까지 시간이 멈춤) */ this.bossMode = false
     /** 보스전 음악, 설정되지 않을경우 필드음악이 계속 재생됨.(음악이 꺼지진 않음.) */ this.bossMusic = null
 
-    /** 모든 페이즈가 끝나는 시간 (적 전부 죽었는지 확인) */ this.phaseEnd = 0
+    /** 
+     * 모든 페이즈가 끝나는 시간 (그리고 적 전부 죽었는지 확인) 
+     * 참고로 이 시간은 addRoundPhase를 사용할 때마다 해당 라운드의 종료 시점으로 자동으로 맞춰집니다.
+     */ 
+    this.phaseEndTime = 0
+
+    /** 
+     * 각 페이즈의 시간 
+     * @type {{startTime: number, endTime: number}[]}
+     */ 
+    this.phaseTime = []
+
+    /**
+     * 라운드 페이즈를 정의하는 함수를 여기에 추가하세요.
+     * @type {Function[]}
+     */
+    this.phaseRound = []
   }
 
   addBossData (enemyId, time) {
     this.bossData.push({enemyId: enemyId, time: time, created: false})
   }
+
+  /**
+   * 라운드의 페이즈 추가.
+   * 참고로 이 함수를 사용하면 마지막 라운드 페이즈가 마지막 페이즈가 종료되는 시점으로 자동으로 맞춰집니다.
+   * @param {Function} inputFunction 라운드의 내용이 구현되어있는 함수
+   * @param {number} startTime 페이즈의 시작 시간
+   * @param {number} endTime 페이즈의 종료 시간
+   */
+  addRoundPhase (inputFunction, startTime, endTime = startTime) {
+    if (inputFunction == null) {
+      console.warn('라운드 페이즈가 구현된 함수를 입력해 주세요. 데이터가 없으면 추가되지 않습니다.')
+      return
+    }
+
+    // 참고, 라운드를 건네주었을 때, this값이 사라지기 때문에 이 라운드 함수를 사용할 수 있게끔 this를 이 클래스에 바인드 해야함.
+    this.phaseRound.push(inputFunction.bind(this))
+    this.phaseTime.push({startTime: startTime, endTime: endTime})
+
+    // 만약 페이즈 시간이랑 페이즈 종료 시간이 잘못 겹치면 해당 라운드에 영원히 갇힐 수 있음,
+    // 페이즈 종료 시간은 마지막 시간에서 1초를 추가
+    this.phaseEndTime = endTime + 1
+  }
+
 
   /**
    * 해당 라운드가 클리어 되어있는지 확인.
@@ -5066,7 +5116,7 @@ export class RoundData {
     this.processRound()
     this.processBackground()
     this.processBoss()
-    this.phaseEndEnemyNothing()
+    this.processPhaseEndEnemyNothing()
   }
 
   processBoss () {
@@ -5118,11 +5168,18 @@ export class RoundData {
   }
 
   /**
-   * 라운드 진행에 관한 처리, 이 함수를 재정의 해서, 라운드의 구성을 작성합니다.
-   * (예를 들어, 적이 언제 어디서 나올것인지, 보스는 어느 시간에 나올것인지)
+   * 라운드 진행에 관한 처리. 라운드 구성에 관해서는 roundPhase 부분을 참고
    */
   processRound () {
+    for (let i = 0; i < this.phaseRound.length; i++) {
+      let currentPhase = this.phaseRound[i]
+      let startTime = this.phaseTime[i].startTime
+      let endTime = this.phaseTime[i].endTime
 
+      if (this.timeCheck(startTime, endTime)) {
+        currentPhase()
+      }
+    }
   }
 
   /**
@@ -5161,10 +5218,10 @@ export class RoundData {
   /**
    * 페이즈 종료 상태에서, 적이 전부 죽을 때까지 시간이 진행되지 않습니다.
    */
-  phaseEndEnemyNothing () {
-    if (this.phaseEnd === 0) return
+  processPhaseEndEnemyNothing () {
+    if (this.phaseEndTime === 0) return
 
-    if (this.currentTime === this.phaseEnd) {
+    if (this.currentTime === this.phaseEndTime) {
       if (this.enemyNothingCheck()) {
         this.currentTimePaused = false
       } else {
@@ -5228,21 +5285,27 @@ class Round1_1 extends RoundData {
     this.recommandPower = 10000
     this.requireLevel = 1
     this.finishTime = 150
-    this.clearBonus = 24000
+    this.clearBonus = 30000
     this.backgroundImage = imageFile.round.round1_space
     this.music = soundFile.music.music01_space_void
     this.addBossData(ID.enemy.spaceEnemyBoss, 145)
-    this.phaseEnd = 141
     this.bossMusic = soundFile.music.music06_round1_boss_thema
+
+    this.addRoundPhase(this.roundPhase0, 2, 10)
+    this.addRoundPhase(this.roundPhase1, 11, 30)
+    this.addRoundPhase(this.roundPhase2, 31, 60)
+    this.addRoundPhase(this.roundPhase3, 61, 90)
+    this.addRoundPhase(this.roundPhase4, 91, 120)
+    this.addRoundPhase(this.roundPhase5, 121, 141)
   }
 
-  processRoundPhase1 () {
+  roundPhase0 () {
     if (this.timeCheck(2, 10, 10)) {
       this.createEnemy(ID.enemy.spaceEnemyLight)
     }
   }
 
-  processRoundPhase2 () {
+  roundPhase1 () {
     if (this.timeCheck(11, 30, 30)) {
       this.createEnemy(ID.enemy.spaceEnemyLight)
     }
@@ -5258,7 +5321,7 @@ class Round1_1 extends RoundData {
     }
   }
 
-  processRoundPhase3 () {
+  roundPhase2 () {
     if (this.timeCheck(31, 60, 60)) {
       this.createEnemy(ID.enemy.spaceEnemyLight)
     }
@@ -5281,7 +5344,7 @@ class Round1_1 extends RoundData {
     }
   }
 
-  processRoundPhase4 () {
+  roundPhase3 () {
     // 혜성도 대거 등장하고, 빛들이 많아짐
     if (this.timeCheck(61, 74, 15) || this.timeCheck(75, 90, 60)) {
       this.createEnemy(ID.enemy.spaceEnemyLight)
@@ -5295,7 +5358,7 @@ class Round1_1 extends RoundData {
     }
   }
 
-  processRoundPhase5 () {
+  roundPhase4 () {
     // 수송선과 감지기가 메인이 되고, 빛과 운석 비중이 줄어둠.
     if (this.timeCheck(91, 120, 120)) {
       this.createEnemy(ID.enemy.spaceEnemyLight)
@@ -5320,7 +5383,7 @@ class Round1_1 extends RoundData {
     }
   }
 
-  processRoundPhase6 () {
+  roundPhase5 () {
     // 이제 수송선, 감지기, 운석만 등장...
     if (this.timeCheck(121, 140, 240)) {
       this.createEnemy(ID.enemy.spaceEnemySusong)
@@ -5329,24 +5392,6 @@ class Round1_1 extends RoundData {
 
     if (this.timeCheck(121, 140, 90)) {
       this.createEnemy(ID.enemy.spaceEnemyMeteorite)
-    }
-  }
-
-  processRound () {
-    // phase total 6
-    // 1: (0 ~ 10), 2: (11 ~ 30), 3: (31 ~ 60), 4: (61 ~ 90), 5: (91 ~ 120), 6: (121 ~ 140), boss: 145
-    if (this.timeCheck(0, 10)) {
-      this.processRoundPhase1()
-    } else if (this.timeCheck(11, 30)) {
-      this.processRoundPhase2()
-    } else if (this.timeCheck(31, 60)) {
-      this.processRoundPhase3()
-    } else if (this.timeCheck(61, 90)) {
-      this.processRoundPhase4()
-    } else if (this.timeCheck(91, 120)) {
-      this.processRoundPhase5()
-    } else if (this.timeCheck(121, 140)) {
-      this.processRoundPhase6()
     }
   }
 }
@@ -5359,35 +5404,133 @@ class Round1_2 extends RoundData {
     this.recommandPower = 10000
     this.requireLevel = 1
     this.finishTime = 180
-    this.clearBonus = 12400
+    this.clearBonus = 40000
     this.backgroundImage = imageFile.round.round1_meteorite
     this.music = soundFile.music.music02_meteorite_zone_field
+
+    this.addRoundPhase(this.roundPhase00, 0, 15)
+    this.addRoundPhase(this.roundPhase01, 16, 30)
+    this.addRoundPhase(this.roundPhase02, 31, 45)
+    this.addRoundPhase(this.roundPhase03, 46, 60)
+    this.addRoundPhase(this.roundPhase04, 61, 90)
+    this.addRoundPhase(this.roundPhase05, 91, 120)
+    this.addRoundPhase(this.roundPhase06, 121, 150)
+    this.addRoundPhase(this.roundPhase07, 151, 176)
   }
 
-  processRound () {
-    // phase
-    // 1: (0 ~ 20), 2: (21 ~ 40), 3: (41 ~ 60), 4: (61 ~ 80), 5: (81 ~ 140), 
-    // 6: (141 ~ 160) 7: (161 ~ 180)
-    if (this.currentTimeFrame % 60 === 0 && this.enemyNothingCheck()) {
+  roundPhase00 () {
+    // 운석의 등장
+    if (this.timeCheck(0, 15, 30)) {
+      this.createEnemy(ID.enemy.meteoriteEnemyClass1)
+    }
+    if (this.timeCheck(0, 15, 40)) {
+      this.createEnemy(ID.enemy.meteoriteEnemyClass2)
+    }
+    if (this.timeCheck(0, 15, 60)) {
+      this.createEnemy(ID.enemy.meteoriteEnemyClass3)
+    }
+    if (this.timeCheck(0, 15, 120)) {
+      this.createEnemy(ID.enemy.spaceEnemyLight)
+      this.createEnemy(ID.enemy.spaceEnemyComet)
+    }
+  }
+  
+  roundPhase01 () {
+    if (this.timeCheck(16, 30, 60)) {
+      this.createEnemy(ID.enemy.meteoriteEnemyWhiteMeteo)
+      this.createEnemy(ID.enemy.meteoriteEnemyBlackMeteo)
+    }
+    if (this.timeCheck(16, 30, 120)) {
+      this.createEnemy(ID.enemy.spaceEnemyLight)
+      this.createEnemy(ID.enemy.spaceEnemyComet)
+    }
+  }
+
+  roundPhase02 () {
+    if (this.timeCheck(31, 45, 120)) {
+      this.createEnemy(ID.enemy.meteoriteEnemyStone)
+    }
+    if (this.timeCheck(16, 30, 120)) {
+      this.createEnemy(ID.enemy.spaceEnemyLight)
+      this.createEnemy(ID.enemy.spaceEnemyComet)
+    }
+  }
+
+  roundPhase03 () {
+    if (this.timeCheck(46, 60, 90)) {
+      this.createEnemy(ID.enemy.meteoriteEnemyBomb)
+    }
+    if (this.timeCheck(46, 60, 120)) {
+      this.createEnemy(ID.enemy.spaceEnemyLight)
+      this.createEnemy(ID.enemy.spaceEnemyComet)
+    }
+  }
+
+  roundPhase04 () {
+    // space enemy: total 30%
+    if (this.timeCheck(61, 90, 240)) {
+      this.createEnemy(ID.enemy.spaceEnemyGamjigi)
+    }
+
+    if (this.timeCheck(61, 90, 120)) {
+      this.createEnemy(ID.enemy.spaceEnemyLight)
+      this.createEnemy(ID.enemy.spaceEnemyComet)
+    }
+
+    if (this.timeCheck(61, 90, 150)) {
+      this.createEnemy(ID.enemy.spaceEnemySquare)
       this.createEnemy(ID.enemy.spaceEnemyEnergy)
     }
 
-    return
-    // spacelight
-    if (this.currentTime >= 1 && this.currentTime <= 60 && this.currentTimeFrame % 60 === 0) {
-      this.createEnemy(ID.enemy.spaceEnemyLight)
+    // meteoriteEnemy: total 53?%
+    if (this.timeCheck(61, 90, 180)) {
+      this.createEnemy(ID.enemy.meteoriteEnemyWhiteMeteo)
+      this.createEnemy(ID.enemy.meteoriteEnemyBlackMeteo)
     }
 
-    // phase 1
-    if (this.currentTime >= 2 && this.currentTime <= 20 && this.currentTimeFrame % 30 === 0) {
+    if (this.timeCheck(61, 90, 60)) {
       this.createEnemy(ID.enemy.meteoriteEnemyClass1)
     }
 
-    // phase 2
-    if (this.currentTime >= 21 && this.currentTime <= 40 && this.currentTimeFrame % 50 === 0) {
+    if (this.timeCheck(61, 90, 120)) {
       this.createEnemy(ID.enemy.meteoriteEnemyClass2)
     }
-    
+
+    if (this.timeCheck(61, 90, 240)) {
+      this.createEnemy(ID.enemy.meteoriteEnemyClass3)
+    }
+  }
+
+  roundPhase05 () {
+    if (this.timeCheck(91, 120, 180)) {
+      this.createEnemy(ID.enemy.spaceEnemyGamjigi)
+    }
+
+    if (this.timeCheck(91, 120, 120)) {
+      this.createEnemy(ID.enemy.meteoriteEnemyClass4)
+      this.createEnemy(ID.enemy.meteoriteEnemyBombBig)
+    }
+  }
+
+  roundPhase06 () {
+    if (this.timeCheck(121, 150, 12)) {
+      this.createEnemy(ID.enemy.meteoriteEnemyClass1)
+    }
+
+    if (this.timeCheck(121, 150, 20)) {
+      this.createEnemy(ID.enemy.spaceEnemyComet)
+    }
+
+    if (this.timeCheck(121, 150, 60)) {
+      this.createEnemy(ID.enemy.meteoriteEnemyStonePiece)
+    }
+  }
+
+  roundPhase07 () {
+    if (this.timeCheck(151, 176, 60)) {
+      this.createEnemy(ID.enemy.spaceEnemyGamjigi)
+      this.createEnemy(ID.enemy.meteoriteEnemyClass4)
+    }
   }
 }
 

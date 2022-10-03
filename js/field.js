@@ -120,8 +120,10 @@ class PlayerObject extends FieldData {
     this.centerY = this.y + (this.height / 2)
 
     this.damageEnimationCount = 0
+    this.levelupEnimationCount = 0
 
     const getData = userSystem.getPlayerObjectData()
+    this.currentLevel = getData.lv
     this.attack = getData.attack
     this.hp = getData.hp
     this.hpMax = getData.hpMax
@@ -223,8 +225,20 @@ class PlayerObject extends FieldData {
       this.processSkill()
       this.processShield()
       this.processDamage()
+      this.processLevelupCheck()
     }
     this.processDie()
+  }
+
+  processLevelupCheck () {
+    if (this.currentLevel != userSystem.getPlayerObjectData().lv) {
+      this.currentLevel = userSystem.getPlayerObjectData().lv
+      this.levelupEnimationCount = 120
+    }
+
+    if (this.levelupEnimationCount > 0) {
+      this.levelupEnimationCount--
+    }
   }
 
   processDie () {
@@ -410,6 +424,14 @@ class PlayerObject extends FieldData {
         graphicSystem.imageDisplay(this.playerImage, frameSliceX, this.playerImageData.y, this.playerImageData.width, this.playerImageData.height, this.x, this.y, this.width, this.height)
       } else {
         graphicSystem.imageDisplay(this.playerImage, this.playerImageData.x, this.playerImageData.y, this.playerImageData.width, this.playerImageData.height, this.x, this.y, this.width, this.height)
+      }
+
+      if (this.levelupEnimationCount > 0) {
+        let levelUpImage = imageFile.system.playerLevelup
+        let targetFrame = Math.floor((this.levelupEnimationCount % 16) / 4)
+        let targetX = this.x - 15
+        let targetY = this.y + Math.floor(this.levelupEnimationCount / 4) - 10
+        graphicSystem.imageDisplay(levelUpImage, (this.levelupEnimationCount % targetFrame) * 70, 0, 70, 15, targetX, targetY, 70, 15)
       }
     }
   }
@@ -752,10 +774,12 @@ export class fieldSystem {
   static SCORE_ENIMATION_MAX_FRAME = 60
   static SCORE_ENIMATION_INTERVAL = 4
   static enimationFrame = 0
-  static score = 0
+  static totalScore = 0
+  static fieldScore = 0
 
   static requestAddScore (score) {
-    this.score += score
+    this.fieldScore += score
+    this.totalScore += score
     fieldState.playerObject.addExp(score)
   }
 
@@ -780,7 +804,8 @@ export class fieldSystem {
     this.cursor = 0
     this.enimationFrame = 0
     this.exitDelayCount = 0
-    this.score = 0
+    this.totalScore = 0
+    this.fieldScore = 0
 
     soundSystem.musicPlay(this.round.music)
   }
@@ -803,7 +828,7 @@ export class fieldSystem {
   static scoreSound () {
     if (this.exitDelayCount < this.SCORE_ENIMATION_MAX_FRAME 
       && this.exitDelayCount % this.SCORE_ENIMATION_INTERVAL === 0
-      && this.score >= 1) {
+      && this.totalScore >= 1) {
       soundSystem.play(soundFile.system.systemScore)
     }
   }
@@ -860,6 +885,8 @@ export class fieldSystem {
     // 라운드 클리어 사운드 재생 (딜레이카운트가 0일때만 재생해서 중복 재생 방지)
     if (this.exitDelayCount === 0) {
       soundSystem.play(soundFile.system.systemRoundClear)
+      userSystem.plusExp(this.round.clearBonus)
+      this.totalScore = this.fieldScore + this.round.clearBonus
     }
 
     this.scoreSound()
@@ -980,7 +1007,7 @@ export class fieldSystem {
     graphicSystem.imageDisplay(image, imageDataMusicOn.x, imageDataMusicOn.y, imageDataMusicOn.width, imageDataMusicOn.height, CHECK_X, CHECK_MUSIC_Y, imageDataMusicOn.width, imageDataMusicOn.height)
     graphicSystem.imageDisplay(image, imageDataSelected.x, imageDataSelected.y, imageDataSelected.width, imageDataSelected.height, SELECT_X, SELECT_Y, imageDataSelected.width, imageDataSelected.height)
     graphicSystem.fillRect(SCORE_X, SCORE_Y, 400, 30)
-    graphicSystem.digitalFontDisplay('score: ' + this.score, SCORE_X + 5, SCORE_Y + 5)
+    graphicSystem.digitalFontDisplay('score: ' + this.totalScore, SCORE_X + 5, SCORE_Y + 5)
   }
 
   /**
@@ -1009,15 +1036,20 @@ export class fieldSystem {
 
     titleX = (graphicSystem.CANVAS_WIDTH - imageData.width) / 2
 
-    let viewScore = this.score * (this.exitDelayCount / this.SCORE_ENIMATION_MAX_FRAME)
-    if (viewScore >= this.score) viewScore = this.score
+    let viewScore = this.totalScore * (this.exitDelayCount / this.SCORE_ENIMATION_MAX_FRAME)
+    if (viewScore >= this.totalScore) viewScore = this.totalScore
+
+    let clearBonus = 0
+    if (this.stateId === this.STATE_ROUND_CLEAR && this.round != null) {
+      clearBonus = this.round.clearBonus
+    }
 
     graphicSystem.imageDisplay(image, imageData.x, imageData.y, imageData.width, imageData.height, titleX, titleY, imageData.width, imageData.height)
     graphicSystem.fillRect(TEXT_X, TEXT_Y - 4, 400, TEXT_HEIGHT * 4, 'lime')
-    graphicSystem.digitalFontDisplay('field score: ' + Math.floor(viewScore), TEXT_X, TEXT_Y)
-    graphicSystem.digitalFontDisplay('clear bonus: ' + 0, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 1))
+    graphicSystem.digitalFontDisplay('field score: ' + this.fieldScore, TEXT_X, TEXT_Y)
+    graphicSystem.digitalFontDisplay('clear bonus: ' + clearBonus, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 1))
     graphicSystem.digitalFontDisplay('-----------: ' + 0, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 2))
-    graphicSystem.digitalFontDisplay('total score: ', TEXT_X, TEXT_Y + (TEXT_HEIGHT * 3))
+    graphicSystem.digitalFontDisplay('total score: ' + Math.floor(viewScore), TEXT_X, TEXT_Y + (TEXT_HEIGHT * 3))
   }
 
   static displayFieldData () {

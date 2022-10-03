@@ -14,6 +14,7 @@ export class imageFile {
     fieldSystem: new Image(),
     optionCheck: new Image(),
     playerDie: new Image(),
+    playerLevelup: new Image()
   }
 
   static weapon = {
@@ -74,6 +75,7 @@ imageFile.system.skillIcon.src = './image/system/skillIcon.png'
 imageFile.system.fieldSystem.src = './image/system/fieldSystem.png'
 imageFile.system.optionCheck.src = './image/system/optionCheck.png'
 imageFile.system.playerDie.src = './image/system/playerDie.png'
+imageFile.system.playerLevelup.src = './image/system/playerLevelup.png'
 
 // weapon
 imageFile.weapon.multyshot.src = './image/weapon/multyshot.png'
@@ -221,8 +223,8 @@ export class imageDataInfo {
     enemyDieMeteorite1: {x: 0, y: 0, width: 50, height: 50, frame: 10},
     enemyDieMeteorite2: {x: 0, y: 50, width: 50, height: 50, frame: 10},
     enemyDieMeteorite3: {x: 0, y: 100, width: 50, height: 50, frame: 10},
-    enemyDieMeteoriteWhite: {x: 0, y: 150, width: 50, height: 50, frame: 10},
-    enemyDieMeteoriteBlack: {x: 0, y: 200, width: 50, height: 50, frame: 10},
+    enemyDieMeteoriteWhite: {x: 0, y: 150, width: 70, height: 50, frame: 10},
+    enemyDieMeteoriteBlack: {x: 0, y: 200, width: 80, height: 45, frame: 10},
   }
 }
 

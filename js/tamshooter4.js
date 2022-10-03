@@ -739,12 +739,13 @@ export class userSystem {
   /** 체력 최대치 */ static hpMax = 100
   /** 공격력(초당) */ static attack = 10000
   /** 데미지 경고 프레임 */ static damageWarningFrame = 0
+  /** 레벨업 이펙트 프레임 */ static levelUpEffectFrame = 0
 
   /**
    * 경험치 테이블
    */
   static expTable = [0, // lv 0
-    181100, 181200, 181300, 181400, 181500, 181600, 181700, 181800, 181900, 182000, // lv 1 ~ 10
+    4, 33000, 36000, 39000, 42000, 45000, 48000, 51000, 54000, 57000, // lv 1 ~ 10
     255500, 256000, 256500, 257000, 257500, 258000, 258500, 259000, 259500, 260000 // lv 11 ~ 20
   ]
 
@@ -864,6 +865,7 @@ export class userSystem {
         this.exp -= this.expTable[this.lv]
         this.lv++
         levelUpSound = true
+        this.levelUpEffectFrame = 120
       }
 
       if (levelUpSound) {
@@ -883,6 +885,7 @@ export class userSystem {
   static process () {
     this.playTime.process()
     if (this.damageWarningFrame > 0) this.damageWarningFrame--
+    if (this.levelUpEffectFrame > 0) this.levelUpEffectFrame--
   }
 
   static display () {
@@ -948,6 +951,17 @@ export class userSystem {
       graphicSystem.gradientDisplay(0 + HP_WIDTH, LAYER1_Y, SHIELD_WIDTH, LAYER_HEIGHT, '#4B8AFC', '#A7C6FF')
     }
 
+    const expColorStartList = ['#A770EF', '#8E2DE2', '#ad5389']
+    const expColorEndList = ['#CF8BF3', '#4A00E0', '#3c1053']
+    let expPercent = this.exp / this.expTable[this.lv]
+
+    if (this.levelUpEffectFrame > 0) {
+      let targetFrame = this.levelUpEffectFrame % expColorStartList.length
+      graphicSystem.gradientDisplay(0, LAYER2_Y, LAYER_WIDTH, LAYER_HEIGHT, expColorStartList[targetFrame], expColorEndList[targetFrame])
+    } else {
+      graphicSystem.gradientDisplay(0, LAYER2_Y, LAYER_WIDTH * expPercent, LAYER_HEIGHT, expColorStartList[0], expColorEndList[0])
+    }
+
     // 스킬 인터페이스
     // 참고로 스킬은 쿨타임이 남아있으면, 남은 쿨타임 시간을 표시하고, 아닐경우 스킬 아이콘을 출력합니다.
     for (let i = 0; i < 4; i++) {
@@ -990,7 +1004,8 @@ export class userSystem {
       hp: this.hpMax,
       hpMax: this.hpMax,
       shield: this.shieldMax,
-      shieldMax: this.shieldMax
+      shieldMax: this.shieldMax,
+      lv: this.lv
     }
   }
 }
