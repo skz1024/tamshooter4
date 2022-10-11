@@ -633,7 +633,8 @@ class RoundSelectSystem extends MenuSystem {
     // 나중에 data.js쪽에 옮겨질 예정
     const roundTableId = [
       ID.round.round1_1,
-      ID.round.round1_2
+      ID.round.round1_2,
+      ID.round.round1_3
     ]
 
     if (this.cursorMode === this.CURSORMODE_MAIN) {
@@ -745,7 +746,7 @@ export class userSystem {
    * 경험치 테이블
    */
   static expTable = [0, // lv 0
-    4, 33000, 36000, 39000, 42000, 45000, 48000, 51000, 54000, 57000, // lv 1 ~ 10
+    30000, 33000, 36000, 39000, 42000, 45000, 48000, 51000, 54000, 57000, // lv 1 ~ 10
     255500, 256000, 256500, 257000, 257500, 258000, 258500, 259000, 259500, 260000 // lv 11 ~ 20
   ]
 

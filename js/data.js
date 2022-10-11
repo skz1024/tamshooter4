@@ -93,10 +93,19 @@ export class ID {
     meteoriteEnemyBombBig: 20135,
     meteoriteEnemyRed: 20136,
     meteoriteEnemyRedBig: 20137,
+    jemulEnemyRotateRocket: 20140,
+    jemulEnemyEnergyBolt: 20141,
+    jemulEnemyHellSpike: 20142,
+    jemulEnemyHellDrill: 20143,
+    jemulEnemyHellAir: 20144,
+    jemulEnemyHellShip: 20145,
   }
 
   static enemyBullet = {
     meteoriteBomb: 30140,
+    jemulEnemySpike: 30145,
+    jemulEnemyShip: 30146,
+    jemulEnemyAir: 30147
   }
 
   static effect = {
@@ -105,6 +114,7 @@ export class ID {
     skillMissile: 40002,
     skillParapo: 40003,
     enemyBulletMeteoriteBomb: 40004,
+    jemulEnemyEnergyBoltAttack: 40005,
   }
 
   static sprite = {
@@ -273,12 +283,12 @@ export class collisionClass {
         y: (-halfWidth * sin) + (-halfHeight * cos) + objectA.y + halfHeight
       })
       vertex.push({
-        x: (halfWidth * cos) - (halfHeight * sin) + objectA.x + halfWidth,
-        y: (halfWidth * sin) + (halfHeight * cos) + objectA.y + halfHeight
-      })
-      vertex.push({
         x: (halfWidth * cos) - (-halfHeight * sin) + objectA.x + halfWidth,
         y: (halfWidth * sin) + (-halfHeight * cos) + objectA.y + halfHeight
+      })
+      vertex.push({
+        x: (halfWidth * cos) - (halfHeight * sin) + objectA.x + halfWidth,
+        y: (halfWidth * sin) + (halfHeight * cos) + objectA.y + halfHeight
       })
       vertex.push({
         x: (-halfWidth * cos) - (halfHeight * sin) + objectA.x + halfWidth,
@@ -420,7 +430,7 @@ class EnimationData {
     this.finished = false
 
     /** 이미지 뒤집기 */ this.flip = 0
-    /** 이미지 회전값 */ this.rotateDegree = 0
+    /** 이미지 회전값 */ this.degree = 0
   }
 
   /**
@@ -496,8 +506,8 @@ class EnimationData {
     const sliceY = this.sliceStartY + (sliceLine * this.frameHeight)
 
     // 이미지 출력
-    if (this.flip || this.rotateDegree) {
-      graphicSystem.imageDisplay(this.image, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight, this.flip, this.rotateDegree)
+    if (this.flip || this.degree) {
+      graphicSystem.imageDisplay(this.image, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight, this.flip, this.degree)
     } else {
       graphicSystem.imageDisplay(this.image, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight)
     }
@@ -631,7 +641,7 @@ export class FieldData {
     }
   }
 
-  /** 랜덤하게 적 속도 결정 */
+  /** 랜덤하게 적 속도 결정 (이동 속도 기준이라 방향에 영향을 받음) */
   setRandomSpeed (maxX = 2, maxY = 2, isMinusRangeInclued = false) {
     if (isMinusRangeInclued) {
       this.moveSpeedX = (Math.random() * maxX) - (maxX * 2)
@@ -639,6 +649,14 @@ export class FieldData {
     } else {
       this.moveSpeedX = Math.random() * maxX
       this.moveSpeedY = Math.random() * maxY
+    }
+
+    if (this.moveDirectionX === '') {
+      this.speedX = this.moveSpeedX
+    }
+
+    if (this.moveDirectionY === '') {
+      this.speedY = this.moveSpeedY
     }
   }
 
@@ -648,6 +666,8 @@ export class FieldData {
   setMoveSpeed (moveSpeedX = 1, moveSpeedY = 1) {
     this.moveSpeedX = moveSpeedX
     this.moveSpeedY = moveSpeedY
+    this.speedX = moveSpeedX
+    this.speedY = moveSpeedY
   }
 
   /**
@@ -725,6 +745,19 @@ export class FieldData {
   }
 
   /**
+   * 필드 객체가 화면 영역을 완전히 벗어났는지 확인합니다. outAreaCheck와는 감지 범위가 다릅니다.
+   */
+  exitAreaCheck () {
+    if (this.x + this.width < 0 || this.x > graphicSystem.CANVAS_WIDTH ||
+      this.y + this.height < 0 || this.y > graphicSystem.CANVAS_HEIGHT) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+
+  /**
    * fieldState에서 오브젝트를 클래스를 이용해 생성하면 좌표값은 0, 0이되기 때문에,
    * 원하는 좌표에 설정하기 위한 함수를 사용해 좌표를 정해주어야 합니다.
    * @param {number} x x좌표
@@ -735,6 +768,13 @@ export class FieldData {
     this.x = x
     this.y = y
     this.z = z
+  }
+
+  /**
+   * 각 필드 객체별로 생성할 때, 옵션을 이용해 일부 스탯을 설정하는 경우, 이 함수를 재정의 해서 사용
+   */
+  setOption () {
+
   }
 
   /**
@@ -758,6 +798,27 @@ export class FieldData {
           graphicSystem.imageDisplay(this.image, this.x, this.y)
         }
       }
+    }
+  }
+
+  /**
+   * (EnemyData 전용에서 FieldData 전용으로 변경됨.)
+   * 이미지와 이미지 데이터를 설정하고, 자동으로 에니메이션 설정을 합니다.
+   * 참고로 이 설정은 크기(너비, 높이)까지 자동으로 변경하며, 수동으로 값을 조정해야 한다면, width, height 옵션을 넣어주세요.
+   * @param {Image} image
+   * @param {ImageDataObject} imageData
+   * @param {number} enimationDelay 에니메이션 딜레이(프레임 단위)
+   */
+   setAutoImageData (image, imageData, enimationDelay = 1, {width = null, height = null} = {}) {
+    this.image = image
+    this.imageData = imageData
+    if (this.image == null || this.imageData == null) return
+
+    this.width = width == null ? this.imageData.width : width
+    this.height = height == null ? this.imageData.height : height
+    
+    if (this.imageData.frame >= 2) {
+      this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, enimationDelay, -1)
     }
   }
 }
@@ -3257,24 +3318,6 @@ export class EnemyData extends FieldData {
     }]
   }
 
-  /**
-   * 이미지와 이미지 데이터를 설정하고, 자동으로 에니메이션 설정을 합니다.
-   * @param {Image} image
-   * @param {ImageDataObject} imageData
-   * @param {number} enimationDelay 에니메이션 딜레이(프레임 단위)
-   */
-  setAutoImageData (image, imageData, enimationDelay = 1) {
-    this.image = image
-    this.imageData = imageData
-    if (this.image == null || this.imageData == null) return
-
-    this.width = this.imageData.width
-    this.height = this.imageData.height
-    if (this.imageData.frame >= 2) {
-      this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, enimationDelay, -1)
-    }
-  }
-
   setEnemyStat (hp = 1, score = 0, attack = 0) {
     this.hp = hp
     this.score = score
@@ -3315,6 +3358,7 @@ export class EnemyData extends FieldData {
       this.processExitToReset()
       this.processPlayerCollision()
       this.processEnimation()
+      this.processAttack()
     }
 
     // 적 죽었는지 체크
@@ -3343,7 +3387,7 @@ export class EnemyData extends FieldData {
       this.x = graphicSystem.CANVAS_WIDTH
       if (this.moveDirectionX === 'left') {
         this.moveDirectionX = 'right'
-      } else if (this.moveDirectionX === ' right') {
+      } else if (this.moveDirectionX === 'right') {
         this.moveDirectionX = 'left'
       } else {
         this.speedX = -Math.abs(this.speedX)
@@ -3396,14 +3440,11 @@ export class EnemyData extends FieldData {
   }
 
   /**
-   * 적이 화면 바깥에 있는지 없는지 알려줍니다.
+   * 만약 적이 공격해야 할 일이 있다면 이 함수를 작성해주세요.
+   * 다만 대부분의 적들은 공격을 하지 않고 충돌만 합니다. (참고로 충돌데미지와 공격데미지는 별개입니다.)
    */
-  viewAreaExitCheck () {
-    if (this.x - this.width < 0 || this.x + this.width > graphicSystem.CANVAS_WIDTH || this.y - this.height < 0 || this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
-      return true
-    } else {
-      return false
-    }
+  processAttack () {
+
   }
 
   /**
@@ -3505,6 +3546,7 @@ export class EnemyData extends FieldData {
 export class EnemyBulletData extends FieldData {
   constructor () {
     super()
+    this.isNotMoveOption = false
   }
 
   process () {
@@ -3539,6 +3581,33 @@ export class EnemyBulletData extends FieldData {
       } else {
         return false
       }
+  }
+
+  setOption (moveOption = {moveSpeedX: 1, moveSpeedY: 0, moveDirectionX: '', moveDirectionY: ''}) {
+    if (this.isNotMoveOption) return
+
+    this.moveSpeedX = moveOption.moveSpeedX
+    this.moveSpeedY = moveOption.moveSpeedY
+    this.moveDirectionX = moveOption.moveDirectionX
+    this.moveDirectionY = moveOption.moveDirectionY
+
+    if (this.moveDirectionX === '') {
+      this.speedX = this.moveSpeedX
+    }
+    if (this.moveDirectionY === '') {
+      this.speedY = this.moveSpeedY
+    }
+  }
+
+  setAutoRotate () {
+    let speedX = this.moveDirectionX == 'right' ? this.speedX : -this.speedX
+    let speedY = this.moveDirectionY == 'down' ? this.speedY : -this.speedY
+    let nextX = this.x + speedX
+    let nextY = this.y + speedY
+    let distanceX = nextX - this.x
+    let distanceY = nextY - this.y
+    const atangent = Math.atan2(distanceY, distanceX)
+    this.degree = atangent * (180 / Math.PI)
   }
 }
 
@@ -3622,7 +3691,7 @@ class SpaceEnemyRocket extends EnemyData {
     this.setMoveSpeed(4 + Math.random() * 2, 0)
     this.isPossibleExit = true
     this.isExitToReset = true
-    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceRocket, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceRocket, this.height, this.height, 2))
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceRocket, new CustomEffectData(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedWhite, this.height, this.height, 2))
   }
 }
 
@@ -3631,7 +3700,7 @@ class SpaceEnemyCar extends EnemyData {
     super()
     this.setEnemyStat(4800, 48, 14)
     this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.greenCar, 4)
-    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceCar, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceCar, this.height, this.height, 2))
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceCar, new CustomEffectData(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.car1, this.height, this.height, 2))
     this.state = 'normal'
     this.boostCount = 0 // 자동차의 속도를 올리기 위한 변수
     this.isPossibleExit = true
@@ -3683,7 +3752,7 @@ class SpaceEnemySquare extends EnemyData {
     super()
     this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.blueSqaure, 4)
     this.setEnemyStat(5000, 50, 16)
-    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceSquare, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceSquare, this.width, this.height, 2))
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceSquare, new CustomEffectData(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareGrey, this.width, this.height, 2))
     this.isPossibleExit = false
     this.MOVE_STOP_FRAME = 180
     this.moveDelay = new DelayData(240)
@@ -3720,7 +3789,7 @@ class SpaceEnemyAttack extends EnemyData {
     super()
     this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.blueAttack, 4)
     this.setEnemyStat(4800, 48, 14)
-    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceSquare, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceAttack, this.width, this.height, 2))
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceSquare, new CustomEffectData(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.diamondBlue, this.width, this.height, 2))
     this.boostCount = 0
     this.moveSpeedY = Math.random() * 2 - 1
   }
@@ -3752,7 +3821,7 @@ class SpaceEnemyEnergy extends EnemyData {
     this.setEnemyStat(6000, 60, 16)
     this.setMoveSpeed(4, 4)
     this.setMoveDirection()
-    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceEnergy, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceEnergy, this.width, this.height, 2))
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceEnergy, new CustomEffectData(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareLinePurple, this.width, this.height, 2))
     this.boostCount = 0
     this.moveDelay = new DelayData(180) // 이 값이 180이 아니면, 오류가 발생할 수 있음. 속도를 계산하는 데 알고리즘상의 문제가 있음.
     this.moveDelay.count = this.moveDelay.delay // 딜레이 즉시 발동을 위한 카운트 강제 증가
@@ -3796,7 +3865,7 @@ class SpaceEnemySusong extends EnemyData {
     super()
     this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.susong, 3)
     this.setEnemyStat(20000, 200, 20)
-    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceSusong, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceSusong, this.width / 2, this.width / 2, 2, 2))
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceSusong, new CustomEffectData(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.smallCircleUp, this.width / 2, this.width / 2, 2, 2))
     this.boostCount = 0
     this.moveDelay = new DelayData(240)
     this.state = 'move'
@@ -3858,7 +3927,7 @@ class SpaceEnemyGamjigi extends EnemyData {
     this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.gamjigi)
     this.setEnemyStat(16000, 160, 16)
     this.setMoveDirection()
-    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceGamjigi, new CustomEffectData(imageFile.enemyDie.enemyDieSpaceGamjigi, imageDataInfo.enemyDieSpace.enemyDieSpaceGamjigi, this.width, this.height, 3))
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceGamjigi, new CustomEffectData(imageFile.enemyDie.enemyDieSpaceGamjigi, imageDataInfo.enemyDieEffectEx.enemyDieSpaceGamjigi, this.width, this.height, 3))
     this.moveDelay = new DelayData(300)
     this.boostCount = 0
     this.degree = 0
@@ -3904,9 +3973,9 @@ class SpaceEnemyGamjigi extends EnemyData {
 
   processPlayerCollision () {
     if (this.collisionDelay.check(false)) {
-      this.collisionDelay.count = 0
       const player = fieldState.getPlayerObject()
       if (collisionClass.collisionOBB(player, this)) {
+        this.collisionDelay.count = 0
         player.addDamage(this.attack)
       }
     }
@@ -3920,7 +3989,7 @@ class SpaceEnemyGamjigi extends EnemyData {
       this.processDieDefault()
 
       // 죽음 이펙트를 얻어온 후 이 적이 죽었을 때 당시의 현재 회전값을 얻어와 애니메이션에다가 지정하고 그 값으로 커스텀 이펙트를 생성한다.
-      customEffect.enimation.rotateDegree = this.degree
+      customEffect.enimation.degree = this.degree
       fieldState.createEffectCustomObject(customEffect, this.x, this.y)
     }
   }
@@ -3936,7 +4005,7 @@ class SpaceEnemyComet extends EnemyData {
   constructor () {
     super()
     this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.comet, 2)
-    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceComet, new CustomEffectData(imageFile.enemyDie.enemyDieSpaceComet, imageDataInfo.enemyDieSpace.enemyDieSpaceComet, this.width, this.height, 4))
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceComet, new CustomEffectData(imageFile.enemyDie.enemyDieSpaceComet, imageDataInfo.enemyDieEffectEx.enemyDieSapceComet, this.width, this.height, 4))
     this.setEnemyStat(2800, 28, 4)
     this.setMoveSpeed(1, Math.random() * 4 + 2)
     this.boostCount = 0
@@ -4021,7 +4090,7 @@ class SpaceEnemyBoss extends EnemyData {
     this.width = 300
     this.height = 300
     this.setEnemyStat(1200000, 6000, 40)
-    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceCar, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceCar, this.width, this.height, 1, 12))
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceCar, new CustomEffectData(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.car1, this.width, this.height, 1, 12))
 
     // 따라서 에니메이션의 출력 사이즈도 변경
     this.enimation.setOutputSize(this.width, this.height)
@@ -4751,6 +4820,7 @@ class EnemyBulletMeteoriteBomb extends EnemyBulletData {
     this.attack = 20
     this.width = MeteoriteEnemyBomb.BOMB_SIZE
     this.height = MeteoriteEnemyBomb.BOMB_SIZE
+    this.isNotMoveOption = true
   }
 
   process () {
@@ -4861,7 +4931,7 @@ class MeteoriteEnemyStonePiece extends EnemyData {
     this.pieceNumber = option.length > 1 ? option[1] : Math.floor(Math.random() * pieceNumberMax)
 
     this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataList[this.stoneType][this.pieceNumber])
-    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceSmall, new CustomEffectData(imageFile.enemyDie.enemyDieSpace, imageDataInfo.enemyDieSpace.enemyDieSpaceSquare, this.width, this.height, 1))
+    this.setDieEffect(soundFile.enemyDie.enemyDieSpaceSmall, new CustomEffectData(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareGrey, this.width, this.height, 1))
     this.setEnemyStat(4000, 40, 10)
     this.setRandomSpeed(4, 4)
     this.width = 80
@@ -4889,6 +4959,401 @@ class MeteoriteEnemyStonePiece extends EnemyData {
     }
   }
 }
+
+class JemulEnemyRotateRocket extends EnemyData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageFile.enemy.jemulEnemy, imageDataInfo.jemulEnemy.rotateRocket, 5)
+    this.setEnemyStat(20000, 200, 25)
+    this.setDieEffect(soundFile.enemyDie.enemyDieJemulRocket, new CustomEffectData(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedOrange, this.width, this.width, 2))
+
+    // 이 로켓은 플레이어가 있는 위치에 발사되기 때문에, 이동 방향을 삭제하고 순수 속도값을 설정
+    this.setMoveDirection()
+    this.changeMoveSpeed()
+  }
+
+  changeMoveSpeed () {
+    const playerX = fieldState.getPlayerObject().centerX
+    const playerY = fieldState.getPlayerObject().centerY
+    const distanceX = playerX - this.x
+    const distanceY = playerY - this.y
+    const atangent = Math.atan2(distanceY, distanceX)
+
+    // 판정 문제 때문에 에니메이션 각도와 실제 각도를 동시에 변경
+    this.degree = atangent * (180 / Math.PI)
+    this.enimation.degree = this.degree 
+
+    this.speedX = distanceX / 250
+    this.speedY = distanceY / 250
+  }
+
+  processMove () {
+    super.processMove()
+    if (this.exitAreaCheck()) {
+      this.changeMoveSpeed()
+    }
+  }
+
+  processPlayerCollision () {
+    if (this.collisionDelay.check(false)) {
+      const player = fieldState.getPlayerObject()
+      if (collisionClass.collisionOBB(player, this)) {
+        this.collisionDelay.count = 0
+        player.addDamage(this.attack)
+      }
+    }
+  }
+}
+
+class JemulEnemyEnergyBolt extends EnemyData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageFile.enemy.jemulEnemy, imageDataInfo.jemulEnemy.energyBolt)
+    this.setEnemyStat(8000, 80, 15)
+    this.setDieEffect(soundFile.enemyDie.enemyDieJemulEnergyBolt, new CustomEffectData(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.pulseDiamondBlue, this.width, this.height, 2))
+    this.setRandomSpeed(2, 3)
+    this.moveDelay = new DelayData(180)
+    this.attackDelay = new DelayData(180)
+    this.bulletDamage = 15
+    this.bulletSize = 160
+    this.isExitToReset = true
+  }
+
+  processMove () {
+    if (this.moveDelay.check()) {
+      this.setRandomSpeed(2, 3)
+    }
+    super.processMove()
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      // 에너지볼트는 일정시간마다 에너지를 자기 근처에 발사한다. (위치는 정해진 범위내 랜덤)
+      const hitArea = {
+        x: Math.floor(this.x + (this.width / 2) - (this.bulletSize / 2) + (Math.random() * 120) - 60), 
+        y: Math.floor(this.y + (this.width / 2) - (this.bulletSize / 2) + (Math.random() * 120) - 60),
+        width: this.bulletSize,
+        height: this.bulletSize
+      }
+      const player = fieldState.getPlayerObject()
+      const playerPosition = {
+        x: player.x,
+        y: player.y,
+        width: player.width,
+        height: player.height
+      }
+
+      // 플레이어가 맞았다면 데미지를 추가
+      if (collision(playerPosition, hitArea)) {
+        player.addDamage(15)
+      }
+      
+      // 사운드 및 이펙트 추가
+      fieldState.createEffectObject(ID.effect.jemulEnemyEnergyBoltAttack, hitArea.x, hitArea.y)
+      soundSystem.play(soundFile.enemyAttack.jemulEnergyBoltAttack)
+    }
+  }
+}
+
+class JemulEnemyEnergyBoltAttackEffect extends EffectData {
+  constructor () {
+    super()
+    this.autoSetEnimation(imageFile.enemyAttack.energyBoltAttack, imageDataInfo.enemyAttack.jemulEnergyBoltAttack, 160, 160, 3)
+  }
+}
+
+class JemulEnemyHellSpike extends EnemyData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageFile.enemy.jemulEnemy, imageDataInfo.jemulEnemy.hellSpike)
+    this.setEnemyStat(13200, 132, 22)
+    this.setDieEffect(soundFile.enemyDie.enemyDieJemulSpike, new CustomEffectData(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.diamondMagenta, this.width, this.height, 2))
+    this.setRandomSpeed(3, 3)
+    this.attackDelay = new DelayData(120)
+    this.isExitToReset = true
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let centerX = this.x + (this.width / 2)
+      let centerY = this.y + (this.height / 2)
+      fieldState.createEnemyBulletObject(ID.enemyBullet.jemulEnemySpike, centerX, centerY, 10, {moveDirectionX: 'left', moveDirectionY: 'up', moveSpeedX: 3, moveSpeedY: 3})
+      fieldState.createEnemyBulletObject(ID.enemyBullet.jemulEnemySpike, centerX, centerY, 10, {moveDirectionX: 'left', moveDirectionY: 'down', moveSpeedX: 3, moveSpeedY: 3})
+      fieldState.createEnemyBulletObject(ID.enemyBullet.jemulEnemySpike, centerX, centerY, 10, {moveDirectionX: 'right', moveDirectionY: 'up', moveSpeedX: 3, moveSpeedY: 3})
+      fieldState.createEnemyBulletObject(ID.enemyBullet.jemulEnemySpike, centerX, centerY, 10, {moveDirectionX: 'right', moveDirectionY: 'down', moveSpeedX: 3, moveSpeedY: 3})
+    }
+  }
+}
+
+class JemulEnemyHellSpikeBullet extends EnemyBulletData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageFile.enemyAttack.attackList, imageDataInfo.enemyAttack.jemulEnemyHellSpike, 1)
+    this.attack = 10
+  }
+
+  processMove () {
+    this.setAutoRotate()
+    super.processMove()
+  }
+}
+
+class JemulEnemyHellDrill extends EnemyData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageFile.enemy.jemulEnemy, imageDataInfo.jemulEnemy.hellDrill, 0)
+    this.setEnemyStat(14400, 144, 6)
+    this.setDieEffect(soundFile.enemyDie.enemyDieJemulDrill, new CustomEffectData(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.smallCircleUp, this.width, this.height, 3))
+    
+    // 드릴은 초당 6회 공격 가능(일반적이 적들은 초당 1회 제한)
+    this.collisionDelay.delay = 10
+
+    this.moveDelay = new DelayData(240)
+    this.setMoveDirection()
+    this.setRandomSpeed(4, 2)
+    this.isExitToReset = true
+    this.state = ''
+  }
+
+  processPlayerCollision () {
+    if (this.collisionDelay.check(false)) {
+      const player = fieldState.getPlayerObject()
+      const enemy = this.getCollisionArea() // 적은 따로 충돌 영역을 얻습니다.
+
+      for (let i = 0; i < enemy.length; i++) {
+        if (collision(enemy[i], player)) {
+          soundSystem.play(soundFile.enemyAttack.jemulHellDrillAttack) // 공격 성공시 사운드 출력
+          player.addDamage(this.attack)
+          this.collisionDelay.count = 0 // 플레이어랑 충돌하면 충돌 딜레이카운트를 0으로 만듬
+          return
+        }
+      }
+    }
+  }
+
+  processMove () {
+    if (this.moveDelay.check(false)) {
+      let checkArea = {
+        x: this.x - 150,
+        y: this.y - 150,
+        width: 300,
+        height: 300
+      }
+      let player = fieldState.getPlayerObject()
+
+      if (collision(checkArea, player)) {
+        this.moveDelay.count = 0
+        this.state = 'attack'
+        this.setMoveDirection()
+        this.speedX = (player.x - this.x) / 27
+        this.speedY = (player.y - this.y) / 27
+      }
+    }
+    
+    if (this.state === 'attack' && this.moveDelay.count >= 30) {
+      this.state = ''
+      this.speedX /= 4
+      this.speedY /= 4
+    }
+
+    super.processMove()
+  }
+}
+
+class JemulEnemyHellShip extends EnemyData {
+  constructor () {
+    super()
+    // 이 객체는 에니메이션이 총 3종류라 따로 코드를 작성해야 합니다.
+    this.setAutoImageData(imageFile.enemy.jemulEnemy, imageDataInfo.jemulEnemy.hellShipFront)
+    this.setEnemyStat(32000, 320, 24)
+    this.setDieEffect(soundFile.enemyDie.enemyDieJemulHellShip, new CustomEffectData(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireBlue, this.width, this.height, 2))
+    let up = imageDataInfo.jemulEnemy.hellShipUp
+    let down = imageDataInfo.jemulEnemy.hellShipDown
+    this.enimationUp  = new EnimationData(this.image, up.x, up.y, up.width, up.height, up.frame, 1, -1, this.width, this.height)
+    this.enimationDown  = new EnimationData(this.image, down.x, down.y, down.width, down.height, down.frame, 1, -1, this.width, this.height)
+    this.state = 'front'
+    this.isPossibleExit = false
+    this.setMoveSpeed(4, 0)
+    this.moveDelay = new DelayData(60)
+    this.attackDelay = new DelayData(60)
+    this.maxMoveSpeedY = 1
+  }
+
+  processMove () {
+    if (this.moveDelay.check()) {
+      this.moveSpeedX = Math.random() * 4
+      this.maxMoveSpeedY = Math.random() * 3
+      
+      let randomNumber = Math.random() * 100
+      if (randomNumber <= 33) {
+        this.state = 'up'
+        this.moveDirectionY = 'up'
+      } else if (randomNumber >= 34 && randomNumber <= 67) {
+        this.state = 'down'
+        this.moveDirectionY = 'down'
+      } else {
+        this.state = 'front'
+      }
+    }
+
+    // 어느 정도 왼쪽으로 왔다면 강제로 오른쪽으로 이동
+    if (this.x < 200) {
+      this.moveDirectionX = 'right'
+    }
+
+    if (this.moveDirectionX === 'right') {
+      this.enimation.flip = 1
+      this.enimationUp.flip = 1
+      this.enimationDown.flip = 1
+    } else {
+      this.enimation.flip = 0
+      this.enimationUp.flip = 0
+      this.enimationDown.flip = 0
+    }
+
+    if (this.state === 'up' || this.state === 'down') {
+      if (this.moveSpeedY < this.maxMoveSpeedY) {
+        this.moveSpeedY += 0.06
+      }
+    } else if (this.state === 'front') {
+      if (this.moveSpeedY > 0) {
+        this.moveSpeedY -= 0.11
+      } else {
+        this.moveSpeedY = 0
+      }
+    }
+
+    super.processMove()
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      fieldState.createEnemyBulletObject(ID.enemyBullet.jemulEnemyShip, this.x, this.y, 14, {moveSpeedX: 4, moveDirectionX: 'left'})
+    }
+  }
+
+  processEnimation () {
+    if (this.enimation != null || this.enimationUp != null || this.enimationDown != null) {
+      this.enimation.process()
+      this.enimationUp.process()
+      this.enimationDown.process()
+    }
+  }
+
+  display () {
+    // 이동 상태에 따라 출력 이미지 변경
+    if (this.moveSpeedY === 0) {
+      this.enimation.display(this.x, this.y)
+    } else if (this.moveDirectionY === 'up' && this.moveSpeedY > 0) {
+      this.enimationUp.display(this.x, this.y)
+    } else if (this.moveDirectionY === 'down' && this.moveSpeedY > 0) {
+      this.enimationDown.display(this.x, this.y)
+    }
+  }
+}
+
+class JemulEnemyHellShipBullet extends EnemyBulletData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageFile.enemyAttack.attackList, imageDataInfo.enemyAttack.jemulEnemyShip)
+  }
+}
+
+class JemulEnemyHellAir extends EnemyData {
+  constructor () {
+    super()
+    // 이 객체는 에니메이션이 총 3종류라 따로 코드를 작성해야 합니다.
+    this.setAutoImageData(imageFile.enemy.jemulEnemy, imageDataInfo.jemulEnemy.hellAirFront)
+    this.setEnemyStat(36000, 360, 24)
+    this.setDieEffect(soundFile.enemyDie.enemyDieJemulHellAir, new CustomEffectData(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireBlue, this.width, this.height, 2))
+    let up = imageDataInfo.jemulEnemy.hellAirUp
+    let down = imageDataInfo.jemulEnemy.hellAirDown
+    this.enimationUp  = new EnimationData(this.image, up.x, up.y, up.width, up.height, up.frame, 1, -1, this.width, this.height)
+    this.enimationDown  = new EnimationData(this.image, down.x, down.y, down.width, down.height, down.frame, 1, -1, this.width, this.height)
+    this.state = 'front'
+    this.isExitToReset = true
+    this.setRandomSpeed(4, 4)
+    this.moveDelay = new DelayData(120)
+    this.attackDelay = new DelayData(90)
+  }
+
+  processMove () {
+    if (this.moveDelay.check()) {
+      this.setRandomSpeed(4, 4)
+      let randomNumberA = Math.random() * 100
+      let randomNumberB = Math.random() * 100
+
+      this.moveDirectionX = randomNumberA < 50 ? 'left' : 'right'
+      this.moveDirectionY = randomNumberB < 50 ? 'up' : 'down'
+    }
+
+    if (this.moveDirectionX === 'right') {
+      this.enimation.flip = 1
+      this.enimationUp.flip = 1
+      this.enimationDown.flip = 1
+    } else {
+      this.enimation.flip = 0
+      this.enimationUp.flip = 0
+      this.enimationDown.flip = 0
+    }
+
+    if (this.moveSpeedY > 1) {
+      if (this.moveDirectionY === 'up') {
+        this.state = 'up'
+      } else {
+        this.state = 'down'
+      }
+    } else {
+      this.state = 'front'
+    }
+
+    super.processMove()
+  }
+
+  processEnimation () {
+    this.enimation.process()
+    this.enimationUp.process()
+    this.enimationDown.process()
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let bulletSpeedX = 8
+      let bulletX = this.x + this.width
+      if (this.moveDirectionX === 'left') {
+        bulletSpeedX = -8
+        bulletX = this.x
+      }
+
+      fieldState.createEnemyBulletObject(ID.enemyBullet.jemulEnemyAir, bulletX, this.y + (this.height / 4 * 1), 12, {moveSpeedX: bulletSpeedX, moveSpeedY: 0, moveDirectionX: '', moveDirectionY: ''})
+      fieldState.createEnemyBulletObject(ID.enemyBullet.jemulEnemyAir, bulletX, this.y + (this.height / 4 * 3), 12, {moveSpeedX: bulletSpeedX, moveSpeedY: 0, moveDirectionX: '', moveDirectionY: ''})
+    }
+  }
+
+  display () {
+    // 이동 상태에 따라 출력 이미지 변경
+    if (this.state === 'front') {
+      this.enimation.display(this.x, this.y)
+    } else if (this.state === 'up') {
+      this.enimationUp.display(this.x, this.y)
+    } else if (this.state === 'down') {
+      this.enimationDown.display(this.x, this.y)
+    }
+  }
+}
+
+class JemulEnemyHellAirBullet extends EnemyBulletData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageFile.enemyAttack.attackList, imageDataInfo.enemyAttack.jemulEnemyAir)
+  }
+
+  processMove () {
+    super.processMove()
+  }
+}
+
+
 
 
 class Donggeurami extends EnemyData {
@@ -5282,7 +5747,7 @@ class Round1_1 extends RoundData {
     super()
     this.roundName = stringText.dataRoundName.round1_1
     this.roundText = '1-1'
-    this.recommandPower = 10000
+    this.recommandPower = 40000
     this.requireLevel = 1
     this.finishTime = 150
     this.clearBonus = 30000
@@ -5401,8 +5866,8 @@ class Round1_2 extends RoundData {
     super()
     this.roundName = stringText.dataRoundName.round1_2
     this.roundText = '1-2'
-    this.recommandPower = 10000
-    this.requireLevel = 1
+    this.recommandPower = 40000
+    this.requireLevel = 2
     this.finishTime = 180
     this.clearBonus = 40000
     this.backgroundImage = imageFile.round.round1_meteorite
@@ -5534,6 +5999,29 @@ class Round1_2 extends RoundData {
   }
 }
 
+class Round1_3 extends RoundData {
+  constructor () {
+    super()
+    this.roundName = stringText.dataRoundName.round1_3
+    this.roundText = '1-3'
+    this.recommandPower = 40000
+    this.requireLevel = 3
+    this.finishTime = 210
+    this.clearBonus = 30000
+    this.backgroundImage = imageFile.round.round1_meteoriteDeep
+    this.music = soundFile.music.music02_meteorite_zone_field
+    // this.addBossData(ID.enemy.spaceEnemyBoss, 145)
+    this.bossMusic = soundFile.music.music03_meteorite_zone_battle
+
+    this.addRoundPhase(this.roundPhase0, 1, 11)
+  }
+
+  roundPhase0 () {
+    if (this.timeCheck(0, 60, 60) && fieldState.getEnemyObject().length === 0) {
+      this.createEnemy(ID.enemy.jemulEnemyHellAir)
+    }
+  }
+}
 
 
 /**
@@ -5671,6 +6159,14 @@ export class tamshooter4Data {
       case ID.enemy.meteoriteEnemyBombBig: return MeteoriteEnemyBombBig
       case ID.enemy.meteoriteEnemyStone: return MeteoriteEnemyStone
       case ID.enemy.meteoriteEnemyStonePiece: return MeteoriteEnemyStonePiece
+      
+      // r1-3: jemul enemy
+      case ID.enemy.jemulEnemyRotateRocket: return JemulEnemyRotateRocket
+      case ID.enemy.jemulEnemyEnergyBolt: return JemulEnemyEnergyBolt
+      case ID.enemy.jemulEnemyHellSpike: return JemulEnemyHellSpike
+      case ID.enemy.jemulEnemyHellDrill: return JemulEnemyHellDrill
+      case ID.enemy.jemulEnemyHellShip: return JemulEnemyHellShip
+      case ID.enemy.jemulEnemyHellAir: return JemulEnemyHellAir
 
       // null?
       default: return null
@@ -5689,6 +6185,7 @@ export class tamshooter4Data {
       case ID.effect.skillMissile: return SkillMissileEffect
       case ID.effect.skillParapo: return SkillParapoEffect
       case ID.effect.enemyBulletMeteoriteBomb: return EnemyBulletMeteoriteBombEffect
+      case ID.effect.jemulEnemyEnergyBoltAttack: return JemulEnemyEnergyBoltAttackEffect
     }
   }
 
@@ -5700,6 +6197,9 @@ export class tamshooter4Data {
   static getEnemyBulletData (enemyBulletId) {
     switch (enemyBulletId) {
       case ID.enemyBullet.meteoriteBomb: return EnemyBulletMeteoriteBomb
+      case ID.enemyBullet.jemulEnemySpike: return JemulEnemyHellSpikeBullet
+      case ID.enemyBullet.jemulEnemyShip: return JemulEnemyHellShipBullet
+      case ID.enemyBullet.jemulEnemyAir: return JemulEnemyHellAirBullet
     }
   }
 
@@ -5711,6 +6211,7 @@ export class tamshooter4Data {
     switch (roundId) {
       case ID.round.round1_1: return Round1_1
       case ID.round.round1_2: return Round1_2
+      case ID.round.round1_3: return Round1_3
     }
   }
 }

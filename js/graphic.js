@@ -7,7 +7,7 @@ import { systemText } from './text.js'
  */
 
 // 정상적으로 이 js파일을 로드한다면 noticeText 를 삭제합니다.
-document.getElementById('noticeText').remove()
+// document.getElementById('noticeText').remove()
 
 /**
  * HTML의 canvas의 2d contex를 사용하기 위한 함수.

@@ -80,6 +80,17 @@ export class soundFile {
     enemyDieSpaceSmall: new Audio('./sound/enemyDieSpaceSmall.mp3'),
     enemyDieSpaceSquare: new Audio('./sound/enemyDieSpaceSquare.mp3'),
     enemyDieSpaceSusong: new Audio('./sound/enemyDieSpaceSusong.mp3'),
+    enemyDieJemulDrill: new Audio('./sound/enemyDieJemulDrill.mp3'),
+    enemyDieJemulEnergyBolt: new Audio('./sound/enemyDieJemulEnergyBolt.mp3'),
+    enemyDieJemulHellAir: new Audio('./sound/enemyDieJemulHellAir.mp3'),
+    enemyDieJemulHellShip: new Audio('./sound/enemyDieJemulHellShip.mp3'),
+    enemyDieJemulRocket: new Audio('./sound/enemyDieJemulRocket.mp3'),
+    enemyDieJemulSpike: new Audio('./sound/enemyDieJemulSpike.mp3'),
+  }
+
+  static enemyAttack = {
+    jemulEnergyBoltAttack: new Audio('./sound/enemyJemulEnergyBoltAttack.mp3'),
+    jemulHellDrillAttack: new Audio('./sound/enemyJemulHellDrillAttack.mp3')
   }
 
   static music = {

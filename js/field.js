@@ -185,6 +185,8 @@ class PlayerObject extends FieldData {
   }
 
   addDamage (damage) {
+    if (this.isDied) return
+
     let hpDamage = 0
     let shieldDamage = 0
 
@@ -402,6 +404,8 @@ class PlayerObject extends FieldData {
   }
 
   processSubAttack () {
+    if (this.playerWeaponId[this.playerWeaponPosition] === ID.playerWeapon.unused) return
+
     const getWeaponData = tamshooter4Data.getPlayerWeaponData(ID.playerWeapon.subWeapon)
     this.playerSubWeaponDelayCount++
 
@@ -582,15 +586,22 @@ export class fieldState {
     this.damageObject[this.damageObjectNumber].createId = this.getNextCreateId()
   }
 
-  static createEnemyBulletObject (typeId, x = 0, y = 0, attack = 1, ...option) {
+  static createEnemyBulletObject (typeId, x = 0, y = 0, attack = 1, moveOption = {
+    moveSpeedX: 1, moveSpeedY: 0, moveDirectionX: '', moveDirectionY: ''
+  },  ...option) {
     const GetClass = tamshooter4Data.getEnemyBulletData(typeId)
     if (GetClass == null) return
 
     const inputData = new GetClass(option)
     inputData.createId = this.getNextCreateId()
     inputData.setPosition(x, y)
+    inputData.attack = attack
+    inputData.setOption(moveOption)
     this.enemyBulletObject.push(inputData)
   }
+
+
+
 
   static process () {
     this.processPlayerObject()
