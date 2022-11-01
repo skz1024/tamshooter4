@@ -17,6 +17,11 @@ export class imageFile {
     playerLevelup: new Image()
   }
 
+  static effect = {
+    jemulstar: new Image(),
+    jemulCreate: new Image()
+  }
+
   static weapon = {
     multyshot: new Image(),
     missile: new Image(),
@@ -63,11 +68,14 @@ export class imageFile {
 
   static round = {
     roundIcon: new Image(),
-    round1_space: new Image(),
-    round1_meteorite: new Image(),
-    round1_redzoneBoss: new Image(),
-    round1_redzone: new Image(),
-    round1_meteoriteDeep: new Image(),
+    round1_1_space: new Image(),
+    round1_2_meteorite: new Image(),
+    round1_3_meteoriteDeep: new Image(),
+    round1_4_meteoriteDark: new Image(),
+    round1_4_redzone: new Image(),
+    round1_5_meteoriteRed: new Image(),
+    round1_6_space: new Image(),
+    round1_6_paran_planet: new Image()
   }
 }
 imageFile.tamshooter4Title.src = './image/title.png'
@@ -84,6 +92,10 @@ imageFile.system.fieldSystem.src = './image/system/fieldSystem.png'
 imageFile.system.optionCheck.src = './image/system/optionCheck.png'
 imageFile.system.playerDie.src = './image/system/playerDie.png'
 imageFile.system.playerLevelup.src = './image/system/playerLevelup.png'
+
+// effect
+imageFile.effect.jemulstar.src = './image/effect/jemulstar.png'
+imageFile.effect.jemulCreate.src = './image/effect/jemulCreate.png'
 
 // weapon
 imageFile.weapon.multyshot.src = './image/weapon/multyshot.png'
@@ -127,11 +139,14 @@ imageFile.enemyDie.enemyDieMeteorite.src = './image/enemy/enemyDieMeteorite.png'
 
 // round
 imageFile.round.roundIcon.src = './image/round/roundIcon.png'
-imageFile.round.round1_space.src = './image/round/stars-g700d8fc30_1280.jpg'
-imageFile.round.round1_meteorite.src = './image/round/space-g26f4aa3b6_1920_2.jpg'
-imageFile.round.round1_redzone.src = './image/round/space-g26f4aa3b6_1920.jpg'
-imageFile.round.round1_meteoriteDeep.src = './image/round/space-g26f4aa3b6_1920_3.jpg'
-imageFile.round.round1_redzoneBoss.src = './image/round/space-g26f4aa3b6_1920_4.jpg'
+imageFile.round.round1_1_space.src = './image/round/round1_1_space.jpg'
+imageFile.round.round1_2_meteorite.src = './image/round/round1_2_meteoriteZone.jpg'
+imageFile.round.round1_3_meteoriteDeep.src = './image/round/round1_3_meteoriteDeep.jpg'
+imageFile.round.round1_4_meteoriteDark.src = './image/round/round1_4_meteoriteDark.jpg',
+imageFile.round.round1_4_redzone.src = './image/round/round1_4_redZone.jpg'
+imageFile.round.round1_5_meteoriteRed.src = './image/round/round1_5_meteoriteRed.jpg'
+imageFile.round.round1_6_space.src = './image/round/round1_6_space.jpg'
+imageFile.round.round1_6_paran_planet.src = './image/round/round1_6_paran_planet.png'
 
 // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
 // 그러므로 svg 파일은 게임 내에서 사용되지 않습니다.
@@ -159,7 +174,9 @@ export class imageDataInfo {
     meteorite3: { x: 550, y: 290, width: 50, height: 50, frame: 1 },
     meteorite4: { x: 600, y: 290, width: 70, height: 50, frame: 1 },
     meteorite5: { x: 670, y: 290, width: 80, height: 45, frame: 1 },
-    bossSqaure: { x: 0, y: 340, width: 60, height: 60, frame: 8 }
+    bossSqaure: { x: 0, y: 340, width: 60, height: 60, frame: 8 },
+    donggrami1: { x: 500, y: 340, width: 50, height: 50, frame: 1},
+    donggrami2: { x: 550, y: 340, width: 50, height: 50, frame: 1},
   }
   // { x: 0, y: 0, width: 0, height: 0, frame: 1 },
 
@@ -191,37 +208,44 @@ export class imageDataInfo {
     blackMeteo5: { x: 320, y: 200, width: 80, height: 45, frame: 1 },
     bomb: {x: 0, y: 250, width: 60, height: 60, frame: 8},
     bombBig: {x: 0, y: 250, width: 60, height: 60, frame: 1},
-    stoneBrown: {x: 300, y: 0, width: 80, height: 80, frame: 1},
-    stoneBrownPiece1: {x: 300, y: 0, width: 40, height: 40, frame: 1},
-    stoneBrownPiece2: {x: 340, y: 0, width: 40, height: 40, frame: 1},
-    stoneBrownPiece3: {x: 340, y: 40, width: 40, height: 40, frame: 1},
-    stoneBrownPiece4: {x: 300, y: 40, width: 40, height: 40, frame: 1},
-    stoneBlack: {x: 400, y: 0, width: 80, height: 80, frame: 1},
-    stoneBlackPiece1: {x: 400, y: 0, width: 40, height: 40, frame: 1},
-    stoneBlackPiece2: {x: 440, y: 0, width: 40, height: 40, frame: 1},
-    stoneBlackPiece3: {x: 440, y: 40, width: 40, height: 40, frame: 1},
-    stoneBlackPiece4: {x: 400, y: 40, width: 40, height: 40, frame: 1},
-    stoneGreen: {x: 500, y: 0, width: 80, height: 80, frame: 1},
-    stoneGreenPiece1: {x: 500, y: 0, width: 40, height: 40, frame: 1},
-    stoneGreenPiece2: {x: 540, y: 0, width: 40, height: 40, frame: 1},
-    stoneGreenPiece3: {x: 540, y: 40, width: 40, height: 40, frame: 1},
-    stoneGreenPiece4: {x: 500, y: 40, width: 40, height: 40, frame: 1},
-    red1: {x: 400, y: 200, width: 50, height: 50, frame: 1},
-    red2: {x: 450, y: 200, width: 70, height: 50, frame: 1},
-    red3: {x: 520, y: 200, width: 80, height: 45, frame: 1},
+    stoneBrown: {x: 250, y: 0, width: 80, height: 80, frame: 1},
+    stoneBrownPiece1: {x: 250, y: 0, width: 40, height: 40, frame: 1},
+    stoneBrownPiece2: {x: 290, y: 0, width: 40, height: 40, frame: 1},
+    stoneBrownPiece3: {x: 290, y: 40, width: 40, height: 40, frame: 1},
+    stoneBrownPiece4: {x: 250, y: 40, width: 40, height: 40, frame: 1},
+    stoneBlack: {x: 330, y: 0, width: 80, height: 80, frame: 1},
+    stoneBlackPiece1: {x: 330, y: 0, width: 40, height: 40, frame: 1},
+    stoneBlackPiece2: {x: 370, y: 0, width: 40, height: 40, frame: 1},
+    stoneBlackPiece3: {x: 370, y: 40, width: 40, height: 40, frame: 1},
+    stoneBlackPiece4: {x: 330, y: 40, width: 40, height: 40, frame: 1},
+    stoneGreen: {x: 410, y: 0, width: 80, height: 80, frame: 1},
+    stoneGreenPiece1: {x: 410, y: 0, width: 40, height: 40, frame: 1},
+    stoneGreenPiece2: {x: 450, y: 0, width: 40, height: 40, frame: 1},
+    stoneGreenPiece3: {x: 450, y: 40, width: 40, height: 40, frame: 1},
+    stoneGreenPiece4: {x: 410, y: 40, width: 40, height: 40, frame: 1},
+    red1: {x: 250, y: 80, width: 50, height: 50, frame: 1},
+    red2: {x: 300, y: 80, width: 70, height: 50, frame: 1},
+    red3: {x: 370, y: 80, width: 80, height: 45, frame: 1},
+    red4: {x: 450, y: 80, width: 50, height: 50, frame: 1},
   }
 
   static jemulEnemy = {
     rotateRocket: {x: 0, y: 0, width: 200, height: 100, frame: 10},
     energyBolt: {x: 0, y: 100, width: 90, height: 40, frame: 20},
     hellSpike: {x: 0, y: 140, width: 60, height: 60, frame: 10},
-    hellDrill: {x: 0, y: 200, width: 100, height: 30, frame: 10},
+    hellDrill: {x: 840, y: 300, width: 100, height: 30, frame: 10},
     hellShipFront: {x: 600, y: 140, width: 110, height: 45, frame: 3},
     hellShipUp: {x: 930, y: 140, width: 110, height: 45, frame: 3},
     hellShipDown: {x: 1260, y: 140, width: 110, height: 45, frame: 3},
-    hellAirFront: {x: 0, y: 230, width: 120, height: 100, frame: 4},
-    hellAirUp: {x: 480, y: 230, width: 120, height: 100, frame: 4},
-    hellAirDown: {x: 960, y: 230, width: 120, height: 100, frame: 4},
+    hellAirFront: {x: 0, y: 200, width: 120, height: 100, frame: 4},
+    hellAirUp: {x: 480, y: 200, width: 120, height: 100, frame: 4},
+    hellAirDown: {x: 960, y: 200, width: 120, height: 100, frame: 4},
+    jemulBoss: {x: 0, y: 300, width: 120, height: 100, frame: 7},
+    jemulBossEye: {x: 840, y: 330, width: 100, height: 60, frame: 7},
+    redAir: {x: 1450, y: 200, width: 120, height: 90, frame: 4},
+    redShip: {x: 1590, y: 140, width: 110, height: 40, frame: 3},
+    redJewel: {x: 1550, y: 330, width: 40, height: 45, frame: 10},
+    redMeteorite: {x: 1920, y: 140, width: 70, height: 50, frame: 1}
   }
 
   static fieldSystem = {
@@ -248,8 +272,11 @@ export class imageDataInfo {
     diamondMagenta: {x: 0, y: 160, width: 20, height: 20, frame: 10},
     fireBlue: {x: 0, y: 180, width: 20, height: 20, frame: 10},
     squareRed: {x: 0, y: 200, width: 20, height: 20, frame: 10},
+    fireRed: {x: 0, y: 220, width: 20, height: 20, frame: 10},
+    squareLineRed: {x: 0, y: 240, width: 20, height: 20, frame: 10},
+    noiseRed: {x: 0, y: 260, width: 20, height: 20, frame: 10},
   }
-
+  
   static enemyDieEffectEx = {
     enemyDieSpaceGamjigi: {x: 0, y: 0, width: 30, height: 50, frame: 10},
     enemyDieSapceComet: {x: 0, y: 0, width: 35, height: 35, frame: 10}

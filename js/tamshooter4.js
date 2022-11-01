@@ -153,12 +153,28 @@ class MenuSystem {
 
   /**
    * 로직 처리 - 마우스 입력
-   * 만약 이 함수를 상속받는다면 super.processMouse()를 호출하고 그 밑에 로직을 구현해주세요.
-   * 부모 함수의 역할은 menuList에 박스가 눌려졌는지를 확인합니다.
+   * 이 함수는 상속받지 마시고, 대신 추가로 구현해야 하는 기능이 있다면 processMouseExtends 함수에 내용을 추가해주세요.
+   * 
+   * 클릭 조건을 확인하기 위해서 if (!mouseSystem.getMouseDown()) return 를 사용해주세요.
+   * 안그러면 마우스가 닿기만 해도 반응할 수 있습니다.
    */
   processMouse () {
     if (!mouseSystem.getMouseDown()) return
+    
+    this.mouseLogicMenuList()
+    this.processMouseExtend()
+  }
 
+  /**
+   * 마우스 처리 확장 함수.
+   * 이것은 processMouse의 조건 처리때문에 super.processMouse를 사용한 다음, 
+   * 마우스 클릭을 못처리하는 상태를 막기 위해 만든 함수입니다.
+   */
+  processMouseExtend () {
+
+  }
+
+  mouseLogicMenuList () {
     const mouseX = mouseSystem.getMousePosition().x
     const mouseY = mouseSystem.getMousePosition().y
 
@@ -186,6 +202,7 @@ class MenuSystem {
 
   /**
    * 로직 처리 - 메뉴 선택
+   * 
    * 이 함수를 재작성할경우, 맨 처음에 if (!this.selectedCheck()) return 문을 넣어주세요.
    * 왜냐하면 중복선택을 방지하기 위함입니다. 부모 함수의 원본에 구현된 로직 코드를 참고해주세요.
    */
@@ -242,10 +259,15 @@ class MenuSystem {
   /** 화면 출력 함수 (로직을 여기에 처리하면 안됩니다.) */ display () {}
 }
 
+/**
+ * 메인 화면 시스템
+ * 
+ * 메인 메뉴 및 설정은 여기서 관리합니다.
+ */
 class MainSystem extends MenuSystem {
   /** 메뉴: 라운드 선택 */ MENU_ROUND_SELECT = 0
   /** 메뉴: 옵션 */ MENU_OPTION = 1
-  /** 메뉴: 데이터 셋팅 @deprecated */ MENU_DATA_SETTING = 2
+  /** 메뉴: 데이터 셋팅 */ MENU_DATA_SETTING = 2
 
   constructor () {
     super()
@@ -276,6 +298,7 @@ class MainSystem extends MenuSystem {
     switch (this.cursorPosition) {
       case this.MENU_OPTION: gameSystem.stateId = gameSystem.STATE_OPTION; break
       case this.MENU_ROUND_SELECT: gameSystem.stateId = gameSystem.STATE_ROUNDSELECT; break
+      case this.MENU_DATA_SETTING: gameSystem.stateId = gameSystem.STATE_DATASETTING; break
     }
 
     // 사운드 출력
@@ -634,7 +657,13 @@ class RoundSelectSystem extends MenuSystem {
     const roundTableId = [
       ID.round.round1_1,
       ID.round.round1_2,
-      ID.round.round1_3
+      ID.round.round1_3,
+      ID.round.round1_4,
+      ID.round.round1_5,
+      ID.round.round1_6,
+      null,
+      null,
+      ID.round.round1_test
     ]
 
     if (this.cursorMode === this.CURSORMODE_MAIN) {
@@ -728,6 +757,155 @@ class RoundSelectSystem extends MenuSystem {
   }
 }
 
+class DataSettingSystem extends MenuSystem {
+  constructor () {
+    super()
+    const LAYER_X = 0
+    const LAYER_Y = 0
+    const LAYER_WIDTH = 400
+    const LAYER_HEIGHT = 50
+
+    // 그라디언트 컬러
+    const color1 = '#E0AC00'
+    const color2 = '#B2F641'
+    const focusColor = 'black'
+
+    let menuText = ['<- back', 'all data delete (모든 데이터 삭제)']
+    this.menuList.push(new BoxObject(LAYER_X, LAYER_Y + (LAYER_HEIGHT * 0), LAYER_WIDTH, LAYER_HEIGHT, menuText[0], color1, color2, focusColor))
+    this.menuList.push(new BoxObject(LAYER_X, LAYER_Y + (LAYER_HEIGHT * 1), LAYER_WIDTH, LAYER_HEIGHT, menuText[1], color1, color2, focusColor))
+
+    /**
+     * 진짜 삭제할건지 질문하는 창이 뜨는지 여부
+     */
+    this.isQuestionResetWindow = false
+
+    /**
+     * 사용자가 진짜 삭제할 건지를 결정하는 변수, true일경우 모든 데이터 삭제, false일경우 취소, 기본값 false
+     */
+    this.questionReset = false
+    
+    /**
+     * 사용자가 리셋을 완전히 결정한 경우, 자동으로 새로고침이 되도록 리셋완료 표시를 해야합니다.
+     */
+    this.isResetComplete = false
+
+    this.questionResetBox = new BoxObject(200, 100, 400, 200, '정말 모든 데이터를 삭제하겠어요?(you want to data reset?)', 'white')
+    this.questionResetNo = new BoxObject(200, 300, 200, 50, '아니오 (NO)', 'white', 'white', 'blue')
+    this.questionResetYes = new BoxObject(200, 400, 200, 50, '예 (YES)', 'white', 'white', 'blue')
+  }
+
+  process () {
+    // 사용자가 리셋을 완료하지 않은 경우에만 기능 동작.
+    // 리셋했다면, 몇 초 후 자동 새로고침 되고, 더이상의 기능을 멈춤
+    if (!this.isResetComplete) {
+      super.process()
+    }
+    this.processQuestionWindow()
+  }
+
+  processQuestionWindow () {
+    if (this.isResetComplete) {
+      this.questionResetBox.text = '데이터 삭제 완료. 2초 후 자동 새로고침 합니다.'
+    } else if (this.questionReset) {
+      this.questionResetYes.focus = true
+      this.questionResetNo.focus = false
+    } else {
+      this.questionResetYes.focus = false
+      this.questionResetNo.focus = true
+    }
+  }
+
+  processCancel () {
+    if (!this.canceledCheck()) return
+
+    soundSystem.play(soundFile.system.systemBack)
+    if (this.isQuestionResetWindow) {
+      this.isQuestionResetWindow = false
+      this.questionReset = false
+    } else {
+      gameSystem.stateId = gameSystem.STATE_MAIN
+    }
+  }
+
+  processButton () {
+    super.processButton()
+    const buttonUp = buttonSystem.getButtonInput(buttonSystem.BUTTON_UP)
+    const buttonDown = buttonSystem.getButtonInput(buttonSystem.BUTTON_DOWN)
+
+    if (this.isQuestionResetWindow) {
+      // 리셋버튼은 위쪽에 아니오, 밑쪽에 예가 있습니다.
+      // 따라서, 위 버튼을 누르면 아니오로 이동되고, 아래 버튼을 누르면 예로 이동됩니다.
+      if (buttonUp && this.questionReset) {
+        this.questionReset = false
+      } else if (buttonDown && !this.questionReset) {
+        this.questionReset = true
+      }
+    } else {
+      if (buttonUp && this.cursorPosition > 0) {
+        this.cursorPosition--
+        soundSystem.play(soundFile.system.systemCursor)
+      } else if (buttonDown && this.cursorPosition < this.menuList.length - 1) {
+        this.cursorPosition++
+        soundSystem.play(soundFile.system.systemCursor)
+      }
+    }
+  }
+
+  processSelect () {
+    if (!this.selectedCheck()) return
+
+    if (this.isQuestionResetWindow) {
+      if (this.questionReset) {
+        gameSystem.dataReset()
+        this.isResetComplete = true
+        
+        // 2초 후 자동 새로고침
+        soundSystem.play(soundFile.system.systemPlayerDie)
+        setTimeout(() => { location.reload() }, 2000)
+      } else {
+        // 취소 명령
+        this.canceled = true
+      }
+    } else {
+      if (this.cursorPosition >= 1) {
+        soundSystem.play(soundFile.system.systemSelect)
+      }
+      switch (this.cursorPosition) {
+        case 0: this.canceled = true; break
+        case 1: this.isQuestionResetWindow = true; break
+      }
+    }
+  }
+
+  processMouseExtend () {
+    const mouseX = mouseSystem.getMousePosition().x
+    const mouseY = mouseSystem.getMousePosition().y
+    if (this.isQuestionResetWindow) {
+      if (this.questionResetYes.collision(mouseX, mouseY)) {
+        this.questionReset = true
+        this.questionResetYes.focus = true
+        this.questionResetNo.focus = false
+        this.selected = true
+      } else if (this.questionResetNo.collision(mouseX, mouseY)) {
+        this.questionReset = false
+        this.canceled = true
+      }
+    }
+  }
+  display () {
+    graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT, '#78b3f2', '#d2dff6')
+
+    if (this.isQuestionResetWindow) {
+      this.questionResetBox.display()
+      this.questionResetYes.display()
+      this.questionResetNo.display()
+    } else {
+      this.menuList[0].display()
+      this.menuList[1].display()
+    }
+  }
+}
+
 /**
  * 유저 정보 (static 클래스)
  */
@@ -742,12 +920,24 @@ export class userSystem {
   /** 데미지 경고 프레임 */ static damageWarningFrame = 0
   /** 레벨업 이펙트 프레임 */ static levelUpEffectFrame = 0
 
+  /** 유저 스탯 숨기기 */ static isHideUserStat = false
+  /** 숨기기를 사용할 때, 적용되는 알파값, 완전히 숨겨지면 0.2로 취급 */ static hideUserStatAlpha = 1
+
   /**
    * 경험치 테이블
    */
   static expTable = [0, // lv 0
     30000, 33000, 36000, 39000, 42000, 45000, 48000, 51000, 54000, 57000, // lv 1 ~ 10
     255500, 256000, 256500, 257000, 257500, 258000, 258500, 259000, 259500, 260000 // lv 11 ~ 20
+  ]
+
+  /**
+   * 공격력 보너스 테이블
+   */
+  static attackBonusTable = [0, // lv 0
+    0, 250, 500, 750, 1000, 1200, 1400, 1600, 1800, 2000, // lv 1 ~ 10
+    2400, 2800, 3200, 3600, 4000, 4300, 4500, 4700, 5000, // lv 11 ~ 20
+    5130, 5240, 5330, 5410, 5500, 5600, 5700, 5800, 6000, // lv 21 ~ 30
   ]
 
   /** 총 플레이 타임 에 관한 정보 */
@@ -889,8 +1079,35 @@ export class userSystem {
     if (this.levelUpEffectFrame > 0) this.levelUpEffectFrame--
   }
 
+  static hideUserStat () {
+    this.isHideUserStat = true
+  }
+
+  static showUserStat () {
+    this.isHideUserStat = false
+  }
+
   static display () {
-    this.displayUserStat()
+    if (this.isHideUserStat && this.hideUserStatAlpha > 0.2) {
+      this.hideUserStatAlpha -= 0.05
+    } else if (this.hideUserStatAlpha < 1) {
+      this.hideUserStatAlpha += 0.05
+    }
+
+    if (this.hideUserStatAlpha < 0.1) {
+      this.hideUserStatAlpha = 0.2
+    } else if (this.hideUserStatAlpha > 1) {
+      this.hideUserStatAlpha = 1
+    }
+
+    if (this.hideUserStatAlpha != 1) {
+      graphicSystem.setAlpha(this.hideUserStatAlpha)
+      this.displayUserStat()
+      graphicSystem.setAlpha(1)
+    } else {
+      this.displayUserStat()
+    }
+
     // this.displayPlayTime() // 이것은 gameSystem에서만 사용합니다.
   }
 
@@ -955,6 +1172,7 @@ export class userSystem {
     const expColorStartList = ['#A770EF', '#8E2DE2', '#ad5389']
     const expColorEndList = ['#CF8BF3', '#4A00E0', '#3c1053']
     let expPercent = this.exp / this.expTable[this.lv]
+    if (expPercent > 1) expPercent = 1
 
     if (this.levelUpEffectFrame > 0) {
       let targetFrame = this.levelUpEffectFrame % expColorStartList.length
@@ -999,7 +1217,15 @@ export class userSystem {
     graphicSystem.digitalFontDisplay(statusText, RIGHT_X, LAYER2_DIGITAL_Y) // 현재 라운드 정보
   }
 
+  /**
+   * 플레이어의 스탯 재측정
+   */
+  static processStat () {
+    this.attack = 10000 + this.attackBonusTable[this.lv]
+  }
+
   static getPlayerObjectData () {
+    this.processStat()
     return {
       attack: this.attack,
       hp: this.hpMax,
@@ -1009,16 +1235,44 @@ export class userSystem {
       lv: this.lv
     }
   }
+
+  /**
+   * 저장 형식 (버전에 따라 변경될 수 있음.)
+   * 
+   * lv,exp
+   * 
+   * @retruns 세이브데이터의 문자열
+   */
+  static getSaveData () {
+    return '' + this.lv + ',' + this.exp
+  }
+
+  /**
+   * 
+   * @param {string} saveData 
+   */
+  static setLoadData (saveData) {
+    if (saveData == null) return
+
+    let getData = saveData.split(',')
+    this.lv = Number(getData[0])
+    this.exp = Number(getData[1])
+  }
 }
 
 /**
  * 게임 시스템 (거의 모든 로직을 처리), 경고: new 키워드로 인스턴스를 생성하지 마세요.
  * 이건 단일 클래스입니다.
+ * 
+ * 참고: 메인 메뉴에 관해서 설정을 하고 싶다면, mainSystem을 수정해주세요.
+ * 그리고, 새로운 메뉴가 추가되었다면, 여기서 process, display함수를 사용할 수 있도록 한 뒤에
+ * 메인 메뉴에서 이동할 수 있도록 mainSystem도 같이 수정해야 합니다.
  */
 export class gameSystem {
   /** 게임 상태 ID */ static stateId = 0
   /** 상태: 메인 */ static STATE_MAIN = 0
   /** 상태: 게임 옵션 */ static STATE_OPTION = 1
+  /** 상태: 데이터 설정 */ static STATE_DATASETTING = 2
   /** 상태: 라운드선택 */ static STATE_ROUNDSELECT = 11
   /** 상태: 필드(게임 진행중) */ static STATE_FIELD = 12
   /** 게임 첫 실행시 로드를 하기 위한 초기화 확인 변수 */ static isLoad = false
@@ -1030,6 +1284,7 @@ export class gameSystem {
   /** 메인 시스템 */ static mainSystem = new MainSystem()
   /** 옵션 시스템 */ static optionSystem = new OptionSystem()
   /** 라운드 선택 시스템 */ static roundSelectSystem = new RoundSelectSystem()
+  /** 데이터 설정 시스템 */ static dataSettingSystem = new DataSettingSystem()
 
   /**
    * 저장하거나 불러올 때 localStorage 에서 사용하는 키 이름 (임의로 변경 금지)
@@ -1070,7 +1325,12 @@ export class gameSystem {
     /**
      * 모든 옵션 값들을 저장합니다.
      */
-    optionValue: 'optionValue'
+    optionValue: 'optionValue',
+
+    /**
+     * 유저가 가지고 있는 정보 (레벨, 경험치 등...)
+     */
+    userData: 'userData'
   }
 
   /** 저장 지연 시간을 카운트 하는 변수 */ static saveDelayCount = 0
@@ -1086,6 +1346,9 @@ export class gameSystem {
    * 이 게임 내에서는, 지연 시간을 딜레이란 단어로 표기합니다.
    */
   static processSave () {
+    // 데이터 리셋이 되었다면, 게임을 자동 새로고침하므로 저장 함수를 실행하지 않음.
+    if (this.isDataReset) return
+
     /** 저장 딜레이 시간 */ const SAVE_DELAY = 60
 
     // 세이브 지연시간보다 세이브 지연 시간을 카운트 한 값이 낮으면 함수는 실행되지 않습니다.
@@ -1117,6 +1380,9 @@ export class gameSystem {
     // 모든 옵션 값들 저장
     const optionValue = this.optionSystem.optionValue
     localStorage.setItem(this.saveKey.optionValue, optionValue)
+
+    const userData = this.userSystem.getSaveData()
+    localStorage.setItem(this.saveKey.userData, userData)
   }
 
   /**
@@ -1144,11 +1410,20 @@ export class gameSystem {
     // 옵션 값 불러오기
     const optionValue = localStorage.getItem(this.saveKey.optionValue).split(',')
     this.optionSystem.loadOption(optionValue)
+
+    const userData = localStorage.getItem(this.saveKey.userData)
+    this.userSystem.setLoadData(userData)
   }
 
   static isDataReset = false
+
+  /**
+   * 모든 데이터를 삭제합니다.
+   * 삭제 기능이 동작한 후, 2초 후 자동으로 새로고침 되기 때문에, 저장기능이 일시적으로 정지도비니다.
+   */
   static dataReset () {
     localStorage.clear()
+    this.isDataReset = true
   }
 
   static displayTodayTime () {
@@ -1176,6 +1451,7 @@ export class gameSystem {
       case this.STATE_OPTION: this.optionSystem.process(); break
       case this.STATE_ROUNDSELECT: this.roundSelectSystem.process(); break
       case this.STATE_FIELD: this.fieldSystem.process(); break
+      case this.STATE_DATASETTING: this.dataSettingSystem.process(); break
     }
 
     this.processSave()
@@ -1196,6 +1472,7 @@ export class gameSystem {
       case this.STATE_OPTION: this.optionSystem.display(); break
       case this.STATE_ROUNDSELECT: this.roundSelectSystem.display(); break
       case this.STATE_FIELD: this.fieldSystem.display(); break
+      case this.STATE_DATASETTING: this.dataSettingSystem.display(); break
     }
 
     // 메인 화면 또는 옵션 화면일때만, 시간 표시

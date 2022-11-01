@@ -61,7 +61,7 @@ export class graphicSystem {
    * 이후 출력되는 모든 이미지를 회전합니다. 중심축은 이미지의 중심입니다. (캔버스의 원점이 아님.)
    * @param {number} degree 각도 범위: 0 ~ 360, 이 수치에서 벗어나면 360으로 나눈 나머지로 계산
    */
-  static setRotateDegree (degree = 0) {
+  static setDegree (degree = 0) {
     if (degree >= 0 && degree <= 360) {
       this.rotateDegree = degree
     } else {
@@ -87,7 +87,7 @@ export class graphicSystem {
    */
   static setOption (flip = 0, degree = 0, alpha = 1) {
     this.setFlip(flip)
-    this.setRotateDegree(degree)
+    this.setDegree(degree)
     this.setAlpha(alpha)
   }
 
@@ -96,7 +96,7 @@ export class graphicSystem {
    * 이 값이 true라면, displayTransform이 실행됩니다.
    */
   static checkTransform () {
-    if (this.flip && this.rotateDegree) {
+    if (this.flip || this.rotateDegree) {
       return true
     } else {
       return false
@@ -383,19 +383,22 @@ export class graphicSystem {
    * @param {number} y 그라디언트 시작점의 y좌표
    * @param {number} width 그라디언트 길이
    * @param {number} height 그라디언트 높이
-   * @param {string} startColor 시작 색깔의 css값
-   * @param {string} endColor 끝 색깔의 css값
-   * @param {anotherColor} anotherColor 또다른 컬러들... (그라디언트를 여러개의 색상으로 만들 때 사용)
+   * @param {string} startColor 그라디언트 시작 색깔의 css값
+   * @param {string} endColor 그라디언트 끝 색깔의 css값 (anotherColor가 추가되어도 끝 색깔은 끝부분에 적용됩니다.)
+   * @param {anotherColor} anotherColor 또다른 컬러들... (그라디언트를 여러개의 색상으로 만들 때 사용, 단 이 값은 중간에 들어가는 색입니다.)
    */
-  static gradientDisplay (x, y, width, height, startColor, endColor, ...anotherColor) {
+  static gradientDisplay (x, y, width, height, startColor = 'black', endColor = startColor, ...anotherColor) {
     // 그라디언트 backGround
     const gradient = this.#context.createLinearGradient(x, y, x + width, y + height)
+
     gradient.addColorStop(0, startColor)
     gradient.addColorStop(1, endColor)
 
     // 또다른 컬러도 있다면 추가
     for (let i = 0; i < anotherColor.length; i++) {
-      gradient.addColorStop(i + 2, anotherColor[i])
+      let totalColorCount = 2 + anotherColor.length
+      let position = (1 / totalColorCount) * (i + 1)
+      gradient.addColorStop(position, anotherColor[i])
     }
 
     // 그라디언트 그리기
@@ -408,6 +411,41 @@ export class graphicSystem {
       this.#context.fillRect(x, y, width, height)
     }
   }
+
+  /**
+   * 미터 형태로(전체 값중 일부만큼 비율에 맞춰서 출력) 그라디언트 그리기
+   * 그려지는 크기는 현재 값 / 최대 값 을 계산한 비율입니다. 즉 10%비율이면, 총 크기의 10%만 그려집니다.
+   * 
+   * 이 함수는 내부적으로 gradientDisplay 함수를 사용합니다.
+   * @param {number} x x좌표
+   * @param {number} y y좌표
+   * @param {number} width 너비 (최대 값 기준)
+   * @param {number} height 높이 (최대 값 기준)
+   * @param {number} value 현재 값
+   * @param {number} maxValue 최대 값
+   * @param {string | number} meterType 미터 타입 (수직: 0 or 'vertical', 수평: 1 or 'horizontal)
+   * @param {string} startColor 시작 색깔
+   * @param {string} endColor 끝 색깔 (경고: 이 색은 여러개의 색깔이 더 추가되어도, 가장 마지막 색으로 지정됨.)
+   * @param  {string} anotherColor 추가 색깔 (경고: 이 색은 마지막 색이 될 수 없음.)
+   */
+  static meterGradient (x, y, width, height, value, maxValue, meterType, startColor, endColor, ...anotherColor) {
+    let percent = value / maxValue
+
+    // 받아온 미터 타입이 숫자라면, 문자열로 변경
+    if (typeof meterType === 'number') {
+      let setType = ['vertical', 'horizontal']
+      meterType = setType[meterType]
+    }
+
+    switch (meterType) {
+      case 'vertical': this.gradientDisplay(x, y, width, Math.floor(height * percent), startColor, endColor, ...anotherColor); break
+      case 'horizontal': this.gradientDisplay(x, y, Math.floor(width * percent), height, startColor, endColor, ...anotherColor); break
+      default: console.log('잘못된 값 입력!, meterType은 vertical 또는 horizontal입니다. 그라디언트 출력은 무시됩니다.'); break
+    }
+  }
+
+  /** 미터 타입: 수직 */ static METER_VERTICAL = 'vertical'
+  /** 미터 타입: 수평 */ static METER_HORIZONTAL = 'horizontal'
 
   /**
    * context.fillRect랑 동일, 사각형 그리기

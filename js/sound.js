@@ -71,6 +71,7 @@ export class soundFile {
     enemyDieMeteorite5: new Audio('./sound/enemyDieMeteorite5.mp3'),
     enemyDieMeteoriteBomb: new Audio('./sound/enemyDieMeteoriteBomb.mp3'),
     enemyDieMeteoriteStone: new Audio('./sound/enemyDieMeteoriteStone.mp3'),
+    enemyDieMetoriteRed: new Audio('./sound/enemyDieMeteoriteRed.mp3'),
     enemyDieSpaceCar: new Audio('./sound/enemyDieSpaceCar.mp3'),
     enemyDieSpaceComet: new Audio('./sound/enemyDieSpaceComet.mp3'),
     enemyDieSpaceEnergy: new Audio('./sound/enemyDieSpaceEnergy.mp3'),
@@ -86,11 +87,28 @@ export class soundFile {
     enemyDieJemulHellShip: new Audio('./sound/enemyDieJemulHellShip.mp3'),
     enemyDieJemulRocket: new Audio('./sound/enemyDieJemulRocket.mp3'),
     enemyDieJemulSpike: new Audio('./sound/enemyDieJemulSpike.mp3'),
+    enemyDieJemulBoss: new Audio('./sound/enemyDieJemulBoss.mp3'),
+    enemyDieJemulBossEye: new Audio('./sound/enemyDieJemulBossEye.mp3'),
+    enemyDieJemulRedJewel: new Audio('./sound/enemyDieJemulRedJewel.mp3'),
+    enemyDieJemulRedAir: new Audio('./sound/enemyDieJemulRedAir.mp3'),
+    enemyDieDonggrami1: new Audio('./sound/enemyDieDonggrami1.mp3'),
+    enemyDieDonggrami2: new Audio('./sound/enemyDieDonggrami2.mp3'),
   }
 
   static enemyAttack = {
     jemulEnergyBoltAttack: new Audio('./sound/enemyJemulEnergyBoltAttack.mp3'),
-    jemulHellDrillAttack: new Audio('./sound/enemyJemulHellDrillAttack.mp3')
+    jemulHellDrillAttack: new Audio('./sound/enemyJemulHellDrillAttack.mp3'),
+    jemulBossAttack: new Audio('./sound/enemyJemulBossAttackLaser.mp3'),
+    jemulBossAttack2: new Audio('./sound/enemyJemulBossAttackLaser2.mp3'),
+    jemulBossAttack3: new Audio('./sound/enemyJemulBossAttackLaser3.mp3')
+  }
+
+  static round = {
+    r1_4_message1: new Audio('./sound/round1_4_message1.mp3'),
+    r1_4_message2: new Audio('./sound/round1_4_message2.mp3'),
+    r1_4_jemulstar: new Audio('./sound/round1_4_jemulstar.mp3'),
+    r1_4_jemulstart: new Audio('./sound/round1_4_jemulstart.mp3'),
+    r1_4_jemulrun: new Audio('./sound/round1_4_jemulrun.mp3')
   }
 
   static music = {
@@ -100,7 +118,8 @@ export class soundFile {
     music04_meteorite_zone_red: new Audio('./music/music04_meteorite_zone_red.ogg'),
     music05_space_tour: new Audio('./music/music05_space_tour.ogg'),
     music06_round1_boss_thema: new Audio('./music/music06_round1_boss_thema.ogg'),
-    music07_paran_planet_entry: new Audio('./music/music07_paran_planet_entry.ogg')
+    music07_paran_planet_entry: new Audio('./music/music07_paran_planet_entry.ogg'),
+    music08_round1_4_jemul: new Audio('./music/music08_round1_4_jemul.ogg')
   }
 }
 
@@ -109,12 +128,16 @@ export class soundSystem {
   static masterGain = this.audioContext.createGain()
   static soundGain = this.audioContext.createGain()
   static musicGain = this.audioContext.createGain()
+  static fadeGain = this.audioContext.createGain()
   static musicEchoGain = this.audioContext.createGain()
   static musicEchoDelay = this.audioContext.createDelay()
   static currentMusic = null
+  static nextMusic = null
   static musicPaused = false
   static soundOn = true
   static musicOn = true
+
+  static fadeTime = 0
 
   /**
    * 사운드 시스템 초기화 함수. 해당 함수를 실행해야 제대로 사운드가 출력됩니다.
@@ -123,21 +146,23 @@ export class soundSystem {
     this.masterGain.gain.value = 1
     this.soundGain.gain.value = 1
     this.musicGain.gain.value = 1
-    this.musicEchoGain.gain.value = 0.25
+    this.fadeGain.gain.value = 1
+    this.musicEchoGain.gain.value = 0.3
     this.musicEchoDelay.delayTime.value = 0.2
 
     this.soundGain.connect(this.masterGain)
-    this.musicGain.connect(this.masterGain)
-    this.musicGain.connect(this.musicEchoDelay).connect(this.musicEchoGain).connect(this.masterGain)
+    this.musicGain.connect(this.fadeGain).connect(this.masterGain)
+    this.musicGain.connect(this.fadeGain).connect(this.musicEchoDelay).connect(this.musicEchoGain).connect(this.masterGain)
     this.masterGain.connect(this.audioContext.destination)
     this.connect()
   }
 
   /**
-   * 효과음 및 배경음악등을 audioContext에서 출력되도록 연결합니다.
+   * 배경음악등을 audioContext에서 출력되도록 연결합니다.
+   * 효과음은 일부만 적용 (다 하기 너무 귀찮다.)
    */
   static connect () {
-    // 효과음 - 시스템
+    // 효과음 - 시스템 // 먼저 로드가 필요하므로, 미리 audioContext에 등록해둠
     this.audioContext.createMediaElementSource(soundFile.system.systemBack).connect(this.soundGain)
     this.audioContext.createMediaElementSource(soundFile.system.systemBuzzer).connect(this.soundGain)
     this.audioContext.createMediaElementSource(soundFile.system.systemCursor).connect(this.soundGain)
@@ -150,15 +175,15 @@ export class soundSystem {
     this.audioContext.createMediaElementSource(soundFile.system.systemSelect).connect(this.soundGain)
 
     // 효과음 - 스킬 및 무기
-    this.audioContext.createMediaElementSource(soundFile.skill.skillMultyshotShot).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.skill.skillMultyshotUse).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.skill.skillMissileShot).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.skill.skillMissileHit).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.skill.skillBlasterShot).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.skill.skillLaserShot).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.skill.skillParapoHit).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.skill.skillSapiaWeapon).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.skill.skillSidewaveShot).connect(this.soundGain)
+    // this.audioContext.createMediaElementSource(soundFile.skill.skillMultyshotShot).connect(this.soundGain)
+    // this.audioContext.createMediaElementSource(soundFile.skill.skillMultyshotUse).connect(this.soundGain)
+    // this.audioContext.createMediaElementSource(soundFile.skill.skillMissileShot).connect(this.soundGain)
+    // this.audioContext.createMediaElementSource(soundFile.skill.skillMissileHit).connect(this.soundGain)
+    // this.audioContext.createMediaElementSource(soundFile.skill.skillBlasterShot).connect(this.soundGain)
+    // this.audioContext.createMediaElementSource(soundFile.skill.skillLaserShot).connect(this.soundGain)
+    // this.audioContext.createMediaElementSource(soundFile.skill.skillParapoHit).connect(this.soundGain)
+    // this.audioContext.createMediaElementSource(soundFile.skill.skillSapiaWeapon).connect(this.soundGain)
+    // this.audioContext.createMediaElementSource(soundFile.skill.skillSidewaveShot).connect(this.soundGain)
 
     // 배경음악
     this.audioContext.createMediaElementSource(soundFile.music.music01_space_void).connect(this.musicGain)
@@ -168,6 +193,7 @@ export class soundSystem {
     this.audioContext.createMediaElementSource(soundFile.music.music05_space_tour).connect(this.musicGain)
     this.audioContext.createMediaElementSource(soundFile.music.music06_round1_boss_thema).connect(this.musicGain)
     this.audioContext.createMediaElementSource(soundFile.music.music07_paran_planet_entry).connect(this.musicGain)
+    this.audioContext.createMediaElementSource(soundFile.music.music08_round1_4_jemul).connect(this.musicGain)
   }
 
 
@@ -294,6 +320,8 @@ export class soundSystem {
   static play (soundFile) {
     // 사운드가 꺼질경우, 사운드를 출력하지 않음.
     if (!this.soundOn) return
+
+    soundFile.volume = this.soundGain.gain.value
     
     // 사운드가 정지 상태일때는 play() 함수를 호출합니다.
     // 그렇지 않으면 currentTime을 0으로 설정해서 처음부터 다시 재생합니다.
@@ -305,12 +333,43 @@ export class soundSystem {
     }
   }
 
-  static musicPlay (soundFile) {
-    this.currentMusicChange(soundFile)
+  /**
+   * 음악을 재생하고, 음악의 일시정지 상태를 해제합니다.
+   * 
+   * (음악이 꺼져있다면, 일시정지는 해제되어도 음악은 재생되지 않습니다.)
+   * @param {HTMLAudioElement} soundFile 음악 파일
+   * @param {number} currentTime 재생할 오디오의 현재 시간
+   * @returns 
+   */
+  static musicPlay (soundFile, currentTime = null) {
     this.musicPaused = false // 음악 일시정지 상태를 해제
+
+    if (soundFile == null) return // 음악파일이 없다면 함수 종료
+
+    this.currentMusicChange(soundFile)
+    if (currentTime != null) {
+      soundFile.currentTime = currentTime
+    }
 
     // 음악설정이 꺼져있는 경우, 음악을 출력하지 않음.
     if (!this.musicOn) return
+  }
+
+  /**
+   * 음악을 페이드 인/아웃 하면서 변경합니다. 배경음악만 적용 가능 (효과음은 audioContext에 연결되어있지 않아 아무 효과 없음)
+   * @param {HTMLAudioElement} soundFile 사운드 파일
+   * @param {number} time 페이드 시간(인/아웃 포함), 단위: 초
+   */
+  static musicChangeFade (soundFile, time = 1) {
+    if (soundFile != null && this.currentMusic != soundFile) {
+      if (this.currentMusic != null) {
+        // time 시간동안 페이드 아웃이 진행됩니다.
+        // 페이드 인은, process에서 구현합니다.
+        this.fadeTime = time
+        this.fadeGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + time)
+        this.nextMusic = soundFile
+      }
+    }
   }
 
   static currentMusicChange (soundFile) {
@@ -318,7 +377,6 @@ export class soundSystem {
       if (this.currentMusic != null) {
         // 현재 음악이 있다면 현재 음악 일시 정지
         this.currentMusic.pause()
-        this.currentMusic.currentTime = 0
       }
 
       // 새로운 파일로 교체
@@ -354,6 +412,12 @@ export class soundSystem {
         // 만약 음악파일이 null이면 음악과 관련된 처리를 하지 않음.
         this.currentMusic.play()
       }
+    }
+
+    // 음악 페이드 볼륨이 0이 된경우 (음악 on/off 상관없이 페이드 효과는 적용됩니다.)
+    if (this.fadeGain.gain.value === 0) {
+      this.currentMusicChange(this.nextMusic)
+      this.fadeGain.gain.linearRampToValueAtTime(1, this.audioContext.currentTime + this.fadeTime)
     }
   }
 

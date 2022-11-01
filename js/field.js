@@ -129,12 +129,19 @@ class PlayerObject extends FieldData {
     this.hpMax = getData.hpMax
     this.shield = getData.shield
     this.shieldMax = getData.shieldMax
-    this.playerWeaponId = [ID.playerWeapon.multyshot,
-      ID.playerWeapon.missile, ID.playerWeapon.arrow, ID.playerWeapon.laser, ID.playerWeapon.sapia,
-      ID.playerWeapon.parapo, ID.playerWeapon.blaster, ID.playerWeapon.sidewave,
+    this.playerWeaponId = [
+      ID.playerWeapon.multyshot,
+      ID.playerWeapon.missile,
+      ID.playerWeapon.arrow,
+      ID.playerWeapon.laser,
       ID.playerWeapon.unused
     ]
-    this.playerWeaponPosition = this.playerWeaponId.length - 1
+    // this.playerWeaponId = [ID.playerWeapon.multyshot,
+    //   ID.playerWeapon.missile, ID.playerWeapon.arrow, ID.playerWeapon.laser, ID.playerWeapon.sapia,
+    //   ID.playerWeapon.parapo, ID.playerWeapon.blaster, ID.playerWeapon.sidewave,
+    //   ID.playerWeapon.unused
+    // ]
+    this.playerWeaponPosition = 0 // this.playerWeaponId.length - 1
     this.playerWeaponDelayCount = [0, 0, 0, 0, 0, 0, 0, 0, 0]
     this.skill = [
       { id: ID.playerSkill.sapia, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
@@ -185,7 +192,7 @@ class PlayerObject extends FieldData {
   }
 
   addDamage (damage) {
-    if (this.isDied) return
+    if (this.isDied || damage === 0 || damage == null) return
 
     let hpDamage = 0
     let shieldDamage = 0
@@ -283,7 +290,7 @@ class PlayerObject extends FieldData {
 
   processShield () {
     const SHIELD_RECOVERY_POINT = 6000
-    this.shieldRecovery += 60
+    this.shieldRecovery += 100
 
     // 쉴드 회복 처리
     if (this.shieldRecovery >= SHIELD_RECOVERY_POINT) {
@@ -515,8 +522,10 @@ export class fieldState {
     const GetClass = tamshooter4Data.getWeaponData(typeId)
     if (GetClass == null) return
 
+    /** @type {WeaponData} */
     const inputData = new GetClass(addOption)
     inputData.createId = this.getNextCreateId()
+    inputData.id = typeId
     inputData.setPosition(x, y)
     inputData.setOption(attack)
     this.weaponObject.push(inputData)
@@ -526,8 +535,10 @@ export class fieldState {
     const GetClass = tamshooter4Data.getEnemyData(typeId)
     if (GetClass == null) return
 
+    /** @type {EnemyData} */
     const inputData = new GetClass(option)
     inputData.createId = this.getNextCreateId()
+    inputData.id = typeId
     inputData.setPosition(x, y)
     inputData.init()
     this.enemyObject.push(inputData)
@@ -540,8 +551,10 @@ export class fieldState {
     const GetClass = tamshooter4Data.getEnemyData(typeId)
     if (GetClass == null) return
 
+    /** @type {EnemyData} */
     const inputData = new GetClass(option)
     inputData.createId = this.getNextCreateId()
+    inputData.id = typeId
     inputData.setPosition(x, y)
     inputData.init()
     this.enemyObject.push(inputData)
@@ -552,8 +565,10 @@ export class fieldState {
     const GetClass = tamshooter4Data.getEffectData(typeId)
     if (GetClass == null) return
 
+    /** @type {EffectData} */
     const inputData = new GetClass(option)
     inputData.createId = this.getNextCreateId()
+    inputData.id = typeId
     inputData.setPosition(x, y)
     // inputData.setOption(width, height)
     this.effectObject.push(inputData)
@@ -614,6 +629,12 @@ export class fieldState {
 
   static processPlayerObject () {
     this.playerObject.process()
+
+    if (this.playerObject.y > graphicSystem.CANVAS_HEIGHT - 80) {
+      gameSystem.userSystem.hideUserStat()
+    } else {
+      gameSystem.userSystem.showUserStat()
+    }
   }
 
   static processWeaponObject () {
@@ -818,7 +839,7 @@ export class fieldSystem {
     this.totalScore = 0
     this.fieldScore = 0
 
-    soundSystem.musicPlay(this.round.music)
+    soundSystem.musicPlay(this.round.music, 0)
   }
 
   /**
@@ -1068,12 +1089,13 @@ export class fieldSystem {
     const LAYER_Y = 570
     const LAYER_DIGITAL_Y = 570 + 5
     const HEIGHT = 30
+    const roundText = this.round != null ? this.round.roundText : 'NULL'
     const currentTime = this.round != null ? this.round.currentTime : '999'
     const finishTime = this.round != null ? this.round.finishTime : '999'
     const plusTime = this.round != null ? this.round.plusTime : '0'
     const meterMultiple = currentTime / finishTime
     graphicSystem.fillRect(LAYER_X, LAYER_Y, graphicSystem.CANVAS_WIDTH_HALF, HEIGHT, 'silver')
     graphicSystem.fillRect(LAYER_X, LAYER_Y, graphicSystem.CANVAS_WIDTH_HALF * meterMultiple, HEIGHT, '#D5F5E3')
-    graphicSystem.digitalFontDisplay(`R:1-1, T:${currentTime}/${finishTime} + ${plusTime}`, LAYER_X + 5, LAYER_DIGITAL_Y)
+    graphicSystem.digitalFontDisplay(`R:${roundText}, T:${currentTime}/${finishTime} + ${plusTime}`, LAYER_X + 5, LAYER_DIGITAL_Y)
   }
 }
