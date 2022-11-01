@@ -8028,7 +8028,7 @@ class Round1_6 extends RoundData {
     this.music = soundFile.music.music01_space_void
   }
 
-  if ()
+  // if ()
 }
 
 class Round1_Test extends RoundData {
