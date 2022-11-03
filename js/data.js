@@ -8025,10 +8025,221 @@ class Round1_6 extends RoundData {
     this.finishTime = 150
     this.clearBonus = 35000
     this.backgroundImage = imageFile.round.round1_1_space
+    this.spaceImage = imageFile.round.round1_6_space
     this.music = soundFile.music.music01_space_void
+    this.musicTour = soundFile.music.music05_space_tour
+    this.musicPlanet = soundFile.music.music07_paran_planet_entry
+    this.addBossData(ID.enemy.spaceEnemyBoss, 27)
+    this.bossMusic = soundFile.music.music06_round1_boss_thema
+
+    this.addRoundPhase(this.roundPhase00, 1, 30)
+    this.addRoundPhase(this.roundPhase01, 31, 60)
+    this.addRoundPhase(this.roundPhase02, 61, 90)
+    this.addRoundPhase(this.roundPhase03, 91, 120)
+    this.addRoundPhase(this.roundPhase04, 121, 150)
+
+    /**
+     * 이 라운드에서 행성을 보여주기 위한 오브젝트
+     */
+    this.planet = this.createPlanet()
   }
 
-  // if ()
+  /**
+   * 이 라운드에서 행성을 보여주기 위한 오브젝트를 만드는 함수
+   */
+  /**
+   * 이 라운드에서 행성을 보여주기 위한 오브젝트를 만드는 함수
+   */
+   createPlanet () {
+    return {
+      image: imageFile.round.round1_6_paran_planet,
+      elapsedFrame: 0,
+      baseSize: 60,
+      outputSize: 60,
+      degree: 0,
+      x: graphicSystem.CANVAS_WIDTH + 100,
+      xBase: graphicSystem.CANVAS_WIDTH + 100,
+      y: graphicSystem.CANVAS_HEIGHT_HALF,
+      totalDisplayTime: 50,
+      process: function () {
+        this.elapsedFrame++
+        const sectionFrame = 300
+        const moveSize = (this.xBase - graphicSystem.CANVAS_WIDTH_HALF) / 1200
+        const upSize = [
+          (100 - this.baseSize) / sectionFrame, // 40
+          (180 - 100) / sectionFrame, // 80
+          (300 - 180) / sectionFrame, // 120
+          (600 - 300) / sectionFrame, // 300
+          (1200 - 600) / sectionFrame, // 600
+          (2000 - 1200) / sectionFrame // 800
+        ]
+
+        const sectionLevel = Math.floor(this.elapsedFrame / 300)
+        if (sectionLevel <= 3) {
+          this.x -= moveSize
+        } else if (sectionLevel <= 3 + upSize.length) {
+          // sectionLevel 4부터 행성의 크기가 증가
+          this.outputSize += upSize[sectionLevel - 4]
+        } else {
+          this.outputSize += 0
+        }
+      },
+      display: function () {
+        let outputX = this.x - (this.outputSize / 2)
+        let outputY = this.y - (this.outputSize / 2)
+        graphicSystem.imageDisplay(this.image, 0, 0, this.image.width, this.image.height, outputX, outputY, this.outputSize, this.outputSize)
+      }
+    }
+  }
+
+  roundPhase00 () {
+    // 20%
+    if (this.timeCheckInterval(1, 22, 240)) {
+      this.createEnemy(ID.enemy.spaceEnemySusong)
+    }
+
+    // 35%
+    if (this.timeCheckInterval(1, 22, 120)) {
+      this.createEnemy(ID.enemy.jemulEnemyHellAir)
+      this.createEnemy(ID.enemy.jemulEnemyRedAir)
+    }
+
+    // 20%
+    if (this.timeCheckInterval(1, 22, 60)) {
+      this.createEnemy(ID.enemy.spaceEnemyGamjigi)
+    }
+
+    if (this.timeCheckInterval(25)) {
+      this.currentTimePaused = this.enemyNothingCheck() ? false : true
+    }
+
+    // 음악 재생 시간 관계상, 29초 지점부터 음악이 변경됨.
+    if (this.timeCheckFrame(29, 0)) {
+      // soundSystem.musicChangeFade(this.musicTour, 1)
+      soundSystem.musicPlay(this.musicTour)
+      this.changeBackgroundImage(this.spaceImage, 120)
+    }
+  }
+
+  roundPhase01 () {
+    // 빛 생성 여부 설정
+    // 24%, 48%, 80%, 24%, 12%
+    let isCreateLight = this.timeCheckInterval(31, 34, 10)
+      || this.timeCheckInterval(35, 40, 5)
+      || this.timeCheckInterval(41, 45, 3)
+      || this.timeCheckInterval(46, 50, 10)
+      || this.timeCheckInterval(51, 60, 20)
+    
+    if (isCreateLight) {
+      this.createEnemy(ID.enemy.spaceEnemyLight)
+    }
+
+    // 30%
+    if (this.timeCheckInterval(46, 60, 10)) {
+      this.createEnemy(ID.enemy.spaceEnemyComet)
+    }
+  }
+
+  roundPhase02 () {
+    // 20%
+    if (this.timeCheckInterval(61, 90, 30)) {
+      this.createEnemy(ID.enemy.spaceEnemyLight)
+      this.createEnemy(ID.enemy.spaceEnemyComet)
+    }
+
+    // 20%
+    if (this.timeCheckInterval(61, 90, 60)) {
+      this.createEnemy(ID.enemy.spaceEnemyGamjigi)
+    }
+
+    // 50%
+    if (this.timeCheckInterval(61, 90, 60)) {
+      this.createEnemy(ID.enemy.spaceEnemyCar)
+      this.createEnemy(ID.enemy.spaceEnemyAttack)
+      this.createEnemy(ID.enemy.spaceEnemyEnergy)
+      this.createEnemy(ID.enemy.spaceEnemySquare)
+    }
+
+    // 33% ~ 10%
+    if (this.timeCheckInterval(75, 76, 30)) {
+      this.createEnemy(ID.enemy.spaceEnemyDonggrami)
+    } else if (this.timeCheckInterval(77, 90, 150)) {
+      this.createEnemy(ID.enemy.spaceEnemyDonggrami)
+    }
+  }
+
+  roundPhase03 () {
+    // 30%, 15%, 7%
+    let isCreateEnemy = this.timeCheckInterval(91, 100, 60)
+      || this.timeCheckInterval(101, 110, 120)
+      || this.timeCheckInterval(111, 120, 240)
+
+    // 20%, 10%, 5%
+    let isCreateLight = this.timeCheckInterval(91, 100, 30)
+      || this.timeCheckInterval(101, 110, 60)
+      || this.timeCheckInterval(111, 120, 120)
+
+    // 15%
+    if (this.timeCheckInterval(91, 120, 120)) {
+      this.createEnemy(ID.enemy.spaceEnemyDonggrami)
+    }
+
+    // 10%
+    if (this.timeCheckInterval(91, 112, 120)) {
+      this.createEnemy(ID.enemy.spaceEnemyGamjigi)
+    }
+
+    if (isCreateEnemy) {
+      this.createEnemy(ID.enemy.spaceEnemyCar)
+      this.createEnemy(ID.enemy.spaceEnemyAttack)
+      this.createEnemy(ID.enemy.spaceEnemyRocket)
+    }
+
+    if (isCreateLight) {
+      this.createEnemy(ID.enemy.spaceEnemyLight)
+      this.createEnemy(ID.enemy.spaceEnemyComet)
+    }
+  }
+
+  roundPhase04 () {
+    if (this.timeCheckInterval(126, 133, 60)) {
+      this.createEnemy(ID.enemy.spaceEnemyDonggrami)
+    } else if (this.timeCheckInterval(134, 146, 120)) {
+      this.createEnemy(ID.enemy.spaceEnemyDonggrami)
+    }
+  }
+
+  processRound () {
+    super.processRound()
+
+    // 참고: space tour 음악은 약 97초
+    // 음악이 29초 + 97초 = 126초 지점에 종료됨.
+    // 파란 행성 진입 음악은 약 126초 붜터 약 24초간 재생됨 (페이드 시간을 고려해서)
+    const fadeTime = 1
+    const planetMusicPlayTime = 126 - fadeTime
+    if (this.timeCheckFrame(planetMusicPlayTime, 0)) {
+      soundSystem.musicChangeFade(this.musicPlanet, fadeTime)
+      // soundSystem.musicPlay(this.musicPlanet)
+    }
+  }
+
+  processPhaseEndEnemyNothing () {
+    // 적 남아있어도 클리어 가능
+  }
+
+  processBackground () {
+    super.processBackground()
+    if (this.currentTime >= this.finishTime - this.planet.totalDisplayTime) {
+      this.planet.process()
+    }
+  }
+
+  displayBackground () {
+    super.displayBackground()
+    if (this.currentTime >= this.finishTime - this.planet.totalDisplayTime) {
+      this.planet.display()
+    }
+  }
 }
 
 class Round1_Test extends RoundData {
@@ -8038,46 +8249,18 @@ class Round1_Test extends RoundData {
     this.roundText = 'test'
     this.recommandPower = 40000
     this.requireLevel = 3
-    this.finishTime = 210
-    this.clearBonus = 39000
+    this.finishTime = 50
+    this.clearBonus = 100
     this.backgroundImage = imageFile.round.round1_6_space
-    this.music = soundFile.music.music07_paran_planet_entry
+    this.music = soundFile.music.music08_round1_4_jemul
 
-    this.planet = {
-      image: imageFile.round.round1_6_paran_planet,
-      outputSize: 0
-    }
 
     this.addRoundPhase(() => {
-      
+      if (this.timeCheckFrame(4, 0)) {
+        soundSystem.musicChangeFade(soundFile.music.music06_round1_boss_thema, 4)
+      }
     }, 0, 999)
-  }
 
-  processBackground () {
-    this.backgroundSpeedX = 0
-    super.processBackground()
-  }
-
-  displayBackground () {
-    super.displayBackground()
-    let outputX = graphicSystem.CANVAS_WIDTH_HALF - (this.planet.outputSize / 2)
-    let outputY = graphicSystem.CANVAS_HEIGHT_HALF - (this.planet.outputSize / 2)
-    graphicSystem.imageDisplay(this.planet.image, 0, 0, this.planet.image.width, this.planet.image.height, outputX, outputY, this.planet.outputSize, this.planet.outputSize)
-    
-    if (this.planet.outputSize <= 200) {
-      this.planet.outputSize += 0.1
-    } else if (this.planet.outputSize <= 800) {
-      this.planet.outputSize += 0.4
-    } else if (this.planet.outputSize <= 1600) {
-      this.planet.outputSize += 1.4
-    } else {
-
-    }
-  }
-
-  display () {
-    super.display()
-    // graphicSystem.fillRect(0, 0, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT, '#DDCCDD')
   }
 }
 

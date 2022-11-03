@@ -3,7 +3,7 @@
 일반 적: hp 100당 score 1
 보스: hp 200당 score 1
 
-spaceEnemy - baseCp: 40000 - (1-1 ~ 1-6)
+spaceEnemy - baseCp: 40000 - (1-1 ~ 1-2, 1-6)
 name   |hp       |attack
 light  |4%(1600) |1
 rocket |10%(4000)|10

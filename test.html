@@ -10,4 +10,41 @@
   <canvas id="canvas" width="800" height="400"></canvas>
 </body>
 </html>
-<script src="test.js" type="module"></script>
+<script>
+
+var title = {
+  image: 1,
+  elsapedFrame: 2,
+  process: function () {
+    this.elsapedFrame = 99
+    console.log(this)
+    let a = () => { return this }
+    console.log(a)
+    a()
+  },
+
+  planet: {
+    a: 9995,
+    process: function () {
+      this.a = 3525335
+      return this
+    }
+  }
+}
+
+
+var planet = () => {
+  this.image = 1
+  this.elsapedFrame = 2
+  this.degree = 4
+  this.x = 800 + 100
+  this.y = 600 - (200 / 2)
+  this.process = function () {
+    // 0 ~ 8초 < 행성이 중앙으로 이동
+    this.x = 99
+  }
+
+  console.log(this)
+  return this
+}
+</script>
