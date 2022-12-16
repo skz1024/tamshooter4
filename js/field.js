@@ -1,11 +1,19 @@
 'use strict'
 
 import { buttonSystem } from './control.js'
-import { EffectData, EnemyData, FieldData, ID, objectType, RoundData, tamshooter4Data, WeaponData, EnemyBulletData, CustomEffectData } from './data.js'
+import { tamshooter4Data } from './data.js'
+import { CustomEditEffect, CustomEffect, EffectData } from './dataEffect.js'
+import { EnemyBulletData, EnemyData } from './dataEnemy.js'
+import { FieldData } from './dataField.js'
+import { ID } from './dataId.js'
+import { PlayerWeaponData } from './dataPlayer.js'
+import { RoundData } from './dataRound.js'
+import { WeaponData } from './dataWeapon.js'
 import { graphicSystem } from './graphic.js'
 import { imageDataInfo, imageFile } from './image.js'
 import { soundFile, soundSystem } from './sound.js'
 import { gameSystem, userSystem } from './tamshooter4.js'
+
 // import { systemText } from './text.js'
 
 /*
@@ -93,10 +101,15 @@ class PlayerObject extends FieldData {
   }
 
   constructor () {
-    super(objectType.PLAYER, 0, 300, 200)
+    super('player', 0, 300, 200)
     this.width = this.playerImageData.width
     this.height = this.playerImageData.height
   }
+
+  /**
+   * @typedef {{skill: PlayerSKillData, id: number, coolTimeFrame: number, repeatCount: number, delayCount: number}} SkillSlot 플레이어가 사용하는 스킬 슬롯의 오브젝트 구조
+   * @typedef {{weapon: PlayerWeaponData, id: number, delayCount: number}} WeaponSlot 무기 슬롯 (총 5개가 있으며, 0 ~3번 슬롯은 유저가 정한 무기를 사용하고, 4번 슬롯은 무기를 사용하지 않는 슬롯입니다.)
+   */
 
   /**
    * 플레이어 정보 초기화 함수:
@@ -129,27 +142,102 @@ class PlayerObject extends FieldData {
     this.hpMax = getData.hpMax
     this.shield = getData.shield
     this.shieldMax = getData.shieldMax
-    this.playerWeaponId = [
-      ID.playerWeapon.multyshot,
-      ID.playerWeapon.missile,
-      ID.playerWeapon.arrow,
-      ID.playerWeapon.laser,
-      ID.playerWeapon.unused
+    
+    this.#initSkill()
+    this.#initWeapon()
+  }
+
+  /**
+   * 무기 객체 초기화 작업
+   */
+  #initWeapon () {
+    let userWapon = userSystem.getWeaponList()
+
+    /**
+     * @type {WeaponSlot[]}
+     */
+    this.weaponSlot = [
+      {weapon: null, id: userWapon[0], delayCount: 0},
+      {weapon: null, id: userWapon[1], delayCount: 0},
+      {weapon: null, id: userWapon[2], delayCount: 0},
+      {weapon: null, id: userWapon[3], delayCount: 0},
+      {weapon: null, id: ID.playerWeapon.unused, delayCount: 0},
     ]
-    // this.playerWeaponId = [ID.playerWeapon.multyshot,
-    //   ID.playerWeapon.missile, ID.playerWeapon.arrow, ID.playerWeapon.laser, ID.playerWeapon.sapia,
-    //   ID.playerWeapon.parapo, ID.playerWeapon.blaster, ID.playerWeapon.sidewave,
-    //   ID.playerWeapon.unused
-    // ]
-    this.playerWeaponPosition = 0 // this.playerWeaponId.length - 1
-    this.playerWeaponDelayCount = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-    this.skill = [
-      { id: ID.playerSkill.sapia, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-      { id: ID.playerSkill.parapo, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-      { id: ID.playerSkill.blaster, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-      { id: ID.playerSkill.sidewave, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 }
-    ]
+
+    /**
+     * 서브 무기 슬롯
+     * 
+     * 게임 규칙 상, 이 무기는 성능과 효과가 고정되어있습니다.
+     * 무조건 유도성능을 가진 무기이며, 이 무기는 화면 바깥에 있는 적을 죽일 수 있게 하기 위한 무기입니다.
+     * (사용자가 적이 남아있는것을 눈치채게 하기 위해서 일부러 이렇게 만들었습니다.)
+     * @type {WeaponSlot}
+     */
+    this.subWeaponSlot = {
+      weapon: null, id: ID.playerWeapon.subMultyshot, delayCount: 0
+    }
+
+    /**
+     * 플레이어의 무기 슬롯 번호
+     */
+    this.weaponSlotNumber = 0
+
+    
+    // 무기 슬롯 데이터 입력합니다.
+    for (let i = 0; i < this.weaponSlot.length; i++) {
+      let getClass = tamshooter4Data.getPlayerWeapon(this.weaponSlot[i].id)
+      this.weaponSlot[i].weapon = getClass != null ? new getClass() : null
+    }
+
+    // 서브 웨폰
+    let subWeaponClass = tamshooter4Data.getPlayerWeapon(this.subWeaponSlot.id)
+    this.subWeaponSlot.weapon = subWeaponClass != null ? new subWeaponClass() : null
+
+    /** 서브 웨폰 딜레이 */
     this.playerSubWeaponDelayCount = 0
+  }
+
+  /**
+   * 스킬 정보 초기화
+   */
+  #initSkill () {
+    /** 스킬 슬롯이 A인지 여부, 아닐경우 B로 처리 */ this.usingSkillSlotA = true
+    let getUserSkill = userSystem.getSkillList()
+
+    /**
+     * 스킬의 대한 정보를 저장하는 데이터
+     * 
+     * 스킬은 A슬롯과 B슬롯이 있으며, 최대 한번에 4개까지만 사용 가능하고, 같은 슬롯에 있는 쿨타임은 공유 개념처럼 사용
+     * @type {SkillSlot[]}
+     */
+    this.skillSlotA = [
+      { skill: null, id: getUserSkill[0], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+      { skill: null, id: getUserSkill[1], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+      { skill: null, id: getUserSkill[2], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+      { skill: null, id: getUserSkill[3], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 }
+    ]
+
+    /**
+     * @type {SkillSlot[]}
+     */
+    this.skillSlotB = [
+      { skill: null, id: getUserSkill[4], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+      { skill: null, id: getUserSkill[5], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+      { skill: null, id: getUserSkill[6], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
+      { skill: null, id: getUserSkill[7], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 }
+    ]
+
+    // 스킬 클래스 등록 (한번에 A, B 슬롯 두개를 등록하는건 귀찮아서...)
+    // 여기서는 널 체크를 하지 않습니다. (process에서만 널 체크 진행)
+    for (let i = 0; i < this.skillSlotA.length; i++) {
+      const getIdA = this.skillSlotA[i].id
+      const getIdB = this.skillSlotB[i].id
+      const getSkillA = tamshooter4Data.getPlayerSkill(getIdA)
+      const getSkillB = tamshooter4Data.getPlayerSkill(getIdB)
+
+      // 널체크와 동시에 클래스 인스턴스 생성 (null일경우 생성하지 않음.)
+      this.skillSlotA[i].skill = getSkillA != null ? new getSkillA() : null
+      this.skillSlotB[i].skill = getSkillB != null ? new getSkillB() : null
+    }
   }
 
   damageSoundPlay (shieldDamage, hpDamage) {
@@ -262,24 +350,30 @@ class PlayerObject extends FieldData {
   }
 
   useSkill (skillPosition) {
-    const getId = this.skill[skillPosition].id
-    const getSkill = tamshooter4Data.getPlayerSkillData(getId)
-    if (getSkill == null) return // 스킬이 없다면 무시
+    // 스킬 클래스(데이터)가 없거나, 스킬 위치가 없으면 함수를 실행하지 않음.
+    if (skillPosition == null) return
+    if (this.skillSlotA[skillPosition].skill == null || this.skillSlotB[skillPosition].skill == null) return
+
+    // 스킬 슬롯에 따라 해당 스킬을 찾기
+    let targetSkill = this.usingSkillSlotA ? this.skillSlotA[skillPosition] : this.skillSlotB[skillPosition]
 
     // 쿨타임 계산해서, 쿨타임이 남아있으면, 무시
-    const leftCoolTime = this.skill[skillPosition].coolTimeFrame
-    if (leftCoolTime > 0) return
+    if (targetSkill.coolTimeFrame > 0) return
 
     // 스킬 사용
-    this.skill[skillPosition].repeatCount += getSkill.repeatCount // 스킬 반복 횟수를 증가시켜 여러번 무기가 발사되게 처리
-    this.skill[skillPosition].coolTimeFrame += getSkill.getCoolTimeFrame() // 쿨타임 추가 (단위가 프레임이므로, 쿨타임 시간에 60을 곱함)
+    // 스킬을 사용했을 때, 해당 스킬 만큼의 스킬 쿨타임이 증가합니다.
+    // 그리고 같은 번호의 다른 슬롯도 동시에 공유됩니다.
+    targetSkill.repeatCount += targetSkill.skill.repeatCount // 스킬 반복 횟수를 증가시켜 여러번 무기가 발사되게 처리
+    
+    this.skillSlotA[skillPosition].coolTimeFrame += targetSkill.skill.getCoolTimeFrame() // 쿨타임 추가 (단위가 프레임이므로, 쿨타임 시간에 60을 곱함)
+    this.skillSlotB[skillPosition].coolTimeFrame += targetSkill.skill.getCoolTimeFrame() // 슬롯 B에도 마찬가지로 쿨타임 추가
 
     // 스킬에 사용된 무기가 즉시 발사되도록, 딜레이카운트를 채워줌(딜레이 이상이여야 무기 발사됨)
     // 다만 beforeDelay가 있을경우, 미리 delayCount에서 해당 수치만큼 감소
-    this.skill[skillPosition].delayCount += getSkill.delay - getSkill.beforeDelay
+    targetSkill.delayCount += targetSkill.skill.delay - targetSkill.skill.beforeDelay
 
     // 스킬 사운드 출력
-    getSkill.useSoundPlay()
+    targetSkill.skill.useSoundPlay()
   }
 
   processDamage () {
@@ -305,25 +399,50 @@ class PlayerObject extends FieldData {
   }
 
   processSkill () {
-    for (let i = 0; i < this.skill.length; i++) {
-      const currentSkill = this.skill[i] // 루프 i값에 따른 현재 스킬
+    // 참고: null 체크는 processSkillLogic에서 검사합니다.
 
-      if (currentSkill.coolTimeFrame > 0) { // 스킬 쿨타임이 0보다 클 때
-        currentSkill.coolTimeFrame-- // 스킬 쿨타임프레임 감소
+    for (let i = 0; i < this.skillSlotA.length; i++) {
+      // 루프 i값에 따른 현재 스킬. 
+      // 스킬슬롯 A를 사용중이면, A슬롯의 스킬을 가져옵니다., B슬롯이라면, B슬롯에 있는 스킬을 가져옵니다.
+      this.processSkillLogic(this.skillSlotA[i])
+    }
+
+    for (let i = 0; i < this.skillSlotB.length; i++) {
+      this.processSkillLogic(this.skillSlotB[i])
+    }
+
+    if (this.usingSkillSlotA) {
+      for (let i = 0; i < this.skillSlotA.length; i++) {
+        userSystem.setSkillDisplayStat(i, Math.round(this.skillSlotA[i].coolTimeFrame / 60), this.skillSlotA[i].id)
       }
-
-      // 만약 스킬 반복횟수가 없다면, 스킬을 사용하지 않은것이므로 무시
-      if (currentSkill.repeatCount <= 0) continue
-
-      const getSkill = tamshooter4Data.getPlayerSkillData(currentSkill.id)
-      if (getSkill == null) continue // 스킬이 없다면 무시
-
-      currentSkill.delayCount++ // 스킬 딜레이카운트 증가
-      if (currentSkill.delayCount >= getSkill.delay) { // 딜레이카운트카 스킬 딜레이를 넘어가면 무기 생성
-        getSkill.create(this.centerX, this.centerY, this.attack)
-        currentSkill.delayCount -= getSkill.delay // 스킬 딜레이카운트 감소
-        currentSkill.repeatCount-- // 반복횟수 1회 감소
+    } else {
+      for (let i = 0; i < this.skillSlotB.length; i++) {
+        userSystem.setSkillDisplayStat(i, Math.round(this.skillSlotB[i].coolTimeFrame / 60), this.skillSlotB[i].id)
       }
+    }
+  }
+
+  /**
+   * 
+   * @param {SkillSlot} currentSkill
+   */
+  processSkillLogic (currentSkill) {
+    // 해당 스킬에 대한 데이터가 없으면 무시
+    if (currentSkill.skill == null) return
+
+    if (currentSkill.coolTimeFrame > 0) { // 스킬 쿨타임이 0보다 클 때
+      currentSkill.coolTimeFrame-- // 스킬 쿨타임프레임 감소
+    }
+
+    // 만약 스킬 반복횟수가 없다면, 스킬을 사용하지 않은것이므로 무시
+    if (currentSkill.repeatCount <= 0) return
+    if (currentSkill.skill == null) return // 스킬이 없다면 무시
+
+    currentSkill.delayCount++ // 스킬 딜레이카운트 증가
+    if (currentSkill.delayCount >= currentSkill.skill.delay) { // 딜레이카운트카 스킬 딜레이를 넘어가면 무기 생성
+      currentSkill.skill.create(this.attack, this.centerX, this.centerY)
+      currentSkill.delayCount -= currentSkill.skill.delay // 스킬 딜레이카운트 감소
+      currentSkill.repeatCount-- // 반복횟수 1회 감소
     }
   }
 
@@ -343,8 +462,8 @@ class PlayerObject extends FieldData {
     userSystem.hp = this.hp
     userSystem.shield = this.shield
     for (let i = 0; i < 4; i++) {
-      userSystem.skill[i].coolTime = Math.ceil(this.skill[i].coolTimeFrame / 60)
-      userSystem.skill[i].id = this.skill[i].id
+      userSystem.skillDisplayStat[i].coolTime = Math.ceil(this.skillSlotA[i].coolTimeFrame / 60)
+      userSystem.skillDisplayStat[i].id = this.skillSlotA[i].id
     }
   }
 
@@ -369,28 +488,14 @@ class PlayerObject extends FieldData {
     this.centerY = this.y + (this.height / 2)
 
     if (buttonA) {
-      this.playerWeaponPosition++
-      if (this.playerWeaponPosition >= this.playerWeaponId.length) {
-        this.playerWeaponPosition = 0
+      this.weaponSlotNumber++
+      if (this.weaponSlotNumber >= this.weaponSlot.length) {
+        this.weaponSlotNumber = 0
       }
     }
 
     if (buttonB) {
-      if (this.skill[0].id === ID.playerSkill.multyshot) {
-        this.skill = [
-          { id: ID.playerSkill.sapia, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-          { id: ID.playerSkill.parapo, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-          { id: ID.playerSkill.blaster, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-          { id: ID.playerSkill.sidewave, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 }
-        ]
-      } else if (this.skill[0].id === ID.playerSkill.sapia) {
-        this.skill = [
-          { id: ID.playerSkill.multyshot, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-          { id: ID.playerSkill.missile, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-          { id: ID.playerSkill.arrow, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-          { id: ID.playerSkill.laser, coolTimeFrame: 0, repeatCount: 0, delayCount: 0 }
-        ]
-      }
+      this.usingSkillSlotA = !this.usingSkillSlotA
     }
 
     if (buttonSkill0) this.useSkill(0)
@@ -400,25 +505,28 @@ class PlayerObject extends FieldData {
   }
 
   processAttack () {
-    const getWeaponData = tamshooter4Data.getPlayerWeaponData(this.playerWeaponId[this.playerWeaponPosition])
-    if (getWeaponData == null) return
+    /**
+     * @type {WeaponSlot}
+     */
+    const currentWeapon = this.weaponSlot[this.weaponSlotNumber]
+    if (currentWeapon.weapon == null) return
 
-    this.playerWeaponDelayCount[this.playerWeaponPosition]++
-    if (this.playerWeaponDelayCount[this.playerWeaponPosition] >= getWeaponData.delay) {
-      getWeaponData.create(this.attack, this.centerX, this.centerY)
-      this.playerWeaponDelayCount[this.playerWeaponPosition] -= getWeaponData.delay
+    currentWeapon.delayCount++
+    if (currentWeapon.delayCount >= currentWeapon.weapon.delay) {
+      currentWeapon.weapon.create(this.attack, this.centerX, this.centerY)
+      currentWeapon.delayCount -= currentWeapon.weapon.delay
     }
   }
 
   processSubAttack () {
-    if (this.playerWeaponId[this.playerWeaponPosition] === ID.playerWeapon.unused) return
+    // 무기를 사용하지 않는 상태일경우, 서브웨폰도 사용하지 않습니다.
+    if (this.weaponSlot[this.weaponSlotNumber].id === ID.playerWeapon.unused) return
+    if (this.subWeaponSlot.weapon == null) return
 
-    const getWeaponData = tamshooter4Data.getPlayerWeaponData(ID.playerWeapon.subWeapon)
-    this.playerSubWeaponDelayCount++
-
-    if (this.playerSubWeaponDelayCount >= getWeaponData.delay) {
-      getWeaponData.create(this.attack, this.centerX, this.centerY)
-      this.playerSubWeaponDelayCount -= getWeaponData.delay
+    this.subWeaponSlot.delayCount++
+    if (this.subWeaponSlot.delayCount >= this.subWeaponSlot.weapon.delay) {
+      this.subWeaponSlot.weapon.create(this.attack, this.centerX, this.centerY)
+      this.subWeaponSlot.delayCount -= this.subWeaponSlot.weapon.delay
     }
   }
 
@@ -444,6 +552,148 @@ class PlayerObject extends FieldData {
         let targetY = this.y + Math.floor(this.levelupEnimationCount / 4) - 10
         graphicSystem.imageDisplay(levelUpImage, (this.levelupEnimationCount % targetFrame) * 70, 0, 70, 15, targetX, targetY, 70, 15)
       }
+    }
+  }
+
+  /**
+   * player 데이터, 이 저장 데이터는 fieldData와 공식이 다릅니다.
+   */
+  getSaveData () {
+    return {
+      // 좌표 값
+      x: this.x,
+      y: this.y,
+      
+      // 체력 및 쉴드
+      hp: this.hp,
+      shield: this.shield,
+      shieldMax: this.shieldMax,
+
+      // 딜레이
+      attackDelayCount: this.attackDelayCount,
+      dieAfterDelayCount: this.dieAfterDelayCount,
+
+      // 무기
+      weapon: this.getSaveWeaponData(),
+      weaponSlotNumber: this.weaponSlotNumber,
+
+      // 스킬
+      skill: this.getSaveSkillData(),
+      usingSkillSlotA: this.usingSkillSlotA,
+    }
+  }
+
+  getSaveWeaponData () {
+    // id, id, id, id, id
+    // delayCount, delayCount, delayCount, delayCount
+    let data = []
+    for (let i = 0; i < this.weaponSlot.length; i++) {
+      data.push({id: this.weaponSlot[i].id, delayCount: this.weaponSlot[i].delayCount})
+    }
+
+    return data
+  }
+
+  getSaveSkillData () {
+    // 배열로 이루어진 오브젝트로 저장
+    // 슬롯A, 슬롯B 한번에 저장됨.
+    let data = []
+
+    for (let i = 0; i < this.skillSlotA.length; i++) {
+      data.push({
+        id: this.skillSlotA[i].id,
+        delayCount: this.skillSlotA[i].delayCount,
+        coolTimeFrame: this.skillSlotA[i].coolTimeFrame,
+        repeatCount: this.skillSlotA[i].repeatCount
+      })
+    }
+
+    for (let i = 0; i < this.skillSlotB.length; i++) {
+      data.push({
+        id: this.skillSlotB[i].id,
+        delayCount: this.skillSlotB[i].delayCount,
+        coolTimeFrame: this.skillSlotB[i].coolTimeFrame,
+        repeatCount: this.skillSlotB[i].repeatCount
+      })
+    }
+
+    return data
+  }
+
+  /**
+   * 저장되었던 플레이어 오브젝트를 불러옵니다.
+   * 
+   * 무기와 스킬도 같이 초기화되면서 불러와집니다.
+   * @param {Object} saveData 
+   */
+  setLoadData (saveData) {
+    for (let key in saveData) {
+      if (typeof saveData[key] === 'object') {
+        if (key === 'weapon') {
+          this.setLoadWeaponData(saveData[key])
+        } else if (key === 'skill') {
+          this.setLoadSkillData(saveData[key])
+        } else {
+          this[key] = saveData[key]
+        }
+      } else {
+        this[key] = saveData[key]
+      }
+    }
+  }
+
+  /**
+   * 
+   * @param {WeaponSlot[]} data 
+   */
+  setLoadWeaponData (data) {
+    for (let i = 0; i < this.weaponSlot.length; i++) {
+      this.weaponSlot[i].delayCount = data[i].delayCount
+      this.weaponSlot[i].id = data[i].id
+    }
+
+    // 무기 슬롯 데이터 입력합니다.
+    for (let i = 0; i < this.weaponSlot.length; i++) {
+      let getClass = tamshooter4Data.getPlayerWeapon(this.weaponSlot[i].id)
+      this.weaponSlot[i].weapon = getClass != null ? new getClass() : null
+    }
+  }
+
+  /**
+   * 
+   * @param {SkillSlot[]} data 
+   */
+  setLoadSkillData (data) {
+    // 스킬은 슬롯에 상관없이 한번에 8개를 저장하기 때문에
+    // 슬롯B 값은 +4 인덱스를 해서 가져와야 합니다.
+    // 인덱스 초과 방지를 위해 skillSlotA.length로 배열 최대 길이 제한을 넣었습니다.
+    for (let i = 0; i < this.skillSlotA.length; i++) {
+      let indexA = i
+      let indexB = i + 4
+
+      this.skillSlotA[i].coolTimeFrame = data[indexA].coolTimeFrame
+      this.skillSlotA[i].delayCount = data[indexA].delayCount
+      this.skillSlotA[i].id = data[indexA].id
+      this.skillSlotA[i].repeatCount = data[indexA].repeatCount
+
+      this.skillSlotB[i].coolTimeFrame = data[indexB].coolTimeFrame
+      this.skillSlotB[i].delayCount = data[indexB].delayCount
+      this.skillSlotB[i].id = data[indexB].id
+      this.skillSlotB[i].repeatCount = data[indexB].repeatCount
+    }
+
+    // 스킬 불러온 후 스킬 다시 초기화
+    // 스킬 클래스 등록 (한번에 A, B 슬롯 두개를 등록하는건 귀찮아서...)
+    // 여기서는 널 체크를 하지 않습니다. (process에서만 널 체크 진행)
+    for (let i = 0; i < this.skillSlotA.length; i++) {
+      const getIdA = this.skillSlotA[i].id
+      const getIdB = this.skillSlotB[i].id
+      const getSkillA = tamshooter4Data.getPlayerSkill(getIdA)
+      const getSkillB = tamshooter4Data.getPlayerSkill(getIdB)
+
+      // 널체크와 동시에 클래스 인스턴스 생성 (null일경우 생성하지 않음.)
+      this.skillSlotA[i].skill = getSkillA != null ? new getSkillA() : null
+      this.skillSlotB[i].skill = getSkillB != null ? new getSkillB() : null
     }
   }
 }
@@ -500,7 +750,7 @@ export class fieldState {
 
   /**
    * 랜덤한 적 객체를 얻습니다. 다만, 이 객체가 삭제 예정이라면 함수의 리턴값은 null이 됩니다.
-   * @returns 적 오브젝트
+   * @returns {EnemyData} 적 오브젝트
    */
   static getRandomEnemyObject () {
     if (this.enemyObject.length === 0) return null
@@ -519,7 +769,7 @@ export class fieldState {
    * @param {number} attack 공격력 (반드시 정수여야 함. Math.floor 연산 회피를 위해 여기서는 검사하지 않음.)
    */
   static createWeaponObject (typeId, x = 0, y = 0, attack = 1, ...addOption) {
-    const GetClass = tamshooter4Data.getWeaponData(typeId)
+    const GetClass = tamshooter4Data.getWeapon(typeId)
     if (GetClass == null) return
 
     /** @type {WeaponData} */
@@ -527,12 +777,13 @@ export class fieldState {
     inputData.createId = this.getNextCreateId()
     inputData.id = typeId
     inputData.setPosition(x, y)
-    inputData.setOption(attack)
+    inputData.afterInitDefault(attack)
     this.weaponObject.push(inputData)
+    return inputData
   }
 
   static createEnemyObject (typeId, x = 0, y = 0, ...option) {
-    const GetClass = tamshooter4Data.getEnemyData(typeId)
+    const GetClass = tamshooter4Data.getEnemy(typeId)
     if (GetClass == null) return
 
     /** @type {EnemyData} */
@@ -540,15 +791,21 @@ export class fieldState {
     inputData.createId = this.getNextCreateId()
     inputData.id = typeId
     inputData.setPosition(x, y)
-    inputData.init()
+    inputData.afterInitDefault()
     this.enemyObject.push(inputData)
+    return inputData
   }
 
   /**
+   * 해당 함수는 createEnemyObject랑 똑같은 기능을 수행하기 때문에 제외되었습니다.
+   * 
+   * 더이상 사용하지 마세요.
+   * 
    * 보스를 생성하는데, 해당 보스 적 객체의 데이터랑 연결할 수 있도록 return이 추가되었습니다.
+   * @deprecated
    */
   static createEnemyBoss (typeId, x = 0, y = 0, ...option) {
-    const GetClass = tamshooter4Data.getEnemyData(typeId)
+    const GetClass = tamshooter4Data.getEnemy(typeId)
     if (GetClass == null) return
 
     /** @type {EnemyData} */
@@ -556,34 +813,66 @@ export class fieldState {
     inputData.createId = this.getNextCreateId()
     inputData.id = typeId
     inputData.setPosition(x, y)
-    inputData.init()
+    inputData.afterInitDefault()
     this.enemyObject.push(inputData)
     return inputData // 보스로 생성된 적 객체는 리턴해서 객체를 가져올 수 있음.
   }
 
-  static createEffectObject (typeId, x = 0, y = 0, repeatCount = 0, beforeDelay = 0, ...option) {
-    const GetClass = tamshooter4Data.getEffectData(typeId)
-    if (GetClass == null) return
-
-    /** @type {EffectData} */
-    const inputData = new GetClass(option)
-    inputData.createId = this.getNextCreateId()
-    inputData.id = typeId
-    inputData.setPosition(x, y)
-    // inputData.setOption(width, height)
-    this.effectObject.push(inputData)
-  }
-
   /**
-   * 커스텀 이펙트 오브젝트를 생성합니다.
-   * @param {CustomEffectData} customEffectObject 
+   * 이펙트를 생성합니다.
+   * @param {number | CustomEffect | CustomEditEffect} typeId 
+   * CustomEffect 인스턴스(CustomEffect.getObject() 를 사용해주세요.)
+   * 
+   * 또는 CustomEditEffect 클래스 또는 생성된 인스턴스
+   * 
+   * number는 더이상 사용하지 않습니다.
+   *  
+   * @returns {EffectData | null} 리턴된 이펙트를 이용해서 일시적으로 객체를 조작할 수 있음.
    */
-  static createEffectCustomObject (customEffectObject, x, y) {
-    if (customEffectObject == null) return
+  static createEffectObject (typeId, x = 0, y = 0, repeatCount = 0, beforeDelay = 0, ...option) {
+    if (typeof typeId === 'number') {
+      const GetClass = tamshooter4Data.getEffect(typeId)
+      if (GetClass == null) return
+  
+      /** @type {EffectData} */
+      const inputData = new GetClass(option)
+      inputData.createId = this.getNextCreateId()
+      inputData.id = typeId
+      inputData.setPosition(x, y)
+      // inputData.setOption(width, height)
+      this.effectObject.push(inputData)
+      return inputData
+    } else {
+      if (typeId == null) return null
 
-    customEffectObject.createId = this.getNextCreateId()
-    customEffectObject.setPosition(x, y)
-    this.effectObject.push(customEffectObject)
+      // 만약 생성자(클래스)가 들어왔다면, 해당 클래스의 인스턴스를 생성합니다.
+      // 클래스가 들어올경우 함수 타입으로 들어옵니다. 그래서 타입이 함수인지를 구분합니다.
+      if (typeof typeId === 'function') {
+        typeId = new typeId()
+      }
+
+      let customEffectObject
+      if (typeId instanceof CustomEffect) {
+        // 변수 이름 변경... 및 타입Id에 입력된 CustomEffectData에서 새 오브젝트를 얻어옴.
+        /** @type {EffectData} */
+        customEffectObject = typeId.getObject()
+      } else if (typeId instanceof CustomEditEffect) {
+        /** @type {EffectData} */
+        customEffectObject = typeId // 새로 생성된 인스턴스
+      } else {
+        customEffectObject = null
+      }
+
+      // 커스텀 이펙트가 없으면 아무것도 하지 않습니다.
+      if (customEffectObject == null) return null
+      
+      // 커스텀 이펙트의 객체가 들어올경우, 해당 객체를 곧바로 새로운 데이터에 넣습니다.
+      // (구조 상 인스턴스만 변수로 넣을 수 있어서, 클래스 할당 과정을 거치지 않습니다.)
+      customEffectObject.createId = this.getNextCreateId()
+      customEffectObject.setPosition(x, y)
+      this.effectObject.push(customEffectObject)
+      return customEffectObject
+    }
   }
 
   static damageObjectNumber = 0
@@ -601,18 +890,24 @@ export class fieldState {
     this.damageObject[this.damageObjectNumber].createId = this.getNextCreateId()
   }
 
-  static createEnemyBulletObject (typeId, x = 0, y = 0, attack = 1, moveOption = {
-    moveSpeedX: 1, moveSpeedY: 0, moveDirectionX: '', moveDirectionY: ''
-  },  ...option) {
-    const GetClass = tamshooter4Data.getEnemyBulletData(typeId)
-    if (GetClass == null) return
+  static createEnemyBulletObject (typeData, x = 0, y = 0, ...option) {
+    // 함수(클래스)가 들어온경우, 클래스의 인스턴스를 생성함.
+    if (typeof typeData === 'function') {
+      typeData = new typeData()
+    } else if (typeof typeData === 'object') {
+      // 오브젝트 타입은 변수를 그대로 씀
+    } else {
+      // 그 외 타입은 무시
+      return
+    }
 
-    const inputData = new GetClass(option)
+    /** @type {EnemyBulletData} */
+    const inputData = typeData
     inputData.createId = this.getNextCreateId()
     inputData.setPosition(x, y)
-    inputData.attack = attack
-    inputData.setOption(moveOption)
     this.enemyBulletObject.push(inputData)
+
+    return inputData
   }
 
 
@@ -769,22 +1064,6 @@ export class fieldState {
 }
 
 export class fieldSystem {
-  static fieldTime = {
-    frame: 0,
-    second: 0,
-    process: function () {
-      this.fieldTime.frame++
-      if (this.fieldTime.frame >= 60) {
-        this.fieldTime.frame -= 60
-        this.fieldTime.second++
-      }
-    },
-    reset: function () {
-      this.frame = 0
-      this.second = 0
-    }
-  }
-
   /**
    * 현재 진행되고 있는 라운드
    * @type {RoundData}
@@ -816,21 +1095,30 @@ export class fieldSystem {
   }
 
   /**
+   * 라운드 오브젝트를 생성하고 이 객체을 리턴합니다.
+   */
+  static createRound (roundId) {
+    const RoundClass = tamshooter4Data.getRound(roundId)
+    if (RoundClass == null) return
+
+    // 라운드 데이터
+    let getObject = new RoundClass()
+    getObject.id = roundId // 라운드의 id를 입력해야 합니다. (다른곳에서는 입력하지 않음.)
+
+    return getObject
+  }
+
+  /**
    * 라운드를 시작합니다. 필드 초기화 작업 및 라운드 설정 작업을 진행합니다.
    * 다만, 라운드가 없을경우, 라운드는 시작하지 않습니다.
    */
   static roundStart (roundId) {
-    const RoundClass = tamshooter4Data.getRoundData(roundId)
-    if (RoundClass == null) return
-
-    // 라운드 데이터
-    this.round = new RoundClass()
+    this.round = this.createRound(roundId)
+    if (this.round == null) return
 
     // 라운드가 시작되는 순간, 게임 상태가 필드로 변경되고, 게임이 시작됩니다.
     // 이 과정에서 필드 데이터에 대해 초기화가 진행됩니다.
     gameSystem.stateId = gameSystem.STATE_FIELD
-    this.fieldTime.frame = 0
-    this.fieldTime.second = 0
     fieldState.allObjectReset()
     this.stateId = this.STATE_NORMAL
     this.cursor = 0
@@ -839,7 +1127,7 @@ export class fieldSystem {
     this.totalScore = 0
     this.fieldScore = 0
 
-    soundSystem.musicPlay(this.round.music, 0)
+    // 참고: 배경음악 재생 및 처리는 라운드 내부에서 처리합니다. 필드에서 처리하지 않습니다.
   }
 
   /**
@@ -871,7 +1159,7 @@ export class fieldSystem {
   static processPause () {
     const buttonDown = buttonSystem.getButtonInput(buttonSystem.BUTTON_DOWN)
     const buttonUp = buttonSystem.getButtonInput(buttonSystem.BUTTON_UP)
-    const buttonA = buttonSystem.getButtonInput(buttonSystem.BUTTON_A)
+    const buttonSelect = buttonSystem.getButtonInput(buttonSystem.BUTTON_MENU_SELECT)
     const maxMenuNumber = 3
     soundSystem.musicPause() // 일시정지 상태에서는 음악이 재생되지 않음.
 
@@ -883,7 +1171,7 @@ export class fieldSystem {
       soundSystem.play(soundFile.system.systemCursor)
     }
 
-    if (buttonA) {
+    if (buttonSelect) {
       switch (this.cursor) {
         case 0:
           this.stateId = this.STATE_NORMAL // pause 상태 해제
@@ -961,6 +1249,8 @@ export class fieldSystem {
 
     fieldState.process()
     this.round.process()
+
+    gameSystem.setStatLineText(1, this.getFieldDataString(), this.round.currentTime, this.round.finishTime, '#D5F5E3' ,'#33ff8c')
   }
 
   static process () {
@@ -994,7 +1284,7 @@ export class fieldSystem {
     // 라운드, 필드스테이트, 필드데이터는 항상 출력됩니다.
     if (this.round) this.round.display()
     fieldState.display()
-    this.displayFieldData()
+    // this.displayFieldData()
 
     switch (this.stateId) {
       case this.STATE_PAUSE:
@@ -1038,7 +1328,7 @@ export class fieldSystem {
     graphicSystem.imageDisplay(image, imageDataSoundOn.x, imageDataSoundOn.y, imageDataSoundOn.width, imageDataSoundOn.height, CHECK_X, CHECK_SOUND_Y, imageDataSoundOn.width, imageDataSoundOn.height)
     graphicSystem.imageDisplay(image, imageDataMusicOn.x, imageDataMusicOn.y, imageDataMusicOn.width, imageDataMusicOn.height, CHECK_X, CHECK_MUSIC_Y, imageDataMusicOn.width, imageDataMusicOn.height)
     graphicSystem.imageDisplay(image, imageDataSelected.x, imageDataSelected.y, imageDataSelected.width, imageDataSelected.height, SELECT_X, SELECT_Y, imageDataSelected.width, imageDataSelected.height)
-    graphicSystem.fillRect(SCORE_X, SCORE_Y, 400, 30)
+    graphicSystem.fillRect(SCORE_X, SCORE_Y, 400, 30, '#AEB68F')
     graphicSystem.digitalFontDisplay('score: ' + this.totalScore, SCORE_X + 5, SCORE_Y + 5)
   }
 
@@ -1084,6 +1374,11 @@ export class fieldSystem {
     graphicSystem.digitalFontDisplay('total score: ' + Math.floor(viewScore), TEXT_X, TEXT_Y + (TEXT_HEIGHT * 3))
   }
 
+  /**
+   * 이 함수는 더이상 사용되지 않습니다.
+   * processNormal에서 필드 스탯이 출력되도록 변경되었습니다.
+   * @deprecated
+   */
   static displayFieldData () {
     const LAYER_X = graphicSystem.CANVAS_WIDTH_HALF
     const LAYER_Y = 570
@@ -1097,5 +1392,115 @@ export class fieldSystem {
     graphicSystem.fillRect(LAYER_X, LAYER_Y, graphicSystem.CANVAS_WIDTH_HALF, HEIGHT, 'silver')
     graphicSystem.fillRect(LAYER_X, LAYER_Y, graphicSystem.CANVAS_WIDTH_HALF * meterMultiple, HEIGHT, '#D5F5E3')
     graphicSystem.digitalFontDisplay(`R:${roundText}, T:${currentTime}/${finishTime} + ${plusTime}`, LAYER_X + 5, LAYER_DIGITAL_Y)
+
+  }
+
+  static getFieldDataString () {
+    if (this.round != null) {
+      const roundText = this.round.roundText
+      const currentTime = this.round.currentTime
+      const finishTime = this.round.finishTime
+      const plusTime = this.round.plusTime
+      return `R:${roundText}, T:${currentTime}/${finishTime} + ${plusTime}`
+    } else {
+      return `NO DATA`
+    }
+  }
+
+
+  /**
+   * 저장할 데이터를 얻습니다.
+   */
+  static getSaveData () {
+    let weapon = fieldState.weaponObject.map((data) => {
+      return data.getSaveData()
+    })
+    let enemy = fieldState.enemyObject.map((data) => {
+      return data.getSaveData()
+    })
+    let player = fieldState.playerObject.getSaveData()
+    let round = this.getRoundSaveData()
+    let field = {
+      stateId: this.stateId,
+      fieldScore: this.fieldScore,
+      totalScore: this.totalScore,
+      enimationFrame: this.enimationFrame,
+      exitDelayCount: this.exitDelayCount,
+    }
+    
+    return {
+      weapon,
+      enemy,
+      player,
+      round,
+      field
+    }
+  }
+
+  /**
+   * 널 체크 문제 때문에 이 함수를 만듬...
+   */
+  static getRoundSaveData () {
+    if (this.round != null) {
+      return this.round.getSaveData()
+    } else {
+      return null
+    }
+  }
+
+  /**
+   * 필드 상태를 불러옵니다. (반드시 JSON데이터를 parse해서 입력해야 합니다. string을 그냥 입력할 수 없습니다.)
+   * @param {Object} loadData parse된 JSON 데이터 (localStoarge에서 얻어온 값을 그대로 이 함수에 사용하지 마세요.)
+   */
+  static setLoadData (loadData) {
+    if (typeof loadData === 'string') {
+      throw new Error('save data field is string, this data need using JSON.parse.')
+    }
+
+    // JSON으로 얻은 오브젝트는 함수가 없기 때문에, 클래스로 데이터를 생성한 후에
+    // 세이브 데이터를 이용해 for in을 사용하여 각 객체들의 속성값을 넣어줍니다.
+
+    for (let current of loadData.weapon) {
+      let newData = fieldState.createWeaponObject(current.id, current.x, current.y, current.attack)
+      newData.setLoadData(current)
+    }
+
+    for (let current of loadData.enemy) {
+      let newData = fieldState.createEnemyObject(current.id, current.x, current.y)
+      newData.setLoadData(current)
+    }
+
+    // for (let current of loadData.enemyBullet) {
+    //   let newData = fieldState.createEnemyBulletObject(current.id, current.x, current.y, current.attack)
+    //   for (let key in newData) {
+    //     newData[key] = current[key]
+    //   }
+    // }
+
+    // 플레이어는 배열이 아닌 단일 객체
+    // 플레이어 객체는 fieldState에서 이미 생성되어 있으므로, 새로 생성할 필요는 없습니다.
+    fieldState.playerObject.init() // 플레이어 데이터 초기화
+    fieldState.playerObject.setLoadData(loadData.player) // 저장된 데이터 입력
+
+    // 라운드는 단일 객체, 다만 라운드 데이터 입력 전에 라운드 객체를 생성해야 합니다.
+    this.round = this.createRound(loadData.round.id)
+    if (this.round == null) {
+      throw new Error('round id error. game load fail')
+    }
+
+    this.round.setLoadData(loadData.round)
+    
+    // 필드 불러오기
+    this.stateId = loadData.field.stateId
+    this.fieldScore = loadData.field.fieldScore
+    this.totalScore = loadData.field.totalScore
+    this.enimationFrame = loadData.field.enimationFrame
+    this.exitDelayCount = loadData.field.exitDelayCount
+    
+    // 데이터 표시를 위한 1프레임 진행
+    this.processNormal()
+
+    // 게임을 불러오기 했다면, 일시정지 상태가 됩니다.
+    this.stateId = this.STATE_PAUSE
   }
 }

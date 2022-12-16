@@ -14,7 +14,11 @@ export class imageFile {
     fieldSystem: new Image(),
     optionCheck: new Image(),
     playerDie: new Image(),
-    playerLevelup: new Image()
+    playerLevelup: new Image(),
+    playerStat: new Image(),
+    menuList: new Image(),
+    skillInfo: new Image(),
+    weaponIcon: new Image(),
   }
 
   static effect = {
@@ -22,30 +26,25 @@ export class imageFile {
     jemulCreate: new Image()
   }
 
-  static weapon = {
-    multyshot: new Image(),
-    missile: new Image(),
-    missileB: new Image(),
-    missileEffect: new Image(),
-    arrow: new Image(),
-    laser: new Image(),
-    sapia: new Image(),
-    parapo: new Image(),
-    parapoEffect: new Image(),
-    blaster: new Image(),
-    sidewave: new Image(),
-    subWeapon: new Image(),
+  static weapon = new Image()
 
-    // skill
-    skillMultyshot: new Image(),
-    skillMissile: new Image(),
-    skillMissileEffect: new Image(),
-    skillArrow: new Image(),
-    skillLaser: new Image(),
-    skillSapia: new Image(),
-    skillParapoEffect: new Image(),
-    skillBlaster: new Image(),
-    skillSidewave: new Image()
+  static skill = new Image()
+
+  static weaponEffect = {
+    missile: new Image(),
+    parapo: new Image(),
+  }
+
+  static skillEffect = {
+    missile: new Image(),
+    parapo: new Image(),
+    pileBunker: new Image(),
+    swordHit: new Image(),
+    criticalChaser: new Image(),
+    santansu: new Image(),
+    seondanil: new Image(),
+    whiteflash: new Image(),
+    hanjumoekSplash: new Image(),
   }
 
   static enemy = {
@@ -54,7 +53,7 @@ export class imageFile {
     jemulEnemy: new Image()
   }
 
-  static enemyAttack = {
+  static enemyBullet = {
     energyBoltAttack: new Image(),
     attackList: new Image(),
   }
@@ -92,35 +91,34 @@ imageFile.system.fieldSystem.src = './image/system/fieldSystem.png'
 imageFile.system.optionCheck.src = './image/system/optionCheck.png'
 imageFile.system.playerDie.src = './image/system/playerDie.png'
 imageFile.system.playerLevelup.src = './image/system/playerLevelup.png'
+imageFile.system.playerStat.src = './image/system/playerStat.png'
+imageFile.system.bitmapFont.src = './image/system/bitmapFont.png'
+imageFile.system.menuList.src = './image/system/menuList.png'
+imageFile.system.skillInfo.src = './image/system/skillInfo.png'
+imageFile.system.weaponIcon.src = './image/system/weaponIcon.png'
 
 // effect
 imageFile.effect.jemulstar.src = './image/effect/jemulstar.png'
 imageFile.effect.jemulCreate.src = './image/effect/jemulCreate.png'
 
-// weapon
-imageFile.weapon.multyshot.src = './image/weapon/multyshot.png'
-imageFile.weapon.missile.src = './image/weapon/missile.png'
-imageFile.weapon.missileB.src = './image/weapon/missileB.png'
-imageFile.weapon.missileEffect.src = './image/weapon/missileEffect.png'
-imageFile.weapon.arrow.src = './image/weapon/arrow.png'
-imageFile.weapon.laser.src = './image/weapon/laser.png'
-imageFile.weapon.sapia.src = './image/weapon/sapia.png'
-imageFile.weapon.parapo.src = './image/weapon/parapo.png'
-imageFile.weapon.parapoEffect.src = './image/weapon/parapoEffect.png'
-imageFile.weapon.blaster.src = './image/weapon/blaster.png'
-imageFile.weapon.sidewave.src = './image/weapon/sidewave.png'
-imageFile.weapon.subWeapon.src = './image/weapon/subWeapon.png'
+// weapon, skill
+imageFile.weapon.src = './image/weapon/weapon.png'
+imageFile.skill.src = './image/weapon/skill.png'
 
-// weapon - skill
-imageFile.weapon.skillMultyshot.src = './image/weapon/skillMultyshot.png'
-imageFile.weapon.skillMissile.src = './image/weapon/skillMissile.png'
-imageFile.weapon.skillMissileEffect.src = './image/weapon/skillMissileEffect.png'
-imageFile.weapon.skillArrow.src = './image/weapon/skillArrow.png'
-imageFile.weapon.skillLaser.src = './image/weapon/skillLaser.png'
-imageFile.weapon.skillSapia.src = './image/weapon/skillSapia.png'
-imageFile.weapon.skillParapoEffect.src = './image/weapon/skillParapoEffect.png'
-imageFile.weapon.skillBlaster.src = './image/weapon/skillBlaster.png'
-imageFile.weapon.skillSidewave.src = './image/weapon/skillSidewave.png'
+// weapon effect
+imageFile.weaponEffect.missile.src = './image/weapon/missileEffect.png'
+imageFile.weaponEffect.parapo.src = './image/weapon/parapoEffect.png'
+
+// skill effect
+imageFile.skillEffect.missile.src = './image/weapon/skillMissileEffect.png'
+imageFile.skillEffect.parapo.src = './image/weapon/skillParapoEffect.png'
+imageFile.skillEffect.pileBunker.src = './image/weapon/skillPileBunkerEffect.png'
+imageFile.skillEffect.swordHit.src = './image/weapon/skillSwordHitEffect.png'
+imageFile.skillEffect.criticalChaser.src = './image/weapon/skillCriticalChaserEffect.png'
+imageFile.skillEffect.santansu.src = './image/weapon/skillSantansuEffect.png'
+imageFile.skillEffect.seondanil.src = './image/weapon/skillSeondanilEffect.png'
+imageFile.skillEffect.whiteflash.src = './image/weapon/skillWhiteflashEffect.png'
+imageFile.skillEffect.hanjumoekSplash.src = './image/weapon/skillHanjumeokSplashEffect.png'
 
 // enemy
 imageFile.enemy.spaceEnemy.src = './image/enemy/spaceEnemy.png'
@@ -128,8 +126,8 @@ imageFile.enemy.meteoriteEnemy.src = './image/enemy/meteoriteEnemy.png'
 imageFile.enemy.jemulEnemy.src = './image/enemy/jemulEnemy.png'
 
 // enemyBullet
-imageFile.enemyAttack.energyBoltAttack.src = './image/enemy/energyBoltAttack.png'
-imageFile.enemyAttack.attackList.src = './image/enemy/enemyAttackList.png'
+imageFile.enemyBullet.energyBoltAttack.src = './image/enemy/energyBoltAttack.png'
+imageFile.enemyBullet.attackList.src = './image/enemy/enemyAttackList.png'
 
 // enemyDie
 imageFile.enemyDie.effectList.src = './image/enemy/enemyDieEffect.png'
@@ -290,12 +288,108 @@ export class imageDataInfo {
     enemyDieMeteoriteBlack: {x: 0, y: 200, width: 80, height: 45, frame: 10},
   }
 
-  static enemyAttack = {
+  static enemyBullet = {
     jemulEnergyBoltAttack: {x: 0, y: 0, width: 60, height: 60, frame: 6},
     jemulEnemyAir: {x: 20, y: 0, width: 30, height: 20, frame: 1},
     jemulEnemyShip: {x: 0, y: 0, width: 20, height: 20, frame: 1},
     jemulEnemyHellSpike: {x: 50, y: 0, width: 15, height: 20, frame: 1},
   }
+
+  static weapon = {
+    arrowGreen: {x: 0, y: 0, width: 20, height: 20, frame: 7},
+    arrowBrown: {x: 0, y: 20, width: 20, height: 20, frame: 7},
+    blaster: {x: 140, y: 0, width: 35, height: 35, frame: 1},
+    blasterMini: {x: 176, y: 0, width: 18, height: 18, frame: 1},
+    multyshotNormal: {x: 200, y: 0, width: 40, height: 10, frame: 1},
+    multyshotGreen: {x: 200, y: 10, width: 40, height: 10, frame: 1},
+    multyshotBlue: {x: 200, y: 20, width: 40, height: 10, frame: 1},
+    multyshotGrey: {x: 200, y: 30, width: 40, height: 10, frame: 1},
+    laser: {x: 240, y: 0, width: 40, height: 40, frame: 1},
+    laserBlue: {x: 320, y: 0, width: 40, height: 40, frame: 1},
+    sidewave: {x: 400, y: 0, width: 12, height: 60, frame: 8},
+    missile: {x: 0, y: 40, width: 40, height: 20, frame: 8},
+    missileRocket: {x: 0, y: 60, width: 40, height: 20, frame: 6},
+    sapia: {x: 500, y: 0, width: 48, height: 48, frame: 1},
+    sapiaShot: {x: 550, y: 0, width: 26, height: 26, frame: 1},
+    parapo: {x: 0, y: 80, width: 45, height: 20, frame: 14},
+    rapid: {x: 320, y: 40, width: 60, height: 18, frame: 1},
+    ring: {x: 640, y: 0, width: 50, height: 50, frame: 1},
+    boomerang: {x: 580, y: 0, width:60, height: 50, frame: 1},
+    seondanil: {x: 690, y: 0, width: 90, height: 40, frame: 1}
+  }
+
+  static weaponEffect = {
+    missile: {x: 0, y: 0, width: 100, height: 100, frame: 10},
+    parapoLeft: {x: 0, y: 0, width: 100, height: 100, frame: 10},
+    parapoRight: {x: 0, y: 100, width: 100, height: 100, frame: 10},
+    parapoUp: {x: 0, y: 200, width: 100, height: 100, frame: 10},
+    parapoDown: {x: 0, y: 300, width: 100, height: 100, frame: 10},
+  }
+
+  static skill = {
+    blaster: {x: 0, y: 0, width: 36, height: 36, frame: 1},
+    multyshot: {x: 40, y: 0, width: 60, height: 12, frame: 1},
+    sidewave: {x: 100, y: 0, width: 36, height: 120, frame: 5},
+    sapiaRect: {x: 300, y: 0, width: 100, height: 100, frame: 5},
+    sapiaCircle: {x: 300, y: 100, width: 100, height: 100, frame: 5},
+    sword: {x: 0, y: 140, width: 80, height: 20, frame: 1},
+    hyperBall: {x: 0, y: 40, width: 100, height: 100, frame: 1},
+    laser: {x: 0, y: 200, width: 800, height: 100, frame: 1},
+    swordMove: {x: 0, y: 300, width: 80, height: 40, frame: 7},
+    missile: {x: 0, y: 350, width: 60, height: 30, frame: 8},
+    criticalChase: {x: 0, y: 380, width: 60, height: 40, frame: 8},
+    arrow: {x: 0, y: 420, width: 70, height: 70, frame: 7},
+    santansu: {x: 100, y: 120, width: 30, height: 80, frame: 1},
+    boomerang: {x: 130, y: 120, width: 80, height: 80, frame: 1},
+    ring: {x: 500, y: 350, width: 100, height: 100, frame: 1},
+    moon: {x: 600, y: 300, width: 200, height: 200, frame: 1},
+    seondanil: {x: 600, y: 500, width: 180, height: 100, frame: 1},
+    rapid: {x: 0, y: 490, width: 100, height: 30, frame: 6},
+    hanjumoek: {x: 0, y: 520, width: 75, height: 40, frame: 8},
+    whiteflash: {x: 0, y: 560, width: 60, height: 60, frame: 6}
+  }
+  
+  static skillEffect = {
+    criticalChase: {x: 0, y: 0, width: 50, height: 60, frame: 12},
+    missile: {x: 0, y: 0, width: 200, height: 200, frame: 10},
+    parapo: {x: 0, y: 0, width: 240, height: 240, frame: 10},
+    pileBunker1: {x: 0, y: 0, width: 60, height: 20, frame: 12},
+    pileBunker2: {x: 0, y: 20, width: 60, height: 20, frame: 12},
+    pileBunker3: {x: 0, y: 40, width: 60, height: 20, frame: 12},
+    swordHit: {x: 0, y: 0, width: 20, height: 20, frame: 11},
+    santansuUp: {x: 0, y: 0, width: 40, height: 40, frame: 9},
+    santansuDown: {x: 0, y: 40, width: 40, height: 40, frame: 9},
+    santansuWater: {x: 0, y: 80, width: 40, height: 40, frame: 9},
+    seondanil: {x: 0, y: 0, width: 180, height: 100, frame: 6},
+    whiteflash: {x: 0, y: 0, width: 60, height: 60, frame: 15},
+    hanjumeokSplash: {x: 0, y: 0, width: 100, height: 100, frame: 10},
+  }
+
+  static menuList = {
+    roundSelect: {x: 0, y: 0, width: 400, height: 50, frame: 1},
+    weaponSelect: {x: 0, y: 50, width: 400, height: 50, frame: 1},
+    skillSelect: {x: 0, y: 100, width: 400, height: 50, frame: 1},
+    upgrade: {x: 0, y: 150, width: 400, height: 50, frame: 1},
+    option: {x: 0, y: 200, width: 400, height: 50, frame: 1},
+    data: {x: 0, y: 250, width: 400, height: 50, frame: 1},
+    etc: {x: 0, y: 300, width: 400, height: 50, frame: 1}
+  }
+
+  static system = {
+    skillInfoYellowTitle: {x: 0, y: 0, width: 800, height: 20, frame: 1},
+    skillInfoYellow: {x: 0, y: 20, width: 800, height: 20, frame: 1},
+    skillInfoSkyBlueTitle: {x: 0, y: 40, width: 800, height: 20, frame: 1},
+    skillInfoSkyBlue: {x: 0, y: 60, width: 800, height: 20, frame: 1},
+    skillInfoPurpleBlueTitle: {x: 0, y: 80, width: 800, height: 20, frame: 1},
+    skillInfoPurpleBlue: {x: 0, y: 100, width: 800, height: 20, frame: 1},
+  }
+
+  static effect = {
+    jemulstar: {x: 0, y: 0, width: 60, height: 60, frame: 10},
+    jemulCreate: {x: 0, y: 0, width: 40, height: 40, frame: 4},
+  }
+
+  // : {x: , y: , width: , height: , frame: 1},
 }
 
 /**

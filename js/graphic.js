@@ -15,14 +15,14 @@ import { systemText } from './text.js'
  * graphicSystem에 있는 함수를 사용하는게 좋습니다. (그래야 유지보수 및 관리가 편합니다.)
  */
 export class graphicSystem {
-  /** 캔버스 태그 */ static #canvas = document.getElementById('canvas')
-  /** 캔버스에서 사용할 2D 그리기 객체 */ static #context = this.#canvas.getContext('2d')
+  /** 캔버스 태그 */ static canvas = document.getElementById('canvas')
+  /** 캔버스에서 사용할 2D 그리기 객체 */ static context = this.canvas.getContext('2d')
 
   /** @constant 캔버스의 길이 */
-  static CANVAS_WIDTH = this.#canvas.clientWidth
+  static CANVAS_WIDTH = this.canvas.clientWidth
 
   /** @constant 캔버스의 높이 */
-  static CANVAS_HEIGHT = this.#canvas.clientHeight
+  static CANVAS_HEIGHT = this.canvas.clientHeight
 
   /** @constant 캔버스의 길이의 절반, 또는 캔버스 길이의 중간지점 */
   static CANVAS_WIDTH_HALF = Math.floor(this.CANVAS_WIDTH / 2)
@@ -35,13 +35,13 @@ export class graphicSystem {
    */
   static init () {
     // 텍스트 베이스라인을 top으로 수정(기본이 alphabet이며 alphabet은 y축 위치가 이상함)
-    this.#context.textBaseline = 'top'
+    this.context.textBaseline = 'top'
 
     // 캔버스 폰트 출력에 대한 기본값 설정
-    this.#context.font = '20px 바탕체'
+    this.context.font = '20px 바탕체'
 
     // 캔버스의 초기 상태를 저장.
-    this.#context.save()
+    this.context.save()
   }
 
   /** 이미지 뒤집기: 0. 없음, 1. 가로, 2. 세로, 3. 가로 + 세로 */ static flip = 0
@@ -75,7 +75,7 @@ export class graphicSystem {
    */
   static setAlpha (value = 1) {
     if (value >= 0 && value <= 1) {
-      this.#context.globalAlpha = value
+      this.context.globalAlpha = value
     }
   }
 
@@ -109,7 +109,7 @@ export class graphicSystem {
    * 이 함수에서는 설정값을 조절할 수 없습니다. setFlip, setRotate, setAlpha를 사용해주세요.
    */
   static canvasTransform (x, y, width, height) {
-    this.#context.save() // 나중에 캔버스의 상태를 복원하기 위해 현재 상태를 저장합니다.
+    this.context.save() // 나중에 캔버스의 상태를 복원하기 위해 현재 상태를 저장합니다.
 
     let outputX = x
     let outputY = y
@@ -120,15 +120,15 @@ export class graphicSystem {
       const centerX = x + (width / 2)
       const centerY = y + (height / 2)
       const radian = Math.PI / 180 * this.rotateDegree
-      this.#context.translate(centerX, centerY) // 회전할 객체의 중심 위치로 캔버스의 중심 좌표를 변경
-      this.#context.rotate(radian) // 라디안 값만큼 회전(참고: 각도 값을 라디안으로 변환해야 함)
+      this.context.translate(centerX, centerY) // 회전할 객체의 중심 위치로 캔버스의 중심 좌표를 변경
+      this.context.rotate(radian) // 라디안 값만큼 회전(참고: 각도 값을 라디안으로 변환해야 함)
 
       if (this.flip === 1) {
-        this.#context.scale(-1, 1) // x축의 크기를 반대로
+        this.context.scale(-1, 1) // x축의 크기를 반대로
       } else if (this.flip === 2) {
-        this.#context.scale(1, -1) // y축의 크기를 반대로
+        this.context.scale(1, -1) // y축의 크기를 반대로
       } else if (this.flip === 3) {
-        this.#context.scale(-1, -1) // x축 y축 다 반대로
+        this.context.scale(-1, -1) // x축 y축 다 반대로
       }
 
       // 회전이 중심축에서 이루어지고, translate로 캔버스의 원점이 객체의 중심으로 이동했기 때문에
@@ -139,15 +139,15 @@ export class graphicSystem {
       outputHeight = height
     } else {
       if (this.flip === 1) { // flip 값이 vertical일경우
-        this.#context.scale(-1, 1) // x축의 크기를 반대로
+        this.context.scale(-1, 1) // x축의 크기를 반대로
         outputWidth = -width // x축을 반전시킨탓에, 실제 출력할때도 반대로 값을 넣어서 출력해야합니다. (양수와 음수가 서로 바뀌듯이)
         outputX = -x // 출력 위치도 -x로 변환됩니다.
       } else if (this.flip === 2) { // 이하 방향빼고 나머지 동일
-        this.#context.scale(1, -1) // y축의 크기를 반대로
+        this.context.scale(1, -1) // y축의 크기를 반대로
         outputHeight = -height
         outputY = -y
       } else if (this.flip === 3) {
-        this.#context.scale(-1, -1) // x축 y축 다 반대로
+        this.context.scale(-1, -1) // x축 y축 다 반대로
         outputWidth = -width
         outputX = -x
         outputHeight = -height
@@ -168,7 +168,7 @@ export class graphicSystem {
    * 이 함수를 실행하면, flip과 rotateDegree의 값은 0으로 변경됩니다. (이후에 실행되는 회전 및 변형을 방지하기 위해서)
    */
   static restoreTransform () {
-    this.#context.restore()
+    this.context.restore()
     this.flip = 0
     this.rotateDegree = 0
   }
@@ -182,7 +182,7 @@ export class graphicSystem {
    * @param {number | string} inputText 출력할 텍스트
    * @param {number} x x좌표
    * @param {number} y y좌표
-   * @param {number} wordWidth 글자길이 (기본값: 12px, 20px)
+   * @param {number} wordWidth 글자길이 (기본값: 12px, 18px)
    * @param {number} wordHeight 글자높이
    */
   static digitalFontDisplay (inputText, x = 0, y = 0, wordWidth = 12, wordHeight = wordWidth <= 12 ? 18 : 30) {
@@ -237,7 +237,78 @@ export class graphicSystem {
       }
 
       if (wordPosition >= 0) {
-        this.#context.drawImage(image, DIGITAL_WIDTH * wordPosition, DIGITAL_HEIGHT * wordLine, DIGITAL_WIDTH, DIGITAL_HEIGHT, x + (i * wordWidth), y, wordWidth, wordHeight)
+        this.context.drawImage(image, DIGITAL_WIDTH * wordPosition, DIGITAL_HEIGHT * wordLine, DIGITAL_WIDTH, DIGITAL_HEIGHT, x + (i * wordWidth), y, wordWidth, wordHeight)
+      }
+    }
+
+    // 출력이 끝났고, 캔버스가 변형되었다면 변형을 취소합니다.
+    if (this.checkTransform()) {
+      this.restoreTransform()
+    }
+  }
+
+  /**
+   * digitalFontDisplay와 함수가 동일합니다. (폰트만 다름)
+   * 
+   * 경고: A ~ Z, 0 ~ 9, -, +, ., :, / 문자를 표현 가능. 대/소문자는 상관없지만 가능하면 소문자를 사용해주세요.
+   * 
+   * 경고2: 크기를 늘릴 경우, 안티에일리싱 효과로 글자주위에 선이 칠해지는 경우가 있음.
+   * @param {number | string} inputText 출력할 텍스트
+   * @param {number} x x좌표
+   * @param {number} y y좌표
+   * @param {number} wordWidth 글자길이 (기본값: 12px, 18px)
+   * @param {number} wordHeight 글자높이
+   */
+  static bitmapFontDisplay (inputText, x = 0, y = 0, wordWidth = 14, wordHeight = 20) {
+    if (inputText == null) return
+
+    // 원할한 출력을 위해 string 형태로 변경
+    if (typeof inputText === 'number') inputText = inputText + ''
+
+    const image = imageFile.system.bitmapFont
+    let BITMAP_WIDTH = 8
+    let BITMAP_HEIGHT = 11
+
+    // 변형이 확인된경우, 캔버스를 변형하고 출력좌표를 변경합니다.
+    if (this.checkTransform()) {
+      const output = this.canvasTransform(x, y, wordWidth, wordHeight)
+      x = output.outputX
+      y = output.outputY
+      wordWidth = output.outputWidth
+      wordHeight = output.outputHeight
+    }
+
+    // 첫번째 글자부터 마지막글자까지 하나씩 출력합니다.
+    for (let i = 0; i < inputText.length; i++) {
+      const word = inputText.charAt(i)
+      let wordPosition = -1
+      let wordLine = 0
+
+      if (word >= '0' && word <= '9') {
+        // 0 ~ 9 사이일경우
+        wordLine = 1
+        wordPosition = Number(word)
+      } else if (word >= 'a' && word <= 'z') {
+        // alphabet 소문자
+        wordPosition = word.charCodeAt() - 'a'.charCodeAt()
+      } else if (word >= 'A' && word <= 'Z') {
+        // alphabet 대문자
+        wordPosition = word.charCodeAt() - 'A'.charCodeAt()
+      } else {
+        // 이외 특수기호: -, +, /, ., :
+        wordLine = 1
+        switch (word) {
+          case '/': wordPosition = 10; break
+          case '.': wordPosition = 11; break
+          case '+': wordPosition = 12; break
+          case '-': wordPosition = 13; break
+          case ':': wordPosition = 14; break
+          default: continue // 참고: 아무런 단어도 해당되지 않으면 루프를 건너뜀
+        }
+      }
+
+      if (wordPosition >= 0) {
+        this.context.drawImage(image, BITMAP_WIDTH * wordPosition, BITMAP_HEIGHT * wordLine, BITMAP_WIDTH, BITMAP_HEIGHT, x + (i * wordWidth), y, wordWidth, wordHeight)
       }
     }
 
@@ -269,26 +340,26 @@ export class graphicSystem {
     if (arguments.length === 3) {
       if (this.checkTransform()) {
         const output = this.canvasTransform(arguments[1], arguments[2], image.width, image.height)
-        this.#context.drawImage(image, Math.floor(output.x), Math.floor(output.y), Math.floor(output.width), Math.floor(output.height))
+        this.context.drawImage(image, Math.floor(output.x), Math.floor(output.y), Math.floor(output.width), Math.floor(output.height))
         this.restoreTransform()
       } else {
-        this.#context.drawImage(image, Math.floor(arguments[1]), Math.floor(arguments[2]))
+        this.context.drawImage(image, Math.floor(arguments[1]), Math.floor(arguments[2]))
       }
     } else if (arguments.length === 5) {
       if (this.checkTransform()) {
         const output = this.canvasTransform(arguments[1], arguments[2], arguments[3], arguments[4])
-        this.#context.drawImage(image, Math.floor(output.x), Math.floor(output.y), Math.floor(output.width), Math.floor(output.height))
+        this.context.drawImage(image, Math.floor(output.x), Math.floor(output.y), Math.floor(output.width), Math.floor(output.height))
         this.restoreTransform()
       } else {
-        this.#context.drawImage(image, Math.floor(arguments[1]), Math.floor(arguments[2]), Math.floor(arguments[3]), Math.floor(arguments[4]))
+        this.context.drawImage(image, Math.floor(arguments[1]), Math.floor(arguments[2]), Math.floor(arguments[3]), Math.floor(arguments[4]))
       }
     } else if (arguments.length === 9) {
       if (this.checkTransform()) {
         const output = this.canvasTransform(x, y, width, height)
-        this.#context.drawImage(image, Math.floor(sliceX), Math.floor(sliceY), Math.floor(sliceWidth), Math.floor(sliceHeight), Math.floor(output.x), Math.floor(output.y), Math.floor(output.width), Math.floor(output.height))
+        this.context.drawImage(image, Math.floor(sliceX), Math.floor(sliceY), Math.floor(sliceWidth), Math.floor(sliceHeight), Math.floor(output.x), Math.floor(output.y), Math.floor(output.width), Math.floor(output.height))
         this.restoreTransform()
       } else {
-        this.#context.drawImage(image, Math.floor(sliceX), Math.floor(sliceY), Math.floor(sliceWidth), Math.floor(sliceHeight), Math.floor(x), Math.floor(y), Math.floor(width), Math.floor(height))
+        this.context.drawImage(image, Math.floor(sliceX), Math.floor(sliceY), Math.floor(sliceWidth), Math.floor(sliceHeight), Math.floor(x), Math.floor(y), Math.floor(width), Math.floor(height))
       }
     } else if (arguments.length >= 10 && arguments.length <= 12) {
       // 함수의 내용이 길어 따로 분리
@@ -305,7 +376,7 @@ export class graphicSystem {
    */
   static #imageExpandDisplay (image, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, ...option) {
     // 현재 캔버스의 상태를 저장. 이렇게 하는 이유는, 캔버스의 설정을 너무 많이 바꿔 현재 상태를 저장하지 않으면 원래대로 되돌리기 어렵기 때문
-    this.#context.save()
+    this.context.save()
     let flip = 0
     let rotate = 0
     let alpha = 1
@@ -337,15 +408,15 @@ export class graphicSystem {
       const centerX = x + (width / 2)
       const centerY = y + (height / 2)
       const radian = Math.PI / 180 * rotate
-      this.#context.translate(centerX, centerY) // 회전할 객체의 중심 위치로 캔버스의 중심 좌표를 변경
-      this.#context.rotate(radian) // 라디안 값만큼 회전(참고: 각도 값을 라디안으로 변환해야 함)
+      this.context.translate(centerX, centerY) // 회전할 객체의 중심 위치로 캔버스의 중심 좌표를 변경
+      this.context.rotate(radian) // 라디안 값만큼 회전(참고: 각도 값을 라디안으로 변환해야 함)
 
       if (flip === 1) {
-        this.#context.scale(-1, 1) // x축의 크기를 반대로
+        this.context.scale(-1, 1) // x축의 크기를 반대로
       } else if (flip === 2) {
-        this.#context.scale(1, -1) // y축의 크기를 반대로
+        this.context.scale(1, -1) // y축의 크기를 반대로
       } else if (flip === 3) {
-        this.#context.scale(-1, -1) // x축 y축 다 반대로
+        this.context.scale(-1, -1) // x축 y축 다 반대로
       }
 
       // 회전이 중심축에서 이루어지고, translate로 캔버스의 원점이 객체의 중심으로 이동했기 때문에
@@ -356,15 +427,15 @@ export class graphicSystem {
       outputHeight = height
     } else {
       if (flip === 1) { // flip 값이 vertical일경우
-        this.#context.scale(-1, 1) // x축의 크기를 반대로
+        this.context.scale(-1, 1) // x축의 크기를 반대로
         outputWidth = -width // x축을 반전시킨탓에, 실제 출력할때도 반대로 값을 넣어서 출력해야합니다. (양수와 음수가 서로 바뀌듯이)
         outputX = -x // 출력 위치도 -x로 변환됩니다.
       } else if (flip === 2) { // 이하 방향빼고 나머지 동일
-        this.#context.scale(1, -1) // y축의 크기를 반대로
+        this.context.scale(1, -1) // y축의 크기를 반대로
         outputHeight = -height
         outputY = -y
       } else if (flip === 3) {
-        this.#context.scale(-1, -1) // x축 y축 다 반대로
+        this.context.scale(-1, -1) // x축 y축 다 반대로
         outputWidth = -width
         outputX = -x
         outputHeight = -height
@@ -372,9 +443,9 @@ export class graphicSystem {
       }
     }
 
-    this.#context.globalAlpha = alpha // 알파값 수정
-    this.#context.drawImage(image, Math.floor(sliceX), Math.floor(sliceY), Math.floor(sliceWidth), Math.floor(sliceHeight), Math.floor(outputX), Math.floor(outputY), Math.floor(outputWidth), Math.floor(outputHeight))
-    this.#context.restore() // 캔버스를 이전 상태로 복원
+    this.context.globalAlpha = alpha // 알파값 수정
+    this.context.drawImage(image, Math.floor(sliceX), Math.floor(sliceY), Math.floor(sliceWidth), Math.floor(sliceHeight), Math.floor(outputX), Math.floor(outputY), Math.floor(outputWidth), Math.floor(outputHeight))
+    this.context.restore() // 캔버스를 이전 상태로 복원
   }
 
   /**
@@ -389,7 +460,7 @@ export class graphicSystem {
    */
   static gradientDisplay (x, y, width, height, startColor = 'black', endColor = startColor, ...anotherColor) {
     // 그라디언트 backGround
-    const gradient = this.#context.createLinearGradient(x, y, x + width, y + height)
+    const gradient = this.context.createLinearGradient(x, y, x + width, y + height)
 
     gradient.addColorStop(0, startColor)
     gradient.addColorStop(1, endColor)
@@ -402,13 +473,13 @@ export class graphicSystem {
     }
 
     // 그라디언트 그리기
-    this.#context.fillStyle = gradient
+    this.context.fillStyle = gradient
     if (this.checkTransform()) {
       const output = this.canvasTransform(x, y, width, height)
-      this.#context.fillRect(output.x, output.y, output.width, output.height)
+      this.context.fillRect(output.x, output.y, output.width, output.height)
       this.restoreTransform()
     } else {
-      this.#context.fillRect(x, y, width, height)
+      this.context.fillRect(x, y, width, height)
     }
   }
 
@@ -459,27 +530,27 @@ export class graphicSystem {
   static fillRect (x, y, width, height, color = null, alpha = null) {
     // 색깔이 있는경우
     if (color != null) {
-      this.#context.fillStyle = color
+      this.context.fillStyle = color
     }
 
     // 알파값이 있는 경우
-    const prevAlpha = this.#context.globalAlpha
+    const prevAlpha = this.context.globalAlpha
     if (alpha != null) {
-      this.#context.globalAlpha = alpha
+      this.context.globalAlpha = alpha
     }
 
     if (this.checkTransform()) {
       const output = this.canvasTransform(x, y, width, height)
-      this.#context.fillRect(output.x, output.y, output.width, output.height)
+      this.context.fillRect(output.x, output.y, output.width, output.height)
       this.restoreTransform()
     } else {
-      this.#context.fillRect(x, y, width, height)
+      this.context.fillRect(x, y, width, height)
     }
 
     // 알파값을 원래대로 되돌립니다. (일회성 사용)
     // 만약, 알파값을 원래대로 돌리지 않는다면, 다른 함수에서도 해당 alpha값을 참조하게됩니다.
     if (alpha != null) {
-      this.#context.globalAlpha = prevAlpha
+      this.context.globalAlpha = prevAlpha
     }
   }
 
@@ -493,10 +564,10 @@ export class graphicSystem {
   static clearRect (x, y, width, height) {
     if (this.checkTransform()) {
       const output = this.canvasTransform(x, y, width, height)
-      this.#context.clearRect(output.x, output.y, output.width, output.height)
+      this.context.clearRect(output.x, output.y, output.width, output.height)
       this.restoreTransform()
     } else {
-      this.#context.clearRect(x, y, width, height)
+      this.context.clearRect(x, y, width, height)
     }
   }
 
@@ -506,10 +577,10 @@ export class graphicSystem {
   static clearCanvas () {
     if (this.checkTransform()) {
       const output = this.canvasTransform(0, 0, this.CANVAS_WIDTH, this.CANVAS_HEIGHT)
-      this.#context.clearRect(output.x, output.y, output.width, output.height)
+      this.context.clearRect(output.x, output.y, output.width, output.height)
       this.restoreTransform()
     } else {
-      this.#context.clearRect(0, 0, this.CANVAS_WIDTH, this.CANVAS_HEIGHT)
+      this.context.clearRect(0, 0, this.CANVAS_WIDTH, this.CANVAS_HEIGHT)
     }
   }
 
@@ -520,7 +591,7 @@ export class graphicSystem {
    * @param {string} fontText
    */
   static setCanvasFont (fontText = '20px 바탕체') {
-    this.#context.font = fontText
+    this.context.font = fontText
   }
 
   /**
@@ -532,22 +603,22 @@ export class graphicSystem {
    * @param {number} maxWidth 해당 텍스트 출력의 최대길이(옵션), null일경우 사용하지 않음.
    */
   static fillText (text = '', x, y, color = 'black', maxWidth = null) {
-    this.#context.fillStyle = color
+    this.context.fillStyle = color
 
     if (this.checkTransform()) {
-      const textWidth = this.#context.measureText(text)
-      const output = this.canvasTransform(x, y, textWidth, parseInt(this.#context.font))
+      const textWidth = this.context.measureText(text)
+      const output = this.canvasTransform(x, y, textWidth, parseInt(this.context.font))
       if (maxWidth != null) {
-        this.#context.fillText(text, output.x, output.y, maxWidth)
+        this.context.fillText(text, output.x, output.y, maxWidth)
       } else {
-        this.#context.fillText(text, output.x, output.y)
+        this.context.fillText(text, output.x, output.y)
       }
       this.restoreTransform()
     } else {
       if (maxWidth != null) {
-        this.#context.fillText(text, x, y, maxWidth)
+        this.context.fillText(text, x, y, maxWidth)
       } else {
-        this.#context.fillText(text, x, y)
+        this.context.fillText(text, x, y)
       }
     }
   }
@@ -561,13 +632,13 @@ export class graphicSystem {
    * @param {string} color 색깔: 없으면 검정색이 기본값
    */
   static strokeRect (x, y, width, height, color = 'black') {
-    this.#context.strokeStyle = color
+    this.context.strokeStyle = color
     if (this.checkTransform()) {
       const output = this.canvasTransform(x, y, width, height)
-      this.#context.strokeRect(output.x, output.y, output.width, output.height)
+      this.context.strokeRect(output.x, output.y, output.width, output.height)
       this.restoreTransform()
     } else {
-      this.#context.strokeRect(x, y, width, height)
+      this.context.strokeRect(x, y, width, height)
     }
   }
 
@@ -581,12 +652,14 @@ export class graphicSystem {
    * @param {string} color 선의 색깔, 기본값 black(검정)
    */
   static fillLine (x1, y1, x2, y2, color = 'black') {
-    this.#context.strokeStyle = color
-    this.#context.beginPath()
-    this.#context.lineWidth = 2
-    this.#context.moveTo(x1, y1)
-    this.#context.lineTo(x2, y2)
-    this.#context.stroke()
+    this.context.strokeStyle = color
+    this.context.beginPath()
+    this.context.lineWidth = 2
+    this.context.moveTo(x1, y1)
+    this.context.lineTo(x2, y2)
+    this.context.stroke()
+    
+    this.context.lineWidth = 1 // lineWidth 초기화
   }
 
   /**
@@ -606,11 +679,11 @@ export class graphicSystem {
       console.warn('경고: rotate값에 string을 사용할 수 없습니다. 착각하신건가요?')
     }
 
-    this.#context.fillStyle = color
-    this.#context.beginPath()
-    this.#context.ellipse(x + (width / 2), y + (height / 2), width / 2, height / 2, rotate, 0, Math.PI * 2)
-    this.#context.fill()
-    this.#context.closePath()
+    this.context.fillStyle = color
+    this.context.beginPath()
+    this.context.ellipse(x + (width / 2), y + (height / 2), width / 2, height / 2, rotate, 0, Math.PI * 2)
+    this.context.fill()
+    this.context.closePath()
   }
 }
 graphicSystem.init()

@@ -41,11 +41,13 @@ export class buttonSystem {
   /** 화살표키 오른쪽 , 오른쪽 버튼 */ static BUTTON_RIGHT = 9
   /** 화살표키 위쪽, 왼쪽 버튼 */ static BUTTON_UP = 10
   /** 화살표키 아래쪽, 아래쪽 버튼 */ static BUTTON_DOWN = 11
+  /** 특수키1 */ static BUTTON_SPECIAL1 = 12
+  /** 특수키2 */ static BUTTON_SPECIAL2 = 13
 
   /**
    * 키바인드맵(keybindmap) 의 기본값
    */
-  static DEFAULT_KEYBINDMAP = ['Enter', 'Escape', 'z', 'x', 'a', 's', 'd', 'f', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']
+  static DEFAULT_KEYBINDMAP = ['Enter', 'Escape', 'z', 'x', 'a', 's', 'd', 'f', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'c', 'v']
 
   static ERROR_MESSAGE_BUTTON_OUT_OF_INDEX = '잘못된 버튼의 인덱스가 입력되었습니다. 가능하면 buttonSystem 클래스 내부에 있는 상수 값을 인덱스로 사용하세요.'
 
@@ -242,6 +244,9 @@ export class mouseSystem {
 
   /**
    * mouseDown 이벤트용, 마우스를 클릭한 좌표를 입력합니다.
+   * 
+   * 참고: 캔버스의 확대/축소, 풀스크린을 사용중이라면, event.offset값을 바로 넣지 말고
+   * 추가적인 계산을 해서 값을 넣어야 합니다. 이 함수에서 마우스의 정확한 좌표 계산을 하는것은 불가능합니다.
    * @param {number} offsetX 마우스의 X좌표 (event.offsetX)
    * @param {number} offsetY 마우스의 Y좌표 (event.offsetY)
    */
@@ -253,6 +258,9 @@ export class mouseSystem {
 
   /**
    * mouseMove 이벤트용, 마우스의 현재 좌표를 입력합니다.
+   * 
+   * 현재 이 함수는 게임에서 사용한 경우가 없습니다.
+   * @deprecated 
    * @param {number} offsetX 마우스의 X좌표 (event.offsetX)
    * @param {number} offsetY 마우스의 Y좌표 (event.offsetY)
    */

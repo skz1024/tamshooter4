@@ -2,6 +2,8 @@
 // 인스턴스를 생성할 필요가 없는 클래스입니다.
 
 /**
+ * 사운드 id는 사용하지 않습니다.
+ * 
  * @deprecated
  */
 export class soundId {
@@ -17,98 +19,107 @@ export class soundId {
     systemRoundClear: 8,
     systemGameOver: 9
   }
-
-  static skill = {
-    skillMultyshotUse: 100,
-    skillMultyshotShot: 101,
-    skillMissileShot: 102,
-    skillMissileHit: 103,
-    skillArrowShot: 104,
-    skillLaserShot: 105,
-    skillSapiaWeapon: 106,
-    skillParapoHit: 107,
-    skillBlasterShot: 108,
-    skillSidewaveShot: 109
-  }
 }
 
 export class soundFile {
   static system = {
-    systemBack: new Audio('./sound/systemBack.mp3'),
-    systemBuzzer: new Audio('./sound/systemBuzzer.mp3'),
-    systemCursor: new Audio('./sound/systemCursor.mp3'),
-    systemEnter: new Audio('./sound/systemEnter.mp3'),
-    systemSelect: new Audio('./sound/systemSelect.mp3'),
-    systemScore: new Audio('./sound/systemScore.mp3'),
-    systemLevelUp: new Audio('./sound/systemLevelUp.mp3'),
-    systemPause: new Audio('./sound/systemPause.mp3'),
-    systemRoundClear: new Audio('./sound/systemRoundClear.mp3'),
-    systemGameOver: new Audio('./sound/systemGameOver.mp3'),
-    systemPlayerDamage: new Audio('./sound/systemPlayerDamage.mp3'),
-    systemPlayerDamageBig: new Audio('./sound/systemPlayerDamageBig.mp3'),
-    systemPlayerDamageDanger: new Audio('./sound/systemPlayerDamageDanger.mp3'),
-    systemPlayerDie: new Audio('./sound/systemPlayerDie.mp3')
+    systemBack: new Audio('./sound/systemBack.wav'),
+    systemBuzzer: new Audio('./sound/systemBuzzer.wav'),
+    systemCursor: new Audio('./sound/systemCursor.wav'),
+    systemEnter: new Audio('./sound/systemEnter.ogg'),
+    systemSelect: new Audio('./sound/systemSelect.wav'),
+    systemScore: new Audio('./sound/systemScore.wav'),
+    systemLevelUp: new Audio('./sound/systemLevelUp.wav'),
+    systemPause: new Audio('./sound/systemPause.wav'),
+    systemRoundClear: new Audio('./sound/systemRoundClear.ogg'),
+    systemGameOver: new Audio('./sound/systemGameOver.ogg'),
+    systemPlayerDamage: new Audio('./sound/systemPlayerDamage.wav'),
+    systemPlayerDamageBig: new Audio('./sound/systemPlayerDamageBig.wav'),
+    systemPlayerDamageDanger: new Audio('./sound/systemPlayerDamageDanger.wav'),
+    systemPlayerDie: new Audio('./sound/systemPlayerDie.ogg'),
+    systemSkillSelect: new Audio('./sound/systemSkillSelect.wav')
   }
 
   static skill = {
-    skillMultyshotUse: new Audio('./sound/skillMultyshotUse.mp3'),
-    skillMultyshotShot: new Audio('./sound/skillMultyshotShot.mp3'),
-    skillMissileShot: new Audio('./sound/skillMissileShot.mp3'),
-    skillMissileHit: new Audio('./sound/skillMissileHit.mp3'),
-    skillArrowShot: new Audio('./sound/skillArrow.mp3'),
-    skillLaserShot: new Audio('./sound/skillLaserShot.mp3'),
-    skillSapiaWeapon: new Audio('./sound/skillSapiaWeapon.mp3'),
-    skillParapoHit: new Audio('./sound/skillParapoHit.mp3'),
-    skillBlasterShot: new Audio('./sound/skillBlasterShot.mp3'),
-    skillSidewaveShot: new Audio('./sound/skillSidewaveShot.mp3')
+    // baseSkill total count 20
+    skillMultyshotUse: new Audio('./sound/skillMultyshotUse.wav'),
+    skillMultyshotShot: new Audio('./sound/skillMultyshotShot.wav'),
+    skillMissileShot: new Audio('./sound/skillMissileShot.wav'),
+    skillMissileHit: new Audio('./sound/skillMissileHit.wav'),
+    skillArrowShot: new Audio('./sound/skillArrow.wav'),
+    skillLaserShot: new Audio('./sound/skillLaserShot.ogg'),
+    skillSapiaWeapon: new Audio('./sound/skillSapiaWeapon.ogg'),
+    skillParapoHit: new Audio('./sound/skillParapoHit.wav'),
+    skillBlasterShot: new Audio('./sound/skillBlasterShot.ogg'),
+    skillSidewaveShot: new Audio('./sound/skillSidewaveShot.wav'),
+    skillCriticalChaser: new Audio('./sound/skillCriticalChaser.ogg'),
+    skillCriticalChaserHit: new Audio('./sound/skillCriticalChaserHit.ogg'),
+    skillHyperBall: new Audio('./sound/skillHyperBall.wav'),
+    skillPileBunker: new Audio('./sound/skillPileBunker.ogg'),
+    skillPileBunkerHit2: new Audio('./sound/skillPileBunkerHit2.wav'),
+    skillPileBunkerHit3: new Audio('./sound/skillPileBunkerHit3.wav'),
+    skillSword: new Audio('./sound/skillSword.ogg'),
+    skillSwordHit: new Audio('./sound/skillSwordHit.wav'),
+    skillSantansu: new Audio('./sound/skillSantansuHit.ogg'),
+    skillWhiteflash: new Audio('./sound/skillWhiteflash.ogg'),
+    skillRapid: new Audio('./sound/skillRapid.wav'),
+    skillSeondanil: new Audio('./sound/skillSeondanil.ogg'),
+    skillSeondanilHit: new Audio('./sound/skillSeondanilHit.wav'),
+    skillRing: new Audio('./sound/skillRing.wav'),
+    skillBoomerang: new Audio('./sound/skillBoomerang.ogg'),
+    skillHanjumeok: new Audio('./sound/skillHanjumeok.ogg'),
+    skillHanjumeokHit: new Audio('./sound/skillHanjumeokHit.wav'),
+    skillHanjumeokSplash: new Audio('./sound/skillHanjumeokSplash.ogg'),
+    skillMoon: new Audio('./sound/skillMoon.ogg'),
+    skillMoonAttack: new Audio('./sound/skillMoonAttack.ogg'),
   }
 
   static enemyDie = {
-    enemyDieMeteorite1: new Audio('./sound/enemyDieMeteorite1.mp3'),
-    enemyDieMeteorite2: new Audio('./sound/enemyDieMeteorite2.mp3'),
-    enemyDieMeteorite3: new Audio('./sound/enemyDieMeteorite3.mp3'),
-    enemyDieMeteorite4: new Audio('./sound/enemyDieMeteorite4.mp3'),
-    enemyDieMeteorite5: new Audio('./sound/enemyDieMeteorite5.mp3'),
-    enemyDieMeteoriteBomb: new Audio('./sound/enemyDieMeteoriteBomb.mp3'),
-    enemyDieMeteoriteStone: new Audio('./sound/enemyDieMeteoriteStone.mp3'),
-    enemyDieMetoriteRed: new Audio('./sound/enemyDieMeteoriteRed.mp3'),
-    enemyDieSpaceCar: new Audio('./sound/enemyDieSpaceCar.mp3'),
-    enemyDieSpaceComet: new Audio('./sound/enemyDieSpaceComet.mp3'),
-    enemyDieSpaceEnergy: new Audio('./sound/enemyDieSpaceEnergy.mp3'),
-    enemyDieSpaceGamjigi: new Audio('./sound/enemyDieSpaceGamjigi.mp3'),
-    enemyDieSpaceLight: new Audio('./sound/enemyDieSpaceLight.mp3'),
-    enemyDieSpaceRocket: new Audio('./sound/enemyDieSpaceRocket.mp3'),
-    enemyDieSpaceSmall: new Audio('./sound/enemyDieSpaceSmall.mp3'),
-    enemyDieSpaceSquare: new Audio('./sound/enemyDieSpaceSquare.mp3'),
-    enemyDieSpaceSusong: new Audio('./sound/enemyDieSpaceSusong.mp3'),
-    enemyDieJemulDrill: new Audio('./sound/enemyDieJemulDrill.mp3'),
-    enemyDieJemulEnergyBolt: new Audio('./sound/enemyDieJemulEnergyBolt.mp3'),
-    enemyDieJemulHellAir: new Audio('./sound/enemyDieJemulHellAir.mp3'),
-    enemyDieJemulHellShip: new Audio('./sound/enemyDieJemulHellShip.mp3'),
-    enemyDieJemulRocket: new Audio('./sound/enemyDieJemulRocket.mp3'),
-    enemyDieJemulSpike: new Audio('./sound/enemyDieJemulSpike.mp3'),
-    enemyDieJemulBoss: new Audio('./sound/enemyDieJemulBoss.mp3'),
-    enemyDieJemulBossEye: new Audio('./sound/enemyDieJemulBossEye.mp3'),
-    enemyDieJemulRedJewel: new Audio('./sound/enemyDieJemulRedJewel.mp3'),
-    enemyDieJemulRedAir: new Audio('./sound/enemyDieJemulRedAir.mp3'),
-    enemyDieDonggrami1: new Audio('./sound/enemyDieDonggrami1.mp3'),
-    enemyDieDonggrami2: new Audio('./sound/enemyDieDonggrami2.mp3'),
+    enemyDieMeteorite1: new Audio('./sound/enemyDieMeteorite1.wav'),
+    enemyDieMeteorite2: new Audio('./sound/enemyDieMeteorite2.wav'),
+    enemyDieMeteorite3: new Audio('./sound/enemyDieMeteorite3.wav'),
+    enemyDieMeteorite4: new Audio('./sound/enemyDieMeteorite4.wav'),
+    enemyDieMeteorite5: new Audio('./sound/enemyDieMeteorite5.wav'),
+    enemyDieMeteoriteBomb: new Audio('./sound/enemyDieMeteoriteBomb.wav'),
+    enemyDieMeteoriteStone: new Audio('./sound/enemyDieMeteoriteStone.wav'),
+    enemyDieMetoriteRed: new Audio('./sound/enemyDieMeteoriteRed.wav'),
+    enemyDieSpaceCar: new Audio('./sound/enemyDieSpaceCar.wav'),
+    enemyDieSpaceComet: new Audio('./sound/enemyDieSpaceComet.wav'),
+    enemyDieSpaceEnergy: new Audio('./sound/enemyDieSpaceEnergy.wav'),
+    enemyDieSpaceGamjigi: new Audio('./sound/enemyDieSpaceGamjigi.wav'),
+    enemyDieSpaceLight: new Audio('./sound/enemyDieSpaceLight.wav'),
+    enemyDieSpaceRocket: new Audio('./sound/enemyDieSpaceRocket.wav'),
+    enemyDieSpaceSmall: new Audio('./sound/enemyDieSpaceSmall.wav'),
+    enemyDieSpaceSquare: new Audio('./sound/enemyDieSpaceSquare.wav'),
+    enemyDieSpaceSusong: new Audio('./sound/enemyDieSpaceSusong.ogg'),
+    enemyDieJemulDrill: new Audio('./sound/enemyDieJemulDrill.wav'),
+    enemyDieJemulEnergyBolt: new Audio('./sound/enemyDieJemulEnergyBolt.wav'),
+    enemyDieJemulHellAir: new Audio('./sound/enemyDieJemulHellAir.ogg'),
+    enemyDieJemulHellShip: new Audio('./sound/enemyDieJemulHellShip.ogg'),
+    enemyDieJemulRocket: new Audio('./sound/enemyDieJemulRocket.wav'),
+    enemyDieJemulSpike: new Audio('./sound/enemyDieJemulSpike.wav'),
+    enemyDieJemulBoss: new Audio('./sound/enemyDieJemulBoss.ogg'),
+    enemyDieJemulBossEye: new Audio('./sound/enemyDieJemulBossEye.ogg'),
+    enemyDieJemulRedJewel: new Audio('./sound/enemyDieJemulRedJewel.wav'),
+    enemyDieJemulRedAir: new Audio('./sound/enemyDieJemulRedAir.wav'),
+    enemyDieDonggrami1: new Audio('./sound/enemyDieDonggrami1.wav'),
+    enemyDieDonggrami2: new Audio('./sound/enemyDieDonggrami2.wav'),
   }
 
   static enemyAttack = {
-    jemulEnergyBoltAttack: new Audio('./sound/enemyJemulEnergyBoltAttack.mp3'),
-    jemulHellDrillAttack: new Audio('./sound/enemyJemulHellDrillAttack.mp3'),
-    jemulBossAttack: new Audio('./sound/enemyJemulBossAttackLaser.mp3'),
-    jemulBossAttack2: new Audio('./sound/enemyJemulBossAttackLaser2.mp3'),
-    jemulBossAttack3: new Audio('./sound/enemyJemulBossAttackLaser3.mp3')
+    jemulEnergyBoltAttack: new Audio('./sound/enemyJemulEnergyBoltAttack.wav'),
+    jemulHellDrillAttack: new Audio('./sound/enemyJemulHellDrillAttack.wav'),
+    jemulBossAttack: new Audio('./sound/enemyJemulBossAttackLaser.ogg'),
+    jemulBossAttack2: new Audio('./sound/enemyJemulBossAttackLaser2.ogg'),
+    jemulBossAttack3: new Audio('./sound/enemyJemulBossAttackLaser3.ogg')
   }
 
   static round = {
-    r1_4_message1: new Audio('./sound/round1_4_message1.mp3'),
-    r1_4_message2: new Audio('./sound/round1_4_message2.mp3'),
-    r1_4_jemulstar: new Audio('./sound/round1_4_jemulstar.mp3'),
-    r1_4_jemulstart: new Audio('./sound/round1_4_jemulstart.mp3'),
-    r1_4_jemulrun: new Audio('./sound/round1_4_jemulrun.mp3')
+    r1_4_message1: new Audio('./sound/round1_4_message1.ogg'),
+    r1_4_message2: new Audio('./sound/round1_4_message2.ogg'),
+    r1_4_jemulstar: new Audio('./sound/round1_4_jemulstar.ogg'),
+    r1_4_jemulstart: new Audio('./sound/round1_4_jemulstart.ogg'),
+    r1_4_jemulrun: new Audio('./sound/round1_4_jemulrun.ogg')
   }
 
   static music = {
@@ -162,28 +173,19 @@ export class soundSystem {
    * 효과음은 일부만 적용 (다 하기 너무 귀찮다.)
    */
   static connect () {
-    // 효과음 - 시스템 // 먼저 로드가 필요하므로, 미리 audioContext에 등록해둠
-    this.audioContext.createMediaElementSource(soundFile.system.systemBack).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.system.systemBuzzer).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.system.systemCursor).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.system.systemEnter).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.system.systemGameOver).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.system.systemLevelUp).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.system.systemPause).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.system.systemRoundClear).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.system.systemScore).connect(this.soundGain)
-    this.audioContext.createMediaElementSource(soundFile.system.systemSelect).connect(this.soundGain)
+    // soundFile 객체 구조를 기준으로 모두 오디오컨텍스트에 연결함.
+    let con = (soundObject) => {
+      for (let f in soundObject) {
+        if (f === 'music') continue // 음악은 사운드에 해당하지 않음. 그래서 continue
 
-    // 효과음 - 스킬 및 무기
-    // this.audioContext.createMediaElementSource(soundFile.skill.skillMultyshotShot).connect(this.soundGain)
-    // this.audioContext.createMediaElementSource(soundFile.skill.skillMultyshotUse).connect(this.soundGain)
-    // this.audioContext.createMediaElementSource(soundFile.skill.skillMissileShot).connect(this.soundGain)
-    // this.audioContext.createMediaElementSource(soundFile.skill.skillMissileHit).connect(this.soundGain)
-    // this.audioContext.createMediaElementSource(soundFile.skill.skillBlasterShot).connect(this.soundGain)
-    // this.audioContext.createMediaElementSource(soundFile.skill.skillLaserShot).connect(this.soundGain)
-    // this.audioContext.createMediaElementSource(soundFile.skill.skillParapoHit).connect(this.soundGain)
-    // this.audioContext.createMediaElementSource(soundFile.skill.skillSapiaWeapon).connect(this.soundGain)
-    // this.audioContext.createMediaElementSource(soundFile.skill.skillSidewaveShot).connect(this.soundGain)
+        let soundObj2 = soundObject[f]
+        for (let f2 in soundObj2) {
+          let audioData = soundObj2[f2]
+          this.audioContext.createMediaElementSource(audioData).connect(this.soundGain)
+        }
+      }
+    }
+    con(soundFile)
 
     // 배경음악
     this.audioContext.createMediaElementSource(soundFile.music.music01_space_void).connect(this.musicGain)
@@ -315,11 +317,12 @@ export class soundSystem {
   /**
    * 사운드 재생 함수 >> 주의: 절대로 audio객체의 play 함수를 직접 호출하지 말고, 이 함수를 사용하세요.
    * 참고: 음악은, musicPlay 함수를 사용해주세요. play 함수는 효과음 전용입니다.
-   * @param {Audio} soundFile soundFile 객체의 static 변수
+   * @param {HTMLAudioElement} soundFile soundFile 객체의 static 변수
    */
   static play (soundFile) {
     // 사운드가 꺼질경우, 사운드를 출력하지 않음.
     if (!this.soundOn) return
+    this.audioContext.resume()
 
     soundFile.volume = this.soundGain.gain.value
     
@@ -356,6 +359,18 @@ export class soundSystem {
   }
 
   /**
+   * 현재 재생되고 있는 음악의 시간을 얻어옵니다.
+   * @returns {number}
+   */
+  static getMusicCurrentTime () {
+    if (this.currentMusic != null) {
+      return this.currentMusic.currentTime
+    } else {
+      return 0
+    }
+  }
+
+  /**
    * 음악을 페이드 인/아웃 하면서 변경합니다. 배경음악만 적용 가능 (효과음은 audioContext에 연결되어있지 않아 아무 효과 없음)
    * @param {HTMLAudioElement} soundFile 사운드 파일
    * @param {number} time 페이드 시간(인/아웃 포함), 단위: 초
@@ -386,8 +401,8 @@ export class soundSystem {
 
   static musicPause () {
     this.musicPaused = true
-
   }
+
   static musicStop () {
     if (this.currentMusic != null) {
       this.currentMusic.pause()
