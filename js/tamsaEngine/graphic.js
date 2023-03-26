@@ -4,7 +4,7 @@
  * 참고로 직접적인 context를 이용한 접근은 하지 말아주세요.
  * graphicSystem에 있는 함수를 사용하는게 좋습니다. (그래야 유지보수 및 관리가 편합니다.)
  */
-export class graphicSystem {
+export class GraphicSystem {
   /**
    * 그래픽을 출력할 수 있는 캔버스를 만듭니다.
    * 
@@ -266,20 +266,20 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * @param {number} wordWidth 글자길이 (기본값: 12px, 20px), digitalFont에 정의되어있음. width와 height의 비율은 각 2:3
    * @param {number} wordHeight 글자높이 (기본값: 18px, 30px), digitalFont에 정의되어있음. width와 height의 비율은 각 2:3
    */
-  digitalFontDisplay (inputText, x = 0, y = 0, wordWidth = graphicSystem.digitalFont.width12px, wordHeight = wordWidth <= graphicSystem.digitalFont.width12px ? graphicSystem.digitalFont.height12px : graphicSystem.digitalFont.height20px) {
+  digitalFontDisplay (inputText, x = 0, y = 0, wordWidth = GraphicSystem.digitalFont.width12px, wordHeight = wordWidth <= GraphicSystem.digitalFont.width12px ? GraphicSystem.digitalFont.height12px : GraphicSystem.digitalFont.height20px) {
     if (inputText == null) return
 
     // 개발 편의성을 위해 string 형태로 변경
     if (typeof inputText === 'number') inputText = inputText + ''
 
     // 변수명을 줄이기 위해 만든 변수들
-    const image12 = graphicSystem.digitalFont.image12px
-    const fontW12 = graphicSystem.digitalFont.width12px
-    const fontH12 = graphicSystem.digitalFont.height12px
+    const image12 = GraphicSystem.digitalFont.image12px
+    const fontW12 = GraphicSystem.digitalFont.width12px
+    const fontH12 = GraphicSystem.digitalFont.height12px
 
-    const image20 = graphicSystem.digitalFont.image20px
-    const fontW20 = graphicSystem.digitalFont.width20px
-    const fontH20 = graphicSystem.digitalFont.height20px
+    const image20 = GraphicSystem.digitalFont.image20px
+    const fontW20 = GraphicSystem.digitalFont.width20px
+    const fontH20 = GraphicSystem.digitalFont.height20px
 
     // 글자 길이에 따라서 출력하는 이미지가 달라집니다. 기본값은 12이고, 13 이상은 20px이미지를 확대축소합니다.
     const image = wordWidth <= fontW12 ? image12 : image20
@@ -348,26 +348,26 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
   }
 
   /**
-   * digitalFontDisplay와 함수가 동일합니다. (폰트만 다름)
+   * 내장되어있는 비트맵 font (bitmapFont2.png) 파일을 이용해서 글자를 출력합니다.
    * 
-   * 경고: A ~ Z, 0 ~ 9, -, +, ., :, / 문자를 표현 가능. 대/소문자는 상관없지만 가능하면 소문자를 사용해주세요.
+   * 아스키 코드만 지원(한글 사용불가능), 대소문자는 구분됩니다.
    * 
    * 경고2: 크기를 늘릴 경우, 안티에일리싱 효과로 글자주위에 선이 칠해지는 경우가 있음.
    * @param {number | string} inputText 출력할 텍스트
    * @param {number} x x좌표
    * @param {number} y y좌표
-   * @param {number} wordWidth 글자길이 (기본값 8px, 권장값 16px), 7의 배수로 확대 권장
-   * @param {number} wordHeight 글자높이 (기본값 11px, 권장값 22px), 10의 배수로 확대 권장
+   * @param {number} wordWidth 글자길이 (기본값 8px, 권장값 16px), 8의 배수로 확대 권장
+   * @param {number} wordHeight 글자높이 (기본값 11px, 권장값 22px), 11의 배수로 확대 권장
    */
-  bitmapFontDisplay (inputText, x = 0, y = 0, wordWidth = graphicSystem.bitmapFont.width, wordHeight = graphicSystem.bitmapFont.height) {
+  bitmapFontDisplay (inputText, x = 0, y = 0, wordWidth = GraphicSystem.bitmapFont.width, wordHeight = GraphicSystem.bitmapFont.height) {
     if (inputText == null) return
 
-    // 개발 편의성을 위해 string 형태로 변경
+    // 숫자가 들어올경우, string 형태로 변경 (그래야 조작하기 쉬움)
     if (typeof inputText === 'number') inputText = inputText + ''
 
-    const image = graphicSystem.bitmapFont.image
-    const BITMAP_WIDTH = graphicSystem.bitmapFont.width
-    const BITMAP_HEIGHT = graphicSystem.bitmapFont.height
+    const image = GraphicSystem.bitmapFont.image
+    const BITMAP_WIDTH = GraphicSystem.bitmapFont.width
+    const BITMAP_HEIGHT = GraphicSystem.bitmapFont.height
 
     // 변형이 확인된경우, 캔버스를 변형하고 출력좌표를 변경합니다.
     if (this.checkTransform()) {
@@ -378,33 +378,21 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
       wordHeight = output.outputHeight
     }
 
+    const firstWordPosition = ' '.charCodeAt()
+    const lineMaxXPostition = 32 // 비트맵에는 한줄당 최대 32개 글자 데이터가 있습니다.
+
     // 첫번째 글자부터 마지막글자까지 하나씩 출력합니다.
     for (let i = 0; i < inputText.length; i++) {
       const word = inputText.charAt(i)
-      let wordPosition = -1
-      let wordLine = 0
+      let wordPosition = -1 // 0 ~ 32
+      let wordLine = 0 // 0 ~ 3
 
-      if (word >= '0' && word <= '9') {
-        // 0 ~ 9 사이일경우
-        wordLine = 1
-        wordPosition = Number(word)
-      } else if (word >= 'a' && word <= 'z') {
-        // alphabet 소문자
-        wordPosition = word.charCodeAt(0) - 'a'.charCodeAt(0)
-      } else if (word >= 'A' && word <= 'Z') {
-        // alphabet 대문자
-        wordPosition = word.charCodeAt(0) - 'A'.charCodeAt(0)
-      } else {
-        // 이외 특수기호: -, +, /, ., :
-        wordLine = 1
-        switch (word) {
-          case '/': wordPosition = 10; break
-          case '.': wordPosition = 11; break
-          case '+': wordPosition = 12; break
-          case '-': wordPosition = 13; break
-          case ':': wordPosition = 14; break
-          default: continue // 참고: 아무런 단어도 해당되지 않으면 루프를 건너뜀
-        }
+      wordPosition = word.charCodeAt(0) - firstWordPosition
+
+      // 워드포지션이 32를 넘어가면, 다른 줄로 변경해서 출력할 글자를 찾습니다.
+      if (wordPosition >= lineMaxXPostition) {
+        wordLine = Math.floor(wordPosition / lineMaxXPostition)
+        wordPosition = wordPosition % 32
       }
 
       if (wordPosition >= 0) {
@@ -500,7 +488,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
       // 함수의 내용이 길어 따로 분리
       this.#imageExpandDisplay(image, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, ...option)
     } else {
-      throw new Error(graphicSystem.errorMessage.IMAGE_DISPLAY_ARGUMENT_ERROR)
+      throw new Error(GraphicSystem.errorMessage.IMAGE_DISPLAY_ARGUMENT_ERROR)
     }
   }
 
@@ -1015,5 +1003,28 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     this.context.fill()
     this.context.closePath()
   }
+
+  /**
+   * 여기서 사용하는 캔버스를 body 영역에 추가합니다.
+   * 
+   * 그리고, 여백과 페딩도 전부 제거합니다.
+   * 
+   * 캔버스의 사이즈는 브라우저에 맞춰지도록 변경합니다.
+   * 
+   * 만약 body가 아니라, 다른 곳에 추가하고 싶다면
+   * 특정 엘리먼트의 appendChild 함수에다가 this.canvas 변수를 넣어주세요.
+   * 
+   * 참고로 GraphicSystem.canvas 는 canvas태그랑 동일합니다.
+   */
+  bodyInsert () {
+    document.body.appendChild(this.canvas)
+    document.body.style.padding = '0'
+    document.body.style.margin = '0'
+    document.body.style.border = '0'
+
+    // 참고: canvas는 vw, vh단위로 설정하지 않는 한, 가로/세로 비율이 유지됩니다.
+    this.canvas.style.width = '100%'
+    this.canvas.style.height = '100%'
+  }
 }
-graphicSystem.staticImageAutoSet()
+GraphicSystem.staticImageAutoSet()
