@@ -1009,22 +1009,46 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * 
    * 그리고, 여백과 페딩도 전부 제거합니다.
    * 
-   * 캔버스의 사이즈는 브라우저에 맞춰지도록 변경합니다.
+   * isAutoResize 옵션을 true로 설정하면 캔버스의 사이즈는 브라우저에 맞춰지도록 변경합니다. 
    * 
    * 만약 body가 아니라, 다른 곳에 추가하고 싶다면
    * 특정 엘리먼트의 appendChild 함수에다가 this.canvas 변수를 넣어주세요.
    * 
    * 참고로 GraphicSystem.canvas 는 canvas태그랑 동일합니다.
+   * 
+   * @param {boolean} isAutoResize 브라우저의 크기가 조절되면 자동으로 사이즈가 조절됩니다.
    */
-  bodyInsert () {
+  bodyInsert (isAutoResize = true) {
     document.body.appendChild(this.canvas)
     document.body.style.padding = '0'
     document.body.style.margin = '0'
     document.body.style.border = '0'
+    document.body.style.overflowX = 'hidden' // 크기에 따른 스크롤바 표시를 막기 위함
+    document.body.style.overflowY = 'hidden' // 크기에 따른 스크롤바 표시를 막기 위함
+    document.body.style.textAlign = 'center' // 중앙 정렬
+    if (isAutoResize) {
+      this.resizeFunction()
+      addEventListener('resize', () => this.resizeFunction())
+    }
+  }
 
-    // 참고: canvas는 vw, vh단위로 설정하지 않는 한, 가로/세로 비율이 유지됩니다.
-    this.canvas.style.width = '100%'
-    this.canvas.style.height = '100%'
+  /**
+   * 브라우저 사이즈가 변경될경우 호출합니다.
+   */
+  resizeFunction () {
+    // 브라우저 사이즈가 변경될경우, canvas사이즈의 재조정(풀스크린 지원 안함)
+    // 브라우저 사이즈가 가장 짧은쪽을 선택, 다만, 가로 세로 비율이 4:3 이기 때문에 이를 고려해야 함
+    let width = innerWidth / 4
+    let height = innerHeight / 3
+    
+    if (width > height) {
+      this.canvas.style.width = Math.floor(innerHeight / 3 * 4 / innerWidth * 100) + '%'
+      // this.canvas.style.width = (innerHeight / 3 * 4) + 'px'
+      // this.canvas.style.height = (innerHeight) + 'px'
+    } else {
+      this.canvas.style.width = '100%'
+      this.canvas.style.height = '100%'
+    }
   }
 }
 GraphicSystem.staticImageAutoSet()

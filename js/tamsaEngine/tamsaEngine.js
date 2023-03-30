@@ -1,4 +1,4 @@
-import { TouchPadSystem } from "./control.js";
+import { ControlSystem } from "./control.js";
 import { GraphicSystem } from "./graphic.js";
 // import { soundSystem } from "./sound.js";
 
@@ -43,6 +43,11 @@ class TamsaEngine {
     // 기본 초기화 작업 (재수행 될 수 없음.)
     // 캔버스 등록 및 브라우저 화면에 표시(이 위치를 수정해야 겠다면, 수동으로 캔버스를 지정해주세요.)
     this.graphicSystem = new GraphicSystem(gameWidth, gameHeight)
+    
+    this.controlSystem = new ControlSystem()
+    this.controlSystem.addEventMouseTouch(this.graphicSystem.canvas)
+
+    document.body.style.backgroundColor = '#1F1F1F'
 
     // canvas를 바로 body 영역에 삽입
     if (isAutoBodyInsertCanvas) {
@@ -87,9 +92,17 @@ class TamsaEngine {
     } else {
       this.currentDevice = TamsaEngine.device.mobile
       // 조이패드를 추가
-      this.touchPad = new TouchPadSystem()
-      this.touchPad.bodyInsert()
+      this.controlSystem.createTouchButton()
     }
+
+    addEventListener('resize', () => {
+      // if (matchMedia('(orientation: landscape)').matches) {
+      //   this.controlSystem.touchButton.elementFirst.style.position = 'fixed'
+      //   this.controlSystem.touchButton.elementFirst.style.top = '0%'
+      //   this.controlSystem.touchButton.elementSecond.style.position = 'fixed'
+      //   this.controlSystem.touchButton.elementSecond.style.top = '50%'
+      // }
+    })
   }
 
   /** 1초마다 몇 프레임이 카운트 되었는지를 확인하고, 이를 fps에 반영합니다. */
@@ -157,6 +170,10 @@ class TamsaEngine {
     // 아무것도 없음
   }
 
+
+  biosMenuNumber = 0
+  biosMenuCursor = 1
+  
   /** 
    * 엔진의 바이오스 메뉴: 이것이 실행되면 게임 로직은 동작하지 않습니다. 
    * 
@@ -171,11 +188,108 @@ class TamsaEngine {
   bios () {
     // 검은색 화면 출력
     this.graphicSystem.fillRect(0, 0, this.graphicSystem.CANVAS_WIDTH, this.graphicSystem.CANVAS_HEIGHT, '#282828')
+
+    switch (this.biosMenuNumber) {
+      case 0: this.biosMainMenu(); break
+      case 1: this.biosInputTest(); break
+    }
+  }
+
+  biosMainMenu () {  
+    // 텍스트 출력
     this.biosTextOutput('TAMSAENGINE MENU', 0)
     this.biosTextOutput('created by skz1024 - 2023/03/26', 1)
     this.biosTextOutput('device: ' + this.currentDevice, 2)
 
-    this.biosTextOutput('01234567890123456789012345678901234567890123456789012345678901234567890', 3)
+    this.biosTextOutput('menu select', 4)
+    this.biosTextOutput('  1. INPUT TEST (KEYBOARD, BUTTON, MOUSE, TOUCH)', 5)
+    this.biosTextOutput('  2. SOUND TEST', 6)
+    this.biosTextOutput('  3. GRAPHIC TEST', 7)
+    this.biosTextOutput('  4. EXIT', 8)
+
+    this.biosTextOutput('->', 5 + this.biosMenuCursor - 1)
+
+    const buttonDown = this.controlSystem.getButtonInput(this.controlSystem.buttonIndex.DOWN)
+    const buttonUp = this.controlSystem.getButtonInput(this.controlSystem.buttonIndex.UP)
+    const buttonStart = this.controlSystem.getButtonInput(this.controlSystem.buttonIndex.START)
+    const buttonA = this.controlSystem.getButtonInput(this.controlSystem.buttonIndex.A)
+
+    if (buttonDown && this.biosMenuCursor < 4) {
+      this.biosMenuCursor++
+    } else if (buttonUp && this.biosMenuCursor > 1) {
+      this.biosMenuCursor--
+    } else if ((buttonStart || buttonA)) {
+      this.biosMenuNumber = this.biosMenuCursor
+    }
+  }
+
+  /**
+   * 바이오스의 inputTestMenu
+   */
+  biosInputTest () {
+    const mouseX = this.controlSystem.getMouseX()
+    const mouseY = this.controlSystem.getMouseY()
+    const isMouseDown = this.controlSystem.getMouseDown()
+
+    // 변수명 줄여쓰기...
+    const index = this.controlSystem.buttonIndex
+    const push = this.controlSystem.isButtonDown
+    const key = this.controlSystem.getKeyBindMap()
+
+    // 버튼이 눌려있으면 true를 표시하고 아닐경우 아무것도 표시하지 않습니다.
+    const buttonLeft = push[index.LEFT] ? true : ''
+    const buttonRight = push[index.RIGHT] ? true : ''
+    const buttonUp = push[index.UP] ? true : ''
+    const buttonDown = push[index.DOWN] ? true : ''
+    const buttonA = push[index.A] ? true : ''
+    const buttonB = push[index.B] ? true : ''
+    const buttonX = push[index.X] ? true : ''
+    const buttonY = push[index.Y] ? true : ''
+    const buttonL1 = push[index.L1] ? true : ''
+    const buttonL2 = push[index.L2] ? true : ''
+    const buttonR1 = push[index.R1] ? true : ''
+    const buttonR2 = push[index.R2] ? true : ''
+    const buttonStart = push[index.START] ? true : ''
+    const buttonSelect = push[index.SELECT] ? true : ''
+
+    // keyboard only
+    const keyESC = push[index.ESC] ? true : ''
+    const keyF2 = push[index.F2] ? true : ''
+
+    // 텍스트 입력
+    const text = [
+      'MOUSE: ' + isMouseDown + ' (' + mouseX + ', ' + mouseY + ')',
+      'BUTTON-KEYBOARD  -TEST',
+      'LEFT  -'+ key[index.LEFT].padEnd(10, ' ') + '-' + buttonLeft,
+      'RIGHT -'+ key[index.RIGHT].padEnd(10, ' ') + '-' + buttonRight,
+      'UP    -'+ key[index.UP].padEnd(10, ' ') + '-' + buttonUp,
+      'DOWN  -'+ key[index.DOWN].padEnd(10, ' ') + '-' + buttonDown,
+      'A     -'+ key[index.A].padEnd(10, ' ') + '-' + buttonA,
+      'B     -'+ key[index.B].padEnd(10, ' ') + '-' + buttonB,
+      'X     -'+ key[index.X].padEnd(10, ' ') + '-' + buttonX,
+      'Y     -'+ key[index.Y].padEnd(10, ' ') + '-' + buttonY,
+      'L1    -'+ key[index.L1].padEnd(10, ' ') + '-' + buttonL1,
+      'L2    -'+ key[index.L2].padEnd(10, ' ') + '-' + buttonL2,
+      'R1    -'+ key[index.R1].padEnd(10, ' ') + '-' + buttonR1,
+      'R2    -'+ key[index.R2].padEnd(10, ' ') + '-' + buttonR2,
+      'START -'+ key[index.START].padEnd(10, ' ') + '-' + buttonStart,
+      'SELECT-'+ key[index.SELECT].padEnd(10, ' ') + '-' + buttonSelect,
+      ' ',
+      'KEYBOARD ONLY-TEST',
+      'ESC(CANCLE)-' + key[index.ESC].padEnd(6, ' ') + '-' + keyESC,
+      'F2(BIOS)   -' + key[index.F2].padEnd(6, ' ') + '-' + keyF2,
+      ' ',
+      'L1 + L2 BUTTON TO EXIT'
+    ]
+
+    for (let i = 0; i < text.length; i++) {
+      this.biosTextOutput(text[i], i)
+    }
+
+    // L1 + L2 BUTTON TO EXIT
+    if (buttonL1 && buttonL2) {
+      this.biosMenuNumber = 0
+    }
   }
 
   /**
