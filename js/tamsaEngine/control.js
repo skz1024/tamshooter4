@@ -593,7 +593,8 @@ export class ControlSystem {
 
   /**
    * 현재 버튼이 눌려져 있는 상태인지 확인합니다.
-   * @param {number} buttonIndex 
+   * 
+   * @param {number} buttonIndex 이 객체가 가지고 있는 buttonIndex의 상수값
    */
   getButtonDown (buttonIndex) {
     return this.isButtonDown[buttonIndex]
@@ -634,6 +635,17 @@ export class ControlSystem {
   /** 버튼 처리에 관한 프로세스 */
   processButton () {
 
+  }
+
+  /** 아무 버튼 중 하나라도 눌려있는지를 확인합니다. */
+  getButtonAnykey () {
+    for (let i = 0; i < this.isButtonDown.length; i++) {
+      if (this.isButtonDown[i]) {
+        return true
+      }
+    }
+
+    return false
   }
 
 

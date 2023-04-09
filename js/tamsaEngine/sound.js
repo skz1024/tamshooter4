@@ -1,440 +1,406 @@
-// 사운드파일을 묶은 클래스이고, 모든 변수는 static 이므로, 대문자로 선언하지 않았습니다.
-// 인스턴스를 생성할 필요가 없는 클래스입니다.
-
 /**
- * 사운드 id는 사용하지 않습니다.
+ * tamsaEngine 에서 사용하는 사운드 시스템
  * 
- * @deprecated
+ * web audio api 지원
  */
-export class soundId {
-  static system = {
-    systemBack: 0,
-    systemBuzzer: 1,
-    systemCursor: 2,
-    systemEnter: 3,
-    systemSelect: 4,
-    systemScore: 5,
-    systemLevelUp: 6,
-    systemPause: 7,
-    systemRoundClear: 8,
-    systemGameOver: 9
+export class SoundSystem {
+  static testFileSrc = {
+    soundtest0: 'soundeffect.wav',
+    soundtest1: 'soundtest1.ogg',
+    soundtest2: 'soundtest2.ogg',
+    soundtest3: 'soundtest3.ogg',
   }
-}
-
-export class soundFile {
-  static system = {
-    systemBack: new Audio('./sound/systemBack.wav'),
-    systemBuzzer: new Audio('./sound/systemBuzzer.wav'),
-    systemCursor: new Audio('./sound/systemCursor.wav'),
-    systemEnter: new Audio('./sound/systemEnter.ogg'),
-    systemSelect: new Audio('./sound/systemSelect.wav'),
-    systemScore: new Audio('./sound/systemScore.wav'),
-    systemLevelUp: new Audio('./sound/systemLevelUp.wav'),
-    systemPause: new Audio('./sound/systemPause.wav'),
-    systemRoundClear: new Audio('./sound/systemRoundClear.ogg'),
-    systemGameOver: new Audio('./sound/systemGameOver.ogg'),
-    systemPlayerDamage: new Audio('./sound/systemPlayerDamage.wav'),
-    systemPlayerDamageBig: new Audio('./sound/systemPlayerDamageBig.wav'),
-    systemPlayerDamageDanger: new Audio('./sound/systemPlayerDamageDanger.wav'),
-    systemPlayerDie: new Audio('./sound/systemPlayerDie.ogg'),
-    systemSkillSelect: new Audio('./sound/systemSkillSelect.wav')
-  }
-
-  static skill = {
-    // baseSkill total count 20
-    skillMultyshotUse: new Audio('./sound/skillMultyshotUse.wav'),
-    skillMultyshotShot: new Audio('./sound/skillMultyshotShot.wav'),
-    skillMissileShot: new Audio('./sound/skillMissileShot.wav'),
-    skillMissileHit: new Audio('./sound/skillMissileHit.wav'),
-    skillArrowShot: new Audio('./sound/skillArrow.wav'),
-    skillLaserShot: new Audio('./sound/skillLaserShot.ogg'),
-    skillSapiaWeapon: new Audio('./sound/skillSapiaWeapon.ogg'),
-    skillParapoHit: new Audio('./sound/skillParapoHit.wav'),
-    skillBlasterShot: new Audio('./sound/skillBlasterShot.ogg'),
-    skillSidewaveShot: new Audio('./sound/skillSidewaveShot.wav'),
-    skillCriticalChaser: new Audio('./sound/skillCriticalChaser.ogg'),
-    skillCriticalChaserHit: new Audio('./sound/skillCriticalChaserHit.ogg'),
-    skillHyperBall: new Audio('./sound/skillHyperBall.wav'),
-    skillPileBunker: new Audio('./sound/skillPileBunker.ogg'),
-    skillPileBunkerHit2: new Audio('./sound/skillPileBunkerHit2.wav'),
-    skillPileBunkerHit3: new Audio('./sound/skillPileBunkerHit3.wav'),
-    skillSword: new Audio('./sound/skillSword.ogg'),
-    skillSwordHit: new Audio('./sound/skillSwordHit.wav'),
-    skillSantansu: new Audio('./sound/skillSantansuHit.ogg'),
-    skillWhiteflash: new Audio('./sound/skillWhiteflash.ogg'),
-    skillRapid: new Audio('./sound/skillRapid.wav'),
-    skillSeondanil: new Audio('./sound/skillSeondanil.ogg'),
-    skillSeondanilHit: new Audio('./sound/skillSeondanilHit.wav'),
-    skillRing: new Audio('./sound/skillRing.wav'),
-    skillBoomerang: new Audio('./sound/skillBoomerang.ogg'),
-    skillHanjumeok: new Audio('./sound/skillHanjumeok.ogg'),
-    skillHanjumeokHit: new Audio('./sound/skillHanjumeokHit.wav'),
-    skillHanjumeokSplash: new Audio('./sound/skillHanjumeokSplash.ogg'),
-    skillMoon: new Audio('./sound/skillMoon.ogg'),
-    skillMoonAttack: new Audio('./sound/skillMoonAttack.ogg'),
-  }
-
-  static enemyDie = {
-    enemyDieMeteorite1: new Audio('./sound/enemyDieMeteorite1.wav'),
-    enemyDieMeteorite2: new Audio('./sound/enemyDieMeteorite2.wav'),
-    enemyDieMeteorite3: new Audio('./sound/enemyDieMeteorite3.wav'),
-    enemyDieMeteorite4: new Audio('./sound/enemyDieMeteorite4.wav'),
-    enemyDieMeteorite5: new Audio('./sound/enemyDieMeteorite5.wav'),
-    enemyDieMeteoriteBomb: new Audio('./sound/enemyDieMeteoriteBomb.wav'),
-    enemyDieMeteoriteStone: new Audio('./sound/enemyDieMeteoriteStone.wav'),
-    enemyDieMetoriteRed: new Audio('./sound/enemyDieMeteoriteRed.wav'),
-    enemyDieSpaceCar: new Audio('./sound/enemyDieSpaceCar.wav'),
-    enemyDieSpaceComet: new Audio('./sound/enemyDieSpaceComet.wav'),
-    enemyDieSpaceEnergy: new Audio('./sound/enemyDieSpaceEnergy.wav'),
-    enemyDieSpaceGamjigi: new Audio('./sound/enemyDieSpaceGamjigi.wav'),
-    enemyDieSpaceLight: new Audio('./sound/enemyDieSpaceLight.wav'),
-    enemyDieSpaceRocket: new Audio('./sound/enemyDieSpaceRocket.wav'),
-    enemyDieSpaceSmall: new Audio('./sound/enemyDieSpaceSmall.wav'),
-    enemyDieSpaceSquare: new Audio('./sound/enemyDieSpaceSquare.wav'),
-    enemyDieSpaceSusong: new Audio('./sound/enemyDieSpaceSusong.ogg'),
-    enemyDieJemulDrill: new Audio('./sound/enemyDieJemulDrill.wav'),
-    enemyDieJemulEnergyBolt: new Audio('./sound/enemyDieJemulEnergyBolt.wav'),
-    enemyDieJemulHellAir: new Audio('./sound/enemyDieJemulHellAir.ogg'),
-    enemyDieJemulHellShip: new Audio('./sound/enemyDieJemulHellShip.ogg'),
-    enemyDieJemulRocket: new Audio('./sound/enemyDieJemulRocket.wav'),
-    enemyDieJemulSpike: new Audio('./sound/enemyDieJemulSpike.wav'),
-    enemyDieJemulBoss: new Audio('./sound/enemyDieJemulBoss.ogg'),
-    enemyDieJemulBossEye: new Audio('./sound/enemyDieJemulBossEye.ogg'),
-    enemyDieJemulRedJewel: new Audio('./sound/enemyDieJemulRedJewel.wav'),
-    enemyDieJemulRedAir: new Audio('./sound/enemyDieJemulRedAir.wav'),
-    enemyDieDonggrami1: new Audio('./sound/enemyDieDonggrami1.wav'),
-    enemyDieDonggrami2: new Audio('./sound/enemyDieDonggrami2.wav'),
-  }
-
-  static enemyAttack = {
-    jemulEnergyBoltAttack: new Audio('./sound/enemyJemulEnergyBoltAttack.wav'),
-    jemulHellDrillAttack: new Audio('./sound/enemyJemulHellDrillAttack.wav'),
-    jemulBossAttack: new Audio('./sound/enemyJemulBossAttackLaser.ogg'),
-    jemulBossAttack2: new Audio('./sound/enemyJemulBossAttackLaser2.ogg'),
-    jemulBossAttack3: new Audio('./sound/enemyJemulBossAttackLaser3.ogg')
-  }
-
-  static round = {
-    r1_4_message1: new Audio('./sound/round1_4_message1.ogg'),
-    r1_4_message2: new Audio('./sound/round1_4_message2.ogg'),
-    r1_4_jemulstar: new Audio('./sound/round1_4_jemulstar.ogg'),
-    r1_4_jemulstart: new Audio('./sound/round1_4_jemulstart.ogg'),
-    r1_4_jemulrun: new Audio('./sound/round1_4_jemulrun.ogg')
-  }
-
-  static music = {
-    music01_space_void: new Audio('./music/music01_space_void.ogg'),
-    music02_meteorite_zone_field: new Audio('./music/music02_meteorite_zone_field.ogg'),
-    music03_meteorite_zone_battle: new Audio('./music/music03_meteorite_zone_battle.ogg'),
-    music04_meteorite_zone_red: new Audio('./music/music04_meteorite_zone_red.ogg'),
-    music05_space_tour: new Audio('./music/music05_space_tour.ogg'),
-    music06_round1_boss_thema: new Audio('./music/music06_round1_boss_thema.ogg'),
-    music07_paran_planet_entry: new Audio('./music/music07_paran_planet_entry.ogg'),
-    music08_round1_4_jemul: new Audio('./music/music08_round1_4_jemul.ogg')
-  }
-}
-
-export class soundSystem {
-  static audioContext = new AudioContext()
-  static masterGain = this.audioContext.createGain()
-  static soundGain = this.audioContext.createGain()
-  static musicGain = this.audioContext.createGain()
-  static fadeGain = this.audioContext.createGain()
-  static musicEchoGain = this.audioContext.createGain()
-  static musicEchoDelay = this.audioContext.createDelay()
-  static currentMusic = null
-  static nextMusic = null
-  static musicPaused = false
-  static soundOn = true
-  static musicOn = true
-
-  static fadeTime = 0
 
   /**
-   * 사운드 시스템 초기화 함수. 해당 함수를 실행해야 제대로 사운드가 출력됩니다.
+   * 오디오 객체 저장용도
+   * @type {Map<string, HTMLAudioElement | any>}
    */
-  static init () {
-    this.masterGain.gain.value = 1
-    this.soundGain.gain.value = 1
-    this.musicGain.gain.value = 1
-    this.fadeGain.gain.value = 1
-    this.musicEchoGain.gain.value = 0.3
-    this.musicEchoDelay.delayTime.value = 0.2
-
-    this.soundGain.connect(this.masterGain)
-    this.musicGain.connect(this.fadeGain).connect(this.masterGain)
-    this.musicGain.connect(this.fadeGain).connect(this.musicEchoDelay).connect(this.musicEchoGain).connect(this.masterGain)
-    this.masterGain.connect(this.audioContext.destination)
-    this.connect()
-  }
+  cacheAudio = new Map()
 
   /**
-   * 배경음악등을 audioContext에서 출력되도록 연결합니다.
-   * 효과음은 일부만 적용 (다 하기 너무 귀찮다.)
+   * 오디오 객체를 오디오 컨텍스트에 연결하기 위한 노드를 저장하기 위한 용도
+   * @type {Map<string, MediaElementAudioSourceNode}
    */
-  static connect () {
-    // soundFile 객체 구조를 기준으로 모두 오디오컨텍스트에 연결함.
-    let con = (soundObject) => {
-      for (let f in soundObject) {
-        if (f === 'music') continue // 음악은 사운드에 해당하지 않음. 그래서 continue
-
-        let soundObj2 = soundObject[f]
-        for (let f2 in soundObj2) {
-          let audioData = soundObj2[f2]
-          this.audioContext.createMediaElementSource(audioData).connect(this.soundGain)
-        }
-      }
-    }
-    con(soundFile)
-
-    // 배경음악
-    this.audioContext.createMediaElementSource(soundFile.music.music01_space_void).connect(this.musicGain)
-    this.audioContext.createMediaElementSource(soundFile.music.music02_meteorite_zone_field).connect(this.musicGain)
-    this.audioContext.createMediaElementSource(soundFile.music.music03_meteorite_zone_battle).connect(this.musicGain)
-    this.audioContext.createMediaElementSource(soundFile.music.music04_meteorite_zone_red).connect(this.musicGain)
-    this.audioContext.createMediaElementSource(soundFile.music.music05_space_tour).connect(this.musicGain)
-    this.audioContext.createMediaElementSource(soundFile.music.music06_round1_boss_thema).connect(this.musicGain)
-    this.audioContext.createMediaElementSource(soundFile.music.music07_paran_planet_entry).connect(this.musicGain)
-    this.audioContext.createMediaElementSource(soundFile.music.music08_round1_4_jemul).connect(this.musicGain)
-  }
-
+  cacheAudioNode = new Map()
 
   /**
-   * 마스터 게인(볼륨)을 수정합니다. 최대 2까지 가능 (1 = 100% 기본값)
-   * 마스터 볼륨은 특별하게 150%까지 적용할 수 있습니다. 소리가 작게 들린다면 이 값을 올려주세요.
-   * @param {number} value 0 ~ 2 범위의 게인값
+   * 오디오 버퍼 저장용도 (참고: 버퍼는 실행이 될 때 오디오 컨텍스트에 연결됩니다.)
+   * @type {Map<string, AudioBuffer | any>}
    */
-  static setMasterGain (value) {
-    if (value >= 0 && value <= 1.5) {
-      this.masterGain.gain.value = value
-    }
-  }
-
-  static MASTER_GAIN_MAX = 1.5 
-  static SOUND_GAIN_MAX = 1
-  static TYPE_MASTER_VOLUME = 0
-  static TYPE_SOUND_ON = 1
-  static TYPE_SOUND_VOLUME = 2
-  static TYPE_MUSIC_ON = 3
-  static TYPE_MUSIC_VOLUME = 4
-
+  cacheBuffer = new Map()
+  
   /**
-   * tamshooter4 옵션 메뉴에서 사운드 관련 옵션 값을 수정하고 적용할 때 사용하는 함수
-   * @param {number} optionTypeNumber soundSystem에 있는 type 상수
-   * @param {number} value 적용할 값(참고: 옵션 값 그대로 입력해주세요.). null일경우 정해진 규칙에 따라 값이 변화
+   * 오디오 버퍼를 요청할 때 중복으로 요청하지 않도록 하기 위한 처리값
+   * @type {Map<string, boolean>}
    */
-  static setOption (optionTypeNumber, value = null) {
-    // 만약 value값이 1.5보다 크면, 볼륨 값이 지나치게 클 수 있으므로 게인 설정 값에 맞게 100으로 나눕니다.
-    if (value && typeof value === "number" && value >= this.MASTER_GAIN_MAX) {
-      value = value / 100
-    }
-
-    switch (optionTypeNumber) {
-      case this.TYPE_MASTER_VOLUME:
-        if (value != null && value >= 0 && value <= this.MASTER_GAIN_MAX) {
-          this.masterGain.gain.value = value
-        } else {
-          // 소수점의 정확한 계산을 위해 강제로 소수점 자리수를 자름
-          this.masterGain.gain.value = Number((this.masterGain.gain.value + 0.1).toFixed(1))
-          if (this.masterGain.gain.value > this.MASTER_GAIN_MAX) {
-            this.masterGain.gain.value = 0
-          }
-        }
-        break
-      case this.TYPE_SOUND_ON:
-        // 만약 옵션값이 true 또는 false로 전달된다면 이를 반영하고, 아닐경우 on/off 상태를 변경합니다.
-        if (typeof value === 'boolean') {
-          this.soundOn = value
-        } else {
-          this.soundOn = !this.soundOn
-        }
-        break
-      case this.TYPE_SOUND_VOLUME:
-        if (value != null && value >= 0 & value <= this.SOUND_GAIN_MAX) {
-          this.soundGain.gain.value = value
-        } else {
-          this.soundGain.gain.value = Number((this.soundGain.gain.value + 0.1).toFixed(1))
-          if (this.soundGain.gain.value > this.SOUND_GAIN_MAX) {
-            this.soundGain.gain.value = 0
-          }
-        }
-        break
-      case this.TYPE_MUSIC_ON:
-        // 만약 옵션값이 true 또는 false로 전달된다면 이를 반영하고, 아닐경우 on/off 상태를 변경합니다.
-        if (typeof value === 'boolean') {
-          this.musicOn = value
-        } else {
-          this.musicOn = !this.musicOn
-        }
-        break
-      case this.TYPE_MUSIC_VOLUME:
-        if (value != null && value >= 0 & value <= this.SOUND_GAIN_MAX) {
-          this.musicGain.gain.value = value
-        } else {
-          this.musicGain.gain.value = Number((this.musicGain.gain.value + 0.1).toFixed(1))
-          if (this.musicGain.gain.value > this.SOUND_GAIN_MAX) {
-            this.musicGain.gain.value = 0
-          }
-        }
-        break
-    }
-  }
+  cacheRequest = new Map()
 
   /**
-   * 각 옵션의 값을 얻습니다. 옵션의 값들은 객체로 구성됨
-   * @returns 
-   */
-  static getOption () {
-    return {
-      masterVolume: Math.round(this.masterGain.gain.value * 100),
-      soundOn: this.soundOn,
-      soundVolume: Math.round(this.soundGain.gain.value * 100),
-      musicOn: this.musicOn,
-      musicVolume: Math.round(this.musicGain.gain.value * 100),
-    }
-  }
-
-  /**
-   * 사운드(효과음) 게인(볼륨)을 수정합니다.
-   * @param {number} value 0 ~ 1 범위의 게인값
-   */
-  static setSoundGain (value) {
-    if (value >= 0 && value <= 1) {
-      this.soundGain.gain.value = value
-    }
-  }
-
-  /**
-   * 배경음악 게인(볼륨)을 수정합니다.
-   * @param {number} value 0 ~ 1 범위의 게인값
-   */
-  static setMusicGain (value) {
-    if (value >= 0 && value <= 1) {
-      this.musicGain.gain.value = value
-    }
-  }
-
-  /**
-   * 사운드 재생 함수 >> 주의: 절대로 audio객체의 play 함수를 직접 호출하지 말고, 이 함수를 사용하세요.
-   * 참고: 음악은, musicPlay 함수를 사용해주세요. play 함수는 효과음 전용입니다.
-   * @param {HTMLAudioElement} soundFile soundFile 객체의 static 변수
-   */
-  static play (soundFile) {
-    // 사운드가 꺼질경우, 사운드를 출력하지 않음.
-    if (!this.soundOn) return
-    this.audioContext.resume()
-
-    soundFile.volume = this.soundGain.gain.value
-    
-    // 사운드가 정지 상태일때는 play() 함수를 호출합니다.
-    // 그렇지 않으면 currentTime을 0으로 설정해서 처음부터 다시 재생합니다.
-    // 절대로 pause() 를 호출한 직후 play() 를 호출하지 마세요. 이 경우 사운드 재생 오류가 발생합니다.
-    if (soundFile.paused) {
-      soundFile.play()
-    } else {
-      soundFile.currentTime = 0
-    }
-  }
-
-  /**
-   * 음악을 재생하고, 음악의 일시정지 상태를 해제합니다.
+   * 사운드 시스템 생성 (웹 오디오 모드 기본설정)
    * 
-   * (음악이 꺼져있다면, 일시정지는 해제되어도 음악은 재생되지 않습니다.)
-   * @param {HTMLAudioElement} soundFile 음악 파일
-   * @param {number} currentTime 재생할 오디오의 현재 시간
-   * @returns 
+   * 만약, 웹 오디오를 사용하지 않는다면 일부 기능을 사용할 수 없습니다.
+   * 
+   * 맨 처음 페이지를 로드할 때 사용자의 상호작용(터치, 클릭, 키입력등...) 없이 웹 오디오를 실행할 수 없습니다.
+   * 따라서 사용자와의 상호작용을 받는 이벤트 부분에서 audioContextResume 함수를 사용해주세요.
+   * 
+   * 경고: 웹 오디오를 중간에 끌 수 없습니다. 그렇게 하려면 페이지를 새로고침하고 사운드 객체를 다시 만드세요.
+   * @param {boolean} isWebAudioMode 웹 오디오 사용 여부. 기본값은 true. 이 값을 false로 할 경우, 웹 오디오를 사용하지 않습니다.
    */
-  static musicPlay (soundFile, currentTime = null) {
-    this.musicPaused = false // 음악 일시정지 상태를 해제
+  constructor (isWebAudioMode = true) {
+    // 웹 오디오 모드가 아니라면 생성자의 코드는 진행되지 않고 무시됩니다.
+    // 물론 나머지 기능은 사용할 수 있습니다.
+    if (!isWebAudioMode) return
 
-    if (soundFile == null) return // 음악파일이 없다면 함수 종료
+    this.audioContext = new AudioContext()
+    this.isWebAudioMode = isWebAudioMode
 
-    this.currentMusicChange(soundFile)
-    if (currentTime != null) {
-      soundFile.currentTime = currentTime
-    }
-
-    // 음악설정이 꺼져있는 경우, 음악을 출력하지 않음.
-    if (!this.musicOn) return
+    // 몇몇 게인 추가 및 연결
+    this.connectGain()
   }
 
-  /**
-   * 현재 재생되고 있는 음악의 시간을 얻어옵니다.
-   * @returns {number}
+  /** 
+   * 오디오 컨텍스트가 동작할 수 있도록 재개합니다.
+   * 
+   * 경고: 반드시 사용자와의 상호작용(터치, 키입력, 클릭 등...)을 한 후에 이 함수를 사용해야만 합니다.
    */
-  static getMusicCurrentTime () {
-    if (this.currentMusic != null) {
-      return this.currentMusic.currentTime
+  audioContextResume () {
+    this.audioContext.resume()
+  }
+
+  /** 
+   * 오디오 컨텍스트의 상태가 suspend인지를 알아보는 함수 
+   * 
+   * 만약 이것이 suspend라면, audioContextResume 함수를 사용해서 해당 컨텍스트를 재개해야합니다.
+   */
+  getIsAudioSuspended () {
+    if (this.audioContext.state === 'suspended') {
+      return true
     } else {
-      return 0
+      return false
     }
   }
 
   /**
-   * 음악을 페이드 인/아웃 하면서 변경합니다. 배경음악만 적용 가능 (효과음은 audioContext에 연결되어있지 않아 아무 효과 없음)
-   * @param {HTMLAudioElement} soundFile 사운드 파일
-   * @param {number} time 페이드 시간(인/아웃 포함), 단위: 초
+   * 오디오 컨텍스트에 사용할 몇가지 추가 게인들을 로드합니다.
+   * 참고: 연결 공식은 고정되어있으며, 에코 기능은 꺼져있어도 연결 상태가 해제되지 않습니다.
    */
-  static musicChangeFade (soundFile, time = 1) {
-    if (soundFile != null && this.currentMusic != soundFile) {
-      if (this.currentMusic != null) {
-        // time 시간동안 페이드 아웃이 진행됩니다.
-        // 페이드 인은, process에서 구현합니다.
-        this.fadeTime = time
-        this.fadeGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + time)
-        this.nextMusic = soundFile
+  connectGain () {
+    /** 이 시스템에서 사용하는 오디오 노드의 집합 */
+    this.audioNode = {
+      /** 이 노드는 오디오(효과음 전용)가 맨 처음 연결되는 노드입니다. */
+      firstGain: this.audioContext.createGain(),
+      echoGain: this.audioContext.createGain(),
+      feedBackGain: this.audioContext.createGain(),
+      echoDelay: this.audioContext.createDelay(),
+
+      /** 이 노드는 오디오가 맨 마지막에 연결되는 노드입니다. 이 노드는 audioContext.destination에 연결됩니다. */
+      masterGain: this.audioContext.createGain(),
+
+      /** 이 노드는 음악을 재생하는 오디오가 맨 처음 연결되는 노드입니다. */
+      musicFirstGain: this.audioContext.createGain(),
+      musicEchoGain: this.audioContext.createGain(),
+      musicFeedBackGain: this.audioContext.createGain(),
+      musicEchoDelay: this.audioContext.createDelay()
+    }
+
+    // 초기값 설정
+    this.audioNode.echoGain.gain.value = 0
+    this.audioNode.echoDelay.delayTime.value = 0
+    this.audioNode.feedBackGain.gain.value = 0
+    this.audioNode.musicEchoGain.gain.value = 0
+    this.audioNode.musicFeedBackGain.gain.value = 0
+    this.audioNode.musicEchoDelay.delayTime.value = 0
+    this.audioNode.masterGain.gain.value = 1
+    this.audioNode.firstGain.gain.value = 1
+    this.audioNode.musicFirstGain.gain.value = 1
+
+    // 연결 설정
+    this.audioNode.firstGain.connect(this.audioNode.masterGain) // 원본 소리
+    this.audioNode.firstGain.connect(this.audioNode.echoGain) // 에코 연결
+    this.audioNode.echoGain.connect(this.audioNode.echoDelay).connect(this.audioNode.masterGain) // 에코 효과
+    this.audioNode.echoDelay.connect(this.audioNode.feedBackGain).connect(this.audioNode.echoDelay) // 에코 피드백 전달
+    this.audioNode.feedBackGain.connect(this.audioNode.masterGain) // 피드벡 게인
+    this.audioNode.masterGain.connect(this.audioContext.destination) // 최종 지점
+
+    // 음악 연결 설정
+    this.audioNode.musicFirstGain.connect(this.audioNode.masterGain) // 원본 소리
+    this.audioNode.musicFirstGain.connect(this.audioNode.musicEchoGain) // 음악 에코 연결
+    this.audioNode.musicEchoGain.connect(this.audioNode.musicEchoDelay).connect(this.audioNode.masterGain) // 음악 에코 효과
+    this.audioNode.musicEchoDelay.connect(this.audioNode.musicFeedBackGain).connect(this.audioNode.musicEchoDelay) // 음악 에코 피드백 전달
+    this.audioNode.musicFeedBackGain.connect(this.audioNode.masterGain) // 음악 피드벡 게인
+  }
+  
+
+  /** 웹 오디오를 사용중인지에 대한 여부 (해당 엔진 한정) */
+  getWebAudioMode () {
+    return this.isWebAudioMode
+  }
+
+  /** 
+   * (사운드시스템의) 캐시 오디오 객체를 가져옵니다.
+   * 
+   * 만약 캐시에 오디오 객체가 없다면, 새로 오디오 객체를 생성합니다.
+   * 
+   * 경고: 오디오 경로가 잘못되었는지는 사용자가 스스로 판단해야 합니다. 잘못된 경로를 사용하면 에러가 날 수 있습니다.
+   * @param {string} audioSrc 오디오 파일의 경로 (이 값은 고유한 키로 사용됩니다.)
+   * @returns {HTMLAudioElement}
+   */
+  getCacheAudio (audioSrc) {
+    if (this.cacheAudio.has(audioSrc)) {
+      return this.cacheAudio.get(audioSrc)
+    } else {
+      let newAudio = new Audio(audioSrc)
+      this.cacheAudio.set(audioSrc, newAudio)
+      let newNode = this.audioContext.createMediaElementSource(newAudio)
+      newNode.connect(this.audioNode.firstGain)
+      this.cacheAudioNode.set(audioSrc, newNode) // 컨텍스트에 연결할 오디오 노드
+      return this.cacheAudio.get(audioSrc)
+    }
+  }
+
+  /** (사운드시스템의) 저장된 캐시 오디오 객체와 연관된 오디오 노드를 얻어옵니다. */
+  getCacheAudioNode (audioSrc) {
+    return this.cacheAudioNode.get(audioSrc)
+  }
+
+  /**
+   * (사운드시슽메의) 캐시 버퍼(AudioBuffer)를 가져옵니다.
+   * 
+   * 경고: createBuffer로 버퍼를 먼저 등록해주세요. 여기서도 등록이 진행되기는 하나, 값을 바로 리턴받을 수 없습니다.
+   * 
+   * 이 버퍼는 bufferPlay를 통해 바로 오디오를 재생할 수 있습니다.
+   * 
+   * 경고: 오디오 경로가 잘못되었는지는 사용자가 스스로 판단해야 합니다. 잘못된 경로를 사용하면 에러가 날 수 있습니다.
+   * @param {string} audioSrc 오디오 파일의 경로 (이 값은 고유한 키로 사용됩니다.)
+   * @returns {AudioBuffer}
+   */
+  getCacheBuffer (audioSrc) {
+    if (this.cacheBuffer.has(audioSrc)) {
+      return this.cacheBuffer.get(audioSrc)
+    } else {
+      this.createBuffer(audioSrc)
+      return null
+    }
+  }
+
+  /**
+   * 이 시스템에서 사용할 오디오 버퍼를 등록합니다.
+   * 
+   * 해당 오디오의 경로를 입력하면 그 오디오를 fetch함수를 사용하여 비동기적으로 로드한 후
+   * audioContext의 디코딩 과정을 거쳐 완전히 버퍼의 등록됩니다.
+   * 
+   * 컴퓨터 성능에 따라 일부 시간이 소요될 수 있으므로, 가급적이면 게임을 시작할 때 미리 등록해주세요.
+   * 
+   * 등록되지 않은 버퍼를 재생하려고 하면 아무 일도 일어나지 않습니다.
+   * @param {string} audioSrc 오디오 파일의 경로 (이 값은 고유한 키로 사용됩니다.)
+   */
+  async createBuffer (audioSrc) {
+    // 중복 요청을 방지하기 위한 코드
+    // 해당 버퍼를 이미 가지고 있다면 이 함수는 실행되지 않습니다.
+    if (this.cacheRequest.has(audioSrc)) return
+
+    this.cacheRequest.set(audioSrc, true) // 중복 방지용 데이터 등록
+
+    // 오디오 디코드 과정 진행
+    let getFile = await (await fetch(audioSrc)).arrayBuffer()
+    let decodeFile = await this.audioContext.decodeAudioData(getFile).then((getValue) => getValue)
+    this.cacheBuffer.set(audioSrc, decodeFile)
+  }
+
+  /**
+   * 해당 사운드를 재생합니다. 이것은 오디오 파일을 직접 재생하는것을 목표로 만들어졌습니다.
+   * 따라서 오디오 파일을 중복해서 재생할 수 없습니다. (이렇게하려면 buffer를 사용하거나 다른 이름의 오디오 파일을 만드세요.)
+   * 
+   * 오디오가 중간에 재생중인경우, 해당 오디오를 처음부터 다시 재생합니다.
+   * 
+   * 주의: targetAudio가 오디오객체일경우 이 오디오객체는 웹 오디오 효과가 적용되지 않습니다.
+   * 
+   * @param {HTMLMediaElement | string | AudioBuffer} audioSrc 오디오의 경로 또는 오디오버퍼
+   * string을 넣으면 해당 오디오 경로에 있는 파일을 직접 재생합니다.
+   * 
+   * AudioBuffer를 넣으면 playBuffer 함수를 대신 실행합니다.
+   */
+  play (audioSrc) {
+    let getAudio = null
+    let getNode = null
+    if (typeof audioSrc === 'string') {
+      getAudio = this.getCacheAudio(audioSrc)
+      getNode = this.getCacheAudioNode(audioSrc)
+    } else if (audioSrc instanceof HTMLAudioElement) {
+      getAudio = audioSrc
+    } else if (audioSrc instanceof AudioBuffer) {
+      // 버퍼 재생은 다른 함수에서 실행
+      this.playBuffer(audioSrc, effect)
+      return
+    }
+
+    // 일시정지되면, 다시 재생시키고, 이미 재생중이라면 처음부터 다시 재생합니다.
+    if (getAudio.paused) {
+      getAudio.play()
+    } else {
+      getAudio.currentTime = 0
+    }
+  }
+
+  /**
+   * 버퍼를 가진 사운드를 재생합니다. 중복 재생이 가능하기 때문에 한번에 여러 소리를 전부 출력하지 마세요.
+   * 
+   * 만약 버퍼가 등록되어있지 않다면, 자동으로 등록을 진행하긴 하나 해당 소리가 출력되지 않습니다.
+   * 
+   * 버퍼가 완전히 등록되어야만 해당 소리를 출력할 수 있습니다.
+   * 
+   * @param {string} audioSrc 오디오 파일의 경로 (이 값은 고유한 키로 사용됩니다.)
+   * @param {number} start 오디오 재생의 시작지점
+   * @param {number} duration 오디오 재생 길이 (오디오 버퍼의 최대 길이를 초과할 수 없음),
+   * 설정하지 않을경우 해당 오디오을 전체길이로 재생
+   */
+  playBuffer (audioSrc, start = 0, duration = 0) {
+    // 오디오버퍼가 있고, 오디오 버퍼의 형식이 맞을때만 이 함수가 실행됩니다.
+    let getBuffer = this.getCacheBuffer(audioSrc)
+    if (getBuffer == null) return // 버퍼가 없다면 실행 불가능
+
+    if (start < 0) start = 0 // 시작시건 버그 금지
+    if (duration <= 0) duration = getBuffer.duration // duration 기본값 설정
+
+    // 버퍼 소스 생성
+    let bufferSource = this.audioContext.createBufferSource()
+    bufferSource.buffer = getBuffer
+
+    // 해당 버퍼를 오디오컨텍스트에 연결해야 합니다.
+    bufferSource.connect(this.audioNode.firstGain)
+    bufferSource.start(this.audioContext.currentTime, start, duration)
+  }
+
+  /**
+   * 현재 재생중인 음악의 목록입니다. 
+   * @type {any[]} 
+   */
+  musicTrack = []
+
+  /**
+   * 해당 사운드를 음악처럼 취급해서 재생합니다. (효과음은 play 함수를 사용해주세요.)
+   * 이 함수를 사용할경우, 루프를 사용하는것으로 간주 (반복재생)
+   * 
+   * 배경음은 audio 객체를 직접 사용하여 출력할 수 없습니다.
+   * 
+   * 여러개의 곡을 동시 재생할 수는 있지만, 로딩 능력에 따라 싱크 오류가 발생 할 수 있습니다. (싱크 오류는 막을 수 없음.)
+   * 따라서, 확실하게 동시에 재생되어야 한다면 musicBuffer 함수를 이용해 버퍼를 만든 후에 재생하세요.
+   * 
+   * 경고: 오디오 객체를 넣을 경우, 해당 오디오는 에코 효과를 적용하지 않고 음악을 재생합니다.
+   * 
+   * 효과음을 이것으로 출력하지 마세요. 왜냐하면, 한번 음악을 출력하면 그것으로는 효과음을 출력할 수 없도록 재연결 작업이 진행됩니다.
+   * 
+   * @param {string | HTMLMediaElement | AudioBuffer} audioSrc 오디오의 경로 또는 오디오 객체 (버퍼는 사용불가, 대신 musicBuffer를 사용해주세요.)
+   */
+  musicPlay (audioSrc) {
+    if (typeof audioSrc === 'number' || typeof audioSrc === 'string') {
+      let getMusic = this.getCacheAudio(audioSrc)
+      let getNode = this.getCacheAudioNode(audioSrc)
+      if (getMusic && getNode != null) {
+        getNode.disconnect()
+        getNode.connect(this.audioNode.musicFirstGain)
+        getMusic.play()
+        getMusic.loop = true
+        this.musicTrack.push(getMusic)
+      }
+    } else if (audioSrc instanceof HTMLAudioElement) {
+      audioSrc.loop = true
+      audioSrc.play()
+      this.musicTrack.push(audioSrc)
+    }
+  }
+
+  /** 오디오 버퍼를 음악으로 재생합니다. (루프는 강제 적용) */
+  musicBuffer (audioSrc, start, end) {
+
+  }
+
+  /** 현재 재생중인 모든 음악 정지, 그래도 재생중인 트랙의 모든 데이터는 지워집니다. */
+  musicStop () {
+    for (let i = 0; i < this.musicTrack.length; i++) {
+      let currentMusic = this.musicTrack[i]
+      if (currentMusic instanceof HTMLAudioElement) {
+        currentMusic.currentTime = 0
+        currentMusic.pause()
+      }
+    }
+
+    this.musicTrack.length = 0
+  }
+
+  /** 현재 재생중인 모든 음악 일시정지, 단 이 경우, 재생중인 트랙에서 삭제되지 않습니다. */
+  musicPause () {
+    for (let i = 0; i <this.musicTrack.length; i++) {
+      let currentMusic = this.musicTrack[i]
+      if (currentMusic instanceof HTMLAudioElement) {
+        currentMusic.pause()
       }
     }
   }
 
-  static currentMusicChange (soundFile) {
-    if (soundFile != null && this.currentMusic != soundFile) {
-      if (this.currentMusic != null) {
-        // 현재 음악이 있다면 현재 음악 일시 정지
-        this.currentMusic.pause()
-      }
+  /**
+   * 에코를 설정합니다. (청각 테러 방지를 위해 설정값에 제한이 있습니다.)
+   * 
+   * 함수에 매개변수가 모두 없으면 에코 기능은 동작하지 않습니다. 
+   * 
+   * 특정한 변수 값만 넣고 싶다면, null을 넣거나 잘못된 값을 입력하세요.
+   * 
+   * @param {number} echoGain 에코 게인 (0 ~ 1)
+   * @param {number} feedBackGain 에코 피드백 게인 (0 ~ 1)
+   * @param {number} delay 지연시간
+   */
+  setEcho (echoGain = -1, feedBackGain = -1, delay = -1) {
+    if (echoGain >= 0 && echoGain <= 1) this.audioNode.echoGain.gain.value = echoGain
+    if (feedBackGain >= 0 && feedBackGain <= 1) this.audioNode.feedBackGain.gain.value = feedBackGain
+    if (delay >= 0) this.audioNode.echoDelay.delayTime.value = delay
+  }
 
-      // 새로운 파일로 교체
-      this.currentMusic = soundFile
+  /** 에코 기능을 끕니다. 에코 지연시간도 초기화됩니다. */
+  setEchoDisable () {
+    this.audioNode.echoGain.gain.value = 0
+    this.audioNode.feedBackGain.gain.value = 0
+    this.audioNode.echoDelay.delayTime = 0
+  }
+
+  /** 에코 값을 얻어옴. (주의: 노드를 리턴하지 않고 각 밸류값만 얻어옵니다.) */
+  getEchoValue () {
+    return {
+      echo: this.audioNode.echoGain.gain.value,
+      feedback: this.audioNode.feedBackGain.gain.value,
+      delay: this.audioNode.echoDelay.delayTime.value
     }
   }
 
-  static musicPause () {
-    this.musicPaused = true
+  /**
+   * 음악의 에코를 설정합니다. (청각 테러 방지를 위해 설정값에 제한이 있습니다.)
+   * 
+   * 함수에 매개변수가 모두 없으면 에코 기능은 동작하지 않습니다.
+   * 
+   * 특정한 변수 값만 넣고 싶다면, null을 넣거나 잘못된 값을 입력하세요.
+   * 
+   * @param {number} echoGain 에코 게인 (0 ~ 1) 범위 외의 다른 값은 무시
+   * @param {number} feedBackGain 에코 피드백 게인 (0 ~ 1) 범위 외의 다른 값은 무시
+   * @param {number} delay 지연시간 (음수는 무시)
+   */
+  setMusicEcho (echoGain = 0, feedBackGain = 0, delay = 0) {
+    if (echoGain >= 0 && echoGain <= 1) this.audioNode.musicEchoGain.gain.value = echoGain
+    if (feedBackGain >= 0 && feedBackGain <= 1) this.audioNode.musicFeedBackGain.gain.value = feedBackGain
+    if (delay >= 0) this.audioNode.musicEchoDelay.delayTime.value = delay
   }
 
-  static musicStop () {
-    if (this.currentMusic != null) {
-      this.currentMusic.pause()
-      this.currentMusic.currentTime = 0
-      this.currentMusic = null
-    }
+  /** 음악의 에코를 끕니다. (음악 에코 지연시간도 초기화됩니다.) */
+  setMusicEchoDisable () {
+    this.audioNode.musicEchoGain.gain.value = 0
+    this.audioNode.musicFeedBackGain.gain.value = 0
+    this.audioNode.musicEchoDelay.delayTime.value = 0
   }
 
-  static musicProcess () {
-    // 음악 설정이 꺼져있지만, 현재 음악이 재생중인경우, 강제로 해당 음악을 정지
-    if (!this.musicOn && this.currentMusic != null && !this.currentMusic.paused) {
-      this.currentMusic.pause()
-    }
-
-    // 음악 설정이 켜져있는 경우
-    if (this.musicOn) {
-      // 음악이 일시정지되고, 음악이 있으며 음악이 재생중인경우 일시정지
-      if (this.musicPaused && this.currentMusic != null && !this.currentMusic.paused) {
-        this.currentMusic.pause()
-      } else if(!this.musicPaused && this.currentMusic != null && this.currentMusic.paused) {
-        // 음악이 정해져있으며, 플레이중이 아닐 때는 음악 재생
-        // 만약 음악파일이 null이면 음악과 관련된 처리를 하지 않음.
-        this.currentMusic.play()
-      }
-    }
-
-    // 음악 페이드 볼륨이 0이 된경우 (음악 on/off 상관없이 페이드 효과는 적용됩니다.)
-    if (this.fadeGain.gain.value === 0) {
-      this.currentMusicChange(this.nextMusic)
-      this.fadeGain.gain.linearRampToValueAtTime(1, this.audioContext.currentTime + this.fadeTime)
+  /** 음악에서 사용하는 에코 값을 얻어옴. (주의: 노드를 리턴하지 않고 각 밸류값만 얻어옵니다.) */
+  getMusicEchoValue () {
+    return {
+      echo: this.audioNode.musicEchoGain.gain.value,
+      feedback: this.audioNode.musicFeedBackGain.gain.value,
+      delay: this.audioNode.musicEchoDelay.delayTime.value
     }
   }
-
 }
-soundSystem.init()

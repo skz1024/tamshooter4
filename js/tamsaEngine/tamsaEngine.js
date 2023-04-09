@@ -1,6 +1,126 @@
 import { ControlSystem } from "./control.js";
 import { GraphicSystem } from "./graphic.js";
-// import { soundSystem } from "./sound.js";
+import { SoundSystem } from "./sound.js";
+
+/**
+ * tamsaEngine에서 사용하는 메뉴 구성을 간단하게 만들기 위한 클래스
+ */
+class BiosMenu {
+  /**
+   * 바이오스 메뉴를 간단하게 만들기 위한 함수...
+   * 
+   * 메뉴는 위아래 아래로 내려가는 방식입니다.
+   * 
+   * 텍스트 수정은 textEdit로 해주세요.
+   * @param {GraphicSystem} graphic 그래픽 출력기 (텍스트 출력 용도)
+   * @param {ControlSystem} control 조작기 (키보드 및 조작 기능 인식 용도)
+   */
+  constructor(graphic, control) {
+    if (!graphic && !control) {
+      console.warn('please decide graphic and control')
+      return
+    }
+
+    this.graphic = graphic
+    this.control = control
+    this.headerField = []
+    this.menuField = []
+    this.footerField = []
+
+    /** 메뉴의 커서 번호 */
+    this.cursor = 0
+  }
+
+  /**
+   * @param {string[]} headerField 머리말(배열로 한줄씩 표시)
+   * @param {string[]} menuField 메뉴(배열로 한줄씩 표시) 참고: 이 필드는 자동으로 2칸 들여쓰기를 합니다.(화살표 표시를 위해서)
+   * @param {string[]} footerField 꼬리말(배열로 한줄씩 표시)
+   */
+  textEdit (headerField = [], menuField = [], footerField = []) {
+    this.headerField = headerField
+    this.menuField = menuField
+    this.footerField = footerField
+  }
+
+  /**
+   * 선택한 메뉴가 몇번인지를 알아봅니다.
+   * @returns {number} 메뉴 번호(0부터...) 아무것도 없다면 -1
+   */
+  getSelectMenu () {
+    let buttonUp = this.control.getButtonInput(this.control.buttonIndex.UP)
+    let buttonDown = this.control.getButtonInput(this.control.buttonIndex.DOWN)
+    let buttonA = this.control.getButtonInput(this.control.buttonIndex.A)
+    let buttonStart = this.control.getButtonInput(this.control.buttonIndex.START)
+
+    let isEnter = buttonA | buttonStart
+
+    if (buttonUp && this.cursor > 0) {
+      this.cursor--
+    } else if (buttonDown && this.cursor < this.menuField.length - 1) {
+      this.cursor++
+    }
+
+    if (isEnter) {
+      return this.cursor
+    } else {
+      return -1
+    }
+  }
+
+  /** 글자 출력 함수 */
+  display () {
+    let line = 0
+    for (let i = 0; i < this.headerField.length; i++) {
+      this.textOutput(this.headerField[i], line)
+      line++
+    }
+    for (let i = 0; i < this.menuField.length; i++) {
+      this.textOutput('  ' + this.menuField[i], line)
+
+      // 화살표 출력
+      if (this.cursor === i) this.textOutput('->', line)
+
+      line++
+    }
+    for (let i = 0; i < this.footerField.length; i++) {
+      this.textOutput(this.footerField[i], line)
+      line++
+    }
+  }
+
+  /**
+   * 바이오스에 출력할 글자를 위치와 함께 지정합니다. (고정폭 폰트)
+   * 
+   * 줄 구분을 위하여 y축은 2픽셀만큼 공백을 추가합니다.
+   * @param {string} text 입력할 텍스트 (가능하다면 한줄당 50글자 미만으로 해주세요.)
+   * @param {number} yLine 출력할 시작 지점 텍스트의 y축 줄번호
+   */
+  textOutput (text = '', yLine = 0) {
+    const wordWidth = GraphicSystem.bitmapFont.width * 2
+    const wordHeight = GraphicSystem.bitmapFont.height * 2
+    const marginWidth = 8
+    const marginHeight = 8
+    const lineSpace = 4
+
+    let xMaxWord = Math.floor(this.graphic.CANVAS_WIDTH / wordWidth) - 1
+    let y = yLine * (wordHeight + lineSpace)
+
+    let exceedWords = ''
+    let outputWords = text
+    if (text.length >= xMaxWord) {
+      exceedWords = text.slice(xMaxWord)
+      outputWords = text.slice(0, xMaxWord)
+    }
+
+    // 각 x와 y에 4의 값이 추가된건 여백 설정을 위한 것
+    this.graphic.bitmapFontDisplay(outputWords, marginWidth, y + marginHeight, wordWidth, wordHeight)
+    
+    // 초과되는 글자가 있으면 강제로 다음줄로 넘김(그러나 글자가 넘치도록 작성하는 것은 권장하지 않습니다.)
+    if (exceedWords.length >= 1) {
+      this.textOutput(exceedWords, yLine + 1)
+    }
+  }
+}
 
 /**
  * 탐슈터 4를 만들기 위한 탐사엔진입니다.
@@ -47,7 +167,9 @@ class TamsaEngine {
     this.controlSystem = new ControlSystem()
     this.controlSystem.addEventMouseTouch(this.graphicSystem.canvas)
 
-    document.body.style.backgroundColor = '#1F1F1F'
+    this.soundSystem = new SoundSystem()
+
+    document.body.style.backgroundColor = '#181818'
 
     // canvas를 바로 body 영역에 삽입
     if (isAutoBodyInsertCanvas) {
@@ -95,19 +217,25 @@ class TamsaEngine {
       this.controlSystem.createTouchButton()
     }
 
-    addEventListener('resize', () => {
-      // if (matchMedia('(orientation: landscape)').matches) {
-      //   this.controlSystem.touchButton.elementFirst.style.position = 'fixed'
-      //   this.controlSystem.touchButton.elementFirst.style.top = '0%'
-      //   this.controlSystem.touchButton.elementSecond.style.position = 'fixed'
-      //   this.controlSystem.touchButton.elementSecond.style.top = '50%'
-      // }
-    })
+    /** 
+     * 바이오스 메뉴 데이터
+     * 
+     * 바이오스에 표시할 내용은 따로 구현되어있습니다.
+     */
+    this.bios = {
+      /** @type {BiosMenu} */ mainMenu: new BiosMenu(this.graphicSystem, this.controlSystem),
+      /** @type {BiosMenu} */ inputTest: new BiosMenu(this.graphicSystem, this.controlSystem),
+      /** @type {BiosMenu} */ soundTest: new BiosMenu(this.graphicSystem, this.controlSystem),
+      /** 바이오스 메뉴 번호 */ menuNumber: 0,
+      /** 테스트용 버퍼 */ testAudioBuffer: null,
+      /** 테스트용 트랙번호 */ testAudioTrackNumber: 0
+    }
   }
 
   /** 1초마다 몇 프레임이 카운트 되었는지를 확인하고, 이를 fps에 반영합니다. */
   framePerSecondsCheck () {
     this.fps = this.frameCount
+    this.currentFps = this.fps
     this.frameCount = 0
   }
 
@@ -140,7 +268,7 @@ class TamsaEngine {
       this.frameCount++
 
       if (this.isBiosMode) {
-        this.bios()
+        this.biosProcess()
       } else {
         this.process()
         this.display()
@@ -169,10 +297,6 @@ class TamsaEngine {
   botting () {
     // 아무것도 없음
   }
-
-
-  biosMenuNumber = 0
-  biosMenuCursor = 1
   
   /** 
    * 엔진의 바이오스 메뉴: 이것이 실행되면 게임 로직은 동작하지 않습니다. 
@@ -185,48 +309,54 @@ class TamsaEngine {
    * 
    * 게임이 없는 경우(process와 display를 사용자가 직접 만들어야만 합니다.)
    */
-  bios () {
+  biosProcess () {
     // 검은색 화면 출력
+    // this.graphicSystem.fillRect(0, 0, this.graphicSystem.CANVAS_WIDTH, this.graphicSystem.CANVAS_HEIGHT, 'darkred')
     this.graphicSystem.fillRect(0, 0, this.graphicSystem.CANVAS_WIDTH, this.graphicSystem.CANVAS_HEIGHT, '#282828')
 
-    switch (this.biosMenuNumber) {
-      case 0: this.biosMainMenu(); break
-      case 1: this.biosInputTest(); break
+    switch (this.bios.menuNumber) {
+      case 0: this.biosProcessMainMenu(); break
+      case 1: this.biosProcessInputTest(); break
+      case 2: this.biosSoundTest(); break
+    }
+
+    // 오디오 컨텍스트 재개
+    this.autoMaticAudioContextResume()
+  }
+
+  autoMaticAudioContextResume () {
+    if (this.soundSystem.getIsAudioSuspended()) {
+      if (this.controlSystem.getMouseClick() || this.controlSystem.getButtonAnykey()) {
+        this.soundSystem.audioContextResume()
+      }
     }
   }
 
-  biosMainMenu () {  
-    // 텍스트 출력
-    this.biosTextOutput('TAMSAENGINE MENU', 0)
-    this.biosTextOutput('created by skz1024 - 2023/03/26', 1)
-    this.biosTextOutput('device: ' + this.currentDevice, 2)
+  biosProcessMainMenu () {
+    this.bios.mainMenu.textEdit(
+      ['TAMSAENGINE MENU',
+      'created by skz1024 - 2023/03/26',
+      'device: ' + this.currentDevice,
+      '',
+      'menu select'],
+      ['1. INPUT TEST (KEYBOARD, BUTTON, MOUSE, TOUCH)',
+      '2. SOUND TEST',
+      '3. GRAPHIC TEST',
+      '4. EXIT'],
+      ['',
+      'FPS: ' + this.currentFps]
+    )
 
-    this.biosTextOutput('menu select', 4)
-    this.biosTextOutput('  1. INPUT TEST (KEYBOARD, BUTTON, MOUSE, TOUCH)', 5)
-    this.biosTextOutput('  2. SOUND TEST', 6)
-    this.biosTextOutput('  3. GRAPHIC TEST', 7)
-    this.biosTextOutput('  4. EXIT', 8)
+    this.bios.mainMenu.display()
 
-    this.biosTextOutput('->', 5 + this.biosMenuCursor - 1)
-
-    const buttonDown = this.controlSystem.getButtonInput(this.controlSystem.buttonIndex.DOWN)
-    const buttonUp = this.controlSystem.getButtonInput(this.controlSystem.buttonIndex.UP)
-    const buttonStart = this.controlSystem.getButtonInput(this.controlSystem.buttonIndex.START)
-    const buttonA = this.controlSystem.getButtonInput(this.controlSystem.buttonIndex.A)
-
-    if (buttonDown && this.biosMenuCursor < 4) {
-      this.biosMenuCursor++
-    } else if (buttonUp && this.biosMenuCursor > 1) {
-      this.biosMenuCursor--
-    } else if ((buttonStart || buttonA)) {
-      this.biosMenuNumber = this.biosMenuCursor
+    let selectMenu = this.bios.mainMenu.getSelectMenu()
+    if (selectMenu >= 0) {
+      this.bios.menuNumber = selectMenu + 1
     }
   }
 
-  /**
-   * 바이오스의 inputTestMenu
-   */
-  biosInputTest () {
+  /** 바이오스의 inputTestMenu */
+  biosProcessInputTest () {
     const mouseX = this.controlSystem.getMouseX()
     const mouseY = this.controlSystem.getMouseY()
     const isMouseDown = this.controlSystem.getMouseDown()
@@ -255,9 +385,12 @@ class TamsaEngine {
     // keyboard only
     const keyESC = push[index.ESC] ? true : ''
     const keyF2 = push[index.F2] ? true : ''
-
-    // 텍스트 입력
-    const text = [
+    
+    this.bios.inputTest.textEdit(
+      [],
+      ['(L1 + L2 BUTTON TO EXIT or SELECT EXIT)',
+      'EXIT'],
+      ['',
       'MOUSE: ' + isMouseDown + ' (' + mouseX + ', ' + mouseY + ')',
       'BUTTON-KEYBOARD  -TEST',
       'LEFT  -'+ key[index.LEFT].padEnd(10, ' ') + '-' + buttonLeft,
@@ -273,23 +406,95 @@ class TamsaEngine {
       'R1    -'+ key[index.R1].padEnd(10, ' ') + '-' + buttonR1,
       'R2    -'+ key[index.R2].padEnd(10, ' ') + '-' + buttonR2,
       'START -'+ key[index.START].padEnd(10, ' ') + '-' + buttonStart,
-      'SELECT-'+ key[index.SELECT].padEnd(10, ' ') + '-' + buttonSelect,
-      ' ',
-      'KEYBOARD ONLY-TEST',
-      'ESC(CANCLE)-' + key[index.ESC].padEnd(6, ' ') + '-' + keyESC,
-      'F2(BIOS)   -' + key[index.F2].padEnd(6, ' ') + '-' + keyF2,
-      ' ',
-      'L1 + L2 BUTTON TO EXIT'
-    ]
+      'SELECT-'+ key[index.SELECT].padEnd(10, ' ') + '-' + buttonSelect,,
+      'ESC(CANCLE) KEYBOARD ONLY-' + key[index.ESC].padEnd(6, ' ') + '-' + keyESC,
+      'F2(BIOS)    KEYBOARD ONLY-' + key[index.F2].padEnd(6, ' ') + '-' + keyF2],
+    )
 
-    for (let i = 0; i < text.length; i++) {
-      this.biosTextOutput(text[i], i)
-    }
+    this.bios.inputTest.display()
 
     // L1 + L2 BUTTON TO EXIT
     if (buttonL1 && buttonL2) {
-      this.biosMenuNumber = 0
+      this.bios.menuNumber = 0
+    } else if (this.bios.inputTest.getSelectMenu() === 1) {
+      this.bios.menuNumber = 0
     }
+  }
+
+  biosSoundTest () {
+    let echoValue = this.soundSystem.getMusicEchoValue()
+    let warning = this.soundSystem.getIsAudioSuspended()
+    let warningText = ''
+    if (warning) warningText = 'you must be clicked or keyinput resume audio context'
+
+    this.bios.soundTest.textEdit(
+      ['SOUND TEST',
+      'WEB AUDIO API MODE: ' + this.soundSystem.getWebAudioMode()],
+      ['SOUND PLAY',
+      'MUSIC PLAY',
+      'MUSIC STOP',
+      'COMBINATION: ' + this.bios.testAudioTrackNumber,
+      'ECHO(MUSIC) VALUE: ' + echoValue.echo.toFixed(1),
+      'FEEDBACK(MUSIC) VALUE: ' + echoValue.feedback.toFixed(1),
+      'DELAY(MUSIC) VALUE: ' + echoValue.delay.toFixed(1),
+      'EXIT'],
+      ['',
+      'if you don\'t use web audio, ',
+      'echo effect not available.',
+      'notice: sound echo, music echo is different',
+      '',
+      warningText]
+    )
+
+    switch (this.bios.soundTest.getSelectMenu()) {
+      case 0: this.soundSystem.play(SoundSystem.testFileSrc.soundtest0); break
+      case 1: 
+        if (this.bios.testAudioTrackNumber === 0) {
+          this.soundSystem.musicPlay(SoundSystem.testFileSrc.soundtest1)
+        } else if (this.bios.testAudioTrackNumber === 1) {
+          this.soundSystem.musicPlay(SoundSystem.testFileSrc.soundtest1)
+          this.soundSystem.musicPlay(SoundSystem.testFileSrc.soundtest2)
+        } else if (this.bios.testAudioTrackNumber === 2) {
+          this.soundSystem.musicPlay(SoundSystem.testFileSrc.soundtest1)
+          this.soundSystem.musicPlay(SoundSystem.testFileSrc.soundtest2)
+          this.soundSystem.musicPlay(SoundSystem.testFileSrc.soundtest3)
+        }
+        break
+      case 2: this.soundSystem.musicStop(); break
+      case 3:
+        this.bios.testAudioTrackNumber++
+        if (this.bios.testAudioTrackNumber > 2) this.bios.testAudioTrackNumber = 0
+        break
+      case 4:
+        let currentEcho = echoValue.echo
+        let setEcho = currentEcho + 0.1
+        if (setEcho > 1) setEcho = 0
+        this.soundSystem.setMusicEcho(setEcho, -1, -1)
+        break
+      case 5:
+        let currentFeedBack = echoValue.feedback
+        let setFeedBack = currentFeedBack + 0.1
+        if (setFeedBack > 1) setFeedBack = 0
+        this.soundSystem.setMusicEcho(-1, setFeedBack, -1)
+        break
+      case 6:
+        let currentDelay = echoValue.delay
+        let setDelay = currentDelay + 0.1
+        if (setDelay > 1) setDelay = 0
+        this.soundSystem.setMusicEcho(-1, -1, setDelay)
+        break
+      case this.bios.soundTest.menuField.length - 1:
+        this.bios.soundTest.cursor = 0
+        this.bios.menuNumber = 0
+        break
+    }
+
+    // 에코 기능은 딜레이값이 있어야 의미가 있으므로, 딜레이가 없다면 강제로 특정값으로 설정됩니다.
+    if (echoValue.echo !== 0 && echoValue.delay === 0) {
+      this.soundSystem.setMusicEcho(-1, -1, 0.1)
+    }
+    
+    this.bios.soundTest.display()
   }
 
   /**
@@ -298,6 +503,7 @@ class TamsaEngine {
    * 줄 구분을 위하여 y축은 2픽셀만큼 공백을 추가합니다.
    * @param {string} text 입력할 텍스트
    * @param {number} yLine 출력할 시작 지점 텍스트의 y축 줄번호
+   * @deprecated
    */
   biosTextOutput (text = '', yLine = 0) {
     const wordWidth = GraphicSystem.bitmapFont.width * 2
