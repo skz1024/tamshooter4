@@ -103,6 +103,8 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
 
   /**
    * 이후 출력되는 모든 이미지를 뒤집습니다. (캔버스 전역적으로 적용)
+   * 
+   * 매개변수가 없으면 기본값 설정
    * @param {number} flip 0. 없음, 1. 가로 방향, 2. 세로 방향, 3. 가로 + 세로, 그 외 무시
    */
   setFlip (flip = 0) {
@@ -113,6 +115,8 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
 
   /**
    * 이후 출력되는 모든 이미지를 회전합니다. 중심축은 이미지의 중심입니다. (캔버스의 원점이 아님.) (캔버스 전역적으로 적용)
+   * 
+   * 매개변수가 없으면 기본값 설정
    * @param {number} degree 각도 범위: 0 ~ 360, 이 수치에서 벗어나면 360으로 나눈 나머지로 계산
    */
   setDegree (degree = 0) {
@@ -126,6 +130,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
   /**
    * 투명도 조절 (캔버스 전역적으로 적용)
    * 다른 변수들과 달리, 이 값은 context의 globalAlpha값을 직접 변경합니다.
+   * 매개변수가 없으면 기본값 설정
    * 
    * @param {number} value 0 ~ 1 사이의 값 (0: 투명, 1: 불투명), 이 이외는 무시
    */
@@ -291,10 +296,10 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     // 변형이 확인된경우, 캔버스를 변형하고 출력좌표를 변경합니다.
     if (this.checkTransform()) {
       const output = this.canvasTransform(x, y, wordWidth, wordHeight)
-      x = output.outputX
-      y = output.outputY
-      wordWidth = output.outputWidth
-      wordHeight = output.outputHeight
+      x = output.x
+      y = output.y
+      wordWidth = output.x
+      wordHeight = output.y
     }
 
     // 첫번째 글자부터 마지막글자까지 하나씩 출력합니다.
@@ -372,10 +377,10 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     // 변형이 확인된경우, 캔버스를 변형하고 출력좌표를 변경합니다.
     if (this.checkTransform()) {
       const output = this.canvasTransform(x, y, wordWidth, wordHeight)
-      x = output.outputX
-      y = output.outputY
-      wordWidth = output.outputWidth
-      wordHeight = output.outputHeight
+      x = output.x
+      y = output.y
+      wordWidth = output.width
+      wordHeight = output.height
     }
 
     const firstWordPosition = ' '.charCodeAt()
@@ -670,12 +675,20 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     // 좌표값은 사각형 기준. isVertical에 따라 방향 결정.
     // true면 왼쪽에서 오른쪽이고 X1은 맨 왼쪽, X2는 맨 오른쪽, Y축은 y + Math.floor(height / 2)
     // false면 위쪽에서 아래쪽이고 X축은 x + Math.floor(width / 2), Y1은 맨 위쪽, Y2는 맨 아래쪽
-    let gX1 = isVertical ? x : x + Math.floor(width / 2)
-    let gX2 = isVertical ? x + width : x + Math.floor(width / 2)
-    let gY1 = isVertical ? y + Math.floor(height / 2) : y
-    let gY2 = isVertical ? y + Math.floor(height / 2) : y + height
+    let gPosition = {gX1: 0, gX2: 0, gY1: 0, gY2: 0}
+    if (isVertical) {
+      gPosition.gX1 = x
+      gPosition.gX2 = x + width
+      gPosition.gY1 = y + Math.floor(height / 2)
+      gPosition.gY2 = y + Math.floor(height / 2)
+    } else {
+      gPosition.gX1 = x + Math.floor(width / 2)
+      gPosition.gX2 = x + Math.floor(width / 2)
+      gPosition.gY1 = y
+      gPosition.gY2 = y + height
+    }
 
-    const gradient = this.context.createLinearGradient(gX1, gY1, gX2, gY2)
+    const gradient = this.context.createLinearGradient(gPosition.gX1, gPosition.gY1, gPosition.gX2, gPosition.gY2)
     for (let i = 0; i < color.length; i++) {
       let position = 0
       if (i === 0) {

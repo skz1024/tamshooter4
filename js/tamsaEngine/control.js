@@ -149,6 +149,7 @@ class TouchButton {
     this.divAreaSecond = document.createElement('div')
     this.divAreaSecond.style.position = 'relative'
     this.imageArrow = document.createElement('img')
+    this.imageArrow.style.pointerEvents = 'none'
     this.imageArrow.src = this.imageSrc.buttonArrowBox
     this.imageArrow.style.width = '100%'
     this.imageArrow.style.height = '100%'
@@ -387,6 +388,7 @@ export class ControlSystem {
   addTouchButtonEvent (targetButton, buttonIndex) {
     targetButton.addEventListener('touchstart', () => {
       this.setButtonDown(buttonIndex)
+      this.setButtonInput(buttonIndex)
     })
     targetButton.addEventListener('touchmove', () => {
       this.setButtonDown(buttonIndex)
@@ -411,7 +413,7 @@ export class ControlSystem {
     const centerPercent = '25%'
     const maxPercent = '50%'
 
-    let arrowButtonFunction = (e) => {
+    let arrowButtonFunction = (e, isInput = true) => {
       // offsetX, offsetY를 얻기 위한 과정
       var rect = e.target.getBoundingClientRect()
       var offsetX = e.targetTouches[0].pageX - rect.left
@@ -426,24 +428,28 @@ export class ControlSystem {
       if (percentX <= 0.33) {
         this.touchButton.buttonArrow.style.left = minPercent
         this.setButtonDown(this.buttonIndex.LEFT)
+        if (isInput) this.setButtonInput(this.buttonIndex.LEFT)
       } else if (percentX >= 0.34 && percentX <= 0.66) {
         this.touchButton.buttonArrow.style.left = centerPercent
         this.setButtonUp(this.buttonIndex.LEFT)
         this.setButtonUp(this.buttonIndex.RIGHT)
       } else if (percentX >= 0.67) {
         this.touchButton.buttonArrow.style.left = maxPercent
-        this.setButtonDown(this.buttonIndex.LEFT)
+        this.setButtonDown(this.buttonIndex.RIGHT)
+        if (isInput) this.setButtonInput(this.buttonIndex.RIGHT)
       }
     
       if (percentY <= 0.33) {
         this.touchButton.buttonArrow.style.top = minPercent
         this.setButtonDown(this.buttonIndex.UP)
+        if (isInput) this.setButtonInput(this.buttonIndex.UP)
       } else if (percentY >= 0.34 && percentY <= 0.66) {
         this.touchButton.buttonArrow.style.top = centerPercent
         this.setButtonUp(this.buttonIndex.UP)
         this.setButtonUp(this.buttonIndex.DOWN)
       } else if (percentY >= 0.67) {
         this.setButtonDown(this.buttonIndex.DOWN)
+        if (isInput) this.setButtonInput(this.buttonIndex.DOWN)
         this.touchButton.buttonArrow.style.top = maxPercent
       }  
     }
@@ -451,11 +457,11 @@ export class ControlSystem {
     // 참고: e.stopPropagation 을 하지 않으면 터치 입력이 이중으로 되어서
     // 잘못된 형태로 터치처리가 될 수 있음.
     this.touchButton.divAreaSecond.addEventListener('touchstart', (e) => {
-      arrowButtonFunction(e)
+      arrowButtonFunction(e, true)
       e.stopPropagation()
     })
     this.touchButton.divAreaSecond.addEventListener('touchmove', (e) => {
-      arrowButtonFunction(e)
+      arrowButtonFunction(e, true)
       e.stopPropagation()
     })
 
@@ -538,14 +544,10 @@ export class ControlSystem {
   }
   
   /**
-   * 이 함수 대신 setButtonDown을 사용해주세요.
-   * 
    * 특정 버튼을 누른것으로 처리합니다.
    * 
    * 다시 인식시키려면 한번 더 버튼을 다시 눌러야 합니다.
    * @param {number} buttonIndex 버튼의 index (해당 클래스의 buttonIndex 참고)
-   * 
-   * @deprecated
    */
   setButtonInput (buttonIndex) {
     this.isButtonInput[buttonIndex] = true
@@ -557,10 +559,10 @@ export class ControlSystem {
    * 
    * 버튼을 누르고 있는 동안 press 값이 지속적으로 증가합니다. (버튼을 떼면 press 값 초기화)
    * @param {number} buttonIndex 버튼의 index (해당 클래스의 buttonIndex 참고)
+   * @param {boolean} isInputButtonCheck 버튼 input
    */
   setButtonDown (buttonIndex) {
     this.isButtonDown[buttonIndex] = true
-    this.isButtonInput[buttonIndex] = true
   }
 
   /**

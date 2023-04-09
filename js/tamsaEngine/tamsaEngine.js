@@ -193,9 +193,6 @@ class TamsaEngine {
     /** animationFrame의 id 저장용 */
     this.animationId = requestAnimationFrame(() => this.animation())
 
-    /** 현재 바이오스 모드인지 확인 */
-    this.isBiosMode = false
-
     /** 
      * 엔진이 가동된 시점(시간값이 아닌 정수값입니다.)
      * 
@@ -226,9 +223,15 @@ class TamsaEngine {
       /** @type {BiosMenu} */ mainMenu: new BiosMenu(this.graphicSystem, this.controlSystem),
       /** @type {BiosMenu} */ inputTest: new BiosMenu(this.graphicSystem, this.controlSystem),
       /** @type {BiosMenu} */ soundTest: new BiosMenu(this.graphicSystem, this.controlSystem),
+      /** @type {BiosMenu} */ graphicTest: new BiosMenu(this.graphicSystem, this.controlSystem),
       /** 바이오스 메뉴 번호 */ menuNumber: 0,
       /** 테스트용 버퍼 */ testAudioBuffer: null,
-      /** 테스트용 트랙번호 */ testAudioTrackNumber: 0
+      /** 테스트용 트랙번호 */ testAudioTrackNumber: 0,
+      /** 그래픽 테스트 번호 */ graphicTestNumber: 0,
+      /** 그래픽 테스트 서브번호 */ graphicTestSubNumber: 0,
+      /** 그래픽 테스트 오브젝트 */ graphicTestObject: {x: 0, y: 0, width: 0, height: 0},
+      /** 바이오스 입장 가능 시간 확인용도 */ elapsedFrame: 0,
+      /** 현재 바이오스 모드인지 확인 */ isBiosMode: false
     }
   }
 
@@ -267,7 +270,17 @@ class TamsaEngine {
       this.thenAnimationTime = this.timestamp - (elapsed % fpsInterval)
       this.frameCount++
 
-      if (this.isBiosMode) {
+      if (this.bios.elapsedFrame < 120) {
+        this.bios.elapsedFrame++
+        let buttonStart = this.controlSystem.getButtonDown(this.controlSystem.buttonIndex.START)
+        let buttonSelect = this.controlSystem.getButtonDown(this.controlSystem.buttonIndex.SELECT)
+
+        if (buttonSelect && buttonSelect) {
+          this.bios.isBiosMode = true
+        }
+      }
+
+      if (this.bios.isBiosMode) {
         this.biosProcess()
       } else {
         this.process()
@@ -285,7 +298,7 @@ class TamsaEngine {
   process () {
     // 아무것도 없음
     // 아무 로직도 없으면 바이오스를 실행시킴
-    this.isBiosMode = true
+    this.bios.isBiosMode = true
   }
 
   /** 게임에서의 출력: 이 함수의 내용을 변경해주세요. */
@@ -301,13 +314,9 @@ class TamsaEngine {
   /** 
    * 엔진의 바이오스 메뉴: 이것이 실행되면 게임 로직은 동작하지 않습니다. 
    * 
-   * 바이오스 입장 방법:
+   * 바이오스 입장 방법: select + start버튼을 부팅 2초 이내에 누름
    * 
-   * 키보드: del 또는 F2키를 부팅 5초 이내에 누름(게임이 켜지는것과 상관없이)
-   * 
-   * 모바일 패드: select키 5회를 부팅 5초 이내에 누름 (패드를 표시하지 않으면 불가능 할 수 있음.)
-   * 
-   * 게임이 없는 경우(process와 display를 사용자가 직접 만들어야만 합니다.)
+   * 또는 게임이 없는 경우(process와 display를 사용자가 직접 만들어야만 합니다.)
    */
   biosProcess () {
     // 검은색 화면 출력
@@ -318,6 +327,7 @@ class TamsaEngine {
       case 0: this.biosProcessMainMenu(); break
       case 1: this.biosProcessInputTest(); break
       case 2: this.biosSoundTest(); break
+      case 3: this.biosGraphicTest(); break
     }
 
     // 오디오 컨텍스트 재개
@@ -484,6 +494,8 @@ class TamsaEngine {
         this.soundSystem.setMusicEcho(-1, -1, setDelay)
         break
       case this.bios.soundTest.menuField.length - 1:
+        // soundTest에서 나가기
+        this.soundSystem.musicStop()
         this.bios.soundTest.cursor = 0
         this.bios.menuNumber = 0
         break
@@ -497,44 +509,134 @@ class TamsaEngine {
     this.bios.soundTest.display()
   }
 
-  /**
-   * 바이오스에 출력할 글자를 위치와 함께 지정합니다. (고정폭 폰트)
-   * 
-   * 줄 구분을 위하여 y축은 2픽셀만큼 공백을 추가합니다.
-   * @param {string} text 입력할 텍스트
-   * @param {number} yLine 출력할 시작 지점 텍스트의 y축 줄번호
-   * @deprecated
-   */
-  biosTextOutput (text = '', yLine = 0) {
-    const wordWidth = GraphicSystem.bitmapFont.width * 2
-    const wordHeight = GraphicSystem.bitmapFont.height * 2
-    const marginWidth = 8
-    const marginHeight = 8
-    const lineSpace = 4
+  biosGraphicTest () {
+    this.bios.graphicTest.textEdit(
+      ['GRAPHIC TEST - FPS: ' + this.currentFps + '/60',
+      'DISPLAY: ' + this.graphicSystem.canvas.clientWidth + 'x' + this.graphicSystem.canvas.clientHeight,
+      'CANVAS SIZE: ' + this.graphicSystem.canvas.width + 'x' + this.graphicSystem.canvas.height,
+      'canvas display is auto sized'],
+      ['1. fillRect',
+      '2. MeterRect',
+      '3. Gradient(Linear)',
+      '4. alpha test',
+      '5. image draw',
+      '6. filp test',
+      '7. rotate test',
+      '8. rect object rotate',
+      '9. exit']
+    )
+    let testObj = this.bios.graphicTestObject
+    let color = ['darkred', 'darkblue', 'darkgreen', 'darkmagenta', 'darkorange']
+    let randomPosition = () => {
+      testObj.width = 100
+      testObj.height = 100
+      testObj.x = Math.random() * (this.graphicSystem.canvas.width - testObj.width)
+      testObj.y = Math.random() * (this.graphicSystem.canvas.height - testObj.height)
+    }
+    let fillRectTest = () => {
+      let currentColor = color[this.bios.graphicTestSubNumber % color.length]
+      this.graphicSystem.fillRect(testObj.x, testObj.y, testObj.width, testObj.height, currentColor)
+    }
+    let meterRectTest = () => {
+      testObj.x = 0
+      testObj.y = this.graphicSystem.canvas.height - 100
+      testObj.width = this.graphicSystem.canvas.width
+      testObj.height = 100
+      this.bios.graphicTestSubNumber++
+      let bgColor = 'black'
+      let value = this.bios.graphicTestSubNumber
+      const maxValue = 100
+      this.graphicSystem.meterRect(testObj.x, testObj.y, testObj.width, testObj.height, color[color.length - 1], value, maxValue, true, bgColor, 1)
 
-    let xMaxWord = Math.floor(this.graphicSystem.CANVAS_WIDTH / wordWidth) - 1
-    let y = yLine * (wordHeight + lineSpace)
-
-    let exceedWords = ''
-    let outputWords = text
-    if (text.length >= xMaxWord) {
-      exceedWords = text.slice(xMaxWord)
-      outputWords = text.slice(0, xMaxWord)
+      if (value > maxValue) {
+        this.bios.graphicTestSubNumber = 0
+      }
+    }
+    let gradientTest = () => {
+      let isVertical = this.bios.graphicTestSubNumber % 2 === 0
+      if (isVertical) {
+        testObj.x = 0
+        testObj.y = this.graphicSystem.canvas.height - 100
+        testObj.width = this.graphicSystem.canvas.width
+        testObj.height = 100
+      } else {
+        testObj.x = this.graphicSystem.canvas.width - 100
+        testObj.y = 0
+        testObj.width = 100
+        testObj.height = this.graphicSystem.canvas.height
+      }
+      this.graphicSystem.gradientRect(testObj.x, testObj.y, testObj.width, testObj.height, [color[0], color[1], color[2], color[3], color[4]], isVertical)
+    }
+    let alphaTest = () => {
+      let alpha = [0.2, 0.4, 0.6, 0.8, 1.0]
+      this.graphicSystem.setAlpha(alpha[this.bios.graphicTestSubNumber % alpha.length])
+      this.graphicSystem.fillRect(200, 200, this.graphicSystem.canvas.width, this.graphicSystem.canvas.height, 'skyblue')
+      this.graphicSystem.setAlpha()
+    }
+    let imageDraw = () => {
+      let image = new Image()
+      image.src = 'controlButtonImageBackup.png'
+      switch (this.bios.graphicTestSubNumber % 4) {
+        case 0: this.graphicSystem.imageView(image, 200, 200); break
+        case 1: this.graphicSystem.imageView(image, 200, 200, 400, 200); break
+        case 2: this.graphicSystem.imageDisplay(image, 0, 0, 100, 100, 200, 200, 400, 200); break
+        case 3: this.graphicSystem.imageDisplay(image, 0, 0, 100, 100, 200, 200, 400, 200, 0, 146, 0.7); break
+      }
+    }
+    let flipTest = () => {
+      let text = 'this text is flip!'
+      let flip = (this.bios.graphicTestSubNumber + 1) % 4
+      this.graphicSystem.setFlip(flip)
+      this.graphicSystem.bitmapFontDisplay(text, 0, 400, 24, 33)
+      this.graphicSystem.setFlip()
+    }
+    let rotateTest = () => {
+      let text = 'this text is rotate!'
+      let rotate = ((this.bios.graphicTestSubNumber + 1) % 12) * 30
+      this.graphicSystem.setDegree(rotate)
+      this.graphicSystem.bitmapFontDisplay(text, 0, 400, 24, 33)
+      this.graphicSystem.setDegree()
+    }
+    let rectRotate = () => {
+      this.bios.graphicTestSubNumber++
+      let rotate = (this.bios.graphicTestSubNumber % 360)
+      this.graphicSystem.setDegree(rotate)
+      this.graphicSystem.fillRect(400, 400, 100, 100, color[2])
+      this.graphicSystem.setDegree()
     }
 
-    // 각 x와 y에 4의 값이 추가된건 여백 설정을 위한 것
-    this.graphicSystem.bitmapFontDisplay(outputWords, marginWidth, y + marginHeight, wordWidth, wordHeight)
+    let select = this.bios.graphicTest.getSelectMenu()
+    if (select >= 0) {
+      if (select + 1 === this.bios.graphicTestNumber) {
+        this.bios.graphicTestSubNumber++
+      } else {
+        this.bios.graphicTestSubNumber = 0
+      }
+
+      switch(select + 1) {
+        case 1: randomPosition(); break
+      }
+
+      this.bios.graphicTestNumber = select + 1
+    }
     
-    if (exceedWords.length >= 1) {
-      this.biosTextOutput(exceedWords, yLine + 1)
+    switch (this.bios.graphicTestNumber) {
+      case 1: fillRectTest(); break
+      case 2: meterRectTest(); break
+      case 3: gradientTest(); break
+      case 4: alphaTest(); break
+      case 5: imageDraw(); break
+      case 6: flipTest(); break
+      case 7: rotateTest(); break
+      case 8: rectRotate(); break
+      case 9:
+        this.bios.graphicTestNumber = 0
+        this.bios.menuNumber = 0
+        break
     }
+
+    this.bios.graphicTest.display()
   }
 }
 
-let tamshooter4 = new TamsaEngine('tamshooter4', 800, 600)
-// tamshooter4.graphicSystem
-
-export {
-  tamshooter4,
-  GraphicSystem,
-}
+export let tamshooter4 = new TamsaEngine('tamshooter4', 800, 600)
