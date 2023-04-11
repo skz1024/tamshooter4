@@ -56,21 +56,77 @@ export class SoundSystem {
 
     // 몇몇 게인 추가 및 연결
     this.connectGain()
+
+    // 오디오 컨텍스트를 사용하도록, 이벤트를 추가
+    addEventListener('click', () => {
+      if (this.audioContext.state !== 'running') {
+        this.audioContext.resume()
+      }
+    })
+    addEventListener('touchstart', () => {
+      if (this.audioContext.state !== 'running') {
+        this.audioContext.resume()
+      }
+    })
+    addEventListener('keydown', () => {
+      if (this.audioContext.state !== 'running') {
+        this.audioContext.resume()
+      }
+    })
+    
+    // addEventListener('click', () => {
+    //   if (!this.isFirstLoad) {
+    //     this.firstFileLoad()
+    //     let filelist = [
+    //       SoundSystem.testFileSrc.soundtest0,
+    //       SoundSystem.testFileSrc.soundtest1,
+    //       SoundSystem.testFileSrc.soundtest2,
+    //       SoundSystem.testFileSrc.soundtest3,
+    //     ]
+    
+    //     for (let i = 0; i < filelist.length; i++) {
+    //       this.getCacheAudio(filelist[i])
+    //     }
+    //   }
+    // })
+
+    // addEventListener('touchstart', () => {
+    //   if (!this.isFirstLoad) {
+    //     this.firstFileLoad()
+    //     let filelist = [
+    //       SoundSystem.testFileSrc.soundtest0,
+    //       SoundSystem.testFileSrc.soundtest1,
+    //       SoundSystem.testFileSrc.soundtest2,
+    //       SoundSystem.testFileSrc.soundtest3,
+    //     ]
+    
+    //     for (let i = 0; i < filelist.length; i++) {
+    //       this.getCacheAudio(filelist[i])
+    //     }
+    //   }
+    // })
+  }
+
+  isFirstLoad = false
+  /** @deprecated */
+  firstFileLoad () {
+    return
+    let filelist = [
+      SoundSystem.testFileSrc.soundtest0,
+      SoundSystem.testFileSrc.soundtest1,
+      SoundSystem.testFileSrc.soundtest2,
+      SoundSystem.testFileSrc.soundtest3,
+    ]
+
+    for (let i = 0; i < filelist.length; i++) {
+      this.getCacheAudio(filelist[i])
+    }
   }
 
   /** 
-   * 오디오 컨텍스트가 동작할 수 있도록 재개합니다.
+   * 오디오 컨텍스트의 상태가 suspend인지를 알아보는 함수
    * 
-   * 경고: 반드시 사용자와의 상호작용(터치, 키입력, 클릭 등...)을 한 후에 이 함수를 사용해야만 합니다.
-   */
-  audioContextResume () {
-    this.audioContext.resume()
-  }
-
-  /** 
-   * 오디오 컨텍스트의 상태가 suspend인지를 알아보는 함수 
-   * 
-   * 만약 이것이 suspend라면, audioContextResume 함수를 사용해서 해당 컨텍스트를 재개해야합니다.
+   * 참고: 사용자가 해당 페이지에 터치, 키입력, 클릭을 한다면 audioContext는 resume상태로 전환합니다.
    */
   getIsAudioSuspended () {
     if (this.audioContext.state === 'suspended') {
@@ -150,6 +206,7 @@ export class SoundSystem {
       return this.cacheAudio.get(audioSrc)
     } else {
       let newAudio = new Audio(audioSrc)
+      newAudio.playsinline = 'true'
       this.cacheAudio.set(audioSrc, newAudio)
       let newNode = this.audioContext.createMediaElementSource(newAudio)
       newNode.connect(this.audioNode.firstGain)
@@ -236,7 +293,9 @@ export class SoundSystem {
 
     // 일시정지되면, 다시 재생시키고, 이미 재생중이라면 처음부터 다시 재생합니다.
     if (getAudio.paused) {
-      getAudio.play()
+      getAudio.play().catch(() => {
+        alert('sound play denied. i don\'t know this situation.')
+      })
     } else {
       getAudio.currentTime = 0
     }

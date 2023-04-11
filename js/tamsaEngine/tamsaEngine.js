@@ -157,8 +157,12 @@ class TamsaEngine {
     /** 게임의 너비 (캔버스의 너비) */ this.gameWidth = gameWidth
     /** 게임의 높이 (캔버스의 높이) */ this.gameHeight = gameHeight
     /** 초당 게임 프레임 */ this.gameFps = gameFps
+    /** 해당 게임의 기준 프레임 (고정 프레임 간격) */ this.FPS = gameFps
+    /** 프레임 호출횟수 */ this.frameCount = 0
+    /** 에니메이션 프레임 호출횟수 */ this.refreshCount = 0
 
     /** 현재 프레임 */ this.currentFps = 0
+    /** 초당 리프레시 횟수(모니터 주사율) */ this.refreshFps = 0
 
     // 기본 초기화 작업 (재수행 될 수 없음.)
     // 캔버스 등록 및 브라우저 화면에 표시(이 위치를 수정해야 겠다면, 수동으로 캔버스를 지정해주세요.)
@@ -176,14 +180,7 @@ class TamsaEngine {
       this.graphicSystem.bodyInsert()
     }
 
-    /** 해당 게임의 기준 프레임 (고정 프레임 간격) */
-    this.FPS = gameFps
-
-    /** 현재 프레임 */
-    this.fps = 0
-
-    /** 프레임 호출횟수 */
-    this.frameCount = 0
+    
 
     // 참고: 모든 setInterval, requestAnimation은 함수를 bind (화살표 함수를 이용해) 해서 사용합니다.
     // 그래야만 tamsaEngine의 클래스 내부 변수를 this로 접근할 수 있습니다.
@@ -233,13 +230,16 @@ class TamsaEngine {
       /** 바이오스 입장 가능 시간 확인용도 */ elapsedFrame: 0,
       /** 현재 바이오스 모드인지 확인 */ isBiosMode: false
     }
+
+    this.soundSystem.createBuffer(SoundSystem.testFileSrc.soundtest0)
   }
 
   /** 1초마다 몇 프레임이 카운트 되었는지를 확인하고, 이를 fps에 반영합니다. */
   framePerSecondsCheck () {
-    this.fps = this.frameCount
-    this.currentFps = this.fps
+    this.currentFps = this.frameCount
+    this.refreshFps = this.refreshCount
     this.frameCount = 0
+    this.refreshCount = 0
   }
 
   /** animation함수에서 사용하는 다음 시간 확인 용도  */
@@ -262,6 +262,9 @@ class TamsaEngine {
     this.timestamp = performance.now() // 현재 timestamp를 performance.now를 이용해 가져옵니다.
     // 원래는 animation 함수에서 timestamp란 인자값을 받아와야 하나, bind 때문인지 timestamp를 가져오지 못해
     // 이 방식을 대신 사용하였습니다.
+
+    // 리프레시 카운트 증가(모니터 주파수 계산)
+    this.refreshCount++
 
     // 진행시간 = 타임스탬프 - 그 다음 시간
     const elapsed = this.timestamp - this.thenAnimationTime
@@ -328,17 +331,6 @@ class TamsaEngine {
       case 1: this.biosProcessInputTest(); break
       case 2: this.biosSoundTest(); break
       case 3: this.biosGraphicTest(); break
-    }
-
-    // 오디오 컨텍스트 재개
-    this.autoMaticAudioContextResume()
-  }
-
-  autoMaticAudioContextResume () {
-    if (this.soundSystem.getIsAudioSuspended()) {
-      if (this.controlSystem.getMouseClick() || this.controlSystem.getButtonAnykey()) {
-        this.soundSystem.audioContextResume()
-      }
     }
   }
 
@@ -457,7 +449,10 @@ class TamsaEngine {
     )
 
     switch (this.bios.soundTest.getSelectMenu()) {
-      case 0: this.soundSystem.play(SoundSystem.testFileSrc.soundtest0); break
+      case 0: 
+        this.soundSystem.play(SoundSystem.testFileSrc.soundtest0)
+        // this.soundSystem.playBuffer(SoundSystem.testFileSrc.soundtest0)
+        break
       case 1: 
         if (this.bios.testAudioTrackNumber === 0) {
           this.soundSystem.musicPlay(SoundSystem.testFileSrc.soundtest1)
@@ -511,7 +506,7 @@ class TamsaEngine {
 
   biosGraphicTest () {
     this.bios.graphicTest.textEdit(
-      ['GRAPHIC TEST - FPS: ' + this.currentFps + '/60',
+      ['GRAPHIC TEST - FPS: ' + this.currentFps + '/60, ' + 'REFRESH: ' + this.refreshFps + 'Hz',
       'DISPLAY: ' + this.graphicSystem.canvas.clientWidth + 'x' + this.graphicSystem.canvas.clientHeight,
       'CANVAS SIZE: ' + this.graphicSystem.canvas.width + 'x' + this.graphicSystem.canvas.height,
       'canvas display is auto sized'],

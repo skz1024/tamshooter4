@@ -279,6 +279,10 @@ export class ControlSystem {
     addEventListener('keyup', (e) => {
       this.setButtonKeyUp(e.key)
     })
+
+    this.intervalId = setInterval(() => {
+      this.processButton()
+    }, 20)
   }
 
   /**
@@ -302,6 +306,7 @@ export class ControlSystem {
       // 캔버스 내에 터치를 시도할경우, 마우스를 클릭한 것과 같은 효과를 가집니다.
       this.setMouseDown()
       this.setMousePosition(offsetX / canvasZoomWidth, offsetY / canvasZoomHeight)
+      e.preventDefault()
     })
     targetElement.addEventListener('touchmove', (e) => {
       // 마우스의 offsetX, offsetY를 계산하기
@@ -316,6 +321,7 @@ export class ControlSystem {
       // 마우스를 눌렀다고 설정한 후 마우스를 누른 좌표를 입력합니다.
       // 캔버스 내에 터치를 시도할경우, 마우스를 클릭한 것과 같은 효과를 가집니다.
       this.setMousePosition(offsetX / canvasZoomWidth, offsetY / canvasZoomHeight)
+      e.preventDefault()
     })
     targetElement.addEventListener('touchend', () => {
       this.setMouseUp() // 터치에서 모든 손을 떼면 마우스를 뗀 것과 같음
@@ -330,6 +336,7 @@ export class ControlSystem {
       // 마우스를 눌렀다고 설정한 후 마우스를 누른 좌표를 입력합니다.
       this.setMouseDown()
       this.setMousePosition(e.offsetX / canvasZoomWidth, e.offsetY / canvasZoomHeight)
+      e.preventDefault()
     })
     targetElement.addEventListener('mousemove', (e) => {
       // 캔버스의 확대/축소를 고려하여 마우스의 좌표를 계산합니다.
@@ -338,6 +345,7 @@ export class ControlSystem {
 
       // 마우스의 현재 좌표를 입력합니다.
       this.setMousePosition(e.offsetX / canvasZoomWidth, e.offsetY / canvasZoomHeight)
+      e.preventDefault()
     })
     targetElement.addEventListener('mouseup', () => {
       this.setMouseUp()
@@ -352,6 +360,8 @@ export class ControlSystem {
 
       // 마우스의 클릭한 현재 좌표를 입력합니다.
       this.setClick(e.offsetX / canvasZoomWidth, e.offsetY / canvasZoomHeight)
+
+      e.preventDefault()
     })
   }
 
@@ -386,15 +396,18 @@ export class ControlSystem {
    * @param {number} buttonIndex 
    */
   addTouchButtonEvent (targetButton, buttonIndex) {
-    targetButton.addEventListener('touchstart', () => {
+    targetButton.addEventListener('touchstart', (e) => {
       this.setButtonDown(buttonIndex)
       this.setButtonInput(buttonIndex)
+      e.preventDefault()
     })
-    targetButton.addEventListener('touchmove', () => {
+    targetButton.addEventListener('touchmove', (e) => {
       this.setButtonDown(buttonIndex)
+      e.preventDefault()
     })
-    targetButton.addEventListener('touchend', () => {
+    targetButton.addEventListener('touchend', (e) => {
       this.setButtonUp(buttonIndex)
+      e.preventDefault()
     })
   }
 
@@ -428,6 +441,7 @@ export class ControlSystem {
       if (percentX <= 0.33) {
         this.touchButton.buttonArrow.style.left = minPercent
         this.setButtonDown(this.buttonIndex.LEFT)
+        this.setTouchButton(this.buttonIndex.LEFT)
         if (isInput) this.setButtonInput(this.buttonIndex.LEFT)
       } else if (percentX >= 0.34 && percentX <= 0.66) {
         this.touchButton.buttonArrow.style.left = centerPercent
@@ -436,12 +450,14 @@ export class ControlSystem {
       } else if (percentX >= 0.67) {
         this.touchButton.buttonArrow.style.left = maxPercent
         this.setButtonDown(this.buttonIndex.RIGHT)
+        this.setTouchButton(this.buttonIndex.RIGHT)
         if (isInput) this.setButtonInput(this.buttonIndex.RIGHT)
       }
     
       if (percentY <= 0.33) {
         this.touchButton.buttonArrow.style.top = minPercent
         this.setButtonDown(this.buttonIndex.UP)
+        this.setTouchButton(this.buttonIndex.UP)
         if (isInput) this.setButtonInput(this.buttonIndex.UP)
       } else if (percentY >= 0.34 && percentY <= 0.66) {
         this.touchButton.buttonArrow.style.top = centerPercent
@@ -449,6 +465,7 @@ export class ControlSystem {
         this.setButtonUp(this.buttonIndex.DOWN)
       } else if (percentY >= 0.67) {
         this.setButtonDown(this.buttonIndex.DOWN)
+        this.setTouchButton(this.buttonIndex.DOWN)
         if (isInput) this.setButtonInput(this.buttonIndex.DOWN)
         this.touchButton.buttonArrow.style.top = maxPercent
       }  
@@ -459,10 +476,12 @@ export class ControlSystem {
     this.touchButton.divAreaSecond.addEventListener('touchstart', (e) => {
       arrowButtonFunction(e, true)
       e.stopPropagation()
+      e.preventDefault()
     })
     this.touchButton.divAreaSecond.addEventListener('touchmove', (e) => {
-      arrowButtonFunction(e, true)
+      arrowButtonFunction(e, false)
       e.stopPropagation()
+      e.preventDefault()
     })
 
     // 터치에서 손을 떼었다면 이동버튼은 아무것도 누르지 않은것으로 처리합니다.
@@ -474,6 +493,7 @@ export class ControlSystem {
       this.touchButton.buttonArrow.style.left = centerPercent
       this.touchButton.buttonArrow.style.top = centerPercent
       e.stopPropagation()
+      e.preventDefault()
     })
   }
 
@@ -522,6 +542,11 @@ export class ControlSystem {
    * (경고: 단위가 초가 아닙니다. 게임 루프 속도에 따라 다를 수 있습니다.)
    */
   buttonPressTime = new Array(this.DEFAULT_KEYBINDMAP.length).fill(0)
+
+  /**
+   * 터치가 쭉 눌려져 있는 상태에서 일정시간마다 input가 눌려지도록 누른 시간을 계산하는 용도
+   */
+  touchPressTime = new Array(this.DEFAULT_KEYBINDMAP.length).fill(0)
 
   /**
    * 키 바인드 맵을 설정합니다.
@@ -575,6 +600,20 @@ export class ControlSystem {
     this.isButtonDown[buttonIndex] = false
     this.isButtonInput[buttonIndex] = false
     this.buttonPressTime[buttonIndex] = 0
+    this.touchPressTime[buttonIndex] = 0
+  }
+
+  /**
+   * 터치로 버튼을 눌렀을 때, input를 일정시간마다 입력하도록 조정합니다.
+   * 
+   * @deprecated
+   * @param {number} buttonIndex 
+   */
+  setTouchButton (buttonIndex) {
+    let pressTime = this.buttonPressTime[buttonIndex]
+    if (pressTime >= 15 && pressTime % 4 === 1) {
+      this.setButtonInput(buttonIndex)
+    }
   }
 
   /**
@@ -623,6 +662,8 @@ export class ControlSystem {
     }
   }
 
+  
+
   /**
    * 현재 입력한 키를 기준으로 특정 버튼을 뗀 작업을 처리합니다.
    * @param {string} key 자바스크립트 이벤트 객체의 key값 (event.key 값)
@@ -634,9 +675,18 @@ export class ControlSystem {
     }
   }
 
-  /** 버튼 처리에 관한 프로세스 */
+  /** 
+   * 버튼 처리에 관한 프로세스
+   * 초당 입력횟수는 setInterval로 설정되며 약 50회입니다.
+   */
   processButton () {
-
+    for (let i = 0; i < this.buttonPressTime.length; i++) {
+      if (this.getButtonDown(i)) {
+        this.buttonPressTime[i]++
+      } else {
+        this.buttonPressTime[i] = 0
+      }
+    }
   }
 
   /** 아무 버튼 중 하나라도 눌려있는지를 확인합니다. */
