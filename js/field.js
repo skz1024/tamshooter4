@@ -10,9 +10,9 @@ import { PlayerWeaponData } from './dataPlayer.js'
 import { RoundData } from './dataRound.js'
 import { WeaponData } from './dataWeapon.js'
 import { graphicSystem } from './graphic.js'
-import { imageDataInfo, imageFile } from './image.js'
+import { imageDataInfo, imageFile } from './imageSrc.js'
 import { soundFile, soundSystem } from './sound.js'
-import { gameSystem, userSystem } from './tamshooter4.js'
+import { gameSystem, userSystem } from './tamshooter4_backup.js'
 
 // import { systemText } from './text.js'
 

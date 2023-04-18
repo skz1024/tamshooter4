@@ -4,13 +4,6 @@
  * web audio api 지원
  */
 export class SoundSystem {
-  static testFileSrc = {
-    soundtest0: 'soundeffect.wav',
-    soundtest1: 'soundtest1.ogg',
-    soundtest2: 'soundtest2.ogg',
-    soundtest3: 'soundtest3.ogg',
-  }
-
   /**
    * 오디오 객체 저장용도
    * @type {Map<string, HTMLAudioElement | any>}
@@ -45,8 +38,9 @@ export class SoundSystem {
    * 
    * 경고: 웹 오디오를 중간에 끌 수 없습니다. 그렇게 하려면 페이지를 새로고침하고 사운드 객체를 다시 만드세요.
    * @param {boolean} isWebAudioMode 웹 오디오 사용 여부. 기본값은 true. 이 값을 false로 할 경우, 웹 오디오를 사용하지 않습니다.
+   * @param {string} resourceSrc 기준 외부 리소스의 경로 (이 값이 지정되지 않으면 내장된 파일을 재생할 수 없음.)
    */
-  constructor (isWebAudioMode = true) {
+  constructor (isWebAudioMode = true, resourceSrc) {
     // 웹 오디오 모드가 아니라면 생성자의 코드는 진행되지 않고 무시됩니다.
     // 물론 나머지 기능은 사용할 수 있습니다.
     if (!isWebAudioMode) return
@@ -62,64 +56,30 @@ export class SoundSystem {
       if (this.audioContext.state !== 'running') {
         this.audioContext.resume()
       }
+
+      this.audioObjectCreate()
     })
     addEventListener('touchstart', () => {
       if (this.audioContext.state !== 'running') {
         this.audioContext.resume()
       }
+
+      this.audioObjectCreate()
     })
     addEventListener('keydown', () => {
       if (this.audioContext.state !== 'running') {
         this.audioContext.resume()
       }
+
+      this.audioObjectCreate()
     })
-    
-    // addEventListener('click', () => {
-    //   if (!this.isFirstLoad) {
-    //     this.firstFileLoad()
-    //     let filelist = [
-    //       SoundSystem.testFileSrc.soundtest0,
-    //       SoundSystem.testFileSrc.soundtest1,
-    //       SoundSystem.testFileSrc.soundtest2,
-    //       SoundSystem.testFileSrc.soundtest3,
-    //     ]
-    
-    //     for (let i = 0; i < filelist.length; i++) {
-    //       this.getCacheAudio(filelist[i])
-    //     }
-    //   }
-    // })
 
-    // addEventListener('touchstart', () => {
-    //   if (!this.isFirstLoad) {
-    //     this.firstFileLoad()
-    //     let filelist = [
-    //       SoundSystem.testFileSrc.soundtest0,
-    //       SoundSystem.testFileSrc.soundtest1,
-    //       SoundSystem.testFileSrc.soundtest2,
-    //       SoundSystem.testFileSrc.soundtest3,
-    //     ]
-    
-    //     for (let i = 0; i < filelist.length; i++) {
-    //       this.getCacheAudio(filelist[i])
-    //     }
-    //   }
-    // })
-  }
 
-  isFirstLoad = false
-  /** @deprecated */
-  firstFileLoad () {
-    return
-    let filelist = [
-      SoundSystem.testFileSrc.soundtest0,
-      SoundSystem.testFileSrc.soundtest1,
-      SoundSystem.testFileSrc.soundtest2,
-      SoundSystem.testFileSrc.soundtest3,
-    ]
-
-    for (let i = 0; i < filelist.length; i++) {
-      this.getCacheAudio(filelist[i])
+    this.testFileSrc = {
+      soundtest0: resourceSrc + 'soundeffect.wav',
+      soundtest1: resourceSrc + 'soundtest1.ogg',
+      soundtest2: resourceSrc + 'soundtest2.ogg',
+      soundtest3: resourceSrc + 'soundtest3.ogg',
     }
   }
 
@@ -195,7 +155,7 @@ export class SoundSystem {
   /** 
    * (사운드시스템의) 캐시 오디오 객체를 가져옵니다.
    * 
-   * 만약 캐시에 오디오 객체가 없다면, 새로 오디오 객체를 생성합니다.
+   * 만약 캐시에 오디오 객체가 없다면, 새로 오디오 객체를 생성합니다. (해당 기능은 취소됨)
    * 
    * 경고: 오디오 경로가 잘못되었는지는 사용자가 스스로 판단해야 합니다. 잘못된 경로를 사용하면 에러가 날 수 있습니다.
    * @param {string} audioSrc 오디오 파일의 경로 (이 값은 고유한 키로 사용됩니다.)
@@ -205,13 +165,7 @@ export class SoundSystem {
     if (this.cacheAudio.has(audioSrc)) {
       return this.cacheAudio.get(audioSrc)
     } else {
-      let newAudio = new Audio(audioSrc)
-      newAudio.playsinline = 'true'
-      this.cacheAudio.set(audioSrc, newAudio)
-      let newNode = this.audioContext.createMediaElementSource(newAudio)
-      newNode.connect(this.audioNode.firstGain)
-      this.cacheAudioNode.set(audioSrc, newNode) // 컨텍스트에 연결할 오디오 노드
-      return this.cacheAudio.get(audioSrc)
+      this.createAudio(audioSrc)
     }
   }
 
@@ -264,6 +218,43 @@ export class SoundSystem {
     this.cacheBuffer.set(audioSrc, decodeFile)
   }
 
+
+  /** 오디오 생성 대기열 목록(오디오 경로) */
+  createAudioSrcWaitList = []
+
+  /**
+   * 오디오를 생성합니다.
+   * 
+   * 주의: 모바일에 대한 지원을 위하여, 오디오는 반드시 터치, 클릭, 키보드 입력시에만 생성되도록 변경됩니다.
+   * 이 함수는 해당 이벤트가 발생하기 전까지, 요청된 파일의 경로를 계속 누적합니다. (파일 등록은 안된 상태입니다.)
+   * @param {string} audioSrc 
+   */
+  createAudio (audioSrc) {
+    if (this.cacheAudio.has(audioSrc)) return
+
+    this.createAudioSrcWaitList.push(audioSrc)
+  }
+
+  /** 이 함수는 반드시 터치, 클릭, 키보드 입력시에만 발동하도록 해당 이벤트 내에서 사용해주세요. */
+  audioObjectCreate () {
+    if (this.createAudioSrcWaitList.length === 0) return
+
+    for (let i = 0; i < this.createAudioSrcWaitList.length; i++) {
+      let audioSrc = this.createAudioSrcWaitList[i]
+      if (this.cacheAudio.has(audioSrc)) continue
+
+      let newAudio = new Audio(audioSrc)
+      this.cacheAudio.set(audioSrc, newAudio)
+      let newNode = this.audioContext.createMediaElementSource(newAudio)
+      newNode.connect(this.audioNode.firstGain)
+      this.cacheAudioNode.set(audioSrc, newNode) // 컨텍스트에 연결할 오디오 노드
+      return this.cacheAudio.get(audioSrc)
+    }
+
+    // 배열의 모든 내용을 삭제
+    this.createAudioSrcWaitList.length = 0
+  }
+
   /**
    * 해당 사운드를 재생합니다. 이것은 오디오 파일을 직접 재생하는것을 목표로 만들어졌습니다.
    * 따라서 오디오 파일을 중복해서 재생할 수 없습니다. (이렇게하려면 buffer를 사용하거나 다른 이름의 오디오 파일을 만드세요.)
@@ -291,10 +282,12 @@ export class SoundSystem {
       return
     }
 
+    if (getAudio == null || getNode == null) return
+
     // 일시정지되면, 다시 재생시키고, 이미 재생중이라면 처음부터 다시 재생합니다.
     if (getAudio.paused) {
       getAudio.play().catch(() => {
-        alert('sound play denied. i don\'t know this situation.')
+        alert('sound play denied. 사운드 플레이 거부. 이것은 모바일에서의 제약으로 인한 오류입니다. 개발자는 해당 오류를 수정할 수 있으므로 문의주세요.')
       })
     } else {
       getAudio.currentTime = 0
@@ -460,6 +453,38 @@ export class SoundSystem {
       echo: this.audioNode.musicEchoGain.gain.value,
       feedback: this.audioNode.musicFeedBackGain.gain.value,
       delay: this.audioNode.musicEchoDelay.delayTime.value
+    }
+  }
+
+  /**
+   * 사운드의 볼륨을 설정합니다.
+   * @param {number} gainValue 게인값 (0 ~ 1)
+   */
+  setGain (gainValue) {
+    if (gainValue >= 0 && gainValue <= 1) {
+      this.audioNode.firstGain.gain.value = gainValue
+    }
+  }
+
+  /**
+   * 음악의 볼륨을 설정합니다.
+   * @param {number} gainValue 게인값 (0 ~ 1)
+   */
+  setMusicGain (gainValue) {
+    if (gainValue >= 0 && gainValue <= 1) {
+      this.audioNode.musicFirstGain.gain.value = gainValue
+    }
+  }
+
+  /**
+   * (임시로 만들어진 함수 - 사용 비추천)
+   * 마스터 게인의 볼륨을 설정합니다.
+   * @param {number} gainValue 게인값 (0 ~ 1)
+   * @deprecated
+   */
+  setMasterGain (gainValue) {
+    if (gainValue >= 0 && gainValue <= 1) {
+      this.audioNode.masterGain.gain.value = gainValue
     }
   }
 }

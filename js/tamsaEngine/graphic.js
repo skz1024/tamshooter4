@@ -16,8 +16,16 @@ export class GraphicSystem {
    * 
    * @param {number} canvasWidth 캔버스 너비
    * @param {number} canvasHeight 캔버스 높이
+   * @param {string} resourceSrc 탐사엔진이 있는 외부 리소스의 경로 HTML 파일에 따라 상대경로가 변경되므로, 
+   * 이 값을 제대로 입력해야 내장 이미지를 제대로 출력할 수 있습니다.
    */
-  constructor (canvasWidth = 400, canvasHeight = 300) {
+  constructor (canvasWidth = 400, canvasHeight = 300, resourceSrc = '') {
+    /** 
+     * 이미지 캐시 저장 용도 (src로 이미지를 출력할 때 여기서 가져옵니다.)
+     * @type {Map<string, HTMLImageElement>}
+     */
+    this.cacheImage = new Map()
+
     /** 캔버스 (캔버스 엘리먼트) */ this.canvas = document.createElement('canvas')
     this.canvas.width = canvasWidth
     this.canvas.height = canvasHeight
@@ -60,23 +68,52 @@ export class GraphicSystem {
      * 캔버스에 전역적 젹용, 다만 일부 함수는 이 값을 직접 지정할 수 있어서 캔버스의 수정은 비추천
      */ 
     this.rotateDegree = 0
+
+    this.baseImageAutoSet(resourceSrc)
   }
 
-  /** graphicSystem 내부적으로 사용하는 비트맵 (영어, 숫자, 일부 기호만 지원) */
-  static bitmapFont = {
-    image: new Image(),
-    width: 8,
-    height: 11
+  /** 
+   * 특정 이미지 경로에 있는 이미지 객체를 생성합니다. 
+   * 
+   * 만약 이 함수로 미리 생성하지 않고, 이미지를 불러오게 되면, 임의로 해당 경로를 기준으로 이미지 객체를 추가하게 됩니다.
+   * @param {string} imageSrc 이미지 파일의 경로
+   */
+  createImage (imageSrc) {
+    if (this.cacheImage.has(imageSrc)) return
+    
+    let image = new Image()
+    image.src = imageSrc
+    this.cacheImage.set(imageSrc, image)
   }
 
-  /** graphicSystem 내부적으로 사용하는 디지털폰트 (영어, 숫자, 일부 기호만 지원) */
-  static digitalFont = {
-    image12px: new Image(),
-    image20px: new Image(),
-    width12px: 12,
-    height12px: 18,
-    width20px: 20,
-    height20px: 30,
+  /** 
+   * 특정 이미지 경로에 있는 이미지 객체를 가져옵니다.
+   * 
+   * 없을 경우 가져오지 않음.
+   * @param {string} imageSrc 이미지 파일의 경로
+   */
+  getImage (imageSrc) {
+    return this.cacheImage.get(imageSrc)
+  }
+
+  /** 
+   * 캐시된 이미지 객체를 가져옵니다.
+   * 
+   * 만약 이미지가 캐시되지 않은 경우, 해당 이미지를 새로 캐시에 등록합니다.
+   * 
+   * (이것은 graphicSystem 전용 함수이지만, 일단 public 함수로 정의함.)
+   * @param {string} imageSrc 이미지 파일의 경로
+   */
+  getCacheImage (imageSrc) {
+    if (this.cacheImage.has(imageSrc)) {
+      return this.cacheImage.get(imageSrc)
+    } else {
+      let image = new Image()
+      image.src = imageSrc
+      this.cacheImage.set(imageSrc, image)
+
+      return this.cacheImage.get(imageSrc, image)
+    }
   }
 
   /**
@@ -85,11 +122,17 @@ export class GraphicSystem {
    * 이 함수는 이 js파일을 불러오는 즉시 실행됩니다.
    * 
    * 경고: 이 함수가 초기에 실행되지 않으면 bitmapFont, digitalFont는 그려지지 않습니다. (이미지가 없으므로)
+   * 
+   * @param {string} resourceSrc 리소스의 기준 경로 (HTML 파일에 따라 달라지므로 지정 필요)
    */
-  static staticImageAutoSet () {
-    this.bitmapFont.image.src = 'bitmapFont.png'
-    this.digitalFont.image12px.src = 'digitalFontSmall.png'
-    this.digitalFont.image20px.src = 'digitalFont.png'
+  baseImageAutoSet (resourceSrc) {
+    /** graphicSystem 내부적으로 사용하는 비트맵 (영어, 숫자, 일부 기호만 지원) */
+    this.bitmapFont = {
+      image: new Image(),
+      baseWidth: 8,
+      baseHeight: 11
+    }
+    this.bitmapFont.image.src = resourceSrc + 'bitmapFont.png'
   }
 
   /**
@@ -260,99 +303,6 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
   }
 
   /**
-   * 디지털 글자를 출력하는데 사용 (주로 인터페이스에 사용),
-   * 
-   * 경고: A ~ Z, 0 ~ 9, -, +, ., :, / 문자를 표현 가능. 대/소문자는 상관없지만 가능하면 소문자를 사용해주세요.
-   * 
-   * 경고2: 크기를 늘릴 경우, 안티에일리싱 효과로 글자주위에 선이 칠해지는 경우가 있음.
-   * @param {number | string} inputText 출력할 텍스트
-   * @param {number} x x좌표
-   * @param {number} y y좌표
-   * @param {number} wordWidth 글자길이 (기본값: 12px, 20px), digitalFont에 정의되어있음. width와 height의 비율은 각 2:3
-   * @param {number} wordHeight 글자높이 (기본값: 18px, 30px), digitalFont에 정의되어있음. width와 height의 비율은 각 2:3
-   */
-  digitalFontDisplay (inputText, x = 0, y = 0, wordWidth = GraphicSystem.digitalFont.width12px, wordHeight = wordWidth <= GraphicSystem.digitalFont.width12px ? GraphicSystem.digitalFont.height12px : GraphicSystem.digitalFont.height20px) {
-    if (inputText == null) return
-
-    // 개발 편의성을 위해 string 형태로 변경
-    if (typeof inputText === 'number') inputText = inputText + ''
-
-    // 변수명을 줄이기 위해 만든 변수들
-    const image12 = GraphicSystem.digitalFont.image12px
-    const fontW12 = GraphicSystem.digitalFont.width12px
-    const fontH12 = GraphicSystem.digitalFont.height12px
-
-    const image20 = GraphicSystem.digitalFont.image20px
-    const fontW20 = GraphicSystem.digitalFont.width20px
-    const fontH20 = GraphicSystem.digitalFont.height20px
-
-    // 글자 길이에 따라서 출력하는 이미지가 달라집니다. 기본값은 12이고, 13 이상은 20px이미지를 확대축소합니다.
-    const image = wordWidth <= fontW12 ? image12 : image20
-
-    // 글자 길이도 이미지 크기에 맞춰 달라집니다. (참고: wordWidth로만 판단하고, 높이는 판단하지 않습니다.)
-    const DIGITAL_WIDTH = wordWidth <= fontW12 ? fontW12 : fontW20
-    const DIGITAL_HEIGHT = wordWidth <= fontW12 ? fontH12 : fontH20
-
-    // 변형이 확인된경우, 캔버스를 변형하고 출력좌표를 변경합니다.
-    if (this.checkTransform()) {
-      const output = this.canvasTransform(x, y, wordWidth, wordHeight)
-      x = output.x
-      y = output.y
-      wordWidth = output.x
-      wordHeight = output.y
-    }
-
-    // 첫번째 글자부터 마지막글자까지 하나씩 출력합니다.
-    for (let i = 0; i < inputText.length; i++) {
-      const word = inputText.charAt(i)
-      let wordPosition = -1
-      let wordLine = 0
-
-      if (word >= '0' && word <= '9') {
-        // 0 ~ 9 사이일경우
-        wordLine = 1
-        wordPosition = Number(word)
-      } else if (word >= 'a' && word <= 'z') {
-        // alphabet 소문자
-        wordPosition = word.charCodeAt(0) - 'a'.charCodeAt(0)
-      } else if (word >= 'A' && word <= 'Z') {
-        // alphabet 대문자
-        wordPosition = word.charCodeAt(0) - 'A'.charCodeAt(0)
-      } else {
-        // 이외 특수기호: -, +, /, ., :
-        wordLine = 1
-        switch (word) {
-          case '/': wordPosition = 10; break
-          case '.': wordPosition = 11; break
-          case '+': wordPosition = 12; break
-          case '-': wordPosition = 13; break
-          case ':': wordPosition = 14; break
-          default: continue // 참고: 아무런 단어도 해당되지 않으면 루프를 건너뜀
-        }
-      }
-
-      if (wordPosition >= 0) {
-        this.context.drawImage(
-          image, 
-          DIGITAL_WIDTH * wordPosition, 
-          DIGITAL_HEIGHT * wordLine, 
-          DIGITAL_WIDTH - 1, // 1을 빼는 이유는 확대/축소 했을 때 안티에일러싱 효과로 인해 잘못된 선이 출력되는걸 막기 위함
-          DIGITAL_HEIGHT - 1, 
-          x + (i * wordWidth), 
-          y, 
-          wordWidth - Math.floor(wordWidth / DIGITAL_WIDTH), // 일부 길이 값을 빼는것은 확대/축소 했을 때 정확한 출력을 보정하기 위함
-          wordHeight - Math.floor(wordHeight / DIGITAL_HEIGHT)
-        )
-      }
-    }
-
-    // 출력이 끝났고, 캔버스가 변형되었다면 변형을 취소합니다.
-    if (this.checkTransform()) {
-      this.restoreTransform()
-    }
-  }
-
-  /**
    * 내장되어있는 비트맵 font (bitmapFont2.png) 파일을 이용해서 글자를 출력합니다.
    * 
    * 아스키 코드만 지원(한글 사용불가능), 대소문자는 구분됩니다.
@@ -364,15 +314,15 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * @param {number} wordWidth 글자길이 (기본값 8px, 권장값 16px), 8의 배수로 확대 권장
    * @param {number} wordHeight 글자높이 (기본값 11px, 권장값 22px), 11의 배수로 확대 권장
    */
-  bitmapFontDisplay (inputText, x = 0, y = 0, wordWidth = GraphicSystem.bitmapFont.width, wordHeight = GraphicSystem.bitmapFont.height) {
+  bitmapFontDisplay (inputText, x = 0, y = 0, wordWidth = this.bitmapFont.baseWidth, wordHeight = this.bitmapFont.baseHeight) {
     if (inputText == null) return
 
     // 숫자가 들어올경우, string 형태로 변경 (그래야 조작하기 쉬움)
     if (typeof inputText === 'number') inputText = inputText + ''
 
-    const image = GraphicSystem.bitmapFont.image
-    const BITMAP_WIDTH = GraphicSystem.bitmapFont.width
-    const BITMAP_HEIGHT = GraphicSystem.bitmapFont.height
+    const image = this.bitmapFont.image
+    const BITMAP_WIDTH = this.bitmapFont.baseWidth
+    const BITMAP_HEIGHT = this.bitmapFont.baseHeight
 
     // 변형이 확인된경우, 캔버스를 변형하고 출력좌표를 변경합니다.
     if (this.checkTransform()) {
@@ -384,7 +334,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     }
 
     const firstWordPosition = ' '.charCodeAt()
-    const lineMaxXPostition = 32 // 비트맵에는 한줄당 최대 32개 글자 데이터가 있습니다.
+    const lineMaxXPostition = Math.floor(image.width / this.bitmapFont.baseWidth)  // 비트맵에는 한줄당 최대 32개 글자 데이터가 있습니다.
 
     // 첫번째 글자부터 마지막글자까지 하나씩 출력합니다.
     for (let i = 0; i < inputText.length; i++) {
@@ -421,6 +371,160 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     }
   }
 
+  /** 
+   * 아스키 코드를 기반으로 한 비트맵 폰트를 출력합니다.
+   * 여기서 얻어온 객체를 이용해 bitmapDisplay를 쓰는것과 동일한 느낌으로 사용할 수 있습니다.
+   * 
+   * 주의: 아스키 코드의 위치를 기반으로 가로 세로를 계산합니다.
+   * 
+   * 따라서, 숫자만 사용할거면, CustomNumber를, 문자까지 추가하려면 이 함수를 사용하세요.
+   * 
+   * @param {string} imageSrc 이미지 파일의 경로
+   * @param {number} baseWordWidth 이미지의 가로너비
+   * @param {number} baseWordHeight 이미지의 세로높이
+   * @returns bitmapDisplay를 해줄 수 있는 함수(전용 함수 리턴)
+   */
+  createCustomBitmapDisplay (imageSrc, baseWordWidth, baseWordHeight) {
+    /**
+     * 아스키 코드를 기반으로 한 비트맵 폰트를 출력합니다.
+     * 아스키 코드만 지원(한글 사용불가능), 대소문자는 구분됩니다.
+     * 
+     * 경고2: 크기를 늘릴 경우, 안티에일리싱 효과로 글자주위에 선이 칠해지는 경우가 있음.
+     * 
+     * (bitmapDisplay 함수를 상속받았다 카더라)
+     * @param {number | string} inputText 출력할 텍스트
+     * @param {number} x x좌표
+     * @param {number} y y좌표
+     * @param {number} wordWidth 글자길이
+     * @param {number} wordHeight 글자높이
+     */
+    return (inputText, x, y, wordWidth = baseWordWidth, wordHeight = baseWordHeight) => {
+      if (inputText == null) return
+
+      // 숫자가 들어올경우, string 형태로 변경 (그래야 조작하기 쉬움)
+      if (typeof inputText === 'number') inputText = inputText + ''
+  
+      const image = this.getCacheImage(imageSrc)
+      if (image == null) return
+
+      const BITMAP_WIDTH = wordWidth
+      const BITMAP_HEIGHT = wordHeight
+  
+      // 변형이 확인된경우, 캔버스를 변형하고 출력좌표를 변경합니다.
+      if (this.checkTransform()) {
+        const output = this.canvasTransform(x, y, wordWidth, wordHeight)
+        x = output.x
+        y = output.y
+        wordWidth = output.width
+        wordHeight = output.height
+      }
+  
+      const firstWordPosition = ' '.charCodeAt()
+      const lineMaxXPostition = Math.floor(image.width / baseWordWidth) // 비트맵에는 한줄당 최대 32개 글자 데이터가 있습니다.
+  
+      // 첫번째 글자부터 마지막글자까지 하나씩 출력합니다.
+      for (let i = 0; i < inputText.length; i++) {
+        const word = inputText.charAt(i)
+        let wordPosition = -1 // 0 ~ 32
+        let wordLine = 0 // 0 ~ 3
+  
+        wordPosition = word.charCodeAt(0) - firstWordPosition
+  
+        // 워드포지션이 32를 넘어가면, 다른 줄로 변경해서 출력할 글자를 찾습니다.
+        if (wordPosition >= lineMaxXPostition) {
+          wordLine = Math.floor(wordPosition / lineMaxXPostition)
+          wordPosition = wordPosition % 32
+        }
+  
+        if (wordPosition >= 0) {
+          this.context.drawImage(
+            image, 
+            BITMAP_WIDTH * wordPosition, 
+            BITMAP_HEIGHT * wordLine, 
+            BITMAP_WIDTH - 1, // 1을 빼는 이유는 확대/축소 했을 때 안티에일러싱 효과로 인해 잘못된 선이 출력되는걸 막기 위함
+            BITMAP_HEIGHT - 1, 
+            x + (i * wordWidth), 
+            y, 
+            wordWidth - Math.floor(wordWidth / BITMAP_WIDTH), // 일부 길이 값을 빼는것은 확대/축소 했을 때 정확한 출력을 보정하기 위함
+            wordHeight - Math.floor(wordWidth / BITMAP_HEIGHT)
+          )
+        }
+      }
+  
+      // 출력이 끝났고, 캔버스가 변형되었다면 변형을 취소합니다.
+      if (this.checkTransform()) {
+        this.restoreTransform()
+      }
+    }
+  }
+
+  /**
+   * 이미지로 된 숫자를 출력할 수 있게 해주는 함수입니다.
+   * 
+   * 이 함수를 이용하여 이미지를 출력해주는 함수를 리턴받을 수 있습니다.
+   * 
+   * 참고: 이미지의 글자 순서는 0123456789 입니다.
+   * @param {string} imageSrc 이미지 파일의 경로
+   * @param {number} baseWordWidth 이미지의 가로너비
+   * @param {number} baseWordHeight 이미지의 세로높이
+   * @returns numberDisplay를 해줄 수 있는 함수(전용 함수 리턴)
+   */
+  createCustomNumberDisplay (imageSrc, baseWordWidth, baseWordHeight) {
+    /**
+     * 이미지로 된 숫자를 출력하는 함수
+     * 
+     * (bitmapDisplay 함수를 상속받았다 카더라)
+     * @param {number | string} inputNumber 출력할 숫자
+     * @param {number} x x좌표
+     * @param {number} y y좌표
+     * @param {number} wordWidth 글자길이
+     * @param {number} wordHeight 글자높이
+     */
+    return (inputNumber, x, y, wordWidth = baseWordWidth, wordHeight = baseWordHeight) => {
+      if (inputNumber == null) return
+
+      // 숫자가 들어올경우, string 형태로 변경 (그래야 조작하기 쉬움)
+      if (typeof inputNumber === 'number') inputNumber = inputNumber + ''
+  
+      const image = this.getCacheImage(imageSrc)
+      if (image == null) return
+
+      const BITMAP_WIDTH = wordWidth
+      const BITMAP_HEIGHT = wordHeight
+  
+      // 변형이 확인된경우, 캔버스를 변형하고 출력좌표를 변경합니다.
+      if (this.checkTransform()) {
+        const output = this.canvasTransform(x, y, wordWidth, wordHeight)
+        x = output.x
+        y = output.y
+        wordWidth = output.width
+        wordHeight = output.height
+      }
+  
+      // 첫번째 글자부터 마지막글자까지 하나씩 출력합니다.
+      for (let i = 0; i < inputNumber.length; i++) {
+        const word = Number(inputNumber.charAt(i))
+        this.context.drawImage(
+          image, 
+          BITMAP_WIDTH * word, 
+          0, 
+          BITMAP_WIDTH - 1, // 1을 빼는 이유는 확대/축소 했을 때 안티에일러싱 효과로 인해 잘못된 선이 출력되는걸 막기 위함
+          BITMAP_HEIGHT - 1, 
+          x + (i * wordWidth), 
+          y, 
+          wordWidth - Math.floor(wordWidth / BITMAP_WIDTH), // 일부 길이 값을 빼는것은 확대/축소 했을 때 정확한 출력을 보정하기 위함
+          wordHeight - Math.floor(wordWidth / BITMAP_HEIGHT)
+        )
+      }
+  
+      // 출력이 끝났고, 캔버스가 변형되었다면 변형을 취소합니다.
+      if (this.checkTransform()) {
+        this.restoreTransform()
+      }
+    }
+
+  }
+
   /**
    * 이미지 출력 (imageDisplay보다 더 단순한 구성입니다.)
    * 
@@ -429,7 +533,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * 자바스크립트는 오버로딩이 되지 않기 때문에, 9 ~ 12개의 인수를 기준으로 한 imageDisplay를 구분하기 위해 만들어졌습니다.
    * (다만 내부적으로는 imageDisplay는 3, 5개의 인수도 처리할 수 있습니다. 왜냐하면 drawImage 함수가 그만큼의 인수를 지원하기 때문)
    * 
-   * @param {HTMLImageElement} image 이미지(HTML element 또는 new Image()의 이미지 객체)
+   * @param {string | HTMLImageElement} image 이미지의 경로 또는 이미지 객체
    * @param {number} x 이미지를 자르기 위한 이미지 내부의 x좌표
    * @param {number} y 이미지를 자르기 위한 이미지 내부의 y좌표
    * @param {number | null} width 이미지의 너비 (없을경우 해당 이미지의 기본 너비)
@@ -437,6 +541,10 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * @param {number[]} options 기타 옵션 (flip, rotate, alpha) 참고: 이값을 설정했다면, imageDisplay 함수를 사용합니다.
    */
   imageView (image, x, y, width = null, height = null, ...options) {
+    if (typeof image === 'string') {
+      image = this.getCacheImage(image)
+    }
+
     if (image == null) return
 
     // width, height 채우기 (함수 인수로 넣을 수도 있으나, image가 null일경우 에러가 발생하므로, 이렇게 처리함)
@@ -465,7 +573,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * 함수의 표시된 인수 목록은 9개 기준이며 최대 12개까지 지정 가능합니다.
    * 인수가 10개 ~ 12개 사이일경우, 플립, 회전, 알파값을 추가로 수정할 수 있습니다. 옵션이 설정될경우, 캔버스의 설정값은 무시됩니다.
    * (해당 이미지에만 적용)
-   * @param {HTMLImageElement} image 이미지(HTML element 또는 new Image()의 이미지 객체)
+   * @param {string | HTMLImageElement} image 이미지의 경로 또는 이미지 객체
    * @param {number} sliceX 이미지를 자르기 위한 이미지 내부의 x좌표
    * @param {number} sliceY 이미지를 자르기 위한 이미지 내부의 y좌표
    * @param {number} sliceWidth 이미지를 자르는 길이
@@ -477,6 +585,10 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * @param {number[]} option 추가 옵션: flip(0: none, 1: vertical, 2: horizontal, 3:all), rotate(0 ~ 360), alpha(0 ~ 1)
    */
   imageDisplay (image, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, ...option) {
+    if (typeof image === 'string') {
+      image = this.getCacheImage(image)
+    }
+
     if (image == null) return
 
     if (arguments.length === 3 || arguments.length === 5) {
@@ -846,8 +958,8 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
   }
 
 
-  /** 미터 타입: 수직 */ static METER_VERTICAL = 'vertical'
-  /** 미터 타입: 수평 */ static METER_HORIZONTAL = 'horizontal'
+  /** 미터 타입: 수직 @deprecated */ static METER_VERTICAL = 'vertical'
+  /** 미터 타입: 수평 @deprecated */ static METER_HORIZONTAL = 'horizontal'
 
   /**
    * context.fillRect랑 동일, 사각형 그리기
@@ -1064,4 +1176,3 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     }
   }
 }
-GraphicSystem.staticImageAutoSet()

@@ -96,8 +96,8 @@ class BiosMenu {
    * @param {number} yLine 출력할 시작 지점 텍스트의 y축 줄번호
    */
   textOutput (text = '', yLine = 0) {
-    const wordWidth = GraphicSystem.bitmapFont.width * 2
-    const wordHeight = GraphicSystem.bitmapFont.height * 2
+    const wordWidth = this.graphic.bitmapFont.baseWidth * 2
+    const wordHeight = this.graphic.bitmapFont.baseHeight * 2
     const marginWidth = 8
     const marginHeight = 8
     const lineSpace = 4
@@ -137,11 +137,17 @@ class BiosMenu {
  * 
  * 각 모듈에 대한 설명은 내부 변수 참고
  */
-class TamsaEngine {
+export class TamsaEngine {
   /** 디바이스 구분용 문자열 */
   static device = {
     pc: 'pc',
     mobile: 'mobile'
+  }
+
+  /** 디바이스 구분용 문자열 */
+  device = {
+    PC: 'pc',
+    MOBILE: 'mobile'
   }
 
   /**
@@ -151,8 +157,9 @@ class TamsaEngine {
    * @param {number} gameHeight 게임 높이
    * @param {number} gameFps 초당 게임 프레임 (기본값: 고정 60), 가변방식 사용 불가
    * @param {boolean} isAutoBodyInsertCanvas 캔버스를 body 태그에 자동으로 삽입합니다. (false일경우 사용자가 graphicSystem을 직접 호출해서 캔버스의 출력 지점을 지정해야합니다.)
+   * @param {string} resourceSrc 외부 리소스의 경로 (엔진 폴더가 어디에 있는지를 알려주는 경로) 
    */
-  constructor (gameTitle, gameWidth, gameHeight, gameFps = 60, isAutoBodyInsertCanvas = true) {
+  constructor (gameTitle, gameWidth, gameHeight, resourceSrc = 'tamsaEngine', gameFps = 60, isAutoBodyInsertCanvas = true) {
     /** 브라우저 타이틀에 표시할 게임 타이틀 */ this.gameTitle = gameTitle
     /** 게임의 너비 (캔버스의 너비) */ this.gameWidth = gameWidth
     /** 게임의 높이 (캔버스의 높이) */ this.gameHeight = gameHeight
@@ -166,21 +173,29 @@ class TamsaEngine {
 
     // 기본 초기화 작업 (재수행 될 수 없음.)
     // 캔버스 등록 및 브라우저 화면에 표시(이 위치를 수정해야 겠다면, 수동으로 캔버스를 지정해주세요.)
-    this.graphicSystem = new GraphicSystem(gameWidth, gameHeight)
+    /** 해당 엔진에서 사용하는 그래픽 시스템 */
+    this.graphic = new GraphicSystem(gameWidth, gameHeight, resourceSrc)
     
-    this.controlSystem = new ControlSystem()
-    this.controlSystem.addEventMouseTouch(this.graphicSystem.canvas)
+    /** 해당 엔진에서 사용하는 컨트롤 시스템 */
+    this.control = new ControlSystem(resourceSrc)
+    this.control.addEventMouseTouch(this.graphic.canvas)
 
-    this.soundSystem = new SoundSystem()
+    /** 해당 엔진에서 사용하는 사운드 시스템 */
+    this.sound = new SoundSystem(true, resourceSrc)
+    this.sound.createBuffer(this.sound.testFileSrc.soundtest0) // 버퍼 미리듣기용 생성
+    this.sound.createBuffer(this.sound.testFileSrc.soundtest1)
+    this.sound.createBuffer(this.sound.testFileSrc.soundtest2)
+    this.sound.createBuffer(this.sound.testFileSrc.soundtest3)
 
     document.body.style.backgroundColor = '#181818'
 
     // canvas를 바로 body 영역에 삽입
     if (isAutoBodyInsertCanvas) {
-      this.graphicSystem.bodyInsert()
+      this.graphic.bodyInsert()
     }
 
-    
+    // 제목 설정
+    document.title = gameTitle
 
     // 참고: 모든 setInterval, requestAnimation은 함수를 bind (화살표 함수를 이용해) 해서 사용합니다.
     // 그래야만 tamsaEngine의 클래스 내부 변수를 this로 접근할 수 있습니다.
@@ -208,7 +223,7 @@ class TamsaEngine {
     } else {
       this.currentDevice = TamsaEngine.device.mobile
       // 조이패드를 추가
-      this.controlSystem.createTouchButton()
+      this.control.createTouchButton()
     }
 
     /** 
@@ -217,10 +232,10 @@ class TamsaEngine {
      * 바이오스에 표시할 내용은 따로 구현되어있습니다.
      */
     this.bios = {
-      /** @type {BiosMenu} */ mainMenu: new BiosMenu(this.graphicSystem, this.controlSystem),
-      /** @type {BiosMenu} */ inputTest: new BiosMenu(this.graphicSystem, this.controlSystem),
-      /** @type {BiosMenu} */ soundTest: new BiosMenu(this.graphicSystem, this.controlSystem),
-      /** @type {BiosMenu} */ graphicTest: new BiosMenu(this.graphicSystem, this.controlSystem),
+      /** @type {BiosMenu} */ mainMenu: new BiosMenu(this.graphic, this.control),
+      /** @type {BiosMenu} */ inputTest: new BiosMenu(this.graphic, this.control),
+      /** @type {BiosMenu} */ soundTest: new BiosMenu(this.graphic, this.control),
+      /** @type {BiosMenu} */ graphicTest: new BiosMenu(this.graphic, this.control),
       /** 바이오스 메뉴 번호 */ menuNumber: 0,
       /** 테스트용 버퍼 */ testAudioBuffer: null,
       /** 테스트용 트랙번호 */ testAudioTrackNumber: 0,
@@ -228,10 +243,11 @@ class TamsaEngine {
       /** 그래픽 테스트 서브번호 */ graphicTestSubNumber: 0,
       /** 그래픽 테스트 오브젝트 */ graphicTestObject: {x: 0, y: 0, width: 0, height: 0},
       /** 바이오스 입장 가능 시간 확인용도 */ elapsedFrame: 0,
-      /** 현재 바이오스 모드인지 확인 */ isBiosMode: false
+      /** 현재 바이오스 모드인지 확인 */ isBiosMode: false,
+      /** 바이오스에서 나갈 수 있는지에 대한 여부 */ isBiosPossibleExit: true,
     }
 
-    this.soundSystem.createBuffer(SoundSystem.testFileSrc.soundtest0)
+    this.sound.createBuffer(this.sound.testFileSrc.soundtest0)
   }
 
   /** 1초마다 몇 프레임이 카운트 되었는지를 확인하고, 이를 fps에 반영합니다. */
@@ -275,8 +291,8 @@ class TamsaEngine {
 
       if (this.bios.elapsedFrame < 120) {
         this.bios.elapsedFrame++
-        let buttonStart = this.controlSystem.getButtonDown(this.controlSystem.buttonIndex.START)
-        let buttonSelect = this.controlSystem.getButtonDown(this.controlSystem.buttonIndex.SELECT)
+        let buttonStart = this.control.getButtonInput(this.control.buttonIndex.START)
+        let buttonSelect = this.control.getButtonInput(this.control.buttonIndex.SELECT)
 
         if (buttonSelect && buttonSelect) {
           this.bios.isBiosMode = true
@@ -297,14 +313,24 @@ class TamsaEngine {
     requestAnimationFrame(() => this.animation())
   }
 
-  /** 게임에서의 로직: 이 함수의 내용을 변경해주세요. */
+  /** 
+   * 게임에서의 로직: 이 함수의 내용을 변경해주세요.  
+   * 
+   * 참고: 여기다가 출력 로직을 넣어도 게인 내부적으로는 상관이 없지만, 그래도 구분하는것을 추천합니다.
+   */
   process () {
     // 아무것도 없음
     // 아무 로직도 없으면 바이오스를 실행시킴
     this.bios.isBiosMode = true
+    this.bios.isBiosPossibleExit = false
   }
 
-  /** 게임에서의 출력: 이 함수의 내용을 변경해주세요. */
+  /** 
+   * 게임에서의 출력: 이 함수의 내용을 변경해주세요.  
+   * 
+   * 기본적으로 출력과 관련된 모든 함수를 여기서 사용합니다. 
+   * 게임에 대한 로직 처리를 display 함수에서 하는건 권장하지 않습니다.
+   */
   display () {
     // 아무것도 없음
   }
@@ -324,27 +350,35 @@ class TamsaEngine {
   biosProcess () {
     // 검은색 화면 출력
     // this.graphicSystem.fillRect(0, 0, this.graphicSystem.CANVAS_WIDTH, this.graphicSystem.CANVAS_HEIGHT, 'darkred')
-    this.graphicSystem.fillRect(0, 0, this.graphicSystem.CANVAS_WIDTH, this.graphicSystem.CANVAS_HEIGHT, '#282828')
+    this.graphic.fillRect(0, 0, this.graphic.CANVAS_WIDTH, this.graphic.CANVAS_HEIGHT, '#282828')
 
     switch (this.bios.menuNumber) {
       case 0: this.biosProcessMainMenu(); break
       case 1: this.biosProcessInputTest(); break
       case 2: this.biosSoundTest(); break
       case 3: this.biosGraphicTest(); break
+      case 4:
+        if (this.bios.isBiosPossibleExit) {
+          this.bios.isBiosMode = false;
+        } else {
+          this.bios.menuNumber = 0
+        }
+        break
     }
   }
 
   biosProcessMainMenu () {
     this.bios.mainMenu.textEdit(
       ['TAMSAENGINE MENU',
-      'created by skz1024 - 2023/03/26',
+      'created by skz1024 - 2023/04/15',
       'device: ' + this.currentDevice,
+      'game name: ' + this.gameTitle,
       '',
       'menu select'],
       ['1. INPUT TEST (KEYBOARD, BUTTON, MOUSE, TOUCH)',
       '2. SOUND TEST',
       '3. GRAPHIC TEST',
-      '4. EXIT'],
+      this.bios.isBiosPossibleExit ? '4. EXIT' : ''],
       ['',
       'FPS: ' + this.currentFps]
     )
@@ -359,14 +393,14 @@ class TamsaEngine {
 
   /** 바이오스의 inputTestMenu */
   biosProcessInputTest () {
-    const mouseX = this.controlSystem.getMouseX()
-    const mouseY = this.controlSystem.getMouseY()
-    const isMouseDown = this.controlSystem.getMouseDown()
+    const mouseX = this.control.getMouseX()
+    const mouseY = this.control.getMouseY()
+    const isMouseDown = this.control.getMouseDown()
 
     // 변수명 줄여쓰기...
-    const index = this.controlSystem.buttonIndex
-    const push = this.controlSystem.isButtonDown
-    const key = this.controlSystem.getKeyBindMap()
+    const index = this.control.buttonIndex
+    const push = this.control.isButtonDown
+    const key = this.control.getKeyBindMap()
 
     // 버튼이 눌려있으면 true를 표시하고 아닐경우 아무것도 표시하지 않습니다.
     const buttonLeft = push[index.LEFT] ? true : ''
@@ -424,16 +458,18 @@ class TamsaEngine {
   }
 
   biosSoundTest () {
-    let echoValue = this.soundSystem.getMusicEchoValue()
-    let warning = this.soundSystem.getIsAudioSuspended()
+    let echoValue = this.sound.getMusicEchoValue()
+    let warning = this.sound.getIsAudioSuspended()
     let warningText = ''
     if (warning) warningText = 'you must be clicked or keyinput resume audio context'
 
     this.bios.soundTest.textEdit(
       ['SOUND TEST',
-      'WEB AUDIO API MODE: ' + this.soundSystem.getWebAudioMode()],
+      'WEB AUDIO API MODE: ' + this.sound.getWebAudioMode()],
       ['SOUND PLAY',
+      'BUFFER SOUND PLAY',
       'MUSIC PLAY',
+      'BUFFER MUSIC PLAY',
       'MUSIC STOP',
       'COMBINATION: ' + this.bios.testAudioTrackNumber,
       'ECHO(MUSIC) VALUE: ' + echoValue.echo.toFixed(1),
@@ -450,47 +486,61 @@ class TamsaEngine {
 
     switch (this.bios.soundTest.getSelectMenu()) {
       case 0: 
-        this.soundSystem.play(SoundSystem.testFileSrc.soundtest0)
-        // this.soundSystem.playBuffer(SoundSystem.testFileSrc.soundtest0)
+        this.sound.play(this.sound.testFileSrc.soundtest0)
         break
-      case 1: 
+      case 1:
+        this.sound.playBuffer(this.sound.testFileSrc.soundtest0)
+        break
+      case 2: 
         if (this.bios.testAudioTrackNumber === 0) {
-          this.soundSystem.musicPlay(SoundSystem.testFileSrc.soundtest1)
+          this.sound.musicPlay(this.sound.testFileSrc.soundtest1)
         } else if (this.bios.testAudioTrackNumber === 1) {
-          this.soundSystem.musicPlay(SoundSystem.testFileSrc.soundtest1)
-          this.soundSystem.musicPlay(SoundSystem.testFileSrc.soundtest2)
+          this.sound.musicPlay(this.sound.testFileSrc.soundtest1)
+          this.sound.musicPlay(this.sound.testFileSrc.soundtest2)
         } else if (this.bios.testAudioTrackNumber === 2) {
-          this.soundSystem.musicPlay(SoundSystem.testFileSrc.soundtest1)
-          this.soundSystem.musicPlay(SoundSystem.testFileSrc.soundtest2)
-          this.soundSystem.musicPlay(SoundSystem.testFileSrc.soundtest3)
+          this.sound.musicPlay(this.sound.testFileSrc.soundtest1)
+          this.sound.musicPlay(this.sound.testFileSrc.soundtest2)
+          this.sound.musicPlay(this.sound.testFileSrc.soundtest3)
         }
         break
-      case 2: this.soundSystem.musicStop(); break
       case 3:
+        if (this.bios.testAudioTrackNumber === 0) {
+          this.sound.musicPlay(this.sound.testFileSrc.soundtest1)
+        } else if (this.bios.testAudioTrackNumber === 1) {
+          this.sound.musicPlay(this.sound.testFileSrc.soundtest1)
+          this.sound.musicPlay(this.sound.testFileSrc.soundtest2)
+        } else if (this.bios.testAudioTrackNumber === 2) {
+          this.sound.musicPlay(this.sound.testFileSrc.soundtest1)
+          this.sound.musicPlay(this.sound.testFileSrc.soundtest2)
+          this.sound.musicPlay(this.sound.testFileSrc.soundtest3)
+        }
+        break
+      case 4: this.sound.musicStop(); break
+      case 5:
         this.bios.testAudioTrackNumber++
         if (this.bios.testAudioTrackNumber > 2) this.bios.testAudioTrackNumber = 0
         break
-      case 4:
+      case 6:
         let currentEcho = echoValue.echo
         let setEcho = currentEcho + 0.1
         if (setEcho > 1) setEcho = 0
-        this.soundSystem.setMusicEcho(setEcho, -1, -1)
+        this.sound.setMusicEcho(setEcho, -1, -1)
         break
-      case 5:
+      case 7:
         let currentFeedBack = echoValue.feedback
         let setFeedBack = currentFeedBack + 0.1
         if (setFeedBack > 1) setFeedBack = 0
-        this.soundSystem.setMusicEcho(-1, setFeedBack, -1)
+        this.sound.setMusicEcho(-1, setFeedBack, -1)
         break
-      case 6:
+      case 8:
         let currentDelay = echoValue.delay
         let setDelay = currentDelay + 0.1
         if (setDelay > 1) setDelay = 0
-        this.soundSystem.setMusicEcho(-1, -1, setDelay)
+        this.sound.setMusicEcho(-1, -1, setDelay)
         break
       case this.bios.soundTest.menuField.length - 1:
         // soundTest에서 나가기
-        this.soundSystem.musicStop()
+        this.sound.musicStop()
         this.bios.soundTest.cursor = 0
         this.bios.menuNumber = 0
         break
@@ -498,7 +548,7 @@ class TamsaEngine {
 
     // 에코 기능은 딜레이값이 있어야 의미가 있으므로, 딜레이가 없다면 강제로 특정값으로 설정됩니다.
     if (echoValue.echo !== 0 && echoValue.delay === 0) {
-      this.soundSystem.setMusicEcho(-1, -1, 0.1)
+      this.sound.setMusicEcho(-1, -1, 0.1)
     }
     
     this.bios.soundTest.display()
@@ -507,8 +557,8 @@ class TamsaEngine {
   biosGraphicTest () {
     this.bios.graphicTest.textEdit(
       ['GRAPHIC TEST - FPS: ' + this.currentFps + '/60, ' + 'REFRESH: ' + this.refreshFps + 'Hz',
-      'DISPLAY: ' + this.graphicSystem.canvas.clientWidth + 'x' + this.graphicSystem.canvas.clientHeight,
-      'CANVAS SIZE: ' + this.graphicSystem.canvas.width + 'x' + this.graphicSystem.canvas.height,
+      'DISPLAY: ' + this.graphic.canvas.clientWidth + 'x' + this.graphic.canvas.clientHeight,
+      'CANVAS SIZE: ' + this.graphic.canvas.width + 'x' + this.graphic.canvas.height,
       'canvas display is auto sized'],
       ['1. fillRect',
       '2. MeterRect',
@@ -525,23 +575,23 @@ class TamsaEngine {
     let randomPosition = () => {
       testObj.width = 100
       testObj.height = 100
-      testObj.x = Math.random() * (this.graphicSystem.canvas.width - testObj.width)
-      testObj.y = Math.random() * (this.graphicSystem.canvas.height - testObj.height)
+      testObj.x = Math.random() * (this.graphic.canvas.width - testObj.width)
+      testObj.y = Math.random() * (this.graphic.canvas.height - testObj.height)
     }
     let fillRectTest = () => {
       let currentColor = color[this.bios.graphicTestSubNumber % color.length]
-      this.graphicSystem.fillRect(testObj.x, testObj.y, testObj.width, testObj.height, currentColor)
+      this.graphic.fillRect(testObj.x, testObj.y, testObj.width, testObj.height, currentColor)
     }
     let meterRectTest = () => {
       testObj.x = 0
-      testObj.y = this.graphicSystem.canvas.height - 100
-      testObj.width = this.graphicSystem.canvas.width
+      testObj.y = this.graphic.canvas.height - 100
+      testObj.width = this.graphic.canvas.width
       testObj.height = 100
       this.bios.graphicTestSubNumber++
       let bgColor = 'black'
       let value = this.bios.graphicTestSubNumber
       const maxValue = 100
-      this.graphicSystem.meterRect(testObj.x, testObj.y, testObj.width, testObj.height, color[color.length - 1], value, maxValue, true, bgColor, 1)
+      this.graphic.meterRect(testObj.x, testObj.y, testObj.width, testObj.height, color[color.length - 1], value, maxValue, true, bgColor, 1)
 
       if (value > maxValue) {
         this.bios.graphicTestSubNumber = 0
@@ -551,53 +601,53 @@ class TamsaEngine {
       let isVertical = this.bios.graphicTestSubNumber % 2 === 0
       if (isVertical) {
         testObj.x = 0
-        testObj.y = this.graphicSystem.canvas.height - 100
-        testObj.width = this.graphicSystem.canvas.width
+        testObj.y = this.graphic.canvas.height - 100
+        testObj.width = this.graphic.canvas.width
         testObj.height = 100
       } else {
-        testObj.x = this.graphicSystem.canvas.width - 100
+        testObj.x = this.graphic.canvas.width - 100
         testObj.y = 0
         testObj.width = 100
-        testObj.height = this.graphicSystem.canvas.height
+        testObj.height = this.graphic.canvas.height
       }
-      this.graphicSystem.gradientRect(testObj.x, testObj.y, testObj.width, testObj.height, [color[0], color[1], color[2], color[3], color[4]], isVertical)
+      this.graphic.gradientRect(testObj.x, testObj.y, testObj.width, testObj.height, [color[0], color[1], color[2], color[3], color[4]], isVertical)
     }
     let alphaTest = () => {
       let alpha = [0.2, 0.4, 0.6, 0.8, 1.0]
-      this.graphicSystem.setAlpha(alpha[this.bios.graphicTestSubNumber % alpha.length])
-      this.graphicSystem.fillRect(200, 200, this.graphicSystem.canvas.width, this.graphicSystem.canvas.height, 'skyblue')
-      this.graphicSystem.setAlpha()
+      this.graphic.setAlpha(alpha[this.bios.graphicTestSubNumber % alpha.length])
+      this.graphic.fillRect(200, 200, this.graphic.canvas.width, this.graphic.canvas.height, 'skyblue')
+      this.graphic.setAlpha()
     }
     let imageDraw = () => {
       let image = new Image()
       image.src = 'controlButtonImageBackup.png'
       switch (this.bios.graphicTestSubNumber % 4) {
-        case 0: this.graphicSystem.imageView(image, 200, 200); break
-        case 1: this.graphicSystem.imageView(image, 200, 200, 400, 200); break
-        case 2: this.graphicSystem.imageDisplay(image, 0, 0, 100, 100, 200, 200, 400, 200); break
-        case 3: this.graphicSystem.imageDisplay(image, 0, 0, 100, 100, 200, 200, 400, 200, 0, 146, 0.7); break
+        case 0: this.graphic.imageView(image, 200, 200); break
+        case 1: this.graphic.imageView(image, 200, 200, 400, 200); break
+        case 2: this.graphic.imageDisplay(image, 0, 0, 100, 100, 200, 200, 400, 200); break
+        case 3: this.graphic.imageDisplay(image, 0, 0, 100, 100, 200, 200, 400, 200, 0, 146, 0.7); break
       }
     }
     let flipTest = () => {
       let text = 'this text is flip!'
       let flip = (this.bios.graphicTestSubNumber + 1) % 4
-      this.graphicSystem.setFlip(flip)
-      this.graphicSystem.bitmapFontDisplay(text, 0, 400, 24, 33)
-      this.graphicSystem.setFlip()
+      this.graphic.setFlip(flip)
+      this.graphic.bitmapFontDisplay(text, 0, 400, 24, 33)
+      this.graphic.setFlip()
     }
     let rotateTest = () => {
       let text = 'this text is rotate!'
       let rotate = ((this.bios.graphicTestSubNumber + 1) % 12) * 30
-      this.graphicSystem.setDegree(rotate)
-      this.graphicSystem.bitmapFontDisplay(text, 0, 400, 24, 33)
-      this.graphicSystem.setDegree()
+      this.graphic.setDegree(rotate)
+      this.graphic.bitmapFontDisplay(text, 0, 400, 24, 33)
+      this.graphic.setDegree()
     }
     let rectRotate = () => {
       this.bios.graphicTestSubNumber++
       let rotate = (this.bios.graphicTestSubNumber % 360)
-      this.graphicSystem.setDegree(rotate)
-      this.graphicSystem.fillRect(400, 400, 100, 100, color[2])
-      this.graphicSystem.setDegree()
+      this.graphic.setDegree(rotate)
+      this.graphic.fillRect(400, 400, 100, 100, color[2])
+      this.graphic.setDegree()
     }
 
     let select = this.bios.graphicTest.getSelectMenu()
@@ -633,5 +683,3 @@ class TamsaEngine {
     this.bios.graphicTest.display()
   }
 }
-
-export let tamshooter4 = new TamsaEngine('tamshooter4', 800, 600)

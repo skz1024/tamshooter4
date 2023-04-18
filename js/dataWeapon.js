@@ -4,7 +4,7 @@ import { soundFile, soundSystem } from "./sound.js"
 import { EffectData, CustomEffect } from "./dataEffect.js"
 import { ID } from "./dataId.js"
 import { fieldState } from "./field.js"
-import { imageDataInfo, imageFile } from "./image.js"
+import { imageDataInfo, imageFile } from "./imageSrc.js"
 import { EnemyData } from "./dataEnemy.js"
 
 /**

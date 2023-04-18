@@ -4,7 +4,7 @@ import { soundFile, soundSystem } from "./sound.js"
 import { EffectData, CustomEffect, CustomEditEffect } from "./dataEffect.js"
 import { ID } from "./dataId.js"
 import { stringText } from "./text.js"
-import { imageDataInfo, imageFile } from "./image.js"
+import { imageDataInfo, imageFile } from "./imageSrc.js"
 import { fieldState } from "./field.js"
 
 export class RoundData {

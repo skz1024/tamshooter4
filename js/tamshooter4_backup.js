@@ -1,20 +1,26 @@
-import { imageSrc, imageDataInfo } from "./imageSrc.js";
-import { TamsaEngine } from "./tamsaEngine/tamsaEngine.js";
-import { dataExportStatPlayerSkill, dataExportStatWeapon, dataExportStatPlayerWeapon } from "./dataStat.js";
-import { soundSrc } from "./soundSrc.js";
-import { ID } from "./dataId.js";
+import { buttonSystem, mouseSystem } from './control.js'
+import { soundFile, soundSystem } from './sound.js'
+import { imageDataInfo, ImageDataObject, imageFile } from './imageSrc.js'
+import { fieldSystem } from './field.js'
+import { graphicSystem } from './graphic.js'
+import { ID } from './dataId.js'
+import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon } from './dataStat.js'
 
-// 게임 변수 선언
-// 게임 process 함수와 display 함수는 맨 마지막 줄에 있습니다.
-let game = new TamsaEngine('tamshooter4', 800, 600, 'js/tamsaEngine/')
+/** HTML 캔버스 */
+const canvas = document.getElementById('canvas')
 
-// 처음 로딩용 추가
-for (let sound in soundSrc.system) {
-  game.sound.createAudio(soundSrc.system[sound])
+/** 프레임카운트 */
+let frameCount = 0
+
+/** 현재 프레임 */
+let currentFps = 0
+
+/** 프레임 카운트 1초마다 리셋, 해당 함수는 setInterval(fpsCheck, 1000) 에 의해 실행됨 */
+function fpsCheck () {
+  currentFps = frameCount
+  frameCount = 0
 }
-
-/** 디지털 숫자를 표시하는 함수 */
-let digitalDisplay = game.graphic.createCustomBitmapDisplay(imageSrc.system.digitalFontSmall, 12, 18)
+setInterval(fpsCheck, 1000)
 
 class BoxObject {
   /**
@@ -61,28 +67,28 @@ class BoxObject {
 
   displayBackGround () {
     if (this.borderColor !== '') {
-      game.graphic.strokeRect(this.x, this.y, this.width, this.height, this.borderColor)
+      graphicSystem.strokeRect(this.x, this.y, this.width, this.height, this.borderColor)
     }
 
     if (this.color === '') return
     
     if (this.endColor != null) {
-      game.graphic.gradientDisplay(this.x + this.borderWidth, this.y + this.borderWidth, this.width - (this.borderWidth * 2), this.height - (this.borderWidth * 2), this.color, this.endColor)
+      graphicSystem.gradientDisplay(this.x + this.borderWidth, this.y + this.borderWidth, this.width - (this.borderWidth * 2), this.height - (this.borderWidth * 2), this.color, this.endColor)
     } else {
-      game.graphic.fillRect(this.x + this.borderWidth, this.y + this.borderWidth, this.width - (this.borderWidth * 2), this.height - (this.borderWidth * 2), this.color)
+      graphicSystem.fillRect(this.x + this.borderWidth, this.y + this.borderWidth, this.width - (this.borderWidth * 2), this.height - (this.borderWidth * 2), this.color)
     }
   }
 
   displayFocus () {
     if (this.focus) {
-      game.graphic.fillRect(this.x, this.y, this.width, this.height, this.focusColor, 0.5)
+      graphicSystem.fillRect(this.x, this.y, this.width, this.height, this.focusColor, 0.5)
     }
   }
 
   displayText () {
     // 텍스트
     if (this.text) {
-      game.graphic.fillText(this.text, this.x + this.borderWidth + 2, this.y + this.borderWidth)
+      graphicSystem.fillText(this.text, this.x + this.borderWidth + 2, this.y + this.borderWidth)
     }
   }
 
@@ -124,7 +130,7 @@ class BoxImageObject extends BoxObject {
     super.displayBackGround()
 
     if (this.image == null || this.imageData == null) return
-    game.graphic.imageDisplay(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height)
+    graphicSystem.imageDisplay(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height)
   }
 }
 
@@ -179,14 +185,9 @@ class MenuSystem {
    * 만약 이 함수를 상속받는다면 super.processButton()를 호출하고 그 밑에 로직을 구현해주세요.
    */
   processButton () {
-    let buttonStart = game.control.getButtonInput(game.control.buttonIndex.START)
-    let buttonA = game.control.getButtonInput(game.control.buttonIndex.A)
-    let buttonSelect = game.control.getButtonInput(game.control.buttonIndex.SELECT)
-    let buttonB = game.control.getButtonInput(game.control.buttonIndex.B)
-
-    if (buttonStart || buttonA) {
+    if (buttonSystem.getButtonInput(buttonSystem.BUTTON_MENU_SELECT)) {
       this.selected = true
-    } else if (buttonSelect|| buttonB) {
+    } else if (buttonSystem.getButtonInput(buttonSystem.BUTTON_MENU_CANCEL)) {
       this.canceled = true
     }
   }
@@ -195,12 +196,12 @@ class MenuSystem {
    * 로직 처리 - 마우스 입력
    * 이 함수는 상속받지 마시고, 대신 추가로 구현해야 하는 기능이 있다면 processMouseExtends 함수에 내용을 추가해주세요.
    * 
-   * 클릭 조건을 확인하기 위해서 if (!game.control.getMouseDown()) return 를 사용해주세요.
+   * 클릭 조건을 확인하기 위해서 if (!mouseSystem.getMouseDown()) return 를 사용해주세요.
    * 안그러면 마우스가 닿기만 해도 반응할 수 있습니다.
    */
   processMouse () {
-    if (!game.control.getMouseDown()) return
-
+    if (!mouseSystem.getMouseDown()) return
+    
     this.mouseLogicMenuList()
     this.processMouseExtend()
   }
@@ -215,8 +216,8 @@ class MenuSystem {
   }
 
   mouseLogicMenuList () {
-    const mouseX = game.control.getMousePosition().x
-    const mouseY = game.control.getMousePosition().y
+    const mouseX = mouseSystem.getMousePosition().x
+    const mouseY = mouseSystem.getMousePosition().y
 
     for (let i = 0; i < this.menuList.length; i++) {
       if (this.menuList[i] == null) continue
@@ -319,9 +320,9 @@ class MenuSystem {
 
   displayBackground () {
     if (this.backgroundColor.length === 1) {
-      game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, this.backgroundColor[0])
+      graphicSystem.fillRect(0, 0, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT, this.backgroundColor[0])
     } else if (this.backgroundColor.length >= 2) {
-      game.graphic.gradientDisplay(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, this.backgroundColor[0], this.backgroundColor[this.backgroundColor.length - 1], ...this.backgroundColor.slice(2))
+      graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT, this.backgroundColor[0], this.backgroundColor[this.backgroundColor.length - 1], ...this.backgroundColor.slice(2))
     }
   }
 
@@ -344,13 +345,13 @@ class MainSystem extends MenuSystem {
 
   constructor () {
     super()
-    this.menuList[this.MENU_ROUND_SELECT] = new BoxImageObject(0, 100, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.roundSelect)
-    this.menuList[this.MENU_WEAPON_SELECT] = new BoxImageObject(0, 150, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.weaponSelect)
-    this.menuList[this.MENU_SKILL_SELECT] = new BoxImageObject(0, 200, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.skillSelect)
-    this.menuList[this.MENU_UPGRADE] = new BoxImageObject(0, 250, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.upgrade)
-    this.menuList[this.MENU_OPTION] = new BoxImageObject(0, 300, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.option)
-    this.menuList[this.MENU_DATA_SETTING] = new BoxImageObject(0, 350, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.data)
-    this.menuList[this.MENU_ETC] = new BoxImageObject(0, 400, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.etc)
+    this.menuList[this.MENU_ROUND_SELECT] = new BoxImageObject(0, 100, 400, 50, '', imageFile.system.menuList, imageDataInfo.menuList.roundSelect)
+    this.menuList[this.MENU_WEAPON_SELECT] = new BoxImageObject(0, 150, 400, 50, '', imageFile.system.menuList, imageDataInfo.menuList.weaponSelect)
+    this.menuList[this.MENU_SKILL_SELECT] = new BoxImageObject(0, 200, 400, 50, '', imageFile.system.menuList, imageDataInfo.menuList.skillSelect)
+    this.menuList[this.MENU_UPGRADE] = new BoxImageObject(0, 250, 400, 50, '', imageFile.system.menuList, imageDataInfo.menuList.upgrade)
+    this.menuList[this.MENU_OPTION] = new BoxImageObject(0, 300, 400, 50, '', imageFile.system.menuList, imageDataInfo.menuList.option)
+    this.menuList[this.MENU_DATA_SETTING] = new BoxImageObject(0, 350, 400, 50, '', imageFile.system.menuList, imageDataInfo.menuList.data)
+    this.menuList[this.MENU_ETC] = new BoxImageObject(0, 400, 400, 50, '', imageFile.system.menuList, imageDataInfo.menuList.etc)
     this.menuList[this.MENU_FULLSCREEN] = new BoxObject(0, 450, 400, 50, 'full screen', 'grey')
 
     this.backgroundColor = ['#78b3f2', '#d2dff6']
@@ -360,14 +361,14 @@ class MainSystem extends MenuSystem {
     super.processButton()
 
     // 버튼 눌렀는지 확인하는 변수, true or false
-    const buttonInputUp = game.control.getButtonInput(game.control.buttonIndex.UP)
-    const buttonInputDown = game.control.getButtonInput(game.control.buttonIndex.DOWN)
+    const buttonInputUp = buttonSystem.getButtonInput(buttonSystem.BUTTON_UP)
+    const buttonInputDown = buttonSystem.getButtonInput(buttonSystem.BUTTON_DOWN)
 
     if (buttonInputUp && this.cursorPosition > 0) {
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
       this.cursorPosition--
     } else if (buttonInputDown && this.cursorPosition < this.menuList.length - 1) {
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
       this.cursorPosition++
     }
   }
@@ -388,7 +389,7 @@ class MainSystem extends MenuSystem {
     }
 
     // 사운드 출력
-    game.sound.play(soundSrc.system.systemSelect)
+    soundSystem.play(soundFile.system.systemSelect)
   }
 
   /**
@@ -399,15 +400,8 @@ class MainSystem extends MenuSystem {
     if (document.fullscreenElement) {
       document.exitFullscreen()
     } else {
-      try {
-        if (game.currentDevice === game.device.PC) {
-          game.graphic.canvas.requestFullscreen()
-        } else {
-          gameSystem.setStatLineText(1, 'MOBILE NOT USING THIS')
-        }
-      } catch {
-        gameSystem.setStatLineText(1, 'NOT SUPPORTED FULL SCREEN')
-      }
+      let canvas = document.getElementById('canvas')
+      canvas.requestFullscreen()
     }
   }
 
@@ -420,38 +414,32 @@ class MainSystem extends MenuSystem {
 
   display () {
     super.display()
-    game.graphic.imageDisplay(imageSrc.tamshooter4Title, 0, 0)
+    graphicSystem.imageDisplay(imageFile.tamshooter4Title, 0, 0)
   }
 }
 
 class OptionSystem extends MenuSystem {
   MENU_BACK = 0
-  MENU_SOUND = 1
-  MENU_SOUND_VOLUME = 2
-  MENU_MUSIC = 3
-  MENU_MUSIC_VOLUME = 4
-  MENU_RESULT_AUTO_SKIP = 5
+  MENU_MASTER_VOLUME = 1
+  MENU_SOUND = 2
+  MENU_SOUND_VOLUME = 3
+  MENU_MUSIC = 4
+  MENU_MUSIC_VOLUME = 5
   MENU_SHOW_ENEMY_HP = 6
-  MENU_SHOW_DAMAGE = 7
+  MENU_RESULT_AUTO_SKIP = 7
+  MENU_SHOW_DAMAGE = 8
 
+  optionDefaultValue = [null, 100, true, 100, true, 100, true, true, true]
+  optionValue = this.optionDefaultValue
   boxText = ['<- back', 
+    'master volume (마스터 볼륨)',
     'sound (효과음)',
     'sound volume (사운드 볼륨)',
     'music (음악)',
     'music volume (음악 볼륨)',
-    'result auto skip (결과 자동 건너뛰기)',
     'show enemy hp (적 체력 보여주기)',
+    'result auto skip (결과 자동 건너뛰기)',
     'show damage (데미지 보여주기)']
-
-  optionValue = {
-    soundOn: true,
-    musicOn: true,
-    soundVolume: 100,
-    musicVolume: 100,
-    resultAutoSkip: true,
-    showEnemyHp: true,
-    showDamage: true
-  }
 
   constructor () {
     super()
@@ -471,134 +459,141 @@ class OptionSystem extends MenuSystem {
     this.backgroundColor = ['#f9d423', '#ff4e50']
   }
 
-  getSaveData () {
-    return this.optionValue
-  }
-
-  setOption (optionIndex) {
-    let option = this.optionValue
-
-    switch (optionIndex) {
-      case this.MENU_SOUND:
-        option.soundOn = !option.soundOn
-        break
-      case this.MENU_SOUND_VOLUME:
-        // 현재 사운드 볼륨을 가져오고 10을 증가시킵니다.
-        let currentSoundVolume = option.soundVolume
-        currentSoundVolume += 10
-        if (currentSoundVolume > 100) currentSoundVolume = 0
-
-        // 사운드 볼륨 값을 저장한 후, 실제 엔진의 게인을 조정하여 사운드 볼륨을 조정합니다.
-        option.soundVolume = currentSoundVolume
-        game.sound.setGain(currentSoundVolume / 100)
-        break
-      case this.MENU_MUSIC:
-        option.musicOn = !option.musicOn
-        break
-      case this.MENU_MUSIC_VOLUME:
-        // 현재 음악 볼륨을 가져오고 10을 증가시킵니다.
-        let currentMusicVolume = option.musicVolume
-        currentMusicVolume += 10
-        if (currentMusicVolume > 100) currentMusicVolume = 0
-
-        // 음악 볼륨 값을 저장한 훟, 실제 엔진의 게인을 조정하여 음악 볼륨을 조정합니다.
-        option.musicVolume = currentMusicVolume
-        game.sound.setMusicGain(currentMusicVolume / 100)
-        break
-      case this.MENU_RESULT_AUTO_SKIP:
-        // 이 옵션은 6초 후 자동으로 메인화면으로 이동하게 해주는 기능
-        // 사용자는 추가적인 작업을 할 필요가 없다.
-        // 이 기능을 끄면 여러분이 직접 ENTER를 눌러야 나갈 수 있습니다.
-        option.resultAutoSkip = !option.resultAutoSkip
-        break
-      case this.MENU_SHOW_ENEMY_HP:
-        option.showEnemyHp = !option.showEnemyHp
-        break
-      case this.MENU_SHOW_DAMAGE:
-        option.showDamage = !option.showDamage
-        break
-    }
-  }
-
   processButton () {
     super.processButton()
 
-    const buttonInputUp = game.control.getButtonInput(game.control.buttonIndex.UP)
-    const buttonInputDown = game.control.getButtonInput(game.control.buttonIndex.DOWN)
-    const buttonInputLeft = game.control.getButtonInput(game.control.buttonIndex.LEFT)
-    const buttonInputRight = game.control.getButtonInput(game.control.buttonIndex.RIGHT)
+    const buttonInputUp = buttonSystem.getButtonInput(buttonSystem.BUTTON_UP)
+    const buttonInputDown = buttonSystem.getButtonInput(buttonSystem.BUTTON_DOWN)
+    const buttonInputLeft = buttonSystem.getButtonInput(buttonSystem.BUTTON_LEFT)
+    const buttonInputRight = buttonSystem.getButtonInput(buttonSystem.BUTTON_RIGHT)
 
     if (buttonInputUp && this.cursorPosition > 0) {
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
       this.cursorPosition--
     } else if (buttonInputDown && this.cursorPosition < this.menuList.length - 1) {
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
       this.cursorPosition++
     }
 
-    // if (buttonInputLeft || buttonInputRight) {
-    //   switch (this.cursorPosition) {
-    //     case this.MENU_SOUND_VOLUME:
-    //       game.sound.setOption(this.MENU_SOUND_VOLUME)
-    //       break
-    //     case this.MENU_MUSIC_VOLUME:
-    //       game.sound.setOption(this.MENU_MUSIC_VOLUME)
-    //       break
-    //     case this.MENU_MASTER_VOLUME:
-    //       game.sound.setOption(this.MENU_MASTER_VOLUME)
-    //       break
-    //     case this.MENU_BACK:
-    //       break
-    //     default:
-    //       this.selected = true
-    //       break
-    //   }
-    // }
+    if (buttonInputLeft) {
+      switch (this.cursorPosition) {
+        case this.MENU_SOUND_VOLUME:
+          soundSystem.setOption(soundSystem.TYPE_SOUND_VOLUME, soundSystem.getOption().soundVolume - 10)
+          break
+        case this.MENU_MUSIC_VOLUME:
+          soundSystem.setOption(soundSystem.TYPE_MUSIC_VOLUME, soundSystem.getOption().musicVolume - 10)
+          break
+        case this.MENU_MASTER_VOLUME:
+          soundSystem.setOption(soundSystem.TYPE_MASTER_VOLUME, soundSystem.getOption().masterVolume - 10)
+          break
+        case this.MENU_BACK:
+          break
+        default:
+          this.selected = true
+          break
+      }
+    }
 
-    // if (buttonInputRight) {
-    //   switch (this.cursorPosition) {
-    //     case this.MENU_SOUND_VOLUME:
-    //       game.sound.setOption(game.sound.TYPE_SOUND_VOLUME, game.sound.getOption().soundVolume + 10)
-    //       break
-    //     case this.MENU_MUSIC_VOLUME:
-    //       game.sound.setOption(game.sound.TYPE_MUSIC_VOLUME, game.sound.getOption().musicVolume + 10)
-    //       break
-    //     case this.MENU_MASTER_VOLUME:
-    //       game.sound.setOption(game.sound.TYPE_MASTER_VOLUME, game.sound.getOption().masterVolume + 10)
-    //       break
-    //     case this.MENU_BACK:
-    //       break
-    //     default:
-    //       this.selected = true
-    //       break
-    //   }
-    // }
+    if (buttonInputRight) {
+      switch (this.cursorPosition) {
+        case this.MENU_SOUND_VOLUME:
+          soundSystem.setOption(soundSystem.TYPE_SOUND_VOLUME, soundSystem.getOption().soundVolume + 10)
+          break
+        case this.MENU_MUSIC_VOLUME:
+          soundSystem.setOption(soundSystem.TYPE_MUSIC_VOLUME, soundSystem.getOption().musicVolume + 10)
+          break
+        case this.MENU_MASTER_VOLUME:
+          soundSystem.setOption(soundSystem.TYPE_MASTER_VOLUME, soundSystem.getOption().masterVolume + 10)
+          break
+        case this.MENU_BACK:
+          break
+        default:
+          this.selected = true
+          break
+      }
+    }
 
     // 사운드 출력
     if (buttonInputLeft || buttonInputRight) {
       switch (this.cursorPosition) {
         case this.MENU_MASTER_VOLUME:
         case this.MENU_SOUND_VOLUME:
-          game.sound.play(soundSrc.system.systemCursor)
+          soundSystem.play(soundFile.system.systemCursor)
           break
       }
     }
   }
 
+  process () {
+    super.process()
+    this.processGetOption()
+  }
+
+  /**
+   * 옵션을 불러온 후 다른 객체에게 옵션값을 전달하고 반영할 때 사용하는 함수
+   */
+  loadOption (sendOptionValue) {
+    // 옵션 값을 정상적으로 반영하기 위해 형변환을 합니다.
+    for (let i = 0; i < sendOptionValue.length; i++) {
+      switch (i) {
+        case this.MENU_BACK:
+          // 뒤로 가기 옵션은 null값으로 처리함.
+          this.optionValue[i] = null
+          break
+        case this.MENU_SOUND:
+        case this.MENU_MUSIC:
+        case this.MENU_RESULT_AUTO_SKIP:
+        case this.MENU_SHOW_ENEMY_HP:
+        case this.MENU_SHOW_DAMAGE:
+          // boolean값으로 변환 (경고: Boolean 생성자로는 boolean값을 판단할 수 없음.)
+          if (sendOptionValue[i] === 'true') {
+            this.optionValue[i] = true
+          } else {
+            this.optionValue[i] = false
+          }
+          break
+        default:
+          // 그외 나머지는 전부 number로 가정
+          this.optionValue[i] = Number(sendOptionValue[i])
+      }
+    }
+
+    soundSystem.setOption(soundSystem.TYPE_MASTER_VOLUME, this.optionValue[this.MENU_MASTER_VOLUME])
+    soundSystem.setOption(soundSystem.TYPE_SOUND_ON, this.optionValue[this.MENU_SOUND])
+    soundSystem.setOption(soundSystem.TYPE_SOUND_VOLUME, this.optionValue[this.MENU_SOUND_VOLUME])
+    soundSystem.setOption(soundSystem.TYPE_MUSIC_ON, this.optionValue[this.MENU_MUSIC])
+    soundSystem.setOption(soundSystem.TYPE_MUSIC_VOLUME, this.optionValue[this.MENU_MUSIC_VOLUME])
+  }
+  
+  processGetOption () {
+    let soundOption = soundSystem.getOption()
+    this.optionValue[this.MENU_MASTER_VOLUME] = soundOption.masterVolume
+    this.optionValue[this.MENU_SOUND] = soundOption.soundOn
+    this.optionValue[this.MENU_SOUND_VOLUME] = soundOption.soundVolume
+    this.optionValue[this.MENU_MUSIC] = soundOption.musicOn
+    this.optionValue[this.MENU_MUSIC_VOLUME] = soundOption.musicVolume
+  }
+
   processSelect () {
     if (!this.selectedCheck()) return
 
-    if (this.cursorPosition === this.MENU_BACK) {
-      this.canceled = true
-    } else {
-      this.setOption(this.cursorPosition)
+    switch (this.cursorPosition) {
+      case this.MENU_BACK: this.canceled = true; break
+      case this.MENU_MASTER_VOLUME: soundSystem.setOption(soundSystem.TYPE_MASTER_VOLUME); break
+      case this.MENU_SOUND: soundSystem.setOption(soundSystem.TYPE_SOUND_ON); break
+      case this.MENU_SOUND_VOLUME: soundSystem.setOption(soundSystem.TYPE_SOUND_VOLUME); break
+      case this.MENU_MUSIC: soundSystem.setOption(soundSystem.TYPE_MUSIC_ON); break
+      case this.MENU_MUSIC_VOLUME: soundSystem.setOption(soundSystem.TYPE_MUSIC_VOLUME); break
+      case this.MENU_SHOW_ENEMY_HP: this.optionValue[this.MENU_SHOW_ENEMY_HP] = !this.optionValue[this.MENU_SHOW_ENEMY_HP]; break
+      case this.MENU_RESULT_AUTO_SKIP: this.optionValue[this.MENU_RESULT_AUTO_SKIP] = !this.optionValue[this.MENU_RESULT_AUTO_SKIP]; break
+      case this.MENU_SHOW_DAMAGE: this.optionValue[this.MENU_SHOW_DAMAGE] = !this.optionValue[this.MENU_SHOW_DAMAGE]; break
     }
 
     // 사운드 출력
     switch (this.cursorPosition) {
       case this.MENU_MASTER_VOLUME:
       case this.MENU_SOUND_VOLUME:
-        game.sound.play(soundSrc.system.systemCursor)
+        soundSystem.play(soundFile.system.systemCursor)
         break
     }
   }
@@ -606,57 +601,36 @@ class OptionSystem extends MenuSystem {
   processCancel () {
     if (!this.canceledCheck()) return
 
-    game.sound.play(soundSrc.system.systemBack)
+    soundSystem.play(soundFile.system.systemBack)
     gameSystem.stateId = gameSystem.STATE_MAIN
   }
 
   displayMenu () {
-    let optionArray = [
-      null,
-      this.optionValue.soundOn,
-      this.optionValue.soundVolume,
-      this.optionValue.musicOn,
-      this.optionValue.musicVolume,
-      this.optionValue.resultAutoSkip,
-      this.optionValue.showEnemyHp,
-      this.optionValue.showDamage,
-    ]
-
-    const imageOptionCheckHeight = 64
-    const imageOptionCheckWidth = 30
-
     for (let i = 0; i < this.menuList.length; i++) {
       this.menuList[i].display()
-      let imageOptionCheck = imageSrc.system.optionCheck
+      let imageOptionCheck = imageFile.system.optionCheck
 
       // 두번째(1번) 메뉴부터 옵션 결과값이 쉽게 보여지도록 하얀색 박스 배경을 만듬.
       if (i !== 0) {
-        game.graphic.fillRect(this.menuList[i].x + this.menuList[i].width, this.menuList[i].y, 100, this.menuList[i].height, 'white')
+        graphicSystem.fillRect(this.menuList[i].x + this.menuList[i].width, this.menuList[i].y, 100, this.menuList[i].height, 'white')
       }
 
-      if (i >= 1) { // 첫번째 줄부터 옵션 값이 있으므로 여기서부터 옵션 값 출력
-        // 옵션 값 종류에 따라 결과값 표시
-        switch (typeof optionArray[i]) {
-          case 'boolean':
-            if (optionArray[i] === true) {
-              game.graphic.imageDisplay(imageOptionCheck, 0, imageOptionCheckHeight / 2, imageOptionCheckWidth, imageOptionCheckHeight / 2, this.menuList[i].x + this.menuList[i].width, this.menuList[i].y, imageOptionCheckWidth, imageOptionCheckHeight / 2)
-            } else {
-              game.graphic.imageDisplay(imageOptionCheck, 0, 0, imageOptionCheckWidth, imageOptionCheckHeight / 2, this.menuList[i].x + this.menuList[i].width, this.menuList[i].y, imageOptionCheckWidth, imageOptionCheckHeight / 2)
-            }
-            break
-          case 'number':
-            digitalDisplay(optionArray[i], this.menuList[i].x + this.menuList[i].width, this.menuList[i].y)
-            break
-        }
+      // 옵션 값 종류에 따라 결과값 표시
+      switch (typeof this.optionValue[i]) {
+        case 'boolean':
+          if (this.optionValue[i] === true) {
+            graphicSystem.imageDisplay(imageOptionCheck, 0, imageOptionCheck.height / 2, imageOptionCheck.width, imageOptionCheck.height / 2, this.menuList[i].x + this.menuList[i].width, this.menuList[i].y, imageOptionCheck.width, imageOptionCheck.height / 2)
+          } else {
+            graphicSystem.imageDisplay(imageOptionCheck, 0, 0, imageOptionCheck.width, imageOptionCheck.height / 2, this.menuList[i].x + this.menuList[i].width, this.menuList[i].y, imageOptionCheck.width, imageOptionCheck.height / 2)
+          }
+          break
+        case 'number':
+          graphicSystem.digitalFontDisplay(this.optionValue[i], this.menuList[i].x + this.menuList[i].width, this.menuList[i].y)
+          break
       }
-
     }
   }
 
-  /**
-   * 사용불가능
-   * @deprecated
-   */
   getOptionObject () {
     return {
       sound: this.optionValue[this.MENU_SOUND],
@@ -667,10 +641,9 @@ class OptionSystem extends MenuSystem {
     }
   }
 
-  /** 사용불가능 @deprecated */
   setOptionMusicSound (music, sound) {
-    // this.optionValue[this.MENU_MUSIC] = music
-    // this.optionValue[this.MENU_SOUND] = sound
+    this.optionValue[this.MENU_MUSIC] = music
+    this.optionValue[this.MENU_SOUND] = sound
   }
 }
 
@@ -686,7 +659,7 @@ class RoundSelectSystem extends MenuSystem {
   /** 커서 모드 */ cursorMode = this.CURSORMODE_MAIN
   /** 최소 라운드: 게임은 1라운드부터 시작 */ MIN_ROUND = 1
   /** 최대 라운드: 8 */ MAX_ROUND = 8
-  roundIcon = imageSrc.roundIcon
+  roundIcon = imageFile.roundIcon
   roundIconData = { width: 60, height: 60 }
 
 
@@ -710,31 +683,31 @@ class RoundSelectSystem extends MenuSystem {
     super.processButton()
 
     // 이 변수들은 버튼 입력 조건문을 간편하게 작성하기 위한 변수입니다.
-    const buttonUp = game.control.getButtonInput(game.control.buttonIndex.UP)
-    const buttonDown = game.control.getButtonInput(game.control.buttonIndex.DOWN)
-    const buttonLeft = game.control.getButtonInput(game.control.buttonIndex.LEFT)
-    const buttonRight = game.control.getButtonInput(game.control.buttonIndex.RIGHT)
+    const buttonUp = buttonSystem.getButtonInput(buttonSystem.BUTTON_UP)
+    const buttonDown = buttonSystem.getButtonInput(buttonSystem.BUTTON_DOWN)
+    const buttonLeft = buttonSystem.getButtonInput(buttonSystem.BUTTON_LEFT)
+    const buttonRight = buttonSystem.getButtonInput(buttonSystem.BUTTON_RIGHT)
 
     if (this.cursorMode === this.CURSORMODE_MAIN) {
       if (buttonDown) {
         this.selected = true
       } else if (buttonLeft && this.cursorRound > 0) {
         this.cursorRound--
-        game.sound.play(soundSrc.system.systemCursor)
+        soundSystem.play(soundFile.system.systemCursor)
       } else if (buttonRight && this.cursorRound < this.MAX_ROUND) {
         this.cursorRound++
-        game.sound.play(soundSrc.system.systemCursor)
+        soundSystem.play(soundFile.system.systemCursor)
       }
     } else if (this.cursorMode === this.CURSORMODE_SUB) {
       if (buttonLeft && this.cursorSubRound > 0) {
         this.cursorSubRound--
-        game.sound.play(soundSrc.system.systemCursor)
+        soundSystem.play(soundFile.system.systemCursor)
       } else if (buttonRight && this.cursorSubRound < 9) {
         this.cursorSubRound++
-        game.sound.play(soundSrc.system.systemCursor)
+        soundSystem.play(soundFile.system.systemCursor)
       } else if (buttonUp) {
         this.canceled = true
-        game.sound.play(soundSrc.system.systemCursor)
+        soundSystem.play(soundFile.system.systemCursor)
       }
     }
 
@@ -780,10 +753,10 @@ class RoundSelectSystem extends MenuSystem {
 
     if (this.cursorMode === this.CURSORMODE_MAIN) {
       gameSystem.stateId = gameSystem.STATE_MAIN
-      game.sound.play(soundSrc.system.systemBack)
+      soundSystem.play(soundFile.system.systemBack)
     } else if (this.cursorMode === this.CURSORMODE_SUB) {
       this.cursorMode = this.CURSORMODE_MAIN
-      game.sound.play(soundSrc.system.systemBack)
+      soundSystem.play(soundFile.system.systemBack)
     }
   }
 
@@ -810,11 +783,11 @@ class RoundSelectSystem extends MenuSystem {
         this.canceled = true
       } else {
         this.cursorMode = this.CURSORMODE_SUB
-        game.sound.play(soundSrc.system.systemSelect)
+        soundSystem.play(soundFile.system.systemSelect)
       }
     } else if (this.cursorMode === this.CURSORMODE_SUB) {
       fieldSystem.roundStart(roundTableId[this.cursorSubRound])
-      game.sound.play(soundSrc.system.systemEnter)
+      soundSystem.play(soundFile.system.systemEnter)
     }
   }
 
@@ -861,7 +834,7 @@ class RoundSelectSystem extends MenuSystem {
 
       if (i < 9 || i > 19) continue
       // 각 라운드 아이콘의 이미지 출력
-      game.graphic.imageDisplay(
+      graphicSystem.imageDisplay(
         this.roundIcon, 
         iconNumberX * this.roundIconData.width, 
         1 * this.roundIconData.height, 
@@ -875,7 +848,7 @@ class RoundSelectSystem extends MenuSystem {
 
       // 이미지에 가려져서 무엇이 선택되었는지 알기 어려우므로, 따로 사격형을 먼저 칠합니다.
       if (this.cursorMode === this.CURSORMODE_SUB && this.cursorSubRound === n) {
-        game.graphic.fillRect(
+        graphicSystem.fillRect(
           this.menuList[i].x - rectPlusSize, 
           this.menuList[i].y - rectPlusSize,
           this.menuList[i].width + (rectPlusSize * 2),
@@ -886,18 +859,18 @@ class RoundSelectSystem extends MenuSystem {
       }
 
       // 글자를 표시할 사각형 출력 후, 글자 출력
-      game.graphic.fillRect(this.menuList[i].x, this.menuList[i].y + (this.menuList[i].height - fontHeight), fontWidth * 3, fontHeight, 'white', 0.5)
-      digitalDisplay('1-' + (iconNumberX + 1), this.menuList[i].x, this.menuList[i].y + (this.menuList[i].height - fontHeight))
+      graphicSystem.fillRect(this.menuList[i].x, this.menuList[i].y + (this.menuList[i].height - fontHeight), fontWidth * 3, fontHeight, 'white', 0.5)
+      graphicSystem.digitalFontDisplay('1-' + (iconNumberX + 1), this.menuList[i].x, this.menuList[i].y + (this.menuList[i].height - fontHeight))
     }
   }
 
   displayWorld () {
-    game.graphic.strokeRect(0, 240, 800, 300, 'green')
+    graphicSystem.strokeRect(0, 240, 800, 300, 'green')
   }
 
   displayInfo () {
-    game.graphic.strokeRect(400, 160, 400, 80, 'pink')
-    game.graphic.fillText('ROUND: ' + this.menuList[this.cursorPosition].text, 400, 160, 400)
+    graphicSystem.strokeRect(400, 160, 400, 80, 'pink')
+    graphicSystem.fillText('ROUND: ' + this.menuList[this.cursorPosition].text, 400, 160, 400)
   }
 }
 
@@ -969,7 +942,7 @@ class DataSettingSystem extends MenuSystem {
   processCancel () {
     if (!this.canceledCheck()) return
 
-    game.sound.play(soundSrc.system.systemBack)
+    soundSystem.play(soundFile.system.systemBack)
     if (this.isQuestionResetWindow) {
       this.isQuestionResetWindow = false
       this.questionReset = false
@@ -980,8 +953,8 @@ class DataSettingSystem extends MenuSystem {
 
   processButton () {
     super.processButton()
-    const buttonUp = game.control.getButtonInput(game.control.buttonIndex.UP)
-    const buttonDown = game.control.getButtonInput(game.control.buttonIndex.DOWN)
+    const buttonUp = buttonSystem.getButtonInput(buttonSystem.BUTTON_UP)
+    const buttonDown = buttonSystem.getButtonInput(buttonSystem.BUTTON_DOWN)
 
     if (this.isQuestionResetWindow) {
       // 리셋버튼은 위쪽에 아니오, 밑쪽에 예가 있습니다.
@@ -994,10 +967,10 @@ class DataSettingSystem extends MenuSystem {
     } else {
       if (buttonUp && this.cursorPosition > 0) {
         this.cursorPosition--
-        game.sound.play(soundSrc.system.systemCursor)
+        soundSystem.play(soundFile.system.systemCursor)
       } else if (buttonDown && this.cursorPosition < this.menuList.length - 1) {
         this.cursorPosition++
-        game.sound.play(soundSrc.system.systemCursor)
+        soundSystem.play(soundFile.system.systemCursor)
       }
     }
   }
@@ -1011,7 +984,7 @@ class DataSettingSystem extends MenuSystem {
         this.isResetComplete = true
         
         // 2초 후 자동 새로고침
-        game.sound.play(soundSrc.system.systemPlayerDie)
+        soundSystem.play(soundFile.system.systemPlayerDie)
         setTimeout(() => { location.reload() }, 2000)
       } else {
         // 취소 명령
@@ -1019,7 +992,7 @@ class DataSettingSystem extends MenuSystem {
       }
     } else {
       if (this.cursorPosition >= 1) {
-        game.sound.play(soundSrc.system.systemSelect)
+        soundSystem.play(soundFile.system.systemSelect)
       }
       switch (this.cursorPosition) {
         case this.MENU_BACK: this.canceled = true; break
@@ -1033,8 +1006,8 @@ class DataSettingSystem extends MenuSystem {
   }
 
   processMouseExtend () {
-    const mouseX =  game.control.getMousePosition().x
-    const mouseY =  game.control.getMousePosition().y
+    const mouseX = mouseSystem.getMousePosition().x
+    const mouseY = mouseSystem.getMousePosition().y
     if (this.isQuestionResetWindow) {
       if (this.questionResetYes.collision(mouseX, mouseY)) {
         this.questionReset = true
@@ -1103,7 +1076,7 @@ class WeaponSelectSystem extends MenuSystem {
     /** 리스트 포지션의 최대 */ this.LIST_POSITION_MAX = 4
 
     for (let i = 10, index = 0; index < 50; i++, index++) {
-      this.menuList[i] = new BoxImageObject((index % 10) * 80, Math.floor(index / 10) * 40 + 40, 80, 40, '', imageSrc.system.weaponIcon, {x: (index % 10) * 40, y: Math.floor(index / 10) * 20, width: 40, height: 20})
+      this.menuList[i] = new BoxImageObject((index % 10) * 80, Math.floor(index / 10) * 40 + 40, 80, 40, '', imageFile.system.weaponIcon, {x: (index % 10) * 40, y: Math.floor(index / 10) * 20, width: 40, height: 20})
     }
 
     for (let i = 60, index = 0; index < 4; i++, index++) {
@@ -1114,14 +1087,14 @@ class WeaponSelectSystem extends MenuSystem {
 
   /** 어떤 버튼이 눌렸는지를 오브젝트로 확인합니다. 버튼이 눌린것은 boolean값으로 확인해야합니다. */
   getButtonObject () {
-    const buttonUp = game.control.getButtonInput(game.control.buttonIndex.UP)
-    const buttonDown = game.control.getButtonInput(game.control.buttonIndex.DOWN)
-    const buttonLeft = game.control.getButtonInput(game.control.buttonIndex.LEFT)
-    const buttonRight = game.control.getButtonInput(game.control.buttonIndex.RIGHT)
-    const buttonSkill0 = game.control.getButtonInput(game.control.buttonIndex.L1)
-    const buttonSkill1 = game.control.getButtonInput(game.control.buttonIndex.L2)
-    const buttonSkill2 = game.control.getButtonInput(game.control.buttonIndex.R1)
-    const buttonSkill3 = game.control.getButtonInput(game.control.buttonIndex.R2)
+    const buttonUp = buttonSystem.getButtonInput(buttonSystem.BUTTON_UP)
+    const buttonDown = buttonSystem.getButtonInput(buttonSystem.BUTTON_DOWN)
+    const buttonLeft = buttonSystem.getButtonInput(buttonSystem.BUTTON_LEFT)
+    const buttonRight = buttonSystem.getButtonInput(buttonSystem.BUTTON_RIGHT)
+    const buttonSkill0 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL0)
+    const buttonSkill1 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL1)
+    const buttonSkill2 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL2)
+    const buttonSkill3 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL3)
     return  {
       buttonUp,
       buttonDown,
@@ -1190,13 +1163,13 @@ class WeaponSelectSystem extends MenuSystem {
     let button = this.getButtonObject()
     if (button.buttonLeft && this.cursorMenu >= 0) {
       this.cursorMenu--
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     } else if (button.buttonRight && this.cursorMenu < 1) {
       this.cursorMenu++
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     } else if (button.buttonDown) {
       this.state = this.STATE_ICON
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     }
   }
 
@@ -1209,19 +1182,19 @@ class WeaponSelectSystem extends MenuSystem {
     if (button.buttonLeft) {
       // 커서아이콘이 X축 0의 위치에 있다면, 맨 오른쪽으로 이동시킴 그게 아닐경우 왼쪽으로 한칸 이동
       cursorX === 0 ? this.cursorIcon += 9 : this.cursorIcon--
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     } else if (button.buttonRight) {
       // 커서아이콘이 X축 9의 위치에 있다면, 커서를 맨 왼쪽으로 이동시킴 그게 아닐경우 오른쪽으로 한칸 이동
       cursorX === 9 ? this.cursorIcon -= 9 : this.cursorIcon++
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     } else if (button.buttonDown) {
       // 맨 마지막줄일경우 상태를 변경하고 아닐경우 아래쪽으로 한줄 이동
       cursorY === 4 ? this.state = this.STATE_LIST : this.cursorIcon += 10
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     } else if (button.buttonUp) {
       // 맨 처음 줄일경우 상태를 변경하고 아닐경우 위쪽으로 한줄 이동
       cursorY === 0 ? this.state = this.STATE_MENU : this.cursorIcon -= 10
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     }
   }
 
@@ -1229,10 +1202,10 @@ class WeaponSelectSystem extends MenuSystem {
     let button = this.getButtonObject()
     if (button.buttonDown && this.cursorList < 3) {
       this.cursorList++
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     } else if (button.buttonUp) {
       this.cursorList === 0 ? this.state = this.STATE_ICON : this.cursorList--
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     }
   }
 
@@ -1246,7 +1219,7 @@ class WeaponSelectSystem extends MenuSystem {
     this.listPosition++
     if (this.listPosition > 3) this.listPosition = 0
 
-    game.sound.play(soundSrc.system.systemSkillSelect)
+    soundSystem.play(soundFile.system.systemSkillSelect)
   }
 
   processSelect () {
@@ -1261,7 +1234,7 @@ class WeaponSelectSystem extends MenuSystem {
     } else if (this.state === this.STATE_LIST) {
       this.listPosition = this.cursorList
       this.state = this.STATE_ICON
-      game.sound.play(soundSrc.system.systemSelect)
+      soundSystem.play(soundFile.system.systemSelect)
     }
   }
 
@@ -1275,29 +1248,29 @@ class WeaponSelectSystem extends MenuSystem {
     } else if (this.state === this.STATE_LIST) {
       this.state = this.STATE_ICON
     }
-    game.sound.play(soundSrc.system.systemBack)
+    soundSystem.play(soundFile.system.systemBack)
   }
 
   displayUserWeapon () {
     let outputY = 400
-    digitalDisplay('icon/name           /delay/shot/hit/multiple/attack/damage', 0, 400)
+    graphicSystem.digitalFontDisplay('icon/name           /delay/shot/hit/multiple/attack/damage', 0, 400)
 
     let userWeapon = userSystem.getWeaponList()
-    let weaponIcon = imageSrc.system.weaponIcon
+    let weaponIcon = imageFile.system.weaponIcon
     let iconWidth = 40
     let iconHeight = 20
     for (let i = 0; i < userWeapon.length; i++) {
       let getString = this.getIconString(userWeapon[i])
-      digitalDisplay(getString, 0, outputY + iconHeight + (i * iconHeight))
+      graphicSystem.digitalFontDisplay(getString, 0, outputY + iconHeight + (i * iconHeight))
       
       let weaponNumber = userWeapon[i] - ID.playerWeapon.weaponNumberStart
       let weaponX = weaponNumber % 10
       let weaponY = Math.floor(weaponNumber / 10)
-      game.graphic.imageDisplay(weaponIcon, (weaponX * iconWidth), weaponY * iconHeight, iconWidth, iconHeight, 0, outputY + iconHeight + (i * iconHeight), iconWidth, iconHeight)
+      graphicSystem.imageDisplay(weaponIcon, (weaponX * iconWidth), weaponY * iconHeight, iconWidth, iconHeight, 0, outputY + iconHeight + (i * iconHeight), iconWidth, iconHeight)
     }
 
     // 하이라이트 표시
-    game.graphic.fillRect(0, outputY + iconHeight + (this.listPosition  * iconHeight), game.graphic.CANVAS_WIDTH, iconHeight, 'orange', 0.5)
+    graphicSystem.fillRect(0, outputY + iconHeight + (this.listPosition  * iconHeight), graphicSystem.CANVAS_WIDTH, iconHeight, 'orange', 0.5)
   }
 
   /** 해당 아이콘 위치에 있는 무기 또는 스킬의 정보를 얻어옵니다. */
@@ -1320,7 +1293,7 @@ class WeaponSelectSystem extends MenuSystem {
 
   display () {
     super.display()
-    // digitalFontDisplay('icon/name           /delay/shot/hit/multiple/attack/damage', 0, 0)
+    // graphicSystem.digitalFontDisplay('icon/name           /delay/shot/hit/multiple/attack/damage', 0, 0)
     this.displayUserWeapon()
   }
 }
@@ -1352,13 +1325,13 @@ class SkillSelectSystem extends WeaponSelectSystem {
       let xNumber = index % 10
       let yNumber = Math.floor(index / 10)
       let imageData = {x: xNumber * iconWidth, y: yNumber * iconHeight, width: iconWidth, height: iconHeight}
-      this.menuList[i] = new BoxImageObject(xNumber * iconOutputWidth, yNumber * iconWidth + sectionArea, iconOutputWidth, iconWidth, '', imageSrc.system.skillIcon, imageData)
+      this.menuList[i] = new BoxImageObject(xNumber * iconOutputWidth, yNumber * iconWidth + sectionArea, iconOutputWidth, iconWidth, '', imageFile.system.skillIcon, imageData)
       this.menuList[i].borderColor = 'black'
       this.menuList[i].color = ''
     }
 
     // menuList 60 ~ 67 스킬 장착 메뉴
-    let image = imageSrc.system.skillInfo
+    let image = imageFile.system.skillInfo
     let slotBNumber = 64
     let slotALayerY = 320
     let slotBLayerY = 420
@@ -1367,7 +1340,7 @@ class SkillSelectSystem extends WeaponSelectSystem {
       // 60 ~ 63이 A슬롯, 64 ~ 67이 B슬롯입니다.
       let imageData = i < slotBNumber ? imageDataInfo.system.skillInfoSkyBlue : imageDataInfo.system.skillInfoPurpleBlue
       let positionY = i < slotBNumber ? slotALayerY + (yLine * iconHeight) : slotBLayerY + (yLine * iconHeight)
-      this.menuList[i] = new BoxImageObject(0, positionY, game.graphic.CANVAS_WIDTH, iconHeight, '', image, imageData)
+      this.menuList[i] = new BoxImageObject(0, positionY, graphicSystem.CANVAS_WIDTH, iconHeight, '', image, imageData)
     }
   }
 
@@ -1379,10 +1352,10 @@ class SkillSelectSystem extends WeaponSelectSystem {
     // 도움말 메뉴를 누르면 도움말 창이 표시됨.
     // 참고: 프리뷰 기능은 어떻게 구현해야 할지 고민중... (필드를 새로 만들어야 하나...)
     if (button.buttonLeft && this.cursorMenu > 0) {
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
       this.cursorMenu--
     } else if (button.buttonRight && this.cursorMenu < this.NUM_END_MENU - 1) {
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
       this.cursorMenu++
     } else if (button.buttonDown) {
       this.state = this.STATE_ICON
@@ -1397,19 +1370,19 @@ class SkillSelectSystem extends WeaponSelectSystem {
     if (button.buttonLeft) {
       // 커서X값이 0이면, 반대방향으로 이동시킴, 아닐경우 왼쪽으로 이동
       cursorX === 0 ? this.cursorIcon += 9 : this.cursorIcon--
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     } else if (button.buttonRight) {
       // 커서X값이 9이면, 반대방향으로 이동시킴, 아닐경우 오른쪽으로 이동
       cursorX === 9 ? this.cursorIcon -= 9 : this.cursorIcon++
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     } else if (button.buttonUp) {
       // 커서 Y축이 맨 위에 있다면, 메뉴 상태로 변경합니다. 아닐경우, 한 줄 위로 올라갑니다.
       cursorY === 0 ? this.state = this.STATE_MENU : this.cursorIcon -= 10
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     } else if (button.buttonDown) {
       // 커서 Y축이 맨 아래에 있다면, 리스트 상태로 변경합니다. 아닐경우, 한 줄 아래로 내려갑니다.
       cursorY === 4 ? this.state = this.STATE_LIST : this.cursorIcon += 10
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     }
 
     // 스킬 단축키로 스킬 바로 설정 가능 (슬롯 A만 단축키로 설정 가능, B슬롯은 직접 넣어야 합니다.)
@@ -1433,7 +1406,7 @@ class SkillSelectSystem extends WeaponSelectSystem {
     let getUserSkill = userSystem.getPlayerObjectData().skillList
     getUserSkill[slotNumber] = skillId
     userSystem.setSkillList(getUserSkill)
-    game.sound.play(soundSrc.system.systemSkillSelect)
+    soundSystem.play(soundFile.system.systemSkillSelect)
   }
 
   processButtonList () {
@@ -1442,10 +1415,10 @@ class SkillSelectSystem extends WeaponSelectSystem {
     if (button.buttonUp) {
       // 리스트번호가 0인 상태라면, 상태를 스킬로 변경하고, 아니면 리스트번호를 1감소합니다.
       this.cursorList === 0 ? this.state = this.STATE_ICON : this.cursorList--
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     } else if (button.buttonDown && this.cursorList < 7) {
       this.cursorList++
-      game.sound.play(soundSrc.system.systemCursor)
+      soundSystem.play(soundFile.system.systemCursor)
     }
   }
 
@@ -1494,13 +1467,13 @@ class SkillSelectSystem extends WeaponSelectSystem {
       this.state = this.STATE_ICON
     }
     
-    game.sound.play(soundSrc.system.systemBack)
+    soundSystem.play(soundFile.system.systemBack)
   }
 
 
   /** 스킬에 대한 정보 이미지를 표시(정보는 이 함수 말고 다른곳에서 출력됨) */
   displayTitle () {
-    const image = imageSrc.system.skillInfo
+    const image = imageFile.system.skillInfo
     const MENU_LAYER = 40
     const SKILL_LAYER1 = 300
     const SKILL_LAYER2 = 400
@@ -1508,19 +1481,19 @@ class SkillSelectSystem extends WeaponSelectSystem {
     const WIDTH = 800
 
     let yellowTitle = imageDataInfo.system.skillInfoYellowTitle
-    game.graphic.imageDisplay(image, yellowTitle.x, yellowTitle.y, yellowTitle.width, yellowTitle.height, 0, MENU_LAYER, WIDTH, HEIGHT)
+    graphicSystem.imageDisplay(image, yellowTitle.x, yellowTitle.y, yellowTitle.width, yellowTitle.height, 0, MENU_LAYER, WIDTH, HEIGHT)
     let yellowData = imageDataInfo.system.skillInfoYellow
-    game.graphic.imageDisplay(image, yellowData.x, yellowData.y, yellowData.width, yellowData.height, 0, MENU_LAYER + HEIGHT, WIDTH, HEIGHT)
+    graphicSystem.imageDisplay(image, yellowData.x, yellowData.y, yellowData.width, yellowData.height, 0, MENU_LAYER + HEIGHT, WIDTH, HEIGHT)
 
     let blueTitle = imageDataInfo.system.skillInfoSkyBlueTitle
-    game.graphic.imageDisplay(image, blueTitle.x, blueTitle.y, blueTitle.width, blueTitle.height, 0, SKILL_LAYER1, WIDTH, HEIGHT)
+    graphicSystem.imageDisplay(image, blueTitle.x, blueTitle.y, blueTitle.width, blueTitle.height, 0, SKILL_LAYER1, WIDTH, HEIGHT)
     let blueData = imageDataInfo.system.skillInfoSkyBlue
-    game.graphic.imageDisplay(image, blueData.x, blueData.y, blueData.width, blueData.height, 0, SKILL_LAYER1 + HEIGHT, WIDTH, HEIGHT)
+    graphicSystem.imageDisplay(image, blueData.x, blueData.y, blueData.width, blueData.height, 0, SKILL_LAYER1 + HEIGHT, WIDTH, HEIGHT)
 
     let purpleTitle = imageDataInfo.system.skillInfoPurpleBlueTitle
-    game.graphic.imageDisplay(image, purpleTitle.x, purpleTitle.y, purpleTitle.width, purpleTitle.height, 0, SKILL_LAYER2, WIDTH, HEIGHT)
+    graphicSystem.imageDisplay(image, purpleTitle.x, purpleTitle.y, purpleTitle.width, purpleTitle.height, 0, SKILL_LAYER2, WIDTH, HEIGHT)
     let purpleData =imageDataInfo.system.skillInfoPurpleBlue
-    game.graphic.imageDisplay(image, purpleData.x, purpleData.y, purpleData.width, purpleData.height, 0, SKILL_LAYER2 + HEIGHT, WIDTH, HEIGHT)
+    graphicSystem.imageDisplay(image, purpleData.x, purpleData.y, purpleData.width, purpleData.height, 0, SKILL_LAYER2 + HEIGHT, WIDTH, HEIGHT)
   }
 
   display () {
@@ -1538,7 +1511,7 @@ class SkillSelectSystem extends WeaponSelectSystem {
 
     let lineY = this.listPosition < 4 ? 320 : 420
     lineY += (this.listPosition % 4) * 20
-    game.graphic.fillRect(0, lineY, 800, 20, 'orange', 0.4)
+    graphicSystem.fillRect(0, lineY, 800, 20, 'orange', 0.4)
   }
 
   displaySKillList () {
@@ -1551,10 +1524,10 @@ class SkillSelectSystem extends WeaponSelectSystem {
       let skillNum1 = userSkillList[i] - ID.playerSkill.skillNumberStart
       let skillNum2 = userSkillList[i + 4] - ID.playerSkill.skillNumberStart
 
-      digitalDisplay(outputText1, 3, (i + 1) * 20 + outputY1)
-      digitalDisplay(outputText2, 3, (i + 1) * 20 + outputY2)
-      game.graphic.imageDisplay(imageSrc.system.skillIcon, (skillNum1 % 10) * 40, Math.floor(skillNum1 / 10) * 20, 40, 20, 0, (i + 1) * 20 + outputY1, 40, 20)
-      game.graphic.imageDisplay(imageSrc.system.skillIcon, (skillNum2 % 10) * 40, Math.floor(skillNum2 / 10) * 20, 40, 20, 0, (i + 1) * 20 + outputY2, 40, 20)
+      graphicSystem.digitalFontDisplay(outputText1, 3, (i + 1) * 20 + outputY1)
+      graphicSystem.digitalFontDisplay(outputText2, 3, (i + 1) * 20 + outputY2)
+      graphicSystem.imageDisplay(imageFile.system.skillIcon, (skillNum1 % 10) * 40, Math.floor(skillNum1 / 10) * 20, 40, 20, 0, (i + 1) * 20 + outputY1, 40, 20)
+      graphicSystem.imageDisplay(imageFile.system.skillIcon, (skillNum2 % 10) * 40, Math.floor(skillNum2 / 10) * 20, 40, 20, 0, (i + 1) * 20 + outputY2, 40, 20)
     }
   }
 
@@ -1562,8 +1535,8 @@ class SkillSelectSystem extends WeaponSelectSystem {
     if (this.cursorPosition >= 10 && this.cursorPosition < 60) {
       let position = this.cursorPosition - 10
       let inputString = this.getSkillInfoString(this.targetIdList[position])
-      game.graphic.imageDisplay(imageSrc.system.skillIcon, (position % 10) * 40, Math.floor(position / 10) * 20, 40, 20, 0, 60, 40, 20)
-      digitalDisplay(inputString, 3, 60)
+      graphicSystem.imageDisplay(imageFile.system.skillIcon, (position % 10) * 40, Math.floor(position / 10) * 20, 40, 20, 0, 60, 40, 20)
+      graphicSystem.digitalFontDisplay(inputString, 3, 60)
     }
   }
 
@@ -1613,13 +1586,13 @@ export class userSystem {
   
   /** 스킬 리스트 (총 8개, 이중 0 ~ 3번은 A슬롯, 4 ~ 7번은 B슬롯) */ 
   static skillList = [
-    // ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.arrow, ID.playerSkill.blaster,
-    // ID.playerSkill.hyperBall, ID.playerSkill.santansu, ID.playerSkill.parapo, ID.playerSkill.critcalChaser
+    ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.arrow, ID.playerSkill.blaster,
+    ID.playerSkill.hyperBall, ID.playerSkill.santansu, ID.playerSkill.parapo, ID.playerSkill.critcalChaser
   ]
 
   /** 무기 리스트, 0 ~ 3번까지만 있음. 4번은 무기를 사용하기 싫을 때 사용 따라서 무기가 지정되지 않음. */
   static weaponList = [
-    // ID.playerWeapon.multyshot, ID.playerWeapon.missile, ID.playerWeapon.arrow, ID.playerWeapon.laser
+    ID.playerWeapon.multyshot, ID.playerWeapon.missile, ID.playerWeapon.arrow, ID.playerWeapon.laser
   ]
   
   /** 공격력(초당), 참고: 이 값은 processStat함수를 실행하지 않으면 값이 갱신되지 않습니다. */ 
@@ -1814,7 +1787,7 @@ export class userSystem {
       }
 
       if (levelUpSound) {
-        game.sound.play(soundSrc.system.systemLevelUp)
+        soundSystem.play(soundFile.system.systemLevelUp)
       }
     }
   }
@@ -1855,9 +1828,9 @@ export class userSystem {
     }
 
     if (this.hideUserStatAlpha != 1) {
-      game.graphic.setAlpha(this.hideUserStatAlpha)
+      graphicSystem.setAlpha(this.hideUserStatAlpha)
       this.displayUserStatVer2()
-      game.graphic.setAlpha(1)
+      graphicSystem.setAlpha(1)
     } else {
       this.displayUserStatVer2()
     }
@@ -1869,7 +1842,7 @@ export class userSystem {
   }
 
   static displayUserStatVer2 () {
-    const statImage = imageSrc.system.playerStat
+    const statImage = imageFile.system.playerStat
     const statImageX = 20
     const statImageY = 500
 
@@ -1889,13 +1862,13 @@ export class userSystem {
     const EXP_COLORB = ['#CF8BF3', '#4A00E0', '#3c1053']
 
     // stat image
-    game.graphic.imageDisplay(statImage, statImageX, statImageY)
+    graphicSystem.imageDisplay(statImage, statImageX, statImageY)
 
 
     // skill display
     for (let i = 0; i < this.skillDisplayStat.length; i++) {
-      const skillNumberImage = imageSrc.system.skillNumber
-      const skillIconImage = imageSrc.system.skillIcon
+      const skillNumberImage = imageFile.system.skillNumber
+      const skillIconImage = imageFile.system.skillIcon
       const NUMBER_SLICE_WIDTH = 20
       const NUMBER_SLICE_HEIGHT = 20
       // NUMBER_SLICEX는 1번부터 4번까지 차례대로 출력하므로, i값을 이용해 위치를 조절
@@ -1913,7 +1886,7 @@ export class userSystem {
       const OUTPUT_TIME_X = OUTPUT_SKILL_X
       const OUTPUT_TIME_Y = LAYERY1 + 2
 
-      game.graphic.imageDisplay(skillNumberImage, NUMBER_SLICEX, NUMBER_SLICEY, NUMBER_SLICE_WIDTH, NUMBER_SLICE_HEIGHT, OUTPUT_NUMBER_X, LAYERY1, NUMBER_SLICE_WIDTH, NUMBER_SLICE_HEIGHT)
+      graphicSystem.imageDisplay(skillNumberImage, NUMBER_SLICEX, NUMBER_SLICEY, NUMBER_SLICE_WIDTH, NUMBER_SLICE_HEIGHT, OUTPUT_NUMBER_X, LAYERY1, NUMBER_SLICE_WIDTH, NUMBER_SLICE_HEIGHT)
       
       // 스킬 쿨타임이 남아있다면, 남은 시간이 숫자로 표시됩니다.
       // 스킬 쿨타임이 없다면, 스킬을 사용할 수 있으며, 스킬 아이콘이 표시됩니다.
@@ -1923,15 +1896,15 @@ export class userSystem {
           const skillNumber = this.skillDisplayStat[i].id - 15000 // 스킬의 ID는 15001부터 시작이라, 15000을 빼면, 스킬 번호값을 얻을 수 있음.
           const skillXLine = skillNumber % 10
           const skillYLine = Math.floor(skillNumber / 10)
-          game.graphic.imageDisplay(skillIconImage, skillXLine * SKILL_WIDTH, skillYLine * SKILL_HEIGHT, SKILL_WIDTH, SKILL_HEIGHT, OUTPUT_SKILL_X, LAYERY1, SKILL_WIDTH, SKILL_HEIGHT, 0, 0, 0.5)
+          graphicSystem.imageDisplay(skillIconImage, skillXLine * SKILL_WIDTH, skillYLine * SKILL_HEIGHT, SKILL_WIDTH, SKILL_HEIGHT, OUTPUT_SKILL_X, LAYERY1, SKILL_WIDTH, SKILL_HEIGHT, 0, 0, 0.5)
         }
-        digitalDisplay(this.skillDisplayStat[i].coolTime, OUTPUT_TIME_X, OUTPUT_TIME_Y) // 스킬 쿨타임 시간
+        graphicSystem.digitalFontDisplay(this.skillDisplayStat[i].coolTime, OUTPUT_TIME_X, OUTPUT_TIME_Y) // 스킬 쿨타임 시간
       } else {
         if (this.skillDisplayStat[i].id !== 0) {
           const skillNumber = this.skillDisplayStat[i].id - 15000 // 스킬의 ID는 15001부터 시작이라, 15000을 빼면, 스킬 번호값을 얻을 수 있음.
           const skillXLine = skillNumber % 10
           const skillYLine = Math.floor(skillNumber / 10)
-          game.graphic.imageDisplay(skillIconImage, skillXLine * SKILL_WIDTH, skillYLine * SKILL_HEIGHT, SKILL_WIDTH, SKILL_HEIGHT, OUTPUT_SKILL_X, LAYERY1, SKILL_WIDTH, SKILL_HEIGHT)
+          graphicSystem.imageDisplay(skillIconImage, skillXLine * SKILL_WIDTH, skillYLine * SKILL_HEIGHT, SKILL_WIDTH, SKILL_HEIGHT, OUTPUT_SKILL_X, LAYERY1, SKILL_WIDTH, SKILL_HEIGHT)
         }
       }
     }
@@ -1946,20 +1919,20 @@ export class userSystem {
       let targetFrame = this.damageWarningFrame % H_COLORA.length
 
       // 체력 게이지 그라디언트
-      game.graphic.gradientDisplay(LAYERX, LAYERY2, HP_WIDTH, LAYER_HEIGHT, H_COLORA[targetFrame], H_COLORB[targetFrame])
+      graphicSystem.gradientDisplay(LAYERX, LAYERY2, HP_WIDTH, LAYER_HEIGHT, H_COLORA[targetFrame], H_COLORB[targetFrame])
 
       // 쉴드 게이지 그라디언트
-      game.graphic.gradientDisplay(LAYERX + HP_WIDTH, LAYERY2, SHIELD_WIDTH, LAYER_HEIGHT, S_COLORA[targetFrame], S_COLORB[targetFrame])
+      graphicSystem.gradientDisplay(LAYERX + HP_WIDTH, LAYERY2, SHIELD_WIDTH, LAYER_HEIGHT, S_COLORA[targetFrame], S_COLORB[targetFrame])
     } else {
       // 체력 게이지 그라디언트 [파란색]
-      game.graphic.gradientDisplay(LAYERX, LAYERY2, HP_WIDTH, LAYER_HEIGHT, H_COLORA[0], H_COLORB[0])
+      graphicSystem.gradientDisplay(LAYERX, LAYERY2, HP_WIDTH, LAYER_HEIGHT, H_COLORA[0], H_COLORB[0])
 
       // 쉴드 게이지 그라디언트 [하늘색]
-      game.graphic.gradientDisplay(LAYERX + HP_WIDTH, LAYERY2, SHIELD_WIDTH, LAYER_HEIGHT, S_COLORA[0], S_COLORB[0])
+      graphicSystem.gradientDisplay(LAYERX + HP_WIDTH, LAYERY2, SHIELD_WIDTH, LAYER_HEIGHT, S_COLORA[0], S_COLORB[0])
     }
 
     const hpText = this.hp + ' + ' + this.shield + '/' + this.shieldMax
-    digitalDisplay(hpText, LAYERX, LAYERY2)
+    graphicSystem.digitalFontDisplay(hpText, LAYERX, LAYERY2)
 
 
     // lv + exp display
@@ -1968,13 +1941,13 @@ export class userSystem {
 
     if (this.levelUpEffectFrame > 0) {
       let targetFrame = this.levelUpEffectFrame % EXP_COLORA.length
-      game.graphic.gradientDisplay(LAYERX, LAYERY3, LAYER_WIDTH, LAYER_HEIGHT, EXP_COLORA[targetFrame], EXP_COLORB[targetFrame])
+      graphicSystem.gradientDisplay(LAYERX, LAYERY3, LAYER_WIDTH, LAYER_HEIGHT, EXP_COLORA[targetFrame], EXP_COLORB[targetFrame])
     } else {
-      game.graphic.gradientDisplay(LAYERX, LAYERY3, LAYER_WIDTH * expPercent, LAYER_HEIGHT, EXP_COLORA[0], EXP_COLORB[0])
+      graphicSystem.gradientDisplay(LAYERX, LAYERY3, LAYER_WIDTH * expPercent, LAYER_HEIGHT, EXP_COLORA[0], EXP_COLORB[0])
     }
 
     const lvText = 'Lv.' + this.lv + ' ' + this.exp + '/' + this.expTable[this.lv]
-    digitalDisplay(lvText, LAYERX, LAYERY3)
+    graphicSystem.digitalFontDisplay(lvText, LAYERX, LAYERY3)
   }
 
   /**
@@ -2095,12 +2068,12 @@ class StatSystem {
 
     for (let i = 0; i < this.lineData.length; i++) {
       const OUTPUT_Y = LAYERY + (LAYER_HEIGHT * i)
-      game.graphic.fillRect(LAYERX, OUTPUT_Y, LAYER_WIDTH, LAYER_HEIGHT, this.lineData[i].backgroundColor)
-      game.graphic.gradientDisplay(LAYERX, OUTPUT_Y, LAYER_WIDTH * this.lineData[i].multiple, LAYER_HEIGHT, this.lineData[i].colorA, this.lineData[i].colorB)
-      digitalDisplay(this.lineData[i].text, LAYERX, OUTPUT_Y)
+      graphicSystem.fillRect(LAYERX, OUTPUT_Y, LAYER_WIDTH, LAYER_HEIGHT, this.lineData[i].backgroundColor)
+      graphicSystem.gradientDisplay(LAYERX, OUTPUT_Y, LAYER_WIDTH * this.lineData[i].multiple, LAYER_HEIGHT, this.lineData[i].colorA, this.lineData[i].colorB)
+      graphicSystem.digitalFontDisplay(this.lineData[i].text, LAYERX, OUTPUT_Y)
 
       // 테두리도 추가로 그려야 함.
-      game.graphic.strokeRect(LAYERX, OUTPUT_Y, LAYER_WIDTH, LAYER_HEIGHT, 'black')
+      graphicSystem.strokeRect(LAYERX, OUTPUT_Y, LAYER_WIDTH, LAYER_HEIGHT, 'black')
     }
   }
 }
@@ -2121,7 +2094,7 @@ class UpgradeSystem extends MenuSystem {
   }
 
   display () {
-    game.graphic.fillText('해당 기능은 나중에 구현될 예정', 0, 40)
+    graphicSystem.fillText('해당 기능은 나중에 구현될 예정', 0, 40)
   }
 }
 
@@ -2141,7 +2114,7 @@ class EtcSystem extends MenuSystem {
   }
 
   display () {
-    game.graphic.fillText('해당 기능은 나중에 구현될 예정', 0, 40)
+    graphicSystem.fillText('해당 기능은 나중에 구현될 예정', 0, 40)
   }
 }
 
@@ -2169,7 +2142,7 @@ export class gameSystem {
 
   // 일부 시스템은 static을 사용하기 때문에 new를 이용해 인스턴스를 생성하지 않습니다.
   /** 유저 시스템 */ static userSystem = userSystem
-  // /** 필드 시스템 */ static fieldSystem = fieldSystem
+  /** 필드 시스템 */ static fieldSystem = fieldSystem
   /** 메인 시스템 */ static mainSystem = new MainSystem()
   /** 옵션 시스템 */ static optionSystem = new OptionSystem()
   /** 라운드 선택 시스템 */ static roundSelectSystem = new RoundSelectSystem()
@@ -2179,11 +2152,6 @@ export class gameSystem {
   /** 스킬 선택 시스템 */ static skillSelectSystem = new SkillSelectSystem()
   /** 업그레이드 시스템 */ static upgradeSystem = new UpgradeSystem()
   /** etc... 시스템 */ static etcSystem = new EtcSystem()
-
-  /** 현재 게임의 옵션 데이터를 가져옵니다. */
-  static getGameOption () {
-    return this.optionSystem.optionValue
-  }
 
   /**
    * 저장하거나 불러올 때 localStorage 에서 사용하는 키 이름 (임의로 변경 금지)
@@ -2285,7 +2253,7 @@ export class gameSystem {
     localStorage.setItem(this.saveKey.playTime, playTimeString)
 
     // 모든 옵션 값들 저장
-    const optionValue = JSON.stringify(this.optionSystem.optionValue)
+    const optionValue = this.optionSystem.optionValue
     localStorage.setItem(this.saveKey.optionValue, optionValue)
 
     const userData = this.userSystem.getSaveData()
@@ -2311,36 +2279,32 @@ export class gameSystem {
     // 초기 불러오기 완료 설정
     this.initLoad = true
 
-    try {
-      // saveFlag의 값을 불러오고, 만약 아무것도 없다면 불러오기 함수를 사용하지 않습니다.
-      const saveFlag = localStorage.getItem(this.saveKey.saveFlag)
-      if (!saveFlag) return
-  
-      // 플레이 타임 불러오기: 저장 규칙을 모르겠으면, saveKey 객체 내에 있는 변수들의 설명을 참고
-      const playTime = localStorage.getItem(this.saveKey.playTime).split(',')
-      this.userSystem.setPlayTime(playTime[0], playTime[1], playTime[2])
-  
-      // 시작 날짜 및 시간 불러오기
-      const startDate = localStorage.getItem(this.saveKey.startDate).split(',')
-      this.userSystem.setStartDate(startDate[0], startDate[1], startDate[2], startDate[3], startDate[4], startDate[5])
-  
-      // 옵션 값 불러오기
-      const optionValue = localStorage.getItem(this.saveKey.optionValue)
-      this.optionSystem.optionValue = JSON.parse(optionValue)
-  
-      const userData = localStorage.getItem(this.saveKey.userData)
-      this.userSystem.setLoadData(userData)
-  
-      const fieldSaveData = localStorage.getItem(this.saveKey.fieldData)
-      if (fieldSaveData != null) {
-        // 경고: localStoarge 특성상 string값으로 비교해야 합니다.
-        // 필드 저장 데이터가 있다면, state를 필드 데이터로 이동
-        // 참고로 필드 데이터는 JSON으로 저장되므로, 이걸 JSON.parse 해야합니다.
-        this.stateId = this.STATE_FIELD
-        fieldSystem.setLoadData(JSON.parse(fieldSaveData))
-      }
-    } catch (e) {
-      alert('저장 데이터를 읽어오는 중 오류가 발생했습니다. 일부 데이터는 로드되지 않습니다.')
+    // saveFlag의 값을 불러오고, 만약 아무것도 없다면 불러오기 함수를 사용하지 않습니다.
+    const saveFlag = localStorage.getItem(this.saveKey.saveFlag)
+    if (!saveFlag) return
+
+    // 플레이 타임 불러오기: 저장 규칙을 모르겠으면, saveKey 객체 내에 있는 변수들의 설명을 참고
+    const playTime = localStorage.getItem(this.saveKey.playTime).split(',')
+    this.userSystem.setPlayTime(playTime[0], playTime[1], playTime[2])
+
+    // 시작 날짜 및 시간 불러오기
+    const startDate = localStorage.getItem(this.saveKey.startDate).split(',')
+    this.userSystem.setStartDate(startDate[0], startDate[1], startDate[2], startDate[3], startDate[4], startDate[5])
+
+    // 옵션 값 불러오기
+    const optionValue = localStorage.getItem(this.saveKey.optionValue).split(',')
+    this.optionSystem.loadOption(optionValue)
+
+    const userData = localStorage.getItem(this.saveKey.userData)
+    this.userSystem.setLoadData(userData)
+
+    const fieldSaveData = localStorage.getItem(this.saveKey.fieldData)
+    if (fieldSaveData != null) {
+      // 경고: localStoarge 특성상 string값으로 비교해야 합니다.
+      // 필드 저장 데이터가 있다면, state를 필드 데이터로 이동
+      // 참고로 필드 데이터는 JSON으로 저장되므로, 이걸 JSON.parse 해야합니다.
+      this.stateId = this.STATE_FIELD
+      fieldSystem.setLoadData(JSON.parse(fieldSaveData))
     }
   }
 
@@ -2364,7 +2328,7 @@ export class gameSystem {
     const minute = date.getMinutes()
     const second = date.getSeconds()
 
-    digitalDisplay(year + '/' + month + '/' + day + ' ' + hour + ':' + minute + ':' + second, 0, 480)
+    graphicSystem.digitalFontDisplay(year + '/' + month + '/' + day + ' ' + hour + ':' + minute + ':' + second, 0, 480)
   }
 
   /**
@@ -2372,6 +2336,7 @@ export class gameSystem {
    * [process 함수 내에서 출력과 관련됨 모든 함수 사용금지]
    */
   static process () {
+    frameCount++
     this.userSystem.process()
 
     switch (this.stateId) {
@@ -2391,7 +2356,7 @@ export class gameSystem {
 
     // 메인 화면 또는 옵션 화면일때만, 시간 표시
     if (this.stateId === this.STATE_MAIN || this.stateId === this.STATE_OPTION) {
-      this.setStatLineText(0, 'fps: ' + game.currentFps)
+      this.setStatLineText(0, 'fps: ' + currentFps)
       this.setStatLineText(1, this.userSystem.getPlayTimeText())
       this.userSystem.setSkillDisplayCooltimeZero()
     } else if (this.stateId === this.STATE_FIELD) {
@@ -2408,7 +2373,7 @@ export class gameSystem {
    */
   static display () {
     // 화면 지우기
-    game.graphic.clearCanvas()
+    graphicSystem.clearCanvas()
 
     // 화면 출력
     switch (this.stateId) {
@@ -2441,9 +2406,95 @@ export class gameSystem {
   }
 }
 
-game.process = () => {
-  gameSystem.process()
+// 게임에 관한 출력과 로직 처리는 animation함수에서 진행합니다.
+// 그러나 실제로는 gameSystem.process() 와 gameSystem.display()만 사용합니다.
+
+/** animation함수에서 사용하는 다음 시간 확인 용도  */
+let thenAnimationTime = 0
+
+/** 브라우저의 requsetAnimation을 사용하기 위해 만든 에니메이션 함수입니다. */
+function animation (timestamp) {
+  /*
+  * 에니메이션의 출력 프레임을 60fps로 고정시키기 위해 다음과 같은 알고리즘을 적용하였습니다.
+  * 사실 원리는 모르겠지만, 이전 시간을 기준으로 다음 프레임을 계산할 때
+  * then = timestamp - (elapsed % fpsInterval) 계산을 공통적으로 하는것 같습니다.
+  * 어쨋든, 이 게임은 모니터 환경에 상관없이 초당 60fps로만 실행됩니다.
+  * 이 설정을 바꾸는 것은 게임 규칙 위반입니다. 임의로 수정하지 마세요.
+  * 기본값: 16.6 = 60fps
+  */
+  const fpsInterval = 16.6 // 1seconds 60fps limit, do not exceed 60fps!
+
+  // 진행시간 = 타임스탬프 - 그 다음 시간
+  const elapsed = timestamp - thenAnimationTime
+  if (elapsed >= fpsInterval) { // 진행시간이 fps간격 이상일 때
+    // 그 다음시간 = 타임스탬프값에서 (진행시간값의 fps간격의 나머지)을 뺀다.
+    thenAnimationTime = timestamp - (elapsed % fpsInterval)
+
+    // 해당 에니메이션 로직 실행
+    gameSystem.process() // 게임 처리 함수
+    gameSystem.display() // 게임 출력 함수 (...)
+
+    // 사실 이렇게 된건 firefox의 setInterval이 느리게 작동하기 때문이다.
+    // 어쩔수 없이 requsetAnimationFrame을 사용해야 한다.
+  }
+
+  requestAnimationFrame(animation)
 }
-game.display = () => {
-  gameSystem.display()
-}
+requestAnimationFrame(animation)
+
+// 마우스와 키보드 이벤트 처리
+canvas.addEventListener('mousedown', (e) => {
+  // 왼쪽 클릭만 게임에 적용됨. preventDefault는 사용 안합니다.
+  if (e.button === 0) {
+    // 캔버스가 풀스크린인 경우
+    // 게임 기본 해상도는 800x600 입니다.
+    const gameWidth = 800
+    const gameHeight = 600
+
+    if (document.fullscreenElement === canvas) {
+      // 풀스크린일 때, 캔버스는 중앙에 위치하고, 화면은 채울 수 있는 부분까지 확대됩니다.
+      // y축은 전부 채워지지만, x축은 전부 채워지지 않으므로, y축을 이용해 배율 계산을 합니다.
+      const canvasZoom = canvas.offsetHeight / gameHeight // 1.28 (768 / 600)
+
+      // 그렇게되면, 양 옆쪽이 비게되는데, 이 사이즈를 계산해야 합니다.
+      const borderSize = (canvas.offsetWidth - (gameWidth * canvasZoom)) / 2 // (1366 - 1024) / 2 = 171
+
+      // 그렇게 해서, X축은 boarderSize값을 빼고 1.28로 나눈 값으로 계산하고,
+      // Y축은 1.28로 나눈 값을 마우스 좌표값으로 정의합니다.
+      // 마우스 좌표값은 소수점 버림
+      let mouseX = (e.offsetX - borderSize) / canvasZoom
+      let mouseY = e.offsetY / canvasZoom
+      mouseSystem.mouseDown(Math.floor(mouseX), Math.floor(mouseY))
+    } else if (canvas.offsetWidth === gameWidth && canvas.offsetHeight === gameHeight) {
+      // 캔버스의 크기가 게임 기본 크기인경우 다른 처리를 할 필요없이 offsetX, offsetY를 사용합니다.
+      mouseSystem.mouseDown(e.offsetX, e.offsetY)
+    } else {
+      // 캔버스 사이즈가 달라진 경우, 달라진 사이즈에 맞춰서 배율을 곱해서 처리함.
+      // 캔버스의 크기는 한쪽만 변경해도 다른 한쪽의 비율이 맞춰져서 자동으로 변경되기 때문에
+      // 너비 또는 높이 중 하나만 정확하게 계산하면 배율을 구할 수 있습니다.
+      const canvasZoom = canvas.offsetWidth / gameWidth
+
+      let mouseX = e.offsetX / canvasZoom
+      let mouseY = e.offsetY / canvasZoom
+      mouseSystem.mouseDown(Math.floor(mouseX), Math.floor(mouseY))
+    }
+  }
+})
+canvas.addEventListener('mousemove', () => {
+  // mouseSystem.mouseMove(e.offsetX, e.offsetY)
+})
+canvas.addEventListener('mouseup', () => {
+  mouseSystem.mouseUp()
+})
+addEventListener('keydown', (e) => {
+  buttonSystem.keyInput(e.key)
+  buttonSystem.keyDown(e.key)
+
+  // 새로고침 기능, 개발자 도구 이외의 다른 기능은 막습니다.
+  if (e.key !== 'F5' && e.key !== 'F12') {
+    e.preventDefault()
+  }
+})
+addEventListener('keyup', (e) => {
+  buttonSystem.keyUp(e.key)
+})

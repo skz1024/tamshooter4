@@ -1,154 +1,89 @@
-export class imageFile {
-  static tamshooter4Title = new Image()
-  static enemyTemp = new Image()
-  static roundIcon = new Image()
+/**
+ * tamshooter4 에서 사용하는 이미지의 경로
+ * 
+ * 모든 변수는 static입니다.
+ */
+export class imageSrc {
+  static tamshooter4Title = './image/title.png'
+  static roundIcon = './image/round/roundIcon.png'
 
   static system = {
-    bitmapFont: new Image(),
-    digitalFont20px: new Image(),
-    digitalFont12px: new Image(),
-    damageFont: new Image(),
-    playerImage: new Image(),
-    skillNumber: new Image(),
-    skillIcon: new Image(),
-    fieldSystem: new Image(),
-    optionCheck: new Image(),
-    playerDie: new Image(),
-    playerLevelup: new Image(),
-    playerStat: new Image(),
-    menuList: new Image(),
-    skillInfo: new Image(),
-    weaponIcon: new Image(),
+    digitalFontBig: './image/system/digitalFont.png',
+    digitalFontSmall: './image/system/digitalFontSmall.png',
+    playerImage: './image/system/playerImage.png',
+    damageFont: './image/system/damageFont.png',
+    skillNumber: './image/system/skillNumber.png',
+    skillIcon: './image/system/skillIcon.png',
+    fieldSystem: './image/system/fieldSystem.png',
+    optionCheck: './image/system/optionCheck.png',
+    playerDie: './image/system/playerDie.png',
+    playerLevelup: './image/system/playerLevelup.png',
+    playerStat: './image/system/playerStat.png',
+    bitmapFont: './image/system/bitmapFont.png',
+    menuList: './image/system/menuList.png',
+    skillInfo: './image/system/skillInfo.png',
+    weaponIcon: './image/system/weaponIcon.png',
   }
 
   static effect = {
-    jemulstar: new Image(),
-    jemulCreate: new Image()
+    jemulstar: './image/effect/jemulstar.png',
+    jemulCreate: './image/effect/jemulCreate.png',
   }
 
-  static weapon = new Image()
-
-  static skill = new Image()
+  static weapon = './image/weapon/weapon.png'
+  static skill = './image/weapon/skill.png'
 
   static weaponEffect = {
-    missile: new Image(),
-    parapo: new Image(),
+    missile: './image/weapon/missileEffect.png',
+    parapo: './image/weapon/parapoEffect.png'
   }
 
   static skillEffect = {
-    missile: new Image(),
-    parapo: new Image(),
-    pileBunker: new Image(),
-    swordHit: new Image(),
-    criticalChaser: new Image(),
-    santansu: new Image(),
-    seondanil: new Image(),
-    whiteflash: new Image(),
-    hanjumoekSplash: new Image(),
+    missile: './image/weapon/skillMissileEffect.png',
+    parapo: './image/weapon/skillParapoEffect.png',
+    pileBunker: './image/weapon/skillPileBunkerEffect.png',
+    swordHit: './image/weapon/skillSwordHitEffect.png',
+    criticalChaser: './image/weapon/skillCriticalChaserEffect.png',
+    santansu: './image/weapon/skillSantansuEffect.png',
+    seondanil: './image/weapon/skillSeondanilEffect.png',
+    whiteflash: './image/weapon/skillWhiteflashEffect.png',
+    hanjumoekSplash: './image/weapon/skillHanjumeokSplashEffect.png',
   }
 
   static enemy = {
-    spaceEnemy: new Image(),
-    meteoriteEnemy: new Image(),
-    jemulEnemy: new Image()
+    spaceEnemy: './image/enemy/spaceEnemy.png',
+    meteoriteEnemy: './image/enemy/meteoriteEnemy.png',
+    jemulEnemy: './image/enemy/jemulEnemy.png',
   }
 
   static enemyBullet = {
-    energyBoltAttack: new Image(),
-    attackList: new Image(),
+    energyBoltAttack: './image/enemy/energyBoltAttack.png',
+    attackList: './image/enemy/enemyAttackList.png',
   }
-  
+
   static enemyDie = {
-    effectList: new Image(),
-    enemyDieSpaceComet: new Image(),
-    enemyDieSpaceGamjigi: new Image(),
-    enemyDieMeteorite: new Image(),
+    effectList: './image/enemy/enemyDieEffect.png',
+    enemyDieSpaceComet: './image/enemy/enemyDieSpaceComet.png',
+    enemyDieSpaceGamjigi: './image/enemy/enemyDieSpaceGamjigi.png',
+    enemyDieMeteorite: './image/enemy/enemyDieMeteorite.png',
   }
 
   static round = {
-    roundIcon: new Image(),
-    round1_1_space: new Image(),
-    round1_2_meteorite: new Image(),
-    round1_3_meteoriteDeep: new Image(),
-    round1_4_meteoriteDark: new Image(),
-    round1_4_redzone: new Image(),
-    round1_5_meteoriteRed: new Image(),
-    round1_6_space: new Image(),
-    round1_6_paran_planet: new Image()
+    roundIcon: './image/round/roundIcon.png',
+    round1_1_space: './image/round/round1_1_space.jpg',
+    round1_2_meteorite: './image/round/round1_2_meteoriteZone.jpg',
+    round1_3_meteoriteDeep: './image/round/round1_3_meteoriteDeep.jpg',
+    round1_4_meteoriteDark: './image/round/round1_4_meteoriteDark.jpg',
+    round1_4_redzone: './image/round/round1_4_redZone.jpg',
+    round1_5_meteoriteRed: './image/round/round1_5_meteoriteRed.jpg',
+    round1_6_space: './image/round/round1_6_space.jpg',
+    round1_6_paran_planet: './image/round/round1_6_paran_planet.png',
   }
+
+  // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
+  // 그러므로 svg 파일은 게임 내에서 사용되지 않습니다.
+  // imageFile.DIGITAL_VECTOR_UNUSED.src = 'numbervector.svg'
 }
-imageFile.tamshooter4Title.src = './image/title.png'
-imageFile.roundIcon.src = './image/round/roundIcon.png'
-
-// system
-imageFile.system.digitalFont20px.src = './image/system/digitalFont.png'
-imageFile.system.digitalFont12px.src = './image/system/digitalFontSmall.png'
-imageFile.system.playerImage.src = './image/system/playerImage.png'
-imageFile.system.damageFont.src = './image/system/damageFont.png'
-imageFile.system.skillNumber.src = './image/system/skillNumber.png'
-imageFile.system.skillIcon.src = './image/system/skillIcon.png'
-imageFile.system.fieldSystem.src = './image/system/fieldSystem.png'
-imageFile.system.optionCheck.src = './image/system/optionCheck.png'
-imageFile.system.playerDie.src = './image/system/playerDie.png'
-imageFile.system.playerLevelup.src = './image/system/playerLevelup.png'
-imageFile.system.playerStat.src = './image/system/playerStat.png'
-imageFile.system.bitmapFont.src = './image/system/bitmapFont.png'
-imageFile.system.menuList.src = './image/system/menuList.png'
-imageFile.system.skillInfo.src = './image/system/skillInfo.png'
-imageFile.system.weaponIcon.src = './image/system/weaponIcon.png'
-
-// effect
-imageFile.effect.jemulstar.src = './image/effect/jemulstar.png'
-imageFile.effect.jemulCreate.src = './image/effect/jemulCreate.png'
-
-// weapon, skill
-imageFile.weapon.src = './image/weapon/weapon.png'
-imageFile.skill.src = './image/weapon/skill.png'
-
-// weapon effect
-imageFile.weaponEffect.missile.src = './image/weapon/missileEffect.png'
-imageFile.weaponEffect.parapo.src = './image/weapon/parapoEffect.png'
-
-// skill effect
-imageFile.skillEffect.missile.src = './image/weapon/skillMissileEffect.png'
-imageFile.skillEffect.parapo.src = './image/weapon/skillParapoEffect.png'
-imageFile.skillEffect.pileBunker.src = './image/weapon/skillPileBunkerEffect.png'
-imageFile.skillEffect.swordHit.src = './image/weapon/skillSwordHitEffect.png'
-imageFile.skillEffect.criticalChaser.src = './image/weapon/skillCriticalChaserEffect.png'
-imageFile.skillEffect.santansu.src = './image/weapon/skillSantansuEffect.png'
-imageFile.skillEffect.seondanil.src = './image/weapon/skillSeondanilEffect.png'
-imageFile.skillEffect.whiteflash.src = './image/weapon/skillWhiteflashEffect.png'
-imageFile.skillEffect.hanjumoekSplash.src = './image/weapon/skillHanjumeokSplashEffect.png'
-
-// enemy
-imageFile.enemy.spaceEnemy.src = './image/enemy/spaceEnemy.png'
-imageFile.enemy.meteoriteEnemy.src = './image/enemy/meteoriteEnemy.png'
-imageFile.enemy.jemulEnemy.src = './image/enemy/jemulEnemy.png'
-
-// enemyBullet
-imageFile.enemyBullet.energyBoltAttack.src = './image/enemy/energyBoltAttack.png'
-imageFile.enemyBullet.attackList.src = './image/enemy/enemyAttackList.png'
-
-// enemyDie
-imageFile.enemyDie.effectList.src = './image/enemy/enemyDieEffect.png'
-imageFile.enemyDie.enemyDieSpaceComet.src = './image/enemy/enemyDieSpaceComet.png'
-imageFile.enemyDie.enemyDieSpaceGamjigi.src = './image/enemy/enemyDieSpaceGamjigi.png'
-imageFile.enemyDie.enemyDieMeteorite.src = './image/enemy/enemyDieMeteorite.png'
-
-// round
-imageFile.round.roundIcon.src = './image/round/roundIcon.png'
-imageFile.round.round1_1_space.src = './image/round/round1_1_space.jpg'
-imageFile.round.round1_2_meteorite.src = './image/round/round1_2_meteoriteZone.jpg'
-imageFile.round.round1_3_meteoriteDeep.src = './image/round/round1_3_meteoriteDeep.jpg'
-imageFile.round.round1_4_meteoriteDark.src = './image/round/round1_4_meteoriteDark.jpg',
-imageFile.round.round1_4_redzone.src = './image/round/round1_4_redZone.jpg'
-imageFile.round.round1_5_meteoriteRed.src = './image/round/round1_5_meteoriteRed.jpg'
-imageFile.round.round1_6_space.src = './image/round/round1_6_space.jpg'
-imageFile.round.round1_6_paran_planet.src = './image/round/round1_6_paran_planet.png'
-
-// 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
-// 그러므로 svg 파일은 게임 내에서 사용되지 않습니다.
-// imageFile.DIGITAL_VECTOR_UNUSED.src = 'numbervector.svg'
 
 /**
  * imageData가 가지고 있는 정보입니다. imageDataInfo로 한것은 imageData로 하면 이름 충돌이 발생하기 때문입니다.

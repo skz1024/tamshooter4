@@ -1,5 +1,5 @@
 import { graphicSystem } from "./graphic.js"
-import { ImageDataObject } from "./image.js"
+import { ImageDataObject } from "./imageSrc.js"
 
 /**
  * 충돌 감지 함수
