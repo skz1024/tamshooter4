@@ -1,4 +1,5 @@
 'use strict'
+//@ts-check
 
 import { dataExportPlayerSkill, dataExportPlayerWeapon, PlayerSkillData, PlayerWeaponData } from './dataPlayer.js'
 import { EnemyData, EnemyBulletData, dataExportEnemy } from './dataEnemy.js'

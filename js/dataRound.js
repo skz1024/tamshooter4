@@ -1,11 +1,16 @@
+//@ts-check
+
 import { DelayData, FieldData, EnimationData, collision, collisionClass } from "./dataField.js"
-import { graphicSystem } from "./graphic.js"
-import { soundFile, soundSystem } from "./sound.js"
 import { EffectData, CustomEffect, CustomEditEffect } from "./dataEffect.js"
 import { ID } from "./dataId.js"
 import { stringText } from "./text.js"
-import { imageDataInfo, imageFile } from "./imageSrc.js"
+import { imageDataInfo, imageSrc } from "./imageSrc.js"
 import { fieldState } from "./field.js"
+import { soundSrc } from "./soundSrc.js"
+import { game } from "./game.js"
+
+let graphicSystem = game.graphic
+let soundSystem = game.sound
 
 export class RoundData {
   constructor () {
@@ -184,11 +189,11 @@ export class RoundData {
 
   /**
    * 배경 이미지를 출력합니다. (경우에 따라, 다른 이미지를 출력하도록 할 수 있습니다.)
-   * @param {HTMLImageElement} imageFile 이미지 파일 (입력시 해당 배경 이미지를 사용, 이게 없으면 기본 이미지 배경 사용)
+   * @param {HTMLImageElement} imageSrc 이미지 파일 (입력시 해당 배경 이미지를 사용, 이게 없으면 기본 이미지 배경 사용)
    */
-  displayBackgroundImage (imageFile) {
+  displayBackgroundImage (imageSrc) {
     // 배경화면 이미지 출력 및 스크롤 효과, 배경이 없으면 아무것도 출력 안함.
-    let image = imageFile == null ? this.backgroundImage : imageFile
+    let image = imageSrc == null ? this.backgroundImage : imageSrc
     if (image == null) return // 이미지 파일이 없으면 출력하지 않음.
 
     let imageWidth = image.width
@@ -593,15 +598,15 @@ export class RoundData {
    * 음악을 재생합니다.
    * 
    * 참고: 불러오기를 했을 때 이 함수를 사용하면, currentTime을 설정해도 무시함.
-   * @param {*} soundFile 
+   * @param {*} soundSrc 
    */
-  musicPlay (soundFile, currentTime) {
+  musicPlay (soundSrc, currentTime) {
     if (this.loadCurrentMusicTime !== 0) {
       // 불러오기 전용 변수
       soundSystem.musicPlay(this.music, this.loadCurrentMusicTime)
       this.loadCurrentMusicTime = 0
-    } else if (soundFile != null) {
-      soundSystem.musicPlay(soundFile, currentTime)
+    } else if (soundSrc != null) {
+      soundSystem.musicPlay(soundSrc, currentTime)
     } else {
       soundSystem.musicPlay(this.music, currentTime)
     }
@@ -636,9 +641,9 @@ class Round1_1 extends RoundData {
     this.requireLevel = 1
     this.finishTime = 150
     this.clearBonus = 30000
-    this.backgroundImage = imageFile.round.round1_1_space
-    this.music = soundFile.music.music01_space_void
-    this.bossMusic = soundFile.music.music06_round1_boss_thema
+    this.backgroundImage = imageSrc.round.round1_1_space
+    this.music = soundSrc.music.music01_space_void
+    this.bossMusic = soundSrc.music.music06_round1_boss_thema
 
     this.addRoundPhase(this.roundPhase0, 2, 10)
     this.addRoundPhase(this.roundPhase1, 11, 30)
@@ -747,7 +752,7 @@ class Round1_1 extends RoundData {
     this.timePauseEnemyCount(144)
 
     if (this.timeCheckFrame(147, 0)) {
-      this.requestBossMode(ID.enemy.spaceEnemy.boss, soundFile.music.music06_round1_boss_thema)
+      this.requestBossMode(ID.enemy.spaceEnemy.boss, soundSrc.music.music06_round1_boss_thema)
     }
   }
 
@@ -781,12 +786,12 @@ class Round1_1 extends RoundData {
 
     // 운석지대로 화면 전환
     if (this.timeCheckFrame(140, 0)) {
-      this.changeBackgroundImage(imageFile.round.round1_2_meteorite, 300)
+      this.changeBackgroundImage(imageSrc.round.round1_2_meteorite, 300)
     }
 
     // 운석지대로 진입한 이후 저장 후 불러왔을 때 운석 지대 이미지로 변경
     if (this.timeCheckInterval(140, 150)) {
-      this.backgroundImage = imageFile.round.round1_2_meteorite
+      this.backgroundImage = imageSrc.round.round1_2_meteorite
     }
 
     super.processBackground()
@@ -802,10 +807,10 @@ class Round1_2 extends RoundData {
     this.requireLevel = 2
     this.finishTime = 180
     this.clearBonus = 40000
-    this.backgroundImage = imageFile.round.round1_2_meteorite
-    this.music = soundFile.music.music02_meteorite_zone_field
+    this.backgroundImage = imageSrc.round.round1_2_meteorite
+    this.music = soundSrc.music.music02_meteorite_zone_field
 
-    this.meteoriteDeepImage = imageFile.round.round1_3_meteoriteDeep
+    this.meteoriteDeepImage = imageSrc.round.round1_3_meteoriteDeep
 
     this.addRoundPhase(this.roundPhase00, 0, 15)
     this.addRoundPhase(this.roundPhase01, 16, 30)
@@ -980,13 +985,13 @@ class Round1_3 extends RoundData {
     this.requireLevel = 3
     this.finishTime = 210
     this.clearBonus = 39000
-    this.backgroundImage = imageFile.round.round1_3_meteoriteDeep
-    this.music = soundFile.music.music02_meteorite_zone_field
+    this.backgroundImage = imageSrc.round.round1_3_meteoriteDeep
+    this.music = soundSrc.music.music02_meteorite_zone_field
 
     // ---
-    this.battleMusic = soundFile.music.music03_meteorite_zone_battle
-    this.redZone1 = imageFile.round.round1_5_meteoriteRed
-    this.redZone2 = imageFile.round.round1_4_meteoriteDark
+    this.battleMusic = soundSrc.music.music03_meteorite_zone_battle
+    this.redZone1 = imageSrc.round.round1_5_meteoriteRed
+    this.redZone2 = imageSrc.round.round1_4_meteoriteDark
     this.memoryMusicTime = 0
 
     this.addRoundPhase(this.roundPhase00, 1, 10)
@@ -1308,20 +1313,20 @@ class Round1_4 extends RoundData {
     this.requireLevel = 4
     this.finishTime = 151
     this.clearBonus = 38000
-    this.backgroundImage = imageFile.round.round1_4_meteoriteDark
-    this.music = soundFile.music.music03_meteorite_zone_battle
+    this.backgroundImage = imageSrc.round.round1_4_meteoriteDark
+    this.music = soundSrc.music.music03_meteorite_zone_battle
     this.waitTimeFrame = 0
     this.backgroundDegree = 0
 
     this.messageSound = {
-      message1: soundFile.round.r1_4_message1,
-      message2: soundFile.round.r1_4_message2,
-      jemulstar: soundFile.round.r1_4_jemulstar,
-      jemulstart: soundFile.round.r1_4_jemulstart,
-      jemulrun: soundFile.round.r1_4_jemulrun
+      message1: soundSrc.round.r1_4_message1,
+      message2: soundSrc.round.r1_4_message2,
+      jemulstar: soundSrc.round.r1_4_jemulstar,
+      jemulstart: soundSrc.round.r1_4_jemulstart,
+      jemulrun: soundSrc.round.r1_4_jemulrun
     }
 
-    this.specialImage = imageFile.round.round1_4_redzone
+    this.specialImage = imageSrc.round.round1_4_redzone
 
     this.addRoundPhase(this.roundPhase00, 1, 20)
     this.addRoundPhase(this.roundPhase01, 21, 80)
@@ -1329,7 +1334,7 @@ class Round1_4 extends RoundData {
     this.addRoundPhase(this.roundPhase03, 111, 150)
 
     /** 제물스타 이펙트 */
-    this.effectJemulstar = new CustomEffect(imageFile.effect.jemulstar, imageDataInfo.effect.jemulstar, 500, 320, 3, 2)
+    this.effectJemulstar = new CustomEffect(imageSrc.effect.jemulstar, imageDataInfo.effect.jemulstar, 500, 320, 3, 2)
 
     /** 제물 생성 이펙트 */
    
@@ -1337,7 +1342,7 @@ class Round1_4 extends RoundData {
     this.EffectJemulCreate = class JemulCreateEffect extends CustomEditEffect {
       constructor () {
         super()
-        this.autoSetEnimation(imageFile.effect.jemulCreate, imageDataInfo.effect.jemulCreate, 200, 200, 4, 15)
+        this.autoSetEnimation(imageSrc.effect.jemulCreate, imageDataInfo.effect.jemulCreate, 200, 200, 4, 15)
       }
     
       process () {
@@ -1353,7 +1358,7 @@ class Round1_4 extends RoundData {
     // 시작하자마자 보스 등장 (0 ~ 10)
     if (this.timeCheckInterval(3) && this.currentTimeFrame === 0) {
       this.createEnemy(ID.enemy.jemulEnemy.boss)
-      soundSystem.musicPlay(soundFile.music.music06_round1_boss_thema)
+      soundSystem.musicPlay(soundSrc.music.music06_round1_boss_thema)
     }
 
     // 보스가 일찍 죽으면 해당 페이즈 스킵
@@ -1456,7 +1461,7 @@ class Round1_4 extends RoundData {
     const phase3End = this.phaseTime[3].endTime
 
     if (this.timeCheckInterval(phase3Time, phase3End)) {
-      soundSystem.musicPlay(soundFile.music.music08_round1_4_jemul)
+      soundSystem.musicPlay(soundSrc.music.music08_round1_4_jemul)
     }
 
     this.backgroundImage = this.specialImage
@@ -1536,8 +1541,8 @@ class Round1_5 extends RoundData {
     this.requireLevel = 1
     this.finishTime = 210
     this.clearBonus = 41000
-    this.backgroundImage = imageFile.round.round1_5_meteoriteRed
-    this.music = soundFile.music.music04_meteorite_zone_red
+    this.backgroundImage = imageSrc.round.round1_5_meteoriteRed
+    this.music = soundSrc.music.music04_meteorite_zone_red
 
     this.addRoundPhase(this.roundPhase00, 1, 30)
     this.addRoundPhase(this.roundPhase01, 31, 60)
@@ -1559,7 +1564,7 @@ class Round1_5 extends RoundData {
   }
 
   processBackground () {
-    const imageA = imageFile.round.round1_3_meteoriteDeep
+    const imageA = imageSrc.round.round1_3_meteoriteDeep
     let phase7Start = this.phaseTime[7].startTime
     let phase8Start = this.phaseTime[8].startTime
     if (this.timeCheckFrame(phase7Start, 0)) {
@@ -1766,11 +1771,11 @@ class Round1_5 extends RoundData {
   roundPhase07 () {
     // 운석지대
     if (this.timeCheckFrame(181, 11)) {
-      soundSystem.musicChangeFade(soundFile.music.music02_meteorite_zone_field)
+      soundSystem.musicChangeFade(soundSrc.music.music02_meteorite_zone_field)
     }
 
     if (this.timeCheckInterval(181, 11)) {
-      soundSystem.musicPlay(soundFile.music.music02_meteorite_zone_field)
+      soundSystem.musicPlay(soundSrc.music.music02_meteorite_zone_field)
     }
 
     // 40%
@@ -1812,12 +1817,12 @@ class Round1_6 extends RoundData {
     this.requireLevel = 6
     this.finishTime = 152
     this.clearBonus = 35000
-    this.backgroundImage = imageFile.round.round1_2_meteorite
-    this.spaceImage = imageFile.round.round1_6_space
-    this.music = soundFile.music.music02_meteorite_zone_field
-    this.musicTour = soundFile.music.music05_space_tour
-    this.musicPlanet = soundFile.music.music07_paran_planet_entry
-    this.bossMusic = soundFile.music.music06_round1_boss_thema
+    this.backgroundImage = imageSrc.round.round1_2_meteorite
+    this.spaceImage = imageSrc.round.round1_6_space
+    this.music = soundSrc.music.music02_meteorite_zone_field
+    this.musicTour = soundSrc.music.music05_space_tour
+    this.musicPlanet = soundSrc.music.music07_paran_planet_entry
+    this.bossMusic = soundSrc.music.music06_round1_boss_thema
 
     this.addRoundPhase(this.roundPhase00, 1, 30)
     this.addRoundPhase(this.roundPhase01, 31, 60)
@@ -1836,7 +1841,7 @@ class Round1_6 extends RoundData {
    */
    createPlanet () {
     return {
-      image: imageFile.round.round1_6_paran_planet,
+      image: imageSrc.round.round1_6_paran_planet,
       elapsedFrame: 0,
       baseSize: 60,
       size: 60,

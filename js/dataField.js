@@ -1,4 +1,5 @@
-import { graphicSystem } from "./graphic.js"
+//@ts-check
+
 import { ImageDataObject } from "./imageSrc.js"
 
 /**

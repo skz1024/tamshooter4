@@ -476,3 +476,19 @@ PC버전의 경우는 해당사항 없음
 6. digitalFont는 이제 tamshooter4 전용으로 이동하고, ascii 코드를 기준으로 배치되었습니다.
 7. graphicSystem이 number, ascii 기반의 글자를 이미지로 출력할 수 있도록 새로운 함수 추가
 8. 모바일 실행가능 (주의: 아이폰은 소리가 안남(왜냐고... 파일이 ogg거든... 사파리는 이걸 몰라...))
+
+
+ver 0.36.1 - 순환 참조 막기 진행중
+1. 순환 참조 문제를 막기 위해 서로의 파일을 서로 참조하지 않도록 변경중...
+2. 이로인하여 여러 참조를 하는 구조를 전면적으로 변경(너무 복잡해서 설명 불가...)
+
+전반적인 구조
+// 엔진 및 게임의 시작점
+tamshooter4(시작점) <- game, gameFunction(공용 함수) <- tamsaEngine <- control, graphic, sound
+// 필드 및 데이터
+tamshooter4(시작점) <- field <- data <- dataWeapon, dataEnemy, dataEffect등... <- dataStat
+아마 이렇게 구성 될 것 같습니다.
+
+field는 더이상 gameSystem을 직접 수정할 수 없습니다.
+대신, gameSystem에서 field가 보낸 메세지를 이용하여 게임 시스템 값이 간접적으로 변경됩니다.
+게임이 실행 가능해지면 0.37.0 으로 버전을 변경하겠습니다.

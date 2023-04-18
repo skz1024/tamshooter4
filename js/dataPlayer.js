@@ -5,7 +5,7 @@ import { ID } from "./dataId.js"
 import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatWeapon } from "./dataStat.js"
 import { dataExportWeapon, WeaponData } from "./dataWeapon.js"
 import { fieldState } from "./field.js"
-import { soundFile, soundSystem } from "./sound.js"
+import { soundSrc } from "./soundSrc.js"
 
 /**
  * 플레이어 무기 데이터
@@ -555,7 +555,7 @@ class PlayerSkillMultyshot extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.multyshot)
-    this.setSound(soundFile.skill.skillMultyshotUse, soundFile.skill.skillMultyshotShot)
+    this.setSound(soundSrc.skill.skillMultyshotUse, soundSrc.skill.skillMultyshotShot)
     this.beforeDelay = 30
   }
 }
@@ -565,7 +565,7 @@ class PlayerSkillMissile extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.missile)
-    this.setSound(null, soundFile.skill.skillMissileShot)
+    this.setSound(null, soundSrc.skill.skillMissileShot)
   }
 }
 
@@ -575,7 +575,7 @@ class PlayerSkillArrow extends PlayerSkillData {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.arrow)
     this.option = [7, -7]
-    this.setSound(null, soundFile.skill.skillArrowShot)
+    this.setSound(null, soundSrc.skill.skillArrowShot)
   }
 }
 
@@ -584,7 +584,7 @@ class PlayerSkillLaser extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.laser)
-    this.setSound(null, soundFile.skill.skillLaserShot)
+    this.setSound(null, soundSrc.skill.skillLaserShot)
   }
 }
 
@@ -593,7 +593,7 @@ class PlayerSkillSapia extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.sapia)
-    this.setSound(soundFile.skill.skillSapiaWeapon, null)
+    this.setSound(soundSrc.skill.skillSapiaWeapon, null)
   }
 }
 
@@ -614,7 +614,7 @@ class PlayerSkillBlaster extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.blaster)
-    this.setSound(null, soundFile.skill.skillBlasterShot)
+    this.setSound(null, soundSrc.skill.skillBlasterShot)
   }
 }
 
@@ -627,7 +627,7 @@ class PlayerSkillSidewave extends PlayerSkillData {
     this.setAutoPlayerSkill(ID.playerSkill.sidewave)
     this.option = [-7, 0, 7]
     this.position = [{x: 0, y: -70}]
-    this.setSound(null, soundFile.skill.skillSidewaveShot)
+    this.setSound(null, soundSrc.skill.skillSidewaveShot)
   }
 }
 
@@ -635,7 +635,7 @@ class PlayerSkillSword extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.sword)
-    this.setSound(null, soundFile.skill.skillSword)
+    this.setSound(null, soundSrc.skill.skillSword)
   }
 }
 
@@ -643,7 +643,7 @@ class PlayerSkillHyperBall extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.hyperBall)
-    this.setSound(null, soundFile.skill.skillHyperBall)
+    this.setSound(null, soundSrc.skill.skillHyperBall)
     this.position = [{x: 0, y: -50}, {x: 0, y: 50}]
   }
 }
@@ -652,7 +652,7 @@ class PlayerSkillCriticalChaser extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.critcalChaser)
-    this.setSound(null, soundFile.skill.skillCriticalChaser)
+    this.setSound(null, soundSrc.skill.skillCriticalChaser)
     this.position = [{x: -30, y: -30}, {x: 30, y: 30}]
   }
 }
@@ -661,7 +661,7 @@ class PlayerSkillPileBunker extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.pileBunker)
-    this.setSound(null, soundFile.skill.skillPileBunker)
+    this.setSound(null, soundSrc.skill.skillPileBunker)
   }
 }
 
@@ -677,7 +677,7 @@ class PlayerSkillWhiteflash extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.whiteflash)
-    this.setSound(soundFile.skill.skillWhiteflash, null)
+    this.setSound(soundSrc.skill.skillWhiteflash, null)
   }
 }
 
@@ -685,7 +685,7 @@ class PlayerSkillRapid extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.rapid)
-    this.setSound(null, soundFile.skill.skillRapid)
+    this.setSound(null, soundSrc.skill.skillRapid)
     this.position = [{x: 0, y: -15}, {x: 0, y: -5}, {x: 0, y: 5}, {x: 0, y: 15}]
   }
 }
@@ -694,7 +694,7 @@ class PlayerSkillRing extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.ring)
-    this.setSound(null, soundFile.skill.skillRing)
+    this.setSound(null, soundSrc.skill.skillRing)
     this.option = ['left', 'leftdown', 'leftup', 'right', 'rightdown', 'rightup', 'up', 'down']
   }
 }
@@ -703,7 +703,7 @@ class PlayerSkillSeondanil extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.seondanil)
-    this.setSound(soundFile.skill.skillSeondanil, null)
+    this.setSound(soundSrc.skill.skillSeondanil, null)
   }
 }
 
@@ -711,7 +711,7 @@ class PlayerSkillHanjumeok extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.hanjumoek)
-    this.setSound(soundFile.skill.skillHanjumeok, null)
+    this.setSound(soundSrc.skill.skillHanjumeok, null)
   }
 }
 
@@ -719,7 +719,7 @@ class PlayerSkillBoomerang extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.boomerang)
-    this.setSound(soundFile.skill.skillBoomerang, null)
+    this.setSound(soundSrc.skill.skillBoomerang, null)
     this.option = [{x: 0, y: -240}, {x: 0, y: -60}, {x: 0, y: 180}]
   }
 }
@@ -728,7 +728,7 @@ class PlayerSkillMoon extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.moon)
-    this.setSound(soundFile.skill.skillMoon, null)
+    this.setSound(soundSrc.skill.skillMoon, null)
   }
 }
 

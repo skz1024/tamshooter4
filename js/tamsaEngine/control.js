@@ -312,6 +312,7 @@ export class ControlSystem {
       // 마우스를 눌렀다고 설정한 후 마우스를 누른 좌표를 입력합니다.
       // 캔버스 내에 터치를 시도할경우, 마우스를 클릭한 것과 같은 효과를 가집니다.
       this.setMouseDown()
+      this.setClick(offsetX / canvasZoomWidth, offsetY / canvasZoomHeight)
       this.setMousePosition(offsetX / canvasZoomWidth, offsetY / canvasZoomHeight)
       e.preventDefault()
     })

@@ -1,10 +1,11 @@
+//@ts-check
+
 import { DelayData, FieldData, EnimationData, collision, collisionClass } from "./dataField.js"
-import { graphicSystem } from "./graphic.js"
-import { soundFile, soundSystem } from "./sound.js"
 import { EffectData, CustomEffect, CustomEditEffect } from "./dataEffect.js"
 import { ID } from "./dataId.js"
 import { fieldState, fieldSystem } from "./field.js"
-import { imageDataInfo, imageFile } from "./imageSrc.js"
+import { imageDataInfo, imageSrc } from "./imageSrc.js"
+import { soundSrc } from "./soundSrc.js"
 
 export class EnemyData extends FieldData {
   constructor () {
@@ -51,7 +52,7 @@ export class EnemyData extends FieldData {
     /** 
      * 적이 죽으면 나오는 사운드. (isDied가 true이면 dieCheck 함수에서 발동) 
      * 현재는 적만 이 사운드를 가지고 있음.
-     * @type {soundFile} soundFile 객체 내에 있는 변수
+     * @type {soundSrc} soundSrc 객체 내에 있는 변수
      * */ 
     this.dieSound = null
 
@@ -487,7 +488,7 @@ class TestEnemy extends EnemyData {
     this.score = 100
     this.width = 48
     this.height = 48
-    this.image = imageFile.enemyTemp
+    this.image = imageSrc.enemyTemp
   }
 }
 
@@ -500,7 +501,7 @@ class TestAttackEnemy extends EnemyData {
     this.height = 48
     this.attack = 10
     this.isPossibleExit = false
-    this.image = imageFile.enemyTemp
+    this.image = imageSrc.enemyTemp
     this.moveSpeedX = -1
   }
 }
@@ -514,7 +515,7 @@ class TestShowDamageEnemy extends EnemyData {
     this.height = 48
     this.attack = 0
     this.isPossibleExit = false
-    this.image = imageFile.enemyTemp
+    this.image = imageSrc.enemyTemp
     this.moveSpeedX = 0
   }
 
@@ -530,7 +531,7 @@ class TestShowDamageEnemy extends EnemyData {
 class SpaceEnemyData extends EnemyData {
   constructor () {
     super()
-    this.image = imageFile.enemy.spaceEnemy
+    this.image = imageSrc.enemy.spaceEnemy
     this.baseCp = 40000
   }
 }
@@ -547,7 +548,7 @@ class SpaceEnemyLight extends SpaceEnemyData {
     this.moveSpeedY = Math.random() * 8 - 4
     this.isPossibleExit = true
     this.isExitToReset = true
-    this.dieSound = soundFile.enemyDie.enemyDieSpaceLight
+    this.dieSound = soundSrc.enemyDie.enemyDieSpaceLight
   }
 
   display () {
@@ -569,7 +570,7 @@ class SpaceEnemyRocket extends SpaceEnemyData {
     this.setMoveSpeed(4 + Math.random() * 2, 0)
     this.isPossibleExit = true
     this.isExitToReset = true
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieSpaceRocket, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedWhite, this.height, this.height, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceRocket, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedWhite, this.height, this.height, 2))
   }
 }
 
@@ -578,7 +579,7 @@ class SpaceEnemyCar extends SpaceEnemyData {
     super()
     this.setEnemyByCpStat(12, 10)
     this.setAutoImageData(this.image, imageDataInfo.spaceEnemy.greenCar, 4)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieSpaceCar, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.car1, this.height, this.height, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceCar, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.car1, this.height, this.height, 2))
     this.state = 'normal'
     this.boostCount = 0 // 자동차의 속도를 올리기 위한 변수
     this.isPossibleExit = true
@@ -630,7 +631,7 @@ class SpaceEnemySquare extends SpaceEnemyData {
     super()
     this.setAutoImageData(this.image, imageDataInfo.spaceEnemy.blueSqaure, 4)
     this.setEnemyByCpStat(20, 16)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieSpaceSquare, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareGrey, this.width, this.height, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceSquare, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareGrey, this.width, this.height, 2))
     this.isPossibleExit = false
     this.MOVE_STOP_FRAME = 180
     this.moveDelay = new DelayData(240)
@@ -667,7 +668,7 @@ class SpaceEnemyAttack extends SpaceEnemyData {
     super()
     this.setAutoImageData(this.image, imageDataInfo.spaceEnemy.blueAttack, 4)
     this.setEnemyByCpStat(14, 12)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieSpaceSquare, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.diamondBlue, this.width, this.height, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceSquare, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.diamondBlue, this.width, this.height, 2))
     this.boostCount = 0
     this.moveSpeedY = Math.random() * 2 - 1
   }
@@ -699,7 +700,7 @@ class SpaceEnemyEnergy extends SpaceEnemyData {
     this.setEnemyByCpStat(20, 10)
     this.setMoveSpeed(4, 4)
     this.setMoveDirection()
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieSpaceEnergy, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareLinePurple, this.width, this.height, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceEnergy, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareLinePurple, this.width, this.height, 2))
     this.boostCount = 0
     this.moveDelay = new DelayData(180) // 이 값이 180이 아니면, 오류가 발생할 수 있음. 속도를 계산하는 데 알고리즘상의 문제가 있음.
     this.moveDelay.count = this.moveDelay.delay // 딜레이 즉시 발동을 위한 카운트 강제 증가
@@ -745,7 +746,7 @@ class SpaceEnemySusong extends SpaceEnemyData {
     super()
     this.setAutoImageData(this.image, imageDataInfo.spaceEnemy.susong, 3)
     this.setEnemyByCpStat(80, 20)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieSpaceSusong, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.smallCircleUp, this.width / 2, this.width / 2, 2, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceSusong, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.smallCircleUp, this.width / 2, this.width / 2, 2, 2))
     this.boostCount = 0
     this.moveDelay = new DelayData(240)
     this.state = 'move'
@@ -804,10 +805,10 @@ class SpaceEnemySusong extends SpaceEnemyData {
 class SpaceEnemyGamjigi extends SpaceEnemyData {
   constructor () {
     super()
-    this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.gamjigi)
+    this.setAutoImageData(imageSrc.enemy.spaceEnemy, imageDataInfo.spaceEnemy.gamjigi)
     this.setEnemyByCpStat(20, 12)
     this.setMoveDirection()
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieSpaceGamjigi, new CustomEffect(imageFile.enemyDie.enemyDieSpaceGamjigi, imageDataInfo.enemyDieEffectEx.enemyDieSpaceGamjigi, this.width, this.height, 3))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceGamjigi, new CustomEffect(imageSrc.enemyDie.enemyDieSpaceGamjigi, imageDataInfo.enemyDieEffectEx.enemyDieSpaceGamjigi, this.width, this.height, 3))
     this.moveDelay = new DelayData(300)
     this.boostCount = 0
     this.degree = 0
@@ -883,8 +884,8 @@ class SpaceEnemyGamjigi extends SpaceEnemyData {
 class SpaceEnemyComet extends SpaceEnemyData {
   constructor () {
     super()
-    this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.comet, 2)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieSpaceComet, new CustomEffect(imageFile.enemyDie.enemyDieSpaceComet, imageDataInfo.enemyDieEffectEx.enemyDieSapceComet, this.width, this.height, 4))
+    this.setAutoImageData(imageSrc.enemy.spaceEnemy, imageDataInfo.spaceEnemy.comet, 2)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceComet, new CustomEffect(imageSrc.enemyDie.enemyDieSpaceComet, imageDataInfo.enemyDieEffectEx.enemyDieSapceComet, this.width, this.height, 4))
     this.setEnemyByCpStat(5, 4)
     this.setMoveSpeed(1, Math.random() * 4 + 2)
     this.boostCount = 0
@@ -918,11 +919,11 @@ class SpaceEnemyMeteorite extends SpaceEnemyData {
       imageDataInfo.spaceEnemy.meteorite5
     ]
     const dieSoundList = [
-      soundFile.enemyDie.enemyDieMeteorite1,
-      soundFile.enemyDie.enemyDieMeteorite2,
-      soundFile.enemyDie.enemyDieMeteorite3,
-      soundFile.enemyDie.enemyDieMeteorite4,
-      soundFile.enemyDie.enemyDieMeteorite5,
+      soundSrc.enemyDie.enemyDieMeteorite1,
+      soundSrc.enemyDie.enemyDieMeteorite2,
+      soundSrc.enemyDie.enemyDieMeteorite3,
+      soundSrc.enemyDie.enemyDieMeteorite4,
+      soundSrc.enemyDie.enemyDieMeteorite5,
     ]
     const dieEffectImageDataList = [
       imageDataInfo.enemyDieMeteorite.enemyDieMeteorite1,
@@ -936,8 +937,8 @@ class SpaceEnemyMeteorite extends SpaceEnemyData {
     let meteoriteNumber = Math.floor(Math.random() * 5)
     
     this.setEnemyStat(hpList[meteoriteNumber], scoreList[meteoriteNumber], attackList[meteoriteNumber])
-    this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataList[meteoriteNumber])
-    this.setDieEffectOption(dieSoundList[meteoriteNumber], new CustomEffect(imageFile.enemyDie.enemyDieMeteorite, dieEffectImageDataList[meteoriteNumber], this.width, this.height, 4))
+    this.setAutoImageData(imageSrc.enemy.spaceEnemy, imageDataList[meteoriteNumber])
+    this.setDieEffectOption(dieSoundList[meteoriteNumber], new CustomEffect(imageSrc.enemyDie.enemyDieMeteorite, dieEffectImageDataList[meteoriteNumber], this.width, this.height, 4))
     this.setMoveDirection()
 
     this.moveSpeedX = Math.random() * 4 - 2
@@ -964,11 +965,11 @@ class SpaceEnemyBoss extends SpaceEnemyData {
   constructor () {
     super()
     
-    this.setAutoImageData(imageFile.enemy.spaceEnemy, imageDataInfo.spaceEnemy.bossSqaure, 6)
+    this.setAutoImageData(imageSrc.enemy.spaceEnemy, imageDataInfo.spaceEnemy.bossSqaure, 6)
     // 보스의 크기는 300x300, 이미지 자동설정 후에 크기를 설정하는 이유는, autoImageData함수가 크기를 자동으로 지정해두기 때문
     this.setWidthHeight(300, 300)
     this.setEnemyByCpStat(3000, 40, 200)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieSpaceCar, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.car1, this.width, this.height, 1, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceCar, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.car1, this.width, this.height, 1, 2))
 
     this.MOVE_STOP_FRAME = 90
     this.moveDelay = new DelayData(90)
@@ -1147,7 +1148,7 @@ class SpaceEnemyDonggrami extends SpaceEnemyData {
     super()
     // 50% 확률로 이미지 결정
     let imageDataTarget = Math.random() * 100 < 50 ? imageDataInfo.spaceEnemy.donggrami1 : imageDataInfo.spaceEnemy.donggrami2
-    let dieSoundTarget = Math.random() * 100 < 50 ? soundFile.enemyDie.enemyDieDonggrami1 : soundFile.enemyDie.enemyDieDonggrami2
+    let dieSoundTarget = Math.random() * 100 < 50 ? soundSrc.enemyDie.enemyDieDonggrami1 : soundSrc.enemyDie.enemyDieDonggrami2
     this.setAutoImageData(this.image, imageDataTarget)
     this.setEnemyByCpStat(36, 15)
     this.setDieEffectOption(dieSoundTarget)
@@ -1172,7 +1173,7 @@ class MeteoriteEnemyData extends EnemyData {
   constructor () {
     super()
     this.baseCp = 40000
-    this.image = imageFile.enemy.meteoriteEnemy
+    this.image = imageSrc.enemy.meteoriteEnemy
   }
 }
 
@@ -1197,11 +1198,11 @@ class MeteoriteEnemyClass1 extends MeteoriteEnemyData {
       imageDataInfo.meteoriteEnemy.class35,
     ]
     const dieSoundList = [
-      soundFile.enemyDie.enemyDieMeteorite1,
-      soundFile.enemyDie.enemyDieMeteorite2,
-      soundFile.enemyDie.enemyDieMeteorite3,
-      soundFile.enemyDie.enemyDieMeteorite4,
-      soundFile.enemyDie.enemyDieMeteorite5
+      soundSrc.enemyDie.enemyDieMeteorite1,
+      soundSrc.enemyDie.enemyDieMeteorite2,
+      soundSrc.enemyDie.enemyDieMeteorite3,
+      soundSrc.enemyDie.enemyDieMeteorite4,
+      soundSrc.enemyDie.enemyDieMeteorite5
     ]
     const dieImageDataList = [
       imageDataInfo.enemyDieMeteorite.enemyDieMeteorite1,
@@ -1215,8 +1216,8 @@ class MeteoriteEnemyClass1 extends MeteoriteEnemyData {
     
     this.setEnemyByCpStat(4, 5)
     this.setWidthHeight(25, 25)
-    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataList[imageNumber])
-    this.setDieEffectOption(dieSoundList[dieSoundNumber], new CustomEffect(imageFile.enemyDie.enemyDieMeteorite, dieImageDataList[dieImageNumber], this.width, this.height, 1))
+    this.setAutoImageData(imageSrc.enemy.meteoriteEnemy, imageDataList[imageNumber])
+    this.setDieEffectOption(dieSoundList[dieSoundNumber], new CustomEffect(imageSrc.enemyDie.enemyDieMeteorite, dieImageDataList[dieImageNumber], this.width, this.height, 1))
     this.setMoveSpeed((Math.random() * 8) - 4, (Math.random() * 8) - 4)
     this.isExitToReset = true
     this.degree = Math.floor(Math.random() * 360)
@@ -1294,21 +1295,21 @@ class MeteoriteEnemyWhiteMeteo extends MeteoriteEnemyData {
     ]
     const moveDelayTable = [300, 240, 120, 180, 24]
     const dieSoundTable = [
-      soundFile.enemyDie.enemyDieMeteorite1,
-      soundFile.enemyDie.enemyDieMeteorite2,
-      soundFile.enemyDie.enemyDieMeteorite3,
-      soundFile.enemyDie.enemyDieMeteorite4,
-      soundFile.enemyDie.enemyDieMeteorite5
+      soundSrc.enemyDie.enemyDieMeteorite1,
+      soundSrc.enemyDie.enemyDieMeteorite2,
+      soundSrc.enemyDie.enemyDieMeteorite3,
+      soundSrc.enemyDie.enemyDieMeteorite4,
+      soundSrc.enemyDie.enemyDieMeteorite5
     ]
 
     let imageNumber = Math.floor(Math.random() * MAX_NUM)
     let soundNumber = Math.floor(Math.random() * dieSoundTable.length)
 
     this.typeNumber = Math.floor(Math.random() * 5)
-    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataTable[imageNumber])
+    this.setAutoImageData(imageSrc.enemy.meteoriteEnemy, imageDataTable[imageNumber])
     this.setEnemyByCpStat(15, 12)
     this.setMoveSpeed((Math.random() * 2) - 1, (Math.random() * 2) - 1)
-    this.setDieEffectOption(dieSoundTable[soundNumber], new CustomEffect(imageFile.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteoriteWhite, this.width, this.height, 1))
+    this.setDieEffectOption(dieSoundTable[soundNumber], new CustomEffect(imageSrc.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteoriteWhite, this.width, this.height, 1))
     this.maxMoveSpeedX = Math.random() * 3 + 1
     this.maxMoveSpeedY = Math.random() * 3 + 1
     this.baseMoveSpeedX = this.moveSpeedX
@@ -1620,9 +1621,9 @@ class MeteoriteEnemyBlackMeteo extends MeteoriteEnemyWhiteMeteo {
     const moveDelayTable = [300, 240, 120, 180, 24]
 
     let imageNumber = Math.floor(Math.random() * MAX_NUM)
-    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataTable[imageNumber])
+    this.setAutoImageData(imageSrc.enemy.meteoriteEnemy, imageDataTable[imageNumber])
     this.setEnemyByCpStat(18, 12)
-    this.dieEffect = new CustomEffect(imageFile.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteoriteBlack, this.width, this.height, 4)
+    this.dieEffect = new CustomEffect(imageSrc.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteoriteBlack, this.width, this.height, 4)
     this.moveDelay.delay = moveDelayTable[this.typeNumber]
   }
 }
@@ -1731,10 +1732,10 @@ class MeteoriteEnemyBomb extends MeteoriteEnemyData {
   constructor () {
     super()
     this.setEnemyByCpStat(25, 20)
-    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataInfo.meteoriteEnemy.bomb)
+    this.setAutoImageData(imageSrc.enemy.meteoriteEnemy, imageDataInfo.meteoriteEnemy.bomb)
     this.setMoveSpeed(Math.random() * 3, Math.random() * 3)
     this.isExitToReset = true
-    this.dieSound = soundFile.enemyDie.enemyDieMeteoriteBomb
+    this.dieSound = soundSrc.enemyDie.enemyDieMeteoriteBomb
   }
 
   processDie () {
@@ -1779,13 +1780,13 @@ class MeteoriteEnemyStone extends MeteoriteEnemyData {
     let imageNumber = Math.floor(Math.random() * imageDataList.length)
     this.stoneType = imageNumber // 돌 타입 설정(이미지 차이만 있음.)
 
-    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataList[imageNumber])
+    this.setAutoImageData(imageSrc.enemy.meteoriteEnemy, imageDataList[imageNumber])
     this.setEnemyByCpStat(50, 20)
     this.setRandomSpeed(2, 2)
     this.width = 160
     this.height = 160
     this.isExitToReset = true
-    this.dieSound = soundFile.enemyDie.enemyDieSpaceRocket
+    this.dieSound = soundSrc.enemyDie.enemyDieSpaceRocket
   }
 
   processDieAfter () {
@@ -1831,8 +1832,8 @@ class MeteoriteEnemyStonePiece extends MeteoriteEnemyData {
     this.stoneType = option.length > 0 ? option[0] : Math.floor(Math.random() * MeteoriteEnemyStone.TYPE_STONE_MAX)
     this.pieceNumber = option.length > 1 ? option[1] : Math.floor(Math.random() * pieceNumberMax)
 
-    this.setAutoImageData(imageFile.enemy.meteoriteEnemy, imageDataList[this.stoneType][this.pieceNumber])
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieSpaceSmall, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareGrey, this.width, this.height, 1))
+    this.setAutoImageData(imageSrc.enemy.meteoriteEnemy, imageDataList[this.stoneType][this.pieceNumber])
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceSmall, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareGrey, this.width, this.height, 1))
     this.setEnemyByCpStat(10, 10)
     this.setRandomSpeed(4, 4)
     this.width = 80
@@ -1877,7 +1878,7 @@ class MeteoriteEnemyRed extends MeteoriteEnemyData {
     this.setAutoImageData(this.image, imageDataList[imageDataNumber])
     this.setWidthHeight(this.width * 2, this.height * 2) // 크기 2배 증가
     this.setEnemyByCpStat(50, 40)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieMetoriteRed, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.noiseRed, this.width, this.height, 4))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieMetoriteRed, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.noiseRed, this.width, this.height, 4))
     this.setRandomSpeed(3, 2)
   }
 }
@@ -1887,16 +1888,16 @@ class JemulEnemyData extends EnemyData {
   constructor () {
     super()
     this.baseCp = 40000
-    this.image = imageFile.enemy.jemulEnemy
+    this.image = imageSrc.enemy.jemulEnemy
   }
 }
 
 class JemulEnemyRotateRocket extends JemulEnemyData {
   constructor () {
     super()
-    this.setAutoImageData(imageFile.enemy.jemulEnemy, imageDataInfo.jemulEnemy.rotateRocket, 5)
+    this.setAutoImageData(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.rotateRocket, 5)
     this.setEnemyByCpStat(10, 20)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieJemulRocket, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedOrange, this.width, this.width, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulRocket, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedOrange, this.width, this.width, 2))
 
     // 이 로켓은 플레이어가 있는 위치에 발사되기 때문에, 이동 방향을 삭제하고 순수 속도값을 설정
     this.setMoveDirection()
@@ -1939,9 +1940,9 @@ class JemulEnemyRotateRocket extends JemulEnemyData {
 class JemulEnemyEnergyBolt extends JemulEnemyData {
   constructor () {
     super()
-    this.setAutoImageData(imageFile.enemy.jemulEnemy, imageDataInfo.jemulEnemy.energyBolt)
+    this.setAutoImageData(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.energyBolt)
     this.setEnemyByCpStat(12, 12)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieJemulEnergyBolt, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.pulseDiamondBlue, this.width, this.height, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulEnergyBolt, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.pulseDiamondBlue, this.width, this.height, 2))
     this.setRandomSpeed(2, 3)
     this.moveDelay = new DelayData(180)
     this.attackDelay = new DelayData(180)
@@ -1949,7 +1950,7 @@ class JemulEnemyEnergyBolt extends JemulEnemyData {
     this.bulletSize = 160
     this.isExitToReset = true
 
-    this.bulletEffect = new CustomEffect(imageFile.enemyBullet.energyBoltAttack, imageDataInfo.enemyBullet.jemulEnergyBoltAttack, 160, 160, 2)
+    this.bulletEffect = new CustomEffect(imageSrc.enemyBullet.energyBoltAttack, imageDataInfo.enemyBullet.jemulEnergyBoltAttack, 160, 160, 2)
   }
 
   processMove () {
@@ -1983,7 +1984,7 @@ class JemulEnemyEnergyBolt extends JemulEnemyData {
       
       // 사운드 및 이펙트 추가
       fieldState.createEffectObject(this.bulletEffect, hitArea.x, hitArea.y)
-      soundSystem.play(soundFile.enemyAttack.jemulEnergyBoltAttack)
+      soundSystem.play(soundSrc.enemyAttack.jemulEnergyBoltAttack)
     }
   }
 }
@@ -1991,16 +1992,16 @@ class JemulEnemyEnergyBolt extends JemulEnemyData {
 class JemulEnemyEnergyBoltAttackEffect extends EffectData {
   constructor () {
     super()
-    this.autoSetEnimation(imageFile.enemyBullet.energyBoltAttack, imageDataInfo.enemyBullet.jemulEnergyBoltAttack, 160, 160, 3)
+    this.autoSetEnimation(imageSrc.enemyBullet.energyBoltAttack, imageDataInfo.enemyBullet.jemulEnergyBoltAttack, 160, 160, 3)
   }
 }
 
 class JemulEnemyHellSpike extends JemulEnemyData {
   constructor () {
     super()
-    this.setAutoImageData(imageFile.enemy.jemulEnemy, imageDataInfo.jemulEnemy.hellSpike)
+    this.setAutoImageData(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.hellSpike)
     this.setEnemyByCpStat(10, 10)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieJemulSpike, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.diamondMagenta, this.width, this.height, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulSpike, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.diamondMagenta, this.width, this.height, 2))
     this.setRandomSpeed(3, 3)
     this.attackDelay = new DelayData(120)
     this.isExitToReset = true
@@ -2013,7 +2014,7 @@ class JemulEnemyHellSpike extends JemulEnemyData {
       let moveDirectionX = [FieldData.direction.LEFT, FieldData.direction.LEFT, FieldData.direction.RIGHT, FieldData.direction.RIGHT]
       let moveDirectionY = [FieldData.direction.UP, FieldData.direction.DOWN, FieldData.direction.UP, FieldData.direction.DOWN]
       for (let i = 0; i < 4; i++) {
-        let enemyBullet = new CustomEnemyBullet(imageFile.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyHellSpike, 10, 3, 3, moveDirectionX[i], moveDirectionY[i])
+        let enemyBullet = new CustomEnemyBullet(imageSrc.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyHellSpike, 10, 3, 3, moveDirectionX[i], moveDirectionY[i])
         enemyBullet.setAutoRotate()
         fieldState.createEnemyBulletObject(enemyBullet, centerX, centerY)
       }
@@ -2024,9 +2025,9 @@ class JemulEnemyHellSpike extends JemulEnemyData {
 class JemulEnemyHellDrill extends JemulEnemyData {
   constructor () {
     super()
-    this.setAutoImageData(imageFile.enemy.jemulEnemy, imageDataInfo.jemulEnemy.hellDrill, 0)
+    this.setAutoImageData(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.hellDrill, 0)
     this.setEnemyByCpStat(15, 3)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieJemulDrill, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.smallCircleUp, this.width, this.height, 3))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulDrill, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.smallCircleUp, this.width, this.height, 3))
     
     // 드릴은 초당 10회 공격 가능 (일반적인 적들은 초당 1회 제한)
     this.collisionDelay.delay = 6
@@ -2045,7 +2046,7 @@ class JemulEnemyHellDrill extends JemulEnemyData {
 
       for (let i = 0; i < enemy.length; i++) {
         if (collision(enemy[i], player)) {
-          soundSystem.play(soundFile.enemyAttack.jemulHellDrillAttack) // 공격 성공시 사운드 출력
+          soundSystem.play(soundSrc.enemyAttack.jemulHellDrillAttack) // 공격 성공시 사운드 출력
           player.addDamage(this.attack)
           this.collisionDelay.count = 0 // 플레이어랑 충돌하면 충돌 딜레이카운트를 0으로 만듬
           return
@@ -2087,9 +2088,9 @@ class JemulEnemyHellShip extends JemulEnemyData {
   constructor () {
     super()
     // 이 객체는 에니메이션이 총 3종류라 따로 코드를 작성해야 합니다.
-    this.setAutoImageData(imageFile.enemy.jemulEnemy, imageDataInfo.jemulEnemy.hellShipFront)
+    this.setAutoImageData(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.hellShipFront)
     this.setEnemyByCpStat(23, 20)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieJemulHellShip, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireBlue, this.width, this.height, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulHellShip, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireBlue, this.width, this.height, 2))
     let up = imageDataInfo.jemulEnemy.hellShipUp
     let down = imageDataInfo.jemulEnemy.hellShipDown
     this.enimationUp  = new EnimationData(this.image, up.x, up.y, up.width, up.height, up.frame, 1, -1, this.width, this.height)
@@ -2151,7 +2152,7 @@ class JemulEnemyHellShip extends JemulEnemyData {
 
   processAttack () {
     if (this.attackDelay.check()) {
-      let enemyBullet = new CustomEnemyBullet(imageFile.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyShip, 15, 4, 0, FieldData.direction.LEFT)
+      let enemyBullet = new CustomEnemyBullet(imageSrc.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyShip, 15, 4, 0, FieldData.direction.LEFT)
       fieldState.createEnemyBulletObject(enemyBullet, this.x, this.y)
     }
   }
@@ -2180,9 +2181,9 @@ class JemulEnemyHellAir extends JemulEnemyData {
   constructor () {
     super()
     // 이 객체는 에니메이션이 총 3종류라 따로 코드를 작성해야 합니다.
-    this.setAutoImageData(imageFile.enemy.jemulEnemy, imageDataInfo.jemulEnemy.hellAirFront)
+    this.setAutoImageData(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.hellAirFront)
     this.setEnemyByCpStat(20, 20)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieJemulHellAir, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireBlue, this.width, this.height, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulHellAir, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireBlue, this.width, this.height, 2))
     let up = imageDataInfo.jemulEnemy.hellAirUp
     let down = imageDataInfo.jemulEnemy.hellAirDown
     this.enimationUp  = new EnimationData(this.image, up.x, up.y, up.width, up.height, up.frame, 1, -1, this.width, this.height)
@@ -2246,7 +2247,7 @@ class JemulEnemyHellAir extends JemulEnemyData {
       let speedYList = [-1, 0, 0, 1]
       let insertY = [this.y + (this.height / 4 * 0), this.y + (this.height / 4 * 2), this.y + (this.height / 4 * 3), this.y + (this.height / 4 * 4)]
       for (let i = 0; i < 4; i++) {
-        let enemyBullet = new CustomEnemyBullet(imageFile.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyAir, 6, bulletSpeedX, speedYList[i])
+        let enemyBullet = new CustomEnemyBullet(imageSrc.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyAir, 6, bulletSpeedX, speedYList[i])
         fieldState.createEnemyBulletObject(enemyBullet, this.x, insertY[i])
       }
     }
@@ -2287,7 +2288,7 @@ class JemulEnemyBoss extends JemulEnemyData {
     this.setAutoImageData(this.image, imageDataInfo.jemulEnemy.jemulBoss, 5)
     this.setWidthHeight(360, 300) // 크기 3배
     this.setEnemyByCpStat(2000, 50, 200)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieJemulBoss, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.car1, this.width, this.height, 4))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulBoss, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.car1, this.width, this.height, 4))
     this.attackDelay = new DelayData(this.ATTACK_DELAY)
     this.isPossibleExit = false
     
@@ -2421,7 +2422,7 @@ class JemulEnemyBoss extends JemulEnemyData {
       }
     }
 
-    let enemyBullet = new CustomEnemyBullet(imageFile.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyShip, 20, bulletSpeedX, bulletSpeedY, '', '')
+    let enemyBullet = new CustomEnemyBullet(imageSrc.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyShip, 20, bulletSpeedX, bulletSpeedY, '', '')
     fieldState.createEnemyBulletObject(enemyBullet, this.centerX, this.centerY)
   }
 
@@ -2452,7 +2453,7 @@ class JemulEnemyBoss extends JemulEnemyData {
     // 레이저 사운드 출력(사운드 코드가 맨 위에 있는 이유는 laserDelay.check 함수에서 count를 1 증가시키기 때문)
     // 그래서 laserDelay.count % 120 === 1을 써야 하는데, 그게 싫음.
     if (this.laserDelay.count % 120 === 0) {
-      soundSystem.play(soundFile.enemyAttack.jemulBossAttack)
+      soundSystem.play(soundSrc.enemyAttack.jemulBossAttack)
     }
 
     // 레이저 카운터는 증가하지만, 지연시간을 확인하는 용도로 사용하지 않습니다.
@@ -2481,7 +2482,7 @@ class JemulEnemyBoss extends JemulEnemyData {
 
   processAttackRotateLaser () {
     if (this.laserDelay.count % 120 === 0) {
-      soundSystem.play(soundFile.enemyAttack.jemulBossAttack)
+      soundSystem.play(soundSrc.enemyAttack.jemulBossAttack)
     }
   
     this.laserDelay.check(false, true)
@@ -2527,7 +2528,7 @@ class JemulEnemyBossEye extends JemulEnemyData {
     this.setAutoImageData(this.image, imageDataInfo.jemulEnemy.jemulBossEye, 5)
     this.setWidthHeight(400, 240) // 크기 3배
     this.setEnemyStat(40000 * 60 * 4, 8000, 0)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieJemulBossEye, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.noiseRed, this.width, this.height, 10))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulBossEye, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.noiseRed, this.width, this.height, 10))
     this.attackDelay = new DelayData(6)
     this.isPossibleExit = false
 
@@ -2571,9 +2572,9 @@ class JemulEnemyBossEye extends JemulEnemyData {
     this.laserDelay = new DelayData(300)
     this.state = this.STATE_START
     this.laserNumber = this.laserNumberStack.shift()
-    this.laserSound1 = soundFile.enemyAttack.jemulBossAttack
-    this.laserSound2 = soundFile.enemyAttack.jemulBossAttack2
-    this.laserSound3 = soundFile.enemyAttack.jemulBossAttack3
+    this.laserSound1 = soundSrc.enemyAttack.jemulBossAttack
+    this.laserSound2 = soundSrc.enemyAttack.jemulBossAttack2
+    this.laserSound3 = soundSrc.enemyAttack.jemulBossAttack3
   }
 
   requestStateStop () {
@@ -2998,7 +2999,7 @@ class JemulEnemyRedMeteorite extends JemulEnemyData {
     this.setAutoImageData(this.image, imageDataInfo.jemulEnemy.redMeteorite)
     this.setMoveSpeed((Math.random() * 4) - 1, (Math.random() * 4) - 1)
     this.setWidthHeight(this.width, this.height)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieMetoriteRed)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieMetoriteRed)
     this.isPossibleExit = false
   }
 }
@@ -3016,7 +3017,7 @@ class JemulEnemyRedAir extends JemulEnemyData {
     super()
     this.setAutoImageData(this.image, imageDataInfo.jemulEnemy.redAir)
     this.setEnemyByCpStat(40, 23)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieJemulRedAir, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireRed, this.width, this.height, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulRedAir, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireRed, this.width, this.height, 2))
     this.setRandomSpeed(2, 2)
     this.moveDelay = new DelayData(300)
     this.attackDelay = new DelayData(240)
@@ -3048,7 +3049,7 @@ class JemulEnemyRedAir extends JemulEnemyData {
         bulletX = this.x
       }
 
-      let enemyBullet = new CustomEnemyBullet(imageFile.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyAir, 6, bulletSpeedX, 0)
+      let enemyBullet = new CustomEnemyBullet(imageSrc.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyAir, 6, bulletSpeedX, 0)
       fieldState.createEnemyBulletObject(enemyBullet, bulletX, this.y + (this.height / 4 * 1))
     }
 
@@ -3062,7 +3063,7 @@ class JemulEnemyRedShip extends JemulEnemyData {
     super()
     this.setAutoImageData(this.image, imageDataInfo.jemulEnemy.redShip)
     this.setEnemyByCpStat(41, 24)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieJemulRedAir, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireRed, this.width, this.height, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulRedAir, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireRed, this.width, this.height, 2))
     this.setRandomSpeed(2, 2)
     this.moveDelay = new DelayData(240)
     this.attackDelay = new DelayData(60)
@@ -3087,8 +3088,8 @@ class JemulEnemyRedShip extends JemulEnemyData {
 
   processAttack () {
     if (this.attackDelay.check()) {
-      let enemyBullet1 = new CustomEnemyBullet(imageFile.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyShip, 10, 9, 0, 'left')
-      let enemyBullet2 = new CustomEnemyBullet(imageFile.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyShip, 10, 9, 0, 'right')
+      let enemyBullet1 = new CustomEnemyBullet(imageSrc.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyShip, 10, 9, 0, 'left')
+      let enemyBullet2 = new CustomEnemyBullet(imageSrc.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyShip, 10, 9, 0, 'right')
       fieldState.createEnemyBulletObject(enemyBullet1, this.x, this.y)
       fieldState.createEnemyBulletObject(enemyBullet2, this.x, this.y)
     }
@@ -3101,7 +3102,7 @@ class JemulEnemyRedJewel extends JemulEnemyData {
     this.setAutoImageData(this.image, imageDataInfo.jemulEnemy.redJewel, 3)
     this.setWidthHeight(this.width * 2, this.height * 2)
     this.setEnemyByCpStat(11, 14)
-    this.setDieEffectOption(soundFile.enemyDie.enemyDieJemulRedJewel, new CustomEffect(imageFile.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareLineRed, this.width, this.height, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulRedJewel, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareLineRed, this.width, this.height, 2))
     this.setMoveSpeed(1, 0)
     this.moveDelay = new DelayData(120)
     this.isExitToReset = true
@@ -3131,7 +3132,7 @@ class Donggeurami extends EnemyData {
   }
 
   display () {
-    const IMAGE = imageFile.enemyTemp
+    const IMAGE = imageSrc.enemyTemp
     graphicSystem.imageDisplay(IMAGE, this.x, this.y)
   }
 }

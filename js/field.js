@@ -1,18 +1,18 @@
 'use strict'
 
-import { buttonSystem } from './control.js'
 import { tamshooter4Data } from './data.js'
 import { CustomEditEffect, CustomEffect, EffectData } from './dataEffect.js'
 import { EnemyBulletData, EnemyData } from './dataEnemy.js'
 import { FieldData } from './dataField.js'
 import { ID } from './dataId.js'
-import { PlayerWeaponData } from './dataPlayer.js'
+import { PlayerSkillData, PlayerWeaponData } from './dataPlayer.js'
 import { RoundData } from './dataRound.js'
 import { WeaponData } from './dataWeapon.js'
-import { graphicSystem } from './graphic.js'
-import { imageDataInfo, imageFile } from './imageSrc.js'
-import { soundFile, soundSystem } from './sound.js'
-import { gameSystem, userSystem } from './tamshooter4_backup.js'
+import { imageDataInfo, imageSrc } from './imageSrc.js'
+import { soundSrc } from './soundSrc.js'
+import { gameSystem } from './tamshooter4.js'
+import { userSystem } from './game.js'
+import { game } from "./game.js"
 
 // import { systemText } from './text.js'
 
@@ -75,7 +75,7 @@ class DamageObject {
   display () {
     if (!this.isUsing) return
 
-    const IMAGE = imageFile.system.damageFont
+    const IMAGE = imageSrc.system.damageFont
     const NUMBER_WIDTH = 12
     const NUMBER_HEIGHT = 12
     const WIDTH = 10
@@ -84,7 +84,7 @@ class DamageObject {
     for (let i = 0; i < attackText.length; i++) {
       const number = attackText.charAt(i)
       const outputX = this.x + (WIDTH * i)
-      graphicSystem.imageDisplay(IMAGE, number * NUMBER_WIDTH, 0, NUMBER_WIDTH, NUMBER_HEIGHT, outputX, this.y, WIDTH, HEIGHT)
+      game.graphic.imageDisplay(IMAGE, number * NUMBER_WIDTH, 0, NUMBER_WIDTH, NUMBER_HEIGHT, outputX, this.y, WIDTH, HEIGHT)
     }
   }
 }
@@ -95,7 +95,7 @@ class DamageObject {
  * 이 객체는 필드 상태에서 직접 생성해 만드는 객체이기 때문에 data.js에서 플레이어 데이터를 받아오지 않습니다.
  */
 class PlayerObject extends FieldData {
-  /** 플레이어 이미지 */ playerImage = imageFile.system.playerImage
+  /** 플레이어 이미지 */ playerImage = imageSrc.system.playerImage
   playerImageData = {
     x: 0, y: 0, width: 40, height: 20, frame: 3
   }
@@ -107,7 +107,7 @@ class PlayerObject extends FieldData {
   }
 
   /**
-   * @typedef {{skill: PlayerSKillData, id: number, coolTimeFrame: number, repeatCount: number, delayCount: number}} SkillSlot 플레이어가 사용하는 스킬 슬롯의 오브젝트 구조
+   * @typedef {{skill: PlayerSkillData, id: number, coolTimeFrame: number, repeatCount: number, delayCount: number}} SkillSlot 플레이어가 사용하는 스킬 슬롯의 오브젝트 구조
    * @typedef {{weapon: PlayerWeaponData, id: number, delayCount: number}} WeaponSlot 무기 슬롯 (총 5개가 있으며, 0 ~3번 슬롯은 유저가 정한 무기를 사용하고, 4번 슬롯은 무기를 사용하지 않는 슬롯입니다.)
    */
 
@@ -250,19 +250,19 @@ class PlayerObject extends FieldData {
 
     if (hpDamage >= 1) {
       if (hpDamage >= HP_LOW_DAMAGE && hpDamage < HP_MIDDLE_DAMAGE) {
-        soundSystem.play(soundFile.system.systemPlayerDamage)
+        game.sound.play(soundSrc.system.systemPlayerDamage)
       } else if (hpDamage >= HP_MIDDLE_DAMAGE && hpDamage < HP_HIGH_DAMAGE) {
-        soundSystem.play(soundFile.system.systemPlayerDamageBig)
+        game.sound.play(soundSrc.system.systemPlayerDamageBig)
       } else if (hpDamage >= HP_HIGH_DAMAGE) {
-        soundSystem.play(soundFile.system.systemPlayerDamageDanger)
+        game.sound.play(soundSrc.system.systemPlayerDamageDanger)
       }
     } else {
       if (shieldDamage >= LOW_DAMAGE && shieldDamage < MIDDLE_DAMAGE) {
-        soundSystem.play(soundFile.system.systemPlayerDamage)
+        game.sound.play(soundSrc.system.systemPlayerDamage)
       } else if (shieldDamage >= MIDDLE_DAMAGE && shieldDamage < HIGH_DAMAGE) {
-        soundSystem.play(soundFile.system.systemPlayerDamageBig)
+        game.sound.play(soundSrc.system.systemPlayerDamageBig)
       } else if (shieldDamage >= HIGH_DAMAGE) {
-        soundSystem.play(soundFile.system.systemPlayerDamageDanger)
+        game.sound.play(soundSrc.system.systemPlayerDamageDanger)
       }
     }
   }
@@ -341,7 +341,7 @@ class PlayerObject extends FieldData {
   processDie () {
     if (this.hp <= 0 && !this.isDied) {
       this.isDied = true
-      soundSystem.play(soundFile.system.systemPlayerDie)
+      game.sound.play(soundSrc.system.systemPlayerDie)
     }
 
     if (this.isDied) {
@@ -452,7 +452,7 @@ class PlayerObject extends FieldData {
 
   displayDebug () {
     if (fieldState.weaponObject[fieldState.weaponObject.length - 1] == null) return
-    graphicSystem.fillText(fieldState.weaponObject[fieldState.weaponObject.length - 1].x + ', ' + fieldState.weaponObject[fieldState.weaponObject.length - 1].y, 0, 100)
+    game.graphic.fillText(fieldState.weaponObject[fieldState.weaponObject.length - 1].x + ', ' + fieldState.weaponObject[fieldState.weaponObject.length - 1].y, 0, 100)
 
     if (fieldState.weaponObject[0].targetObject == null) return
     console.log(fieldState.weaponObject[0].x + ', ' + fieldState.weaponObject[0].y + ', ' + fieldState.weaponObject[0].targetObject.x + ', ' + fieldState.weaponObject[0].targetObject.y)
@@ -468,16 +468,16 @@ class PlayerObject extends FieldData {
   }
 
   processButton () {
-    const buttonLeft = buttonSystem.getButtonDown(buttonSystem.BUTTON_LEFT)
-    const buttonRight = buttonSystem.getButtonDown(buttonSystem.BUTTON_RIGHT)
-    const buttonUp = buttonSystem.getButtonDown(buttonSystem.BUTTON_UP)
-    const buttonDown = buttonSystem.getButtonDown(buttonSystem.BUTTON_DOWN)
-    const buttonA = buttonSystem.getButtonInput(buttonSystem.BUTTON_A)
-    const buttonB = buttonSystem.getButtonInput(buttonSystem.BUTTON_B)
-    const buttonSkill0 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL0)
-    const buttonSkill1 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL1)
-    const buttonSkill2 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL2)
-    const buttonSkill3 = buttonSystem.getButtonInput(buttonSystem.BUTTON_SKILL3)
+    const buttonLeft = game.control.getButtonDown(game.control.buttonIndex.LEFT)
+    const buttonRight = game.control.getButtonDown(game.control.buttonIndex.RIGHT)
+    const buttonUp = game.control.getButtonDown(game.control.buttonIndex.UP)
+    const buttonDown = game.control.getButtonDown(game.control.buttonIndex.DOWN)
+    const buttonA = game.control.getButtonInput(game.control.buttonIndex.A)
+    const buttonB = game.control.getButtonInput(game.control.buttonIndex.B)
+    const buttonSkill0 = game.control.getButtonInput(game.control.buttonIndex.L1)
+    const buttonSkill1 = game.control.getButtonInput(game.control.buttonIndex.L2)
+    const buttonSkill2 = game.control.getButtonInput(game.control.buttonIndex.R1)
+    const buttonSkill3 = game.control.getButtonInput(game.control.buttonIndex.R2)
 
     if (buttonLeft) this.x -= 8
     if (buttonRight) this.x += 8
@@ -533,24 +533,24 @@ class PlayerObject extends FieldData {
   display () {
     if (this.isDied) {
       if (this.dieAfterDelayCount <= 60) {
-        const dieImage = imageFile.system.playerDie
-        graphicSystem.imageDisplay(dieImage, (this.dieAfterDelayCount % 10) * 20, 0, 20, 20, this.x - 20, this.y - 20, this.width * 2, this.height * 2)
+        const dieImage = imageSrc.system.playerDie
+        game.graphic.imageDisplay(dieImage, (this.dieAfterDelayCount % 10) * 20, 0, 20, 20, this.x - 20, this.y - 20, this.width * 2, this.height * 2)
       }
     } else {
       if (this.damageEnimationCount > 0) {
         let targetFrame = this.damageEnimationCount % this.playerImageData.frame
         let frameSliceX = targetFrame * this.playerImageData.width
-        graphicSystem.imageDisplay(this.playerImage, frameSliceX, this.playerImageData.y, this.playerImageData.width, this.playerImageData.height, this.x, this.y, this.width, this.height)
+        game.graphic.imageDisplay(this.playerImage, frameSliceX, this.playerImageData.y, this.playerImageData.width, this.playerImageData.height, this.x, this.y, this.width, this.height)
       } else {
-        graphicSystem.imageDisplay(this.playerImage, this.playerImageData.x, this.playerImageData.y, this.playerImageData.width, this.playerImageData.height, this.x, this.y, this.width, this.height)
+        game.graphic.imageDisplay(this.playerImage, this.playerImageData.x, this.playerImageData.y, this.playerImageData.width, this.playerImageData.height, this.x, this.y, this.width, this.height)
       }
 
       if (this.levelupEnimationCount > 0) {
-        let levelUpImage = imageFile.system.playerLevelup
+        let levelUpImage = imageSrc.system.playerLevelup
         let targetFrame = Math.floor((this.levelupEnimationCount % 16) / 4)
         let targetX = this.x - 15
         let targetY = this.y + Math.floor(this.levelupEnimationCount / 4) - 10
-        graphicSystem.imageDisplay(levelUpImage, (this.levelupEnimationCount % targetFrame) * 70, 0, 70, 15, targetX, targetY, 70, 15)
+        game.graphic.imageDisplay(levelUpImage, (this.levelupEnimationCount % targetFrame) * 70, 0, 70, 15, targetX, targetY, 70, 15)
       }
     }
   }
@@ -925,7 +925,7 @@ export class fieldState {
   static processPlayerObject () {
     this.playerObject.process()
 
-    if (this.playerObject.y > graphicSystem.CANVAS_HEIGHT - 80) {
+    if (this.playerObject.y > game.graphic.CANVAS_HEIGHT - 80) {
       gameSystem.userSystem.hideUserStat()
     } else {
       gameSystem.userSystem.showUserStat()
@@ -1029,8 +1029,8 @@ export class fieldState {
 
     const meterWidth = Math.floor(enemyHpPercent * currentEnemy.width)
 
-    graphicSystem.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height, currentEnemy.width, 2, 'red')
-    graphicSystem.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height, meterWidth, 2, 'green')
+    game.graphic.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height, currentEnemy.width, 2, 'red')
+    game.graphic.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height, meterWidth, 2, 'green')
   }
 
   static displayDamageObject () {
@@ -1043,7 +1043,7 @@ export class fieldState {
 
   static displayEffectObject () {
     // 참고: 이펙트는 투명도 70%가 적용됩니다. 100%은 눈아픔.
-    graphicSystem.setAlpha(0.7)
+    game.graphic.setAlpha(0.7)
 
     for (let i = 0; i < this.effectObject.length; i++) {
       const currentEffect = this.effectObject[i]
@@ -1051,7 +1051,7 @@ export class fieldState {
       currentEffect.display()
     }
 
-    graphicSystem.setAlpha(1)
+    game.graphic.setAlpha(1)
   }
 
   static displayEnemyBulletObject () {
@@ -1149,7 +1149,7 @@ export class fieldSystem {
     if (this.exitDelayCount < this.SCORE_ENIMATION_MAX_FRAME 
       && this.exitDelayCount % this.SCORE_ENIMATION_INTERVAL === 0
       && this.totalScore >= 1) {
-      soundSystem.play(soundFile.system.systemScore)
+      game.sound.play(soundSrc.system.systemScore)
     }
   }
 
@@ -1157,18 +1157,18 @@ export class fieldSystem {
    * 일시 정지 상태에서의 처리
    */
   static processPause () {
-    const buttonDown = buttonSystem.getButtonInput(buttonSystem.BUTTON_DOWN)
-    const buttonUp = buttonSystem.getButtonInput(buttonSystem.BUTTON_UP)
-    const buttonSelect = buttonSystem.getButtonInput(buttonSystem.BUTTON_MENU_SELECT)
+    const buttonDown = game.control.getButtonInput(game.control.buttonIndex.DOWN)
+    const buttonUp = game.control.getButtonInput(game.control.buttonIndex.UP)
+    const buttonSelect = game.control.getButtonInput(game.control.buttonIndex.START)
     const maxMenuNumber = 3
-    soundSystem.musicPause() // 일시정지 상태에서는 음악이 재생되지 않음.
+    game.sound.musicPause() // 일시정지 상태에서는 음악이 재생되지 않음.
 
     if (buttonUp && this.cursor > 0) {
       this.cursor--
-      soundSystem.play(soundFile.system.systemCursor)
+      game.sound.play(soundSrc.system.systemCursor)
     } else if (buttonDown && this.cursor < maxMenuNumber) {
       this.cursor++
-      soundSystem.play(soundFile.system.systemCursor)
+      game.sound.play(soundSrc.system.systemCursor)
     }
 
     if (buttonSelect) {
@@ -1177,10 +1177,10 @@ export class fieldSystem {
           this.stateId = this.STATE_NORMAL // pause 상태 해제
           break
         case 1:
-          soundSystem.soundOn = !soundSystem.soundOn
+          game.sound.soundOn = !game.sound.soundOn
           break
         case 2:
-          soundSystem.musicOn = !soundSystem.musicOn
+          game.sound.musicOn = !game.sound.musicOn
           break
         case 3:
           this.stateId = this.STATE_EXIT // 라운드를 나감
@@ -1204,7 +1204,7 @@ export class fieldSystem {
   static processRoundClear () {
     // 라운드 클리어 사운드 재생 (딜레이카운트가 0일때만 재생해서 중복 재생 방지)
     if (this.exitDelayCount === 0) {
-      soundSystem.play(soundFile.system.systemRoundClear)
+      game.sound.play(soundSrc.system.systemRoundClear)
       userSystem.plusExp(this.round.clearBonus)
       this.totalScore = this.fieldScore + this.round.clearBonus
     }
@@ -1222,7 +1222,7 @@ export class fieldSystem {
   static processGameOver () {
     // 라운드 실패 사운드 재생 (딜레이카운트가 0일때만 재생해서 중복 재생 방지)
     if (this.exitDelayCount === 0) {
-      soundSystem.play(soundFile.system.systemGameOver)
+      game.sound.play(soundSrc.system.systemGameOver)
     }
 
     this.scoreSound()
@@ -1236,10 +1236,10 @@ export class fieldSystem {
   }
 
   static processNormal () {
-    const buttonPause = buttonSystem.getButtonInput(buttonSystem.BUTTON_ENTER)
+    const buttonPause = game.control.getButtonInput(game.control.buttonIndex.START)
 
     if (buttonPause) {
-      soundSystem.play(soundFile.system.systemPause)
+      game.sound.play(soundSrc.system.systemPause)
       this.stateId = this.STATE_PAUSE
     } else if (this.round.clearCheck()) {
       this.stateId = this.STATE_ROUND_CLEAR
@@ -1254,28 +1254,28 @@ export class fieldSystem {
   }
 
   static process () {
-    soundSystem.musicProcess()
+    // game.sound.musicProcess()
 
     switch (this.stateId) {
       case this.STATE_PAUSE:
         this.processPause()
-        soundSystem.musicPause()
+        game.sound.musicPause()
         break
       case this.STATE_ROUND_CLEAR:
         this.processRoundClear()
-        soundSystem.musicStop()
+        game.sound.musicStop()
         break
       case this.STATE_GAME_OVER:
         this.processGameOver()
-        soundSystem.musicStop()
+        game.sound.musicStop()
         break
       case this.STATE_EXIT:
         this.processExit()
-        soundSystem.musicStop()
+        game.sound.musicStop()
         break
       default:
         this.processNormal()
-        soundSystem.musicPlay()
+        game.sound.musicPlay()
         break
     }
   }
@@ -1299,16 +1299,16 @@ export class fieldSystem {
   }
 
   static displayPause () {
-    const image = imageFile.system.fieldSystem
+    const image = imageSrc.system.fieldSystem
     const imageDataPause = imageDataInfo.fieldSystem.pause
     const imageDataMenu = imageDataInfo.fieldSystem.menu
     const imageDataArrow = imageDataInfo.fieldSystem.arrow
     const imageDataChecked = imageDataInfo.fieldSystem.checked
     const imageDataUnchecked = imageDataInfo.fieldSystem.unchecked
     const imageDataSelected = imageDataInfo.fieldSystem.selected
-    const MID_X = (graphicSystem.CANVAS_WIDTH / 2) - (imageDataPause.width / 2)
+    const MID_X = (game.graphic.CANVAS_WIDTH / 2) - (imageDataPause.width / 2)
     const MID_Y = 100
-    const MENU_X = (graphicSystem.CANVAS_WIDTH / 2) - (imageDataMenu.width / 2)
+    const MENU_X = (game.graphic.CANVAS_WIDTH / 2) - (imageDataMenu.width / 2)
     const MENU_Y = 100 + imageDataInfo.fieldSystem.pause.height
     const ARROW_X = MENU_X - imageDataArrow.width
     const ARROW_Y = MENU_Y + (this.cursor * imageDataArrow.height)
@@ -1317,26 +1317,26 @@ export class fieldSystem {
     const CHECK_MUSIC_Y = MENU_Y + imageDataChecked.height * 2
     const SELECT_X = MENU_X
     const SELECT_Y = ARROW_Y
-    const SCORE_X = (graphicSystem.CANVAS_WIDTH / 2) - 200
+    const SCORE_X = (game.graphic.CANVAS_WIDTH / 2) - 200
     const SCORE_Y = MENU_Y + imageDataMenu.height
-    const imageDataSoundOn = soundSystem.soundOn ? imageDataChecked : imageDataUnchecked // 사운드의 이미지데이터는 코드 길이를 줄이기 위해 체크/언체크에 따른 이미지 데이터를 대신 입력함
-    const imageDataMusicOn = soundSystem.musicOn ? imageDataChecked : imageDataUnchecked
+    const imageDataSoundOn = game.sound.soundOn ? imageDataChecked : imageDataUnchecked // 사운드의 이미지데이터는 코드 길이를 줄이기 위해 체크/언체크에 따른 이미지 데이터를 대신 입력함
+    const imageDataMusicOn = game.sound.musicOn ? imageDataChecked : imageDataUnchecked
 
-    graphicSystem.imageDisplay(image, imageDataPause.x, imageDataPause.y, imageDataPause.width, imageDataPause.height, MID_X, MID_Y, imageDataPause.width, imageDataPause.height)
-    graphicSystem.imageDisplay(image, imageDataMenu.x, imageDataMenu.y, imageDataMenu.width, imageDataMenu.height, MENU_X, MENU_Y, imageDataMenu.width, imageDataMenu.height)
-    graphicSystem.imageDisplay(image, imageDataArrow.x, imageDataArrow.y, imageDataArrow.width, imageDataArrow.height, ARROW_X, ARROW_Y, imageDataArrow.width, imageDataArrow.height)
-    graphicSystem.imageDisplay(image, imageDataSoundOn.x, imageDataSoundOn.y, imageDataSoundOn.width, imageDataSoundOn.height, CHECK_X, CHECK_SOUND_Y, imageDataSoundOn.width, imageDataSoundOn.height)
-    graphicSystem.imageDisplay(image, imageDataMusicOn.x, imageDataMusicOn.y, imageDataMusicOn.width, imageDataMusicOn.height, CHECK_X, CHECK_MUSIC_Y, imageDataMusicOn.width, imageDataMusicOn.height)
-    graphicSystem.imageDisplay(image, imageDataSelected.x, imageDataSelected.y, imageDataSelected.width, imageDataSelected.height, SELECT_X, SELECT_Y, imageDataSelected.width, imageDataSelected.height)
-    graphicSystem.fillRect(SCORE_X, SCORE_Y, 400, 30, '#AEB68F')
-    graphicSystem.digitalFontDisplay('score: ' + this.totalScore, SCORE_X + 5, SCORE_Y + 5)
+    game.graphic.imageDisplay(image, imageDataPause.x, imageDataPause.y, imageDataPause.width, imageDataPause.height, MID_X, MID_Y, imageDataPause.width, imageDataPause.height)
+    game.graphic.imageDisplay(image, imageDataMenu.x, imageDataMenu.y, imageDataMenu.width, imageDataMenu.height, MENU_X, MENU_Y, imageDataMenu.width, imageDataMenu.height)
+    game.graphic.imageDisplay(image, imageDataArrow.x, imageDataArrow.y, imageDataArrow.width, imageDataArrow.height, ARROW_X, ARROW_Y, imageDataArrow.width, imageDataArrow.height)
+    game.graphic.imageDisplay(image, imageDataSoundOn.x, imageDataSoundOn.y, imageDataSoundOn.width, imageDataSoundOn.height, CHECK_X, CHECK_SOUND_Y, imageDataSoundOn.width, imageDataSoundOn.height)
+    game.graphic.imageDisplay(image, imageDataMusicOn.x, imageDataMusicOn.y, imageDataMusicOn.width, imageDataMusicOn.height, CHECK_X, CHECK_MUSIC_Y, imageDataMusicOn.width, imageDataMusicOn.height)
+    game.graphic.imageDisplay(image, imageDataSelected.x, imageDataSelected.y, imageDataSelected.width, imageDataSelected.height, SELECT_X, SELECT_Y, imageDataSelected.width, imageDataSelected.height)
+    game.graphic.fillRect(SCORE_X, SCORE_Y, 400, 30, '#AEB68F')
+    game.graphic.digitalFontDisplay('score: ' + this.totalScore, SCORE_X + 5, SCORE_Y + 5)
   }
 
   /**
    * 결과 화면을 출력합니다. roundClear, gameOver, processExit 상태 모두 동일한 display 함수 사용
    */
   static displayResult () {
-    const image = imageFile.system.fieldSystem
+    const image = imageSrc.system.fieldSystem
     let imageData
     let titleX = 0
     const titleY = 100
@@ -1356,7 +1356,7 @@ export class fieldSystem {
         break
     }
 
-    titleX = (graphicSystem.CANVAS_WIDTH - imageData.width) / 2
+    titleX = (game.graphic.CANVAS_WIDTH - imageData.width) / 2
 
     let viewScore = this.totalScore * (this.exitDelayCount / this.SCORE_ENIMATION_MAX_FRAME)
     if (viewScore >= this.totalScore) viewScore = this.totalScore
@@ -1366,12 +1366,12 @@ export class fieldSystem {
       clearBonus = this.round.clearBonus
     }
 
-    graphicSystem.imageDisplay(image, imageData.x, imageData.y, imageData.width, imageData.height, titleX, titleY, imageData.width, imageData.height)
-    graphicSystem.fillRect(TEXT_X, TEXT_Y - 4, 400, TEXT_HEIGHT * 4, 'lime')
-    graphicSystem.digitalFontDisplay('field score: ' + this.fieldScore, TEXT_X, TEXT_Y)
-    graphicSystem.digitalFontDisplay('clear bonus: ' + clearBonus, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 1))
-    graphicSystem.digitalFontDisplay('-----------: ' + 0, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 2))
-    graphicSystem.digitalFontDisplay('total score: ' + Math.floor(viewScore), TEXT_X, TEXT_Y + (TEXT_HEIGHT * 3))
+    game.graphic.imageDisplay(image, imageData.x, imageData.y, imageData.width, imageData.height, titleX, titleY, imageData.width, imageData.height)
+    game.graphic.fillRect(TEXT_X, TEXT_Y - 4, 400, TEXT_HEIGHT * 4, 'lime')
+    game.graphic.digitalFontDisplay('field score: ' + this.fieldScore, TEXT_X, TEXT_Y)
+    game.graphic.digitalFontDisplay('clear bonus: ' + clearBonus, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 1))
+    game.graphic.digitalFontDisplay('-----------: ' + 0, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 2))
+    game.graphic.digitalFontDisplay('total score: ' + Math.floor(viewScore), TEXT_X, TEXT_Y + (TEXT_HEIGHT * 3))
   }
 
   /**
@@ -1380,7 +1380,7 @@ export class fieldSystem {
    * @deprecated
    */
   static displayFieldData () {
-    const LAYER_X = graphicSystem.CANVAS_WIDTH_HALF
+    const LAYER_X = game.graphic.CANVAS_WIDTH_HALF
     const LAYER_Y = 570
     const LAYER_DIGITAL_Y = 570 + 5
     const HEIGHT = 30
@@ -1389,9 +1389,9 @@ export class fieldSystem {
     const finishTime = this.round != null ? this.round.finishTime : '999'
     const plusTime = this.round != null ? this.round.plusTime : '0'
     const meterMultiple = currentTime / finishTime
-    graphicSystem.fillRect(LAYER_X, LAYER_Y, graphicSystem.CANVAS_WIDTH_HALF, HEIGHT, 'silver')
-    graphicSystem.fillRect(LAYER_X, LAYER_Y, graphicSystem.CANVAS_WIDTH_HALF * meterMultiple, HEIGHT, '#D5F5E3')
-    graphicSystem.digitalFontDisplay(`R:${roundText}, T:${currentTime}/${finishTime} + ${plusTime}`, LAYER_X + 5, LAYER_DIGITAL_Y)
+    game.graphic.fillRect(LAYER_X, LAYER_Y, game.graphic.CANVAS_WIDTH_HALF, HEIGHT, 'silver')
+    game.graphic.fillRect(LAYER_X, LAYER_Y, game.graphic.CANVAS_WIDTH_HALF * meterMultiple, HEIGHT, '#D5F5E3')
+    game.graphic.digitalFontDisplay(`R:${roundText}, T:${currentTime}/${finishTime} + ${plusTime}`, LAYER_X + 5, LAYER_DIGITAL_Y)
 
   }
 
