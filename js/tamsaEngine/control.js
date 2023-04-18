@@ -20,8 +20,8 @@ class TouchButton {
 
       this.setButtonStyle(this.buttonL1, '15vw', '10vw', {left: '1%'})
       this.setButtonStyle(this.buttonL2, '15vw', '10vw', {left: '20%'})
-      this.setButtonStyle(this.buttonR1, '15vw', '10vw', {right: '1%'})
-      this.setButtonStyle(this.buttonR2, '15vw', '10vw', {right: '20%'})
+      this.setButtonStyle(this.buttonR1, '15vw', '10vw', {right: '20%'})
+      this.setButtonStyle(this.buttonR2, '15vw', '10vw', {right: '1%'})
       this.setButtonStyle(this.buttonStart, '10vw', '6vw', {left: '38%', top: '5%'})
       this.setButtonStyle(this.buttonSelect, '10vw', '6vw', {left: '52%', top: '5%'})
 
@@ -49,8 +49,8 @@ class TouchButton {
 
       this.setButtonStyle(this.buttonL1, '15vh', '10vh', {left: '1%'})
       this.setButtonStyle(this.buttonL2, '15vh', '10vh', {left: '12%'})
-      this.setButtonStyle(this.buttonR1, '15vh', '10vh', {right: '1%'})
-      this.setButtonStyle(this.buttonR2, '15vh', '10vh', {right: '12%'})
+      this.setButtonStyle(this.buttonR1, '15vh', '10vh', {right: '12%'})
+      this.setButtonStyle(this.buttonR2, '15vh', '10vh', {right: '1%'})
       this.setButtonStyle(this.buttonStart, '15vh', '10vh', {left: '1%', top: '-100%'})
       this.setButtonStyle(this.buttonSelect, '15vh', '10vh', {left: '12%', top: '-100%'})
 

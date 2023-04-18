@@ -81,6 +81,14 @@ export class SoundSystem {
       soundtest2: resourceSrc + 'soundtest2.ogg',
       soundtest3: resourceSrc + 'soundtest3.ogg',
     }
+
+    this.fade = {
+      /** 페이드 진행중인경우 */ isFading: false,
+      /** 페이드의 기준 진행시간 */ fadeTime: 0,
+      /** 다음에 재생할 페이드 오디오의 경로 */ nextAudioSrc: '',
+      /** 다음에 재생할 페이드 버퍼의 경로 */ nextBufferSrc: '',
+      /** 다음에 재생할 오디오가 버퍼인지 확인 */ isNextBuffer: false
+    }
   }
 
   /** 
@@ -116,7 +124,8 @@ export class SoundSystem {
       musicFirstGain: this.audioContext.createGain(),
       musicEchoGain: this.audioContext.createGain(),
       musicFeedBackGain: this.audioContext.createGain(),
-      musicEchoDelay: this.audioContext.createDelay()
+      musicEchoDelay: this.audioContext.createDelay(),
+      musicFadeGain: this.audioContext.createGain(),
     }
 
     // 초기값 설정
@@ -129,6 +138,7 @@ export class SoundSystem {
     this.audioNode.masterGain.gain.value = 1
     this.audioNode.firstGain.gain.value = 1
     this.audioNode.musicFirstGain.gain.value = 1
+    this.audioNode.musicFadeGain.gain.value = 1
 
     // 연결 설정
     this.audioNode.firstGain.connect(this.audioNode.masterGain) // 원본 소리
@@ -139,8 +149,8 @@ export class SoundSystem {
     this.audioNode.masterGain.connect(this.audioContext.destination) // 최종 지점
 
     // 음악 연결 설정
-    this.audioNode.musicFirstGain.connect(this.audioNode.masterGain) // 원본 소리
-    this.audioNode.musicFirstGain.connect(this.audioNode.musicEchoGain) // 음악 에코 연결
+    this.audioNode.musicFirstGain.connect(this.audioNode.musicFadeGain).connect(this.audioNode.masterGain) // 원본 소리
+    this.audioNode.musicFirstGain.connect(this.audioNode.musicFadeGain).connect(this.audioNode.musicEchoGain) // 음악 에코 연결
     this.audioNode.musicEchoGain.connect(this.audioNode.musicEchoDelay).connect(this.audioNode.masterGain) // 음악 에코 효과
     this.audioNode.musicEchoDelay.connect(this.audioNode.musicFeedBackGain).connect(this.audioNode.musicEchoDelay) // 음악 에코 피드백 전달
     this.audioNode.musicFeedBackGain.connect(this.audioNode.masterGain) // 음악 피드벡 게인
@@ -365,6 +375,36 @@ export class SoundSystem {
   /** 오디오 버퍼를 음악으로 재생합니다. (루프는 강제 적용) */
   musicBuffer (audioSrc, start, end) {
 
+  }
+
+  /** 
+   * 다음 음악을 페이드 효과를 이용해 변경합니다.
+   * 
+   * 경고: 이 함수를 사용하는 즉시 재생중인 모든 음악은 페이드 아웃됩니다.
+   * 그리고 새로운 음악으로 교체됩니다.
+   */
+  musicFadeNextAudio (audioSrc, fadeTime = 2) {
+    this.fade.isNextBuffer = false
+    this.fade.isFading = true
+    this.fade.nextAudioSrc = audioSrc
+    this.fade.fadeTime = fadeTime
+  }
+
+  /** 다음 음악을 페이드 효과를 이용해 변경합니다. (버퍼로 재생함.) */
+  musicFadeNextBuffer (audioSrc, fadeTime) {
+
+  }
+
+  /** 
+   * 참고: 이 함수는 자동으로 반복되어 실행됩니다. (0.1초 단위)  
+   * 주로, 페이드 인 효과를 정의할 때 사용합니다.
+   */
+  musicProcess () {
+
+    // 페이드 과정 진행
+    if (this.fade.isFading) {
+      
+    }
   }
 
   /** 현재 재생중인 모든 음악 정지, 그래도 재생중인 트랙의 모든 데이터는 지워집니다. */

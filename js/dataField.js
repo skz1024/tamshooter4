@@ -1,6 +1,9 @@
 //@ts-check
 
 import { ImageDataObject } from "./imageSrc.js"
+import { game } from "./game.js"
+
+let graphicSystem = game.graphic
 
 /**
  * 충돌 감지 함수
@@ -258,7 +261,7 @@ export class EnimationData {
   /**
    * 에니메이션 데이터를 생성합니다.
    * 경고: 불규칙 크기의 에니메이션을 사용하진 마세요. 이 경우, 예상하지 못한 버그가 발생합니다.
-   * @param {HTMLImageElement} image HTML 이미지
+   * @param {string} imageSrc 이미지의 경로
    * @param {number} silceStartX 이미지의 시작지점 X좌표 (경고: sliceStartX는 0을 권장, 아니라면, 1줄에 모든 에니메이션 프레임을 배치할 것, 이렇게 안하면, 출력 순서가 꼬일 수 있음.)
    * @param {number} silceStartY 이미지의 시작지점 Y좌표
    * @param {number} frameWidth 프레임 너비
@@ -270,10 +273,10 @@ export class EnimationData {
    * @param {number} outputHeight 출력 높이 >> 기본값: 프레임 높이 (이 숫자는 canvas 성능 문제때문에, 가급적 변경하지 않는게 좋습니다.)
    */
   constructor (
-    image = null, silceStartX = 0, silceStartY = 0, frameWidth = 0, frameHeight = 0,
+    imageSrc = '', silceStartX = 0, silceStartY = 0, frameWidth = 0, frameHeight = 0,
     frameCount = 0, frameDelay = 1, frameRepeat = 1,
     outputWidth = frameWidth, outputHeight = frameHeight) {
-    /** 이미지 */ this.image = image
+    /** 이미지의 경로 */ this.imageSrc = imageSrc
     /** 이미지의 에니메이션 프레임 시작지점 X위치, 기본값 = 0 */ this.sliceStartX = silceStartX
     /** 이미지의 에니메이션 프레임 시작지점 Y위치, 기본값 = 0 */ this.sliceStartY = silceStartY
     /** 에니메이션 프레임의 너비 */ this.frameWidth = frameWidth
@@ -285,6 +288,10 @@ export class EnimationData {
     /** 에니메이션의 총 최대 프레임 수(프레임 개수 * 프레임 반복 횟수) */ this.maxFrame = this.frameCount * this.frameRepeat
     /** 에니메이션의 출력할 너비 */ this.outputWidth = outputWidth
     /** 에니메이션의 출력할 높이 */ this.outputHeight = outputHeight
+
+    let image = graphicSystem.getCacheImage(imageSrc)
+    /** 이미지의 너비 */ this.imageWidth = image == null ? 0 : image.width
+    /** 이미지의 높이 */ this.imageHeight = image == null ? 0 : image.height
 
     /**
      * 에니메이션 프레임의 지연시간
@@ -344,8 +351,7 @@ export class EnimationData {
    * @param {number} y 출력할 에니메이션의 y좌표
    */
   display (x, y) {
-    // 이미지가 없는데 출력을 할 수 없잖아요!
-    if (this.image == null) return
+    if (this.imageSrc == null) return
 
     // 무한반복 상태가 아니면서 진행된 프레임이 최대 프레임보다 높으면 에니메이션 없음
     if (this.frameRepeat != -1 && this.elapsedFrame >= this.maxFrame) return
@@ -363,7 +369,7 @@ export class EnimationData {
     // 라인 최대 프레임 (한 줄에 몇개의 프레임이 있을 수 있는가?)
     // 참고: 조심해야 할 것은, 다음 줄로 넘어갈 때, 0좌표가 아닌 sliceStartX에서부터 시작합니다.
     // 즉 다음 줄로 넘어갈 때, 맨 왼쪽부터 프레임 위치를 계산하는게 아니고 시작지점부터 출력 위치를 계산합니다.
-    const lineMaxFrame = Math.floor((this.image.width - this.sliceStartX) / this.frameWidth)
+    const lineMaxFrame = Math.floor((this.imageWidth - this.sliceStartX) / this.frameWidth)
 
     // 자른 프레임 라인, 이미지의 Y좌표를 어디서부터 잘라야 할 지를 결정합니다.
     // 프레임이 여러 줄로 배치되어있을 때, 몇번째 줄의 프레임을 가져올 것인지 결정합니다.
@@ -372,14 +378,14 @@ export class EnimationData {
     const sliceLine = Math.floor(sliceFrame / lineMaxFrame)
 
     // 이미지 파일 내부에서 가져올 프레임 위치 계산
-    const sliceX = this.sliceStartX + (sliceFrame * this.frameWidth) % this.image.width
+    const sliceX = this.sliceStartX + (sliceFrame * this.frameWidth) % this.imageWidth
     const sliceY = this.sliceStartY + (sliceLine * this.frameHeight)
 
     // 이미지 출력
     if (this.flip || this.degree) {
-      graphicSystem.imageDisplay(this.image, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight, this.flip, this.degree)
+      graphicSystem.imageDisplay(this.imageSrc, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight, this.flip, this.degree)
     } else {
-      graphicSystem.imageDisplay(this.image, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight)
+      graphicSystem.imageDisplay(this.imageSrc, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight)
     }
   }
 }
@@ -408,7 +414,7 @@ export class FieldData {
 
     /** 타입 세부 구분용 */ this.mainType = ''
     /** 타입 세부 구분용 */ this.subType = ''
-    /** 타입 세부 구분용 Id (Id는 number 입니다.) */ this.id = ''
+    /** 타입 세부 구분용 Id (Id는 number 입니다.) */ this.id = 0
     /** 생성 ID, 일부 객체에서 중복 확인용도로 사용 */ this.createId = 0
     
     /** 
@@ -485,7 +491,7 @@ export class FieldData {
 
     /**
      * 지연시간 객체(지연시간이 없으면 null)
-     * @type {DelayData}
+     * @type {DelayData | null}
      */
     this.delay = null
 
@@ -495,7 +501,7 @@ export class FieldData {
      * 보통은, 이동할 때 사용하는것보다는, 이동 형태를 바꿀 때 주로 사용합니다.
      * 
      * 일반적으로는 잘 사용하지 않습니다. (이동 용도로는 거의 안씀...)
-     * @type {DelayData}
+     * @type {DelayData | null}
      */
     this.moveDelay = null
 
@@ -503,7 +509,7 @@ export class FieldData {
      * 객체가 공격이 가능할 때, 공격을 대기시키기 위한 딜레이 (만약 이 값이 없다면 매 프레임마다 공격할지도 모름.)
      * 
      * 무기 객체, 적 객체만 주로 사용하고 나머지는 거의 사용하지 않음.
-     * @type {DelayData}
+     * @type {DelayData | null}
      */
     this.attackDelay = null
 
@@ -514,7 +520,7 @@ export class FieldData {
     /**
      * 만약 해당 오브젝트가 다른 오브젝트를 참고할 일이 있다면, 이 오브젝트에 다른 오브젝트의 정보를 저장합니다.
      * 만약 그 다른 오브젝트의 isDelete 값이 true
-     * @type {FieldData}
+     * @type {FieldData | null}
      */
     this.targetObject = null
 
@@ -536,20 +542,20 @@ export class FieldData {
 
     /**
      * 에니메이션 객체: 이 객체는 EnimationData를 생성하여 이용합니다.
-     * @type {EnimationData}
+     * @type {EnimationData | null}
      */
     this.enimation = null
 
     /**
-     * HTML 이미지
+     * HTML 이미지의 경로
      * 참고: 이미지는 보통 출력 용도로 사용
-     * @type {HTMLImageElement}
+     * @type {string}
      */
-    this.image = null
+    this.imageSrc = ''
 
     /**
      * 이미지 데이터, 이 값은 특수한 경우에 주로 사용[여러개의 오브젝트가 그려져있는 이미지를 자를 때 주로 사용]
-     * @type {ImageDataObject} ImageData의 변수값
+     * @type {ImageDataObject | null} ImageData의 변수값
      */
     this.imageData = null
   }
@@ -760,18 +766,18 @@ export class FieldData {
   defaultDisplay () {
     if (this.enimation) {
       this.enimation.display(this.x, this.y)
-    } else if (this.image) {
+    } else if (this.imageSrc) {
       if (this.imageData) {
         if (this.degree !== 0 || this.flip !== 0) {
-          graphicSystem.imageDisplay(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height, this.flip, this.degree)
+          graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height, this.flip, this.degree)
         } else {
-          graphicSystem.imageDisplay(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height)
+          graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height)
         }
       } else {
         if (this.degree !== 0 || this.flip !== 0) {
-          graphicSystem.imageDisplay(this.image, 0, 0, this.width, this.height, this.x, this.y, this.width, this.height, this.flip, this.degree)
+          graphicSystem.imageDisplay(this.imageSrc, 0, 0, this.width, this.height, this.x, this.y, this.width, this.height, this.flip, this.degree)
         } else {
-          graphicSystem.imageDisplay(this.image, this.x, this.y)
+          graphicSystem.imageView(this.imageSrc, this.x, this.y)
         }
       }
     }
@@ -784,20 +790,20 @@ export class FieldData {
    * 참고로 이 설정은 크기(너비, 높이)까지 자동으로 변경합니다.
    * 
    * 옵션을 통해 출력 사이즈를 조정할 수 있으며, 또는  setWidthHeight 함수를 사용해서 에니메이션의 크기를 변경할 수 있습니다.
-   * @param {HTMLImageElement} image
+   * @param {string} imageSrc
    * @param {ImageDataObject} imageData
    * @param {number} enimationDelay 에니메이션 딜레이(프레임 단위)
    */
-  setAutoImageData (image, imageData, enimationDelay = 1, {width = null, height = null} = {}) {
-    this.image = image
+  setAutoImageData (imageSrc, imageData, enimationDelay = 1, {width = null, height = null} = {}) {
+    this.imageSrc = imageSrc
     this.imageData = imageData
-    if (this.image == null || this.imageData == null) return
+    if (this.imageSrc == null || this.imageData == null) return
 
     this.width = width == null ? this.imageData.width : width
     this.height = height == null ? this.imageData.height : height
     
     if (this.imageData.frame >= 2) {
-      this.enimation = new EnimationData(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, enimationDelay, -1)
+      this.enimation = new EnimationData(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, enimationDelay, -1)
     }
   }
 

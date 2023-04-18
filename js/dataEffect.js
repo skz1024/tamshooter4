@@ -41,7 +41,7 @@ import { DelayData, FieldData, EnimationData } from "./dataField.js"
     /**
      * 이미지
      */
-    this.image = null
+    this.imageSrc = null
 
     /**
      * 해당 에니메이션의 총합 프레임. 에니메이션 객체가 있을때는 해당 요소를 사용하지 않음.
@@ -65,7 +65,7 @@ import { DelayData, FieldData, EnimationData } from "./dataField.js"
    */
   autoSetEnimation (image, imageData, width, height, frameDelay = 1, frameRepeat = 1) {
     if (image != null && imageData != null) {
-      this.image = image
+      this.imageSrc = image
       this.imageData = imageData
       this.width = width == null ? imageData.width : width
       this.height = height == null ? imageData.height : height
@@ -154,7 +154,7 @@ export class CustomEffect extends EffectData {
     // frameRepeat는 EffectData 클래스 내에 존재하지 않고, 
     // enimation.frameRepeat용도로 사용하기 때문에 frameRepeat 변수가 선언되서 사용되야 합니다.
     const frameRepeat = this.enimation != null ? this.enimation.frameRepeat : 1
-    return new CustomEffect(this.image, this.imageData, this.width, this.height, this.frameDelay, frameRepeat)
+    return new CustomEffect(this.imageSrc, this.imageData, this.width, this.height, this.frameDelay, frameRepeat)
   }
 }
 

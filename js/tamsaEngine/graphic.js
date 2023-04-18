@@ -105,6 +105,8 @@ export class GraphicSystem {
    * @param {string} imageSrc 이미지 파일의 경로
    */
   getCacheImage (imageSrc) {
+    if (!imageSrc) return
+
     if (this.cacheImage.has(imageSrc)) {
       return this.cacheImage.get(imageSrc)
     } else {
@@ -544,7 +546,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     if (typeof image === 'string') {
       image = this.getCacheImage(image)
     }
-
+    
     if (image == null) return
 
     // width, height 채우기 (함수 인수로 넣을 수도 있으나, image가 null일경우 에러가 발생하므로, 이렇게 처리함)
@@ -706,27 +708,34 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    */
   gradientDisplay (x, y, width, height, startColor = 'black', endColor = startColor, ...anotherColor) {
     // 그라디언트 backGround
-    const gradient = this.context.createLinearGradient(x, y, x + width, y + height)
+    let gradient
+    try {
+      gradient = this.context.createLinearGradient(x, y, x + width, y + height)
 
-    gradient.addColorStop(0, startColor)
-    gradient.addColorStop(1, endColor)
+      gradient.addColorStop(0, startColor)
+      gradient.addColorStop(1, endColor)
 
-    // 또다른 컬러도 있다면 추가
-    for (let i = 0; i < anotherColor.length; i++) {
-      let totalColorCount = 2 + anotherColor.length
-      let position = (1 / totalColorCount) * (i + 1)
-      gradient.addColorStop(position, anotherColor[i])
+      // 또다른 컬러도 있다면 추가
+      for (let i = 0; i < anotherColor.length; i++) {
+        let totalColorCount = 2 + anotherColor.length
+        let position = (1 / totalColorCount) * (i + 1)
+        gradient.addColorStop(position, anotherColor[i])
+      }
+
+      // 그라디언트 그리기
+      this.context.fillStyle = gradient
+      if (this.checkTransform()) {
+        const output = this.canvasTransform(x, y, width, height)
+        this.context.fillRect(output.x, output.y, output.width, output.height)
+        this.restoreTransform()
+      } else {
+        this.context.fillRect(x, y, width, height)
+      }
+    } catch (e) {
+      alert(e)
     }
 
-    // 그라디언트 그리기
-    this.context.fillStyle = gradient
-    if (this.checkTransform()) {
-      const output = this.canvasTransform(x, y, width, height)
-      this.context.fillRect(output.x, output.y, output.width, output.height)
-      this.restoreTransform()
-    } else {
-      this.context.fillRect(x, y, width, height)
-    }
+    
   }
 
   /**

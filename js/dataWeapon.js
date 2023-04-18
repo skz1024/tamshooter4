@@ -7,6 +7,10 @@ import { fieldState } from "./field.js"
 import { imageDataInfo, imageSrc } from "./imageSrc.js"
 import { EnemyData } from "./dataEnemy.js"
 import { soundSrc } from "./soundSrc.js"
+import { game } from "./game.js"
+
+let graphicSystem = game.graphic
+let soundSystem = game.sound
 
 /**
  * 이 게임에서 사용하는 무기 객체, 참고로 스킬도 이 객체를 사용하여 구현합니다.

@@ -12,7 +12,9 @@ import { imageDataInfo, imageSrc } from './imageSrc.js'
 import { soundSrc } from './soundSrc.js'
 import { gameSystem } from './tamshooter4.js'
 import { userSystem } from './game.js'
-import { game } from "./game.js"
+import { game, gameFunction } from "./game.js"
+
+let digitalDisplay = gameFunction.digitalDisplay
 
 // import { systemText } from './text.js'
 
@@ -352,7 +354,8 @@ class PlayerObject extends FieldData {
   useSkill (skillPosition) {
     // 스킬 클래스(데이터)가 없거나, 스킬 위치가 없으면 함수를 실행하지 않음.
     if (skillPosition == null) return
-    if (this.skillSlotA[skillPosition].skill == null || this.skillSlotB[skillPosition].skill == null) return
+    if (this.usingSkillSlotA && this.skillSlotA[skillPosition].skill == null) return
+    if (!this.usingSkillSlotA && this.skillSlotB[skillPosition].skill == null) return
 
     // 스킬 슬롯에 따라 해당 스킬을 찾기
     let targetSkill = this.usingSkillSlotA ? this.skillSlotA[skillPosition] : this.skillSlotB[skillPosition]
@@ -1329,7 +1332,7 @@ export class fieldSystem {
     game.graphic.imageDisplay(image, imageDataMusicOn.x, imageDataMusicOn.y, imageDataMusicOn.width, imageDataMusicOn.height, CHECK_X, CHECK_MUSIC_Y, imageDataMusicOn.width, imageDataMusicOn.height)
     game.graphic.imageDisplay(image, imageDataSelected.x, imageDataSelected.y, imageDataSelected.width, imageDataSelected.height, SELECT_X, SELECT_Y, imageDataSelected.width, imageDataSelected.height)
     game.graphic.fillRect(SCORE_X, SCORE_Y, 400, 30, '#AEB68F')
-    game.graphic.digitalFontDisplay('score: ' + this.totalScore, SCORE_X + 5, SCORE_Y + 5)
+    digitalDisplay('score: ' + this.totalScore, SCORE_X + 5, SCORE_Y + 5)
   }
 
   /**
@@ -1368,10 +1371,10 @@ export class fieldSystem {
 
     game.graphic.imageDisplay(image, imageData.x, imageData.y, imageData.width, imageData.height, titleX, titleY, imageData.width, imageData.height)
     game.graphic.fillRect(TEXT_X, TEXT_Y - 4, 400, TEXT_HEIGHT * 4, 'lime')
-    game.graphic.digitalFontDisplay('field score: ' + this.fieldScore, TEXT_X, TEXT_Y)
-    game.graphic.digitalFontDisplay('clear bonus: ' + clearBonus, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 1))
-    game.graphic.digitalFontDisplay('-----------: ' + 0, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 2))
-    game.graphic.digitalFontDisplay('total score: ' + Math.floor(viewScore), TEXT_X, TEXT_Y + (TEXT_HEIGHT * 3))
+    digitalDisplay('field score: ' + this.fieldScore, TEXT_X, TEXT_Y)
+    digitalDisplay('clear bonus: ' + clearBonus, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 1))
+    digitalDisplay('-----------: ' + 0, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 2))
+    digitalDisplay('total score: ' + Math.floor(viewScore), TEXT_X, TEXT_Y + (TEXT_HEIGHT * 3))
   }
 
   /**
@@ -1391,7 +1394,7 @@ export class fieldSystem {
     const meterMultiple = currentTime / finishTime
     game.graphic.fillRect(LAYER_X, LAYER_Y, game.graphic.CANVAS_WIDTH_HALF, HEIGHT, 'silver')
     game.graphic.fillRect(LAYER_X, LAYER_Y, game.graphic.CANVAS_WIDTH_HALF * meterMultiple, HEIGHT, '#D5F5E3')
-    game.graphic.digitalFontDisplay(`R:${roundText}, T:${currentTime}/${finishTime} + ${plusTime}`, LAYER_X + 5, LAYER_DIGITAL_Y)
+    digitalDisplay(`R:${roundText}, T:${currentTime}/${finishTime} + ${plusTime}`, LAYER_X + 5, LAYER_DIGITAL_Y)
 
   }
 

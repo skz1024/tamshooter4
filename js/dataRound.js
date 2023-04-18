@@ -7,10 +7,11 @@ import { stringText } from "./text.js"
 import { imageDataInfo, imageSrc } from "./imageSrc.js"
 import { fieldState } from "./field.js"
 import { soundSrc } from "./soundSrc.js"
-import { game } from "./game.js"
+import { game, gameFunction } from "./game.js"
 
 let graphicSystem = game.graphic
 let soundSystem = game.sound
+let digitalDisplay = gameFunction.digitalDisplay
 
 export class RoundData {
   constructor () {
@@ -38,16 +39,16 @@ export class RoundData {
 
     /**
      * 해당 라운드의 기본 배경 이미지 (배경은 언제든지 변경 가능)
-     * @type {Image}
+     * @type {string}
      */
-    this.backgroundImage = null
+    this.backgroundImageSrc = ''
     /** 배경을 변경할 때, 화면을 부드럽게 전환하기 위한 변수(페이드 기준값) */ this.backgroundFadeFrameMax = 120
     /** 배경을 변경할 때, 화면을 부드럽게 전환하기 위한 변수 */ this.backgroundFadeFrame = 0
     this.backgroundX = 1
     this.backgroundY = 0
     this.backgroundSpeedX = 0.5
     this.backgroundSpeedY = 0
-    this.prevBackgroundImage = null
+    this.prevBackgroundImageSrc = ''
 
     /** 현재 시간의 프레임 */ this.currentTimeFrame = 0
     /** 현재 시간, 기본값은 반드시 0이어야 합니다. */ this.currentTime = 0
@@ -59,7 +60,7 @@ export class RoundData {
     
     /** 
      * 현재 있는 보스 
-     * @type {FieldData}
+     * @type {FieldData | null | any}
      */ 
     this.currentBoss = null
 
@@ -147,16 +148,16 @@ export class RoundData {
 
   /**
    * 배경화면을 실시간으로 변경합니다. (주의: 페이드 시간이 겹쳐지면 이전 페이드 효과는 무시함.)
-   * @param {HTMLImageElement} changeBackgroundImage 변경할 배경 이미지
+   * @param {string} changeBackgroundImageSrc 변경할 배경 이미지
    * @param {number} fadeTimeFrame 배경화면이 전환되는 시간(프레임)
    */
-  changeBackgroundImage (changeBackgroundImage, fadeTimeFrame = 1) {
-    if (changeBackgroundImage != null) {
+  changeBackgroundImage (changeBackgroundImageSrc, fadeTimeFrame = 1) {
+    if (changeBackgroundImageSrc != null) {
 
       // 배경 전환및 상태 저장을 원할하게 하기 위해, 
       // 변경할 예정인 이미지가 현재 이미지로 변경되고, 페이드 되는 이미지는 nextImage로 변경
-      this.prevBackgroundImage = this.backgroundImage
-      this.backgroundImage = changeBackgroundImage
+      this.prevBackgroundImageSrc = this.backgroundImageSrc
+      this.backgroundImageSrc = changeBackgroundImageSrc
       this.backgroundFadeFrameMax = fadeTimeFrame
       this.backgroundFadeFrame = fadeTimeFrame
     }
@@ -171,7 +172,7 @@ export class RoundData {
    * 
    * (경고: 보스 모드의 체력 표시는 첫번째 적을 기준으로 하므로, 모든 적이 없는 상테에서 생성해야만 제대로 된 표시가 가능)
    * @param {number} enemyId 생성할 적 Id. 없을 경우 무시(적을 생성하지 않음.)
-   * @param {HTMLMediaElement} setMusic 보스전으로 설정할 음악, 이 값이 없다면 bossMusic으로 설정하고, bossMusic도 없다면 음악 변화 없음.
+   * @param {string} setMusic 보스전으로 설정할 음악, 이 값이 없다면 bossMusic으로 설정하고, bossMusic도 없다면 음악 변화 없음.
    */
   requestBossMode (enemyId, setMusic = this.bossMusic) {
     if (this.bossMode) return // 보스모드 설정 상태에서 중복으로 호출할 수 없음.
@@ -189,12 +190,13 @@ export class RoundData {
 
   /**
    * 배경 이미지를 출력합니다. (경우에 따라, 다른 이미지를 출력하도록 할 수 있습니다.)
-   * @param {HTMLImageElement} imageSrc 이미지 파일 (입력시 해당 배경 이미지를 사용, 이게 없으면 기본 이미지 배경 사용)
+   * @param {string} imageSrc 이미지 파일 (입력시 해당 배경 이미지를 사용, 이게 없으면 기본 이미지 배경 사용)
    */
-  displayBackgroundImage (imageSrc) {
+  displayBackgroundImage (imageSrc = '') {
     // 배경화면 이미지 출력 및 스크롤 효과, 배경이 없으면 아무것도 출력 안함.
-    let image = imageSrc == null ? this.backgroundImage : imageSrc
-    if (image == null) return // 이미지 파일이 없으면 출력하지 않음.
+    let targetSrc = (imageSrc === '') ? this.backgroundImageSrc : imageSrc
+    let image = graphicSystem.getCacheImage(targetSrc)
+    if (image == null) return
 
     let imageWidth = image.width
     let imageHeight = image.height
@@ -292,8 +294,8 @@ export class RoundData {
   displayBackground () {
     if (this.backgroundFadeFrame >= 1) {
       this.backgroundFadeFrame--
-      let current = this.backgroundImage
-      let prev = this.prevBackgroundImage
+      let current = this.backgroundImageSrc
+      let prev = this.prevBackgroundImageSrc
       let prevAlpha = (1 / this.backgroundFadeFrameMax) * this.backgroundFadeFrame
       let originalAlpha = 1 - prevAlpha
        
@@ -306,7 +308,7 @@ export class RoundData {
       graphicSystem.setAlpha(1)
 
       if (this.backgroundFadeFrame === 0) {
-        this.prevBackgroundImage = null
+        this.prevBackgroundImageSrc = ''
       }
     } else {
       this.displayBackgroundImage()
@@ -322,13 +324,14 @@ export class RoundData {
     if (!this.bossMode) return
 
     let enemy = fieldState.getEnemyObject()
+    let firstEnemy
     if (enemy[0] != null) {
-      enemy = enemy[0]
+      firstEnemy = enemy[0]
     } else {
       return
     }
 
-    let percent = enemy.hp / enemy.hpMax
+    let percent = firstEnemy.hp / firstEnemy.hpMax
     graphicSystem.setAlpha(0.7)
     graphicSystem.fillRect(0, 0, graphicSystem.CANVAS_WIDTH, 20, 'lightgrey')
     if (percent >= 0.2) {
@@ -337,7 +340,7 @@ export class RoundData {
       graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'purple', 'red')
     }
     graphicSystem.setAlpha(1)
-    graphicSystem.digitalFontDisplay('boss hp: ' + enemy.hp + '/' + enemy.hpMax, 0, 0)
+    digitalDisplay('boss hp: ' + firstEnemy.hp + '/' + firstEnemy.hpMax, 0, 0)
   }
 
   process () {
@@ -371,24 +374,27 @@ export class RoundData {
   }
 
   processBackground () {
-    if (this.backgroundImage == null) return
+    if (this.backgroundImageSrc == null) return
+    let image = graphicSystem.getCacheImage(this.backgroundImageSrc)
+    
     
     this.backgroundX += this.backgroundSpeedX
     this.backgroundY += this.backgroundSpeedY
     // 화면 전환 프레임이 동작중이라면, 배경화면의 길이를 초과해도 좌표가 자동으로 조절되지 않습니다.
     // 이것은 배경 사이즈가 다른 화면 전환을 부드럽게 하기 위해서입니다.
     if (this.backgroundFadeFrame > 0) return
+    if (image == null) return
 
-    if (this.backgroundX > this.backgroundImage.width) {
-      this.backgroundX -= this.backgroundImage.width
+    if (this.backgroundX > image.width) {
+      this.backgroundX -= image.width
     } else if (this.backgroundX < 0) {
-      this.backgroundX += this.backgroundImage.width
+      this.backgroundX += image.width
     }
 
-    if (this.backgroundY > this.backgroundImage.height) {
-      this.backgroundY -= this.backgroundImage.height
+    if (this.backgroundY > image.height) {
+      this.backgroundY -= image.height
     } else if (this.backgroundY < 0) {
-      this.backgroundY += this.backgroundImage.height
+      this.backgroundY += image.height
     }
   }
 
@@ -530,20 +536,21 @@ export class RoundData {
   showEnemyHp () {
     // 첫번째 에너미 한정
     let enemy = fieldState.getEnemyObject()
+    let firstEnemy = null
     if (enemy[0] != null) {
-      enemy = enemy[0]
+      firstEnemy = enemy[0]
     } else {
       return
     }
 
-    let percent = enemy.hp / enemy.hpMax
+    let percent = firstEnemy.hp / firstEnemy.hpMax
     graphicSystem.fillRect(0, 0, graphicSystem.CANVAS_WIDTH, 20, 'lightgrey')
     if (percent >= 0.2) {
       graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'yellow', 'orange')
     } else {
       graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'purple', 'red')
     }
-    graphicSystem.digitalFontDisplay('boss hp: ' + enemy.hp + '/' + enemy.hpMax, 0, 0)
+    digitalDisplay('boss hp: ' + firstEnemy.hp + '/' + firstEnemy.hpMax, 0, 0)
 
   }
 
@@ -584,7 +591,7 @@ export class RoundData {
       plusTimeFrame: this.plusTimeFrame,
 
       // 음악 시간
-      loadCurrentMusicTime: soundSystem.getMusicCurrentTime(),
+      loadCurrentMusicTime: 0, // soundSystem.getMusicCurrentTime(),
 
       // 보스 모드
       bossMode: this.bossMode,
@@ -600,15 +607,15 @@ export class RoundData {
    * 참고: 불러오기를 했을 때 이 함수를 사용하면, currentTime을 설정해도 무시함.
    * @param {*} soundSrc 
    */
-  musicPlay (soundSrc, currentTime) {
+  musicPlay (soundSrc = '') {
     if (this.loadCurrentMusicTime !== 0) {
       // 불러오기 전용 변수
-      soundSystem.musicPlay(this.music, this.loadCurrentMusicTime)
+      soundSystem.musicPlay(this.music)
       this.loadCurrentMusicTime = 0
     } else if (soundSrc != null) {
-      soundSystem.musicPlay(soundSrc, currentTime)
+      soundSystem.musicPlay(soundSrc)
     } else {
-      soundSystem.musicPlay(this.music, currentTime)
+      soundSystem.musicPlay(this.music)
     }
   }
 
@@ -641,7 +648,7 @@ class Round1_1 extends RoundData {
     this.requireLevel = 1
     this.finishTime = 150
     this.clearBonus = 30000
-    this.backgroundImage = imageSrc.round.round1_1_space
+    this.backgroundImageSrc = imageSrc.round.round1_1_space
     this.music = soundSrc.music.music01_space_void
     this.bossMusic = soundSrc.music.music06_round1_boss_thema
 
@@ -791,7 +798,7 @@ class Round1_1 extends RoundData {
 
     // 운석지대로 진입한 이후 저장 후 불러왔을 때 운석 지대 이미지로 변경
     if (this.timeCheckInterval(140, 150)) {
-      this.backgroundImage = imageSrc.round.round1_2_meteorite
+      this.backgroundImageSrc = imageSrc.round.round1_2_meteorite
     }
 
     super.processBackground()
@@ -807,7 +814,7 @@ class Round1_2 extends RoundData {
     this.requireLevel = 2
     this.finishTime = 180
     this.clearBonus = 40000
-    this.backgroundImage = imageSrc.round.round1_2_meteorite
+    this.backgroundImageSrc = imageSrc.round.round1_2_meteorite
     this.music = soundSrc.music.music02_meteorite_zone_field
 
     this.meteoriteDeepImage = imageSrc.round.round1_3_meteoriteDeep
@@ -833,7 +840,7 @@ class Round1_2 extends RoundData {
 
     // 배경화면 변경 적용 (페이드 효과 이후 시간에)
     if (this.timeCheckInterval(lastPhaseTime, this.finishTime)) {
-      this.backgroundImage = this.meteoriteDeepImage
+      this.backgroundImageSrc = this.meteoriteDeepImage
     }
 
     if (this.timeCheckInterval(31, 150, 180)) {
@@ -985,7 +992,7 @@ class Round1_3 extends RoundData {
     this.requireLevel = 3
     this.finishTime = 210
     this.clearBonus = 39000
-    this.backgroundImage = imageSrc.round.round1_3_meteoriteDeep
+    this.backgroundImageSrc = imageSrc.round.round1_3_meteoriteDeep
     this.music = soundSrc.music.music02_meteorite_zone_field
 
     // ---
@@ -1017,9 +1024,9 @@ class Round1_3 extends RoundData {
     }
 
     if (this.timeCheckInterval(phase6Start, phase8Start)) {
-      this.backgroundImage = this.redZone1
+      this.backgroundImageSrc = this.redZone1
     } else if (this.timeCheckInterval(phase8Start, this.finishTime)) {
-      this.backgroundImage = this.redZone2
+      this.backgroundImageSrc = this.redZone2
     }
 
     if (this.timeCheckInterval(31, phase8Start, 180)) {
@@ -1313,7 +1320,7 @@ class Round1_4 extends RoundData {
     this.requireLevel = 4
     this.finishTime = 151
     this.clearBonus = 38000
-    this.backgroundImage = imageSrc.round.round1_4_meteoriteDark
+    this.backgroundImageSrc = imageSrc.round.round1_4_meteoriteDark
     this.music = soundSrc.music.music03_meteorite_zone_battle
     this.waitTimeFrame = 0
     this.backgroundDegree = 0
@@ -1428,7 +1435,7 @@ class Round1_4 extends RoundData {
       this.changeBackgroundImage(this.specialImage, 150)
     }
     if (this.timeCheckInterval(phase2Time + 5, phase2Time + 30)) {
-      this.backgroundImage = this.specialImage
+      this.backgroundImageSrc = this.specialImage
       this.backgroundSpeedX = 0
       this.backgroundSpeedY = 0
     }
@@ -1464,7 +1471,7 @@ class Round1_4 extends RoundData {
       soundSystem.musicPlay(soundSrc.music.music08_round1_4_jemul)
     }
 
-    this.backgroundImage = this.specialImage
+    this.backgroundImageSrc = this.specialImage
 
     // 배경 흔들기
     if (this.timeCheckInterval(phase3Time, phase3Time + 10, 3)) {
@@ -1541,7 +1548,7 @@ class Round1_5 extends RoundData {
     this.requireLevel = 1
     this.finishTime = 210
     this.clearBonus = 41000
-    this.backgroundImage = imageSrc.round.round1_5_meteoriteRed
+    this.backgroundImageSrc = imageSrc.round.round1_5_meteoriteRed
     this.music = soundSrc.music.music04_meteorite_zone_red
 
     this.addRoundPhase(this.roundPhase00, 1, 30)
@@ -1817,7 +1824,7 @@ class Round1_6 extends RoundData {
     this.requireLevel = 6
     this.finishTime = 152
     this.clearBonus = 35000
-    this.backgroundImage = imageSrc.round.round1_2_meteorite
+    this.backgroundImageSrc = imageSrc.round.round1_2_meteorite
     this.spaceImage = imageSrc.round.round1_6_space
     this.music = soundSrc.music.music02_meteorite_zone_field
     this.musicTour = soundSrc.music.music05_space_tour
@@ -2037,7 +2044,7 @@ class Round1_6 extends RoundData {
     }
 
     if (this.timeCheckInterval(31, this.finishTime)) {
-      this.backgroundImage = this.spaceImage
+      this.backgroundImageSrc = this.spaceImage
     }
   }
 
@@ -2067,7 +2074,7 @@ class Round1_test extends RoundData {
     this.requireLevel = 3
     this.finishTime = 50
     this.clearBonus = 100
-    this.backgroundImage = null
+    this.backgroundImageSrc = null
     this.music = null
 
 

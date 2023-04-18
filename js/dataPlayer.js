@@ -6,6 +6,10 @@ import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatWe
 import { dataExportWeapon, WeaponData } from "./dataWeapon.js"
 import { fieldState } from "./field.js"
 import { soundSrc } from "./soundSrc.js"
+import { game } from "./game.js"
+
+let soundSystem = game.sound
+let graphicSystem = game.graphic
 
 /**
  * 플레이어 무기 데이터
