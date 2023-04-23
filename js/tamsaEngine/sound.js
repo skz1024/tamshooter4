@@ -75,11 +75,11 @@ export class SoundSystem {
     })
 
 
+    /** 엔진에서 테스트 용도로 사용하는 파일의 경로: 단, 바이오스 기능을 실행하기 전까지 해당 파일은 다운로드 하지 않습니다. */
     this.testFileSrc = {
-      soundtest0: resourceSrc + 'soundeffect.wav',
-      soundtest1: resourceSrc + 'soundtest1.ogg',
-      soundtest2: resourceSrc + 'soundtest2.ogg',
-      soundtest3: resourceSrc + 'soundtest3.ogg',
+      soundtest: resourceSrc + 'soundeffect.wav',
+      testMusicMp3: resourceSrc + '1141sub2[new] - track2 - 2011.12.21.mp3',
+      testMusicOgg: resourceSrc + '1141sub2[new] - track2 - 2011.12.21.ogg'
     }
 
     this.fade = {
@@ -89,6 +89,9 @@ export class SoundSystem {
       /** 다음에 재생할 페이드 버퍼의 경로 */ nextBufferSrc: '',
       /** 다음에 재생할 오디오가 버퍼인지 확인 */ isNextBuffer: false
     }
+
+    /** 반복적인 음악 처리 함수 호출 setInterval id */
+    this.intervalId = setInterval(this.musicProcess.bind(this), 100)
   }
 
   /** 
@@ -155,9 +158,8 @@ export class SoundSystem {
     this.audioNode.musicEchoDelay.connect(this.audioNode.musicFeedBackGain).connect(this.audioNode.musicEchoDelay) // 음악 에코 피드백 전달
     this.audioNode.musicFeedBackGain.connect(this.audioNode.masterGain) // 음악 피드벡 게인
   }
-  
 
-  /** 웹 오디오를 사용중인지에 대한 여부 (해당 엔진 한정) */
+  /** 웹 오디오를 사용중인지에 대한 여부 */
   getWebAudioMode () {
     return this.isWebAudioMode
   }
@@ -256,9 +258,11 @@ export class SoundSystem {
       let newAudio = new Audio(audioSrc)
       this.cacheAudio.set(audioSrc, newAudio)
       let newNode = this.audioContext.createMediaElementSource(newAudio)
-      newNode.connect(this.audioNode.firstGain)
+      newAudio.addEventListener('pause', () => {
+        newNode.disconnect(); // 정지상태가 되면 디스커넥트 // 이렇게 해야 렌더링 누수를 막을 수 있음.
+        // 너무 많은 파일이 렌더링 되면 사운드에 문제가 발생합니다.
+      })
       this.cacheAudioNode.set(audioSrc, newNode) // 컨텍스트에 연결할 오디오 노드
-      return this.cacheAudio.get(audioSrc)
     }
 
     // 배열의 모든 내용을 삭제
@@ -269,11 +273,11 @@ export class SoundSystem {
    * 해당 사운드를 재생합니다. 이것은 오디오 파일을 직접 재생하는것을 목표로 만들어졌습니다.
    * 따라서 오디오 파일을 중복해서 재생할 수 없습니다. (이렇게하려면 buffer를 사용하거나 다른 이름의 오디오 파일을 만드세요.)
    * 
-   * 오디오가 중간에 재생중인경우, 해당 오디오를 처음부터 다시 재생합니다.
+   * 버퍼 재생은 이 함수에서 할 수 없습니다. 대신 playBuffer를 사용하세요.
    * 
-   * 주의: targetAudio가 오디오객체일경우 이 오디오객체는 웹 오디오 효과가 적용되지 않습니다.
+   * 오디오 객체를 재생할 수도 있습니다. 이 경우 웹 오디오 효과를 받을 수 없습니다.
    * 
-   * @param {HTMLMediaElement | string | AudioBuffer} audioSrc 오디오의 경로 또는 오디오버퍼
+   * @param {HTMLMediaElement | string} audioSrc 오디오의 경로
    * string을 넣으면 해당 오디오 경로에 있는 파일을 직접 재생합니다.
    * 
    * AudioBuffer를 넣으면 playBuffer 함수를 대신 실행합니다.
@@ -286,19 +290,15 @@ export class SoundSystem {
       getNode = this.getCacheAudioNode(audioSrc)
     } else if (audioSrc instanceof HTMLAudioElement) {
       getAudio = audioSrc
-    } else if (audioSrc instanceof AudioBuffer) {
-      // 버퍼 재생은 다른 함수에서 실행
-      this.playBuffer(audioSrc, effect)
-      return
     }
-
-    if (getAudio == null || getNode == null) return
+    
+    if (getAudio == null || getNode == null) return // 노드 또는 오디오가 없다면 재생 불가능
+    getNode.connect(this.audioNode.firstGain) // 재생을 위한 오디오 연결
 
     // 일시정지되면, 다시 재생시키고, 이미 재생중이라면 처음부터 다시 재생합니다.
     if (getAudio.paused) {
-      getAudio.play().catch(() => {
-        alert('sound play denied. 사운드 플레이 거부. 이것은 모바일에서의 제약으로 인한 오류입니다. 개발자는 해당 오류를 수정할 수 있으므로 문의주세요.')
-      })
+      // 오류 메세지 막기(예외처리...)
+      getAudio.play().catch(() => {})
     } else {
       getAudio.currentTime = 0
     }
@@ -335,46 +335,120 @@ export class SoundSystem {
 
   /**
    * 현재 재생중인 음악의 목록입니다. 
-   * @type {any[]} 
+   * 
+   * 추후 지원 예정...
+   * @type {HTMLMediaElement | AudioBufferSourceNode} 
    */
   musicTrack = []
 
+  /** 
+   * 현재 재생중인 음악
+   * @type {HTMLMediaElement | AudioBufferSourceNode} 
+   */
+  currentMusic = null
+
   /**
    * 해당 사운드를 음악처럼 취급해서 재생합니다. (효과음은 play 함수를 사용해주세요.)
-   * 이 함수를 사용할경우, 루프를 사용하는것으로 간주 (반복재생)
+   * 이 함수를 사용할경우, 해당 음악 파일들은 모두 loop속성을 가지게됩니다.
+   * 따라서 절대로 효과음을 이 함수로 재생하지 마세요. (한번 loop속성이 추가되면 해제할 수 없습니다.)
    * 
-   * 배경음은 audio 객체를 직접 사용하여 출력할 수 없습니다.
-   * 
-   * 여러개의 곡을 동시 재생할 수는 있지만, 로딩 능력에 따라 싱크 오류가 발생 할 수 있습니다. (싱크 오류는 막을 수 없음.)
-   * 따라서, 확실하게 동시에 재생되어야 한다면 musicBuffer 함수를 이용해 버퍼를 만든 후에 재생하세요.
+   * 여러개의 곡을 동시 재생할 수는 없습니다. 여러개의 곡을 동시 재생하는 기능은 추후에 만들어질 예정.
    * 
    * 경고: 오디오 객체를 넣을 경우, 해당 오디오는 에코 효과를 적용하지 않고 음악을 재생합니다.
    * 
-   * 효과음을 이것으로 출력하지 마세요. 왜냐하면, 한번 음악을 출력하면 그것으로는 효과음을 출력할 수 없도록 재연결 작업이 진행됩니다.
-   * 
-   * @param {string | HTMLMediaElement | AudioBuffer} audioSrc 오디오의 경로 또는 오디오 객체 (버퍼는 사용불가, 대신 musicBuffer를 사용해주세요.)
+   * 일시정지된 음악도 같이 재생합니다. (이 경우 audioSrc를 넣지 마세요.)
+   * @param {string | HTMLMediaElement} audioSrc 오디오의 경로 또는 오디오 객체 (버퍼는 사용불가, 대신 musicBuffer를 사용해주세요.)
+   * @param {number} start 오디오의 시작 지점 (주의: 오디오가 교체되지 않으면 이 변수는 무시됩니다.)
    */
-  musicPlay (audioSrc) {
+  musicPlay (audioSrc, start = 0) {
+    let getMusic = null
+    let getNode = null
+
+    // 음악 불러오기
     if (typeof audioSrc === 'number' || typeof audioSrc === 'string') {
-      let getMusic = this.getCacheAudio(audioSrc)
-      let getNode = this.getCacheAudioNode(audioSrc)
-      if (getMusic && getNode != null) {
-        getNode.disconnect()
+      getMusic = this.getCacheAudio(audioSrc)
+      getNode = this.getCacheAudioNode(audioSrc)
+      if (getNode != null) {
         getNode.connect(this.audioNode.musicFirstGain)
-        getMusic.play()
-        getMusic.loop = true
-        this.musicTrack.push(getMusic)
       }
     } else if (audioSrc instanceof HTMLAudioElement) {
-      audioSrc.loop = true
-      audioSrc.play()
-      this.musicTrack.push(audioSrc)
+      getMusic = audioSrc
+    }
+
+    // 현재 재생중인 음악과 다른지를 확인
+    // 재생중인 음악이 다를경우 새로운 음악으로 교체
+    if (getMusic != null && this.currentMusic !== getMusic) {
+      this.musicStop() // 기존의 음악을 먼저 정지시킴
+      this.currentMusic = getMusic
+      if (start >= 0 && start <= getMusic.duration) {
+        getMusic.currentTime = start
+      }
+    }
+
+    if (getMusic != null) {
+      getMusic.loop = true
+      if (getMusic.paused) {
+        getMusic.play()
+      }
     }
   }
 
-  /** 오디오 버퍼를 음악으로 재생합니다. (루프는 강제 적용) */
-  musicBuffer (audioSrc, start, end) {
+  /** 
+   * 오디오 버퍼를 음악으로 재생합니다. (루프는 강제 적용)  
+   * 
+   * 참고: 음악 버퍼는 같은 음악을 재생하여도, 새로운 음악으로 계속 교체됩니다.
+   * @param {string | AudioBuffer} audioSrc 오디오의 경로 또는 오디오 버퍼 (음악 객체는 사용불가, 대신 musicPlay를 사용해주세요.)
+   * @param {number} start 음악의 시작지점
+   * @param {number} end 음악의 끝지점
+   */
+  musicBuffer (audioSrc, start = 0, end = 0) {
+    let getBuffer = null
+    if (typeof audioSrc === 'number' || typeof audioSrc === 'string') {
+      getBuffer = this.getCacheBuffer(audioSrc)
+    } else if (audioSrc instanceof AudioBuffer) {
+      getBuffer = audioSrc
+    }
 
+    if (getBuffer == null) return
+
+    let newBuffer = this.audioContext.createBufferSource()
+    newBuffer.buffer = getBuffer
+    newBuffer.connect(this.audioNode.musicFirstGain)
+    
+    // start와 end 값 범위 조절
+    if (start < 0 || start > newBuffer.buffer.duration) start = 0
+    if (end <= 0 || end > newBuffer.buffer.duration) end = newBuffer.buffer.duration
+    newBuffer.loop = true
+    newBuffer.loopStart = start
+    newBuffer.loopEnd = end
+
+    this.musicStop() // 현재 재생중인 음악 정지
+    newBuffer.start(this.audioContext.currentTime, start)
+    this.currentMusic = newBuffer
+  }
+
+  /** 
+   * 음악을 페이드 아웃합니다. (next를 지정하지 않으면 페이드 인 하지 않습니다.)
+   * 
+   * 주의: 동시에 여러번 페이드아웃하면 가장 마지막의 페이드 아웃이 끝날때까지 음악을 재생하지 못할 수 있습니다.
+   * 
+   * 페이드 시간이 0이라면, 페이드 아웃을 취소합니다.
+   */
+  musicFade (fadeTime = 0) {
+    if (fadeTime === 0) {
+      this.musicStop()
+      this.audioNode.musicFadeGain.gain.setValueAtTime(1, this.audioContext.currentTime)
+      return
+    }
+
+    // this.fade.isNextBuffer = false
+    this.fade.isFading = true
+    // this.fade.nextAudioSrc = audioSrc
+    this.fade.fadeTime = fadeTime
+
+    // 참고: setValueAtTime을 하지 않고 바로 페이드 아웃을 시도하면, 자연스러운 감소가 아닌 급격한 감소로 페이드 아웃됩니다.
+    this.audioNode.musicFadeGain.gain.setValueAtTime(1, this.audioContext.currentTime)
+    this.audioNode.musicFadeGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + fadeTime)
   }
 
   /** 
@@ -383,16 +457,17 @@ export class SoundSystem {
    * 경고: 이 함수를 사용하는 즉시 재생중인 모든 음악은 페이드 아웃됩니다.
    * 그리고 새로운 음악으로 교체됩니다.
    */
-  musicFadeNextAudio (audioSrc, fadeTime = 2) {
-    this.fade.isNextBuffer = false
-    this.fade.isFading = true
+  musicFadeNextAudio (audioSrc, fadeTime = 0) {
+    this.musicFade(fadeTime)
     this.fade.nextAudioSrc = audioSrc
-    this.fade.fadeTime = fadeTime
+    this.fade.isNextBuffer = false
   }
 
   /** 다음 음악을 페이드 효과를 이용해 변경합니다. (버퍼로 재생함.) */
   musicFadeNextBuffer (audioSrc, fadeTime) {
-
+    this.musicFade(fadeTime)
+    this.fade.nextAudioSrc = audioSrc
+    this.fade.isNextBuffer = true
   }
 
   /** 
@@ -400,33 +475,56 @@ export class SoundSystem {
    * 주로, 페이드 인 효과를 정의할 때 사용합니다.
    */
   musicProcess () {
-
     // 페이드 과정 진행
     if (this.fade.isFading) {
-      
+      if (this.audioNode.musicFadeGain.gain.value <= 0) {
+        this.fade.isFading = false
+        this.fade.fadeTime = 0
+        this.musicStop()
+        if (this.fade.nextAudioSrc != null) {
+          if (this.fade.isNextBuffer) {
+            this.musicBuffer(this.fade.nextAudioSrc)
+          } else {
+            this.musicPlay(this.fade.nextAudioSrc)
+          }
+          // 페이드 인
+          this.audioNode.musicFadeGain.gain.linearRampToValueAtTime(1, this.audioContext.currentTime + this.fade.fadeTime)
+        } else {
+          this.audioNode.musicFadeGain.gain.value = 1
+        }
+      }
     }
   }
 
   /** 현재 재생중인 모든 음악 정지, 그래도 재생중인 트랙의 모든 데이터는 지워집니다. */
   musicStop () {
-    for (let i = 0; i < this.musicTrack.length; i++) {
-      let currentMusic = this.musicTrack[i]
-      if (currentMusic instanceof HTMLAudioElement) {
-        currentMusic.currentTime = 0
-        currentMusic.pause()
-      }
+    if (this.currentMusic instanceof HTMLMediaElement) {
+      this.currentMusic.currentTime = 0
+      this.currentMusic.pause()
+    } else if (this.currentMusic instanceof AudioBufferSourceNode) {
+      this.currentMusic.stop()
     }
 
-    this.musicTrack.length = 0
+    this.currentMusic = null
+
+    // for (let i = 0; i < this.musicTrack.length; i++) {
+    //   let currentMusic = this.musicTrack[i]
+    //   if (currentMusic instanceof HTMLAudioElement) {
+    //     currentMusic.pause()
+    //     currentMusic.currentTime = 0
+    //   }
+    // }
+
+    // this.musicTrack.length = 0
   }
 
-  /** 현재 재생중인 모든 음악 일시정지, 단 이 경우, 재생중인 트랙에서 삭제되지 않습니다. */
+  /** 현재 재생중인 모든 음악 일시정지, 오디오만 일시정지 가능하고, 버퍼는 일시정지 할 수 없기 때문에 자동으로 정지됩니다. */
   musicPause () {
-    for (let i = 0; i <this.musicTrack.length; i++) {
-      let currentMusic = this.musicTrack[i]
-      if (currentMusic instanceof HTMLAudioElement) {
-        currentMusic.pause()
-      }
+    if (this.currentMusic instanceof HTMLMediaElement) {
+      this.currentMusic.pause()
+    } else if (this.currentMusic instanceof AudioBuffer) {
+      this.currentMusic.stop()
+      this.currentMusic = null
     }
   }
 

@@ -913,9 +913,6 @@ export class fieldState {
     return inputData
   }
 
-
-
-
   static process () {
     this.processPlayerObject()
     this.processWeaponObject()
@@ -1090,6 +1087,15 @@ export class fieldSystem {
   static enimationFrame = 0
   static totalScore = 0
   static fieldScore = 0
+
+  /** 
+   * fieldSystem에서 사용하는 특정 메세지 객체 
+   * 
+   */
+  static postMessage = ''
+  static messageList = {
+    FIELD_EXIT: 'field exit'
+  }
 
   static requestAddScore (score) {
     this.fieldScore += score

@@ -1,3 +1,5 @@
+//@ts-check
+
 import { ControlSystem } from "./control.js";
 import { GraphicSystem } from "./graphic.js";
 import { SoundSystem } from "./sound.js";
@@ -6,6 +8,26 @@ import { SoundSystem } from "./sound.js";
  * tamsaEngine에서 사용하는 메뉴 구성을 간단하게 만들기 위한 클래스
  */
 class BiosMenu {
+  /** 메뉴의 커서 번호 */ cursor = 0
+
+  /** 
+   * 헤더 필드(머릿말)
+   * @type {string[]}
+   */
+  headerField = []
+
+  /**
+   * 메뉴 필드(메뉴의 목록을 표시)
+   * @type {string[]}
+   */
+  menuField = []
+
+  /** 
+   * 푸터 필드(꼬릿말)
+   * @type {string[]}
+   */
+  footerField = []
+
   /**
    * 바이오스 메뉴를 간단하게 만들기 위한 함수...
    * 
@@ -23,12 +45,6 @@ class BiosMenu {
 
     this.graphic = graphic
     this.control = control
-    this.headerField = []
-    this.menuField = []
-    this.footerField = []
-
-    /** 메뉴의 커서 번호 */
-    this.cursor = 0
   }
 
   /**
@@ -47,12 +63,15 @@ class BiosMenu {
    * @returns {number} 메뉴 번호(0부터...) 아무것도 없다면 -1
    */
   getSelectMenu () {
+    if (this.control == null) return -1
+    if (this.menuField == null) return -1
+
     let buttonUp = this.control.getButtonInput(this.control.buttonIndex.UP)
     let buttonDown = this.control.getButtonInput(this.control.buttonIndex.DOWN)
     let buttonA = this.control.getButtonInput(this.control.buttonIndex.A)
     let buttonStart = this.control.getButtonInput(this.control.buttonIndex.START)
 
-    let isEnter = buttonA | buttonStart
+    let isEnter = buttonA || buttonStart
 
     if (buttonUp && this.cursor > 0) {
       this.cursor--
@@ -96,6 +115,8 @@ class BiosMenu {
    * @param {number} yLine 출력할 시작 지점 텍스트의 y축 줄번호
    */
   textOutput (text = '', yLine = 0) {
+    if (this.graphic == null || this.graphic.bitmapFont == null) return
+
     const wordWidth = this.graphic.bitmapFont.baseWidth * 2
     const wordHeight = this.graphic.bitmapFont.baseHeight * 2
     const marginWidth = 8
@@ -120,6 +141,28 @@ class BiosMenu {
       this.textOutput(exceedWords, yLine + 1)
     }
   }
+}
+
+/** 로딩 최적화를 위하여 바이오스를 호출하기 전까지 바이오스 기능이 분리되었습니다. */
+class BiosSystem {
+  /**
+   * tamshooter4에서 사용하는 바이오스 시스템, 이 시스템은 바이오스 호출 명령이 동작하기 전까지 할당되지 않습니다.
+   * @param {GraphicSystem} graphic 
+   * @param {ControlSystem} control 
+   * @param {SoundSystem} sound 
+   */
+  constructor (graphic, control, sound) {
+    if (graphic == null || control == null || sound == null) {
+      console.error('please insert graphic, control, sound system.')
+      return
+    }
+
+    this.graphic = graphic
+    this.control = control
+    this.sound = sound
+  }
+
+
 }
 
 /**
@@ -167,6 +210,7 @@ export class TamsaEngine {
     /** 해당 게임의 기준 프레임 (고정 프레임 간격) */ this.FPS = gameFps
     /** 프레임 호출횟수 */ this.frameCount = 0
     /** 에니메이션 프레임 호출횟수 */ this.refreshCount = 0
+    /** 그래픽 fps (프로세스와 별개) */ this.graphicFps = 0
 
     /** 현재 프레임 */ this.currentFps = 0
     /** 초당 리프레시 횟수(모니터 주사율) */ this.refreshFps = 0
@@ -182,10 +226,6 @@ export class TamsaEngine {
 
     /** 해당 엔진에서 사용하는 사운드 시스템 */
     this.sound = new SoundSystem(true, resourceSrc)
-    this.sound.createBuffer(this.sound.testFileSrc.soundtest0) // 버퍼 미리듣기용 생성
-    this.sound.createBuffer(this.sound.testFileSrc.soundtest1)
-    this.sound.createBuffer(this.sound.testFileSrc.soundtest2)
-    this.sound.createBuffer(this.sound.testFileSrc.soundtest3)
 
     document.body.style.backgroundColor = '#181818'
 
@@ -238,16 +278,15 @@ export class TamsaEngine {
       /** @type {BiosMenu} */ graphicTest: new BiosMenu(this.graphic, this.control),
       /** 바이오스 메뉴 번호 */ menuNumber: 0,
       /** 테스트용 버퍼 */ testAudioBuffer: null,
-      /** 테스트용 트랙번호 */ testAudioTrackNumber: 0,
       /** 그래픽 테스트 번호 */ graphicTestNumber: 0,
       /** 그래픽 테스트 서브번호 */ graphicTestSubNumber: 0,
       /** 그래픽 테스트 오브젝트 */ graphicTestObject: {x: 0, y: 0, width: 0, height: 0},
       /** 바이오스 입장 가능 시간 확인용도 */ elapsedFrame: 0,
       /** 현재 바이오스 모드인지 확인 */ isBiosMode: false,
       /** 바이오스에서 나갈 수 있는지에 대한 여부 */ isBiosPossibleExit: true,
+      /** 오디오 파일 타입 */ audioFileType: 'mp3',
     }
 
-    this.sound.createBuffer(this.sound.testFileSrc.soundtest0)
   }
 
   /** 1초마다 몇 프레임이 카운트 되었는지를 확인하고, 이를 fps에 반영합니다. */
@@ -458,10 +497,26 @@ export class TamsaEngine {
   }
 
   biosSoundTest () {
+    this.sound.createBuffer(this.sound.testFileSrc.soundtest)
+    this.sound.createBuffer(this.sound.testFileSrc.testMusicMp3)
+    this.sound.createBuffer(this.sound.testFileSrc.testMusicOgg)
+    this.sound.createAudio(this.sound.testFileSrc.soundtest)
+    this.sound.createAudio(this.sound.testFileSrc.testMusicMp3)
+    this.sound.createAudio(this.sound.testFileSrc.testMusicOgg)
+
     let echoValue = this.sound.getMusicEchoValue()
     let warning = this.sound.getIsAudioSuspended()
     let warningText = ''
     if (warning) warningText = 'you must be clicked or keyinput resume audio context'
+
+    let supportText = ''
+    if (this.bios.audioFileType === 'mp3') {
+      let cache = this.sound.getCacheBuffer(this.sound.testFileSrc.testMusicMp3)
+      if (cache == null) supportText = ', waring: not supported'
+    } else {
+      let cache = this.sound.getCacheBuffer(this.sound.testFileSrc.testMusicOgg)
+      if (cache == null) supportText = ', waring: not supported'
+    }
 
     this.bios.soundTest.textEdit(
       ['SOUND TEST',
@@ -469,12 +524,13 @@ export class TamsaEngine {
       ['SOUND PLAY',
       'BUFFER SOUND PLAY',
       'MUSIC PLAY',
-      'BUFFER MUSIC PLAY',
+      'BUFFER MUSIC PLAY (NOT AVLIABLE)',
       'MUSIC STOP',
-      'COMBINATION: ' + this.bios.testAudioTrackNumber,
+      'FILE TYPE(MUSIC):' + this.bios.audioFileType + supportText,
       'ECHO(MUSIC) VALUE: ' + echoValue.echo.toFixed(1),
       'FEEDBACK(MUSIC) VALUE: ' + echoValue.feedback.toFixed(1),
       'DELAY(MUSIC) VALUE: ' + echoValue.delay.toFixed(1),
+      'FADE TEST',
       'EXIT'],
       ['',
       'if you don\'t use web audio, ',
@@ -486,39 +542,32 @@ export class TamsaEngine {
 
     switch (this.bios.soundTest.getSelectMenu()) {
       case 0: 
-        this.sound.play(this.sound.testFileSrc.soundtest0)
+        this.sound.play(this.sound.testFileSrc.soundtest)
         break
       case 1:
-        this.sound.playBuffer(this.sound.testFileSrc.soundtest0)
+        this.sound.playBuffer(this.sound.testFileSrc.soundtest)
         break
-      case 2: 
-        if (this.bios.testAudioTrackNumber === 0) {
-          this.sound.musicPlay(this.sound.testFileSrc.soundtest1)
-        } else if (this.bios.testAudioTrackNumber === 1) {
-          this.sound.musicPlay(this.sound.testFileSrc.soundtest1)
-          this.sound.musicPlay(this.sound.testFileSrc.soundtest2)
-        } else if (this.bios.testAudioTrackNumber === 2) {
-          this.sound.musicPlay(this.sound.testFileSrc.soundtest1)
-          this.sound.musicPlay(this.sound.testFileSrc.soundtest2)
-          this.sound.musicPlay(this.sound.testFileSrc.soundtest3)
+      case 2:
+        if (this.bios.audioFileType === 'mp3') {
+          this.sound.musicPlay(this.sound.testFileSrc.testMusicMp3)
+        } else {
+          this.sound.musicPlay(this.sound.testFileSrc.testMusicOgg)
         }
         break
       case 3:
-        if (this.bios.testAudioTrackNumber === 0) {
-          this.sound.musicPlay(this.sound.testFileSrc.soundtest1)
-        } else if (this.bios.testAudioTrackNumber === 1) {
-          this.sound.musicPlay(this.sound.testFileSrc.soundtest1)
-          this.sound.musicPlay(this.sound.testFileSrc.soundtest2)
-        } else if (this.bios.testAudioTrackNumber === 2) {
-          this.sound.musicPlay(this.sound.testFileSrc.soundtest1)
-          this.sound.musicPlay(this.sound.testFileSrc.soundtest2)
-          this.sound.musicPlay(this.sound.testFileSrc.soundtest3)
+        if (this.bios.audioFileType === 'mp3') {
+          this.sound.musicBuffer(this.sound.testFileSrc.testMusicMp3)
+        } else {
+          this.sound.musicBuffer(this.sound.testFileSrc.testMusicOgg)
         }
         break
       case 4: this.sound.musicStop(); break
       case 5:
-        this.bios.testAudioTrackNumber++
-        if (this.bios.testAudioTrackNumber > 2) this.bios.testAudioTrackNumber = 0
+        if (this.bios.audioFileType === 'mp3') {
+          this.bios.audioFileType = 'ogg'
+        } else {
+          this.bios.audioFileType = 'mp3'
+        }
         break
       case 6:
         let currentEcho = echoValue.echo
@@ -538,6 +587,9 @@ export class TamsaEngine {
         if (setDelay > 1) setDelay = 0
         this.sound.setMusicEcho(-1, -1, setDelay)
         break
+      case 9:
+        this.sound.musicFadeNextAudio(null, 2)
+        break
       case this.bios.soundTest.menuField.length - 1:
         // soundTest에서 나가기
         this.sound.musicStop()
@@ -556,7 +608,7 @@ export class TamsaEngine {
 
   biosGraphicTest () {
     this.bios.graphicTest.textEdit(
-      ['GRAPHIC TEST - FPS: ' + this.currentFps + '/60, ' + 'REFRESH: ' + this.refreshFps + 'Hz',
+      ['GRAPHIC TEST - FPS: ' + this.currentFps + '/' + this.FPS + ', ' + 'REFRESH: ' + this.refreshFps + 'Hz',
       'DISPLAY: ' + this.graphic.canvas.clientWidth + 'x' + this.graphic.canvas.clientHeight,
       'CANVAS SIZE: ' + this.graphic.canvas.width + 'x' + this.graphic.canvas.height,
       'canvas display is auto sized'],

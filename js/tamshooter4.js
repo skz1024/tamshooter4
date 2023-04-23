@@ -7,12 +7,16 @@ import { fieldSystem } from "./field.js";
 import { game, gameFunction } from "./game.js";
 
 let digitalDisplay = gameFunction.digitalDisplay
+let totalFrame = 0
 
 game.process = () => {
   gameSystem.process()
 }
 game.display = () => {
-  gameSystem.display()
+  totalFrame++
+  // if (totalFrame % 2 === 1) {
+    gameSystem.display()
+  // }
 }
 
 class BoxObject {

@@ -6,7 +6,7 @@ import { TamsaEngine } from "./tamsaEngine/tamsaEngine.js"
 // 순환 참조를 구조적으로 불가능하게 하기 위해 만들어졌습니다.
 
 /** tamshooter4 게임 변수입니다. */
-export let game = new TamsaEngine('tamshooter4', 800, 600, 'js/tamsaEngine/')
+export let game = new TamsaEngine('tamshooter4', 800, 600, 'js/tamsaEngine/', 60)
 
 /** tamshooter4 게임에서 사용하는 공통 함수 */
 export class gameFunction {
@@ -16,9 +16,19 @@ export class gameFunction {
 
 let digitalDisplay = gameFunction.digitalDisplay
 
-// 처음 로딩용 추가
-for (let sound in soundSrc.system) {
-  game.sound.createAudio(soundSrc.system[sound])
+// 사운드 선 로딩
+// 나중에 후로딩 방식으로 변경할지 잘 모르겠음.
+for (let key in soundSrc.system) {
+  game.sound.createAudio(soundSrc.system[key])
+}
+for (let key in soundSrc.music) {
+  game.sound.createAudio(soundSrc.music[key])
+}
+for (let key in soundSrc.skill) {
+  game.sound.createAudio(soundSrc.skill[key])
+}
+for (let key in soundSrc.enemyDie) {
+  game.sound.createAudio(soundSrc.enemyDie[key])
 }
 
 /** 유저 정보 (static 클래스) */

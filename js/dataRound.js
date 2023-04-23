@@ -612,7 +612,7 @@ export class RoundData {
       // 불러오기 전용 변수
       soundSystem.musicPlay(this.music)
       this.loadCurrentMusicTime = 0
-    } else if (soundSrc != null) {
+    } else if (soundSrc != '') {
       soundSystem.musicPlay(soundSrc)
     } else {
       soundSystem.musicPlay(this.music)
@@ -1050,7 +1050,7 @@ class Round1_3 extends RoundData {
 
       if (currentEnemy.id === ID.enemy.jemulEnemy.boss) {
         graphicSystem.meterGradient(0, 0, graphicSystem.CANVAS_WIDTH, 20, currentEnemy.hp, currentEnemy.hpMax, graphicSystem.METER_HORIZONTAL, '#DDA7A7', '#FF4545')
-        graphicSystem.digitalFontDisplay(`boss hp: ${currentEnemy.hp}/${currentEnemy.hpMax}`, 10, 2)
+        digitalDisplay(`boss hp: ${currentEnemy.hp}/${currentEnemy.hpMax}`, 10, 2)
       }
     }
   }
@@ -1073,7 +1073,7 @@ class Round1_3 extends RoundData {
     if (this.timeCheckFrame(11, 0)) {
       this.createEnemy(ID.enemy.jemulEnemy.boss, 900)
       // this.memoryMusicTime = this.battleMusic.duration // 현재 음악의 재생 시간 저장
-      soundSystem.musicChangeFade(this.battleMusic, 2)
+      soundSystem.musicFadeNextAudio(this.battleMusic, 2)
     }
 
     if (this.timeCheckInterval(13, 28)) {
@@ -1094,7 +1094,7 @@ class Round1_3 extends RoundData {
   roundPhase02 () {
     // 음악 변경
     if (this.timeCheckInterval(31, 31) && this.currentTimeFrame === 0) {
-      soundSystem.musicChangeFade(this.music, 2)
+      soundSystem.musicFadeNextAudio(this.music, 2)
     }
 
     if (this.timeCheckInterval(31, 36, 20)) {
@@ -1124,7 +1124,7 @@ class Round1_3 extends RoundData {
     // 이 페이즈 이후 부터 해당 음악이 적용됩니다.
     if (this.timeCheckInterval(71) && this.currentTimeFrame === 0) {
       this.createEnemy(ID.enemy.jemulEnemy.boss, 900)
-      soundSystem.musicChangeFade(this.battleMusic, 2)
+      soundSystem.musicFadeNextAudio(this.battleMusic, 2)
     }
 
     // 보스가 죽었다면, 지속적으로 적이 등장
@@ -1299,7 +1299,7 @@ class Round1_3 extends RoundData {
     super.process()
 
     if (this.getCurrentPhase() >= 4 && soundSystem.currentMusic != this.battleMusic) {
-      soundSystem.musicChangeFade(this.battleMusic, 2)
+      soundSystem.musicFadeNextAudio(this.battleMusic, 2)
     }
   }
 
@@ -1778,7 +1778,7 @@ class Round1_5 extends RoundData {
   roundPhase07 () {
     // 운석지대
     if (this.timeCheckFrame(181, 11)) {
-      soundSystem.musicChangeFade(soundSrc.music.music02_meteorite_zone_field)
+      soundSystem.musicFadeNextAudio(soundSrc.music.music02_meteorite_zone_field)
     }
 
     if (this.timeCheckInterval(181, 11)) {
@@ -2009,7 +2009,7 @@ class Round1_6 extends RoundData {
 
     // 음악 재생 시간 관계상, 29초 지점부터 음악이 변경됨.
     if (this.timeCheckFrame(30, 0)) {
-      soundSystem.musicChangeFade(this.musicTour, 1)
+      soundSystem.musicFadeNextAudio(this.musicTour, 1)
       this.changeBackgroundImage(this.spaceImage, 360)
     }
 
@@ -2023,7 +2023,7 @@ class Round1_6 extends RoundData {
     const fadeTime = 1
     const planetMusicPlayTime = 128 - fadeTime
     if (this.timeCheckFrame(planetMusicPlayTime, 0)) {
-      soundSystem.musicChangeFade(this.musicPlanet, fadeTime)
+      soundSystem.musicFadeNextAudio(this.musicPlanet, fadeTime)
       // soundSystem.musicPlay(this.musicPlanet)
     }
 
