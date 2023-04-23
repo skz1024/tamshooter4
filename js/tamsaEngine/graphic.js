@@ -43,6 +43,10 @@ export class GraphicSystem {
      * 캔버스의 2d 그래픽 콘텍스트
      */
     this.context = this.canvas.getContext('2d')
+    if (this.context == null) {
+      console.warn('잘못된 콘텍스트 형식')
+      return
+    }
 
     // 그래픽 초기화
     // 텍스트 베이스라인을 top으로 수정(기본이 alphabet이며 alphabet은 y축 위치가 이상함)
@@ -114,7 +118,7 @@ export class GraphicSystem {
       image.src = imageSrc
       this.cacheImage.set(imageSrc, image)
 
-      return this.cacheImage.get(imageSrc, image)
+      return this.cacheImage.get(imageSrc)
     }
   }
 
@@ -180,7 +184,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * @param {number} value 0 ~ 1 사이의 값 (0: 투명, 1: 불투명), 이 이외는 무시
    */
   setAlpha (value = 1) {
-    if (value >= 0 && value <= 1) {
+    if (this.context != null && value >= 0 && value <= 1) {
       this.context.globalAlpha = value
     }
   }
@@ -238,6 +242,10 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * 이 함수에서는 설정값을 조절할 수 없습니다. 해당 값을 변경하려면 setFlip, setRotate, setAlpha를 사용해주세요.
    * 
    * graphicSystem 내부에서 사용하는 함수이므로, 직접적으로 이 함수를 호출하면 안됩니다.
+   * @param {number} x
+   * @param {number} y 
+   * @param {number} width
+   * @param {number} height
    */
   canvasTransform (x, y, width, height) {
     this.context.save() // 나중에 캔버스의 상태를 복원하기 위해 현재 상태를 저장합니다.
@@ -300,6 +308,8 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * 이 함수를 실행하면, flip과 rotateDegree의 값은 0으로 변경됩니다. (이후에 실행되는 회전 및 변형을 방지하기 위해서)
    */
   restoreTransform () {
+    if (this.context == null) return
+
     this.context.restore()
     this.setFlipDegreeAlpha()
   }

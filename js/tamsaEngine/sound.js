@@ -75,7 +75,10 @@ export class SoundSystem {
     })
 
 
-    /** 엔진에서 테스트 용도로 사용하는 파일의 경로: 단, 바이오스 기능을 실행하기 전까지 해당 파일은 다운로드 하지 않습니다. */
+    /** 
+     * 엔진에서 테스트 용도로 사용하는 파일의 경로: 단, 바이오스 기능을 실행하기 전까지 해당 파일은 다운로드 하지 않습니다. 
+     * @type {Object}
+     * */
     this.testFileSrc = {
       soundtest: resourceSrc + 'soundeffect.wav',
       testMusicMp3: resourceSrc + '1141sub2[new] - track2 - 2011.12.21.mp3',

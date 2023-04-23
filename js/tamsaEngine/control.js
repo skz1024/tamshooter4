@@ -192,7 +192,7 @@ class TouchButton {
    * 이 함수를 사용하면 내부에 이미지 태그까지 포함된 채로 div 태그를 만들어줍니다.
    * @param {string} width 너비, 반드시 문자열로 입력해야 합니다. css값을 넣어야 합니다.
    * @param {string} height 높이, 반드시 문자열로 입력해야 합니다. css값을 넣어야 합니다.
-   * @param {{left: string, right: string, top: string, bottom: string}} arrowObject 각 포지션에 따른, 위치값(css 값) 
+   * @param {{left: string | null, right: string | null, top: string | null, bottom: string | null}} arrowObject 각 포지션에 따른, 위치값(css 값) 
    * @param {string} imageSrc 이미지의 경로
    */
   createButton (width, height, arrowObject, imageSrc) {
@@ -507,18 +507,7 @@ export class ControlSystem {
     START: 0, SELECT: 1, SYSTEM: 2,
     LEFT: 3, RIGHT: 4, UP: 5, DOWN: 6,
     A: 7, B: 8, X: 9, Y: 10, L1: 11, L2: 12, R1: 13, R2: 14,
-    ESC: 15, F2: 16,
-  }
-
-  /** 
-   * 해당 버튼의 이름 값. 이 값은 일반적으로는 사용하지 않습니다. 
-   * @deprecated
-   */
-  buttonText = {
-    START: 'start', SELECT: 'select', SYSTEM: 'system',
-    LEFT: 'left', RIGHT: 'right', UP: 'up', DOWN: 'down',
-    A: 'A', B: 'B', X: 'X', Y: 'Y', L1: 'L1', L2: 'L2', R1: 'R1', R2: 'R2',
-    DEL: 'DEL', F2: 'F2'
+    ESC: 15, DEL: 16,
   }
 
   /** 키바인드맵(keybindmap) 의 기본값 */
@@ -526,7 +515,7 @@ export class ControlSystem {
     'Enter', 'Shift', 'unused', 
     'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
     'z', 'x', 'c', 'v', 'a', 's', 'd', 'f',
-    'Escape', 'F2']
+    'Escape', 'Delete']
 
   ERROR_MESSAGE_BUTTON_OUT_OF_INDEX = 
     '잘못된 버튼의 인덱스가 입력되었습니다. 가능하면 buttonSystem 클래스 내부에 있는 상수 값을 인덱스로 사용하세요.'
