@@ -501,8 +501,8 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
       const image = this.getCacheImage(imageSrc)
       if (image == null) return
 
-      const BITMAP_WIDTH = wordWidth
-      const BITMAP_HEIGHT = wordHeight
+      const BITMAP_WIDTH = baseWordWidth
+      const BITMAP_HEIGHT = baseWordHeight
   
       // 변형이 확인된경우, 캔버스를 변형하고 출력좌표를 변경합니다.
       if (this.checkTransform()) {
@@ -517,11 +517,11 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
       for (let i = 0; i < inputNumber.length; i++) {
         const word = Number(inputNumber.charAt(i))
         this.context.drawImage(
-          image, 
+          image,
           BITMAP_WIDTH * word, 
           0, 
-          BITMAP_WIDTH - 1, // 1을 빼는 이유는 확대/축소 했을 때 안티에일러싱 효과로 인해 잘못된 선이 출력되는걸 막기 위함
-          BITMAP_HEIGHT - 1, 
+          BITMAP_WIDTH - 1, // 1을 빼는 이유는 확대/축소 했을 때 안티에일러싱 효과로 인해 잘못된 선이 출력되는걸 막기 위함 (보류됨)
+          BITMAP_HEIGHT, // - 1, 
           x + (i * wordWidth), 
           y, 
           wordWidth - Math.floor(wordWidth / BITMAP_WIDTH), // 일부 길이 값을 빼는것은 확대/축소 했을 때 정확한 출력을 보정하기 위함

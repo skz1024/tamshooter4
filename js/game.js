@@ -1,3 +1,5 @@
+//@ts-check
+
 import { imageSrc } from "./imageSrc.js"
 import { soundSrc } from "./soundSrc.js"
 import { TamsaEngine } from "./tamsaEngine/tamsaEngine.js"
@@ -8,10 +10,48 @@ import { TamsaEngine } from "./tamsaEngine/tamsaEngine.js"
 /** tamshooter4 게임 변수입니다. */
 export let game = new TamsaEngine('tamshooter4', 800, 600, 'js/tamsaEngine/', 60)
 
+class StatLineText {
+  /** 새로운 스탯라인 텍스트 생성 */
+  constructor () {
+    /** 텍스트 */ this.text = ''
+    /** 그라디언트 진행도를 표시할 기준값. 없으면 0 */ this.value = 0
+    /** 그라디언트 진행도를 표시할 최대값, 없으면 0 */ this.valueMax = 0
+    /** 색깔 A */ this.colorA = ''
+    /** 색깔 B(이것을 넣으면 그라디언트 효과 적용) */ this.colorB = ''
+  }
+
+  /**
+   * stat 시스템에 출력할 정보를 입력합니다. (이 함수는 tamshooter4의 statLineText랑 동일합니다. 
+   * 다만 전역적으로 사용하기 위해 이 함수를 새로 만들었습니다.)
+   * 
+   * 그리고 tamshooter의 gameSystem은 gameVar에 있는 값을 간접 참조해 stat 시스템의 정보를 출력합니다.
+   * @param {string} text 표시할 텍스트
+   * @param {number} value 그라디언트 진행도를 표시할 기준값. 없으면 0
+   * @param {number} valueMax 그라디언트 진행도를 표시할 최대값, 없으면 0
+   * @param {string} colorA 색깔 A
+   * @param {string} colorB 색깔 B(이것을 넣으면 그라디언트 효과 적용)
+   */
+  setStatLineText(text, value, valueMax, colorA, colorB) {
+    this.text = text
+    this.value = value
+
+    this.valueMax = valueMax < value ? value : valueMax // valueMax가 value 보다 작으면 안됩니다.
+    this.colorA = colorA
+    this.colorB = colorB
+  }
+}
+
 /** tamshooter4 게임에서 사용하는 공통 함수 */
 export class gameFunction {
   /** 숫자를 디지털 이미지의 형태로 출력해주는 함수 */
   static digitalDisplay = game.graphic.createCustomBitmapDisplay(imageSrc.system.digitalFontSmall, 12, 18)
+}
+
+/** tamshooter4 게임에서 사용하는 공통 변수 */
+export class gameVar {
+  /** 스탯 텍스트 0번째 라인에 작성되는 문자 (영어, 숫자, 일부 기호만 가능) */
+  static statLineText1 = new StatLineText()
+  static statLineText2 = new StatLineText()
 }
 
 let digitalDisplay = gameFunction.digitalDisplay
@@ -150,8 +190,17 @@ export class userSystem {
   /**
    * 유저의 playTime을 수정하는 함수.
    * user.playTime.setData() 랑 동일하지만, user에서 직접 수정하는게 더 직관적이라고 생각합니다.
+   * 
+   * 참고: string 값을 넣어도 상관이 없지만. 이 경우 Number로 변환됩니다. (localStoarge 저장용도라 형변환하기 귀찮음.)
+   * @param {number | string} hour 시간
+   * @param {number | string} minute 분
+   * @param {number | string} second 초
    */
   static setPlayTime (hour, minute, second) {
+    if (typeof hour === 'string') hour = Number(hour)
+    if (typeof minute === 'string') minute = Number(minute)
+    if (typeof second === 'string') second = Number(second)
+
     this.playTime.setData(hour, minute, second)
   }
 
@@ -320,7 +369,7 @@ export class userSystem {
     const EXP_COLORB = ['#CF8BF3', '#4A00E0', '#3c1053']
 
     // stat image
-    game.graphic.imageDisplay(statImage, statImageX, statImageY)
+    game.graphic.imageView(statImage, statImageX, statImageY)
 
 
     // skill display

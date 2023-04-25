@@ -28,7 +28,7 @@ import { ID } from './dataId.js'
 export class tamshooter4Data {
   /**
    * 플레이어가 사용하는 플레이어무기 객체 (무기 객체랑 다릅니다.)
-   * @type {Map}
+   * @type {Map<number, PlayerWeaponData>}
    */
   static playerWeapon = dataExportPlayerWeapon
 
@@ -53,7 +53,7 @@ export class tamshooter4Data {
 
   /**
    * 플레이어가 사용하는 스킬 객체
-   * 
+   * @type {Map<number, PlayerSkillData>}
    */
   static playerSkill = dataExportPlayerSkill
 
@@ -78,7 +78,7 @@ export class tamshooter4Data {
 
   /**
    * 무기 객체를 얻어옵니다.
-   * @type {Map}
+   * @type {Map<number, WeaponData>}
    */
   static weapon = dataExportWeapon
 
@@ -99,7 +99,7 @@ export class tamshooter4Data {
 
   /**
    * 적 객체
-   * @type {Map}
+   * @type {Map<number, EnemyData>}
    */
   static enemy = dataExportEnemy
 

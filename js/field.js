@@ -1,18 +1,17 @@
+//@ts-check
 'use strict'
 
 import { tamshooter4Data } from './data.js'
 import { CustomEditEffect, CustomEffect, EffectData } from './dataEffect.js'
 import { EnemyBulletData, EnemyData } from './dataEnemy.js'
-import { FieldData } from './dataField.js'
+import { DelayData, FieldData } from './dataField.js'
 import { ID } from './dataId.js'
 import { PlayerSkillData, PlayerWeaponData } from './dataPlayer.js'
 import { RoundData } from './dataRound.js'
 import { WeaponData } from './dataWeapon.js'
 import { imageDataInfo, imageSrc } from './imageSrc.js'
 import { soundSrc } from './soundSrc.js'
-import { gameSystem } from './tamshooter4.js'
-import { userSystem } from './game.js'
-import { game, gameFunction } from "./game.js"
+import { gameVar, userSystem, game, gameFunction } from './game.js'
 
 let digitalDisplay = gameFunction.digitalDisplay
 
@@ -77,18 +76,10 @@ class DamageObject {
   display () {
     if (!this.isUsing) return
 
-    const IMAGE = imageSrc.system.damageFont
-    const NUMBER_WIDTH = 12
-    const NUMBER_HEIGHT = 12
-    const WIDTH = 10
-    const HEIGHT = 12
-    const attackText = this.attack + ''
-    for (let i = 0; i < attackText.length; i++) {
-      const number = attackText.charAt(i)
-      const outputX = this.x + (WIDTH * i)
-      game.graphic.imageDisplay(IMAGE, number * NUMBER_WIDTH, 0, NUMBER_WIDTH, NUMBER_HEIGHT, outputX, this.y, WIDTH, HEIGHT)
-    }
+    DamageObject.displayNumber(this.attack + '', this.x, this.y, 8, 8)
   }
+
+  static displayNumber = game.graphic.createCustomNumberDisplay(imageSrc.system.damageFont, 12, 10)
 }
 
 /**
@@ -102,16 +93,39 @@ class PlayerObject extends FieldData {
     x: 0, y: 0, width: 40, height: 20, frame: 3
   }
 
+  /**
+   * @typedef {{skill: PlayerSkillData | null, id: number, coolTimeFrame: number, repeatCount: number, delayCount: number}} SkillSlot 플레이어가 사용하는 스킬 슬롯의 오브젝트 구조
+   * @typedef {{weapon: PlayerWeaponData | null, id: number, delayCount: number}} WeaponSlot 무기 슬롯 (총 5개가 있으며, 0 ~3번 슬롯은 유저가 정한 무기를 사용하고, 4번 슬롯은 무기를 사용하지 않는 슬롯입니다.)
+   */
+
   constructor () {
-    super('player', 0, 300, 200)
+    super() // 'player', 0, 300, 200
+    this.objectType = 'player'
     this.width = this.playerImageData.width
     this.height = this.playerImageData.height
-  }
 
-  /**
-   * @typedef {{skill: PlayerSkillData, id: number, coolTimeFrame: number, repeatCount: number, delayCount: number}} SkillSlot 플레이어가 사용하는 스킬 슬롯의 오브젝트 구조
-   * @typedef {{weapon: PlayerWeaponData, id: number, delayCount: number}} WeaponSlot 무기 슬롯 (총 5개가 있으며, 0 ~3번 슬롯은 유저가 정한 무기를 사용하고, 4번 슬롯은 무기를 사용하지 않는 슬롯입니다.)
-   */
+    // 플레이어 전용 변수
+    // 일부 변수의 설명은 init 부분에 적혀있습니다. (참고: init함수는 다른 이름으로도 (initSkill, initWeapon등...) 여러개 있음.)
+    this.shield = 0
+    this.shieldMax = 0
+    this.shieldRecovery = 0
+    this.attackDelay = new DelayData(0)
+    this.attackDelayCount = 0
+    this.debug = false
+    this.dieAfterDelayCount = 0
+
+    this.damageEnimationCount = 0
+    this.levelupEnimationCount = 0
+    this.currentLevel = 0
+
+    this.weaponSlotNumber = 0
+    this.playerSubWeaponDelayCount = 0
+
+    /** @type {SkillSlot[]} */ this.skillSlotA = []
+    /** @type {SkillSlot[]} */ this.skillSlotB = []
+    /** @type {WeaponSlot[]} */ this.weaponSlot = []
+    /** @type {WeaponSlot} */ this.subWeaponSlot = {weapon: null, id: 0, delayCount: 0}
+  }
 
   /**
    * 플레이어 정보 초기화 함수:
@@ -120,10 +134,8 @@ class PlayerObject extends FieldData {
    * 따라서, 이 함수는 보통 roundStart에서 호출합니다.
    */
   init () {
-    this.shield = 0
-    this.shieldMax = 0
     this.shieldRecovery = 0
-    this.attackDelay = 0
+    this.attackDelay.count = 0
     this.attackDelayCount = 0
     this.debug = false
     this.dieAfterDelayCount = 0
@@ -179,19 +191,20 @@ class PlayerObject extends FieldData {
     }
 
     /**
-     * 플레이어의 무기 슬롯 번호
+     * 플레이어의 무기 슬롯 번호, 기본값은 0
      */
     this.weaponSlotNumber = 0
-
     
     // 무기 슬롯 데이터 입력합니다.
     for (let i = 0; i < this.weaponSlot.length; i++) {
       let getClass = tamshooter4Data.getPlayerWeapon(this.weaponSlot[i].id)
+      //@ts-expect-error
       this.weaponSlot[i].weapon = getClass != null ? new getClass() : null
     }
 
     // 서브 웨폰
     let subWeaponClass = tamshooter4Data.getPlayerWeapon(this.subWeaponSlot.id)
+    //@ts-expect-error
     this.subWeaponSlot.weapon = subWeaponClass != null ? new subWeaponClass() : null
 
     /** 서브 웨폰 딜레이 */
@@ -237,12 +250,19 @@ class PlayerObject extends FieldData {
       const getSkillB = tamshooter4Data.getPlayerSkill(getIdB)
 
       // 널체크와 동시에 클래스 인스턴스 생성 (null일경우 생성하지 않음.)
+      //@ts-expect-error 
       this.skillSlotA[i].skill = getSkillA != null ? new getSkillA() : null
+      //@ts-expect-error
       this.skillSlotB[i].skill = getSkillB != null ? new getSkillB() : null
     }
   }
 
-  damageSoundPlay (shieldDamage, hpDamage) {
+  /**
+   * 플레이어가 데미지를 받으면 사운드를 출력합니다.
+   * @param {number} shieldDamage 쉴드 데미지
+   * @param {number} hpDamage 체력 데미지
+   */
+  damageSoundPlay (shieldDamage = 0, hpDamage = 0) {
     const LOW_DAMAGE = 2
     const MIDDLE_DAMAGE = 15
     const HIGH_DAMAGE = 30
@@ -269,7 +289,12 @@ class PlayerObject extends FieldData {
     }
   }
 
-  damageEnimationSet (shieldDamage, hpDamage) {
+  /**
+   * 플레이어가 데미지를 받았을 때, 에니메이션을 출력합니다.
+   * @param {number} shieldDamage 쉴드 데미지
+   * @param {number} hpDamage 체력 데미지
+   */
+  damageEnimationSet (shieldDamage = 0, hpDamage = 0) {
     let damageFrame = (shieldDamage * 2) + (hpDamage * 4)
     if (damageFrame > 180) {
       damageFrame = 180
@@ -281,8 +306,12 @@ class PlayerObject extends FieldData {
     userSystem.setDamageWarningFrame(damageFrame)
   }
 
-  addDamage (damage) {
-    if (this.isDied || damage === 0 || damage == null) return
+  /**
+   * 플레이어가 받은 데미지를 추가합니다. (플레이어가 죽거나 데미지가 없으면 무효)
+   * @param {number} damage 
+   */
+  addDamage (damage = 0) {
+    if (this.isDied || damage === 0) return
 
     let hpDamage = 0
     let shieldDamage = 0
@@ -310,7 +339,8 @@ class PlayerObject extends FieldData {
     this.damageEnimationSet(shieldDamage, hpDamage)
   }
 
-  addExp (score) {
+  /** 플레이어에게 경험치를 추가합니다. */
+  addExp (score = 0) {
     userSystem.plusExp(score)
   }
 
@@ -329,6 +359,7 @@ class PlayerObject extends FieldData {
     this.processDie()
   }
 
+  /** 플레이어가 레벨업을 했는지 확인 */
   processLevelupCheck () {
     if (this.currentLevel != userSystem.getPlayerObjectData().lv) {
       this.currentLevel = userSystem.getPlayerObjectData().lv
@@ -340,6 +371,7 @@ class PlayerObject extends FieldData {
     }
   }
 
+  /** 플레이어가 죽었는지 확인 */
   processDie () {
     if (this.hp <= 0 && !this.isDied) {
       this.isDied = true
@@ -351,14 +383,17 @@ class PlayerObject extends FieldData {
     }
   }
 
-  useSkill (skillPosition) {
-    // 스킬 클래스(데이터)가 없거나, 스킬 위치가 없으면 함수를 실행하지 않음.
-    if (skillPosition == null) return
-    if (this.usingSkillSlotA && this.skillSlotA[skillPosition].skill == null) return
-    if (!this.usingSkillSlotA && this.skillSlotB[skillPosition].skill == null) return
-
+  /**
+   * 스킬을 사용합니다.
+   * @param {number} skillPosition 스킬의 위치(번호 0 ~ 3)
+   * @returns 
+   */
+  useSkill (skillPosition = 0) {
     // 스킬 슬롯에 따라 해당 스킬을 찾기
     let targetSkill = this.usingSkillSlotA ? this.skillSlotA[skillPosition] : this.skillSlotB[skillPosition]
+
+    // 스킬 클래스(데이터)가 없으면 함수를 실행하지 않음.
+    if (targetSkill.skill == null) return
 
     // 쿨타임 계산해서, 쿨타임이 남아있으면, 무시
     if (targetSkill.coolTimeFrame > 0) return
@@ -561,6 +596,7 @@ class PlayerObject extends FieldData {
   /**
    * player 데이터, 이 저장 데이터는 fieldData와 공식이 다릅니다.
    */
+  //@ts-expect-error
   getSaveData () {
     return {
       // 좌표 값
@@ -658,6 +694,7 @@ class PlayerObject extends FieldData {
     // 무기 슬롯 데이터 입력합니다.
     for (let i = 0; i < this.weaponSlot.length; i++) {
       let getClass = tamshooter4Data.getPlayerWeapon(this.weaponSlot[i].id)
+      //@ts-expect-error
       this.weaponSlot[i].weapon = getClass != null ? new getClass() : null
     }
   }
@@ -695,7 +732,10 @@ class PlayerObject extends FieldData {
       const getSkillB = tamshooter4Data.getPlayerSkill(getIdB)
 
       // 널체크와 동시에 클래스 인스턴스 생성 (null일경우 생성하지 않음.)
+      // @ts-expect-error
       this.skillSlotA[i].skill = getSkillA != null ? new getSkillA() : null
+
+      // @ts-expect-error
       this.skillSlotB[i].skill = getSkillB != null ? new getSkillB() : null
     }
   }
@@ -753,7 +793,7 @@ export class fieldState {
 
   /**
    * 랜덤한 적 객체를 얻습니다. 다만, 이 객체가 삭제 예정이라면 함수의 리턴값은 null이 됩니다.
-   * @returns {EnemyData} 적 오브젝트
+   * @returns {EnemyData | null} 적 오브젝트, 없으면 null
    */
   static getRandomEnemyObject () {
     if (this.enemyObject.length === 0) return null
@@ -769,13 +809,18 @@ export class fieldState {
   }
 
   /**
+   * @param {number} typeId 타입의 id
+   * @param {number} x
+   * @param {number} y
    * @param {number} attack 공격력 (반드시 정수여야 함. Math.floor 연산 회피를 위해 여기서는 검사하지 않음.)
+   * @param {any[]} addOption 추가옵션 (무기 클래스에 추가로 입력할 ...매개변수)
    */
   static createWeaponObject (typeId, x = 0, y = 0, attack = 1, ...addOption) {
     const GetClass = tamshooter4Data.getWeapon(typeId)
     if (GetClass == null) return
-
+    
     /** @type {WeaponData} */
+    //@ts-expect-error
     const inputData = new GetClass(addOption)
     inputData.createId = this.getNextCreateId()
     inputData.id = typeId
@@ -790,6 +835,7 @@ export class fieldState {
     if (GetClass == null) return
 
     /** @type {EnemyData} */
+    //@ts-expect-error
     const inputData = new GetClass(option)
     inputData.createId = this.getNextCreateId()
     inputData.id = typeId
@@ -812,6 +858,7 @@ export class fieldState {
     if (GetClass == null) return
 
     /** @type {EnemyData} */
+    //@ts-expect-error
     const inputData = new GetClass(option)
     inputData.createId = this.getNextCreateId()
     inputData.id = typeId
@@ -830,7 +877,8 @@ export class fieldState {
    * 
    * number는 더이상 사용하지 않습니다.
    *  
-   * @returns {EffectData | null} 리턴된 이펙트를 이용해서 일시적으로 객체를 조작할 수 있음.
+   * @param {any[]} option
+   * @returns {EffectData | null | undefined} 리턴된 이펙트를 이용해서 일시적으로 객체를 조작할 수 있음.
    */
   static createEffectObject (typeId, x = 0, y = 0, repeatCount = 0, beforeDelay = 0, ...option) {
     if (typeof typeId === 'number') {
@@ -838,6 +886,7 @@ export class fieldState {
       if (GetClass == null) return
   
       /** @type {EffectData} */
+      //@ts-expect-error
       const inputData = new GetClass(option)
       inputData.createId = this.getNextCreateId()
       inputData.id = typeId
@@ -851,6 +900,7 @@ export class fieldState {
       // 만약 생성자(클래스)가 들어왔다면, 해당 클래스의 인스턴스를 생성합니다.
       // 클래스가 들어올경우 함수 타입으로 들어옵니다. 그래서 타입이 함수인지를 구분합니다.
       if (typeof typeId === 'function') {
+        //@ts-expect-error
         typeId = new typeId()
       }
 
@@ -926,9 +976,9 @@ export class fieldState {
     this.playerObject.process()
 
     if (this.playerObject.y > game.graphic.CANVAS_HEIGHT - 80) {
-      gameSystem.userSystem.hideUserStat()
+      userSystem.hideUserStat()
     } else {
-      gameSystem.userSystem.showUserStat()
+      userSystem.showUserStat()
     }
   }
 
@@ -947,7 +997,7 @@ export class fieldState {
   static processEnemyObject () {
     for (let i = 0; i < this.enemyObject.length; i++) {
       const currentObject = this.enemyObject[i]
-      currentObject.process(currentObject)
+      currentObject.process()
       currentObject.fieldProcess()
 
       if (currentObject.isDeleted) {
@@ -1066,7 +1116,7 @@ export class fieldState {
 export class fieldSystem {
   /**
    * 현재 진행되고 있는 라운드
-   * @type {RoundData}
+   * @type {RoundData | null}
    */
   static round = null
 
@@ -1089,12 +1139,21 @@ export class fieldSystem {
   static fieldScore = 0
 
   /** 
-   * fieldSystem에서 사용하는 특정 메세지 객체 
+   * 다른 객체에서 이 객체를 참조하는 도중에 전달되는 메세지 값  
    * 
+   * 현재는 쉼표를 기준으로 split함.
+   * 
+   * (다만 규칙은 정해진게 없음.)
    */
-  static postMessage = ''
+  static message = ''
+  
+  /** field에서 사용하는 메세지의 리스트 */
   static messageList = {
-    FIELD_EXIT: 'field exit'
+    /** gameSystem의 stateId를 STATE_FILED로 변경 요청합니다. */ STATE_FIELD: 'state:field',
+    /** gameSystem의 stateId를 STATE_MAIN로 변경 요청합니다. */ STATE_MAIN: 'state:main',
+    /** gameSystem의 option중 musicOn의 옵션을 변경 요청합니다. */ CHANGE_MUSICON: 'change:musicOn',
+    /** gameSystem의 option중 soundOn의 옵션을 변경 요청합니다. */ CHANGE_SOUNDON: 'change:soundOn',
+    /** gameSystem의 */ INPUT_TEXT_LINE1: 'input1, '
   }
 
   static requestAddScore (score) {
@@ -1110,6 +1169,7 @@ export class fieldSystem {
     const RoundClass = tamshooter4Data.getRound(roundId)
     if (RoundClass == null) return
 
+    //@ts-expect-error
     // 라운드 데이터
     let getObject = new RoundClass()
     getObject.id = roundId // 라운드의 id를 입력해야 합니다. (다른곳에서는 입력하지 않음.)
@@ -1121,13 +1181,18 @@ export class fieldSystem {
    * 라운드를 시작합니다. 필드 초기화 작업 및 라운드 설정 작업을 진행합니다.
    * 다만, 라운드가 없을경우, 라운드는 시작하지 않습니다.
    */
-  static roundStart (roundId) {
+  static roundStart (roundId = 0) {
     this.round = this.createRound(roundId)
-    if (this.round == null) return
+    if (this.round == null) {
+      this.message = this.messageList.STATE_MAIN
+      return
+    }
 
     // 라운드가 시작되는 순간, 게임 상태가 필드로 변경되고, 게임이 시작됩니다.
     // 이 과정에서 필드 데이터에 대해 초기화가 진행됩니다.
-    gameSystem.stateId = gameSystem.STATE_FIELD
+    
+
+    this.message = this.messageList.STATE_FIELD
     fieldState.allObjectReset()
     this.stateId = this.STATE_NORMAL
     this.cursor = 0
@@ -1148,7 +1213,7 @@ export class fieldSystem {
    * 다만 게임창을 닫을 경우에는 현재 상태가 임시 저장되기 때문에 라운드가 끝나지 않음.
    */
   static roundExit () {
-    gameSystem.stateId = gameSystem.STATE_MAIN
+    this.message = this.messageList.STATE_MAIN
   }
 
   /**
@@ -1184,12 +1249,17 @@ export class fieldSystem {
       switch (this.cursor) {
         case 0:
           this.stateId = this.STATE_NORMAL // pause 상태 해제
+          if (this.round != null) { // round 음악 다시 재생
+            this.round.musicPlay()
+          }
           break
         case 1:
-          game.sound.soundOn = !game.sound.soundOn
+          this.message = this.messageList.CHANGE_SOUNDON
+          // game.sound.soundOn = !game.sound.soundOn
           break
         case 2:
-          game.sound.musicOn = !game.sound.musicOn
+          this.message = this.messageList.CHANGE_MUSICON
+          // game.sound.musicOn = !game.sound.musicOn
           break
         case 3:
           this.stateId = this.STATE_EXIT // 라운드를 나감
@@ -1212,7 +1282,7 @@ export class fieldSystem {
 
   static processRoundClear () {
     // 라운드 클리어 사운드 재생 (딜레이카운트가 0일때만 재생해서 중복 재생 방지)
-    if (this.exitDelayCount === 0) {
+    if (this.exitDelayCount === 0 && this.round != null) {
       game.sound.play(soundSrc.system.systemRoundClear)
       userSystem.plusExp(this.round.clearBonus)
       this.totalScore = this.fieldScore + this.round.clearBonus
@@ -1246,6 +1316,7 @@ export class fieldSystem {
 
   static processNormal () {
     const buttonPause = game.control.getButtonInput(game.control.buttonIndex.START)
+    if (this.round == null) return
 
     if (buttonPause) {
       game.sound.play(soundSrc.system.systemPause)
@@ -1259,7 +1330,8 @@ export class fieldSystem {
     fieldState.process()
     this.round.process()
 
-    gameSystem.setStatLineText(1, this.getFieldDataString(), this.round.currentTime, this.round.finishTime, '#D5F5E3' ,'#33ff8c')
+    gameVar.statLineText1.text = ''
+    gameVar.statLineText2.setStatLineText(this.getFieldDataString(), this.round.currentTime, this.round.finishTime, '#D5F5E3' ,'#33ff8c')
   }
 
   static process () {
@@ -1267,24 +1339,23 @@ export class fieldSystem {
 
     switch (this.stateId) {
       case this.STATE_PAUSE:
-        this.processPause()
         game.sound.musicPause()
+        this.processPause()
         break
       case this.STATE_ROUND_CLEAR:
-        this.processRoundClear()
         game.sound.musicStop()
+        this.processRoundClear()
         break
       case this.STATE_GAME_OVER:
-        this.processGameOver()
         game.sound.musicStop()
+        this.processGameOver()
         break
       case this.STATE_EXIT:
-        this.processExit()
         game.sound.musicStop()
+        this.processExit()
         break
       default:
         this.processNormal()
-        game.sound.musicPlay()
         break
     }
   }
@@ -1328,8 +1399,8 @@ export class fieldSystem {
     const SELECT_Y = ARROW_Y
     const SCORE_X = (game.graphic.CANVAS_WIDTH / 2) - 200
     const SCORE_Y = MENU_Y + imageDataMenu.height
-    const imageDataSoundOn = game.sound.soundOn ? imageDataChecked : imageDataUnchecked // 사운드의 이미지데이터는 코드 길이를 줄이기 위해 체크/언체크에 따른 이미지 데이터를 대신 입력함
-    const imageDataMusicOn = game.sound.musicOn ? imageDataChecked : imageDataUnchecked
+    const imageDataSoundOn = false ? imageDataChecked : imageDataUnchecked // 사운드의 이미지데이터는 코드 길이를 줄이기 위해 체크/언체크에 따른 이미지 데이터를 대신 입력함
+    const imageDataMusicOn = false ? imageDataChecked : imageDataUnchecked
 
     game.graphic.imageDisplay(image, imageDataPause.x, imageDataPause.y, imageDataPause.width, imageDataPause.height, MID_X, MID_Y, imageDataPause.width, imageDataPause.height)
     game.graphic.imageDisplay(image, imageDataMenu.x, imageDataMenu.y, imageDataMenu.width, imageDataMenu.height, MENU_X, MENU_Y, imageDataMenu.width, imageDataMenu.height)
@@ -1397,7 +1468,7 @@ export class fieldSystem {
     const currentTime = this.round != null ? this.round.currentTime : '999'
     const finishTime = this.round != null ? this.round.finishTime : '999'
     const plusTime = this.round != null ? this.round.plusTime : '0'
-    const meterMultiple = currentTime / finishTime
+    const meterMultiple = Number(currentTime) / Number(finishTime)
     game.graphic.fillRect(LAYER_X, LAYER_Y, game.graphic.CANVAS_WIDTH_HALF, HEIGHT, 'silver')
     game.graphic.fillRect(LAYER_X, LAYER_Y, game.graphic.CANVAS_WIDTH_HALF * meterMultiple, HEIGHT, '#D5F5E3')
     digitalDisplay(`R:${roundText}, T:${currentTime}/${finishTime} + ${plusTime}`, LAYER_X + 5, LAYER_DIGITAL_Y)
@@ -1471,12 +1542,16 @@ export class fieldSystem {
 
     for (let current of loadData.weapon) {
       let newData = fieldState.createWeaponObject(current.id, current.x, current.y, current.attack)
-      newData.setLoadData(current)
+      if (newData != null) {
+        newData.setLoadData(current)
+      }
     }
 
     for (let current of loadData.enemy) {
       let newData = fieldState.createEnemyObject(current.id, current.x, current.y)
-      newData.setLoadData(current)
+      if (newData != null) {
+        newData.setLoadData(current)
+      }
     }
 
     // for (let current of loadData.enemyBullet) {

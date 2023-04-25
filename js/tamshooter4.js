@@ -1,22 +1,20 @@
-import { imageSrc, imageDataInfo } from "./imageSrc.js";
+//@ts-check
+
+import { imageSrc, imageDataInfo, ImageDataObject } from "./imageSrc.js";
 import { dataExportStatPlayerSkill, dataExportStatWeapon, dataExportStatPlayerWeapon } from "./dataStat.js";
 import { soundSrc } from "./soundSrc.js";
 import { ID } from "./dataId.js";
-import { userSystem } from "./game.js";
+import { gameVar, userSystem } from "./game.js";
 import { fieldSystem } from "./field.js";
 import { game, gameFunction } from "./game.js";
 
 let digitalDisplay = gameFunction.digitalDisplay
-let totalFrame = 0
 
 game.process = () => {
   gameSystem.process()
 }
 game.display = () => {
-  totalFrame++
-  // if (totalFrame % 2 === 1) {
-    gameSystem.display()
-  // }
+  gameSystem.display()
 }
 
 class BoxObject {
@@ -30,7 +28,7 @@ class BoxObject {
    * @param {string} color Box의 색깔 (endColor를 사용할경우 그라디언트의 시작 색상)
    * @param {string} endColor Box의 그라디언트의 끝색깔, endColor가 null일경우 그라디언트 없음. 기본값 null
    */
-  constructor (x, y, width, height, text = '', color = 'silver', endColor = null, focusColor = 'blue') {
+  constructor (x, y, width, height, text = '', color = 'silver', endColor = '', focusColor = 'blue') {
     this.x = x
     this.y = y
     this.width = width
@@ -69,7 +67,7 @@ class BoxObject {
 
     if (this.color === '') return
     
-    if (this.endColor != null) {
+    if (this.endColor != '') {
       game.graphic.gradientDisplay(this.x + this.borderWidth, this.y + this.borderWidth, this.width - (this.borderWidth * 2), this.height - (this.borderWidth * 2), this.color, this.endColor)
     } else {
       game.graphic.fillRect(this.x + this.borderWidth, this.y + this.borderWidth, this.width - (this.borderWidth * 2), this.height - (this.borderWidth * 2), this.color)
@@ -116,9 +114,14 @@ class BoxObject {
  * 클릭 가능한 BoxObject지만, 이미지를 사용합니다.
  */
 class BoxImageObject extends BoxObject {
-  constructor (x, y, width, height, text, image, imageData) {
+  /**
+   * 새로운 박스 이미지 생성
+   * @param {string} imageSrc 이미지의 경로
+   * @param {ImageDataObject} imageData 이미지데이터
+   */
+  constructor (x = 0, y = 0, width = 0, height = 0, text = '', imageSrc = '', imageData) {
     super(x, y, width, height, text)
-    this.image = image
+    this.imageSrc = imageSrc
 
     /** @type {ImageDataObject} */ this.imageData = imageData
   }
@@ -126,8 +129,8 @@ class BoxImageObject extends BoxObject {
   displayBackGround () {
     super.displayBackGround()
 
-    if (this.image == null || this.imageData == null) return
-    game.graphic.imageDisplay(this.image, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height)
+    if (this.imageSrc == null || this.imageData == null) return
+    game.graphic.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height)
   }
 }
 
@@ -354,7 +357,7 @@ class MainSystem extends MenuSystem {
     this.menuList[this.MENU_OPTION] = new BoxImageObject(0, 300, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.option)
     this.menuList[this.MENU_DATA_SETTING] = new BoxImageObject(0, 350, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.data)
     this.menuList[this.MENU_ETC] = new BoxImageObject(0, 400, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.etc)
-    this.menuList[this.MENU_FULLSCREEN] = new BoxObject(0, 450, 400, 50, 'full screen', 'grey')
+    this.menuList[this.MENU_FULLSCREEN] = new BoxObject(0, 450, 400, 50, 'full screen(pc only, deprecated.)', 'grey')
 
     this.backgroundColor = ['#78b3f2', '#d2dff6']
   }
@@ -387,7 +390,6 @@ class MainSystem extends MenuSystem {
       case this.MENU_DATA_SETTING: gameSystem.stateId = gameSystem.STATE_DATA_SETTING; break
       case this.MENU_ETC: gameSystem.stateId = gameSystem.STATE_ETC; break
       case this.MENU_FULLSCREEN: this.requestFullScreen(); break
-      // case this.MENU_FULLSIZE: this.requestCanvasSize(); break
     }
 
     // 사운드 출력
@@ -406,10 +408,10 @@ class MainSystem extends MenuSystem {
         if (game.currentDevice === game.device.PC) {
           game.graphic.canvas.requestFullscreen()
         } else {
-          gameSystem.setStatLineText(1, 'MOBILE NOT USING THIS')
+          // gameSystem.setStatLineText(1, 'MOBILE NOT USING THIS')
         }
       } catch {
-        gameSystem.setStatLineText(1, 'NOT SUPPORTED FULL SCREEN')
+        // gameSystem.setStatLineText(1, 'NOT SUPPORTED FULL SCREEN')
       }
     }
   }
@@ -423,7 +425,7 @@ class MainSystem extends MenuSystem {
 
   display () {
     super.display()
-    game.graphic.imageDisplay(imageSrc.tamshooter4Title, 0, 0)
+    game.graphic.imageView(imageSrc.tamshooter4Title, 0, 0)
   }
 }
 
@@ -580,7 +582,6 @@ class OptionSystem extends MenuSystem {
     // 사운드 출력
     if (buttonInputLeft || buttonInputRight) {
       switch (this.cursorPosition) {
-        case this.MENU_MASTER_VOLUME:
         case this.MENU_SOUND_VOLUME:
           game.sound.play(soundSrc.system.systemCursor)
           break
@@ -599,7 +600,6 @@ class OptionSystem extends MenuSystem {
 
     // 사운드 출력
     switch (this.cursorPosition) {
-      case this.MENU_MASTER_VOLUME:
       case this.MENU_SOUND_VOLUME:
         game.sound.play(soundSrc.system.systemCursor)
         break
@@ -648,7 +648,7 @@ class OptionSystem extends MenuSystem {
             }
             break
           case 'number':
-            digitalDisplay(optionArray[i], this.menuList[i].x + this.menuList[i].width, this.menuList[i].y)
+            digitalDisplay(optionArray[i] + '', this.menuList[i].x + this.menuList[i].width, this.menuList[i].y)
             break
         }
       }
@@ -802,8 +802,8 @@ class RoundSelectSystem extends MenuSystem {
       ID.round.round1_4,
       ID.round.round1_5,
       ID.round.round1_6,
-      null,
-      null,
+      ID.round.UNUSED,
+      ID.round.UNUSED,
       ID.round.round1_test
     ]
 
@@ -816,6 +816,11 @@ class RoundSelectSystem extends MenuSystem {
         game.sound.play(soundSrc.system.systemSelect)
       }
     } else if (this.cursorMode === this.CURSORMODE_SUB) {
+      // 없는 라운드 진행 불가능
+      if (roundTableId[this.cursorSubRound] === ID.round.UNUSED) return
+
+      // 라운드 설정 후 필드 진행
+      gameSystem.stateId = gameSystem.STATE_FIELD
       fieldSystem.roundStart(roundTableId[this.cursorSubRound])
       game.sound.play(soundSrc.system.systemEnter)
     }
@@ -900,7 +905,7 @@ class RoundSelectSystem extends MenuSystem {
 
   displayInfo () {
     game.graphic.strokeRect(400, 160, 400, 80, 'pink')
-    game.graphic.fillText('ROUND: ' + this.menuList[this.cursorPosition].text, 400, 160, 400)
+    game.graphic.fillText('ROUND: ' + this.menuList[this.cursorPosition].text, 400, 160)
   }
 }
 
@@ -1106,7 +1111,7 @@ class WeaponSelectSystem extends MenuSystem {
     /** 리스트 포지션의 최대 */ this.LIST_POSITION_MAX = 4
 
     for (let i = 10, index = 0; index < 50; i++, index++) {
-      this.menuList[i] = new BoxImageObject((index % 10) * 80, Math.floor(index / 10) * 40 + 40, 80, 40, '', imageSrc.system.weaponIcon, {x: (index % 10) * 40, y: Math.floor(index / 10) * 20, width: 40, height: 20})
+      this.menuList[i] = new BoxImageObject((index % 10) * 80, Math.floor(index / 10) * 40 + 40, 80, 40, '', imageSrc.system.weaponIcon, {x: (index % 10) * 40, y: Math.floor(index / 10) * 20, width: 40, height: 20, frame: 1})
     }
 
     for (let i = 60, index = 0; index < 4; i++, index++) {
@@ -1336,7 +1341,7 @@ class SkillSelectSystem extends WeaponSelectSystem {
     /** 모든 스킬의 슬롯 리스트 */ this.targetIdList = Array.from(dataExportStatPlayerSkill.keys())
     let menuText = ['<- back', 'prevPage', 'nextPage', 'help', 'slot1', 'slot2', 'slot3', 'slot4', 'slot5', 'preview']
     for (let i = 0; i < menuText.length; i++) {
-      this.menuList[i] = new BoxObject(80 * i, 0, 80, 40, menuText[i], 'yellow', null, 'darkblue')
+      this.menuList[i] = new BoxObject(80 * i, 0, 80, 40, menuText[i], 'yellow', '', 'darkblue')
     }
 
     /** 메뉴의 번호 끝값 (메뉴 개수만큼(최대 9번까지 허용)) */ this.NUM_END_MENU = menuText.length - 1
@@ -1354,7 +1359,7 @@ class SkillSelectSystem extends WeaponSelectSystem {
     for (let i = 10, index = 0; index < 50; i++, index++) {
       let xNumber = index % 10
       let yNumber = Math.floor(index / 10)
-      let imageData = {x: xNumber * iconWidth, y: yNumber * iconHeight, width: iconWidth, height: iconHeight}
+      let imageData = {x: xNumber * iconWidth, y: yNumber * iconHeight, width: iconWidth, height: iconHeight, frame: 1}
       this.menuList[i] = new BoxImageObject(xNumber * iconOutputWidth, yNumber * iconWidth + sectionArea, iconOutputWidth, iconWidth, '', imageSrc.system.skillIcon, imageData)
       this.menuList[i].borderColor = 'black'
       this.menuList[i].color = ''
@@ -1609,7 +1614,7 @@ class StatSystem {
   constructor () {
     /**
      * 해당 라인에 출력할 정보들입니다. 아무 정보가 없어도 배경색은 출력됩니다.
-     * @type {{text: number, backgroundColor: string, colorA: string, colorB: string, multiple: number}[]}
+     * @type {{text: string, backgroundColor: string, colorA: string, colorB: string, multiple: number}[]}
      */
     this.lineData = []
 
@@ -1875,19 +1880,29 @@ export class gameSystem {
       if (!saveFlag) return
   
       // 플레이 타임 불러오기: 저장 규칙을 모르겠으면, saveKey 객체 내에 있는 변수들의 설명을 참고
-      const playTime = localStorage.getItem(this.saveKey.playTime).split(',')
-      this.userSystem.setPlayTime(playTime[0], playTime[1], playTime[2])
+      const playTimeArray = localStorage.getItem(this.saveKey.playTime)
+      if (playTimeArray != null) {
+        const playTime = playTimeArray.split(',')
+        this.userSystem.setPlayTime(playTime[0], playTime[1], playTime[2])
+      }
   
       // 시작 날짜 및 시간 불러오기
-      const startDate = localStorage.getItem(this.saveKey.startDate).split(',')
-      this.userSystem.setStartDate(startDate[0], startDate[1], startDate[2], startDate[3], startDate[4], startDate[5])
+      const startDateArray = localStorage.getItem(this.saveKey.startDate)
+      if (startDateArray != null) {
+        const startDate = startDateArray.split(',')
+        this.userSystem.setStartDate(Number(startDate[0]), startDate[1], startDate[2], startDate[3], startDate[4], startDate[5])
+      }
   
       // 옵션 값 불러오기
       const optionValue = localStorage.getItem(this.saveKey.optionValue)
-      this.optionSystem.optionValue = JSON.parse(optionValue)
+      if (optionValue != null) {
+        this.optionSystem.optionValue = JSON.parse(optionValue)
+      }
   
       const userData = localStorage.getItem(this.saveKey.userData)
-      this.userSystem.setLoadData(userData)
+      if (userData != null) {
+        this.userSystem.setLoadData(userData)
+      }
   
       const fieldSaveData = localStorage.getItem(this.saveKey.fieldData)
       if (fieldSaveData != null) {
@@ -1936,27 +1951,55 @@ export class gameSystem {
       case this.STATE_MAIN: this.mainSystem.process(); break
       case this.STATE_OPTION: this.optionSystem.process(); break
       case this.STATE_ROUND_SELECT: this.roundSelectSystem.process(); break
-      case this.STATE_FIELD: this.fieldSystem.process(); break
       case this.STATE_DATA_SETTING: this.dataSettingSystem.process(); break
       case this.STATE_WEAPON_SELECT: this.weaponSelectSystem.process(); break
       case this.STATE_SKILL_SELECT: this.skillSelectSystem.process(); break
       case this.STATE_UPGRADE: this.upgradeSystem.process(); break
       case this.STATE_ETC: this.etcSystem.process(); break
+      case this.STATE_FIELD: this.fieldProcess(); break
     }
 
+    this.processStatLine()
     this.processSave()
     this.processLoad()
+  }
 
-    // 메인 화면 또는 옵션 화면일때만, 시간 표시
-    if (this.stateId === this.STATE_MAIN || this.stateId === this.STATE_OPTION) {
-      this.setStatLineText(0, 'fps: ' + game.currentFps)
-      this.setStatLineText(1, this.userSystem.getPlayTimeText())
-      this.userSystem.setSkillDisplayCooltimeZero()
-    } else if (this.stateId === this.STATE_FIELD) {
+  static fieldProcess () {
+    this.fieldSystem.process()
+    const messageList = this.fieldSystem.messageList
+    switch (this.fieldSystem.message) {
+      case messageList.CHANGE_MUSICON:
+        this.optionSystem.setOption(this.optionSystem.MENU_MUSIC)
+        break
+      case messageList.CHANGE_SOUNDON:
+        this.optionSystem.setOption(this.optionSystem.MENU_SOUND)
+        break
+      case messageList.STATE_MAIN:
+        this.stateId = this.STATE_MAIN
+        break
+      case messageList.STATE_FIELD:
+        this.stateId = this.STATE_FIELD
+    }
 
-    } else {
-      this.setStatLineText(0, '')
-      this.setStatLineText(1, '')
+    // 메세지는 처리된 후 지워져야 합니다.
+    this.fieldSystem.message = ''
+  }
+
+  static processStatLine () {
+    switch (this.stateId) {
+      case this.STATE_MAIN:
+      case this.STATE_OPTION:
+        gameVar.statLineText1.setStatLineText('fps: ' + game.currentFps)
+        gameVar.statLineText2.setStatLineText(this.userSystem.getPlayTimeText())
+        this.userSystem.setSkillDisplayCooltimeZero()
+        break
+      case this.STATE_FIELD:
+        // 필드에서는 필드 객체가 대신 이 값을 수정합니다.
+        break
+      default:
+        // 스탯라인 텍스트 지우기
+        gameVar.statLineText1.setStatLineText()
+        gameVar.statLineText2.setStatLineText()
     }
   }
 
@@ -1982,19 +2025,28 @@ export class gameSystem {
     }
 
     this.userSystem.display()
+    this.displayStatLine()
+  }
+
+  static displayStatLine () {
+    let line1 = gameVar.statLineText1
+    this.statSystem.setLineText(0, line1.text, line1.value, line1.valueMax, line1.colorA, line1.colorB)
+
+    let line2 = gameVar.statLineText2
+    this.statSystem.setLineText(1, line2.text, line2.value, line2.valueMax, line2.colorA, line2.colorB)
     this.statSystem.display()
   }
 
   /**
    * stat 시스템에 출력할 정보를 입력합니다. (StatSystem클래스의 setLineText 함수랑 동일합니다.)
-   * @param {number} lineIndex 라인의 번호(현재는 2번까지만 지원)
+   * @param {number} lineIndex 라인의 번호(현재는 0 ~ 1번까지만 지원)
    * @param {string} text 표시할 텍스트
    * @param {number} value 그라디언트 진행도를 표시할 기준값. 없으면 0 또는 null
    * @param {number} valueMax 그라디언트 진행도를 표시할 최대값, 없으면 0 또는 null
    * @param {string} colorA 색깔 A
    * @param {string} colorB 색깔 B(이것을 넣으면 그라디언트 효과 적용)
    */
-  static setStatLineText(lineIndex, text, value, valueMax, colorA, colorB) {
+  static setStatLineText(lineIndex, text = '', value = 0, valueMax = 0, colorA = '', colorB = colorA) {
     this.statSystem.setLineText(lineIndex, text, value, valueMax, colorA, colorB)
   }
 }

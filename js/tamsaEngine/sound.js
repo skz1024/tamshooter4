@@ -350,6 +350,18 @@ export class SoundSystem {
    */
   currentMusic = null
 
+  /** 음악 버퍼가 재생을 시작한 시간 */
+  musicBufferStartTime = 0
+
+  /** 현재 음악의 상태 (재생, 정지, 일시정지) */
+  currentMusicState = ''
+  musicStateList = {
+    PAUSE: 'paused',
+    STOP: 'stop',
+    PLAYING: 'playing',
+    NODATA: 'nodata'
+  }
+
   /**
    * 해당 사운드를 음악처럼 취급해서 재생합니다. (효과음은 play 함수를 사용해주세요.)
    * 이 함수를 사용할경우, 해당 음악 파일들은 모두 loop속성을 가지게됩니다.
@@ -363,9 +375,18 @@ export class SoundSystem {
    * @param {string | HTMLMediaElement} audioSrc 오디오의 경로 또는 오디오 객체 (버퍼는 사용불가, 대신 musicBuffer를 사용해주세요.)
    * @param {number} start 오디오의 시작 지점 (주의: 오디오가 교체되지 않으면 이 변수는 무시됩니다.)
    */
-  musicPlay (audioSrc, start = 0) {
+  musicPlay (audioSrc = '', start = 0) {
     let getMusic = null
     let getNode = null
+    
+    // 오디오의 경로가 지정되지 않으면 현재 음악을 다시 재생합니다.
+    if (audioSrc === '') {
+      if (this.currentMusic && this.currentMusic.paused) {
+        this.currentMusic.play()
+        this.currentMusicState = this.musicStateList.PLAYING
+      }
+      return
+    }
 
     // 음악 불러오기
     if (typeof audioSrc === 'number' || typeof audioSrc === 'string') {
@@ -392,6 +413,7 @@ export class SoundSystem {
       getMusic.loop = true
       if (getMusic.paused) {
         getMusic.play()
+        this.currentMusicState = this.musicStateList.PLAYING
       }
     }
   }
@@ -428,6 +450,7 @@ export class SoundSystem {
     this.musicStop() // 현재 재생중인 음악 정지
     newBuffer.start(this.audioContext.currentTime, start)
     this.currentMusic = newBuffer
+    this.musicBufferStartTime = this.audioContext.currentTime
   }
 
   /** 
@@ -509,6 +532,7 @@ export class SoundSystem {
     }
 
     this.currentMusic = null
+    this.currentMusicState = this.musicStateList.STOP
 
     // for (let i = 0; i < this.musicTrack.length; i++) {
     //   let currentMusic = this.musicTrack[i]
@@ -525,9 +549,43 @@ export class SoundSystem {
   musicPause () {
     if (this.currentMusic instanceof HTMLMediaElement) {
       this.currentMusic.pause()
+      this.currentMusicState = this.musicStateList.PAUSE
     } else if (this.currentMusic instanceof AudioBuffer) {
       this.currentMusic.stop()
       this.currentMusic = null
+      this.currentMusicState = this.musicStateList.NODATA
+    }
+
+  }
+
+  /** 
+   * 음악이 일시정지 상태인지 확인
+   * 
+   * 음악이 없는 경우도 일시정지 상태로 처리
+   */
+  getMusicPaused () {
+    if (this.currentMusic == null) {
+      return true
+    } else if (this.currentMusic instanceof HTMLMediaElement) {
+      if (this.currentMusic.paused) {
+        return true
+      } else {
+        return false
+      }
+    } else if (this.currentMusic instanceof AudioBufferSourceNode) {
+      if (this.currentMusicState === this.musicStateList.NODATA) {
+        return true
+      } else {
+        return false
+      }
+    }
+  }
+
+  getCurrentTime () {
+    if (this.currentMusic instanceof HTMLMediaElement) {
+      return this.currentMusic.currentTime
+    } else if (this.currentMusic instanceof AudioBufferSourceNode) {
+      return this.musicBufferStartTime
     }
   }
 

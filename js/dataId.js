@@ -183,7 +183,8 @@ export class ID {
     round1_4: 70014,
     round1_5: 70015,
     round1_6: 70016,
-    round1_test: 70009
+    round1_test: 70009,
+    UNUSED: 0,
   }
 }
 Object.freeze(ID)
