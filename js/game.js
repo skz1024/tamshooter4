@@ -10,6 +10,9 @@ import { TamsaEngine } from "./tamsaEngine/tamsaEngine.js"
 /** tamshooter4 게임 변수입니다. */
 export let game = new TamsaEngine('tamshooter4', 800, 600, 'js/tamsaEngine/', 60)
 
+// 디버그용 전역변수로 만들기...
+window.debugGame = game
+
 class StatLineText {
   /** 새로운 스탯라인 텍스트 생성 */
   constructor () {
@@ -31,7 +34,7 @@ class StatLineText {
    * @param {string} colorA 색깔 A
    * @param {string} colorB 색깔 B(이것을 넣으면 그라디언트 효과 적용)
    */
-  setStatLineText(text, value, valueMax, colorA, colorB) {
+  setStatLineText(text = '', value = 0, valueMax = 0, colorA = '', colorB = '') {
     this.text = text
     this.value = value
 

@@ -80,6 +80,7 @@ export class GraphicSystem {
    * 특정 이미지 경로에 있는 이미지 객체를 생성합니다. 
    * 
    * 만약 이 함수로 미리 생성하지 않고, 이미지를 불러오게 되면, 임의로 해당 경로를 기준으로 이미지 객체를 추가하게 됩니다.
+   * 
    * @param {string} imageSrc 이미지 파일의 경로
    */
   createImage (imageSrc) {

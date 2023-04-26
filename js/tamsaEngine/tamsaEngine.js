@@ -730,12 +730,13 @@ export class TamsaEngine {
 
       if (this.elaspedFrame < 120) {
         this.elaspedFrame++
-        let buttonStart = this.control.getButtonInput(this.control.buttonIndex.START)
+        let buttonStart = this.control.getButtonDown(this.control.buttonIndex.START)
         let buttonSelect = this.control.getButtonDown(this.control.buttonIndex.SELECT)
         let buttonDelete = this.control.getButtonInput(this.control.buttonIndex.DEL)
 
         if (buttonStart && buttonSelect) {
           this.isBiosMode = true
+          this.control.setButtonUp(this.control.buttonIndex.START)
         } else if (buttonDelete) {
           this.isBiosMode = true
         }

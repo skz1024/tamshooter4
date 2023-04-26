@@ -87,6 +87,8 @@ export class SoundSystem {
 
     this.fade = {
       /** 페이드 진행중인경우 */ isFading: false,
+      /** 페이드 인 상태인경우 */ isFadeIn: false,
+      /** 페이드 아웃 상태인경우 */ isFadeOut: false,
       /** 페이드의 기준 진행시간 */ fadeTime: 0,
       /** 다음에 재생할 페이드 오디오의 경로 */ nextAudioSrc: '',
       /** 다음에 재생할 페이드 버퍼의 경로 */ nextBufferSrc: '',
@@ -349,6 +351,7 @@ export class SoundSystem {
    * @type {HTMLMediaElement | AudioBufferSourceNode} 
    */
   currentMusic = null
+  currentMusicNode = null
 
   /** 음악 버퍼가 재생을 시작한 시간 */
   musicBufferStartTime = 0
@@ -382,6 +385,10 @@ export class SoundSystem {
     // 오디오의 경로가 지정되지 않으면 현재 음악을 다시 재생합니다.
     if (audioSrc === '') {
       if (this.currentMusic && this.currentMusic.paused) {
+        if (this.currentMusicNode != null) {
+          this.currentMusicNode.connect(this.audioNode.musicFirstGain)
+        }
+
         this.currentMusic.play()
         this.currentMusicState = this.musicStateList.PLAYING
       }
@@ -404,6 +411,7 @@ export class SoundSystem {
     if (getMusic != null && this.currentMusic !== getMusic) {
       this.musicStop() // 기존의 음악을 먼저 정지시킴
       this.currentMusic = getMusic
+      this.currentMusicNode = getNode
       if (start >= 0 && start <= getMusic.duration) {
         getMusic.currentTime = start
       }
@@ -462,19 +470,37 @@ export class SoundSystem {
    */
   musicFade (fadeTime = 0) {
     if (fadeTime === 0) {
-      this.musicStop()
-      this.audioNode.musicFadeGain.gain.setValueAtTime(1, this.audioContext.currentTime)
-      return
+      this.musicStop() // 음악 정지
+      this.musicFadeCancle()
+    } else {
+      if (this.fade.isFading) {
+        this.musicFadeCancle()
+      }
+
+      this.fade.isFading = true
+      this.fade.isFadeIn = false
+      this.fade.isFadeOut = true
+      this.fade.fadeTime = fadeTime
+  
+      // 참고: setValueAtTime을 하지 않고 바로 페이드 아웃을 시도하면, 자연스러운 감소가 아닌 급격한 감소로 페이드 아웃됩니다.
+      this.audioNode.musicFadeGain.gain.value = 1
+      this.audioNode.musicFadeGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + fadeTime)
     }
+  }
 
-    // this.fade.isNextBuffer = false
-    this.fade.isFading = true
-    // this.fade.nextAudioSrc = audioSrc
-    this.fade.fadeTime = fadeTime
+  /** 현재 진행중인 페이드를 취소합니다. */
+  musicFadeCancle () {
+    // 지금까지 적용된 게인 값 변경 요청을 번부 취소하고, 해당 게인을 1로 조정합니다.
+    this.audioNode.musicFadeGain.gain.cancelScheduledValues(this.audioContext.currentTime)
+    this.audioNode.musicFadeGain.gain.value = 1
 
-    // 참고: setValueAtTime을 하지 않고 바로 페이드 아웃을 시도하면, 자연스러운 감소가 아닌 급격한 감소로 페이드 아웃됩니다.
-    this.audioNode.musicFadeGain.gain.setValueAtTime(1, this.audioContext.currentTime)
-    this.audioNode.musicFadeGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + fadeTime)
+    // 페이드 해제
+    this.fade.isFading = false
+    this.fade.isFadeIn = false
+    this.fade.isFadeOut = false
+    this.fade.fadeTime = 0
+    this.fade.nextAudioSrc = ''
+    this.fade.nextBufferSrc = ''
   }
 
   /** 
@@ -484,16 +510,29 @@ export class SoundSystem {
    * 그리고 새로운 음악으로 교체됩니다.
    */
   musicFadeNextAudio (audioSrc, fadeTime = 0) {
-    this.musicFade(fadeTime)
-    this.fade.nextAudioSrc = audioSrc
-    this.fade.isNextBuffer = false
+    if (fadeTime === 0) {
+      // 페이드 시간이 0인경우, 즉시 다음음악으로 교체됩니다.
+      this.musicStop()
+      this.musicFadeCancle()
+      this.musicPlay(audioSrc)
+    } else {
+      this.musicFade(fadeTime)
+      this.fade.nextAudioSrc = audioSrc
+      this.fade.isNextBuffer = false
+    }
   }
 
   /** 다음 음악을 페이드 효과를 이용해 변경합니다. (버퍼로 재생함.) */
   musicFadeNextBuffer (audioSrc, fadeTime) {
-    this.musicFade(fadeTime)
-    this.fade.nextAudioSrc = audioSrc
-    this.fade.isNextBuffer = true
+    if (fadeTime === 0) {
+      this.musicStop()
+      this.musicFadeCancle()
+      this.musicBuffer(audioSrc)
+    } else {
+      this.musicFade(fadeTime)
+      this.fade.nextAudioSrc = audioSrc
+      this.fade.isNextBuffer = true
+    }
   }
 
   /** 
@@ -503,20 +542,31 @@ export class SoundSystem {
   musicProcess () {
     // 페이드 과정 진행
     if (this.fade.isFading) {
-      if (this.audioNode.musicFadeGain.gain.value <= 0) {
-        this.fade.isFading = false
-        this.fade.fadeTime = 0
-        this.musicStop()
-        if (this.fade.nextAudioSrc != null) {
-          if (this.fade.isNextBuffer) {
-            this.musicBuffer(this.fade.nextAudioSrc)
+      if (this.fade.isFadeOut) {
+        if (this.audioNode.musicFadeGain.gain.value <= 0) {
+          // this.musicStop() // musicPlay 에서 음악이 변경되면 기존 음악을 정지시키므로 여기서 정지하지 않습니다.
+          // 중복으로 정지할경우, 페이드 효과가 잘못 적용되는 현상이 생깁니다.
+          // 이것은 음악을 정지할 때 오디오랑 disconnect 하고 그 시점부터 fadeGain이 동작하지 않습니다.
+          if (this.fade.nextAudioSrc != null) {
+            if (this.fade.isNextBuffer) {
+              this.musicBuffer(this.fade.nextAudioSrc)
+            } else {
+              this.musicPlay(this.fade.nextAudioSrc)
+            }
+            // 페이드 인 상태로 변경
+            this.audioNode.musicFadeGain.gain.setValueAtTime(0, this.audioContext.currentTime)
+            this.audioNode.musicFadeGain.gain.linearRampToValueAtTime(1, this.audioContext.currentTime + this.fade.fadeTime)
+            this.fade.isFadeOut = false
+            this.fade.isFadeOut = true
           } else {
-            this.musicPlay(this.fade.nextAudioSrc)
+            // 페이드 아웃 종료
+            this.musicFadeCancle()
           }
-          // 페이드 인
-          this.audioNode.musicFadeGain.gain.linearRampToValueAtTime(1, this.audioContext.currentTime + this.fade.fadeTime)
-        } else {
-          this.audioNode.musicFadeGain.gain.value = 1
+        }
+      } else if (this.fade.isFadeIn) {
+        if (this.audioNode.musicFadeGain.gain.value >= 1) {
+          // 페이드 상태 초기화
+          this.musicFadeCancle()
         }
       }
     }
@@ -533,6 +583,8 @@ export class SoundSystem {
 
     this.currentMusic = null
     this.currentMusicState = this.musicStateList.STOP
+
+    // this.musicFadeCancle()
 
     // for (let i = 0; i < this.musicTrack.length; i++) {
     //   let currentMusic = this.musicTrack[i]
@@ -555,7 +607,7 @@ export class SoundSystem {
       this.currentMusic = null
       this.currentMusicState = this.musicStateList.NODATA
     }
-
+    this.musicFadeCancle()
   }
 
   /** 
@@ -581,7 +633,7 @@ export class SoundSystem {
     }
   }
 
-  getCurrentTime () {
+  getMusicCurrentTime () {
     if (this.currentMusic instanceof HTMLMediaElement) {
       return this.currentMusic.currentTime
     } else if (this.currentMusic instanceof AudioBufferSourceNode) {

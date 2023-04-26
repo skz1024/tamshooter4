@@ -1,4 +1,5 @@
 import { DelayData, FieldData, EnimationData } from "./dataField.js"
+import { ImageDataObject } from "./imageSrc.js"
 
 /**
  * 이펙트 데이터
@@ -39,9 +40,9 @@ import { DelayData, FieldData, EnimationData } from "./dataField.js"
     this.frameHeight = 0
 
     /**
-     * 이미지
+     * 이미지 파일의 경로
      */
-    this.imageSrc = null
+    this.imageSrc = ''
 
     /**
      * 해당 에니메이션의 총합 프레임. 에니메이션 객체가 있을때는 해당 요소를 사용하지 않음.
@@ -56,22 +57,22 @@ import { DelayData, FieldData, EnimationData } from "./dataField.js"
 
   /**
    * 설정값을 넣어주면 자동으로 에니메이션 세팅을 합니다.
-   * @param {HTMLImageElement} image 
+   * @param {string} imageSrc 
    * @param {ImageDataObject} imageData 
    * @param {number} width 
    * @param {number} height 
    * @param {number} frameDelay 
    * @param {number} frameRepeat 
    */
-  autoSetEnimation (image, imageData, width, height, frameDelay = 1, frameRepeat = 1) {
-    if (image != null && imageData != null) {
-      this.imageSrc = image
+  autoSetEnimation (imageSrc, imageData, width, height, frameDelay = 1, frameRepeat = 1) {
+    if (imageSrc != null && imageData != null) {
+      this.imageSrc = imageSrc
       this.imageData = imageData
       this.width = width == null ? imageData.width : width
       this.height = height == null ? imageData.height : height
       this.frameDelay = frameDelay
       this.frameRepeat = frameRepeat
-      this.enimation = new EnimationData(image, imageData.x, imageData.y, imageData.width, imageData.height, imageData.frame, frameDelay, frameRepeat, width, height)
+      this.enimation = new EnimationData(imageSrc, imageData.x, imageData.y, imageData.width, imageData.height, imageData.frame, frameDelay, frameRepeat, width, height)
     }
   }
 
@@ -129,6 +130,8 @@ import { DelayData, FieldData, EnimationData } from "./dataField.js"
 
   /** 에니메이션 지정 시, 최대로 재생할 총 프레임 수 (이 값이 65라면, 애니메이션은 65프레임동안 지속) */
   setMaxFrame (maxFrame = 1) {
+    if (this.enimation == null) return
+
     this.enimation.maxFrame = maxFrame
   }
 }
