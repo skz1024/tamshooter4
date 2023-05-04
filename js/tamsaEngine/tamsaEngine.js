@@ -429,6 +429,9 @@ class BiosSystem {
       case this.bios.soundTest.menuField.length - 1:
         // soundTest에서 나가기
         this.sound.musicStop()
+        // 참고: 바이오스에서전 이전 설정을 기억하지 못합니다.
+        // 따라서 게임 내에서 자동으로 재설정되지 않으면 에코 효과가 사라질 수 있습니다.
+        this.sound.setMusicEcho(0, 0, 0)
         this.bios.soundTest.cursor = 0
         this.bios.menuNumber = 0
         break

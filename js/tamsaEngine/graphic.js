@@ -565,7 +565,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     if (height == null) height = image.height
 
     if (options.length !== 0) {
-      this.#imageExpandDisplay(image, 0, 0, image.width, image.height, x, y, width, height, ...options)
+      this.imageExpandDisplay(image, 0, 0, image.width, image.height, x, y, width, height, ...options)
     } else {
       if (this.checkTransform()) {
         const output = this.canvasTransform(arguments[1], arguments[2], width, height)
@@ -616,7 +616,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
       }
     } else if (arguments.length >= 10 && arguments.length <= 12) {
       // 함수의 내용이 길어 따로 분리
-      this.#imageExpandDisplay(image, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, ...option)
+      this.imageExpandDisplay(image, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, ...option)
     } else {
       throw new Error(GraphicSystem.errorMessage.IMAGE_DISPLAY_ARGUMENT_ERROR)
     }
@@ -629,7 +629,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * 
    * imageDisplay랑 받는 인수가 같으므로, 가급적이면 imageDisplay의 함수를 사용해주세요.
    */
-  #imageExpandDisplay (image, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, ...option) {
+  imageExpandDisplay (image, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, ...option) {
     // 현재 캔버스의 상태를 저장. 이렇게 하는 이유는, 캔버스의 설정을 너무 많이 바꿔 현재 상태를 저장하지 않으면 원래대로 되돌리기 어렵기 때문
     this.context.save()
     let flip = 0

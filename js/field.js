@@ -157,14 +157,14 @@ class PlayerObject extends FieldData {
     this.shield = getData.shield
     this.shieldMax = getData.shieldMax
     
-    this.#initSkill()
-    this.#initWeapon()
+    this.initSkill()
+    this.initWeapon()
   }
 
   /**
    * 무기 객체 초기화 작업
    */
-  #initWeapon () {
+  initWeapon () {
     let userWapon = userSystem.getWeaponList()
 
     /**
@@ -214,7 +214,7 @@ class PlayerObject extends FieldData {
   /**
    * 스킬 정보 초기화
    */
-  #initSkill () {
+  initSkill () {
     /** 스킬 슬롯이 A인지 여부, 아닐경우 B로 처리 */ this.usingSkillSlotA = true
     let getUserSkill = userSystem.getSkillList()
 
