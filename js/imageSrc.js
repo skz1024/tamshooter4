@@ -54,11 +54,16 @@ export class imageSrc {
     spaceEnemy: './image/enemy/spaceEnemy.png',
     meteoriteEnemy: './image/enemy/meteoriteEnemy.png',
     jemulEnemy: './image/enemy/jemulEnemy.png',
+    donggramiEnemy: './image/enemy/donggramiEnemy.png'
   }
 
   static enemyBullet = {
     energyBoltAttack: './image/enemy/energyBoltAttack.png',
     attackList: './image/enemy/enemyAttackList.png',
+  }
+
+  static enemyEffect = {
+    donggrami: './image/enemy/donggramiEnemyEffect.png'
   }
 
   static enemyDie = {
@@ -78,6 +83,13 @@ export class imageSrc {
     round1_5_meteoriteRed: './image/round/round1_5_meteoriteRed.jpg',
     round1_6_space: './image/round/round1_6_space.jpg',
     round1_6_paran_planet: './image/round/round1_6_paran_planet.png',
+    round2_2_apartment1: './image/round/round2_2_apartment1.png',
+    round2_2_apartment2: './image/round/round2_2_apartment2.png',
+    round2_2_maeul_entrance: './image/round/round2_2_maeul_entrance.png',
+    round2_2_park: './image/round/round2_2_park.png',
+    round2_2_placard: './image/round/round2_2_placard.png',
+    round2_2_shopping_mall: './image/round/round2_2_shopping_mall.png',
+    round2_2_tunnel: './image/round/round2_2_tunnel.png'
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -181,6 +193,47 @@ export class imageDataInfo {
     redMeteorite: {x: 1920, y: 140, width: 70, height: 50, frame: 1}
   }
 
+  static donggramiEnemy = {
+    lightBlue: {x: 0, y: 0, width: 48, height: 48, frame: 1},
+    blue: {x: 50, y: 0, width: 48, height: 48, frame: 1},
+    darkBlue: {x: 100, y: 0, width: 48, height: 48, frame: 1},
+    lightGreen: {x: 150, y: 0, width: 48, height: 48, frame: 1},
+    green: {x: 200, y: 0, width: 48, height: 48, frame: 1},
+    darkGreen: {x: 250, y: 0, width: 48, height: 48, frame: 1},
+    lightOrange: {x: 0, y: 50, width: 48, height: 48, frame: 1},
+    orange: {x: 50, y: 50, width: 48, height: 48, frame: 1},
+    darkOrange: {x: 100, y: 50, width: 48, height: 48, frame: 1},
+    lightYellow: {x: 150, y: 0, width: 48, height: 48, frame: 1},
+    yellow: {x: 200, y: 50, width: 48, height: 48, frame: 1},
+    darkYellow: {x: 250, y: 100, width: 48, height: 48, frame: 1},
+    lightRed: {x: 0, y: 100, width: 48, height: 48, frame: 1},
+    red: {x: 50, y: 100, width: 48, height: 48, frame: 1},
+    darkRed: {x: 100, y: 100, width: 48, height: 48, frame: 1},
+    lightPurple: {x: 150, y: 100, width: 48, height: 48, frame: 1},
+    purple: {x: 200, y: 100, width: 48, height: 48, frame: 1},
+    darkPurple: {x: 250, y: 100, width: 48, height: 48, frame: 1},
+    black: {x: 0, y: 150, width: 48, height: 48, frame: 1},
+    darkGrey: {x: 50, y: 150, width: 48, height: 48, frame: 1},
+    grey: {x: 100, y: 150, width: 48, height: 48, frame: 1},
+    lightGrey: {x: 150, y: 150, width: 48, height: 48, frame: 1},
+    whitesmoke : {x: 200, y: 150, width: 48, height: 48, frame: 1},
+    white: {x: 250, y: 150, width: 48, height: 48, frame: 1},
+    gold: {x: 0, y: 200, width: 48, height: 48, frame: 1},
+    silver: {x: 50, y: 200, width: 48, height: 48, frame: 1},
+    pink: {x: 100, y: 200, width: 48, height: 48, frame: 1},
+    skyblue: {x: 150, y: 200, width: 48, height: 48, frame: 1},
+    magenta: {x: 200, y: 200, width: 48, height: 48, frame: 1},
+    cyan: {x: 250, y: 200, width: 48, height: 48, frame: 1},
+    mix1: {x: 0, y: 250, width: 48, height: 48, frame: 1},
+    mix2: {x: 50, y: 250, width: 48, height: 48, frame: 1},
+    mix3: {x: 100, y: 250, width: 48, height: 48, frame: 1},
+    mix4: {x: 150, y: 250, width: 48, height: 48, frame: 1},
+    mix5: {x: 200, y: 250, width: 48, height: 48, frame: 1},
+    mix6: {x: 250, y: 250, width: 48, height: 48, frame: 1},
+    bigBlue: {x: 300, y: 200, width: 192, height: 192, frame: 1},
+    bigRed: {x: 300, y: 200, width: 192, height: 192, frame: 1},
+  }
+
   static fieldSystem = {
     roundClear: { x: 0, y: 0, width: 400, height: 60 },
     gameOver: { x: 0, y: 60, width: 320, height: 60 },
@@ -228,6 +281,19 @@ export class imageDataInfo {
     jemulEnemyAir: {x: 20, y: 0, width: 30, height: 20, frame: 1},
     jemulEnemyShip: {x: 0, y: 0, width: 20, height: 20, frame: 1},
     jemulEnemyHellSpike: {x: 50, y: 0, width: 15, height: 20, frame: 1},
+  }
+
+  static donggramiEnemyEffect = {
+    exclamationMark: {x: 0, y: 0, width: 40, height: 40, frame: 11},
+    questionMark: {x: 0, y: 40, width: 40, height: 40, frame: 12},
+    /** 웃음 */ EmojiSmile: {x: 0, y: 80, width: 40, height: 40, frame: 1},
+    /** 행복 */ EmojiHappy: {x: 40, y: 80, width: 40, height: 40, frame: 1},
+    /** 행복과슬픔 */ EmojiHappySad: {x: 80, y: 80, width: 40, height: 40, frame: 1},
+    /** 찡그림 */ EmojiFrown: {x: 120, y: 80, width: 40, height: 40, frame: 1},
+    /** 어메이즈(놀람?) */ EmojiAmaze: {x: 160, y: 80, width: 40, height: 40, frame: 1},
+    /** 슬픔 */ EmojiSad: {x: 200, y: 80, width: 40, height: 40, frame: 1},
+    /** 화남 */ EmojiAngry: {x: 240, y: 80, width: 40, height: 40, frame: 1},
+    /** 생각중... */ EmojiThinking: {x: 280, y: 80, width: 40, height: 40, frame: 1},
   }
 
   static weapon = {
@@ -328,8 +394,7 @@ export class imageDataInfo {
 }
 
 /**
- * 이 클래스는 자동완성을 쉽게 하기 위해 만들어진 클래스입니다. 일반적인 용도로는 사용하지 않습니다.
- * 해당 생성자를 사용하지 마세요.
+ * 이 클래스는 자동완성을 쉽게 하기 위해 만들어진 클래스입니다.
  */
 export class ImageDataObject {
   constructor () {
@@ -338,6 +403,6 @@ export class ImageDataObject {
     this.width = 0
     this.height = 0
     this.frame = 10
-    throw new Error('이 클래스는 생성할 수 없습니다. This class cannot be created. ')
+    // throw new Error('이 클래스는 생성할 수 없습니다. This class cannot be created. ')
   }
 }

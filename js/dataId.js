@@ -151,9 +151,19 @@ export class ID {
       redAir: 20150,
       redShip: 20151,
       redJewel: 20152,
+    },
+    donggramiEnemy: {
+      miniBlue: 20170,
+      miniGreen: 20171,
+      mini: 20172,
+      exclamationMark: 20173,
+      questionMark: 20174,
+      emoji: 20175,
+      talk: 20176,
     }
   }
 
+  /** 더이상 사용하지 않을 수 있음. @deprecated */
   static enemyBullet = {
     meteoriteBomb: 30140,
     jemulEnemySpike: 30145,
@@ -185,6 +195,27 @@ export class ID {
     round1_6: 70016,
     round1_test: 70009,
     UNUSED: 0,
+    //
+    round2_1: 70021,
+    round2_2: 70022,
+    round2_3: 70023,
+    round2_4: 70024,
+    round2_5: 70025,
+    round2_6: 70026,
+    //
+    round3_1: 70031,
+    round3_2: 70032,
+    round3_3: 70033,
+    round3_4: 70034,
+    round3_5: 70035,
+    round3_6: 70036,
+    round3_7: 70037,
+    round3_8: 70038,
+    round3_A1: 70041,
+    round3_A2: 70042,
+    round3_A3: 70043,
+    //
+    round4_1: 70101,
   }
 }
 Object.freeze(ID)

@@ -519,7 +519,7 @@ export class FieldData {
 
     /**
      * 만약 해당 오브젝트가 다른 오브젝트를 참고할 일이 있다면, 이 오브젝트에 다른 오브젝트의 정보를 저장합니다.
-     * 만약 그 다른 오브젝트의 isDelete 값이 true
+     * 만약 그 다른 오브젝트의 isDelete 값이 true 라면 이 값을 수동으로 null로 지정해주세요.
      * @type {FieldData | null}
      */
     this.targetObject = null
@@ -604,8 +604,8 @@ export class FieldData {
    * 주의: FieldData.direction에 방향과 관련된 상수가 있으므로 해당 값을 사용해야 합니다.
    * 
    * 잘못된 값을 넣을경우, 해당 설정은 무시(취소됨)
-   * @param {string} directionX x축 방향, 'left', 'right', ''(방향 없음) 사용 가능
-   * @param {string} directionY y축 방향, 'up', 'down', ''(방향 없음) 사용 가능
+   * @param {string} directionX x축 방향, 'left', 'right', ''(이 경우 right가 기본값) 사용 가능
+   * @param {string} directionY y축 방향, 'up', 'down', ''(이 경우 down이 기본값) 사용 가능
    */
   setMoveDirection (directionX = '', directionY = '') {
     const LEFT = FieldData.direction.LEFT
@@ -614,12 +614,16 @@ export class FieldData {
     const DOWN = FieldData.direction.DOWN
     const SPACE = ''
 
-    if (directionX === LEFT || directionX === RIGHT || directionX === SPACE) {
+    if (directionX === LEFT || directionX === RIGHT) {
       this.moveDirectionX = directionX
+    } else if (directionX === SPACE) {
+      this.moveDirectionX = RIGHT
     }
 
-    if (directionY === UP || directionY === DOWN || directionY === SPACE) {
+    if (directionY === UP || directionY === DOWN) {
       this.moveDirectionY = directionY
+    } else if (directionY === SPACE) {
+      this.moveDirectionY = DOWN
     }
   }
 

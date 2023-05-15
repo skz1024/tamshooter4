@@ -2099,18 +2099,17 @@ class Round1_test extends RoundData {
     this.roundText = 'test'
     this.recommandPower = 40000
     this.requireLevel = 3
-    this.finishTime = 50
-    this.clearBonus = 100
-    this.backgroundImageSrc = null
-    this.musicSrc = null
+    this.finishTime = 200
+    this.clearBonus = 0
 
+    soundSystem.createAudio(soundSrc.donggrami.emoji)
+    soundSystem.createAudio(soundSrc.donggrami.emojiThrow)
 
     this.addRoundPhase(() => {
-      if (this.timeCheckFrame(1, 1)) {
-        this.createEnemy(ID.enemy.jemulEnemy.boss)
+      if (this.getEnemyCount() < 10) {
+        this.createEnemy(ID.enemy.donggramiEnemy.emoji)
       }
     }, 0, 999)
-
   }
 }
 

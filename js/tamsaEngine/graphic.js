@@ -547,8 +547,8 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * (다만 내부적으로는 imageDisplay는 3, 5개의 인수도 처리할 수 있습니다. 왜냐하면 drawImage 함수가 그만큼의 인수를 지원하기 때문)
    * 
    * @param {string | HTMLImageElement} image 이미지의 경로 또는 이미지 객체
-   * @param {number} x 이미지를 자르기 위한 이미지 내부의 x좌표
-   * @param {number} y 이미지를 자르기 위한 이미지 내부의 y좌표
+   * @param {number} x  x좌표
+   * @param {number} y  y좌표
    * @param {number | null} width 이미지의 너비 (없을경우 해당 이미지의 기본 너비)
    * @param {number | null} height 이미지의 높이 (없을경우 해당 이미지의 기본 높이)
    * @param {number[]} options 기타 옵션 (flip, rotate, alpha) 참고: 이값을 설정했다면, imageDisplay 함수를 사용합니다.

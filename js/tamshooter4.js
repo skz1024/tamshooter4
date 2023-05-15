@@ -1913,7 +1913,9 @@ export class gameSystem {
         fieldSystem.setLoadData(JSON.parse(fieldSaveData))
       }
     } catch (e) {
-      alert('저장 데이터를 읽어오는 중 오류가 발생했습니다. 일부 데이터는 로드되지 않습니다.')
+      alert('저장 데이터를 읽어오는 중 오류가 발생했습니다. 필드데이터는 삭제됩니다.')
+      localStorage.removeItem(this.saveKey.fieldData)
+      this.stateId = this.STATE_MAIN
     }
   }
 

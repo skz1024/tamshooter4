@@ -4,7 +4,7 @@ import { ID } from "./dataId.js"
 import { fieldState, fieldSystem } from "./field.js"
 import { imageDataInfo, imageSrc } from "./imageSrc.js"
 import { soundSrc } from "./soundSrc.js"
-import { game } from "./game.js"
+import { game, gameFunction } from "./game.js"
 
 let graphicSystem = game.graphic
 let soundSystem = game.sound
@@ -138,9 +138,10 @@ export class EnemyData extends FieldData {
    * @param {HTMLAudioElement} dieSound 
    * @param {CustomEffect} dieEffect 
    */
-  setDieEffectOption (dieSound, dieEffect = null) {
+  setDieEffectOption (dieSound = null, dieEffect = null) {
     if (dieEffect != null && dieEffect.constructor != CustomEffect) {
-      console.warn('경고: dieEffect는 CustomEffectData 클래스를 사용해 데이터를 생성해야 합니다.')
+      console.warn('경고: dieEffect는 CustomEffectData 클래스를 사용해 데이터를 생성해야 합니다. 다른 경우는 무시됩니다.')
+      dieEffect = null
     }
   
     this.dieSound = dieSound
@@ -253,18 +254,52 @@ export class EnemyData extends FieldData {
     const scopeSize = 100 // 감지 영역
     const moveAdjust = scopeSize / 2 // 이동 위치 조정
 
-    // 이동 방향이 왼쪽이거나, speedX값이 음수이면, 왼쪽 영역 바깥으로 이동하는것입니다. 반대 방향도 마찬가지
-    if ((this.moveSpeedX < 0 || this.moveDirectionX === 'left') && this.x + this.width < -scopeSize) {
-      this.x = graphicSystem.CANVAS_WIDTH + this.width + moveAdjust
-    } else if ((this.moveSpeedX > 0 || this.moveDirectionX === 'right') && this.x > graphicSystem.CANVAS_WIDTH + scopeSize) {
-      this.x = 0 - this.width - moveAdjust
+    if (this.moveDirectionX === FieldData.direction.LEFT) {
+      // 왼쪽 방향 이동값이 양수일경우 오른쪽 끝부분(보정치 포함)으로 이동
+      if (this.moveSpeedX > 0 && this.x + this.width < -scopeSize) {
+        this.x = graphicSystem.CANVAS_WIDTH + this.width + moveAdjust
+      } else if (this.moveSpeedX <= 0 && this.x > graphicSystem.CANVAS_WIDTH + scopeSize) {
+        // 왼쪽 방향이 아닌 반대로 이동(방향은 왼쪽이나 이동은 오른쪽으로)할경우,
+        // 오른쪽 영역을 넘어갈때, 왼쪽 방향에서 나옴
+        this.x = 0 - this.width - moveAdjust
+      }
+    } else if (this.moveDirectionX === FieldData.direction.RIGHT) {
+      // 오른쪽 방향 이동값이 양수일경우, 왼쪽 끝부분(보정치 포함)으로 이동
+      if (this.moveSpeedX > 0 && this.x > graphicSystem.CANVAS_WIDTH + scopeSize) {
+        this.x = 0 - this.width - moveAdjust
+      } else if (this.moveSpeedX <= 0 && this.x + this.width < -scopeSize) {
+        // 오른쪽 방향으로 되어있지만, 반대방향으로 이동하는경우,
+        // 왼쪽 영역을 넘어갈 때, 오른쪽 방향에서 나옴
+        this.x = graphicSystem.CANVAS_WIDTH + this.width + moveAdjust
+      }
     }
 
-    if ((this.moveSpeedY < 0 || this.moveDirectionY === 'up') && this.y + this.height < -scopeSize) {
-      this.y = graphicSystem.CANVAS_HEIGHT + this.height + moveAdjust
-    } else if ((this.moveSpeedY > 0 || this.moveDirectionY === 'down') && this.y > graphicSystem.CANVAS_HEIGHT + scopeSize) {
-      this.y = 0 - this.height - moveAdjust
+    // y축도 x축과 원리는 동일
+    if (this.moveDirectionY === FieldData.direction.UP) {
+      if (this.moveSpeedY > 0 && this.y + this.height < -scopeSize) {
+        this.y = graphicSystem.CANVAS_HEIGHT + this.height + moveAdjust
+      } else if (this.moveSpeedY <= 0 && this.y > graphicSystem.CANVAS_HEIGHT + scopeSize) {
+        this.y = 0 - this.height - moveAdjust
+      }
+    } else if (this.moveDirectionY === FieldData.direction.DOWN) {
+      if (this.moveSpeedY > 0 && this.y > graphicSystem.CANVAS_HEIGHT + scopeSize) {
+        this.y = 0 - this.height - moveAdjust
+      } else if (this.moveSpeedY <= 0 && this.y + this.height < -scopeSize) {
+        this.y = graphicSystem.CANVAS_HEIGHT + this.height + moveAdjust
+      }
     }
+
+    // if ((this.moveSpeedX < 0 || this.moveDirectionX === 'left') && (this.x + this.width < -scopeSize || this.x > graphicSystem.CANVAS_WIDTH + scopeSize)) {
+    //   this.x = graphicSystem.CANVAS_WIDTH + this.width + moveAdjust
+    // } else if ((this.moveSpeedX > 0 || this.moveDirectionX === 'right') && (this.x > graphicSystem.CANVAS_WIDTH + scopeSize || this.x + this.width < -scopeSize)) {
+    //   this.x = 0 - this.width - moveAdjust
+    // }
+
+    // if ((this.moveSpeedY < 0 || this.moveDirectionY === 'up') && (this.y + this.height < -scopeSize || this.y > graphicSystem.CANVAS_HEIGHT + scopeSize)) {
+    //   this.y = graphicSystem.CANVAS_HEIGHT + this.height + moveAdjust
+    // } else if ((this.moveSpeedY > 0 || this.moveDirectionY === 'down') && (this.y > graphicSystem.CANVAS_HEIGHT + scopeSize || this.y + this.height < -scopeSize)) {
+    //   this.y = 0 - this.height - moveAdjust
+    // }
   }
 
   /**
@@ -523,9 +558,15 @@ class TestShowDamageEnemy extends EnemyData {
 
   display () {
     super.display()
-    graphicSystem.digitalFontDisplay('totaldamage: ' + (1000000 - this.hp), 0, 40)
+    gameFunction.digitalDisplay('totaldamage: ' + (1000000 - this.hp), 0, 40)
   }
 }
+
+class TempleatEnemy extends EnemyData {
+
+}
+
+
 
 /**
  * 1-1 spaceEnemy: baseCp: 40000
@@ -1150,7 +1191,7 @@ class SpaceEnemyDonggrami extends SpaceEnemyData {
     super()
     // 50% 확률로 이미지 결정
     let imageDataTarget = Math.random() * 100 < 50 ? imageDataInfo.spaceEnemy.donggrami1 : imageDataInfo.spaceEnemy.donggrami2
-    let dieSoundTarget = Math.random() * 100 < 50 ? soundSrc.enemyDie.enemyDieDonggrami1 : soundSrc.enemyDie.enemyDieDonggrami2
+    let dieSoundTarget = Math.random() * 100 < 50 ? soundSrc.enemyDie.enemyDieDonggrami : soundSrc.enemyDie.enemyDieDonggrami
     this.setAutoImageData(this.imageSrc, imageDataTarget)
     this.setEnemyByCpStat(36, 15)
     this.setDieEffectOption(dieSoundTarget)
@@ -3123,19 +3164,546 @@ class JemulEnemyRedJewel extends JemulEnemyData {
   }
 }
 
-
-class Donggeurami extends EnemyData {
+/** 동그라미 적 (라운드 2, 3에서 출현) */
+class DonggramiEnemy extends EnemyData {
   constructor () {
     super()
-    this.hp = 10000
-    this.score = 1000
-    this.width = 48
-    this.height = 48
+    this.baseCp = 50000
+    this.imageSrc = imageSrc.enemy.donggramiEnemy
+    this.color = ''
+    this.colorNumber = 0
+    this.dieAfterDeleteDelay = new DelayData(180) // 죽는데 걸리는 시간 추가
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieDonggrami)
+  }
+
+  /** 
+   * 동그라미적의 이미지 데이터 리스트 (이것을 이용하여 동그라미 이미지 데이터를 리턴) 
+   */
+  static imageDataList = [
+    imageDataInfo.donggramiEnemy.lightBlue,
+    imageDataInfo.donggramiEnemy.blue,
+    imageDataInfo.donggramiEnemy.darkBlue,
+    imageDataInfo.donggramiEnemy.lightGreen,
+    imageDataInfo.donggramiEnemy.green,
+    imageDataInfo.donggramiEnemy.darkGreen,
+    imageDataInfo.donggramiEnemy.lightOrange,
+    imageDataInfo.donggramiEnemy.orange,
+    imageDataInfo.donggramiEnemy.darkOrange,
+    imageDataInfo.donggramiEnemy.lightYellow,
+    imageDataInfo.donggramiEnemy.yellow,
+    imageDataInfo.donggramiEnemy.darkYellow,
+    imageDataInfo.donggramiEnemy.lightRed,
+    imageDataInfo.donggramiEnemy.red,
+    imageDataInfo.donggramiEnemy.darkRed,
+    imageDataInfo.donggramiEnemy.lightPurple,
+    imageDataInfo.donggramiEnemy.purple,
+    imageDataInfo.donggramiEnemy.darkPurple,
+    imageDataInfo.donggramiEnemy.black,
+    imageDataInfo.donggramiEnemy.darkGrey,
+    imageDataInfo.donggramiEnemy.grey,
+    imageDataInfo.donggramiEnemy.lightGrey,
+    imageDataInfo.donggramiEnemy.whitesmoke,
+    imageDataInfo.donggramiEnemy.white,
+    imageDataInfo.donggramiEnemy.gold,
+    imageDataInfo.donggramiEnemy.silver,
+    imageDataInfo.donggramiEnemy.pink,
+    imageDataInfo.donggramiEnemy.skyblue,
+    imageDataInfo.donggramiEnemy.magenta,
+    imageDataInfo.donggramiEnemy.cyan,
+    imageDataInfo.donggramiEnemy.mix1,
+    imageDataInfo.donggramiEnemy.mix2,
+    imageDataInfo.donggramiEnemy.mix3,
+    imageDataInfo.donggramiEnemy.mix4,
+    imageDataInfo.donggramiEnemy.mix5,
+    imageDataInfo.donggramiEnemy.mix6,
+    imageDataInfo.donggramiEnemy.bigBlue,
+    imageDataInfo.donggramiEnemy.bigRed,
+  ]
+
+  /** 색 이름의 텍스트 */
+  static colorText = [
+    'darkblue', 'blue', 'lightblue', 'darkgreen', 'green', 'lightgreen',
+    'darkorange', 'orange', 'lightorange', 'darkyellow', 'yellow', 'lightyellow',
+    'darkred', 'red', 'lightred', 'darkpurple', 'purple', 'lightpurple',
+    'black', 'darkgrey', 'grey', 'lightgrey', 'whitesmoke', 'white',
+    'gold', 'silver', 'pink', 'skyblue', 'magenta', 'cyan',
+    'mix1', 'mix2', 'mix3', 'mix4', 'mix5', 'mix6'
+  ]
+
+  /** 
+   * 동그라미 색 그룹에 따른 컬러 번호를 얻어옵니다.
+   * @param {string} colorOption 색깔의 종류: 주의: DonggramiEnemy 클래스가 가지고 있는 static 변수의 colorGroup 변수의 값을 사용해주세요.
+   */
+  static getColorGroupByColorNumber (colorOption = '') {
+    let random = 0
+    switch (colorOption) {
+      case this.colorGroup.BLUE: random = Math.floor(Math.random() * 3) + 0; break // 0 ~ 2
+      case this.colorGroup.GREEN: random = Math.floor(Math.random() * 3) + 3; break // 3 ~ 5
+      case this.colorGroup.ORANGE: random = Math.floor(Math.random() * 3) + 6; break // 6 ~ 8
+      case this.colorGroup.YELLOW: random = Math.floor(Math.random() * 3) + 9; break // 9 ~ 11
+      case this.colorGroup.RED: random = Math.floor(Math.random() * 3) + 12; break // 12 ~ 14
+      case this.colorGroup.PURPLE: random = Math.floor(Math.random() * 3) + 15; break // 15 ~ 17
+      case this.colorGroup.NORMAL: random = Math.floor(Math.random() * 18) + 0; break // 0 ~ 17
+      case this.colorGroup.ACHROMATIC: random = Math.floor(Math.random() * 6) + 18; break // 18 ~ 23
+      case this.colorGroup.SPECIAL: random = Math.floor(Math.random() * 6) + 24; break // 24 ~ 29
+      case this.colorGroup.MIX: random = Math.floor(Math.random() * 6) + 30; break // 30 ~ 35
+      default: random = Math.floor(Math.random() * 36); break // 0 ~ 35 // all color
+    }
+
+    return random
+  }
+
+  /** 색깔의 그룹 (참고: light, normal, dark는 서로 구분되지 않음.) */
+  static colorGroup = {
+    /** 파랑 */ BLUE: 'blue',
+    /** 초록 */ GREEN: 'green',
+    /** 주황(오렌지) */ ORANGE: 'orange',
+    /** 노랑 */ YELLOW: 'yellow',
+    /** 빨강 */ RED: 'red',
+    /** 보라(퍼플) */ PURPLE: 'purple',
+    /** 일반색 계열(파랑, 초록, 주황, 노랑, 빨강, 보라) */ NORMAL: 'normal',
+    /** 무채색 (하양, 회색, 검정) - 참고: 각 색을 분리할 수 없음 */ ACHROMATIC: 'archromatic',
+    /** 특수색 (골드, 실버, 스카이블루, 핑크, 시안, 마젠타) - 참고: 각 색을 분리할 수 없음 */ SPECIAL: 'special',
+    /** 혼합색 - 참고: 각 색을 분리할 수 없음 */ MIX: 'mix',
+    /** 모든색 */ ALL: 'all'
+  }
+
+  /** 동그라미가 사용하는 이모지 리스트(단, 모든 동그라미 클래스가 사용하는것은 아닙니다.) */
+  static EmojiList = {
+    /** 웃음, 스마일 */ SMILE: 'smile',
+    /** 행복, 해피 */ HAPPY: 'happy',
+    /** 웃음과슬픔, 행폭 새드 */ HAPPYSAD: 'happySad',
+    /** 찌푸림, 프로운 */ FROWN: 'frown',
+    /** 슬픔, 새드 */ SAD: 'sad',
+    /** 놀람, 어메이즈 */ AMAZE: 'amaze',
+    /** 아무것도 아님, 낫씽 */ NOTHING: 'nothing',
+    /** 생각중, 띵킹 */ THINKING: 'thinking',
+  }
+
+  /** 
+   * 동그라미 객체의 서브타입이 이모지임을 가리키는 타입 상수
+   * 
+   * 이 변수는 이모지를 사용하는 동그라미 객체에서만 사용됩니다.
+   */
+  static SUBTYPE_EMOJI = 'subTypeEmoji'
+
+  /** 
+   * 각 이모지에 대한 이미지 데이터를 얻습니다.
+   * @param {string} imogeType imogeList에 있는 이모지 이름
+   */
+  static getEmojiImageData (imogeType) {
+    switch (imogeType) {
+      case DonggramiEnemy.EmojiList.SMILE: return imageDataInfo.donggramiEnemyEffect.EmojiSmile
+      case DonggramiEnemy.EmojiList.HAPPY: return imageDataInfo.donggramiEnemyEffect.EmojiHappy
+      case DonggramiEnemy.EmojiList.HAPPYSAD: return imageDataInfo.donggramiEnemyEffect.EmojiHappySad
+      case DonggramiEnemy.EmojiList.AMAZE: return imageDataInfo.donggramiEnemyEffect.EmojiAmaze
+      case DonggramiEnemy.EmojiList.FROWN: return imageDataInfo.donggramiEnemyEffect.EmojiFrown
+      case DonggramiEnemy.EmojiList.THINKING: return imageDataInfo.donggramiEnemyEffect.EmojiThinking
+      case DonggramiEnemy.EmojiList.NOTHING: return null
+      case DonggramiEnemy.EmojiList.SAD: return imageDataInfo.donggramiEnemyEffect.EmojiSad
+      default: return null
+    }
+  }
+
+  /** 랜덤한 이모지 타입을 얻습니다. */
+  static getRandomEmojiType () {
+    let array = [
+      this.EmojiList.SMILE, 
+      this.EmojiList.HAPPY, 
+      this.EmojiList.HAPPYSAD, 
+      this.EmojiList.AMAZE, 
+      this.EmojiList.NOTHING,
+      this.EmojiList.THINKING,
+      this.EmojiList.FROWN,
+      this.EmojiList.SAD]
+
+    let random = Math.floor(Math.random() * array.length)
+    return array[random]
+  }
+
+  /** 
+   * 동그라미 색과 이미지 데이터를 지정합니다.
+   * 이 함수는 setAutoImageData를 사용하기 전에 사용해주세요.
+   * @param {string} colorOption 색깔의 종류: 주의: DonggramiEnemy 클래스가 가지고 있는 static 변수의 colorGroup 변수의 값을 사용해주세요.
+   * 단 인수값이 없으면 모든 색을 대상으로 함.
+   */
+  setDonggramiColor (colorOption = '') {
+    this.colorNumber = DonggramiEnemy.getColorGroupByColorNumber(colorOption)
+    this.imageData = DonggramiEnemy.imageDataList[this.colorNumber]
+    this.color = DonggramiEnemy.colorText[this.colorNumber]
+  }
+
+  /** 모든 동그라미는 dieEffect가 없는대신 밑으로 추락하는 형태로 사라집니다. */
+  processDieAfter () {
+    if (this.isDied) {
+      this.y += 10
+
+      // 적이 죽었을 때, 딜레이가 null 이거나, 딜레이가 있을 때 딜레이카운트를 다 채우면 그 때 삭제
+      if (this.dieAfterDeleteDelay == null || this.dieAfterDeleteDelay.check()) {
+        this.processDieAfterLogic()
+      }
+    }
+  }
+}
+
+class DonggramiEnemyMiniBlue extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.BLUE)
+    this.setAutoImageData(this.imageSrc, this.imageData)
+    this.setEnemyByCpStat(10, 10)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieDonggrami, null)
+    this.isPossibleExit = true
+    this.isExitToReset = true
+    // 이 변수들 이외에도, set으로 시작하는 함수, is로 시작하는 변수를 통해 적의 정보를 설정할 수 있습니다.
+    this.setRandomSpeed(3, 3)
+  }
+}
+
+class DonggramiEnemyMiniGreen extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.GREEN)
+    this.setAutoImageData(this.imageSrc, this.imageData)
+    this.setEnemyByCpStat(10, 10)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieDonggrami, null)
+    this.isPossibleExit = true
+    this.isExitToReset = true
+    // 이 변수들 이외에도, set으로 시작하는 함수, is로 시작하는 변수를 통해 적의 정보를 설정할 수 있습니다.
+    this.setRandomSpeed(3, 3)
+  }
+}
+
+class DonggramiEnemyMini extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.NORMAL)
+    this.setAutoImageData(this.imageSrc, this.imageData)
+    this.setEnemyByCpStat(10, 10)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieDonggrami, null)
+    this.isPossibleExit = true
+    this.isExitToReset = true
+    // 이 변수들 이외에도, set으로 시작하는 함수, is로 시작하는 변수를 통해 적의 정보를 설정할 수 있습니다.
+    this.setRandomSpeed(3, 3)
+  }
+}
+
+class DonggramiEnemyExclamationMark extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.NORMAL)
+    this.setAutoImageData(this.imageSrc, this.imageData)
+    this.setEnemyByCpStat(100, 10)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieDonggrami, null)
+    this.isPossibleExit = true
+    this.isExitToReset = true
+    /** 느낌표 딜레이 체크 간격 */ this.exclamationMarkDelay = new DelayData(5)
+    /** 느낌표 상태가 지속된 시간 */ this.exclamationMarkElaspedFrame = 0
+    this.state = ''
+    this.setRandomSpeed(3, 3)
+
+    soundSystem.createAudio(soundSrc.donggrami.exclamationMark)
+  }
+
+  processMove () {
+    if (this.state === '' || this.state === '.') {
+      super.processMove()
+    }
+    
+    // 느낌표 동그라미의 특징
+    // 5프레임마다 주인공이 자기 기준(자기 중심이 기준이 아님, 좌표상 왼쪽 위 기준) 100x100 근처에 있는지 확인하고
+    // 만약 있다면, 느낌표 상태가 됨
+    if (this.state === '' && this.exclamationMarkDelay.check()) {
+      let playerObject = fieldState.getPlayerObject()
+      let playerArea = {
+        x: playerObject.x,
+        y: playerObject.y,
+        width: playerObject.width,
+        height: playerObject.height,
+      }
+      let enemyArea = {
+        x: this.x - 100,
+        y: this.y - 100,
+        width: this.width + 100,
+        height: this.height + 100
+      }
+
+      if (collision(enemyArea, playerArea)) {
+        this.state = '!'
+        // 느낌표 상태가 되는 즉시 이펙트 출력
+        soundSystem.play(soundSrc.donggrami.exclamationMark)
+        this.setMoveSpeed(-this.moveSpeedX * 4, -this.moveSpeedY * 4)
+      }
+    }
+
+    if (this.state === '!') {
+      // 느낌표 상태에서는 120프레임동안 가만히 있다가, 한쪽 방향으로 도망감
+      this.exclamationMarkElaspedFrame++
+      this.isPossibleExit = true
+      this.isExitToReset = false // 이 값을 false로 해서 바깥에 있도록 허용
+
+      if (this.exclamationMarkElaspedFrame >= 120 && this.exclamationMarkElaspedFrame <= 360) {
+        super.processMove() // 이동 시작...
+      } else if (this.exclamationMarkElaspedFrame >= 360) {
+        if (this.exitAreaCheck()) {
+          this.state = '.' // 다시 원상태로... 하지만 더이상 느낌표를 띄우지 않는다. (연속 도망을 막기 위해서)
+          this.isPossibleExit = true
+          this.isExitToReset = true
+          // 이동속도는 원래대로 돌아오지만, 다시 변경됩니다.
+          this.setRandomSpeed(3, 3)
+        }
+      }
+    }
+  }
+}
+
+class DonggramiEnemyQuestionMark extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.NORMAL)
+    this.setAutoImageData(this.imageSrc, this.imageData)
+    this.setEnemyByCpStat(100, 10)
+    this.setDieEffectOption()
+    this.isPossibleExit = true
+    this.isExitToReset = true
+    // 이 변수들 이외에도, set으로 시작하는 함수, is로 시작하는 변수를 통해 적의 정보를 설정할 수 있습니다.
+    this.setRandomSpeed(3, 3)
+    this.questionMarkDelay = new DelayData(10)
+    this.questionMarkElaspedFrame = 0
+  }
+
+  processMove () {
+    if (this.state === '') {
+      super.processMove()
+    } else if (this.state === '?') {
+      this.questionMarkElaspedFrame++
+      if (this.questionMarkElaspedFrame >= 120 && this.questionMarkElaspedFrame <= 660) {
+        let playerX = fieldState.getPlayerObject().x
+        let playerY = fieldState.getPlayerObject().y
+        let speedX = (playerX - this.x) / 80
+        let speedY = (playerY - this.y) / 80
+        if (speedX <= 2 && speedX > 0) speedX = 2
+        else if (speedX < 0 && speedX >= -2) speedX = -2
+        if (speedY <= 2 && speedX > 0) speedX = 2
+        else if (speedY < 0 && speedY >= -2) speedY -2
+        this.setMoveDirection('', '')
+        this.setMoveSpeed(speedX, speedY)
+        super.processMove()
+      } else if (this.questionMarkElaspedFrame >= 720) {
+        super.processMove()
+      }
+    }
+
+    // 물음표 동그라미의 특징
+    // 10프레임마다 주인공이 자기 기준(자기 중심이 기준이 아님, 좌표상 왼쪽 위 기준) 100x100 근처에 있는지 확인하고
+    // 만약 있다면, 물음표 상태가 됨.
+    if (this.state === '' && this.questionMarkDelay.check()) {
+      let playerObject = fieldState.getPlayerObject()
+      let playerArea = {
+        x: playerObject.x,
+        y: playerObject.y,
+        width: playerObject.width,
+        height: playerObject.height,
+      }
+      let enemyArea = {
+        x: this.x - 100,
+        y: this.y - 100,
+        width: this.width + 100,
+        height: this.height + 100
+      }
+
+      if (collision(enemyArea, playerArea)) {
+        this.state = '?'
+        // 물음표 상태가 되는 즉시 이펙트 출력
+        soundSystem.play(soundSrc.donggrami.questionMark)
+      }
+    }
+  }
+}
+
+class DonggramiEnemyEmojiMini extends DonggramiEnemy {
+  constructor() {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.ALL)
+    this.setAutoImageData(this.imageSrc, this.imageData)
+    this.setEnemyByCpStat(100, 10)
+    this.setDieEffectOption()
+    this.isPossibleExit = true
+    this.isExitToReset = true
+    this.setRandomSpeed(3, 3)
+    this.emojiDelay = new DelayData(120)
+    this.subType = DonggramiEnemy.SUBTYPE_EMOJI
+
+    /** 이모지 오브젝트 (setImoge를 설정하면 해당 객체가 자동으로 생성되거나 변경됨) */
+    this.emojiObject = this.createEmoji(DonggramiEnemy.getRandomEmojiType())
+
+    /** 이동 여부 (이모지 상태에서, 이 동그라미를 이동시키는지에 대한 것) */
+    this.isMove = true
+
+    this.STATE_EMOJI = 'emoji'
+    this.STATE_THROW = 'throw'
+    this.STATE_CATCH = 'catch'
+  }
+
+  /**
+   * 이모지를 전송합니다.
+   * 
+   * 주의: 잘못된 객체에게 이 함수를 사용하게되면, 아무일도 벌어지지 않고 경고가 표시됩니다.
+   * 
+   * @param {DonggramiEnemy} targetObjectEnemy 
+   */
+  sendEmoji (targetObjectEnemy) {
+
+  }
+
+  /** 
+   * 이모지를 생성합니다.
+   */
+  createEmoji (imogeType, x = this.x, y = this.y, throwFrame = -1) {
+    let newEmoji = {
+      x: this.x,
+      y: this.y,
+      width: 40, 
+      height: 40, 
+      type: imogeType, 
+      imageData: DonggramiEnemy.getEmojiImageData(imogeType), 
+      throwFrame: throwFrame, 
+      isThorw: throwFrame >= 1 ? true : false,
+      enable: true
+    }
+
+    if (newEmoji.imageData == null) {
+      newEmoji.enable = false
+    }
+
+    return newEmoji
+  }
+
+  process () {
+    super.process()
+    this.processNormal()
+    this.processEmoji()
+    this.processThrow()
+  }
+
+  processMove () {
+    if (this.state === '') {
+      super.processMove()
+    } else if (this.state === this.STATE_EMOJI) {
+      // 이모지 상태에서 isMove가 활성화되지 않으면 동그라미는 이동하지 않습니다.
+      if (this.isMove) {
+        super.processMove()
+      }
+    } else if (this.state === this.STATE_THROW) {
+      if (this.isMove) {
+        super.processMove()
+      }
+
+      // throw 상태에서는 120프레임 이후 이동할 수 있도록 처리
+      if (this.emojiDelay.count >= 120) {
+        this.isMove = true
+      }
+    }
+  }
+
+  processNormal () {
+    if (this.state !== '') return
+    if (this.emojiObject == null) return
+    // 일반 상태
+
+    // 이모지가 사용 가능한 상태일 때, 이모지를 50%확률료 표시함
+    if (this.emojiObject.enable && this.emojiDelay.check()) {
+      let random = Math.floor(Math.random() * 100)
+      if (random <= 100) {
+        // 상태를 이모지로 변경
+        this.state = this.STATE_EMOJI
+        soundSystem.play(soundSrc.donggrami.emoji)
+        this.emojiDelay.delay = 240
+        this.emojiDelay.count = 0
+      }
+    }
+  }
+
+  processEmoji () {
+    if (this.state !== this.STATE_EMOJI) return
+
+    // 이모지가 존재하지 않을경우 이모지 프로세스는 처리하지 않음.
+    if (this.emojiObject == null) return
+    if (!this.emojiObject.enable) return // 이모지가 적용 상태가 아니면 무시
+
+    // 상태 변경 조건 1
+    // 120프레임이 지날 때, 이모지를 던질 수 있음.
+    this.emojiDelay.count++
+    if (this.emojiDelay.count === 120) {
+      let random = Math.floor(Math.random() * 100)
+      if (random <= 100) {
+        let enemyObject = fieldState.getEnemyObject()
+        // 대상에서 자기 자신을 제외하기 위해 필터처리
+        // 생성 id가 다를경우 다른 객체입니다.
+        enemyObject = enemyObject.filter((value) => value.createId !== this.createId)
+  
+        // 플레이어에게도 던질 수 있도록 목록에 추가
+        enemyObject.push(fieldState.getPlayerObject())
+        
+        let randomIndex = Math.floor(Math.random() * enemyObject.length)
+        this.targetObject = enemyObject[randomIndex]
+  
+        this.state = this.STATE_THROW
+        soundSystem.play(soundSrc.donggrami.emojiThrow)
+        this.emojiDelay.delay = 180
+        this.emojiDelay.count = 0
+      }
+    }
+
+    this.emojiObject.x = this.x
+    this.emojiObject.y = this.y - 40
+  }
+  
+  processThrow () {
+    if (this.state !== this.STATE_THROW) return
+
+    // 이모지 오브젝트 이동 (throw상태가 되면 무조건 이동함)
+    // 단, 타겟오브젝트가 null일경우, 이모지는 더이상 이동하지 않고 멈추게됨.
+    if (this.emojiDelay.count <= 60) {
+      if (this.targetObject != null) {
+        this.emojiObject.x += (this.targetObject.x - this.emojiObject.x) / 10
+        this.emojiObject.y += (this.targetObject.y - this.emojiObject.y - 40) / 10
+      }
+    } else {
+      if (this.targetObject != null) {
+        this.emojiObject.x = this.targetObject.x
+        this.emojiObject.y = this.targetObject.y - 40
+      }
+    }
+
+    // 이모지를 던지고 나서 약 4초 후에 상태 초기화
+    if (this.emojiDelay.check()) {
+      this.state = ''
+    }
   }
 
   display () {
-    const IMAGE = imageSrc.enemyTemp
-    graphicSystem.imageDisplay(IMAGE, this.x, this.y)
+    this.displayEmoji()
+    super.display()
+  }
+
+  displayEmoji () {
+    if (this.state === this.STATE_EMOJI || this.state === this.STATE_THROW) {
+      let emoji = this.emojiObject.imageData
+      if (emoji == null) return
+
+      graphicSystem.imageDisplay(
+        imageSrc.enemyEffect.donggrami, 
+        emoji.x, 
+        emoji.y, 
+        emoji.width, 
+        emoji.height,
+        this.emojiObject.x,
+        this.emojiObject.y,
+        this.emojiObject.width,
+        this.emojiObject.height
+      )
+    }
   }
 }
 
@@ -3184,3 +3752,11 @@ dataExportEnemy.set(ID.enemy.jemulEnemy.redShip, JemulEnemyRedShip)
 dataExportEnemy.set(ID.enemy.jemulEnemy.redMeteorite, JemulEnemyRedMeteorite)
 dataExportEnemy.set(ID.enemy.jemulEnemy.redMeteoriteImmortal, JemulEnemyRedMeteoriteImmortal)
 dataExportEnemy.set(ID.enemy.jemulEnemy.rotateRocket, JemulEnemyRotateRocket)
+
+// donggramiEnemy
+dataExportEnemy.set(ID.enemy.donggramiEnemy.miniBlue, DonggramiEnemyMiniBlue)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.miniGreen, DonggramiEnemyMiniGreen)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.mini, DonggramiEnemyMini)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.exclamationMark, DonggramiEnemyExclamationMark)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.questionMark, DonggramiEnemyQuestionMark)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.emoji, DonggramiEnemyEmojiMini)

@@ -79,8 +79,7 @@ export class soundSrc {
     enemyDieJemulBossEye: './sound/enemyDieJemulBossEye.ogg',
     enemyDieJemulRedJewel: './sound/enemyDieJemulRedJewel.wav',
     enemyDieJemulRedAir: './sound/enemyDieJemulRedAir.wav',
-    enemyDieDonggrami1: './sound/enemyDieDonggrami1.wav',
-    enemyDieDonggrami2: './sound/enemyDieDonggrami2.wav',
+    enemyDieDonggrami: './sound/enemyDieDonggrami.wav',
   }
 
   static enemyAttack = {
@@ -99,6 +98,14 @@ export class soundSrc {
     r1_4_jemulrun: './sound/round1_4_jemulrun.ogg',
   }
 
+  static donggrami = {
+    ellipsis: './sound/donggramiEllipsis.ogg',
+    exclamationMark: './sound/donggramiExclamationMark.ogg',
+    questionMark: './sound/donggramiQuestionMark.ogg',
+    emoji: './sound/donggramiImoge.ogg',
+    emojiThrow: './sound/donggramiImogeThrow.ogg'
+  }
+
   static music = {
     music01_space_void: './music/music01_space_void.ogg',
     music02_meteorite_zone_field: './music/music02_meteorite_zone_field.ogg',
@@ -109,4 +116,6 @@ export class soundSrc {
     music07_paran_planet_entry: './music/music07_paran_planet_entry.ogg',
     music08_round1_4_jemul: './music/music08_round1_4_jemul.ogg',
   }
+
+  
 }
