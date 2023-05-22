@@ -1,6 +1,4 @@
 import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatWeapon } from "./js/dataStat.js"
-import { imageFile } from "./js/image.js"
-import { graphicSystem } from "./js/graphic.js"
 
 let pre = document.getElementById('pre')
 let element = document.createElement('pre')
