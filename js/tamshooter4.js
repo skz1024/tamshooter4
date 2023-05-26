@@ -1,7 +1,7 @@
 //@ts-check
 
 import { imageSrc, imageDataInfo, ImageDataObject } from "./imageSrc.js";
-import { dataExportStatPlayerSkill, dataExportStatWeapon, dataExportStatPlayerWeapon } from "./dataStat.js";
+import { dataExportStatPlayerSkill, dataExportStatWeapon, dataExportStatPlayerWeapon, dataExportStatRound } from "./dataStat.js";
 import { soundSrc } from "./soundSrc.js";
 import { ID } from "./dataId.js";
 import { gameVar, userSystem } from "./game.js";
@@ -720,26 +720,27 @@ class RoundSelectSystem extends MenuSystem {
     const layer1Y = 10
     const layerWidth = 60
     const layerHeight = 60
+    const layerYSection = 100
 
     // 0: back
     this.menuList.push(new BoxObject(layerX, layer1Y, layerWidth, layerHeight, '<<', 'orange', 'yellow'))
 
     // 10 ~ 19: worldRound
-    const layer2Y = 80 + 10
+    const layer2Y = layer1Y + layerYSection + 10
     const layerSection = 80
     for (let i = 0; i <= 9; i++) {
       this.menuList[i + 10] = new BoxObject(layerX + (i * layerSection), layer2Y, layerWidth, layerHeight, '', 'orange', 'gold')
     }
 
     // 20 ~ 29: mainRound 
-    const layer3Y = 160 + 10
+    const layer3Y = layer2Y + layerYSection + 10
     for (let i = 0; i <= 9; i++) {
       // 맨 끝번부터 추가되기 때문에 push나, this.menuList[i + 20] 이나 똑같이 동작함.
       this.menuList.push(new BoxObject(layerX + (i * layerSection), layer3Y, layerWidth, layerHeight, '', 'skyblue', 'white'))
     }
 
     // 30 ~ 39: subRound
-    const layer4Y = 240 + 10
+    const layer4Y = layer3Y + layerYSection + 10
     for (let i = 0; i <= 9; i++) {
       this.menuList.push(new BoxObject(layerX + (i * layerSection), layer4Y, layerWidth, layerHeight, '', 'skyblue', 'white'))
     }
@@ -865,7 +866,13 @@ class RoundSelectSystem extends MenuSystem {
       this.cursorMode = this.CURSORMODE_SUB
       game.sound.play(soundSrc.system.systemSelect)
     } else if (this.cursorMode === this.CURSORMODE_SUB) {
-      
+      let roundId = this.getRoundId()
+      fieldSystem.roundStart(roundId)
+
+      if (fieldSystem.message === fieldSystem.messageList.STATE_FIELD) {
+        game.sound.play(soundSrc.system.systemEnter)
+        gameSystem.stateId = gameSystem.STATE_FIELD
+      }
     }
   }
 
@@ -874,7 +881,7 @@ class RoundSelectSystem extends MenuSystem {
     this.displayRound()
     this.displaySubRound()
     // this.displayWorld()
-    // this.displayInfo()
+    this.displayInfo()
   }
 
   displayRound () {
@@ -925,6 +932,10 @@ class RoundSelectSystem extends MenuSystem {
           0.3
         )
       }
+
+      // 라운드 값 출력
+      let currentRound = i - this.CURSOR_POSITION_START_MAIN + 1
+      digitalDisplay('R: ' + currentRound, this.menuList[i].x, this.menuList[i].y + this.menuList[i].height)
     }
   }
 
@@ -933,6 +944,24 @@ class RoundSelectSystem extends MenuSystem {
       case 0: return this.roundIconTable.r1
       case 1: return this.roundIconTable.r2
       default: return []
+    }
+  }
+
+  getRoundIdTable () {
+    switch (this.cursorRound) {
+      case 0: return this.roundIdTable.r1
+      case 1: return this.roundIdTable.r2
+    }
+  }
+
+  getRoundId () {
+    let idTable = this.getRoundIdTable()
+    if (idTable == null) return 0
+
+    if (this.cursorSubRound < idTable.length) {
+      return idTable[this.cursorSubRound]
+    } else {
+      return 0
     }
   }
 
@@ -966,45 +995,19 @@ class RoundSelectSystem extends MenuSystem {
           0.4
         )
       }
-    }
 
-    return
-    for (let i = 10, n = 0; i <= 25; i++, n++) {
-      this.menuList[i].display()
-      const iconNumberX = i - 10
-      const rectPlusSize = 5
-      const fontWidth = 12
-      const fontHeight = 20
-
-      if (i < 9 || i > 19) continue
-      // 각 라운드 아이콘의 이미지 출력
-      game.graphic.imageDisplay(
-        this.roundIcon, 
-        iconNumberX * this.roundIconSize.width, 
-        1 * this.roundIconSize.height, 
-        this.roundIconSize.width, 
-        this.roundIconSize.height, 
-        this.menuList[i].x, 
-        this.menuList[i].y,
-        this.menuList[i].width,
-        this.menuList[i].height 
-      )
-
-      // 이미지에 가려져서 무엇이 선택되었는지 알기 어려우므로, 따로 사격형을 먼저 칠합니다.
-      if (this.cursorMode === this.CURSORMODE_SUB && this.cursorSubRound === n) {
-        game.graphic.fillRect(
-          this.menuList[i].x - rectPlusSize, 
-          this.menuList[i].y - rectPlusSize,
-          this.menuList[i].width + (rectPlusSize * 2),
-          this.menuList[i].height + (rectPlusSize * 2), 
-          'blue',
-          0.4
-        )
+      let roundIdTable = this.getRoundIdTable()
+      let roundId = 0
+      if (roundIdTable != null) {
+        roundId = roundIdTable[number]
       }
 
-      // 글자를 표시할 사각형 출력 후, 글자 출력
-      game.graphic.fillRect(this.menuList[i].x, this.menuList[i].y + (this.menuList[i].height - fontHeight), fontWidth * 3, fontHeight, 'white', 0.5)
-      digitalDisplay('1-' + (iconNumberX + 1), this.menuList[i].x, this.menuList[i].y + (this.menuList[i].height - fontHeight))
+      if (roundId !== 0) {
+        let stat = dataExportStatRound.get(roundId)
+        if (stat != null) {
+          digitalDisplay(stat.roundText, this.menuList[i].x, this.menuList[i].y + this.menuList[i].height)
+        }
+      }
     }
   }
 
@@ -1013,8 +1016,30 @@ class RoundSelectSystem extends MenuSystem {
   }
 
   displayInfo () {
-    game.graphic.strokeRect(400, 160, 400, 80, 'pink')
-    game.graphic.fillText('ROUND: ' + this.menuList[this.cursorPosition].text, 400, 160)
+    if (this.cursorMode !== this.CURSORMODE_SUB) return
+
+    // 현재 라운드 얻기
+    let roundIdTable = this.getRoundIdTable()
+    if (roundIdTable == null) return
+
+    let roundId = 0
+    if (this.cursorSubRound < roundIdTable.length) {
+      roundId = roundIdTable[this.cursorSubRound]
+    }
+
+    if (roundId === 0) return
+
+    let stat = dataExportStatRound.get(roundId)
+    if (stat == null) return
+
+    const layer1X = 120
+    const layer1Y = 20
+    const layer2X = 400
+    const layer2Y = 40
+    digitalDisplay('ROUND: ' + stat.roundText, layer1X, layer1Y)
+    digitalDisplay('REQUIRE LEVEL: ' + stat.requireLevel, layer1X, layer2Y)
+    digitalDisplay('STANDARD POWER: ' + stat.standardPower, layer2X, layer1Y)
+    digitalDisplay('FINISH TIME: ' + stat.finishTime, layer2X, layer2Y)
   }
 }
 

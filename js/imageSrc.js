@@ -230,7 +230,7 @@ export class imageDataInfo {
     mix4: {x: 150, y: 250, width: 48, height: 48, frame: 1},
     mix5: {x: 200, y: 250, width: 48, height: 48, frame: 1},
     mix6: {x: 250, y: 250, width: 48, height: 48, frame: 1},
-    bigBlue: {x: 300, y: 200, width: 192, height: 192, frame: 1},
+    bigBlue: {x: 300, y: 0, width: 192, height: 192, frame: 1},
     bigRed: {x: 300, y: 200, width: 192, height: 192, frame: 1},
   }
 
@@ -294,6 +294,10 @@ export class imageDataInfo {
     /** 슬픔 */ EmojiSad: {x: 200, y: 80, width: 40, height: 40, frame: 1},
     /** 화남 */ EmojiAngry: {x: 240, y: 80, width: 40, height: 40, frame: 1},
     /** 생각중... */ EmojiThinking: {x: 280, y: 80, width: 40, height: 40, frame: 1},
+    /** 말풍선(donggramiTalk 전용) */ speechBubble: {x: 0, y: 120, width: 200, height: 52, frame: 1},
+    /** 말풍선 꼬리 */ speechBubbleTale: {x: 210, y: 120, width: 70, height: 26, frame: 1},
+    /** 환영 대화창 */ welcomeText: {x: 0, y: 180, width: 198, height: 78, frame: 1},
+    /** 마을 대화창 */ welcomeMaeulText: {x: 200, y: 180, width: 198, height: 78, frame: 1}
   }
 
   static weapon = {

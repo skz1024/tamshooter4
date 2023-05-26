@@ -115,6 +115,8 @@ export class soundSrc {
     music06_round1_boss_thema: './music/music06_round1_boss_thema.ogg',
     music07_paran_planet_entry: './music/music07_paran_planet_entry.ogg',
     music08_round1_4_jemul: './music/music08_round1_4_jemul.ogg',
+    music09_paran_planet: './music/music09_paran_planet.ogg',
+    music10_donggrami_maeul: './music/music10_donggrami_maeul.ogg'
   }
 
   

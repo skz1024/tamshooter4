@@ -8,6 +8,7 @@ import { imageDataInfo, imageSrc } from "./imageSrc.js"
 import { fieldState } from "./field.js"
 import { soundSrc } from "./soundSrc.js"
 import { game, gameFunction } from "./game.js"
+import { dataExportStatRound } from "./dataStat.js"
 
 let graphicSystem = game.graphic
 let soundSystem = game.sound
@@ -27,7 +28,7 @@ export class RoundData {
     /** 라운드의 상태 (저장용도) */ this.state = ''
 
     /** (해당 라운드를 플레이 하기 위한) 필요 레벨, 필요 레벨 미만은 입장 불가 */ this.requireLevel = 0
-    /** (해당 라운드를 원할하게 플레이 할 수 있는) 권장 공격력, 입장은 상관 없음 */ this.recommandPower = 0
+    /** (해당 라운드를 원할하게 플레이 할 수 있는) 권장 공격력, 입장은 상관 없음 */ this.standardPower = 0
     /** 라운드 값을 텍스트로 표시 (예: 1-1), 영어와 숫자만 사용 가능 */ this.roundText = 'TEST'
     /** 라운드 이름, text.js에서 값을 가져와서 입력하세요. */ this.roundName = stringText.dataRoundName.test
     /** 라운드 종료 시간(이 시간이 되면 클리어), 단위: 초 */ this.finishTime = 999
@@ -86,6 +87,24 @@ export class RoundData {
 
     /** 저장 용도로 사용하는 문자열 (저장 형식이 무언지는 알 수 없음) */
     this.saveString = ''
+  }
+
+  /**
+   * 라운드 스탯을 설정합니다.
+   * 
+   * 해당 함수는 반드시 실행되어야 합니다.
+   * @param {number} roundId 해당 라운드의 id
+   */
+  setAutoRoundStat (roundId) {
+    let stat = dataExportStatRound.get(roundId)
+    if (stat == null) return
+
+    this.roundName = stat.roundName
+    this.roundText = stat.roundText
+    this.requireLevel = stat.requireLevel
+    this.standardPower = stat.standardPower
+    this.finishTime = stat.finishTime
+    this.clearBonus = stat.clearBonus
   }
 
   /**
@@ -671,7 +690,7 @@ class Round1_1 extends RoundData {
     super()
     this.roundName = stringText.dataRoundName.round1_1
     this.roundText = '1-1'
-    this.recommandPower = 40000
+    this.standardPower = 40000
     this.requireLevel = 1
     this.finishTime = 150
     this.clearBonus = 30000
@@ -837,7 +856,7 @@ class Round1_2 extends RoundData {
     super()
     this.roundName = stringText.dataRoundName.round1_2
     this.roundText = '1-2'
-    this.recommandPower = 34000
+    this.standardPower = 34000
     this.requireLevel = 2
     this.finishTime = 180
     this.clearBonus = 40000
@@ -1015,7 +1034,7 @@ class Round1_3 extends RoundData {
     super()
     this.roundName = stringText.dataRoundName.round1_3
     this.roundText = '1-3'
-    this.recommandPower = 40000
+    this.standardPower = 40000
     this.requireLevel = 3
     this.finishTime = 210
     this.clearBonus = 39000
@@ -1339,7 +1358,7 @@ class Round1_4 extends RoundData {
     super()
     this.roundName = stringText.dataRoundName.round1_4
     this.roundText = '1-4'
-    this.recommandPower = 40000
+    this.standardPower = 40000
     this.requireLevel = 4
     this.finishTime = 151
     this.clearBonus = 38000
@@ -1578,7 +1597,7 @@ class Round1_5 extends RoundData {
     super()
     this.roundName = stringText.dataRoundName.round1_5
     this.roundText = '1-5'
-    this.recommandPower = 44000
+    this.standardPower = 44000
     this.requireLevel = 1
     this.finishTime = 210
     this.clearBonus = 41000
@@ -1850,7 +1869,7 @@ class Round1_6 extends RoundData {
     super()
     this.roundName = stringText.dataRoundName.round1_6
     this.roundText = '1-6'
-    this.recommandPower = 44000
+    this.standardPower = 44000
     this.requireLevel = 6
     this.finishTime = 152
     this.clearBonus = 35000
@@ -2097,21 +2116,144 @@ class Round1_test extends RoundData {
     super()
     this.roundName = 'test'
     this.roundText = 'test'
-    this.recommandPower = 40000
+    this.standardPower = 40000
     this.requireLevel = 3
     this.finishTime = 200
     this.clearBonus = 0
 
-    soundSystem.createAudio(soundSrc.donggrami.emoji)
-    soundSystem.createAudio(soundSrc.donggrami.emojiThrow)
+    // soundSystem.createAudio(soundSrc.donggrami.emoji)
+    // soundSystem.createAudio(soundSrc.donggrami.emojiThrow)
 
     this.addRoundPhase(() => {
-      if (this.getEnemyCount() < 10) {
-        this.createEnemy(ID.enemy.donggramiEnemy.emoji)
+      if (this.timeCheckFrame(1, 0)) {
+        this.createEnemy(ID.enemy.donggramiEnemy.bossBig1)
+        this.createEnemy(ID.enemy.donggramiEnemy.bossBig2)
       }
     }, 0, 999)
   }
+
+  display () {
+    super.display()
+    // game.graphic.fillRect(0, 0, 800, 600, 'yellow')
+  }
 }
+
+
+class Round2_1 extends RoundData {
+  constructor () {
+    super()
+    this.setAutoRoundStat(ID.round.round2_1)
+    this.backgroundImageSrc = ''
+    this.musicSrc = soundSrc.music.music09_paran_planet
+    this.backgroundSpeedX = 0
+    this.backgroundSpeedY = 0
+    this.backgroundNumber = 0
+    this.backgroundX = 0
+
+    this.addRoundPhase(this.roundPhase01, 0, 30)
+    this.addRoundPhase(this.roundPhase02, 31, 60)
+  }
+
+  displayBackground () {
+    // 색은, 그라디언트 형태로 표현하고 그라디언트의 출력값을 변경하는 방식을 사용
+    const colorA = ['#002b5e', '#004598', '#005ac6', '#267be2', '#5ba5ff', '#84bbff']
+    const colorB = ['#004598', '#005ac6', '#267be2', '#5ba5ff', '#84bbff', '#84bbff']
+    const gradientSize = 1800 // 60 frame * 30 second
+    game.graphic.gradientRect(this.backgroundX, this.backgroundY, gradientSize, gradientSize, [colorA[this.backgroundNumber], colorB[this.backgroundNumber]], false)
+    
+    if (this.backgroundY < -1800 + game.graphic.CANVAS_HEIGHT && this.backgroundNumber < colorA.length - 1) {
+      game.graphic.gradientRect(this.backgroundX, this.backgroundY + gradientSize, gradientSize, gradientSize, [colorA[this.backgroundNumber + 1], colorB[this.backgroundNumber + 1]], false)
+    }
+
+    digitalDisplay('x: ' + this.backgroundX + ', y: ' + this.backgroundY + ', ' + this.backgroundNumber, 0, 0)
+  }
+
+  processBackground () {
+    // 현재 시간에 맞추어서, 백그라운드 배경을 진행
+    this.backgroundNumber = Math.floor(this.currentTime / 30)
+    if(this.backgroundNumber >= 5) {
+      this.backgroundNumber = 4
+      this.backgroundY = -1800 + game.graphic.CANVAS_HEIGHT
+    } else {
+      let leftSecond = this.currentTime % 30
+      this.backgroundY = -(leftSecond * 60) - this.currentTimeFrame
+  
+      if (this.backgroundNumber === 4 && this.backgroundY < -1800 + game.graphic.CANVAS_HEIGHT) {
+        this.backgroundY = -1800 + game.graphic.CANVAS_HEIGHT
+      }
+    }
+
+  }
+
+  /**
+   * 
+   * @param {any} saveData 
+   */
+  setLoadData (saveData) {
+    super.setLoadData(saveData)
+    this.processBackground()
+  }
+
+  roundPhase01 () {
+    // 0 ~ 30 // 파란, 초록 동그라미가 먼저 등장 후, 다양한 색의 동그라미들이 등장
+    if (this.timeCheckInterval(0, 3, 60)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
+    } else if (this.timeCheckInterval(4, 6, 30)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
+    }
+    
+    if (this.timeCheckInterval(7, 12, 60)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.miniGreen)
+      this.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
+    }
+
+    if (this.timeCheckInterval(13, 18, 60)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.miniGreen)
+      this.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+    }
+
+    if (this.timeCheckInterval(19, 24, 15)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+    }
+
+    if (this.timeCheckInterval(25, 30, 10)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+    }
+  }
+
+  roundPhase02 () {
+    this.timePauseEnemyCount(32)
+
+    if (this.timeCheckInterval(34, 35, 60)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark)
+    }
+
+    if (this.timeCheckInterval(41, 42, 60)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.questionMark)
+    }
+
+    if (this.timeCheckInterval(49, 50, 60)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.emoji)
+    }
+
+    this.timePauseEnemyCount(58)
+  }
+
+  roundPhase03 () {
+    // 혼합형 동그라미 대거 등장
+    // 100% dps 필요
+    
+  }
+}
+
+class Round2_2 extends RoundData {
+  constructor () {
+    super()
+    this.setAutoRoundStat(ID.round.round2_2)
+  }
+}
+
 
 /**
  * export 할 라운드 데이터의 변수, tam4변수에 대입하는 용도
@@ -2124,3 +2266,5 @@ dataExportRound.set(ID.round.round1_4, Round1_4)
 dataExportRound.set(ID.round.round1_5, Round1_5)
 dataExportRound.set(ID.round.round1_6, Round1_6)
 dataExportRound.set(ID.round.round1_test, Round1_test)
+dataExportRound.set(ID.round.round2_1, Round2_1)
+dataExportRound.set(ID.round.round2_2, Round2_2)

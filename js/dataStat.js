@@ -3,7 +3,7 @@
 import { ID } from "./dataId.js"
 
 /**
- * 
+ * 무기의 기본 스탯 정보 (무기의 로직 구현은 weaponData에서 진행합니다.)
  */
 export class StatWeapon {
   /**
@@ -32,9 +32,12 @@ export class StatWeapon {
   }
 }
 
+/**
+ * 플레이어가 사용하는 무기에 대한 스탯 정보
+ */
 export class StatPlayerWeapon {
   /**
-   * 
+   * 플레이어가 사용하는 무기에 대한 스탯 정보
    * @param {string} name 무기의 이름
    * @param {number} delay 무기가 각 발사되기 까지의 지연시간
    * @param {number} attackMultiple 공격 배율 (기본값 1, 1보다 높으면 )
@@ -66,9 +69,12 @@ export class StatPlayerWeapon {
   }
 }
 
+/**
+ * 플레이어가 사용하는 스킬에 대한 스탯 정보
+ */
 export class StatPlayerSkill {
   /**
-   * 
+   * 플레이어가 사용하는 스킬에 대한 스탯 정보
    * @param {string} name 스킬의 이름
    * @param {number} coolTime 스킬의 쿨타임 (초)
    * @param {number} delay 스킬의 각 무기가 한번 반복할 때 발사 당 지연 시간
@@ -104,6 +110,43 @@ export class StatPlayerSkill {
 }
 
 /**
+ * 각 라운드에 대한 기본적인 정보
+ * 
+ * (라운드의 구현은 dataRound.js에서 처리합니다. 이 클래스는 스탯값만 정의하고 알고리즘 또는 라운드 구현을 하지 않습니다.)
+ */
+export class StatRound {
+  /**
+   * 각 라운드에 대한 기본적인 정보
+   * 
+   * 주의: 이 값들은 절대적인 기준을 표현하지만, 일부 라운드는 예외가 있을 수 있습니다. (그러나, 극히 일부 라운드만 이 기준과는 조금 다른 기준을 사용합니다.)
+   * 
+   * (라운드의 구현은 dataRound.js에서 처리합니다. 이 클래스는 스탯값만 정의하고 알고리즘 또는 라운드 구현을 하지 않습니다.)
+   * 
+   * (참고: 입력될 내용의 문자열이 길 수 있기 때문에 roundInfo는 맨 마지막 매개변수로 지정되었습니다.)
+   * @param {string} roundText 라운드 값을 표시할 텍스트, 예시: 1-1, 한글 사용 금지, 일부 기호와 알파벳만 사용가능, 최대 5글자까지 지원(검사하진 않음...)
+   * @param {string} roundName 라운드의 이름
+   * @param {number} requireLevel 해당 라운드를 플레이하기 위한 최소 레벨 (해당 레벨 이상만 플레이 가능)
+   * @param {number} standardPower 기준 파워(전투력) 해당 라운드에서 얼마만큼의 전투력을 기준으로 적을 배치했는지에 대한 값
+   * @param {number} finishTime 종료 시간(단위: 초), 해당 라운드를 클리어 하기 위해 사용해야 하는 시간 (단, 이것은 기준 시간이며, 일부 라운드는 특정 상황이 되면 강제로 클리어 할 수 있음.)
+   * @param {number} clearBonus 
+   * @param {string} roundInfo 
+   */
+  constructor (roundText = '', roundName = '', requireLevel = 0, standardPower = 0, finishTime = 10, clearBonus = 0, roundInfo = '') {
+    this.roundText = roundText
+    this.roundName = roundName
+    this.requireLevel = requireLevel
+    this.standardPower = standardPower
+    this.finishTime = finishTime
+    this.clearBonus = clearBonus
+    this.roundInfo = roundInfo
+
+    // 추가적인 옵션 자동 설정
+    this.minPower = Math.floor(standardPower * 0.8)
+  }
+}
+
+/**
+ * 외부에서 사용하기 위한 weapon 스탯 객체
  * @type {Map<number, StatWeapon>}
  */
 export const dataExportStatWeapon = new Map()
@@ -149,6 +192,7 @@ dataExportStatWeapon.set(ID.weapon.skillBoomerang, new StatWeapon('skill', 'boom
 dataExportStatWeapon.set(ID.weapon.skillMoon, new StatWeapon('skill', 'moon', 180, 1, false, true, 9999))
 
 /**
+ * 외부에서 사용하기 위한 플레이어 웨폰 스탯
  * @type {Map<number, StatPlayerWeapon>}
  */
 export const dataExportStatPlayerWeapon = new Map()
@@ -169,6 +213,7 @@ dataExportStatPlayerWeapon.set(ID.playerWeapon.boomerang, new StatPlayerWeapon('
 dataExportStatPlayerWeapon.set(ID.playerWeapon.subMultyshot, new StatPlayerWeapon('subMultyshot', 12, 0.2, 2, 1, [ID.weapon.subMultyshot]))
 
 /**
+ * 외부에서 사용하기 위한 플레이어 스킬 스탯
  * @type {Map<number, StatPlayerSkill>}
  */
 export const dataExportStatPlayerSkill = new Map()
@@ -193,3 +238,40 @@ dataExportStatPlayerSkill.set(ID.playerSkill.seondanil, new StatPlayerSkill('seo
 dataExportStatPlayerSkill.set(ID.playerSkill.hanjumoek, new StatPlayerSkill('hanjumeok', 28, 0, 1.4, 1, 1, dataExportStatWeapon.get(ID.weapon.skillHanjumoek)?.repeatCount, [ID.weapon.skillHanjumoek]))
 dataExportStatPlayerSkill.set(ID.playerSkill.boomerang, new StatPlayerSkill('boomerang', 20, 0, 1.2, 3, 1, dataExportStatWeapon.get(ID.weapon.skillBoomerang)?.repeatCount, [ID.weapon.skillBoomerang]))
 dataExportStatPlayerSkill.set(ID.playerSkill.moon, new StatPlayerSkill('moon', 28, 1, 1, 1, 1, dataExportStatWeapon.get(ID.weapon.skillMoon)?.repeatCount, [ID.weapon.skillMoon]))
+
+
+/**
+ * 외부에서 사용하기 위한 라운드 스탯 값
+ * @type {Map<number, StatRound>}
+ */
+export const dataExportStatRound = new Map()
+dataExportStatRound.set(ID.round.UNUSED, new StatRound())
+// round 1
+dataExportStatRound.set(ID.round.round1_1, new StatRound('1-1', '우주 여행 - 행성을 찾아 떠나는 길', 0, 40000, 150, 30000, ''))
+dataExportStatRound.set(ID.round.round1_2, new StatRound('1-2', '운석 지대 - 운석이 많은 구역', 1, 40000, 180, 36000, ''))
+dataExportStatRound.set(ID.round.round1_3, new StatRound('1-3', '운석 지대 - 무인기 충돌 구역', 1, 40000, 210, 39000, ''))
+dataExportStatRound.set(ID.round.round1_4, new StatRound('1-4', '운석 지대 - 의식의 공간', 4, 40000, 151, 38000, ''))
+dataExportStatRound.set(ID.round.round1_5, new StatRound('1-5', '운석 지대 - 레드 존', 4, 40000, 210, 41000, ''))
+dataExportStatRound.set(ID.round.round1_6, new StatRound('1-6', '우주 여행 - 센티멘탈 행성계: 파란 행성', 6, 40000, 152, 35000, ''))
+dataExportStatRound.set(ID.round.round1_test, new StatRound('TEST1', 'TEST1', 0, 0, 300, 0, '임의 테스트 라운드 - 디버그 용도로 활용'))
+// round 2
+dataExportStatRound.set(ID.round.round2_1, new StatRound('2-1', '파란 행성 - 하늘권 300km ~ 250km', 8, 50000, 150, 40000, ''))
+dataExportStatRound.set(ID.round.round2_2, new StatRound('2-2', '동그라미 마을 - 마을 내부', 8, 50000, 180, 48000, ''))
+dataExportStatRound.set(ID.round.round2_3, new StatRound('2-3', '동그라미 마을 - 에리어 컨텐츠', 12, 50000, 220, 52000, ''))
+dataExportStatRound.set(ID.round.round2_4, new StatRound('2-4', '동그라미 마을 - 캠퍼스 공간 (상점 포함)', 12, 50000, 220, 52000, ''))
+dataExportStatRound.set(ID.round.round2_5, new StatRound('2-5', '동그라미 마을 - 적과의 전투', 14, 50000, 180, 48000, ''))
+dataExportStatRound.set(ID.round.round2_6, new StatRound('2-6', '동그라미 마을 - 조용한 도로', 15, 50000, 150, 44000, ''))
+// round 3
+dataExportStatRound.set(ID.round.round3_1, new StatRound('3-1', '다운 타워 - 1: 레이저 전투', 20, 70000, 240, 35000, ''))
+
+// 앞으로의 예정
+// 3-2 다운타워 - 2: 액스 겹치기
+// 3-3 다운타워 - 3: 대형 전투기
+// 3-4 다운타워 - 4: 무서운 폭격
+// 3-5 다운타워 - 보스전
+// 3-6 다운타워 - 기술실 이동 통로
+// 3-7 다운타워 - 기술실 내부 코어
+// 3-8 다운타워 - 빠른 이동 통로
+// 3-A1 다운타워 코어 - 숨겨진 통로
+// 3-A2 다운타워 코어 - 위험한 함정
+// 3-A3 다운타워 코어 - 마을을 지배하는 자

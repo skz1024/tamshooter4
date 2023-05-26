@@ -160,6 +160,10 @@ export class ID {
       questionMark: 20174,
       emoji: 20175,
       talk: 20176,
+      normal: 20177,
+      strong: 20178,
+      bossBig1: 20179,
+      bossBig2: 20180,
     }
   }
 

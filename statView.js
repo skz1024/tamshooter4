@@ -1,4 +1,4 @@
-import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatWeapon } from "./js/dataStat.js"
+import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, dataExportStatWeapon } from "./js/dataStat.js"
 
 let pre = document.getElementById('pre')
 let element = document.createElement('pre')
@@ -57,6 +57,28 @@ dataExportStatPlayerWeapon.forEach((value) => {
   pre.appendChild(element)
 })
 
-let dataArray = Array.from(dataExportStatPlayerSkill.keys())
-console.log(dataArray)
+let element3 = document.createElement('pre')
+element3.textContent = '-roundList-\n'
++ 'round|require|standard|finish|clear  |round name|round info |\n'
++ 'text |level  |power   |time  |bonus  |          |           |\n'
+pre.appendChild(element3)
+
+dataExportStatRound.forEach((value) => {
+  let roundText = '' + value.roundText.padEnd(5, ' ').slice(0, 5) + '|'
+  let requireLevel = ('' + value.requireLevel).padEnd(7, ' ') + '|'
+  let standardPower = ('' + value.standardPower).padEnd(8, ' ') + '|'
+  let finishTime = ('' + value.finishTime).padEnd(6, ' ') + '|'
+  let clearBonus = ('' + value.clearBonus).padEnd(7, ' ') + '|'
+  let roundName = '' + value.roundName.padEnd(15, ' ')
+  let roundInfo = '' // value.roundInfo + '|'
+
+  let color = 'darkbrown'
+
+  let element = document.createElement('pre')
+  element.style.margin = '0'
+  element.style.background = color
+  element.style.color = 'black'
+  element.textContent = roundText + requireLevel + standardPower + finishTime + clearBonus + roundName + roundInfo
+  pre.appendChild(element)
+})
 

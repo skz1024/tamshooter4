@@ -54,7 +54,13 @@ export class GraphicSystem {
 
     // 캔버스 폰트 출력에 대한 기본값 설정 (다만 폰트가 없을경우, 다른 폰트가 사용될 수 있음.)
     // 이 폰트는 윈도우만 가지고 있음.
+    // 폰트의 pixel은 20px로 정의됩니다.
     this.context.font = '20px 바탕체'
+
+    /** 폰트의 기본 사이즈 (이 값을 변경하지 마세요.)
+     * @type {number} 
+     */
+    this.FONT_SIZE = 20
 
     // 캔버스의 초기 상태를 저장.
     this.context.save()

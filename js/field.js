@@ -1353,6 +1353,7 @@ export class fieldSystem {
       case this.STATE_EXIT:
         game.sound.musicStop()
         this.processExit()
+        game.control.getButtonInput(game.control.buttonIndex.START) // 버튼 중복 누르기 방지용
         break
       default:
         this.processNormal()

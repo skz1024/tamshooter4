@@ -3174,6 +3174,11 @@ class DonggramiEnemy extends EnemyData {
     this.colorNumber = 0
     this.dieAfterDeleteDelay = new DelayData(180) // 죽는데 걸리는 시간 추가
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieDonggrami)
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.ALL)
+    this.setEnemyByCpStat(10, 10)
+    this.isPossibleExit = true
+    this.isExitToReset = true
+    this.setRandomSpeed(3, 3)
   }
 
   /** 
@@ -3227,7 +3232,8 @@ class DonggramiEnemy extends EnemyData {
     'darkred', 'red', 'lightred', 'darkpurple', 'purple', 'lightpurple',
     'black', 'darkgrey', 'grey', 'lightgrey', 'whitesmoke', 'white',
     'gold', 'silver', 'pink', 'skyblue', 'magenta', 'cyan',
-    'mix1', 'mix2', 'mix3', 'mix4', 'mix5', 'mix6'
+    'mix1', 'mix2', 'mix3', 'mix4', 'mix5', 'mix6',
+    'big1', 'big2'
   ]
 
   /** 
@@ -3247,6 +3253,8 @@ class DonggramiEnemy extends EnemyData {
       case this.colorGroup.ACHROMATIC: random = Math.floor(Math.random() * 6) + 18; break // 18 ~ 23
       case this.colorGroup.SPECIAL: random = Math.floor(Math.random() * 6) + 24; break // 24 ~ 29
       case this.colorGroup.MIX: random = Math.floor(Math.random() * 6) + 30; break // 30 ~ 35
+      case this.colorGroup.BIG1: random = 36; break
+      case this.colorGroup.BIG2: random = 37; break
       default: random = Math.floor(Math.random() * 36); break // 0 ~ 35 // all color
     }
 
@@ -3265,7 +3273,9 @@ class DonggramiEnemy extends EnemyData {
     /** 무채색 (하양, 회색, 검정) - 참고: 각 색을 분리할 수 없음 */ ACHROMATIC: 'archromatic',
     /** 특수색 (골드, 실버, 스카이블루, 핑크, 시안, 마젠타) - 참고: 각 색을 분리할 수 없음 */ SPECIAL: 'special',
     /** 혼합색 - 참고: 각 색을 분리할 수 없음 */ MIX: 'mix',
-    /** 모든색 */ ALL: 'all'
+    /** 모든색 */ ALL: 'all',
+    /** 빅1 - 어두운 파랑(보스전용) */ BIG1: 'big1',
+    /** 빅2 - 어두운 빨강(보스전용) */ BIG2: 'big2'
   }
 
   /** 동그라미가 사용하는 이모지 리스트(단, 모든 동그라미 클래스가 사용하는것은 아닙니다.) */
@@ -3323,7 +3333,7 @@ class DonggramiEnemy extends EnemyData {
 
   /** 
    * 동그라미 색과 이미지 데이터를 지정합니다.
-   * 이 함수는 setAutoImageData를 사용하기 전에 사용해주세요.
+   * 이 함수는 setAutoImageData 도 같이 사용하므로, 동그라미를 만들 때에는 setDonggramiColor만 사용하시면 됩니다.
    * @param {string} colorOption 색깔의 종류: 주의: DonggramiEnemy 클래스가 가지고 있는 static 변수의 colorGroup 변수의 값을 사용해주세요.
    * 단 인수값이 없으면 모든 색을 대상으로 함.
    */
@@ -3331,6 +3341,8 @@ class DonggramiEnemy extends EnemyData {
     this.colorNumber = DonggramiEnemy.getColorGroupByColorNumber(colorOption)
     this.imageData = DonggramiEnemy.imageDataList[this.colorNumber]
     this.color = DonggramiEnemy.colorText[this.colorNumber]
+
+    this.setAutoImageData(this.imageSrc, this.imageData)
   }
 
   /** 모든 동그라미는 dieEffect가 없는대신 밑으로 추락하는 형태로 사라집니다. */
@@ -3344,19 +3356,34 @@ class DonggramiEnemy extends EnemyData {
       }
     }
   }
+
+  /** 느낌표 이펙트 데이터 */
+  static exclamationMarkEffect = new CustomEffect(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.exclamationMark, 40, 40, 5, 2)
+
+  /** 물음표 이펙트 데이터 */
+  static questionMarkEffect = new CustomEffect(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.questionMark, 40, 40, 5, 12)
+
+  /** 대화 리스트 */
+  static talkList = [
+    '안녕!',
+    '무슨 일이야?',
+    '넌 누구야?',
+    '꺄핫!',
+    '난 슬프다.',
+    '흠...',
+    '이상한 것이 있다.',
+    '난 동그라미야.',
+    '심심하다.',
+    '이것좀 봐.',
+    '오늘도 평범한 하루'
+  ]
 }
 
 class DonggramiEnemyMiniBlue extends DonggramiEnemy {
   constructor () {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.BLUE)
-    this.setAutoImageData(this.imageSrc, this.imageData)
     this.setEnemyByCpStat(10, 10)
-    this.setDieEffectOption(soundSrc.enemyDie.enemyDieDonggrami, null)
-    this.isPossibleExit = true
-    this.isExitToReset = true
-    // 이 변수들 이외에도, set으로 시작하는 함수, is로 시작하는 변수를 통해 적의 정보를 설정할 수 있습니다.
-    this.setRandomSpeed(3, 3)
   }
 }
 
@@ -3364,56 +3391,83 @@ class DonggramiEnemyMiniGreen extends DonggramiEnemy {
   constructor () {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.GREEN)
-    this.setAutoImageData(this.imageSrc, this.imageData)
     this.setEnemyByCpStat(10, 10)
-    this.setDieEffectOption(soundSrc.enemyDie.enemyDieDonggrami, null)
-    this.isPossibleExit = true
-    this.isExitToReset = true
-    // 이 변수들 이외에도, set으로 시작하는 함수, is로 시작하는 변수를 통해 적의 정보를 설정할 수 있습니다.
-    this.setRandomSpeed(3, 3)
   }
 }
 
+/** 미니 등급의 동그라미 (체력: cp base의 10%) */
 class DonggramiEnemyMini extends DonggramiEnemy {
   constructor () {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.NORMAL)
-    this.setAutoImageData(this.imageSrc, this.imageData)
     this.setEnemyByCpStat(10, 10)
-    this.setDieEffectOption(soundSrc.enemyDie.enemyDieDonggrami, null)
-    this.isPossibleExit = true
-    this.isExitToReset = true
-    // 이 변수들 이외에도, set으로 시작하는 함수, is로 시작하는 변수를 통해 적의 정보를 설정할 수 있습니다.
-    this.setRandomSpeed(3, 3)
+  }
+}
+
+class DonggramiEnemyNormal extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setEnemyByCpStat(20, 10)
+  }
+}
+
+class DonggramiEnemyStrong extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setEnemyByCpStat(100, 10)
+    this.setWidthHeight(this.width * 2, this.height * 2)
   }
 }
 
 class DonggramiEnemyExclamationMark extends DonggramiEnemy {
   constructor () {
     super()
-    this.setDonggramiColor(DonggramiEnemy.colorGroup.NORMAL)
-    this.setAutoImageData(this.imageSrc, this.imageData)
-    this.setEnemyByCpStat(100, 10)
-    this.setDieEffectOption(soundSrc.enemyDie.enemyDieDonggrami, null)
-    this.isPossibleExit = true
-    this.isExitToReset = true
-    /** 느낌표 딜레이 체크 간격 */ this.exclamationMarkDelay = new DelayData(5)
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.ALL)
+    this.setEnemyByCpStat(50, 10)
+
+    /** 느낌표 딜레이 체크 간격 */ this.exclamationMarkDelay = new DelayData(4)
     /** 느낌표 상태가 지속된 시간 */ this.exclamationMarkElaspedFrame = 0
     this.state = ''
     this.setRandomSpeed(3, 3)
 
     soundSystem.createAudio(soundSrc.donggrami.exclamationMark)
+
+    /** 일반 상태 */ this.STATE_NORMAL = ''
+    /** 느낌표 상태 */ this.STATE_EXCLMATION = '!'
+    /** 느낌표 이후의 상태 */ this.STATE_AFTER = '.'
+
+    this.currentEffect = null
+  }
+
+  process () {
+    super.process()
+    this.processEffect()
+  }
+
+  processEffect () {
+    if (this.currentEffect == null) return
+
+    // 이 함수는 이펙트가 무조건 오브젝트를 따라다니게 하기 위해 만든 함수입니다.
+    // 오브젝트가 죽은 경우, 오브젝트는 남아있지만, 이펙트가 오브젝트를 따라가지 않아서 해당 함수를 추가하였습니다.
+    this.currentEffect.x = this.x
+    this.currentEffect.y = this.y - 40
+
+    // 메모리 누수를 방지하기 위해, 삭제 대기 상태에서는 해당 객체를 삭제해야합니다.
+    if (this.currentEffect.isDeleted) {
+      this.currentEffect = null
+    }
   }
 
   processMove () {
-    if (this.state === '' || this.state === '.') {
+    // 일반 상태 또는 after 상태에서는 평소대로 이동함.
+    if (this.state === this.STATE_NORMAL || this.state === this.STATE_AFTER) {
       super.processMove()
     }
     
     // 느낌표 동그라미의 특징
-    // 5프레임마다 주인공이 자기 기준(자기 중심이 기준이 아님, 좌표상 왼쪽 위 기준) 100x100 근처에 있는지 확인하고
+    // 4프레임마다 주인공이 자기 기준(자기 중심이 기준이 아님, 좌표상 왼쪽 위 기준) 200x200 근처에 있는지 확인하고
     // 만약 있다면, 느낌표 상태가 됨
-    if (this.state === '' && this.exclamationMarkDelay.check()) {
+    if (this.state === this.STATE_NORMAL && this.exclamationMarkDelay.check()) {
       let playerObject = fieldState.getPlayerObject()
       let playerArea = {
         x: playerObject.x,
@@ -3422,21 +3476,27 @@ class DonggramiEnemyExclamationMark extends DonggramiEnemy {
         height: playerObject.height,
       }
       let enemyArea = {
-        x: this.x - 100,
-        y: this.y - 100,
-        width: this.width + 100,
-        height: this.height + 100
+        x: this.x - 200,
+        y: this.y - 200,
+        width: this.width + 200,
+        height: this.height + 200
       }
 
+      // 플레이어랑 적의 감지 범위가 충돌되었는지 확인
       if (collision(enemyArea, playerArea)) {
-        this.state = '!'
+        this.state = this.STATE_EXCLMATION
         // 느낌표 상태가 되는 즉시 이펙트 출력
+        // 반대 방향으로 빠르게 이동시킴 (단, 속도만 변경되고 이동 명령은 적용되지 않음.)
         soundSystem.play(soundSrc.donggrami.exclamationMark)
         this.setMoveSpeed(-this.moveSpeedX * 4, -this.moveSpeedY * 4)
+
+        // 메모리 누수 방지를 위해, 객체를 교체할때, null로 만든다음 새로 적용합니다.
+        if (this.currentEffect != null) this.currentEffect = null
+        this.currentEffect = fieldState.createEffectObject(DonggramiEnemy.exclamationMarkEffect, this.x, this.y - 40)
       }
     }
 
-    if (this.state === '!') {
+    if (this.state === this.STATE_EXCLMATION) {
       // 느낌표 상태에서는 120프레임동안 가만히 있다가, 한쪽 방향으로 도망감
       this.exclamationMarkElaspedFrame++
       this.isPossibleExit = true
@@ -3446,10 +3506,10 @@ class DonggramiEnemyExclamationMark extends DonggramiEnemy {
         super.processMove() // 이동 시작...
       } else if (this.exclamationMarkElaspedFrame >= 360) {
         if (this.exitAreaCheck()) {
-          this.state = '.' // 다시 원상태로... 하지만 더이상 느낌표를 띄우지 않는다. (연속 도망을 막기 위해서)
+          this.state = this.STATE_AFTER // 다시 원상태로... 하지만 더이상 느낌표를 띄우지 않는다. (연속 도망을 막기 위해서)
           this.isPossibleExit = true
-          this.isExitToReset = true
-          // 이동속도는 원래대로 돌아오지만, 다시 변경됩니다.
+          this.isExitToReset = true // 다시 원래대로 복구
+          // 이동속도 재설정(다만, 이전 이동속도를 기억하진 않으므로 랜덤으로 재설정됩니다.)
           this.setRandomSpeed(3, 3)
         }
       }
@@ -3461,43 +3521,65 @@ class DonggramiEnemyQuestionMark extends DonggramiEnemy {
   constructor () {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.NORMAL)
-    this.setAutoImageData(this.imageSrc, this.imageData)
-    this.setEnemyByCpStat(100, 10)
-    this.setDieEffectOption()
-    this.isPossibleExit = true
-    this.isExitToReset = true
-    // 이 변수들 이외에도, set으로 시작하는 함수, is로 시작하는 변수를 통해 적의 정보를 설정할 수 있습니다.
-    this.setRandomSpeed(3, 3)
-    this.questionMarkDelay = new DelayData(10)
+    this.setEnemyByCpStat(50, 10)
+
+    this.questionMarkDelay = new DelayData(4)
     this.questionMarkElaspedFrame = 0
+    /** 현재 물음표 이펙트에 대한 오브젝트 */ this.currentEffect = null
+
+    /** 일반 상태 */ this.STATE_NORMAL = ''
+    /** 물음표 상태 */ this.STATE_QUESTION = '?'
+    /** 이후 상태 */ this.STATE_AFTER = '.'
+  }
+
+  process () {
+    super.process()
+    this.processEffect()
+  }
+
+  processEffect () {
+    if (this.currentEffect == null) return
+    // 이 함수는 이펙트가 무조건 오브젝트를 따라다니게 하기 위해 만든 함수입니다.
+    // 오브젝트가 죽은 경우, 오브젝트는 남아있지만, 이펙트가 오브젝트를 따라가지 않아서 해당 함수를 추가하였습니다.
+    this.currentEffect.x = this.x
+    this.currentEffect.y = this.y - 40
+
+    if (this.currentEffect.isDeleted) {
+      this.currentEffect = null
+    }
   }
 
   processMove () {
-    if (this.state === '') {
+    if (this.state === this.STATE_NORMAL || this.state === this.STATE_AFTER) {
       super.processMove()
-    } else if (this.state === '?') {
+    } else if (this.state === this.STATE_QUESTION) {
+      // 물음표 상태에서는 일정시간동안 움직이지 않습니다. (120프레임동안)
       this.questionMarkElaspedFrame++
-      if (this.questionMarkElaspedFrame >= 120 && this.questionMarkElaspedFrame <= 660) {
+      if (this.questionMarkElaspedFrame >= 120 && this.questionMarkElaspedFrame <= 600) {
+        // 그리고 약 8초간 플레이어를 쫓아다닙니다.
         let playerX = fieldState.getPlayerObject().x
         let playerY = fieldState.getPlayerObject().y
         let speedX = (playerX - this.x) / 80
         let speedY = (playerY - this.y) / 80
+
+        // 속도 보정
         if (speedX <= 2 && speedX > 0) speedX = 2
         else if (speedX < 0 && speedX >= -2) speedX = -2
         if (speedY <= 2 && speedX > 0) speedX = 2
         else if (speedY < 0 && speedY >= -2) speedY -2
         this.setMoveDirection('', '')
         this.setMoveSpeed(speedX, speedY)
-        super.processMove()
+        super.processMove() // 객체 이동 함수
       } else if (this.questionMarkElaspedFrame >= 720) {
-        super.processMove()
+        // 이후 2초동안 추가로 멈춘 후, 더이상 아무 반응도 없는 상태로 변경
+        this.state = this.STATE_AFTER
       }
     }
 
     // 물음표 동그라미의 특징
-    // 10프레임마다 주인공이 자기 기준(자기 중심이 기준이 아님, 좌표상 왼쪽 위 기준) 100x100 근처에 있는지 확인하고
+    // 4프레임마다 주인공이 자기 기준(자기 중심이 기준이 아님, 좌표상 왼쪽 위 기준) 200x200 근처에 있는지 확인하고
     // 만약 있다면, 물음표 상태가 됨.
-    if (this.state === '' && this.questionMarkDelay.check()) {
+    if (this.state === this.STATE_NORMAL && this.questionMarkDelay.check()) {
       let playerObject = fieldState.getPlayerObject()
       let playerArea = {
         x: playerObject.x,
@@ -3512,10 +3594,18 @@ class DonggramiEnemyQuestionMark extends DonggramiEnemy {
         height: this.height + 100
       }
 
+      // 적의 감지 범위와 플레이어가 충돌한 경우
       if (collision(enemyArea, playerArea)) {
         this.state = '?'
         // 물음표 상태가 되는 즉시 이펙트 출력
         soundSystem.play(soundSrc.donggrami.questionMark)
+
+        // 메모리 누수를 방지하기 위해, null을 대입한 후 객체를 새로 대입합니다.
+        if (this.currentEffect != null) this.currentEffect = null
+
+        // 움직이는 동그라미 위에 물음표 이펙트를 띄우기 위해서
+        // 실시간으로 위치를 조정할 수 있도록 해당 이펙트를 출력하는 객체를 가져옵니다.
+        this.currentEffect = fieldState.createEffectObject(DonggramiEnemy.questionMarkEffect, this.x, this.y - 40)
       }
     }
   }
@@ -3525,11 +3615,7 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
   constructor() {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.ALL)
-    this.setAutoImageData(this.imageSrc, this.imageData)
-    this.setEnemyByCpStat(100, 10)
-    this.setDieEffectOption()
-    this.isPossibleExit = true
-    this.isExitToReset = true
+    this.setEnemyByCpStat(50, 10)
     this.setRandomSpeed(3, 3)
     this.emojiDelay = new DelayData(120)
     this.subType = DonggramiEnemy.SUBTYPE_EMOJI
@@ -3540,26 +3626,16 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
     /** 이동 여부 (이모지 상태에서, 이 동그라미를 이동시키는지에 대한 것) */
     this.isMove = true
 
+    this.STATE_NORMAL = ''
     this.STATE_EMOJI = 'emoji'
     this.STATE_THROW = 'throw'
     this.STATE_CATCH = 'catch'
   }
 
-  /**
-   * 이모지를 전송합니다.
-   * 
-   * 주의: 잘못된 객체에게 이 함수를 사용하게되면, 아무일도 벌어지지 않고 경고가 표시됩니다.
-   * 
-   * @param {DonggramiEnemy} targetObjectEnemy 
-   */
-  sendEmoji (targetObjectEnemy) {
-
-  }
-
   /** 
    * 이모지를 생성합니다.
    */
-  createEmoji (imogeType, x = this.x, y = this.y, throwFrame = -1) {
+  createEmoji (imogeType, throwFrame = -1) {
     let newEmoji = {
       x: this.x,
       y: this.y,
@@ -3587,7 +3663,7 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
   }
 
   processMove () {
-    if (this.state === '') {
+    if (this.state === this.STATE_NORMAL) {
       super.processMove()
     } else if (this.state === this.STATE_EMOJI) {
       // 이모지 상태에서 isMove가 활성화되지 않으면 동그라미는 이동하지 않습니다.
@@ -3607,19 +3683,25 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
   }
 
   processNormal () {
-    if (this.state !== '') return
+    if (this.state !== this.STATE_NORMAL) return
     if (this.emojiObject == null) return
     // 일반 상태
 
     // 이모지가 사용 가능한 상태일 때, 이모지를 50%확률료 표시함
     if (this.emojiObject.enable && this.emojiDelay.check()) {
       let random = Math.floor(Math.random() * 100)
-      if (random <= 100) {
+      if (random <= 50) {
         // 상태를 이모지로 변경
         this.state = this.STATE_EMOJI
         soundSystem.play(soundSrc.donggrami.emoji)
         this.emojiDelay.delay = 240
         this.emojiDelay.count = 0
+        if (random <= 25) {
+          // 25%확률로 이모지 대기시간동안 움직이지 않음.
+          this.isMove = false 
+        } else {
+          this.isMove = true
+        }
       }
     }
   }
@@ -3632,12 +3714,13 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
     if (!this.emojiObject.enable) return // 이모지가 적용 상태가 아니면 무시
 
     // 상태 변경 조건 1
-    // 120프레임이 지날 때, 이모지를 던질 수 있음.
-    this.emojiDelay.count++
+    // 120프레임이 지날 때, 이모지를 던질 수 있음. (확률 50%)
     if (this.emojiDelay.count === 120) {
       let random = Math.floor(Math.random() * 100)
-      if (random <= 100) {
+      if (random <= 50) {
+        // 던질 수 있는 모든 적을 가져옴
         let enemyObject = fieldState.getEnemyObject()
+
         // 대상에서 자기 자신을 제외하기 위해 필터처리
         // 생성 id가 다를경우 다른 객체입니다.
         enemyObject = enemyObject.filter((value) => value.createId !== this.createId)
@@ -3645,45 +3728,70 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
         // 플레이어에게도 던질 수 있도록 목록에 추가
         enemyObject.push(fieldState.getPlayerObject())
         
+        // 어떤 적에게 던질 것에 대한 무작위 인덱스 지정
         let randomIndex = Math.floor(Math.random() * enemyObject.length)
+
+        // 메모리 누수 방지를 위한, targetObject null 처리 후 다시 객체를 대입
+        if (this.targetObject != null) this.targetObject = null
+
+        // 타겟 오브젝트 지정
         this.targetObject = enemyObject[randomIndex]
   
+        // 상태 변경 및, 이모지를 던짐
         this.state = this.STATE_THROW
         soundSystem.play(soundSrc.donggrami.emojiThrow)
+
+        // 딜레이값 재설정
         this.emojiDelay.delay = 180
         this.emojiDelay.count = 0
+
+        // 특정 타겟 오브젝트는 이모지에 반응할 수 있습니다.
+        if (this.targetObject instanceof DonggramiEnemyTalk) {
+          this.targetObject.setCatchEmoji()
+        }
       }
     }
 
+    // 이모지가 자기 자신을 따라다니도록 설정
     this.emojiObject.x = this.x
-    this.emojiObject.y = this.y - 40
+    this.emojiObject.y = this.y - 40 // this.y 에서 40을 빼는것은, 아이콘이 해당 객체 위에 보여지게 하기 위해서
+
+    // 일정 시간이 지난 이후 원래 상태로 되돌아옴
+    if (this.emojiDelay.check()) {
+      this.state = this.STATE_NORMAL
+    }
   }
   
   processThrow () {
     if (this.state !== this.STATE_THROW) return
 
-    // 이모지 오브젝트 이동 (throw상태가 되면 무조건 이동함)
-    // 단, 타겟오브젝트가 null일경우, 이모지는 더이상 이동하지 않고 멈추게됨.
-    if (this.emojiDelay.count <= 60) {
-      if (this.targetObject != null) {
+    if (this.targetObject != null) {
+      // 이모지 오브젝트 이동 (throw상태가 되면 무조건 이동함)
+      // 단, 타겟오브젝트가 null일경우, 이모지는 더이상 이동하지 않고 멈추게됨.
+      if (this.emojiDelay.count <= 60) {
         this.emojiObject.x += (this.targetObject.x - this.emojiObject.x) / 10
         this.emojiObject.y += (this.targetObject.y - this.emojiObject.y - 40) / 10
-      }
-    } else {
-      if (this.targetObject != null) {
+      } else {
         this.emojiObject.x = this.targetObject.x
         this.emojiObject.y = this.targetObject.y - 40
       }
+
+      // targetObject가 삭제되면, targetObject를 null로 하고, 상태를 변경합니다.
+      if (this.targetObject.isDeleted) {
+        this.targetObject = null
+        this.state = this.STATE_NORMAL
+        this.emojiDelay.count = 0 // 딜레이 카운트 값 초기화
+      }
     }
 
-    // 이모지를 던지고 나서 약 4초 후에 상태 초기화
+    // 이모지를 던지고 나서 약 3초 후에 상태 초기화
     if (this.emojiDelay.check()) {
-      this.state = ''
+      this.state = this.STATE_NORMAL
     }
   }
 
   display () {
-    this.displayEmoji()
+    this.displayEmoji() // 이모지 출력
     super.display()
   }
 
@@ -3704,6 +3812,217 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
         this.emojiObject.height
       )
     }
+  }
+}
+
+class DonggramiEnemyTalk extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setEnemyByCpStat(50, 10)
+
+    /** 현재 대화값 */ this.currentTalk = ''
+    /** 이모지를 받은 상태와 관련한 딜레이 */ this.catchEmojiDelay = new DelayData(300)
+    /** 이모지를 받았을 때 나오는 텍스트 */ this.catchEmojiText = '이모지를 던지지마!'
+    
+    /** 대화 기본 딜레이 값 */ this.BASE_DELAY = 300
+    /** 대화 딜레이 */ this.talkDelay = new DelayData(this.BASE_DELAY)
+
+    /** 일반 상태 */ this.STATE_NORMAL = ''
+    /** 대화 상태 */ this.STATE_TALK = 't'
+    /** 이모지를 잡은 상태 */ this.STATE_CATCH = 'c'
+
+    /** 현재 대화 이펙트 */ this.talkEffect = null
+  }
+
+  /** 랜덤한 대화를 얻습니다. (무작위로 얻은 대사로 대화를 함.) */
+  getRandomTalk () {
+    let talk = DonggramiEnemy.talkList
+    let index = Math.floor(Math.random() * talk.length)
+    return talk[index]
+  }
+
+  process () {
+    super.process()
+    this.processNormal()
+    this.processTalk()
+    this.processEmojiCatch()
+  }
+
+  processNormal () {
+    if (this.state !== this.STATE_NORMAL) return
+
+    // 일반 상태에서, 5초가 지나면, 50% 확률로 자기만의 대화를 함.
+    // 그러나, 50%확률로 대화를 실패하면, 랜덤하게 딜레이의 카운트값이 재설정
+    if (this.talkDelay.check()) {
+      let random = Math.floor(Math.random() * 100)
+      if (random < 100) {
+        // 상태 변경 및 대화 설정
+        this.state = this.STATE_TALK
+        this.currentTalk = this.getRandomTalk()
+      }
+
+      // talkDelay의 count를 음수값으로 하여, 더 많은 지연시간을 가지게끔 처리
+      // count가 delay를 넘어야 트리거 작동(-count면 -부터 1씩 증가하기 때문에 더 많은 지연시간을 가짐)
+      this.talkDelay.delay = this.BASE_DELAY + (Math.random() * 120)
+    }
+  }
+
+  processTalk () {
+    if (this.state !== this.STATE_TALK) return
+
+    if (this.talkDelay.check()) {
+      // 대화 상태 해제 및 딜레이 랜덤 추가
+      // 다음 대화는 더 긴 딜레이 시간을 가짐
+      this.state = this.STATE_NORMAL
+      this.talkDelay.delay = this.BASE_DELAY + Math.floor(Math.random() * 240) + 120
+    }
+  }
+
+  /** 이모지를 받는 설정을 합니다. 이모지에 반응할 확률은 50% */
+  setCatchEmoji () {
+    let random = Math.floor(Math.random() * 100)
+    if (random < 25) {
+      this.talkDelay.count = 0 // 카운트 리셋
+      this.talkDelay.delay = 120 // 딜레이 재설정
+      this.state = this.STATE_CATCH
+
+      // 이모지를 던지지 말라고 텍스트를 변경합니다.
+      // 다만 해당 이모지는 영향을 받지는 않음 (어떤 오브젝트가 던졌는지 모르기 때문에)
+      this.currentTalk = this.catchEmojiText
+    }
+  }
+
+  processEmojiCatch () {
+    if (this.state !== this.STATE_CATCH) return
+
+    if (this.talkDelay.check()) {
+      // 대화 상태 해제 및 딜레이 랜덤 추가
+      // 다음 대화는 더 긴 딜레이 시간을 가짐
+      this.state = this.STATE_NORMAL
+      this.talkDelay.delay = this.BASE_DELAY + Math.floor(Math.random() * 240) + 120
+      this.currentTalk = ''
+    }
+  }
+
+  display () {
+    this.displayTalk()
+    super.display()
+  }
+
+  displayTalk () {
+    if (this.state !== this.STATE_TALK && this.state !== this.STATE_CATCH) return
+
+    const fontSize = game.graphic.FONT_SIZE
+    const padding = 10
+
+    // 텍스트는 한 줄에 10글자까지 출력 가능합니다. 그래서 10글자가 넘는다면, 1줄씩 증가합니다.
+    // 만약 글자가 2줄을 초과한다면, 스피치버블(말풍선)의 높이가 증가합니다.
+    const textMaxLength = this.currentTalk.length
+    const outputText = []
+    const maxLoop = Math.floor(textMaxLength / 10) + 1
+    for (let i = 0; i < maxLoop; i++) {
+      outputText.push(this.currentTalk.slice(i * 10, (i + 1) * 10))
+    }
+    
+    const imageData = imageDataInfo.donggramiEnemyEffect.speechBubble
+    const imageDataTale = imageDataInfo.donggramiEnemyEffect.speechBubbleTale
+    const bubbleSize = maxLoop < 2 ? imageData.height : (maxLoop * 20) + 20
+
+    // 스피치버블의 출력 위치는, 위쪽에 출력하면서 동시에 오브젝트에 겹치지 않아야 합니다.
+    // 그래서 예상 크기만큼을 y축에서 뺍니다.
+    const speechBubbleY = this.y - imageDataTale.height - bubbleSize
+
+    game.graphic.imageDisplay(imageSrc.enemyEffect.donggrami, imageDataTale.x, imageDataTale.y, imageDataTale.width, imageDataTale.height, this.x, this.y - imageDataTale.height, imageDataTale.width, imageDataTale.height)
+    game.graphic.imageDisplay(imageSrc.enemyEffect.donggrami, imageData.x, imageData.y, imageData.width, imageData.height, this.x, speechBubbleY, imageData.width, bubbleSize)
+    
+    // 텍스트 출력값도 스피치 버블이랑 같은 원리지만, padding값이 추가되었습니다.
+    const textY = this.y - imageDataTale.height - bubbleSize + padding
+    for (let i = 0; i < maxLoop; i++) {
+      game.graphic.fillText(outputText[i], this.x + padding, textY + (i * fontSize))
+    }
+  }
+}
+
+class DonggramiEnemyBossBig1 extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setEnemyByCpStat(2000, 10)
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.BIG1)
+
+    // 이 보스는 많이 느림
+    this.setRandomSpeed(1, 1)
+    this.isPossibleExit = false // 화면 바깥을 나갈 수 없음
+
+    this.moveDelay = new DelayData(300)
+    this.welcomeImageData = imageDataInfo.donggramiEnemyEffect.welcomeText
+
+    this.welcomeDelay = new DelayData(300)
+
+    this.state = ''
+    this.STATE_WELCOME = 'w'
+    this.STATE_NORMAL = ''
+  }
+
+  getCollisionArea () {
+    // 구체다 보니, 사각형으로 충돌판정 만들기가 어려움
+    // 실제 사이즈도 192x192라 계산도 힘들어 어림짐작한 사이즈로 결정
+    return [
+      {x: this.x + 50, y: this.y + 0, width: 100, height: 25 },
+      {x: this.x + 50, y: this.y + 192 - 25, width: 100, height: 25},
+      {x: this.x, y: this.y + 25, width: 25, height: 100},
+      {x: this.x + 192 - 25, y: this.y + 25, width: 25, height: 100},
+      {x: this.x + 25, y: this.y + 25, width: 140, height: 145}
+    ]
+  }
+
+  process () {
+    super.process()
+    this.processWelcome()
+  }
+
+  processWelcome () {
+    if (this.welcomeDelay.check()) {
+      if (this.state === this.STATE_NORMAL) {
+        this.state = this.STATE_WELCOME
+        this.welcomeDelay.delay = 300
+      } else {
+        this.state = this.STATE_NORMAL
+        this.welcomeDelay.delay = Math.floor(Math.random() * 300) + 300
+      }
+    }
+  }
+
+  processMove () {
+    super.processMove()
+    
+    if (this.moveDelay.check()) {
+      this.setRandomSpeed(1, 1)
+    }
+
+    this.degree += this.moveSpeedX + this.moveSpeedY
+  }
+
+  display () {
+    super.display()
+    this.displayWelcome()
+  }
+
+  displayWelcome () {
+    if (this.state !== this.STATE_WELCOME) return
+
+    // 대화창 이미지 출력
+    const imageData = this.welcomeImageData
+    const image = imageSrc.enemyEffect.donggrami
+    game.graphic.imageDisplay(image, imageData.x, imageData.y, imageData.width, imageData.height, this.x, this.y - imageData.height, imageData.width, imageData.height)
+  }
+}
+
+class DonggramiEnemyBossBig2 extends DonggramiEnemyBossBig1 {
+  constructor () {
+    super()
+    this.setEnemyByCpStat(2000, 10)
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.BIG2)
+    this.welcomeImageData = imageDataInfo.donggramiEnemyEffect.welcomeMaeulText
   }
 }
 
@@ -3760,3 +4079,8 @@ dataExportEnemy.set(ID.enemy.donggramiEnemy.mini, DonggramiEnemyMini)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.exclamationMark, DonggramiEnemyExclamationMark)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.questionMark, DonggramiEnemyQuestionMark)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.emoji, DonggramiEnemyEmojiMini)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.normal, DonggramiEnemyNormal)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.strong, DonggramiEnemyStrong)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.talk, DonggramiEnemyTalk)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.bossBig1, DonggramiEnemyBossBig1)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.bossBig2, DonggramiEnemyBossBig2)
