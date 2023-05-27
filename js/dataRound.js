@@ -192,18 +192,12 @@ export class RoundData {
    * @param {number} enemyId 생성할 적 Id. 없을 경우 무시(적을 생성하지 않음.)
    * @param {string} setMusic 보스전으로 설정할 음악, 이 값이 없다면 bossMusic으로 설정하고, bossMusic도 없다면 음악 변화 없음.
    */
-  requestBossMode (enemyId, setMusic = this.bossMusic) {
+  requestBossMode (enemyId = 0, setMusic = this.bossMusic) {
     if (this.bossMode) return // 보스모드 설정 상태에서 중복으로 호출할 수 없음.
 
     this.bossMode = true
-    
-    if (enemyId != null) {
-      this.createEnemy(enemyId)
-    }
-
-    if (setMusic != null) {
-      this.musicChange(setMusic)
-    }
+    this.createEnemy(enemyId)
+    this.musicChange(setMusic)
   }
 
   /**
@@ -457,7 +451,7 @@ export class RoundData {
    * 시간 간격 확인 함수 (적 생성 용도로 사용)
    * start이상 end이하일경우 true, 아닐경우 false
    */
-  timeCheckInterval (start, end = start, intervalFrame = 1) {
+  timeCheckInterval (start = 0, end = start, intervalFrame = 1) {
     if (this.currentTime >= start && this.currentTime <= end && this.currentTimeTotalFrame % intervalFrame === 0) {
       return true
     } else {
@@ -571,8 +565,10 @@ export class RoundData {
   /**
    * 적을 생성합니다.
    */
-  createEnemy (enemyId, x = graphicSystem.CANVAS_WIDTH + 50, y = Math.random() * graphicSystem.CANVAS_HEIGHT) {
-    fieldState.createEnemyObject(enemyId, x, y)
+  createEnemy (enemyId = 0, x = graphicSystem.CANVAS_WIDTH + 50, y = Math.random() * graphicSystem.CANVAS_HEIGHT) {
+    if (enemyId != 0) {
+      fieldState.createEnemyObject(enemyId, x, y)
+    }
   }
 
   /**
@@ -644,6 +640,8 @@ export class RoundData {
    * @param {number} fadeTime 페이드 시간
    */
   musicChange (soundSrc = '', fadeTime = 0) {
+    if (soundSrc === '') return
+
     this.currentMusicSrc = soundSrc
     if (fadeTime === 0) {
       soundSystem.musicPlay(soundSrc)
@@ -2125,9 +2123,8 @@ class Round1_test extends RoundData {
     // soundSystem.createAudio(soundSrc.donggrami.emojiThrow)
 
     this.addRoundPhase(() => {
-      if (this.timeCheckFrame(1, 0)) {
-        this.createEnemy(ID.enemy.donggramiEnemy.bossBig1)
-        this.createEnemy(ID.enemy.donggramiEnemy.bossBig2)
+      if (this.timeCheckInterval(1, 30, 120)) {
+        this.createEnemy(ID.enemy.donggramiEnemy.questionMark)
       }
     }, 0, 999)
   }
@@ -2143,46 +2140,89 @@ class Round2_1 extends RoundData {
   constructor () {
     super()
     this.setAutoRoundStat(ID.round.round2_1)
-    this.backgroundImageSrc = ''
+    this.backgroundImageSrc = imageSrc.round.round2_1_cloud
     this.musicSrc = soundSrc.music.music09_paran_planet
     this.backgroundSpeedX = 0
-    this.backgroundSpeedY = 0
-    this.backgroundNumber = 0
+    this.backgroundSpeedY = 1
     this.backgroundX = 0
+    this.maeulImage = imageSrc.round.round2_2_maeul_entrance
+    this.bossMusic = '' // 보스전 음악 없음. 기존 음악이 그대로 재생됨.
+
+    this.gradientBg = {
+      y: 0,
+      number: 0
+    }
 
     this.addRoundPhase(this.roundPhase01, 0, 30)
     this.addRoundPhase(this.roundPhase02, 31, 60)
+    this.addRoundPhase(this.roundPhase03, 61, 90)
+    this.addRoundPhase(this.roundPhase04, 91, 120)
+    this.addRoundPhase(this.roundPhase05, 121, 148)
   }
 
   displayBackground () {
     // 색은, 그라디언트 형태로 표현하고 그라디언트의 출력값을 변경하는 방식을 사용
-    const colorA = ['#002b5e', '#004598', '#005ac6', '#267be2', '#5ba5ff', '#84bbff']
-    const colorB = ['#004598', '#005ac6', '#267be2', '#5ba5ff', '#84bbff', '#84bbff']
-    const gradientSize = 1800 // 60 frame * 30 second
-    game.graphic.gradientRect(this.backgroundX, this.backgroundY, gradientSize, gradientSize, [colorA[this.backgroundNumber], colorB[this.backgroundNumber]], false)
-    
-    if (this.backgroundY < -1800 + game.graphic.CANVAS_HEIGHT && this.backgroundNumber < colorA.length - 1) {
-      game.graphic.gradientRect(this.backgroundX, this.backgroundY + gradientSize, gradientSize, gradientSize, [colorA[this.backgroundNumber + 1], colorB[this.backgroundNumber + 1]], false)
+    const darkSky = '#001A33'
+    const darklight = '#002E5B'
+    const sky = '#00478D'
+    const skylight = '#1D6FC0'
+    const light = '#4995E1'
+    const maeulsky = '#67B2FF'
+
+    const colorA = [darkSky, darklight, darkSky, sky, skylight, sky, light, maeulsky, light, light]
+    const colorB = [darklight, darkSky, sky, skylight, sky, light, maeulsky, light, light, light]
+
+    const gradientWidth = 800
+    const gradientHeight = 1200 // 20 second * 60 frame
+    game.graphic.gradientRect(this.backgroundX, this.gradientBg.y, gradientWidth, gradientHeight, [colorA[this.gradientBg.number], colorB[this.gradientBg.number]], false)
+    game.graphic.gradientRect(this.backgroundX, this.gradientBg.y + gradientHeight, gradientWidth, gradientHeight, [colorA[this.gradientBg.number + 1], colorB[this.gradientBg.number + 1]], false)
+
+    // digitalDisplay('b: ' + this.gradientBg.y + ', y: ' + this.backgroundY + ', ' + this.gradientBg.number, 0, 0)
+    super.displayBackground()
+
+    // 마을 보여주기
+    if (this.currentTime >= 125) {
+      const leftTime = 140 - this.currentTime
+      const baseElapsed = 1200
+      let elapsed = baseElapsed - (60 * leftTime) + this.currentTimeFrame
+      if (elapsed > baseElapsed) elapsed = baseElapsed
+
+      let maeulWidth = Math.floor(game.graphic.CANVAS_WIDTH / baseElapsed * elapsed)
+      let maeulHeight = Math.floor(game.graphic.CANVAS_HEIGHT / baseElapsed * elapsed)
+      let maeulX = (game.graphic.CANVAS_WIDTH) - maeulWidth
+      let maeulY = (game.graphic.CANVAS_HEIGHT) - maeulHeight
+      game.graphic.setAlpha(1 / baseElapsed * elapsed)
+      game.graphic.imageView(this.maeulImage, maeulX, maeulY, maeulWidth, maeulHeight)
+      game.graphic.setAlpha(1)
+      
+      // digitalDisplay('mx: ' + maeulX + ', my: ' + maeulY, 0, 20)
     }
 
-    digitalDisplay('x: ' + this.backgroundX + ', y: ' + this.backgroundY + ', ' + this.backgroundNumber, 0, 0)
+  }
+
+  processDebug () {
+    if (this.timeCheckFrame(0, 5)) {
+      // this.currentTime = 31
+    }
   }
 
   processBackground () {
-    // 현재 시간에 맞추어서, 백그라운드 배경을 진행
-    this.backgroundNumber = Math.floor(this.currentTime / 30)
-    if(this.backgroundNumber >= 5) {
-      this.backgroundNumber = 4
-      this.backgroundY = -1800 + game.graphic.CANVAS_HEIGHT
+    super.processBackground()
+    // 현재 시간에 맞추어서, 그라디언트 배경을 진행
+    const gradientHeight = 1200
+    const divSecond = Math.floor(gradientHeight / 60)
+    this.gradientBg.number = Math.floor(this.currentTime / Math.floor(gradientHeight / 60))
+    if(this.gradientBg.number >= 9) {
+      this.gradientBg.number = 8
+      this.gradientBg.y = -gradientHeight + game.graphic.CANVAS_HEIGHT
     } else {
-      let leftSecond = this.currentTime % 30
-      this.backgroundY = -(leftSecond * 60) - this.currentTimeFrame
+      let leftSecond = this.currentTime % divSecond
+      this.gradientBg.y = -(leftSecond * 60) - this.currentTimeFrame
   
-      if (this.backgroundNumber === 4 && this.backgroundY < -1800 + game.graphic.CANVAS_HEIGHT) {
-        this.backgroundY = -1800 + game.graphic.CANVAS_HEIGHT
+      if (this.gradientBg.number === 4 && this.gradientBg.y < -gradientHeight + game.graphic.CANVAS_HEIGHT) {
+        this.gradientBg.y = -gradientHeight + game.graphic.CANVAS_HEIGHT
       }
     }
-
   }
 
   /**
@@ -2195,55 +2235,120 @@ class Round2_1 extends RoundData {
   }
 
   roundPhase01 () {
-    // 0 ~ 30 // 파란, 초록 동그라미가 먼저 등장 후, 다양한 색의 동그라미들이 등장
-    if (this.timeCheckInterval(0, 3, 60)) {
-      this.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
-    } else if (this.timeCheckInterval(4, 6, 30)) {
+    // 참고: 일반 동그라미는 개체당 dps 10%
+    // 특수 동그라미는 개체당 dps 20%
+
+    // 파랑 동그라미가 먼저 등장 (dps 40%)
+    if (this.timeCheckInterval(0, 6, 15)) {
       this.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
     }
     
-    if (this.timeCheckInterval(7, 12, 60)) {
+    // 초록 동그라미가 추가로 등장 (dps 60%)
+    if (this.timeCheckInterval(7, 12, 20)) {
       this.createEnemy(ID.enemy.donggramiEnemy.miniGreen)
       this.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
     }
 
-    if (this.timeCheckInterval(13, 18, 60)) {
-      this.createEnemy(ID.enemy.donggramiEnemy.miniGreen)
-      this.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
+    // 모든색 동그라미가 등장 (dps 80%)
+    if (this.timeCheckInterval(13, 18, 15)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
       this.createEnemy(ID.enemy.donggramiEnemy.mini)
     }
 
-    if (this.timeCheckInterval(19, 24, 15)) {
-      this.createEnemy(ID.enemy.donggramiEnemy.mini)
-    }
-
-    if (this.timeCheckInterval(25, 30, 10)) {
+    // dps 100% (27초 이후엔 등장 없음)
+    if (this.timeCheckInterval(19, 27, 6)) {
       this.createEnemy(ID.enemy.donggramiEnemy.mini)
     }
   }
 
   roundPhase02 () {
+    // 남은 적들을 전부 죽이지 않으면 시간 일시 정지
+    // 이것은, 다음 적들의 특징을 효과적으로 보여주기 위해 추가한 것
     this.timePauseEnemyCount(32)
 
-    if (this.timeCheckInterval(34, 35, 60)) {
+    // 느낌표 동그라미 dps 100% (5초간 지속 = 총 25마리)
+    if (this.timeCheckInterval(35, 39, 12)) {
       this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark)
     }
 
-    if (this.timeCheckInterval(41, 42, 60)) {
+    // 물음표 동그라미 dps 100%
+    if (this.timeCheckInterval(42, 47, 12)) {
       this.createEnemy(ID.enemy.donggramiEnemy.questionMark)
     }
 
-    if (this.timeCheckInterval(49, 50, 60)) {
+    // 이모지 동그라미 dps 120%
+    if (this.timeCheckInterval(50, 54, 10)) {
       this.createEnemy(ID.enemy.donggramiEnemy.emoji)
     }
-
-    this.timePauseEnemyCount(58)
   }
 
   roundPhase03 () {
-    // 혼합형 동그라미 대거 등장
-    // 100% dps 필요
-    
+    // 일반 동그라미: 초당 dps 60% (60s ~ 70s)
+    // 초당 dps 50% (71s ~ 80s)
+    // 초당 dps 40% (81s ~ 90s)
+    if (this.timeCheckInterval(60, 70, 10) || this.timeCheckInterval(71, 80, 12) || this.timeCheckInterval(81, 90, 15)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+    }
+
+    // 특수 동그라미: 초당 dps 60% (60s ~ 70s)
+    // 초당 dps 80% (71s ~ 80s)
+    // 초당 dps 80% (81s ~ 90s)
+    if (this.timeCheckInterval(60, 70, 20) || this.timeCheckInterval(71, 90, 15)) {
+      let random = Math.floor(Math.random() * 3)
+      switch (random) {
+        case 0: this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark); break
+        case 1: this.createEnemy(ID.enemy.donggramiEnemy.questionMark); break
+        case 2: this.createEnemy(ID.enemy.donggramiEnemy.emoji); break
+      }
+    }
+  }
+
+  roundPhase04 () {
+    this.timePauseEnemyCount(95)
+
+    // talk 동그라미, 초당 dps 100%
+    if (this.timeCheckInterval(96, 100, 12)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.talk)
+    }
+
+    // 이젠 특수동그라미만 나오고, 일반 동그라미는 가끔 나옴
+    // 초당 dps 120%
+    if (this.timeCheckInterval(102, 112, 10)) {
+      let random = Math.floor(Math.random() * 4)
+      switch (random) {
+        case 0: this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark); break
+        case 1: this.createEnemy(ID.enemy.donggramiEnemy.questionMark); break
+        case 2: this.createEnemy(ID.enemy.donggramiEnemy.emoji); break
+        case 3: this.createEnemy(ID.enemy.donggramiEnemy.talk); break
+      }
+    }
+
+    // 일시적으로 동그라미가 엄청나게 많이 등장함
+    // 초당 dps 150%!
+    if (this.timeCheckInterval(116, 119, 2)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+    }
+  }
+
+  roundPhase05 () {
+    // 124 ~ 141초 적 추가로 등장 (모든 종류 동시에 등장)
+    // 초당 dps 90%
+    if (this.timeCheckInterval(124, 140, 60)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+      this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark)
+      this.createEnemy(ID.enemy.donggramiEnemy.questionMark)
+      this.createEnemy(ID.enemy.donggramiEnemy.emoji)
+      this.createEnemy(ID.enemy.donggramiEnemy.talk)
+    }
+
+    this.timePauseEnemyCount(144)
+
+    // 146초 보스전
+    if (this.timeCheckFrame(146, 1) && !this.bossMode) {
+      this.requestBossMode()
+      this.createEnemy(ID.enemy.donggramiEnemy.bossBig1)
+      this.createEnemy(ID.enemy.donggramiEnemy.bossBig2)
+    }
   }
 }
 

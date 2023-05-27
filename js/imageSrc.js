@@ -83,6 +83,7 @@ export class imageSrc {
     round1_5_meteoriteRed: './image/round/round1_5_meteoriteRed.jpg',
     round1_6_space: './image/round/round1_6_space.jpg',
     round1_6_paran_planet: './image/round/round1_6_paran_planet.png',
+    round2_1_cloud: './image/round/round2_1_cloud.png',
     round2_2_apartment1: './image/round/round2_2_apartment1.png',
     round2_2_apartment2: './image/round/round2_2_apartment2.png',
     round2_2_maeul_entrance: './image/round/round2_2_maeul_entrance.png',

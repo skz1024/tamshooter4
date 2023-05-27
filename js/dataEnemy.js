@@ -3172,7 +3172,7 @@ class DonggramiEnemy extends EnemyData {
     this.imageSrc = imageSrc.enemy.donggramiEnemy
     this.color = ''
     this.colorNumber = 0
-    this.dieAfterDeleteDelay = new DelayData(180) // 죽는데 걸리는 시간 추가
+    this.dieAfterDeleteDelay = new DelayData(60) // 죽는데 걸리는 시간 추가
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieDonggrami)
     this.setDonggramiColor(DonggramiEnemy.colorGroup.ALL)
     this.setEnemyByCpStat(10, 10)
@@ -3423,7 +3423,7 @@ class DonggramiEnemyExclamationMark extends DonggramiEnemy {
   constructor () {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.ALL)
-    this.setEnemyByCpStat(50, 10)
+    this.setEnemyByCpStat(20, 10)
 
     /** 느낌표 딜레이 체크 간격 */ this.exclamationMarkDelay = new DelayData(4)
     /** 느낌표 상태가 지속된 시간 */ this.exclamationMarkElaspedFrame = 0
@@ -3506,7 +3506,7 @@ class DonggramiEnemyExclamationMark extends DonggramiEnemy {
         super.processMove() // 이동 시작...
       } else if (this.exclamationMarkElaspedFrame >= 360) {
         if (this.exitAreaCheck()) {
-          this.state = this.STATE_AFTER // 다시 원상태로... 하지만 더이상 느낌표를 띄우지 않는다. (연속 도망을 막기 위해서)
+          this.state = this.STATE_NORMAL // 다시 원상태로...
           this.isPossibleExit = true
           this.isExitToReset = true // 다시 원래대로 복구
           // 이동속도 재설정(다만, 이전 이동속도를 기억하진 않으므로 랜덤으로 재설정됩니다.)
@@ -3521,7 +3521,7 @@ class DonggramiEnemyQuestionMark extends DonggramiEnemy {
   constructor () {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.NORMAL)
-    this.setEnemyByCpStat(50, 10)
+    this.setEnemyByCpStat(20, 10)
 
     this.questionMarkDelay = new DelayData(4)
     this.questionMarkElaspedFrame = 0
@@ -3563,10 +3563,10 @@ class DonggramiEnemyQuestionMark extends DonggramiEnemy {
         let speedY = (playerY - this.y) / 80
 
         // 속도 보정
-        if (speedX <= 2 && speedX > 0) speedX = 2
-        else if (speedX < 0 && speedX >= -2) speedX = -2
-        if (speedY <= 2 && speedX > 0) speedX = 2
-        else if (speedY < 0 && speedY >= -2) speedY -2
+        if (speedX <= 100 && speedX > 0) speedX = 1
+        else if (speedX < 0 && speedX >= -100) speedX = -1
+        if (speedY <= 100 && speedY > 0) speedY = 1
+        else if (speedY < 0 && speedY >= -100) speedY -1
         this.setMoveDirection('', '')
         this.setMoveSpeed(speedX, speedY)
         super.processMove() // 객체 이동 함수
@@ -3615,7 +3615,7 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
   constructor() {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.ALL)
-    this.setEnemyByCpStat(50, 10)
+    this.setEnemyByCpStat(20, 10)
     this.setRandomSpeed(3, 3)
     this.emojiDelay = new DelayData(120)
     this.subType = DonggramiEnemy.SUBTYPE_EMOJI
@@ -3818,7 +3818,7 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
 class DonggramiEnemyTalk extends DonggramiEnemy {
   constructor () {
     super()
-    this.setEnemyByCpStat(50, 10)
+    this.setEnemyByCpStat(20, 10)
 
     /** 현재 대화값 */ this.currentTalk = ''
     /** 이모지를 받은 상태와 관련한 딜레이 */ this.catchEmojiDelay = new DelayData(300)
@@ -3950,13 +3950,15 @@ class DonggramiEnemyBossBig1 extends DonggramiEnemy {
     this.setDonggramiColor(DonggramiEnemy.colorGroup.BIG1)
 
     // 이 보스는 많이 느림
-    this.setRandomSpeed(1, 1)
+    this.setRandomSpeed(3, 3)
     this.isPossibleExit = false // 화면 바깥을 나갈 수 없음
 
-    this.moveDelay = new DelayData(300)
+    this.BASE_DELAY = 240
+    this.ADVANCE_DELAY = 120
+    this.moveDelay = new DelayData(this.BASE_DELAY)
     this.welcomeImageData = imageDataInfo.donggramiEnemyEffect.welcomeText
 
-    this.welcomeDelay = new DelayData(300)
+    this.welcomeDelay = new DelayData(this.BASE_DELAY)
 
     this.state = ''
     this.STATE_WELCOME = 'w'
@@ -3984,10 +3986,10 @@ class DonggramiEnemyBossBig1 extends DonggramiEnemy {
     if (this.welcomeDelay.check()) {
       if (this.state === this.STATE_NORMAL) {
         this.state = this.STATE_WELCOME
-        this.welcomeDelay.delay = 300
+        this.welcomeDelay.delay = this.BASE_DELAY
       } else {
         this.state = this.STATE_NORMAL
-        this.welcomeDelay.delay = Math.floor(Math.random() * 300) + 300
+        this.welcomeDelay.delay = Math.floor(Math.random() * this.ADVANCE_DELAY) + this.BASE_DELAY
       }
     }
   }
@@ -3996,7 +3998,7 @@ class DonggramiEnemyBossBig1 extends DonggramiEnemy {
     super.processMove()
     
     if (this.moveDelay.check()) {
-      this.setRandomSpeed(1, 1)
+      this.setRandomSpeed(3, 3)
     }
 
     this.degree += this.moveSpeedX + this.moveSpeedY
