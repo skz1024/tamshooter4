@@ -90,7 +90,8 @@ export class imageSrc {
     round2_2_park: './image/round/round2_2_park.png',
     round2_2_placard: './image/round/round2_2_placard.png',
     round2_2_shopping_mall: './image/round/round2_2_shopping_mall.png',
-    round2_2_tunnel: './image/round/round2_2_tunnel.png'
+    round2_2_tunnel: './image/round/round2_2_tunnel.png',
+    round2_2_tunnel_outload: './image/round/round2_2_tunnel_outload.png'
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.

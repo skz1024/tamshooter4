@@ -3178,7 +3178,7 @@ class DonggramiEnemy extends EnemyData {
     this.setEnemyByCpStat(10, 10)
     this.isPossibleExit = true
     this.isExitToReset = true
-    this.setRandomSpeed(3, 3)
+    this.setRandomSpeed(3, 3, true)
   }
 
   /** 
@@ -3251,7 +3251,7 @@ class DonggramiEnemy extends EnemyData {
       case this.colorGroup.PURPLE: random = Math.floor(Math.random() * 3) + 15; break // 15 ~ 17
       case this.colorGroup.NORMAL: random = Math.floor(Math.random() * 18) + 0; break // 0 ~ 17
       case this.colorGroup.ACHROMATIC: random = Math.floor(Math.random() * 6) + 18; break // 18 ~ 23
-      case this.colorGroup.SPECIAL: random = Math.floor(Math.random() * 6) + 24; break // 24 ~ 29
+      case this.colorGroup.ANOTHER: random = Math.floor(Math.random() * 6) + 24; break // 24 ~ 29
       case this.colorGroup.MIX: random = Math.floor(Math.random() * 6) + 30; break // 30 ~ 35
       case this.colorGroup.BIG1: random = 36; break
       case this.colorGroup.BIG2: random = 37; break
@@ -3271,7 +3271,7 @@ class DonggramiEnemy extends EnemyData {
     /** 보라(퍼플) */ PURPLE: 'purple',
     /** 일반색 계열(파랑, 초록, 주황, 노랑, 빨강, 보라) */ NORMAL: 'normal',
     /** 무채색 (하양, 회색, 검정) - 참고: 각 색을 분리할 수 없음 */ ACHROMATIC: 'archromatic',
-    /** 특수색 (골드, 실버, 스카이블루, 핑크, 시안, 마젠타) - 참고: 각 색을 분리할 수 없음 */ SPECIAL: 'special',
+    /** 특수색 (골드, 실버, 스카이블루, 핑크, 시안, 마젠타) - 참고: 각 색을 분리할 수 없음 */ ANOTHER: 'special',
     /** 혼합색 - 참고: 각 색을 분리할 수 없음 */ MIX: 'mix',
     /** 모든색 */ ALL: 'all',
     /** 빅1 - 어두운 파랑(보스전용) */ BIG1: 'big1',
@@ -3377,13 +3377,25 @@ class DonggramiEnemy extends EnemyData {
     '이것좀 봐.',
     '오늘도 평범한 하루'
   ]
+
+  /** 2-2 상점에 있는 동그라미가 하는 대화 리스트(talk하고 약간 다름) */
+  static talkShoppingList = [
+    '어떤걸 살까?',
+    '물건이 별로네...',
+    '이거 얼마에요?',
+    '1+1 여기있다!',
+    '어디로 갈까?',
+    '오늘은 쇼핑하는 날',
+    '동그라미도 쇼핑을 해요',
+    '난 돈이 없어.',
+    '오! 할인은 못참아!'
+  ]
 }
 
 class DonggramiEnemyMiniBlue extends DonggramiEnemy {
   constructor () {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.BLUE)
-    this.setEnemyByCpStat(10, 10)
   }
 }
 
@@ -3391,16 +3403,34 @@ class DonggramiEnemyMiniGreen extends DonggramiEnemy {
   constructor () {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.GREEN)
-    this.setEnemyByCpStat(10, 10)
   }
 }
 
-/** 미니 등급의 동그라미 (체력: cp base의 10%) */
+class DonggramiEnemyMiniRed extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.RED)
+  }
+}
+
+class DonggramiEnemyMiniPurple extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.PURPLE)
+  }
+}
+
 class DonggramiEnemyMini extends DonggramiEnemy {
   constructor () {
     super()
-    this.setDonggramiColor(DonggramiEnemy.colorGroup.NORMAL)
-    this.setEnemyByCpStat(10, 10)
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.ALL)
+  }
+}
+
+class DonggramiEnemyMiniAchromatic extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.ACHROMATIC)
   }
 }
 
@@ -3943,10 +3973,112 @@ class DonggramiEnemyTalk extends DonggramiEnemy {
   }
 }
 
+class DonggramiEnemyTalkShopping extends DonggramiEnemyTalk {
+  constructor () {
+    super() 
+  }
+
+  /** 랜덤한 대화를 얻습니다. (무작위로 얻은 대사로 대화를 함.) */
+  getRandomTalk () {
+    let talk = DonggramiEnemy.talkShoppingList
+    let index = Math.floor(Math.random() * talk.length)
+    return talk[index]
+  }
+}
+
+class DonggramiEnemyBounce extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.ALL)
+    this.setRandomSpeed(4, 0, true)
+
+    this.bounceSpeedY = Math.floor(Math.random() * 4) + 10
+    this.bounceDelay = new DelayData(120)
+  }
+
+  processMove () {
+    // 이 동그라미는 바운스 하듯이 움직입니다. (통 통 튀는 형태로)
+    // 2-2 공원부터 출현
+    // 참고: sin 값을 각도로 계산하려면 먼저 라디안을 각도로 변환해야 합니다.
+    this.bounceDelay.check()
+    let count = (this.bounceDelay.count / this.bounceDelay.delay) * 180
+    let degree = Math.PI / 180 * count
+    // sin 0은 0이고, sin 90도는 1이므로,
+    // 속도 0에서 시작해 1로 점점 가속됩니다.
+    let sinValue = Math.sin(degree)
+
+    // 절반의 딜레이 시간동안 추락하고, 절반의 딜레이 시간동안 올라갑니다.
+    // 이렇게 한 이유는, sin 값이 0 ~ 1 ~ 0 식으로 변화하기 때문
+    if (this.bounceDelay.count < this.bounceDelay.delay / 2) {
+      this.moveSpeedY = this.bounceSpeedY * sinValue
+
+      if (this.y > game.graphic.CANVAS_HEIGHT) {
+        // 화면 밑으로 이미 내려갔다면, 딜레이값을 조정해 강제로 위로 올라가도록 처리
+        this.bounceDelay.count = this.bounceDelay.delay / 2
+      } else if (this.bounceDelay.count >= this.bounceDelay.delay - 4) {
+        // 다만, 내려갈 때에는 하면 맨 밑에 닿지 않으면 계속 내려가도록 딜레이를 직접적으로 조정
+        this.bounceDelay.count--
+      }
+    } else {
+      this.moveSpeedY = -this.bounceSpeedY * sinValue
+    }
+
+    super.processMove()
+  }
+}
+
+class DonggramiEnemySpeed extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.boostDelay = new DelayData(60)
+    this.waitDelay = new DelayData(180)
+    this.setRandomSpeed(12, 12)
+    this.state = ''
+
+    this.baseSpeedX = this.moveSpeedX
+    this.baseSpeedY = this.moveSpeedY
+
+    this.STATE_BOOST = 'boost'
+    this.STATE_NORMAL = ''
+  }
+
+  processMove () {
+    if (this.state === this.STATE_NORMAL) {
+      this.moveSpeedX = 0
+      this.moveSpeedY = 0
+
+      if (this.waitDelay.check()) {
+        this.state = this.STATE_BOOST
+        this.setRandomSpeed(12, 12, true)
+
+        // 변경된 속도에 맞춰서 기준 속도 재설정
+        this.baseSpeedX = this.moveSpeedX
+        this.baseSpeedY = this.moveSpeedY
+      }
+    } else if (this.state === this.STATE_BOOST) {
+      // 이 동그라미는 일정시간마다 급가속을 합니다. 일반적인 이동속도는 느립니다.
+      // 부스트는 1초동안만 지속된다.
+      // 부스트가 끝나면 움직이지 않음.
+      let count = (this.boostDelay.count / this.boostDelay.delay) * 90
+      let degree = Math.PI / 180 * count
+      let sinValue = Math.cos(degree)
+
+      this.moveSpeedX = this.baseSpeedX * sinValue 
+      this.moveSpeedY = this.baseSpeedY * sinValue
+
+      if (this.boostDelay.check()) {
+        this.state = this.STATE_NORMAL
+      }
+    }
+
+    super.processMove()
+  }
+}
+
 class DonggramiEnemyBossBig1 extends DonggramiEnemy {
   constructor () {
     super()
-    this.setEnemyByCpStat(2000, 10)
+    this.setEnemyByCpStat(1200, 10)
     this.setDonggramiColor(DonggramiEnemy.colorGroup.BIG1)
 
     // 이 보스는 많이 느림
@@ -4077,12 +4209,18 @@ dataExportEnemy.set(ID.enemy.jemulEnemy.rotateRocket, JemulEnemyRotateRocket)
 // donggramiEnemy
 dataExportEnemy.set(ID.enemy.donggramiEnemy.miniBlue, DonggramiEnemyMiniBlue)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.miniGreen, DonggramiEnemyMiniGreen)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.miniRed, DonggramiEnemyMiniRed)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.miniPurple, DonggramiEnemyMiniPurple)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.mini, DonggramiEnemyMini)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.miniArchomatic, DonggramiEnemyMiniAchromatic)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.exclamationMark, DonggramiEnemyExclamationMark)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.questionMark, DonggramiEnemyQuestionMark)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.emoji, DonggramiEnemyEmojiMini)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.normal, DonggramiEnemyNormal)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.strong, DonggramiEnemyStrong)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.talk, DonggramiEnemyTalk)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.talkShopping, DonggramiEnemyTalkShopping)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.bossBig1, DonggramiEnemyBossBig1)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.bossBig2, DonggramiEnemyBossBig2)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.bounce, DonggramiEnemyBounce)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.speed, DonggramiEnemySpeed)

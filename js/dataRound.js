@@ -679,6 +679,7 @@ export class RoundData {
       this[key] = saveData[key]
     }
 
+
     this.musicPlay()
   }
 }
@@ -2123,8 +2124,8 @@ class Round1_test extends RoundData {
     // soundSystem.createAudio(soundSrc.donggrami.emojiThrow)
 
     this.addRoundPhase(() => {
-      if (this.timeCheckInterval(1, 30, 120)) {
-        this.createEnemy(ID.enemy.donggramiEnemy.questionMark)
+      if (this.timeCheckInterval(1, 30, 120) && this.getEnemyCount() <= 0) {
+        this.createEnemy(ID.enemy.donggramiEnemy.speed)
       }
     }, 0, 999)
   }
@@ -2356,7 +2357,262 @@ class Round2_2 extends RoundData {
   constructor () {
     super()
     this.setAutoRoundStat(ID.round.round2_2)
+    this.musicSrc = soundSrc.music.music10_donggrami_maeul
+    this.bgList = [
+      imageSrc.round.round2_2_maeul_entrance,
+      imageSrc.round.round2_2_tunnel,
+      imageSrc.round.round2_2_tunnel_outload,
+      imageSrc.round.round2_2_apartment1,
+      imageSrc.round.round2_2_park,
+      imageSrc.round.round2_2_apartment2,
+      imageSrc.round.round2_2_shopping_mall,
+      imageSrc.round.round2_2_placard
+    ]
+    this.bgWidth = [800, 800, 800, 1600, 1600, 1600, 1600, 800]
+    this.bgNumber = 0
+
+    // 시간이 배경에 맞추어서 진행되기 때문에, 배경이 변경되는 것을 기준으로 대략적인 시간 값이 설정되었습니다.
+    // 1초에 60frame = 60px씩 이동
+    // [실제 배경 기준 도착 시점]
+    // [0 ~ 20, 21 ~ 60, 61 ~ 87, 88 ~ 114, 115 ~ 141, 142 ~ 169]
+    // 168초 쯤에 배경 스크롤 중지됨
+    // 실제 라운드 기준
+    // [0 ~ 20, 21 ~ 60, 61 ~ 80, 81 ~ 110, 111 ~ 130, 131 ~ 160, 161 ~ 170]
+    this.addRoundPhase(this.roundPhase00, 0, 20) // 입구
+    this.addRoundPhase(this.roundPhase01, 21, 60) // 터널
+    this.addRoundPhase(this.roundPhase02, 61, 80) // 아파트 1단지
+    this.addRoundPhase(this.roundPhase03, 81, 110) // 공원
+    this.addRoundPhase(this.roundPhase04, 111, 130) // 아파트 2단지
+    this.addRoundPhase(this.roundPhase05, 131, 160) // 상가
+    this.addRoundPhase(this.roundPhase06, 161, 167) // 플래카드
   }
+
+  displayBackground () {
+    // super.displayBackground()
+    const lightsky = '#4995E1'
+    const maeulsky = '#67B2FF'
+    game.graphic.gradientRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, [lightsky, maeulsky])
+
+    // 현재 시간에 맞추어서 배경 진행 - 추후 수정
+
+    game.graphic.imageView(this.bgList[this.bgNumber], this.backgroundX, 0)
+    if (this.bgNumber + 1 < this.bgWidth.length) {
+      game.graphic.imageView(this.bgList[this.bgNumber + 1], this.backgroundX + this.bgWidth[this.bgNumber], 0)
+    }
+
+    digitalDisplay('bx: ' + this.backgroundX + ', bn: ' + this.bgNumber, 0, 0)
+
+    if (this.timeCheckInterval(25, 30) || this.timeCheckInterval(41, 45)) {
+      game.sound.setEcho(0.2, 0.2, 0.3)
+      game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', 0.3)
+    } else if (this.timeCheckInterval(31, 35)) {
+      game.sound.setEcho(0.4, 0.4, 0.3)
+      game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', 0.5)
+    } else if (this.timeCheckInterval(36, 40)) {
+      game.sound.setEcho(0.4, 0.4, 0.3)
+      game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', 0.4)
+    }
+  }
+
+  processBackground () {
+    if (this.bgNumber === this.bgWidth.length - 1) {
+      this.backgroundSpeedX = 0
+      this.backgroundX = 0
+    } else if (this.currentTime >= 20) {
+      this.backgroundSpeedX = -1
+    } else {
+      this.backgroundSpeedX = 0
+    }
+    
+    if (this.backgroundX < -this.bgWidth[this.bgNumber] && this.bgNumber < this.bgWidth.length) {
+      this.bgNumber++
+      this.backgroundX = 0
+    }
+
+    if (this.timeCheckInterval(25, 30) || this.timeCheckInterval(41, 45)) {
+      game.sound.setEcho(0.2, 0.2, 0.3)
+      game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', 0.3)
+    } else if (this.timeCheckInterval(31, 35)) {
+      game.sound.setEcho(0.4, 0.4, 0.3)
+      game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', 0.5)
+    } else if (this.timeCheckInterval(36, 40)) {
+      game.sound.setEcho(0.4, 0.4, 0.3)
+      game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', 0.4)
+    } else if (this.timeCheckInterval(46, 50)) {
+      game.sound.setEcho(0, 0, 0)
+    }
+
+    super.processBackground()
+  }
+
+  roundPhase00 () {
+    // 보스전: 의미가 있나?
+    // 0 ~ 20초간 진행
+    // 보스가 죽는다면 진행구간이 스킵됨
+
+    if (this.timeCheckFrame(2)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.bossBig1)
+      this.createEnemy(ID.enemy.donggramiEnemy.bossBig2)
+      // this.requestBossMode()
+      this.currentTime++
+    }
+
+    if (this.timeCheckInterval(5, 18) && this.getEnemyCount() <= 0) {
+      this.currentTime = 19
+    }
+
+    this.timePauseEnemyCount(19)
+  }
+
+  roundPhase01 () {
+    // 일반 동그라미만 등장 (색깔은 자유)
+    // 총 dps: 50%
+    // 시간: 20 ~ 60
+    // 최대 마리수 제한: 40
+    if (this.timeCheckInterval(20, 60, 12) && this.getEnemyCount() < 40) {
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+    }
+  }
+
+  roundPhase02 () {
+    // 일반 동그라미만 등장 (색갈비중: 파란색 4, 초록색 4, 나머지 4)
+    // 총 dps: 120%
+    // 시간: 61 ~ 80
+    // 최대 마리수 제한: 70 ~ 72(70마리 이하일때, 동시에 여러개 생성하기 때문에 이 수치를 초과할 수 있음)
+    if (this.timeCheckInterval(61, 79, 15) && this.getEnemyCount() < 70) {
+      this.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
+      this.createEnemy(ID.enemy.donggramiEnemy.miniGreen)
+    }
+
+    if (this.timeCheckInterval(61, 79, 15) && this.getEnemyCount() < 70) {
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+    }
+  }
+
+  roundPhase03 () {
+    // 특수 동그라미만 등장
+    // 총 dps: 80%
+    // 시간: 81 ~ 110
+    // 최대 마리수 제한: 40 (단, 시간이 89초 이후에 적용)
+
+    if (this.timeCheckInterval(81, 89, 15)) {
+      let random = Math.floor(Math.random() * 8)
+      switch (random) {
+        case 0:
+        case 1:
+          this.createEnemy(ID.enemy.donggramiEnemy.bounce)
+          break
+        case 2:
+        case 3:
+          this.createEnemy(ID.enemy.donggramiEnemy.speed)
+          break
+        case 4:
+          this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark)
+          break
+        case 5:
+          this.createEnemy(ID.enemy.donggramiEnemy.questionMark)
+          break
+        case 6:
+          this.createEnemy(ID.enemy.donggramiEnemy.emoji)
+          break
+        case 7:
+          this.createEnemy(ID.enemy.donggramiEnemy.talk)
+          break
+      }
+    }
+
+    if (this.timeCheckInterval(90, 110, 15) && this.getEnemyCount() < 40) {
+      let random = Math.floor(Math.random() * 8)
+      switch (random) {
+        case 0:
+        case 1:
+          this.createEnemy(ID.enemy.donggramiEnemy.bounce)
+          break
+        case 2:
+        case 3:
+          this.createEnemy(ID.enemy.donggramiEnemy.speed)
+          break
+        case 4:
+          this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark)
+          break
+        case 5:
+          this.createEnemy(ID.enemy.donggramiEnemy.questionMark)
+          break
+        case 6:
+          this.createEnemy(ID.enemy.donggramiEnemy.emoji)
+          break
+        case 7:
+          this.createEnemy(ID.enemy.donggramiEnemy.talk)
+          break
+      }
+    }
+  }
+
+  roundPhase04 () {
+    // 일반 동그라미만 등장
+    // 총 dps: 160%
+    // 시간: 110 ~ 130
+    // 최대 마리수 제한: 100
+    // 가장 어려운 구간 주의 필요
+
+    if (this.timeCheckInterval(110, 127, 15) && this.getEnemyCount() < 100) {
+      this.createEnemy(ID.enemy.donggramiEnemy.miniRed)
+      this.createEnemy(ID.enemy.donggramiEnemy.miniPurple)
+      this.createEnemy(ID.enemy.donggramiEnemy.miniArchomatic)
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+    }
+  }
+
+  roundPhase05 () {
+    // 일반 + 특수 동그라미
+    // 대화 동그라미의 비중 대폭 증가
+    // 총 dps: 60%(131 ~ 140), 120%(141 ~ 150), 160%(150 ~ 160)
+    // 시간: 130 ~ 160
+    // 최대 마리수 제한: 50 (141초 이후부터 적용)
+
+    if (this.timeCheckInterval(131, 140, 60)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.talk)
+      this.createEnemy(ID.enemy.donggramiEnemy.talkShopping)
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+    }
+
+    if (this.timeCheckInterval(141, 150, 60) && this.getEnemyCount() < 50) {
+      this.createEnemy(ID.enemy.donggramiEnemy.talk)
+      this.createEnemy(ID.enemy.donggramiEnemy.talkShopping)
+      let random = Math.floor(Math.random() * 2)
+      switch (random) {
+        case 0:
+          this.createEnemy(ID.enemy.donggramiEnemy.bounce)
+          this.createEnemy(ID.enemy.donggramiEnemy.speed)
+          break
+        case 1:
+          this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark)
+          this.createEnemy(ID.enemy.donggramiEnemy.questionMark)
+          break
+      }
+    }
+
+    if (this.timeCheckInterval(140, 160, 15) && this.getEnemyCount() < 50) {
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+    }
+
+    if (this.timeCheckInterval(150, 160, 15) && this.getEnemyCount() < 50) {
+      for (let i = 0; i < 3; i++) {
+        let random = Math.floor(Math.random() * 6)
+        switch (random) {
+          case 0: this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark); break
+          case 1: this.createEnemy(ID.enemy.donggramiEnemy.questionMark); break
+          case 2: this.createEnemy(ID.enemy.donggramiEnemy.talk); break
+          case 3: this.createEnemy(ID.enemy.donggramiEnemy.talkShopping); break
+          case 4: this.createEnemy(ID.enemy.donggramiEnemy.bounce); break
+          case 5: this.createEnemy(ID.enemy.donggramiEnemy.speed); break
+        }
+      }
+    }
+
+  }
+  roundPhase06 () {}
 }
 
 

@@ -635,8 +635,14 @@ export class FieldData {
    */
   setRandomSpeed (maxX = 2, maxY = 2, isMinusRangeInclued = false) {
     if (isMinusRangeInclued) {
-      this.moveSpeedX = (Math.random() * maxX) - (maxX * 2)
-      this.moveSpeedY = (Math.random() * maxY) - (maxY * 2)
+      // 부호 결정용 랜덤 마이너스 처리
+      // 50% 확률로 양수 또는 음수 결정
+      let randomMinusX = Math.random() * 100 < 50 ? 1 : -1
+      let randomMinusY = Math.random() * 100 < 50 ? 1 : -1
+      
+      // 그 후, 곱셉을 이용하여 음수와 양수를 결정시킴 (마이너스를 곱하면 음수)
+      this.moveSpeedX = Math.random() * maxX * randomMinusX
+      this.moveSpeedY = Math.random() * maxY * randomMinusY
     } else {
       this.moveSpeedX = Math.random() * maxX
       this.moveSpeedY = Math.random() * maxY
