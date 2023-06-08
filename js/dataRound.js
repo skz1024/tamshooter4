@@ -198,6 +198,9 @@ export class RoundData {
     this.bossMode = true
     this.createEnemy(enemyId)
     this.musicChange(setMusic)
+
+    // 중복 또는 연속 호출을 방지하기 위해, 보스모드를 호출하면 시간이 1초 추가됩니다.
+    this.currentTime++
   }
 
   /**
@@ -363,6 +366,7 @@ export class RoundData {
     this.processBoss()
     this.processPhaseEndEnemyNothing()
     this.processFirstMusicPlay()
+    this.processSaveString()
   }
 
   processBoss () {
@@ -371,10 +375,10 @@ export class RoundData {
     // 보스모드인 상태에서는 자동으로 시간 멈춤
     // 보스모드 상태에서 모든 적이 죽을 경우, 다음 구간 진행 가능
     // 다만 재생중인 음악이 종료되므로 주의
+    // 가능하다면, 보스모드는 마지막 페이즈에만 사용해주세요.
     if (this.enemyNothingCheck()) {
       this.bossMode = false
       this.currentTimePaused = false
-      this.currentTime += 1
       soundSystem.musicStop()
     } else {
       this.currentTimePaused = true
@@ -578,15 +582,13 @@ export class RoundData {
     this.currentBoss = fieldState.createEnemyBoss(enemyId, x, y)
   }
 
-  /**
-   * 
-   */
   getSaveData () {
     return {
       id: this.id,
       state: this.state,
       
       // 배경화면
+      backgroundImageSrc: this.backgroundImageSrc,
       backgroundX: this.backgroundX,
       backgroundY: this.backgroundY,
       backgroundSpeedX: this.backgroundSpeedX,
@@ -612,36 +614,58 @@ export class RoundData {
     }
   }
 
+  /** 
+   * saveString 문자열 수정 함수
+   * 
+   * (saveString을 조작하는 방식이 복잡할 수 있으므로, 함수로 따로 분리하였습니다.)
+   */
+  processSaveString () {
+    
+  }
+
   /**
    * 음악을 재생합니다.
    * 
-   * 참고: 불러오기를 했을 때 이 함수를 사용하면, currentTime을 설정해도 무시함.
+   * 참고: 저장된 게임 불러오기를 했을 때 이 함수를 사용하면, currentTime을 설정해도 무시함.
    */
-  musicPlay () {
+  musicPlay (start = -1) {
+    // 음악이 없으면 재생하지 않음
+    if (this.currentMusicSrc === '') {
+      soundSystem.musicStop()
+      return
+    }
+
     if (this.loadCurrentMusicTime !== 0) {
-      // 불러오기 전용 변수
+      // 저장딘 게임 불러오기 전용 변수
       soundSystem.musicPlay(this.currentMusicSrc, this.loadCurrentMusicTime)
-      this.loadCurrentMusicTime = 0
+      
+      // 현재 음악이 로딩되어있지 않아 현재 음악이 없다면, 로드된 시간 설정을 초기화하지 않습니다.
+      if (soundSystem.currentMusic != null) {
+        this.loadCurrentMusicTime = 0
+      }
     } else if (soundSystem.getMusicPaused()) {
-      soundSystem.musicPlay(this.currentMusicSrc)
+      if (start < 0) {
+        soundSystem.musicPlay(this.currentMusicSrc)
+      } else {
+        soundSystem.musicPlay(this.currentMusicSrc)
+      }
     }
   }
 
-  /** 음악을 정지합니다. */
+  /** 음악을 정지합니다. (재개 되기 전까지 재생 불가능) */
   musicStop () {
     soundSystem.musicStop()
+    this.currentMusicSrc = ''
   }
 
   /**
    * 현재 재생중인 음악을 변경합니다.
    * 
    * (라운드가 끝나기 전까지 재생중인 음악은 초기화되지 않습니다.)
-   * @param {string} soundSrc 오디오 파일의 경로
+   * @param {string} soundSrc 오디오 파일의 경로, 없을경우 현재 음악을 페이드
    * @param {number} fadeTime 페이드 시간
    */
   musicChange (soundSrc = '', fadeTime = 0) {
-    if (soundSrc === '') return
-
     this.currentMusicSrc = soundSrc
     if (fadeTime === 0) {
       soundSystem.musicPlay(soundSrc)
@@ -663,7 +687,8 @@ export class RoundData {
    */
   processFirstMusicPlay () {
     if (this.timeCheckFrame(0, 10)) {
-      // 음악 시간을 0초부터 재생시켜야 하나, 현재 함수로는 불가능
+      // 게임 시작 즉시 음악을 호출하는 것이 불가능하므로, 약간의 지연을 넣어서 처리했습니다.
+      // 0초 10프레임 시점에서 음악이 재생됩니다.
       this.currentMusicSrc = this.musicSrc
       this.musicPlay()
     }
@@ -679,39 +704,48 @@ export class RoundData {
       this[key] = saveData[key]
     }
 
+    this.loadDataProgressSaveString()
+  }
 
-    this.musicPlay()
+  /** 
+   * 불러온 saveString 값을 이용해 추가적인 설정을 합니다.
+   * 이 함수의 내부 구현은 라운드마다 다를 수 있음.
+   * 기본적으로 아무것도 수행하지 않습니다.
+   * 
+   * 주의: setLoadData 함수에서 이 함수를 호출하므로, 다른곳에서 이 함수를 호출하지 마세요.
+   */
+  loadDataProgressSaveString () {
+
+  }
+
+  getEnemyObject () {
+    return fieldState.getEnemyObject()
   }
 }
 
 class Round1_1 extends RoundData {
   constructor () {
     super()
-    this.roundName = stringText.dataRoundName.round1_1
-    this.roundText = '1-1'
-    this.standardPower = 40000
-    this.requireLevel = 1
-    this.finishTime = 150
-    this.clearBonus = 30000
+    this.setAutoRoundStat(ID.round.round1_1)
     this.backgroundImageSrc = imageSrc.round.round1_1_space
     this.musicSrc = soundSrc.music.music01_space_void
     this.bossMusic = soundSrc.music.music06_round1_boss_thema
 
-    this.addRoundPhase(this.roundPhase0, 2, 10)
-    this.addRoundPhase(this.roundPhase1, 11, 30)
-    this.addRoundPhase(this.roundPhase2, 31, 60)
-    this.addRoundPhase(this.roundPhase3, 61, 90)
-    this.addRoundPhase(this.roundPhase4, 91, 120)
-    this.addRoundPhase(this.roundPhase5, 121, 148)
+    this.addRoundPhase(this.roundPhase00, 1, 10)
+    this.addRoundPhase(this.roundPhase01, 11, 30)
+    this.addRoundPhase(this.roundPhase02, 31, 60)
+    this.addRoundPhase(this.roundPhase03, 61, 90)
+    this.addRoundPhase(this.roundPhase04, 91, 120)
+    this.addRoundPhase(this.roundPhase05, 121, 148)
   }
 
-  roundPhase0 () {
+  roundPhase00 () {
     if (this.timeCheckInterval(2, 10, 10)) {
       this.createEnemy(ID.enemy.spaceEnemy.light)
     }
   }
 
-  roundPhase1 () {
+  roundPhase01 () {
     if (this.timeCheckInterval(11, 30, 30)) {
       this.createEnemy(ID.enemy.spaceEnemy.light)
     }
@@ -727,7 +761,7 @@ class Round1_1 extends RoundData {
     }
   }
 
-  roundPhase2 () {
+  roundPhase02 () {
     if (this.timeCheckInterval(31, 60, 60)) {
       this.createEnemy(ID.enemy.spaceEnemy.light)
     }
@@ -751,7 +785,7 @@ class Round1_1 extends RoundData {
 
   }
 
-  roundPhase3 () {
+  roundPhase03 () {
     // 혜성도 대거 등장하고, 빛들이 많아짐
     if (this.timeCheckInterval(61, 74, 15) || this.timeCheckInterval(75, 90, 60)) {
       this.createEnemy(ID.enemy.spaceEnemy.light)
@@ -765,7 +799,7 @@ class Round1_1 extends RoundData {
     }
   }
 
-  roundPhase4 () {
+  roundPhase04 () {
     // 수송선과 감지기가 메인이 되고, 빛과 운석 비중이 줄어둠.
     if (this.timeCheckInterval(91, 120, 120)) {
       this.createEnemy(ID.enemy.spaceEnemy.light)
@@ -790,7 +824,7 @@ class Round1_1 extends RoundData {
     }
   }
 
-  roundPhase5 () {
+  roundPhase05 () {
     // 이제 수송선, 감지기, 운석만 등장...
     if (this.timeCheckInterval(121, 141, 240)) {
       this.createEnemy(ID.enemy.spaceEnemy.susong)
@@ -853,15 +887,9 @@ class Round1_1 extends RoundData {
 class Round1_2 extends RoundData {
   constructor () {
     super()
-    this.roundName = stringText.dataRoundName.round1_2
-    this.roundText = '1-2'
-    this.standardPower = 34000
-    this.requireLevel = 2
-    this.finishTime = 180
-    this.clearBonus = 40000
+    this.setAutoRoundStat(ID.round.round1_2)
     this.backgroundImageSrc = imageSrc.round.round1_2_meteorite
     this.musicSrc = soundSrc.music.music02_meteorite_zone_field
-
     this.meteoriteDeepImage = imageSrc.round.round1_3_meteoriteDeep
 
     this.addRoundPhase(this.roundPhase00, 0, 15)
@@ -901,11 +929,7 @@ class Round1_2 extends RoundData {
     // 운석의 등장
     if (this.timeCheckInterval(0, 15, 40)) {
       this.createEnemy(ID.enemy.meteoriteEnemy.class1)
-    }
-    if (this.timeCheckInterval(0, 15, 40)) {
       this.createEnemy(ID.enemy.meteoriteEnemy.class2)
-    }
-    if (this.timeCheckInterval(0, 15, 40)) {
       this.createEnemy(ID.enemy.meteoriteEnemy.class3)
     }
     if (this.timeCheckInterval(0, 15, 120)) {
@@ -1031,12 +1055,7 @@ class Round1_2 extends RoundData {
 class Round1_3 extends RoundData {
   constructor () {
     super()
-    this.roundName = stringText.dataRoundName.round1_3
-    this.roundText = '1-3'
-    this.standardPower = 40000
-    this.requireLevel = 3
-    this.finishTime = 210
-    this.clearBonus = 39000
+    this.setAutoRoundStat(ID.round.round1_3)
     this.backgroundImageSrc = imageSrc.round.round1_3_meteoriteDeep
     this.musicSrc = soundSrc.music.music02_meteorite_zone_field
 
@@ -1044,7 +1063,6 @@ class Round1_3 extends RoundData {
     this.battleMusic = soundSrc.music.music03_meteorite_zone_battle
     this.redZone1 = imageSrc.round.round1_5_meteoriteRed
     this.redZone2 = imageSrc.round.round1_4_meteoriteDark
-    this.memoryMusicTime = 0
 
     this.addRoundPhase(this.roundPhase00, 1, 10)
     this.addRoundPhase(this.roundPhase01, 11, 30)
@@ -1101,7 +1119,7 @@ class Round1_3 extends RoundData {
   }
 
   roundPhase00 () {
-    // 운석이 쏟아지는 페이즈
+    // 운석이 쏟아지는(?) 페이즈
     if (this.timeCheckInterval(0, 9, 90)) {
       this.createEnemy(ID.enemy.meteoriteEnemy.class1)
       this.createEnemy(ID.enemy.meteoriteEnemy.class2)
@@ -1117,12 +1135,11 @@ class Round1_3 extends RoundData {
     // 보스가 한번만 등장하도록, currentTimeFrame을 사용하여 추가로 시간 조건을 넣었습니다.
     if (this.timeCheckFrame(11, 0)) {
       this.createEnemy(ID.enemy.jemulEnemy.boss, 900)
-      // this.memoryMusicTime = this.battleMusic.duration // 현재 음악의 재생 시간 저장
       this.musicChange(this.battleMusic, 2)
     }
 
     // 보스가 죽었다면, 스킵 (이 구간은 건너뜀)
-    if (this.timeCheckInterval(20, 29, 4) && this.enemyNothingCheck()) {
+    if (this.timeCheckInterval(18, 29, 4) && this.enemyNothingCheck()) {
       this.currentTime = 30
     }
 
@@ -1134,7 +1151,7 @@ class Round1_3 extends RoundData {
 
   roundPhase02 () {
     // 음악 변경
-    if (this.timeCheckInterval(31, 31) && this.currentTimeFrame === 0) {
+    if (this.timeCheckFrame(31, 1)) {
       this.musicChange(this.musicSrc, 2)
     }
 
@@ -1155,17 +1172,21 @@ class Round1_3 extends RoundData {
       this.createEnemy(ID.enemy.jemulEnemy.hellShip)
     }
 
-    if (this.timeCheckInterval(70)) {
-      // 적의 수가 5 초과라면, 시간이 일시정지합니다.
-      this.currentTimePaused = this.getEnemyCount() > 2 ? true : false
-    }
+    // 적의 수가 2 초과라면, 시간이 일시정지합니다.
+    this.timePauseEnemyCount(69, 2)
   }
 
   roundPhase03 () {
     // 이 페이즈 이후 부터 해당 음악이 적용됩니다.
-    if (this.timeCheckInterval(71) && this.currentTimeFrame === 0) {
+    if (this.timeCheckFrame(71, 1)) {
       this.createEnemy(ID.enemy.jemulEnemy.boss, 900)
       this.musicChange(this.battleMusic, 2)
+    }
+    
+    if (this.timeCheckFrame(73, 33)) {
+      // 라운드 내의 함수로 만들기에는 애매해서 부득이하게 직접 조정함.
+      // 음악을 처음부터 재생하는것이 아닌 중간부터 재생함.
+      soundSystem.setCurrentMusicCurrentTime(23)
     }
 
     // 보스가 죽었다면, 지속적으로 적이 등장
@@ -1250,10 +1271,7 @@ class Round1_3 extends RoundData {
     this.roundPhase04_3()
     this.roundPhase04_4()
     this.roundPhase04_5()
-
-    if (this.timeCheckInterval(139)) {
-      this.currentTimePaused = this.getEnemyCount() >= 5 ? true : false
-    }
+    this.timePauseEnemyCount(139, 4)
   }
 
   roundPhase05 () {
@@ -1268,9 +1286,7 @@ class Round1_3 extends RoundData {
     }
 
     // 적이 있다면, 시간을 멈춥니다.
-    if (this.timeCheckInterval(159)) {
-      this.currentTimePaused = this.enemyNothingCheck() ? false : true
-    }
+    this.timePauseEnemyCount(159, 0)
   }
 
   roundPhase06 () {
@@ -1292,9 +1308,7 @@ class Round1_3 extends RoundData {
     }
 
     // 적이 있다면, 시간을 멈춥니다.
-    if (this.timeCheckInterval(179)) {
-      this.currentTimePaused = this.enemyNothingCheck() ? false : true
-    }
+    this.timePauseEnemyCount(179, 0)
   }
 
   roundPhase07 () {
@@ -1324,9 +1338,7 @@ class Round1_3 extends RoundData {
     }
 
     // 적이 있다면, 시간을 멈춥니다.
-    if (this.timeCheckInterval(199)) {
-      this.currentTimePaused = this.enemyNothingCheck() ? false : true
-    }
+    this.timePauseEnemyCount(199, 0)
   }
 
   roundPhase08 () {
@@ -1346,6 +1358,8 @@ class Round1_3 extends RoundData {
 
   display () {
     super.display()
+
+    // 중간보스가 등장하는 페이즈에서는 보스의 체력을 표시하도록 처리
     if ([1, 3, 5, 6, 7].includes(this.getCurrentPhase())) {
       this.displayJemulBossMeter()
     }
@@ -1355,16 +1369,12 @@ class Round1_3 extends RoundData {
 class Round1_4 extends RoundData {
   constructor () {
     super()
-    this.roundName = stringText.dataRoundName.round1_4
-    this.roundText = '1-4'
-    this.standardPower = 40000
-    this.requireLevel = 4
-    this.finishTime = 151
-    this.clearBonus = 38000
+    this.setAutoRoundStat(ID.round.round1_4)
     this.backgroundImageSrc = imageSrc.round.round1_4_meteoriteDark
     this.musicSrc = soundSrc.music.music03_meteorite_zone_battle
     this.waitTimeFrame = 0
     this.backgroundDegree = 0
+    this.backgroundFilp = 0
 
     this.messageSound = {
       message1: soundSrc.round.r1_4_message1,
@@ -1381,7 +1391,7 @@ class Round1_4 extends RoundData {
     this.addRoundPhase(this.roundPhase02, 81, 110)
     this.addRoundPhase(this.roundPhase03, 111, 150)
 
-    // 이미지, 효과음 선로드
+    // 이미지, 효과음 로드
     soundSystem.createAudio(this.messageSound.message1)
     soundSystem.createAudio(this.messageSound.message2)
     soundSystem.createAudio(this.messageSound.jemulstar)
@@ -1412,6 +1422,44 @@ class Round1_4 extends RoundData {
     }
   }
 
+  processBackground () {
+    // 참고: 1-4는 여기에 배경을 조정하는 기능이 없고 각 roundPhase마다 적혀져있습니다.
+    this.backgroundSpeedX = 0.4
+
+    // 자연스러운 배경 변화를 위해 x축 위치를 고정시킴
+    // 다만, 다음 페이즈에서 배경을 흔드는 상황이 오기 때문에 이 처리는 페이즈 3에서만 적용
+    // 주의: 초반에 시간을 너무 끌어버린 경우, 부자연스럽게 배경이 이동할 수 있음.
+    // 이것은 버그로 취급하지 않음.
+    if (this.currentTime >= 80 && this.currentTime <= 110) {
+      this.backgroundSpeedX = 0
+
+      // 만약 배경 X축이 앞으로 이동되었다면, 강제로 0으로 오도록 변경
+      if (this.backgroundX > 4) {
+        this.backgroundX -= 4
+      } else {
+        this.backgroundX = 0
+      }
+    }
+
+    const phase3Time = this.phaseTime[3].startTime
+    const phase3End = this.phaseTime[3].endTime
+
+    if (this.timeCheckInterval(phase3Time, phase3Time + 10, 2)) {
+      // 엄청나게 배경 흔들기
+      this.backgroundX = Math.random() * (phase3End - this.currentTime) * 4
+      this.backgroundY = Math.random() * (phase3End - this.currentTime) * 4
+    } else if (this.timeCheckInterval(phase3Time + 10, phase3Time + 20, 3)) {
+      // 위력 약화
+      this.backgroundX = Math.random() * (phase3End - this.currentTime) * 3
+      this.backgroundY = Math.random() * (phase3End - this.currentTime) * 3
+    } else if (this.timeCheckInterval(phase3Time + 20, phase3End - 4, 4)) {
+      this.backgroundX = Math.random() * (phase3End - this.currentTime) * 2
+      this.backgroundY = Math.random() * (phase3End - this.currentTime) * 2
+    }
+
+    super.processBackground()
+  }
+
   roundPhase00 () {
     // 시작하자마자 보스 등장 (0 ~ 10)
     if (this.timeCheckInterval(3) && this.currentTimeFrame === 0) {
@@ -1431,8 +1479,6 @@ class Round1_4 extends RoundData {
     if (this.timeCheckInterval(17)) {
       soundSystem.musicStop()
     }
-
-    this.backgroundSpeedX = 0.4
   }
 
   roundPhase01 () {
@@ -1449,20 +1495,13 @@ class Round1_4 extends RoundData {
         this.currentTime = 80
       }
     }
-
-    if (this.backgroundX > 10) {
-      this.backgroundSpeedX = -0.4
-    } else {
-      this.backgroundSpeedX = 0
-      this.backgroundX = 0
-    }
   }
 
   roundPhase02 () {
     // 필드에 있는 보스 데이터 얻어오기
     let enemyObject = fieldState.getEnemyObject()
 
-    // 1-4만 이런 방식을 사용하고, 2-1부터는 다른 방식으로 외부 데이터를 참조할것입니다.
+    // 특정 보스의 데이터 얻어오기 (뭔가 이상한 방식이긴 하지만...)
     /** 
      * @type {any} // JemulEnemyBossEye
      */
@@ -1481,7 +1520,7 @@ class Round1_4 extends RoundData {
       boss.requestStateStop()
     }
 
-    soundSystem.musicStop() // 음악 강제 정지
+    this.musicStop() // 음악 강제 정지
 
     if (this.timeCheckFrame(phase2Time + 5, 0)) {
       this.changeBackgroundImage(this.specialImage, 150)
@@ -1515,7 +1554,6 @@ class Round1_4 extends RoundData {
   }
 
   roundPhase03 () {
-
     const phase3Time = this.phaseTime[3].startTime
     const phase3End = this.phaseTime[3].endTime
 
@@ -1525,14 +1563,7 @@ class Round1_4 extends RoundData {
 
     this.backgroundImageSrc = this.specialImage
 
-    // 배경 흔들기
-    if (this.timeCheckInterval(phase3Time, phase3Time + 10, 3)) {
-      this.backgroundX = Math.random() * (phase3End - this.currentTime) * 3
-      this.backgroundY = Math.random() * (phase3End - this.currentTime) * 3
-    } else if (this.timeCheckInterval(phase3Time + 10, phase3End, 3)) {
-      this.backgroundX = Math.random() * (phase3End - this.currentTime) * 2
-      this.backgroundY = Math.random() * (phase3End - this.currentTime) * 2
-    }
+    // 배경 흔들기는 processBackground에서 처리합니다.
 
     // 저주받은 운석들이 등장함. 파괴해도, 더 강한 운석이 등장할 뿐...
     if (this.timeCheckInterval(phase3Time, phase3Time + 30, 30)) {
@@ -1567,20 +1598,8 @@ class Round1_4 extends RoundData {
     // 즉, 적이 남아있어도 라운드 클리어 가능
   }
 
-  process () {
-    super.process()
-
-    // if (this.timeCheckFrame(0, 4)) {
-    //   this.currentTime = 109
-    //   this.createEnemy(ID.enemy.jemulEnemyBossEye)
-    // }
-  }
-
   processDebug () {
-    // if (this.timeCheckFrame(0, 4)) {
-    //   this.currentTime = 109
-    //   this.createEnemy(ID.enemy.jemulEnemyBossEye)
-    // }
+
   }
 
   display () {
@@ -1594,13 +1613,9 @@ class Round1_4 extends RoundData {
 class Round1_5 extends RoundData {
   constructor () {
     super()
-    this.roundName = stringText.dataRoundName.round1_5
-    this.roundText = '1-5'
-    this.standardPower = 44000
-    this.requireLevel = 1
-    this.finishTime = 210
-    this.clearBonus = 41000
-    this.backgroundImageSrc = imageSrc.round.round1_5_meteoriteRed
+    this.setAutoRoundStat(ID.round.round1_5)
+    this.backgroundImageSrc = imageSrc.round.round1_4_meteoriteDark
+    this.redZoneImage = imageSrc.round.round1_5_meteoriteRed
     this.musicSrc = soundSrc.music.music04_meteorite_zone_red
 
     this.addRoundPhase(this.roundPhase00, 1, 30)
@@ -1614,20 +1629,14 @@ class Round1_5 extends RoundData {
     this.addRoundPhase(this.roundPhase08, 201, 207)
   }
 
-  processRound () {
-    super.processRound()
-
-    // if (this.timeCheckFrame(0, 5)) {
-    //   this.currentTime = 177
-    // }
-  }
-
   processBackground () {
     const imageA = imageSrc.round.round1_3_meteoriteDeep
     let phase7Start = this.phaseTime[7].startTime
     let phase8Start = this.phaseTime[8].startTime
     if (this.timeCheckFrame(phase7Start, 0)) {
-      this.changeBackgroundImage(imageA, 1200)
+      this.changeBackgroundImage(imageA, 600)
+    } else if (this.timeCheckFrame(30, 0)) {
+      this.changeBackgroundImage(this.redZoneImage, 600)
     }
 
     if (this.timeCheckInterval(0, phase7Start - 1)) {
@@ -1638,22 +1647,13 @@ class Round1_5 extends RoundData {
       this.backgroundSpeedX = 1
     }
 
-    if (this.timeCheckInterval(0, 999)) {
+    if (this.timeCheckInterval(45, 150, 600)) {
       if (this.backgroundSpeedY === 0 || this.backgroundSpeedY === 0.1) {
         this.backgroundSpeedY = -0.1
-
       } else {
         this.backgroundSpeedY = 0.1
-
       }
     }
-
-    // if (this.timeCheckInterval(0, phase7Start, 300)) {
-    //   let randomNumber = Math.random() * 100
-    //   if (randomNumber <= 33) this.backgroundSpeedY = 0.1
-    //   else if (randomNumber <= 66) this.backgroundSpeedY = 0
-    //   else this.backgroundSpeedY = -0.1
-    // }
 
     super.processBackground()
   }
@@ -1866,12 +1866,7 @@ class Round1_5 extends RoundData {
 class Round1_6 extends RoundData {
   constructor () {
     super()
-    this.roundName = stringText.dataRoundName.round1_6
-    this.roundText = '1-6'
-    this.standardPower = 44000
-    this.requireLevel = 6
-    this.finishTime = 152
-    this.clearBonus = 35000
+    this.setAutoRoundStat(ID.round.round1_6)
     this.backgroundImageSrc = imageSrc.round.round1_2_meteorite
     this.spaceImage = imageSrc.round.round1_6_space
     this.musicSrc = soundSrc.music.music02_meteorite_zone_field
@@ -1883,8 +1878,9 @@ class Round1_6 extends RoundData {
     this.addRoundPhase(this.roundPhase01, 31, 60)
     this.addRoundPhase(this.roundPhase02, 61, 90)
     this.addRoundPhase(this.roundPhase03, 91, 120)
-    this.addRoundPhase(this.roundPhase04, 121, 150)
+    this.addRoundPhase(this.roundPhase04, 121, 148)
 
+    // 이 라운드에서만 사용하는 행성 이미지 추가
     graphicSystem.createImage(imageSrc.round.round1_6_paran_planet)
 
     /**
@@ -2081,13 +2077,16 @@ class Round1_6 extends RoundData {
     // 적 남아있어도 클리어 가능
   }
 
-  processBackground () {
-    super.processBackground()
+  processSaveString () {
+    // 행성을 배경에 표시하기 위해 데이터의 일부를 저장
     if (this.currentTime >= this.finishTime - this.planet.totalDisplayTime) {
       this.planet.process()
       this.saveString = this.planet.x + ',' + this.planet.size + ',' + this.planet.elapsedFrame
     }
+  }
 
+  processBackground () {
+    super.processBackground()
     if (this.timeCheckInterval(31, this.finishTime)) {
       this.backgroundImageSrc = this.spaceImage
     }
@@ -2100,9 +2099,7 @@ class Round1_6 extends RoundData {
     }
   }
 
-  setLoadData (saveData) {
-    super.setLoadData(saveData)
-
+  loadDataProgressSaveString () {
     let str = this.saveString.split(',')
     this.planet.x = Number(str[0])
     this.planet.size = Number(str[1])
@@ -2120,9 +2117,6 @@ class Round1_test extends RoundData {
     this.finishTime = 200
     this.clearBonus = 0
 
-    // soundSystem.createAudio(soundSrc.donggrami.emoji)
-    // soundSystem.createAudio(soundSrc.donggrami.emojiThrow)
-
     this.addRoundPhase(() => {
       if (this.timeCheckInterval(1, 30, 120) && this.getEnemyCount() <= 0) {
         this.createEnemy(ID.enemy.donggramiEnemy.speed)
@@ -2132,7 +2126,6 @@ class Round1_test extends RoundData {
 
   display () {
     super.display()
-    // game.graphic.fillRect(0, 0, 800, 600, 'yellow')
   }
 }
 
@@ -2151,7 +2144,9 @@ class Round2_1 extends RoundData {
 
     this.gradientBg = {
       y: 0,
-      number: 0
+      number: 0,
+      maxLength: 9, 
+      height: 1200, // 20 second * 60 frame
     }
 
     this.addRoundPhase(this.roundPhase01, 0, 30)
@@ -2183,6 +2178,7 @@ class Round2_1 extends RoundData {
 
     // 마을 보여주기
     if (this.currentTime >= 125) {
+      // 마을은 125초부터 140초까지 서서히 등장합니다.
       const leftTime = 140 - this.currentTime
       const baseElapsed = 1200
       let elapsed = baseElapsed - (60 * leftTime) + this.currentTimeFrame
@@ -2195,10 +2191,7 @@ class Round2_1 extends RoundData {
       game.graphic.setAlpha(1 / baseElapsed * elapsed)
       game.graphic.imageView(this.maeulImage, maeulX, maeulY, maeulWidth, maeulHeight)
       game.graphic.setAlpha(1)
-      
-      // digitalDisplay('mx: ' + maeulX + ', my: ' + maeulY, 0, 20)
     }
-
   }
 
   processDebug () {
@@ -2209,30 +2202,29 @@ class Round2_1 extends RoundData {
 
   processBackground () {
     super.processBackground()
-    // 현재 시간에 맞추어서, 그라디언트 배경을 진행
-    const gradientHeight = 1200
-    const divSecond = Math.floor(gradientHeight / 60)
-    this.gradientBg.number = Math.floor(this.currentTime / Math.floor(gradientHeight / 60))
-    if(this.gradientBg.number >= 9) {
-      this.gradientBg.number = 8
-      this.gradientBg.y = -gradientHeight + game.graphic.CANVAS_HEIGHT
-    } else {
-      let leftSecond = this.currentTime % divSecond
-      this.gradientBg.y = -(leftSecond * 60) - this.currentTimeFrame
-  
-      if (this.gradientBg.number === 4 && this.gradientBg.y < -gradientHeight + game.graphic.CANVAS_HEIGHT) {
-        this.gradientBg.y = -gradientHeight + game.graphic.CANVAS_HEIGHT
+    
+    if (this.gradientBg.number < this.gradientBg.maxLength - 1) {
+      this.gradientBg.y--
+      if (Math.abs(this.gradientBg.y) >= this.gradientBg.height) {
+        // 참고: y축의 절대값을 사용하여 비교하는 이유는, y축이 음수값이 증가하는 형태로 되어있기 때문
+        this.gradientBg.y = 0
+        this.gradientBg.number++
       }
+    } else {
+      this.gradientBg.y = 0
     }
   }
 
-  /**
-   * 
-   * @param {any} saveData 
-   */
-  setLoadData (saveData) {
-    super.setLoadData(saveData)
-    this.processBackground()
+  loadDataProgressSaveString () {
+    let getText = this.saveString.split(',')
+    this.gradientBg.y = Number(getText[0])
+    this.gradientBg.number = Number(getText[1])
+  }
+  
+  processSaveString () {
+    // 그라디언트 배경의 y축값과 number값만 저장
+    // 마을 등장은 시간상으로 처리하므로 따로 저장할 필요 없음
+    this.saveString = this.gradientBg.y + ',' + this.gradientBg.number
   }
 
   roundPhase01 () {
@@ -2240,61 +2232,59 @@ class Round2_1 extends RoundData {
     // 특수 동그라미는 개체당 dps 20%
 
     // 파랑 동그라미가 먼저 등장 (dps 40%)
-    if (this.timeCheckInterval(0, 6, 15)) {
+    if (this.timeCheckInterval(3, 9, 15)) {
       this.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
     }
     
     // 초록 동그라미가 추가로 등장 (dps 60%)
-    if (this.timeCheckInterval(7, 12, 20)) {
+    if (this.timeCheckInterval(10, 18, 60)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.miniGreen)
       this.createEnemy(ID.enemy.donggramiEnemy.miniGreen)
       this.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
     }
 
-    // 모든색 동그라미가 등장 (dps 80%)
-    if (this.timeCheckInterval(13, 18, 15)) {
-      this.createEnemy(ID.enemy.donggramiEnemy.mini)
-      this.createEnemy(ID.enemy.donggramiEnemy.mini)
-    }
-
-    // dps 100% (27초 이후엔 등장 없음)
-    if (this.timeCheckInterval(19, 27, 6)) {
-      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+    // 빨강, 보라가 추가로 등장 (dps 80%)
+    if (this.timeCheckInterval(13, 27, 60)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.miniGreen)
+      this.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
+      this.createEnemy(ID.enemy.donggramiEnemy.miniRed)
+      this.createEnemy(ID.enemy.donggramiEnemy.miniPurple)
     }
   }
 
   roundPhase02 () {
     // 남은 적들을 전부 죽이지 않으면 시간 일시 정지
     // 이것은, 다음 적들의 특징을 효과적으로 보여주기 위해 추가한 것
-    this.timePauseEnemyCount(32)
+    this.timePauseEnemyCount(33)
 
-    // 느낌표 동그라미 dps 100% (5초간 지속 = 총 25마리)
-    if (this.timeCheckInterval(35, 39, 12)) {
+    // 느낌표 동그라미 dps 60%
+    if (this.timeCheckInterval(35, 40, 20)) {
       this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark)
     }
 
-    // 물음표 동그라미 dps 100%
-    if (this.timeCheckInterval(42, 47, 12)) {
+    // 물음표 동그라미 dps 60%
+    if (this.timeCheckInterval(43, 48, 20)) {
       this.createEnemy(ID.enemy.donggramiEnemy.questionMark)
     }
 
-    // 이모지 동그라미 dps 120%
-    if (this.timeCheckInterval(50, 54, 10)) {
+    // 이모지 동그라미 dps 60%
+    if (this.timeCheckInterval(50, 55, 20)) {
       this.createEnemy(ID.enemy.donggramiEnemy.emoji)
     }
   }
 
   roundPhase03 () {
-    // 일반 동그라미: 초당 dps 60% (60s ~ 70s)
-    // 초당 dps 50% (71s ~ 80s)
-    // 초당 dps 40% (81s ~ 90s)
-    if (this.timeCheckInterval(60, 70, 10) || this.timeCheckInterval(71, 80, 12) || this.timeCheckInterval(81, 90, 15)) {
+    // 일반 동그라미: 초당 dps 40% (60s ~ 70s)
+    // 초당 dps 60% (71s ~ 80s)
+    // 초당 dps 20% (81s ~ 87s)
+    if (this.timeCheckInterval(60, 70, 15) || this.timeCheckInterval(71, 80, 10) || this.timeCheckInterval(81, 87, 30)) {
       this.createEnemy(ID.enemy.donggramiEnemy.mini)
     }
 
-    // 특수 동그라미: 초당 dps 60% (60s ~ 70s)
-    // 초당 dps 80% (71s ~ 80s)
-    // 초당 dps 80% (81s ~ 90s)
-    if (this.timeCheckInterval(60, 70, 20) || this.timeCheckInterval(71, 90, 15)) {
+    // 특수 동그라미: 초당 dps 40% (60s ~ 70s)
+    // 초당 dps 60% (71s ~ 80s)
+    // 초당 dps 40% (81s ~ 87s)
+    if (this.timeCheckInterval(60, 70, 30) || this.timeCheckInterval(71, 80, 20) || this.timeCheckInterval(81, 87, 30)) {
       let random = Math.floor(Math.random() * 3)
       switch (random) {
         case 0: this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark); break
@@ -2305,50 +2295,80 @@ class Round2_1 extends RoundData {
   }
 
   roundPhase04 () {
-    this.timePauseEnemyCount(95)
+    this.timePauseEnemyCount(93)
 
-    // talk 동그라미, 초당 dps 100%
-    if (this.timeCheckInterval(96, 100, 12)) {
+    // talk 동그라미, 초당 dps 60%
+    if (this.timeCheckInterval(95, 100, 20)) {
       this.createEnemy(ID.enemy.donggramiEnemy.talk)
     }
 
-    // 이젠 특수동그라미만 나오고, 일반 동그라미는 가끔 나옴
-    // 초당 dps 120%
-    if (this.timeCheckInterval(102, 112, 10)) {
-      let random = Math.floor(Math.random() * 4)
-      switch (random) {
-        case 0: this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark); break
-        case 1: this.createEnemy(ID.enemy.donggramiEnemy.questionMark); break
-        case 2: this.createEnemy(ID.enemy.donggramiEnemy.emoji); break
-        case 3: this.createEnemy(ID.enemy.donggramiEnemy.talk); break
-      }
+    // speed 동그라미, 초당 dps 60%
+    if (this.timeCheckInterval(103, 108, 20)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.speed)
     }
 
-    // 일시적으로 동그라미가 엄청나게 많이 등장함
-    // 초당 dps 150%!
-    if (this.timeCheckInterval(116, 119, 2)) {
+    // 일반 동그라미 (모든 색) - 초당 dps 100%!
+    // 스플래시 없거나 전투력이 낮으면 동그라미에게 죽을 수 있음
+    if (this.timeCheckInterval(110, 117, 6)) {
       this.createEnemy(ID.enemy.donggramiEnemy.mini)
     }
   }
 
   roundPhase05 () {
-    // 124 ~ 141초 적 추가로 등장 (모든 종류 동시에 등장)
-    // 초당 dps 90%
-    if (this.timeCheckInterval(124, 140, 60)) {
+    // 121 ~ 141초 적 추가로 등장 (모든 종류 동시에 등장)
+    // 초당 dps 120% // 최대 제한 40개
+    if (this.timeCheckInterval(121, 140, 30) && this.getEnemyCount() < 40) {
       this.createEnemy(ID.enemy.donggramiEnemy.mini)
-      this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark)
-      this.createEnemy(ID.enemy.donggramiEnemy.questionMark)
-      this.createEnemy(ID.enemy.donggramiEnemy.emoji)
-      this.createEnemy(ID.enemy.donggramiEnemy.talk)
     }
 
-    this.timePauseEnemyCount(144)
+    if (this.timeCheckInterval(121, 140, 20) && this.getEnemyCount() < 40) {
+      let random = Math.floor(Math.random() * 5)
+      switch (random) {
+        case 0: this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark); break
+        case 1: this.createEnemy(ID.enemy.donggramiEnemy.questionMark); break
+        case 2: this.createEnemy(ID.enemy.donggramiEnemy.emoji); break
+        case 3: this.createEnemy(ID.enemy.donggramiEnemy.talk); break
+        case 4: this.createEnemy(ID.enemy.donggramiEnemy.speed); break
+      }
+    }
+
+    this.timePauseEnemyCount(145)
 
     // 146초 보스전
     if (this.timeCheckFrame(146, 1) && !this.bossMode) {
       this.requestBossMode()
       this.createEnemy(ID.enemy.donggramiEnemy.bossBig1)
       this.createEnemy(ID.enemy.donggramiEnemy.bossBig2)
+    }
+  }
+
+  displayBossHp () {
+    if (!this.bossMode) return
+
+    let enemy = this.getEnemyObject()
+    let src = imageSrc.round.round2_donggramiHp
+    let cacheImage = game.graphic.getCacheImage(src)
+
+    if (cacheImage != null && enemy.length > 0) {
+      let x = game.graphic.CANVAS_WIDTH - cacheImage.width
+      game.graphic.imageView(src, x, 0)
+    }
+
+    const meterLength = 200
+    const meterX = graphicSystem.CANVAS_WIDTH - meterLength
+    const layer1Y = 40
+    const layer2Y = 80
+    for (let i = 0; i < enemy.length; i++) {
+      let e = enemy[i]
+      let y = i === 0 ? layer1Y : layer2Y // y축 위치 결정 (적 배열 번호에 따라서...)
+
+      if (e.id === ID.enemy.donggramiEnemy.bossBig1) {
+        game.graphic.meterRect(meterX, y, meterLength, layer1Y, ['#2C52B0', '#6486D9'], e.hp, e.hpMax)
+      } else if (e.id === ID.enemy.donggramiEnemy.bossBig2) {
+        game.graphic.meterRect(meterX, y, meterLength, layer1Y, ['#9B442F', '#B87C6D'], e.hp, e.hpMax)
+      }
+
+      digitalDisplay(e.hp + '/' + e.hpMax, meterX, y)
     }
   }
 }
@@ -2370,6 +2390,7 @@ class Round2_2 extends RoundData {
     ]
     this.bgWidth = [800, 800, 800, 1600, 1600, 1600, 1600, 800]
     this.bgNumber = 0
+    this.bgBlackAlpha = 0
 
     // 시간이 배경에 맞추어서 진행되기 때문에, 배경이 변경되는 것을 기준으로 대략적인 시간 값이 설정되었습니다.
     // 1초에 60frame = 60px씩 이동
@@ -2387,14 +2408,43 @@ class Round2_2 extends RoundData {
     this.addRoundPhase(this.roundPhase06, 161, 167) // 플래카드
   }
 
+  displayBossHp () {
+    if (this.currentTime > this.phaseTime[0].endTime) return
+
+    let enemy = this.getEnemyObject()
+    let src = imageSrc.round.round2_donggramiHp
+    let cacheImage = game.graphic.getCacheImage(src)
+
+    if (cacheImage != null && enemy.length > 0) {
+      let x = game.graphic.CANVAS_WIDTH - cacheImage.width
+      game.graphic.imageView(src, x, 0)
+    }
+
+    const meterLength = 200
+    const meterX = graphicSystem.CANVAS_WIDTH - meterLength
+    const layer1Y = 40
+    const layer2Y = 80
+    for (let i = 0; i < enemy.length; i++) {
+      let e = enemy[i]
+      let y = i === 0 ? layer1Y : layer2Y // y축 위치 결정 (적 배열 번호에 따라서...)
+
+      if (e.id === ID.enemy.donggramiEnemy.bossBig1) {
+        game.graphic.meterRect(meterX, y, meterLength, layer1Y, ['#2C52B0', '#6486D9'], e.hp, e.hpMax)
+      } else if (e.id === ID.enemy.donggramiEnemy.bossBig2) {
+        game.graphic.meterRect(meterX, y, meterLength, layer1Y, ['#9B442F', '#B87C6D'], e.hp, e.hpMax)
+      }
+
+      digitalDisplay(e.hp + '/' + e.hpMax, meterX, y)
+    }
+  }
+
   displayBackground () {
     // super.displayBackground()
     const lightsky = '#4995E1'
     const maeulsky = '#67B2FF'
     game.graphic.gradientRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, [lightsky, maeulsky])
 
-    // 현재 시간에 맞추어서 배경 진행 - 추후 수정
-
+    // 배경 출력 (좌우 스크롤에 대한 여러 이미지를 순차 출력하는 알고리즘은 아직 RoundData에 없습니다.)
     game.graphic.imageView(this.bgList[this.bgNumber], this.backgroundX, 0)
     if (this.bgNumber + 1 < this.bgWidth.length) {
       game.graphic.imageView(this.bgList[this.bgNumber + 1], this.backgroundX + this.bgWidth[this.bgNumber], 0)
@@ -2402,52 +2452,81 @@ class Round2_2 extends RoundData {
 
     digitalDisplay('bx: ' + this.backgroundX + ', bn: ' + this.bgNumber, 0, 0)
 
-    if (this.timeCheckInterval(25, 30) || this.timeCheckInterval(41, 45)) {
-      game.sound.setEcho(0.2, 0.2, 0.3)
-      game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', 0.3)
-    } else if (this.timeCheckInterval(31, 35)) {
-      game.sound.setEcho(0.4, 0.4, 0.3)
-      game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', 0.5)
-    } else if (this.timeCheckInterval(36, 40)) {
-      game.sound.setEcho(0.4, 0.4, 0.3)
-      game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', 0.4)
-    }
+    // 검은색 배경 출력
+    game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', this.bgBlackAlpha)
+
+    digitalDisplay(this.bgBlackAlpha, 0, 40)
+  }
+
+  processSaveString () {
+    // 배경 화면 저장: backgroundX, bgNumber, bgBlackAlpha
+    this.saveString = this.backgroundX + ',' + this.bgNumber + ',' + this.bgBlackAlpha
+  }
+
+  loadDataProgressSaveString () {
+    let split = this.saveString.split(',')
+    this.backgroundX = Number(split[0])
+    this.bgNumber = Number(split[1])
+    this.bgBlackAlpha = Number(split[2])
   }
 
   processBackground () {
+    // 배경 이동 및 다음 배경으로 이동
     if (this.bgNumber === this.bgWidth.length - 1) {
       this.backgroundSpeedX = 0
       this.backgroundX = 0
     } else if (this.currentTime >= 20) {
       this.backgroundSpeedX = -1
     } else {
+      // 20초 이전일때는 배경이 이동하지 않음
       this.backgroundSpeedX = 0
     }
-    
+
     if (this.backgroundX < -this.bgWidth[this.bgNumber] && this.bgNumber < this.bgWidth.length) {
       this.bgNumber++
       this.backgroundX = 0
     }
 
-    if (this.timeCheckInterval(25, 30) || this.timeCheckInterval(41, 45)) {
-      game.sound.setEcho(0.2, 0.2, 0.3)
-      game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', 0.3)
-    } else if (this.timeCheckInterval(31, 35)) {
-      game.sound.setEcho(0.4, 0.4, 0.3)
-      game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', 0.5)
-    } else if (this.timeCheckInterval(36, 40)) {
-      game.sound.setEcho(0.4, 0.4, 0.3)
-      game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', 0.4)
-    } else if (this.timeCheckInterval(46, 50)) {
-      game.sound.setEcho(0, 0, 0)
+    // 검은 배경화면 출력 (터널)
+    if (this.timeCheckInterval(25, 37, 10)) {
+      // 일정시간 단위로 점점 어두워짐
+      this.bgBlackAlpha += 0.004
+    } else if (this.timeCheckInterval(38, 50, 10)) {
+      // 일정시간 단위로 점점 밝아짐
+      this.bgBlackAlpha -= 0.004
+    } else if (this.timeCheckInterval(51, 55, 20)) {
+      // (밝기가) 원래대로 되돌아옴
+      this.bgBlackAlpha = 0
+    }
+
+    // blackAlpha가 잘못된 값이 되면, 오류가 발생할 수 있으므로, 0미만이 되지 않도록 처리
+    if (this.bgBlackAlpha < 0) {
+      this.bgBlackAlpha = 0
+    }
+
+    // 에코 효과 추가 (터널)
+    // 각각 에코, 피드백, 딜레이, 시간 변경 기준임
+    const echoValue = [0.1, 0.3, 0.5, 0.6, 0.7, 0.6, 0.5, 0.3, 0.1, 0]
+    const feedValue = [0.1, 0.3, 0.4, 0.5, 0.6, 0.5, 0.4, 0.3, 0.1, 0]
+    const delayValue = 0.3
+    const changeTime = [24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54]
+    for (let i = 0; i < changeTime.length - 1; i++) {
+      if (this.currentTime >= changeTime[i] && this.currentTime < changeTime[i + 1]) {
+        game.sound.setEcho(echoValue[i], feedValue[i], delayValue)
+      }
+    }
+
+    // 버그 방지용 에코 끄기 기능
+    if (this.timeCheckInterval(55, 60)) {
+      game.sound.setEchoDisable()
     }
 
     super.processBackground()
   }
 
   roundPhase00 () {
-    // 보스전: 의미가 있나?
-    // 0 ~ 20초간 진행
+    // 보스전: (2-1 보스전과 동일) ?!
+    // 2 ~ 19초간 진행
     // 보스가 죽는다면 진행구간이 스킵됨
 
     if (this.timeCheckFrame(2)) {
@@ -2466,10 +2545,10 @@ class Round2_2 extends RoundData {
 
   roundPhase01 () {
     // 일반 동그라미만 등장 (색깔은 자유)
-    // 총 dps: 50%
+    // 총 dps: 40%
     // 시간: 20 ~ 60
     // 최대 마리수 제한: 40
-    if (this.timeCheckInterval(20, 60, 12) && this.getEnemyCount() < 40) {
+    if (this.timeCheckInterval(20, 60, 15) && this.getEnemyCount() < 40) {
       this.createEnemy(ID.enemy.donggramiEnemy.mini)
     }
   }
@@ -2479,83 +2558,57 @@ class Round2_2 extends RoundData {
     // 총 dps: 120%
     // 시간: 61 ~ 80
     // 최대 마리수 제한: 70 ~ 72(70마리 이하일때, 동시에 여러개 생성하기 때문에 이 수치를 초과할 수 있음)
-    if (this.timeCheckInterval(61, 79, 15) && this.getEnemyCount() < 70) {
+    if (this.timeCheckInterval(62, 77, 15) && this.getEnemyCount() < 70) {
       this.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
       this.createEnemy(ID.enemy.donggramiEnemy.miniGreen)
-    }
-
-    if (this.timeCheckInterval(61, 79, 15) && this.getEnemyCount() < 70) {
       this.createEnemy(ID.enemy.donggramiEnemy.mini)
     }
   }
 
-  roundPhase03 () {
-    // 특수 동그라미만 등장
-    // 총 dps: 80%
-    // 시간: 81 ~ 110
-    // 최대 마리수 제한: 40 (단, 시간이 89초 이후에 적용)
+  /**
+   * 스페셜 동그라미를 만듭니다. (중복 코드 방지용 함수)
+   * @param {number} rRange 코드 구분 기호용도(0: 전체, 1: talkShopping 제외)
+   */
+  createRandomSpecialDonggrami (rRange = 0) {
+    let capR = 7
+    if (rRange === 1) capR = 6 
 
-    if (this.timeCheckInterval(81, 89, 15)) {
-      let random = Math.floor(Math.random() * 8)
-      switch (random) {
-        case 0:
-        case 1:
-          this.createEnemy(ID.enemy.donggramiEnemy.bounce)
-          break
-        case 2:
-        case 3:
-          this.createEnemy(ID.enemy.donggramiEnemy.speed)
-          break
-        case 4:
-          this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark)
-          break
-        case 5:
-          this.createEnemy(ID.enemy.donggramiEnemy.questionMark)
-          break
-        case 6:
-          this.createEnemy(ID.enemy.donggramiEnemy.emoji)
-          break
-        case 7:
-          this.createEnemy(ID.enemy.donggramiEnemy.talk)
-          break
-      }
+    let random = Math.floor(Math.random() * capR)
+    switch (random) {
+      case 0: this.createEnemy(ID.enemy.donggramiEnemy.bounce); break
+      case 1: this.createEnemy(ID.enemy.donggramiEnemy.speed); break
+      case 2: this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark); break
+      case 3: this.createEnemy(ID.enemy.donggramiEnemy.questionMark); break
+      case 4: this.createEnemy(ID.enemy.donggramiEnemy.emoji); break
+      case 5: this.createEnemy(ID.enemy.donggramiEnemy.talk); break
+      case 6: this.createEnemy(ID.enemy.donggramiEnemy.talkShopping); break
     }
+  }
 
-    if (this.timeCheckInterval(90, 110, 15) && this.getEnemyCount() < 40) {
-      let random = Math.floor(Math.random() * 8)
-      switch (random) {
-        case 0:
-        case 1:
-          this.createEnemy(ID.enemy.donggramiEnemy.bounce)
-          break
-        case 2:
-        case 3:
-          this.createEnemy(ID.enemy.donggramiEnemy.speed)
-          break
-        case 4:
-          this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark)
-          break
-        case 5:
-          this.createEnemy(ID.enemy.donggramiEnemy.questionMark)
-          break
-        case 6:
-          this.createEnemy(ID.enemy.donggramiEnemy.emoji)
-          break
-        case 7:
-          this.createEnemy(ID.enemy.donggramiEnemy.talk)
-          break
-      }
+  roundPhase03 () {
+    // 특수 동그라미만 등장 (초반엔 점프하는 동그라미만 등장)
+    // 총 dps: 60%, 80%, 60%
+    // 시간: 81 ~ 110
+
+    if (this.timeCheckInterval(81, 85, 20)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.bounce)
+    } else if (this.timeCheckInterval(86, 100, 15)) {
+      this.createRandomSpecialDonggrami(1)
+    } else if (this.timeCheckInterval(101, 107, 20)) {
+      this.createRandomSpecialDonggrami(1)
     }
   }
 
   roundPhase04 () {
-    // 일반 동그라미만 등장
-    // 총 dps: 160%
+    // 일반 동그라미만 등장 (이 구간이 제일 적이 많음)
+    // 총 dps: 120%, 150%, 120%
     // 시간: 110 ~ 130
     // 최대 마리수 제한: 100
-    // 가장 어려운 구간 주의 필요
+    let isCreateEnemy = this.timeCheckInterval(112, 117, 10)
+      || this.timeCheckInterval(118, 122, 8)
+      || this.timeCheckInterval(123, 127, 10)
 
-    if (this.timeCheckInterval(110, 127, 15) && this.getEnemyCount() < 100) {
+    if (isCreateEnemy && this.getEnemyCount() < 100) {
       this.createEnemy(ID.enemy.donggramiEnemy.miniRed)
       this.createEnemy(ID.enemy.donggramiEnemy.miniPurple)
       this.createEnemy(ID.enemy.donggramiEnemy.miniArchomatic)
@@ -2566,53 +2619,29 @@ class Round2_2 extends RoundData {
   roundPhase05 () {
     // 일반 + 특수 동그라미
     // 대화 동그라미의 비중 대폭 증가
-    // 총 dps: 60%(131 ~ 140), 120%(141 ~ 150), 160%(150 ~ 160)
+    // 총 dps: 40%(131 ~ 140), 80%(141 ~ 150), 120%(150 ~ 160)
     // 시간: 130 ~ 160
-    // 최대 마리수 제한: 50 (141초 이후부터 적용)
-
     if (this.timeCheckInterval(131, 140, 60)) {
       this.createEnemy(ID.enemy.donggramiEnemy.talk)
       this.createEnemy(ID.enemy.donggramiEnemy.talkShopping)
-      this.createEnemy(ID.enemy.donggramiEnemy.mini)
-      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+    } else if (this.timeCheckInterval(141, 150, 15)) {
+      this.createRandomSpecialDonggrami()
+    } else if (this.timeCheckInterval(151, 160, 10)) {
+      this.createRandomSpecialDonggrami()
     }
-
-    if (this.timeCheckInterval(141, 150, 60) && this.getEnemyCount() < 50) {
-      this.createEnemy(ID.enemy.donggramiEnemy.talk)
-      this.createEnemy(ID.enemy.donggramiEnemy.talkShopping)
-      let random = Math.floor(Math.random() * 2)
-      switch (random) {
-        case 0:
-          this.createEnemy(ID.enemy.donggramiEnemy.bounce)
-          this.createEnemy(ID.enemy.donggramiEnemy.speed)
-          break
-        case 1:
-          this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark)
-          this.createEnemy(ID.enemy.donggramiEnemy.questionMark)
-          break
-      }
-    }
-
-    if (this.timeCheckInterval(140, 160, 15) && this.getEnemyCount() < 50) {
-      this.createEnemy(ID.enemy.donggramiEnemy.mini)
-    }
-
-    if (this.timeCheckInterval(150, 160, 15) && this.getEnemyCount() < 50) {
-      for (let i = 0; i < 3; i++) {
-        let random = Math.floor(Math.random() * 6)
-        switch (random) {
-          case 0: this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark); break
-          case 1: this.createEnemy(ID.enemy.donggramiEnemy.questionMark); break
-          case 2: this.createEnemy(ID.enemy.donggramiEnemy.talk); break
-          case 3: this.createEnemy(ID.enemy.donggramiEnemy.talkShopping); break
-          case 4: this.createEnemy(ID.enemy.donggramiEnemy.bounce); break
-          case 5: this.createEnemy(ID.enemy.donggramiEnemy.speed); break
-        }
-      }
-    }
-
   }
-  roundPhase06 () {}
+
+  roundPhase06 () {
+    // 점프하는 동그라미만 등장
+    // 총 dps: 40%
+    if (this.timeCheckInterval(161, 166, 30)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.bounce)
+    }
+
+    if (this.timeCheckFrame(166, 12)) {
+      this.musicChange('', 3)
+    }
+  }
 }
 
 

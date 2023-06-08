@@ -2344,6 +2344,9 @@ class JemulEnemyBoss extends JemulEnemyData {
     /** 레이저 오브젝트[상하 형태] */ this.laserObject2 = {x: 0, y: 0, width: 0, height: 0}
     /** 레이저 오브젝트[회전 형태  */ this.laserObjectR = {x: 0, y: 0, width: 0, height: 0, degree: 0}
     this.laserReset()
+
+    // 효과음 로드
+    soundSystem.createAudio(soundSrc.enemyAttack.jemulBossAttack)
   }
 
   getCollisionArea () {
@@ -2618,6 +2621,11 @@ class JemulEnemyBossEye extends JemulEnemyData {
     this.laserSound1 = soundSrc.enemyAttack.jemulBossAttack
     this.laserSound2 = soundSrc.enemyAttack.jemulBossAttack2
     this.laserSound3 = soundSrc.enemyAttack.jemulBossAttack3
+
+    // 사운드 로드
+    soundSystem.createAudio(this.laserSound1)
+    soundSystem.createAudio(this.laserSound2)
+    soundSystem.createAudio(this.laserSound3)
   }
 
   requestStateStop () {
@@ -2981,33 +2989,16 @@ class JemulEnemyBossEye extends JemulEnemyData {
   }
 
   processMove () {
-    // 이 보스는 화면 중심으로 이동한 다음, 더이상 움직이지 않습니다.
+    // 이 보스는 반드시 중앙에 위치하며 서서히 등장합니다.
     if (this.state === this.STATE_START) {
-      let centerDistanceX = Math.abs(this.centerX - graphicSystem.CANVAS_WIDTH_HALF)
-      let centerDistanceY = Math.abs(this.centerY - graphicSystem.CANVAS_HEIGHT_HALF)
-      if (centerDistanceX <= 4 && centerDistanceY <= 4) {
-        // 적이 센터로 이동했다면, 강제로 center로 이동하고 상태를 moveComplete로 변경
-        this.x = graphicSystem.CANVAS_WIDTH_HALF - (this.width / 2)
-        this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
-        this.moveSpeedX = 0
-        this.moveSpeedY = 0
+      // 적이 센터로 이동했다면, 강제로 center로 이동
+      this.x = graphicSystem.CANVAS_WIDTH_HALF - (this.width / 2)
+      this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
+      this.setMoveSpeed(0, 0)
+      
+      // 생성된지 60프레임 이후에 상태를 laser로 변경
+      if (this.elapsedFrame >= 60) {
         this.state = this.STATE_LASER
-      } else {
-        if (this.centerX > graphicSystem.CANVAS_WIDTH_HALF) {
-          this.moveDirectionX = 'left'
-          this.moveSpeedX = this.MOVE_SPEED
-        } else if (this.centerX < graphicSystem.CANVAS_HEIGHT_HALF) {
-          this.moveDirectionX = 'right'
-          this.moveSpeedX = this.MOVE_SPEED
-        }
-
-        if (this.centerY > graphicSystem.CANVAS_HEIGHT_HALF) {
-          this.moveDirectionY = 'up'
-          this.moveSpeedY = this.MOVE_SPEED
-        } else if (this.centerY < graphicSystem.CANVAS_HEIGHT_HALF) {
-          this.moveDirectionY = 'down'
-          this.moveSpeedY = this.MOVE_SPEED
-        }
       }
     }
 
@@ -3029,7 +3020,16 @@ class JemulEnemyBossEye extends JemulEnemyData {
 
   display () {
     this.displayLaser()
-    super.display()
+
+    // 일정시간 동안 투명 값 변경을 이용하여 서서히 등장(...)
+    if (this.elapsedFrame <= 120) {
+      let alpha = 1 / 120 * this.elapsedFrame
+      graphicSystem.setAlpha(alpha)
+      super.display()
+      graphicSystem.setAlpha(1)
+    } else {
+      super.display()
+    }
   }
 
 }
@@ -3560,6 +3560,8 @@ class DonggramiEnemyQuestionMark extends DonggramiEnemy {
     /** 일반 상태 */ this.STATE_NORMAL = ''
     /** 물음표 상태 */ this.STATE_QUESTION = '?'
     /** 이후 상태 */ this.STATE_AFTER = '.'
+
+    game.sound.createAudio(soundSrc.donggrami.exclamationMark)
   }
 
   process () {
@@ -3660,6 +3662,10 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
     this.STATE_EMOJI = 'emoji'
     this.STATE_THROW = 'throw'
     this.STATE_CATCH = 'catch'
+
+    // 전용 사운드 생성
+    game.sound.createAudio(soundSrc.donggrami.emojiThrow)
+    game.sound.createAudio(soundSrc.donggrami.emoji)
   }
 
   /** 
@@ -4154,7 +4160,6 @@ class DonggramiEnemyBossBig1 extends DonggramiEnemy {
 class DonggramiEnemyBossBig2 extends DonggramiEnemyBossBig1 {
   constructor () {
     super()
-    this.setEnemyByCpStat(2000, 10)
     this.setDonggramiColor(DonggramiEnemy.colorGroup.BIG2)
     this.welcomeImageData = imageDataInfo.donggramiEnemyEffect.welcomeMaeulText
   }

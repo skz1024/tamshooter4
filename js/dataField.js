@@ -292,6 +292,7 @@ export class EnimationData {
     let image = graphicSystem.getCacheImage(imageSrc)
     /** 이미지의 너비 */ this.imageWidth = image == null ? 0 : image.width
     /** 이미지의 높이 */ this.imageHeight = image == null ? 0 : image.height
+    /** 이미지를 정상적으로 얻어온 경우에 대한 여부 */ this.isSuccessGetImage = image == null ? false : true
 
     /**
      * 에니메이션 프레임의 지연시간
@@ -329,6 +330,17 @@ export class EnimationData {
         this.finished = true
       }
     }
+
+    // 만약 제대로 된 캐시이미지를 얻어오지 못해, 이미지 너비 또는 높이가 0이 된경우
+    // 다시 캐시 이미지를 얻어옵니다. (얻어올 때 까지 재시도합니다.)
+    if (this.imageSrc !== '' && (this.imageWidth === 0 || this.imageHeight === 0)) {
+      let image = graphicSystem.getCacheImage(this.imageSrc)
+      if (image != null) {
+        // this.isSuccessGetImage = true
+        this.imageWidth = image.width
+        this.imageHeight = image.height
+      }
+    }
   }
 
   /** 에니메이션 다시 시작 */
@@ -351,10 +363,13 @@ export class EnimationData {
    * @param {number} y 출력할 에니메이션의 y좌표
    */
   display (x, y) {
-    if (this.imageSrc == null) return
+    if (this.imageSrc == '') return
 
     // 무한반복 상태가 아니면서 진행된 프레임이 최대 프레임보다 높으면 에니메이션 없음
     if (this.frameRepeat != -1 && this.elapsedFrame >= this.maxFrame) return
+
+    // 이미지를 정상적으로 불러오지 못해, 이미지의 너비 또는 높이가 0이될경우 출력 무시
+    if (this.imageWidth === 0 || this.imageHeight === 0) return
 
     if (x == null || y == null) {
       // 의도적인 버그 방지용 경고 문구

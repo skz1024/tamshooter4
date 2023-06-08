@@ -91,7 +91,8 @@ export class imageSrc {
     round2_2_placard: './image/round/round2_2_placard.png',
     round2_2_shopping_mall: './image/round/round2_2_shopping_mall.png',
     round2_2_tunnel: './image/round/round2_2_tunnel.png',
-    round2_2_tunnel_outload: './image/round/round2_2_tunnel_outload.png'
+    round2_2_tunnel_outload: './image/round/round2_2_tunnel_outload.png',
+    round2_donggramiHp: './image/round/round2_donggramiHp.png'
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -128,21 +129,21 @@ export class imageDataInfo {
   // { x: 0, y: 0, width: 0, height: 0, frame: 1 },
 
   static meteoriteEnemy = {
-    class11: { x: 0, y: 0, width: 50, height: 50, frame: 1 },
-    class12: { x: 50, y: 0, width: 50, height: 50, frame: 1 },
-    class13: { x: 100, y: 0, width: 50, height: 50, frame: 1 },
-    class14: { x: 150, y: 0, width: 50, height: 50, frame: 1 },
-    class15: { x: 200, y: 0, width: 50, height: 50, frame: 1 },
-    class21: { x: 0, y: 50, width: 50, height: 50, frame: 1 },
-    class22: { x: 50, y: 50, width: 50, height: 50, frame: 1 },
-    class23: { x: 100, y: 50, width: 50, height: 50, frame: 1 },
-    class24: { x: 150, y: 50, width: 50, height: 50, frame: 1 },
-    class25: { x: 200, y: 50, width: 50, height: 50, frame: 1 },
-    class31: { x: 0, y: 100, width: 50, height: 50, frame: 1 },
-    class32: { x: 50, y: 100, width: 50, height: 50, frame: 1 },
-    class33: { x: 100, y: 100, width: 50, height: 50, frame: 1 },
-    class34: { x: 150, y: 100, width: 50, height: 50, frame: 1 },
-    class35: { x: 200, y: 100, width: 50, height: 50, frame: 1 },
+    class11: { x: 0, y: 0, width: 48, height: 48, frame: 1 },
+    class12: { x: 50, y: 0, width: 48, height: 48, frame: 1 },
+    class13: { x: 100, y: 0, width: 48, height: 48, frame: 1 },
+    class14: { x: 150, y: 0, width: 48, height: 48, frame: 1 },
+    class15: { x: 200, y: 0, width: 48, height: 48, frame: 1 },
+    class21: { x: 0, y: 50, width: 48, height: 48, frame: 1 },
+    class22: { x: 50, y: 50, width: 48, height: 48, frame: 1 },
+    class23: { x: 100, y: 50, width: 48, height: 48, frame: 1 },
+    class24: { x: 150, y: 50, width: 48, height: 48, frame: 1 },
+    class25: { x: 200, y: 50, width: 48, height: 48, frame: 1 },
+    class31: { x: 0, y: 99, width: 50, height: 50, frame: 1 },
+    class32: { x: 50, y: 99, width: 50, height: 50, frame: 1 },
+    class33: { x: 100, y: 99, width: 50, height: 50, frame: 1 },
+    class34: { x: 150, y: 99, width: 50, height: 50, frame: 1 },
+    class35: { x: 200, y: 99, width: 50, height: 50, frame: 1 },
     whiteMeteo1: { x: 0, y: 150, width: 70, height: 50, frame: 1 },
     whiteMeteo2: { x: 70, y: 150, width: 70, height: 50, frame: 1 },
     whiteMeteo3: { x: 140, y: 150, width: 70, height: 50, frame: 1 },
@@ -170,10 +171,10 @@ export class imageDataInfo {
     stoneGreenPiece2: {x: 450, y: 0, width: 40, height: 40, frame: 1},
     stoneGreenPiece3: {x: 450, y: 40, width: 40, height: 40, frame: 1},
     stoneGreenPiece4: {x: 410, y: 40, width: 40, height: 40, frame: 1},
-    red1: {x: 250, y: 80, width: 50, height: 50, frame: 1},
-    red2: {x: 300, y: 80, width: 70, height: 50, frame: 1},
-    red3: {x: 370, y: 80, width: 80, height: 45, frame: 1},
-    red4: {x: 450, y: 80, width: 50, height: 50, frame: 1},
+    red1: {x: 251, y: 81, width: 50, height: 50, frame: 1},
+    red2: {x: 305, y: 81, width: 70, height: 50, frame: 1},
+    red3: {x: 376, y: 81, width: 80, height: 45, frame: 1},
+    red4: {x: 440, y: 140, width: 50, height: 50, frame: 1},
   }
 
   static jemulEnemy = {
@@ -188,10 +189,10 @@ export class imageDataInfo {
     hellAirUp: {x: 480, y: 200, width: 120, height: 100, frame: 4},
     hellAirDown: {x: 960, y: 200, width: 120, height: 100, frame: 4},
     jemulBoss: {x: 0, y: 300, width: 120, height: 100, frame: 7},
-    jemulBossEye: {x: 840, y: 330, width: 100, height: 60, frame: 7},
+    jemulBossEye: {x: 841, y: 331, width: 100, height: 60, frame: 7},
     redAir: {x: 1450, y: 200, width: 120, height: 90, frame: 4},
     redShip: {x: 1590, y: 140, width: 110, height: 40, frame: 3},
-    redJewel: {x: 1550, y: 330, width: 40, height: 45, frame: 10},
+    redJewel: {x: 1550, y: 331, width: 40, height: 45, frame: 10},
     redMeteorite: {x: 1920, y: 140, width: 70, height: 50, frame: 1}
   }
 

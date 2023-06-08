@@ -1236,6 +1236,8 @@ export class fieldSystem {
     const buttonSelect = game.control.getButtonInput(game.control.buttonIndex.START)
     const maxMenuNumber = 3
     game.sound.musicPause() // 일시정지 상태에서는 음악이 재생되지 않음.
+    game.sound.setEchoDisable() // 에코 기능 정지
+    // game.sound.setMusicEcho() // 에코 기능 정지 [음악은 정지해야할지 잘 모르겠음]
 
     if (buttonUp && this.cursor > 0) {
       this.cursor--
@@ -1330,12 +1332,18 @@ export class fieldSystem {
     fieldState.process()
     this.round.process()
 
-    gameVar.statLineText1.text = ''
     gameVar.statLineText2.setStatLineText(this.getFieldDataString(), this.round.currentTime, this.round.finishTime, '#D5F5E3' ,'#33ff8c')
   }
 
   static process () {
     // game.sound.musicProcess()
+    if (this.round != null) {
+      if (this.round.currentTimePaused) {
+        gameVar.statLineText1.text = 'enemy count left: ' + fieldState.enemyObject.length
+      } else {
+        gameVar.statLineText1.text = ''
+      }
+    }
 
     switch (this.stateId) {
       case this.STATE_PAUSE:

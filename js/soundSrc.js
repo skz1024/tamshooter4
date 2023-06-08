@@ -99,7 +99,6 @@ export class soundSrc {
   }
 
   static donggrami = {
-    ellipsis: './sound/donggramiEllipsis.ogg',
     exclamationMark: './sound/donggramiExclamationMark.ogg',
     questionMark: './sound/donggramiQuestionMark.ogg',
     emoji: './sound/donggramiImoge.ogg',

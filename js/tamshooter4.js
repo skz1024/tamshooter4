@@ -1036,10 +1036,13 @@ class RoundSelectSystem extends MenuSystem {
     const layer1Y = 20
     const layer2X = 400
     const layer2Y = 40
+    const layer3Y = 60
     digitalDisplay('ROUND: ' + stat.roundText, layer1X, layer1Y)
     digitalDisplay('REQUIRE LEVEL: ' + stat.requireLevel, layer1X, layer2Y)
     digitalDisplay('STANDARD POWER: ' + stat.standardPower, layer2X, layer1Y)
     digitalDisplay('FINISH TIME: ' + stat.finishTime, layer2X, layer2Y)
+    digitalDisplay('TITLE: ', layer1X, layer3Y)
+    game.graphic.fillText(stat.roundName, layer1X + 90, layer3Y)
   }
 }
 
@@ -1882,6 +1885,19 @@ export class gameSystem {
     return this.optionSystem.optionValue
   }
 
+  /** 
+   * 임시 함수 (현재는 사용할지 잘 모르겠음)
+   * 
+   * 게임 메인 화면에서는 에코를 사용하지 않습니다.
+   * 라운드에서는 에코 효과를 사용할 수 있지만 해제하지 않으므로, 메인 화면에서 해제합니다.
+   * 
+   * @deprecated
+   */
+  static echoCancle () {
+    game.sound.setEchoDisable()
+    game.sound.setMusicEchoDisable()
+  }
+
   /**
    * 저장하거나 불러올 때 localStorage 에서 사용하는 키 이름 (임의로 변경 금지)
    * 각 키 별로, 저장 데이터 형식과 저장 목적에 대해 자세히 설명되어있습니다.
@@ -2047,7 +2063,7 @@ export class gameSystem {
         fieldSystem.setLoadData(JSON.parse(fieldSaveData))
       }
     } catch (e) {
-      alert('저장 데이터를 읽어오는 중 오류가 발생했습니다. 필드데이터는 삭제됩니다.')
+      alert('저장 데이터를 읽어오는 중 오류가 발생했습니다. 필드데이터는 삭제됩니다. (나머지는 해당 사항 없음)')
       localStorage.removeItem(this.saveKey.fieldData)
       this.stateId = this.STATE_MAIN
     }

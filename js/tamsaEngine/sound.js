@@ -240,7 +240,7 @@ export class SoundSystem {
   createAudioSrcWaitList = []
 
   /**
-   * 오디오를 생성합니다.
+   * 오디오를 생성합니다. (오디오는 중복으로 생성되지 않습니다. 파일의 경로를 기준으로 중복 여부를 검사합니다.)
    * 
    * 주의: 모바일에 대한 지원을 위하여, 오디오는 반드시 터치, 클릭, 키보드 입력시에만 생성되도록 변경됩니다.
    * 이 함수는 해당 이벤트가 발생하기 전까지, 요청된 파일의 경로를 계속 누적합니다. (파일 등록은 안된 상태입니다.)
@@ -370,15 +370,15 @@ export class SoundSystem {
    * 이 함수를 사용할경우, 해당 음악 파일들은 모두 loop속성을 가지게됩니다.
    * 따라서 절대로 효과음을 이 함수로 재생하지 마세요. (한번 loop속성이 추가되면 해제할 수 없습니다.)
    * 
-   * 여러개의 곡을 동시 재생할 수는 없습니다. 여러개의 곡을 동시 재생하는 기능은 추후에 만들어질 예정.
+   * 여러개의 곡을 동시 재생할 수는 없습니다.
    * 
    * 경고: 오디오 객체를 넣을 경우, 해당 오디오는 에코 효과를 적용하지 않고 음악을 재생합니다.
    * 
    * 일시정지된 음악도 같이 재생합니다. (이 경우 audioSrc를 넣지 마세요.)
    * @param {string | HTMLMediaElement} audioSrc 오디오의 경로 또는 오디오 객체 (버퍼는 사용불가, 대신 musicBuffer를 사용해주세요.)
-   * @param {number} start 오디오의 시작 지점 (주의: 오디오가 교체되지 않으면 이 변수는 무시됩니다.)
+   * @param {number} start 오디오의 시작 지점 (음수로 설정될경우 해당 값을 무시합니다.)
    */
-  musicPlay (audioSrc = '', start = 0) {
+  musicPlay (audioSrc = '', start = -1) {
     let getMusic = null
     let getNode = null
     
@@ -388,7 +388,7 @@ export class SoundSystem {
         if (this.currentMusicNode != null) {
           this.currentMusicNode.connect(this.audioNode.musicFirstGain)
         }
-
+        this.setCurrentMusicCurrentTime(start)
         this.currentMusic.play()
         this.currentMusicState = this.musicStateList.PLAYING
       }
@@ -421,8 +421,16 @@ export class SoundSystem {
       getMusic.loop = true
       if (getMusic.paused) {
         getMusic.play()
+        this.setCurrentMusicCurrentTime(start)
         this.currentMusicState = this.musicStateList.PLAYING
       }
+    }
+  }
+
+  /** 현재 음악의 재생 시간 강제 조정 */
+  setCurrentMusicCurrentTime (start = -1) {
+    if (this.currentMusic != null && start >= 0) {
+      this.currentMusic.currentTime = start
     }
   }
 
@@ -547,7 +555,7 @@ export class SoundSystem {
           // this.musicStop() // musicPlay 에서 음악이 변경되면 기존 음악을 정지시키므로 여기서 정지하지 않습니다.
           // 중복으로 정지할경우, 페이드 효과가 잘못 적용되는 현상이 생깁니다.
           // 이것은 음악을 정지할 때 오디오랑 disconnect 하고 그 시점부터 fadeGain이 동작하지 않습니다.
-          if (this.fade.nextAudioSrc != null) {
+          if (this.fade.nextAudioSrc != '') {
             if (this.fade.isNextBuffer) {
               this.musicBuffer(this.fade.nextAudioSrc)
             } else {
@@ -559,8 +567,9 @@ export class SoundSystem {
             this.fade.isFadeOut = false
             this.fade.isFadeOut = true
           } else {
-            // 페이드 아웃 종료
+            // 페이드 아웃 종료 및 음악 정지
             this.musicFadeCancle()
+            this.musicStop()
           }
         }
       } else if (this.fade.isFadeIn) {
@@ -662,7 +671,7 @@ export class SoundSystem {
   setEchoDisable () {
     this.audioNode.echoGain.gain.value = 0
     this.audioNode.feedBackGain.gain.value = 0
-    this.audioNode.echoDelay.delayTime = 0
+    this.audioNode.echoDelay.delayTime.value = 0
   }
 
   /** 에코 값을 얻어옴. (주의: 노드를 리턴하지 않고 각 밸류값만 얻어옵니다.) */

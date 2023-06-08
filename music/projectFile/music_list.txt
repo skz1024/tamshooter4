@@ -18,8 +18,8 @@ music list
 8. music08_round1_4_jemul (round 1-4)
 
 // round 2 (일부만 확정)
-9. music09_paran_planet (round 2-1)
-10. music10_donggrami_maeul (round 2-2)
+9. music09_paran_planet (round 2-1), (optionbattle music)
+10. music10_donggrami_maeul (round 2-2), (optionbattle music)
 11-1. music11-1_big_room (round 2-3-11)
 11-2. music11-2_jump_room (round 2-3-12)
 11-3. music11-3_special_room (round 2-3-13)
