@@ -734,3 +734,27 @@ ogg로 내보내기 할때는 q6(스테레오 192, 모노 110)으로 처리하�
 1-5: 배경이 조금 더 자연스럽게 변화하도록 중간 단계가 추가되었고, 1-5 배경의 밝기가 감소했습니다.
 2-1, 2-2: saveString을 사용하여 현재 배경과 관련된 정보를 저장하도록 변경, 난이도 감소, 보스 체력 표시 추가
 2-2: 게임 내부에서 에코 효과를 사용할 수 있도록 변경 및 터널에서의 검은 배경 효과가 부드럽게 진행되도록 알고리즘 수정
+
+
+2023/06/11 ver 0.38.3 - 새로운 음악 추가, 사용되지 않는 음악 그리고 효과음 삭제, vopm preset 추가
+round 2-3에 사용할 음악이 총 9개가 추가되었습니다.
+사용되지 않는 곡은 전부 삭제했습니다.
+
+다른 컴퓨터에서도 프로젝트 파일을 복원하기 위해서 vopm vst 플러그인의 preset을 따로 저장해 두었습니다.
+[11번곡에 대해 해당사항을 모두 적용함]
+참고: 원래대로라면 음악 제목은 music11A1_donggrami_space_battle_room 과 같은 형태여야 하지만,
+이렇게 하면 음악 이름이 너무 길기 때문에 donggrami_space 부분을 지웠습니다.
+어차피 music11이 라운드 2-3에서 주로 사용하는 음악이기도 하니, 이름을 줄여서 표현해도 상관없을듯
+
+참고: 사용되지 않는 효과음이 하나 있었는데(enemyDieMeteoriteStone.wav) 해당 효과음을 이 버전에서 삭제했습니다. 
+
+곡 리스트
+music11A1_battle_room
+music11A2_break_room
+music11A3_power_room
+music11B1_jump_room
+music11B2_warp_room
+music11B3_move_room
+music11C1_bullet_room
+music11C2_square_room
+music11C3_trap_room
