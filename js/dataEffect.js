@@ -143,8 +143,19 @@ import { ImageDataObject } from "./imageSrc.js"
  * 아니면, new를 이용해서 새로 인스턴스를 생성하세요. (new CustomEffect(...)과 같이)
  */
 export class CustomEffect extends EffectData {
-  constructor (image, imageData, width, height, frameDelay = 0, frameRepeat = 1) {
+  /**
+   * 
+   * @param {string} image 이미지의 경로 (이미지 객체가 아닙니다!)
+   * @param {ImageDataObject} imageData 이미지 데이터 (imageDataInfo 객체 참고)
+   * @param {number} width 너비, 0이하의 값으로 설정하면, imageData의 값을 참조하여 재설정됨
+   * @param {number} height 높이, 0이하의 값으로 설정하면, imageData의 값을 참조하여 재설정됨
+   * @param {number} frameDelay 프레임딜레이 기본값 0 (2 이상이여야 딜레이가 동작합니다.)
+   * @param {number} frameRepeat 프레임 반복횟수 기본값 1
+   */
+  constructor (image, imageData, width = 0, height = 0, frameDelay = 0, frameRepeat = 1) {
     super()
+    if (width === 0) width = imageData.width
+    if (height === 0) height = imageData.height
     this.autoSetEnimation(image, imageData, width, height, frameDelay, frameRepeat)
   }
 

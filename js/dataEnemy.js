@@ -1,3 +1,5 @@
+//@ts-check
+
 import { DelayData, FieldData, EnimationData, collision, collisionClass } from "./dataField.js"
 import { EffectData, CustomEffect, CustomEditEffect } from "./dataEffect.js"
 import { ID } from "./dataId.js"
@@ -25,7 +27,7 @@ export class EnemyData extends FieldData {
     /** 죽었는지 체크 */ this.isDied = false
     /**
      * 죽은 후 삭제되기까지의 지연시간
-     * @type {DelayData}
+     * @type {DelayData | null}
      */
     this.dieAfterDeleteDelay = null
 
@@ -54,14 +56,14 @@ export class EnemyData extends FieldData {
     /** 
      * 적이 죽으면 나오는 사운드. (isDied가 true이면 dieCheck 함수에서 발동) 
      * 현재는 적만 이 사운드를 가지고 있음.
-     * @type {soundSrc} soundSrc 객체 내에 있는 변수
+     * @type {string} soundSrc 객체 내에 있는 변수
      * */ 
-    this.dieSound = null
+    this.dieSound = ''
 
     /**
      * 적이 죽을경우 나오는 이펙트. 커스텀 이펙트 데이터를 사용하여 제작,
      * 이 클래스를 사용할 때, 해당 객체의 이미지 데이터가 아닌 죽는 이미지 데이터를 사용해주어야 합니다.
-     * @type {CustomEffect}
+     * @type {CustomEffect | null}
      */
     this.dieEffect = null
 
@@ -135,8 +137,8 @@ export class EnemyData extends FieldData {
 
   /**
    * 적 죽음 사운드와 적 죽음 이펙트를 설정합니다. 이펙트는 반드시 CustomEffectData 클래스로 생성해야 합니다.
-   * @param {HTMLAudioElement} dieSound 
-   * @param {CustomEffect} dieEffect 
+   * @param {HTMLAudioElement | null} dieSound 
+   * @param {CustomEffect | null} dieEffect 
    */
   setDieEffectOption (dieSound = null, dieEffect = null) {
     if (dieEffect != null && dieEffect.constructor != CustomEffect) {
@@ -512,20 +514,6 @@ export class CustomEnemyBullet extends EnemyBulletData {
   /** 새 오브젝트 불릿 객체를 생성합니다. 이 객체를 필드 데이터에 넘겨주세요. */
   getCreateObject () {
     return new CustomEnemyBullet(this.imageSrc, this.imageData, this.attack, this.moveSpeedX, this.moveSpeedY, this.moveDirectionX, this.moveDirectionY)
-  }
-}
-
-/**
- * 테스트용 적
- */
-class TestEnemy extends EnemyData {
-  constructor () {
-    super()
-    this.hp = 10000
-    this.score = 100
-    this.width = 48
-    this.height = 48
-    this.imageSrc = imageSrc.enemyTemp
   }
 }
 
@@ -4165,9 +4153,295 @@ class DonggramiEnemyBossBig2 extends DonggramiEnemyBossBig1 {
   }
 }
 
+class DonggramiSpaceA1Fighter extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.RED)
+    this.setEnemyStat(200000, 0, 0)
+    this.setWidthHeight(96, 96)
+    this.isPossibleExit = false // 바깥으로 나갈 수 없음
+    this.setMoveDirection('', '') // 이동방향 제거 (플레이어를 추적하는 알고리즘 때문)
+
+    // 상태 값 종류: 4개 (문자값은 구분용도로만 사용하고 큰 의미는 없음)
+    this.STATE_NORMAL = 'normal'
+    this.STATE_BOOST = 'boost'
+    this.STATE_HAMMER = 'hammer'
+    this.STATE_EARTHQUAKE = 'earthquake'
+    this.state = this.STATE_NORMAL // 상태 기본값 지정
+    this.stateDelay = new DelayData(120)
+
+    /** 현재 상태를 계속 반복한 횟수 */
+    this.stateRepeat = 0
+
+    /** 망치 오브젝트 */ 
+    this.hammerObject = { x: 0, y: 0, width: 180, height: 180, degree: 0, degreeChange: 15 }
+
+    // 이펙트 이름 길이를 줄이기 위해 만든 변수
+    let srcB = imageSrc.enemyEffect.donggramiSpace
+    let imageD = imageDataInfo.donggramiSpaceEffect
+
+    this.hammerStarEffect = new CustomEffect(srcB, imageD.toyHammerStar, 180, 180, 1)
+    this.boostEffect = new CustomEffect(srcB, imageD.booster, this.width, this.height, 1)
+    this.earthquakeEnergyEffect = new CustomEffect(srcB, imageD.earthquakeEnergy, this.width, this.height, 1)
+
+    /** 빠르게 이동해서 도착할 임시 좌표 */ this.boostPositionX = 0
+    /** 빠르게 이동해서 도착할 임시 좌표 */ this.boostPositionY = 0
+  }
+
+  /** 현재 상태를 자동으로 변경하는 함수 */
+  stateChange () {
+    let random = Math.random() * 100
+    let arrayState = [this.STATE_NORMAL, this.STATE_BOOST, this.STATE_HAMMER, this.STATE_EARTHQUAKE]
+    let arrayPercent = [0, 0, 0, 0, 0]
+    let currentState = this.state
+
+    if (this.state === this.STATE_NORMAL) {
+      // 다른 상태로 변환할 확률 처리 (n, n+1의 차이만큼이 확률값임)
+      // 예를들어, normal 상태, stateRepeat 0라면 normal상태 61%, boost상태 13% 식으로 처리된다.
+      switch (this.stateRepeat) {
+        case 0: arrayPercent = [0, 61, 74, 87, 100]; break // 일반 상태 지속확률 61%, 나머지 상태는 서로 동일
+        case 1: arrayPercent = [0, 25, 50, 75, 100]; break // 일반 상태 지속확률 25%, 나머지 상태는 서로 동일
+        default: arrayPercent = [0, 0, 33, 66, 100]; break // 이후 일반상태 지속없이 임의로 상태 변환
+      }
+    } else if (this.state === this.STATE_BOOST) {
+      switch (this.stateRepeat) {
+        case 5: arrayPercent = [0, 5, 90, 95, 100]; break // 부스트 상태 지속확률 85%
+        case 6: arrayPercent = [0, 10, 80, 90, 100]; break // 부스트 상태 지속확률 70%
+        case 7: arrayPercent = [0, 20, 60, 80, 100]; break // 부스트 상태 지속확률 40%
+        case 8: arrayPercent = [0, 25, 50, 75, 100]; break // 부스트 상태 지속확률 25%
+        case 9: arrayPercent = [0, 25, 50, 75, 100]; break // 부스트 상태 지속확률 25%
+        case 10: arrayPercent = [0, 33, 33, 66, 100]; break // 부스트 상태 지속 불가 
+        default: arrayPercent = [0, 0, 100, 0, 0]; break // 0 ~ 5사이는 부스트 상태 반복됨
+      }
+    } else if (this.state === this.STATE_HAMMER) {
+      // 해머 상태는 5회 연속 반복후 30%확률로 다시 반복함
+      // 5회 미만: 해머 상태 지속
+      // 5회 이상: 노말 10%, 부스트 30%, 해머 30%, 어스퀘이크 30%
+      arrayPercent = this.stateRepeat < 5 ? [0, 0, 0, 100, 0] : [0, 10, 40, 70, 100]
+    } else if (this.state === this.STATE_EARTHQUAKE) {
+      // 지진 상태는 최소 2회만 가동하고, 그 다음엔 일반 또는 부스트 또는 해머 상태가 된다.
+      // 일반 상태가 히트할 확률은 낮게 설정된다.
+      arrayPercent = this.stateRepeat < 2 ? [0, 0, 0, 0, 100] : [0, 20, 60, 100, 100]
+    }
+
+    // 아까 지정된 arrayState값을 이용해 확률값에 의해 상태를 변경
+    for (let i = 0; i < arrayState.length; i++) {
+      if (random >= arrayPercent[i] && random < arrayPercent[i + 1]) {
+        this.state = arrayState[i]
+        break
+      }
+    }
+
+    // 현재 상태와 변경된 상태가 동일하면, 현재 상태 반복횟수를 1올리고, 아닐경우 0으로 변경
+    this.stateRepeat = this.state === currentState ? this.stateRepeat + 1 : 0
+  }
+
+  processMove () {
+    switch (this.state) {
+      case this.STATE_NORMAL: this.processMoveNormal(); break
+      case this.STATE_BOOST: this.processMoveBoost(); break
+      case this.STATE_EARTHQUAKE: this.processMoveEarthQuake(); break
+      case this.STATE_HAMMER: this.processMoveHammer(); break
+    }
+  }
+
+  processMoveNormal () {
+    // 기본 이동 방식: 2초 단위로 상태 변화, 1초 이동 후, 1초 정지
+    // 매 이동마다 이동속도는 무작위
+    if (this.stateDelay.count === 0) {
+      // normal 상태가 반복되면, 자기 자신의 속도를 재조정
+      this.setRandomSpeedMinMax(2, 2, 6, 6)
+      // 일정 확률로 방향 전환 (약 50%)
+      this.moveSpeedX = Math.random() < 0.5 ? this.moveSpeedX : -this.moveSpeedX
+      this.moveSpeedY = Math.random() < 0.5 ? this.moveSpeedY : -this.moveSpeedY
+    }
+
+    // 1초간 이동하고, 1초는 정지함.
+    if (this.stateDelay.count <= 60) {
+      super.processMove()
+    }
+
+    if (this.stateDelay.check()) {
+      // 일정 시간이 될 때마다 상태 변경 시도
+      this.stateChange()
+    }
+  }
+
+  processMoveHammer () {
+    // 이동 직전 프레임: 59
+    if (this.stateDelay.count === 59) {
+      // 플레이어가 있는 방향쪽으로 우선 이동하도록 이동 방향을 결정
+      let playerP = fieldState.getPlayerObject()
+      this.setRandomSpeedMinMax(14, 1, 20, 3)
+
+      if (playerP.x > this.x) {
+        this.moveSpeedX = -this.moveSpeedX
+      }
+      if (playerP.y < this.y) {
+        this.moveSpeedY = -this.moveSpeedY
+      }
+    }
+
+    // 해머를 들고 이동
+    if (this.stateDelay.count >= 60) {
+      this.hammerObject.degree += this.hammerObject.degreeChange // 해머의 각도는 매 프레임마다 15씩 변화
+      if (this.hammerObject.degree <= -90) { // -90도 (맨 왼쪽에 뿅망치 부분이 닿으면)
+        this.hammerObject.degreeChange = Math.abs(this.hammerObject.degreeChange) // 변경해야 될 각도변화값을 양수로 변경
+        fieldState.createEffectObject(this.hammerStarEffect, this.hammerObject.x, this.hammerObject.y)
+      } else if (this.hammerObject.degree >= 90) { // 90도 (맨 오른쪽에 뿅망치 부분이 닿으면)
+        this.hammerObject.degreeChange = -Math.abs(this.hammerObject.degreeChange) // 변경해야 될 각도변화값을 음수로 변경
+        fieldState.createEffectObject(this.hammerStarEffect, this.hammerObject.x, this.hammerObject.y)
+      }
+      super.processMove()
+    }
+
+    // 해머의 위치 설정
+    this.hammerObject.x = this.centerX - (this.width / 2)
+    this.hammerObject.y = this.centerY - (this.height) + 48 // 중심값 48 추가
+
+    if (this.stateDelay.check()) {
+      this.stateChange()
+
+      // 만약 같은 상태가 반복된다면, 패턴을 빠르게 사용하도록 delay의 count를 조정함
+      if (this.state === this.STATE_HAMMER) {
+        this.stateDelay.count = 48
+      }
+    }
+  }
+
+  processMoveBoost () {
+    // 부스트 이펙트 출력
+    if (this.stateDelay.count % 12 === 0) {
+      fieldState.createEffectObject(this.boostEffect, this.x, this.y)
+    }
+    
+    if (this.stateDelay.count >= 60) {
+      // 플레이어 오브젝트를 기준으로, 도착 지점 결정 [20프레임단위로]
+      if (this.stateDelay.count % 20 === 0) {
+        let playerP = fieldState.getPlayerObject()
+        this.boostPositionX = playerP.x
+        this.boostPositionY = playerP.y
+      }
+
+      // 속도는 갈수록 감소 [나눗셈 값을 증가시키면 최종 값이 낮아짐]
+      let divideCount = Math.floor((this.stateDelay.count - 60) / 10)
+      let divide = [11, 13, 15, 17, 22, 25, 28, 31, 40, 40, 40, 40]
+      let distanceX = (this.boostPositionX - this.x) / divide[divideCount]
+      let distanceY = (this.boostPositionY - this.y) / divide[divideCount]
+
+      // 속도 최저치 보정
+      if (distanceX > 0 && distanceX < 5) distanceX = 5
+      else if (distanceX < 0 && distanceX > -5) distanceX = -5
+      if (distanceY > 0 && distanceY < 5) distanceY = 5
+      else if (distanceY < 0 && distanceY > -5) distanceY = -5
+
+      // 이동속도 재설정
+      this.setMoveSpeed(distanceX, distanceY)
+      super.processMove()
+    }
+
+    if (this.stateDelay.check()) {
+      this.stateChange()
+
+      // 상태 변경을 해도 같은상태라면, 부스트 패턴 다시 바로 반복하도록 처리
+      if (this.state === this.STATE_BOOST) {
+        this.stateDelay.count = 48
+      }
+    }
+  }
+
+  processMoveEarthQuake () {
+    // 지진 대기 이펙트
+    if (this.stateDelay.count <= 60 && this.stateDelay.count % 10 === 0) {
+      fieldState.createEffectObject(this.earthquakeEnergyEffect, this.x, this.y)
+    }
+
+    // 1초 이후는 상하로 매우 빠르게 이동
+    if (this.stateDelay.count >= 60) {
+      this.setMoveSpeed(0, -96)
+      super.processMove()
+    }
+
+    // 일정시간마다 상태 변경
+    if (this.stateDelay.check()) {
+      this.stateChange()
+
+      // 상태 변경시 같은 상태라면, 해당 delay count를 0으로 변경함 (이렇게하면 해당 패턴을 다시해야함)
+      if (this.state === this.STATE_EARTHQUAKE) {
+        this.stateDelay.count = 0
+      }
+    }
+
+    // 지진효과로 인한 별모양 이펙트 출력
+    if (this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
+      for (let i = 0; i < 5; i++) {
+        fieldState.createEffectObject(this.hammerStarEffect, (160 * i), graphicSystem.CANVAS_HEIGHT - 160)
+        fieldState.createEffectObject(this.hammerStarEffect, (160 * i), graphicSystem.CANVAS_HEIGHT - 320)
+      }
+    }
+  }
+
+  display () {
+    super.display()
+    if (this.state === this.STATE_HAMMER) {
+      this.displayHammer()
+    }
+  }
+
+  displayHammer () {
+    if (this.stateDelay.count > 0) {
+      let hammer = imageDataInfo.donggramiSpaceEffect.toyHammerNoEnimation
+      graphicSystem.imageDisplay(imageSrc.enemyEffect.donggramiSpace, hammer.x, hammer.y, hammer.width, hammer.height, this.hammerObject.x, this.hammerObject.y, this.hammerObject.width, this.hammerObject.height, 0, this.hammerObject.degree)
+    }
+  }
+}
+
+
+/**
+ * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
+ */
+class TestEnemy extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.RED)
+    this.setEnemyStat(2000000, 0, 0)
+    this.setWidthHeight(96, 96)
+    this.isPossibleExit = false
+
+    // 상태 값 종류: 4개
+    this.STATE_NORMAL = 'n'
+    this.STATE_BOOST = 'b'
+    this.STATE_HAMMER = 'h'
+    this.STATE_EARTHQUAKE = 'e'
+    this.state = this.STATE_HAMMER // 상태 기본값 지정
+    this.stateDelay = new DelayData(120)
+
+    // 상태 재시도 횟수
+    this.stateRepeat = 0
+
+    this.hammerStarEffect = new CustomEffect(
+      imageSrc.enemyEffect.donggramiSpace,
+      imageDataInfo.donggramiSpaceEffect.toyHammerStar,
+      imageDataInfo.donggramiSpaceEffect.toyHammerStar.width * 3,
+      imageDataInfo.donggramiSpaceEffect.toyHammerStar.height * 3,
+      1
+    )
+  }
+
+  processMove () {
+    
+  }
+
+  display () {
+    super.display()
+  }
+}
 
 //
 export const dataExportEnemy = new Map()
+
+// testEnemy
+dataExportEnemy.set(ID.enemy.test, TestEnemy)
 
 // spaceEnemy
 dataExportEnemy.set(ID.enemy.spaceEnemy.attack, SpaceEnemyAttack)
@@ -4229,3 +4503,6 @@ dataExportEnemy.set(ID.enemy.donggramiEnemy.bossBig1, DonggramiEnemyBossBig1)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.bossBig2, DonggramiEnemyBossBig2)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.bounce, DonggramiEnemyBounce)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.speed, DonggramiEnemySpeed)
+
+// donggramiSpace
+dataExportEnemy.set(ID.enemy.donggramiSpace.a1_fighter, DonggramiSpaceA1Fighter)

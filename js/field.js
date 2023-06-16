@@ -1040,10 +1040,10 @@ export class fieldState {
   }
 
   static display () {
-    this.displayEffectObject()
     this.displayEnemyObject()
-    this.displayEnemyBulletObject()
+    this.displayEffectObject()
     this.displayWeaponObject()
+    this.displayEnemyBulletObject()
     this.displayDamageObject()
     this.displayPlayerObject()
   }
@@ -1329,8 +1329,8 @@ export class fieldSystem {
       this.stateId = this.STATE_GAME_OVER
     }
 
-    fieldState.process()
     this.round.process()
+    fieldState.process()
 
     gameVar.statLineText2.setStatLineText(this.getFieldDataString(), this.round.currentTime, this.round.finishTime, '#D5F5E3' ,'#33ff8c')
   }
@@ -1490,7 +1490,9 @@ export class fieldSystem {
       const currentTime = this.round.currentTime
       const finishTime = this.round.finishTime
       const plusTime = this.round.plusTime
-      return `R:${roundText}, T:${currentTime}/${finishTime} + ${plusTime}`
+      const sign = plusTime >= 0 ? '+' : '' // 플러스 마이너스 구분 // 의외로 마이너스부분도 같이 출력됨
+
+      return `R:${roundText}, T:${currentTime}/${finishTime} ${sign}${plusTime}`
     } else {
       return `NO DATA`
     }

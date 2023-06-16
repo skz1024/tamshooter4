@@ -758,3 +758,9 @@ music11B3_move_room
 music11C1_bullet_room
 music11C2_square_room
 music11C3_trap_room
+
+
+2023/06/16 ver 0.38.4
+1. 속도를 범위형태로 랜덤설정할 수 있는 함수 추가
+2. fieldState에서 출력 우선순위 변경 (적과 이펙트의 순서를 변경해서) 이펙트가 적 위에 표시되도록 함.
+3. round 2-3 a1 구역에 사용할 적 추가 [패턴은 완성되었으나, 아직 라운드 내부에서의 데미지 처리는 완료되지 않음.]

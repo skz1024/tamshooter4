@@ -171,6 +171,9 @@ export class ID {
       bounce: 20188,
       speed: 20189,
       talkShopping: 20190,
+    },
+    donggramiSpace: {
+      a1_fighter: 20200,
     }
   }
 

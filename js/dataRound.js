@@ -12,6 +12,7 @@ import { dataExportStatRound } from "./dataStat.js"
 
 let graphicSystem = game.graphic
 let soundSystem = game.sound
+let controlSystem = game.control
 let digitalDisplay = gameFunction.digitalDisplay
 
 export class RoundData {
@@ -144,6 +145,30 @@ export class RoundData {
     }
 
     return 0
+  }
+
+  /** 현재 시간을 재설정 (소수점 단위 사용불가, 만약 사용한다면 소수점 버림) */
+  setCurrentTime (setTime = this.currentTime) {
+    // 해당 숫자가 정수인지 소수인지 판정
+    if (!Number.isInteger(setTime)) {
+      setTime = Math.floor(setTime)
+    }
+
+    // 남은 차이값만큼 plusTime 변환
+    // 주의: 이 함수는 무조건 plusTime에 영향을 미치기 때문에
+    // bossMode와 같은곳에는 이 함수가 사용되지 않습니다.
+    let diffValue = this.currentTime - setTime
+    this.currentTime = setTime
+    this.plusTime += diffValue
+  }
+
+  /** 
+   * 현재 시간을 일시정지하는지에 대한 여부
+   * 
+   * 주의: 잘못 사용하면 시간이 영원히 멈출 수도 있습니다.
+   */
+  setCurrentTimePause (boolValue = false) {
+    this.currentTimePaused = boolValue
   }
 
 
@@ -615,7 +640,7 @@ export class RoundData {
   }
 
   /** 
-   * saveString 문자열 수정 함수
+   * saveString 문자열을 어떻게 저장할 것인지에 대한 함수
    * 
    * (saveString을 조작하는 방식이 복잡할 수 있으므로, 함수로 따로 분리하였습니다.)
    */
@@ -2117,11 +2142,29 @@ class Round1_test extends RoundData {
     this.finishTime = 200
     this.clearBonus = 0
 
+    this.backgroundImageSrc = imageSrc.round.round2_3_maeul_space
+
     this.addRoundPhase(() => {
-      if (this.timeCheckInterval(1, 30, 120) && this.getEnemyCount() <= 0) {
-        this.createEnemy(ID.enemy.donggramiEnemy.speed)
+      if (this.timeCheckFrame(1)) {
+        this.createEnemy(ID.enemy.donggramiSpace.a1_fighter)
       }
     }, 0, 999)
+  }
+
+
+  displayBackground () {
+    graphicSystem.gradientRect(0, 0, 1200, 600, ['#218920', '#6DB9AB'])
+    super.displayBackground()
+
+    if (this.getEnemyObject()[0] != null) {
+      let e = this.getEnemyObject()[0]
+      if (e.stateDelay != null) {
+        digitalDisplay(e.stateDelay.count + '/' + e.stateDelay.delay, 0, 50)
+        digitalDisplay(e.state + '', 0, 70)
+        digitalDisplay(e.stateRepeat + '', 0, 90)
+        digitalDisplay('spd: ' +  e.moveSpeedX + ', ' + e.moveSpeedY, 0, 110)
+      }
+    }
   }
 
   display () {
@@ -2644,6 +2687,354 @@ class Round2_2 extends RoundData {
   }
 }
 
+class Round2_3 extends RoundData {
+  constructor () {
+    super()
+    this.setAutoRoundStat(ID.round.round2_3)
+
+    /** 음악의 리스트 (복도 구간은 음악 없음) */
+    this.musicList = {
+      normal_road: '',
+      a1_battle_room: soundSrc.music.music11A1_battle_room,
+      a2_break_room: soundSrc.music.music11A2_break_room,
+      a3_power_room: soundSrc.music.music11A3_power_room,
+      b1_jump_room: soundSrc.music.music11B1_jump_room,
+      b2_warp_room: soundSrc.music.music11B2_warp_room,
+      b3_move_room: soundSrc.music.music11B3_move_room,
+      c1_bullet_room: soundSrc.music.music11C1_bullet_room,
+      c2_square_room: soundSrc.music.music11C2_square_room,
+      c3_trap_room: soundSrc.music.music11C3_trap_room,
+    }
+
+    /** 배경 그라디언트의 색 리스트 (배열) */
+    this.bgGradientColor = {
+      normal_road: ['#4995E1', '#67B2FF'],
+      a1_battle_room: ['#9E5D3D', '#944C4A'],
+      a2_break_room: ['#5D1C1C', '#644C29'],
+      a3_power_room: ['#96705A', '#9A5C50'],
+      b1_jump_room: ['#D7D068', '#DBE83B'],
+      b2_warp_room: ['#D8E4AB', '#E2BC79'],
+      b3_move_room: ['#D7C98F', '#9E8A67'],
+      c1_bullet_room: ['#7EAC81', '#06921D'],
+      c2_square_room: ['#3D5047', '#0B5531'],
+      c3_trap_room: ['#218920', '#6DB9AB']
+    }
+
+    /** 현재 적용된 그라디언트의 색상 */
+    this.currentGradientColor = ['#4995E1', '#67B2FF']
+
+    this.bgRoadSrc = imageSrc.round.round2_3_road
+    this.bgSpaceSrc = imageSrc.round.round2_3_maeul_space
+
+    this.backgroundImageSrc = this.bgRoadSrc
+
+    /**
+     * 맵의 스트링 값
+     * 
+     * 맵의 종류 = a1 ~ a3, b1 ~ b3, c1 ~ c3, z1 ~ z2(복도)
+     */
+    this.courseName = 'z1'
+
+    /** 코스 선택시 현재 선택된 번호 */
+    this.courseCursorNumber = 0
+
+    /** 코스 선택 시간 */
+    this.courseSelectTime = 6
+
+    this.addRoundPhase(this.roundPhase00, 0, 20)
+    this.addRoundPhase(this.roundPhase01, 21, 80)
+    this.addRoundPhase(this.roundPhase02, 81, 140)
+    this.addRoundPhase(this.roundPhase03, 141, 200)
+    this.addRoundPhase(this.roundPhase04, 201, 220)
+
+    
+    // 선택 창에 관한 오브젝트
+    this.boxMap = {
+      x: 100,
+      y: -300,
+      width: 600,
+      height: 200,
+      isShow: false,
+      image: imageSrc.round.round2_3_map,
+    }
+    
+    this.boxCourse = {
+      x: 100,
+      y: 800,
+      width: 600,
+      height: 200,
+      isShow: false,
+      image: imageSrc.round.round2_3_course_select,
+    }
+
+    game.graphic.createImage(this.boxMap.image)
+    game.graphic.createImage(this.boxCourse.image)
+
+    /** 현재 코스 선택 모드에 있는지에 대한 여부 */
+    this.isCourseSelectMode = false
+
+
+    // 음악 추가
+    game.sound.createAudio(this.musicList.a1_battle_room)
+    game.sound.createAudio(this.musicList.a2_break_room)
+    game.sound.createAudio(this.musicList.a3_power_room)
+    game.sound.createAudio(this.musicList.b1_jump_room)
+    game.sound.createAudio(this.musicList.b2_warp_room)
+    game.sound.createAudio(this.musicList.b3_move_room)
+    game.sound.createAudio(this.musicList.c1_bullet_room)
+    game.sound.createAudio(this.musicList.c2_square_room)
+    game.sound.createAudio(this.musicList.c3_trap_room)
+  }
+
+  setCourseGradientColor () {
+    switch (this.courseName) {
+      case 'z1': this.currentGradientColor = this.bgGradientColor.normal_road; break
+      case 'z2': this.currentGradientColor = this.bgGradientColor.normal_road; break
+      case 'a1': this.currentGradientColor = this.bgGradientColor.a1_battle_room; break
+      case 'a2': this.currentGradientColor = this.bgGradientColor.a2_break_room; break
+      case 'a3': this.currentGradientColor = this.bgGradientColor.a3_power_room; break
+      case 'b1': this.currentGradientColor = this.bgGradientColor.b1_jump_room; break
+      case 'b2': this.currentGradientColor = this.bgGradientColor.b2_warp_room; break
+      case 'b3': this.currentGradientColor = this.bgGradientColor.b3_move_room; break
+      case 'c1': this.currentGradientColor = this.bgGradientColor.c1_bullet_room; break
+      case 'c2': this.currentGradientColor = this.bgGradientColor.c2_square_room; break
+      case 'c3': this.currentGradientColor = this.bgGradientColor.c3_trap_room; break
+    }
+  }
+
+  /** 코스 변경 (코스 공식과 사용자의 선택에 따라 자동으로 변경됨) */
+  changeCourse () {
+    // 코스 변경 공식 // 코스를 선택한 순간에만 실행됨
+    if (this.courseName === 'z1') {
+      switch (this.courseCursorNumber) {
+        case 0: this.courseName = 'a1'; break
+        case 1: this.courseName = 'b1'; break
+        case 2: this.courseName = 'c1'; break
+      }
+      if (this.currentTime < 20) {
+        this.setCurrentTime(20)
+      }
+    } else if (this.courseName === 'a1' || this.courseName === 'b1' || this.courseName === 'c1') {
+      switch (this.courseCursorNumber) {
+        case 0: this.courseName = 'a2'; break
+        case 1: this.courseName = 'b2'; break
+        case 2: this.courseName = 'c2'; break
+      }
+      if (this.currentTime < 80) {
+        this.setCurrentTime(80)
+      }
+    } else if (this.courseName === 'a2' || this.courseName === 'b2' || this.courseName === 'c2') {
+      switch (this.courseCursorNumber) {
+        case 0: this.courseName = 'a3'; break
+        case 1: this.courseName = 'b3'; break
+        case 2: this.courseName = 'c3'; break
+      }
+      if (this.currentTime < 140) {
+        this.setCurrentTime(140)
+      }
+    } else if (this.courseName === 'a3' || this.courseName === 'b3' || this.courseName === 'c3') {
+      this.courseName = 'z2'
+    }
+    
+    // z2는 해당 사항 없음 (더이상 변경 불가능)
+
+    // 코스가 변경되면 그라디언트 배경색도 변경됨
+    this.setCourseGradientColor()
+
+    // 배경 변경
+    if (this.courseName !== 'z1' && this.courseName !== 'z2') {
+      this.changeBackgroundImage(this.bgSpaceSrc, 60)
+    } else {
+      this.changeBackgroundImage(this.bgRoadSrc, 60)
+    }
+  }
+
+  setCourseSelectMode () {
+    this.isCourseSelectMode = true
+    this.courseCursorNumber = 1 // 맨 위가 0번, 가운데가 1번, 맨 아래가 2번이고, 커서는 가운데에 놓여짐
+    this.courseSelectTime = 6
+
+    // 코스 오브젝트의 위치 기본값 설정
+    this.boxMap.y = 0 - 200
+    this.boxCourse.y = graphicSystem.CANVAS_HEIGHT + 200
+
+    // 박스 보여지도록 허용
+    this.boxMap.isShow = true
+    this.boxCourse.isShow = true
+
+    // 플레이어 강제 이동
+    let playerP = fieldState.getPlayerObject()
+    playerP.x = 100
+    playerP.y = 400
+  }
+
+  setNormalMode () {
+    this.isCourseSelectMode = false
+    this.boxMap.isShow = false
+    this.boxCourse.isShow = false
+  }
+
+  processCourse () {
+    if (!this.isCourseSelectMode) return
+
+    if (controlSystem.getButtonInput(controlSystem.buttonIndex.DOWN) && this.courseCursorNumber < 2) {
+      this.courseCursorNumber++
+    } else if (controlSystem.getButtonInput(controlSystem.buttonIndex.UP) && this.courseCursorNumber > 0) {
+      this.courseCursorNumber--
+    }
+    
+    let playerP = fieldState.getPlayerObject()
+    if (this.courseCursorNumber === 0) {
+      playerP.y = 300
+    } else if (this.courseCursorNumber === 1) {
+      playerP.y = 350
+    } else if (this.courseCursorNumber === 2) { 
+      playerP.y = 400
+    }
+
+    // 박스 보여지도록 허용
+    this.boxMap.isShow = true
+    this.boxCourse.isShow = true
+
+    // 코스 선택 버튼을 누르거나, 또는 플레이어를 앞으로 이동시킨 경우
+    if (controlSystem.getButtonInput(controlSystem.buttonIndex.A) || playerP.x >= 250) {
+      // 코스 선택 종료 (해당 값을 선택한 것으로 처리)
+      this.setNormalMode()
+      this.changeCourse()
+    }
+
+    // 플레이어는 일정 구간 뒤로 갈 수 없음
+    if (playerP.x <= 99) {
+      playerP.x = 100
+    }
+
+    this.processMapBox()
+  }
+
+  processDebug () {
+    if (this.timeCheckFrame(0, 12)) {
+      this.currentTime = 14
+    }
+  }
+
+  process () {
+    super.process()
+    this.processCourse()
+  }
+
+  processSaveString () {
+    // 저장 방식
+    // 현재 맵, 선택모드, 현재 커서 값, 
+    this.saveString = this.courseName + ',' + this.isCourseSelectMode + ',' + this.courseCursorNumber
+  }
+
+  loadDataProgressSaveString () {
+    let str = this.saveString.split(',')
+    this.courseName = str[0]
+    this.isCourseSelectMode = str[1] === 'true' ? true : false
+    this.courseCursorNumber = Number(str[2])
+
+    // 불러올 때 그라디언트 배경도 변경함
+    this.setCourseGradientColor()
+  }
+
+  processMapBox () {
+    if (this.boxMap.y < 0) {
+      this.boxMap.y += 10
+    }
+    if (this.boxCourse.y > 250) {
+      this.boxCourse.y -= 20
+    }
+  }
+
+  displayBackground () {
+    // 그라디언트 출력
+    if (this.currentGradientColor.length >= 2) {
+      graphicSystem.gradientRect(
+        0, 
+        0, 
+        graphicSystem.CANVAS_WIDTH, 
+        graphicSystem.CANVAS_HEIGHT, 
+        [this.currentGradientColor[0], this.currentGradientColor[1]]
+      )
+    }
+
+    // 배경 출력
+    super.displayBackground()
+
+    // 선택 오브젝트 출력
+    if (this.boxMap.isShow) {
+      graphicSystem.imageView(this.boxMap.image, this.boxMap.x, this.boxMap.y)
+    }
+
+    if (this.boxCourse.isShow) {
+      graphicSystem.imageView(this.boxCourse.image, this.boxCourse.x, this.boxCourse.y)
+    }
+  }
+
+  roundPhase00 () {
+    // 2 ~ 10초
+    // 동그라미들 등장, dps: 40% (dps는 낮게 측정됨)
+    // timestop = 14초
+
+    if (this.timeCheckInterval(2, 10, 15)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+    }
+
+    this.timePauseEnemyCount(14)
+
+    if (this.timeCheckFrame(15)) {
+      this.setCourseSelectMode()
+    }
+
+    if (this.timeCheckInterval(19, 21) && this.isCourseSelectMode) {
+      this.setCurrentTimePause(true)
+    } else {
+      this.setCurrentTimePause(false)
+      this.musicPlay()
+    }
+  }
+
+  roundPhase01 () {
+    switch (this.courseName) {
+      case 'a1': this.coursePhaseA1(); break
+      case 'b1': this.coursePhaseB1(); break
+      // case 'c1': this.coursePhaseA1(); break
+    }
+  }
+
+  roundPhase02 () {}
+  roundPhase03 () {}
+  roundPhase04 () {}
+
+  coursePhaseA1 () {
+    // 음악 관련 버그: musicPlay를 하지 않으면 종종 재생이 되지 않는 오류가 있음.
+    if (this.timeCheckFrame(21, 31)) {
+      this.musicChange(this.musicList.a1_battle_room)
+    }
+
+    // 참고: 판정방식에 대해...
+    let enemy = this.getEnemyObject()[0]
+    if (enemy != null) {
+
+    }
+  }
+
+  coursePhaseB1 () {
+    if (this.timeCheckFrame(21, 31)) {
+      this.musicChange(this.musicList.b1_jump_room)
+    }
+  }
+
+  coursePhaseA2 () {
+
+  }
+
+  coursePhaseA3 () {
+
+  }
+}
+
 
 /**
  * export 할 라운드 데이터의 변수, tam4변수에 대입하는 용도
@@ -2658,3 +3049,4 @@ dataExportRound.set(ID.round.round1_6, Round1_6)
 dataExportRound.set(ID.round.round1_test, Round1_test)
 dataExportRound.set(ID.round.round2_1, Round2_1)
 dataExportRound.set(ID.round.round2_2, Round2_2)
+dataExportRound.set(ID.round.round2_3, Round2_3)

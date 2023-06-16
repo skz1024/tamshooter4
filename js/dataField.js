@@ -664,6 +664,18 @@ export class FieldData {
     }
   }
 
+  /** 
+   * 랜덤하게 적 속도를 설정하지만, 최대 최소를 결정할 수 있습니다.
+   * @param {number} [minX=1] x좌표의 최소 이동속도
+   * @param {number} [minY=1] y좌표의 최소 이동속도
+   * @param {number} [maxX=2] x좌표의 최대 이동속도
+   * @param {number} [maxY=2] y좌표의 최대 이동속도
+   */
+  setRandomSpeedMinMax (minX = 1, minY = 1, maxX = 2, maxY = 2) {
+    this.moveSpeedX = Math.random() * (maxX - minX) + minX
+    this.moveSpeedY = Math.random() * (maxY - minY) + minY
+  }
+
   /** 적 이동속도 결정 */
   setMoveSpeed (moveSpeedX = 1, moveSpeedY = 1) {
     this.moveSpeedX = moveSpeedX

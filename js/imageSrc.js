@@ -63,7 +63,8 @@ export class imageSrc {
   }
 
   static enemyEffect = {
-    donggrami: './image/enemy/donggramiEnemyEffect.png'
+    donggrami: './image/enemy/donggramiEnemyEffect.png',
+    donggramiSpace: './image/enemy/donggramiSpaceEffect.png'
   }
 
   static enemyDie = {
@@ -92,7 +93,11 @@ export class imageSrc {
     round2_2_shopping_mall: './image/round/round2_2_shopping_mall.png',
     round2_2_tunnel: './image/round/round2_2_tunnel.png',
     round2_2_tunnel_outload: './image/round/round2_2_tunnel_outload.png',
-    round2_donggramiHp: './image/round/round2_donggramiHp.png'
+    round2_donggramiHp: './image/round/round2_donggramiHp.png',
+    round2_3_road: './image/round/round2_3_road.png',
+    round2_3_maeul_space: './image/round/round2_3_maeul_space.png',
+    round2_3_map: './image/round/round2_3_map_2.png',
+    round2_3_course_select: './image/round/round2_3_course_select.png'
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -301,6 +306,14 @@ export class imageDataInfo {
     /** 말풍선 꼬리 */ speechBubbleTale: {x: 210, y: 120, width: 70, height: 26, frame: 1},
     /** 환영 대화창 */ welcomeText: {x: 0, y: 180, width: 198, height: 78, frame: 1},
     /** 마을 대화창 */ welcomeMaeulText: {x: 200, y: 180, width: 198, height: 78, frame: 1}
+  }
+
+  static donggramiSpaceEffect = {
+    /** 물결 부스터 */ booster: {x: 0, y: 0, width: 40, height: 40, frame: 7},
+    /** 뿅망치 */ toyHammer: {x: 0, y: 50, width: 60, height: 60, frame: 10},
+    /** 뿅망치(멈춤이미지) */ toyHammerNoEnimation: {x: 540, y: 50, width: 60, height: 60, frame: 1},
+    /** 뿅망치별... */ toyHammerStar: {x: 0, y: 110, width: 60, height: 60, frame: 8},
+    /** 지진 기모으기 */ earthquakeEnergy: {x: 0, y: 180, width: 40, height: 40, frame: 8}
   }
 
   static weapon = {

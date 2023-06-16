@@ -114,7 +114,16 @@ export class soundSrc {
     music07_paran_planet_entry: './music/music07_paran_planet_entry.ogg',
     music08_round1_4_jemul: './music/music08_round1_4_jemul.ogg',
     music09_paran_planet: './music/music09_paran_planet.ogg',
-    music10_donggrami_maeul: './music/music10_donggrami_maeul.ogg'
+    music10_donggrami_maeul: './music/music10_donggrami_maeul.ogg',
+    music11A1_battle_room: './music/music11A1_battle_room.ogg',
+    music11A2_break_room: './music/music11A2_break_room.ogg',
+    music11A3_power_room: './music/music11A3_power_room.ogg',
+    music11B1_jump_room: './music/music11B1_jump_room.ogg',
+    music11B2_warp_room: './music/music11B2_warp_room.ogg',
+    music11B3_move_room: './music/music11B3_move_room.ogg',
+    music11C1_bullet_room: './music/music11C1_bullet_room.ogg',
+    music11C2_square_room: './music/music11C2_square_room.ogg',
+    music11C3_trap_room: './music/music11C3_trap_room.ogg',
   }
 
   
