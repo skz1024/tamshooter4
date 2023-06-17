@@ -7,8 +7,8 @@ let graphicSystem = game.graphic
 
 /**
  * 충돌 감지 함수
- * @param {FieldData} objectA
- * @param {FieldData} objectB
+ * @param {FieldData | any} objectA
+ * @param {FieldData | any} objectB
  */
  export function collision (objectA, objectB) {
   if (objectA.x < objectB.x + objectB.width &&

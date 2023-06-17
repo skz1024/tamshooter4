@@ -2493,12 +2493,8 @@ class Round2_2 extends RoundData {
       game.graphic.imageView(this.bgList[this.bgNumber + 1], this.backgroundX + this.bgWidth[this.bgNumber], 0)
     }
 
-    digitalDisplay('bx: ' + this.backgroundX + ', bn: ' + this.bgNumber, 0, 0)
-
     // 검은색 배경 출력
     game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', this.bgBlackAlpha)
-
-    digitalDisplay(this.bgBlackAlpha, 0, 40)
   }
 
   processSaveString () {
@@ -2741,11 +2737,11 @@ class Round2_3 extends RoundData {
     /** 코스 선택 시간 */
     this.courseSelectTime = 6
 
-    this.addRoundPhase(this.roundPhase00, 0, 20)
-    this.addRoundPhase(this.roundPhase01, 21, 80)
-    this.addRoundPhase(this.roundPhase02, 81, 140)
-    this.addRoundPhase(this.roundPhase03, 141, 200)
-    this.addRoundPhase(this.roundPhase04, 201, 220)
+    this.addRoundPhase(this.roundPhase00, 0, 19)
+    this.addRoundPhase(this.roundPhase01, 20, 79)
+    this.addRoundPhase(this.roundPhase02, 80, 139)
+    this.addRoundPhase(this.roundPhase03, 140, 199)
+    this.addRoundPhase(this.roundPhase04, 200, 214)
 
     
     // 선택 창에 관한 오브젝트
@@ -2784,6 +2780,108 @@ class Round2_3 extends RoundData {
     game.sound.createAudio(this.musicList.c1_bullet_room)
     game.sound.createAudio(this.musicList.c2_square_room)
     game.sound.createAudio(this.musicList.c3_trap_room)
+
+
+    // 각 구역에 따른 변수 지정
+    this.a1 = {
+      /** 적의 체력 */ enemyHp: 100,
+      /** 플레이어의 체력 */ playerHp: 100,
+      /** 무적 시간(플레이어만 해당) */ invincibleFrame: 60,
+      /** 플레이어 강제 이동 (랜덤한 위치로, 타격당할 때마다 변경) */ playerAutoMoveFrame: 0,
+      /** 배틀의 남은 시간 */ battleLeftTime: 45,
+      /** 배틀의 결과 */ result: '',
+      /** 플레이어 이동 고정 위치 x좌표 */ playerAutoMoveX: 0,
+      /** 플레이어 이동 고정 위치 y좌표 */ playerAutoMoveY: 0,
+      /** 에니메이션용(부드럽게 감소시키기위한) 체력 */ playerHpEnimation: 100,
+      /** 에니메이션용(반짝이는 효과를 위한) 체력 */ playerHpEnimationFrame: 0,
+    }
+
+    // 보이스 추가(...)
+    this.voiceList = {
+      complete: soundSrc.round.r2_3_voiceComplete,
+      draw: soundSrc.round.r2_3_voiceDraw,
+      win: soundSrc.round.r2_3_voiceWin,
+      lose: soundSrc.round.r2_3_voiceLose,
+      start: soundSrc.round.r2_3_voiceStart,
+      fight: soundSrc.round.r2_3_voiceFight,
+      ready: soundSrc.round.r2_3_voiceReady
+    }
+
+    game.sound.createAudio(this.voiceList.complete)
+    game.sound.createAudio(this.voiceList.draw)
+    game.sound.createAudio(this.voiceList.win)
+    game.sound.createAudio(this.voiceList.lose)
+    game.sound.createAudio(this.voiceList.start)
+    game.sound.createAudio(this.voiceList.fight)
+    game.sound.createAudio(this.voiceList.ready)
+    game.sound.createAudio(soundSrc.round.r2_3_a1_damage) // 플레이어 데미지 용도
+
+    class LightBox {
+      constructor (x = 0, y = 0, width = 10, height = 10, color = 'white') {
+        this.x = x
+        this.y = y
+        this.width = width
+        this.height = height
+        this.color = color
+        this.alphaPercent = 100
+        this.isAlphaValueUp = false
+      }
+
+      process () {
+        // 알파값이 증가상태면 10%씩 상승, 아닐경우 10%씩 감소
+        this.alphaPercent += this.isAlphaValueUp ? 5 : -5
+
+        if (this.alphaPercent <= 0) {
+          this.isAlphaValueUp = true
+          this.alphaPercent = 0
+        }
+
+        if (this.alphaPercent === 100) {
+          this.isAlphaValueUp = false
+          this.alphaPercent = 100
+        }
+      }
+
+      display () {
+        // 알파값은 100배의 정수로 기록되었으므로, 값을 맞추기 위해 100으로 나눕니다.
+        graphicSystem.fillRect(this.x, this.y, this.width, this.height, this.color, this.alphaPercent / 100)
+      }
+    }
+
+    const lightX = 100
+    this.lightBoxList = {
+      z1: new LightBox(lightX + 0, 50, 100, 150, 'white'),
+      a1: new LightBox(lightX + 100, 50, 100, 50, 'red'),
+      a2: new LightBox(lightX + 200, 50, 100, 50, 'red'),
+      a3: new LightBox(lightX + 300, 50, 100, 50, 'red'),
+      b1: new LightBox(lightX + 100, 100, 100, 50, 'yellow'),
+      b2: new LightBox(lightX + 200, 100, 100, 50, 'yellow'),
+      b3: new LightBox(lightX + 300, 100, 100, 50, 'yellow'),
+      c1: new LightBox(lightX + 100, 150, 100, 50, 'green'),
+      c2: new LightBox(lightX + 200, 150, 100, 50, 'green'),
+      c3: new LightBox(lightX + 300, 150, 100, 50, 'green'),
+      z2: new LightBox(lightX + 400, 50, 100, 150, 'white'),
+      s1: new LightBox(lightX + 100, 300, 500, 50, 'grey'),
+      s2: new LightBox(lightX + 100, 350, 500, 50, 'grey'),
+      s3: new LightBox(lightX + 100, 400, 500, 50, 'grey'),
+    }
+  }
+
+  lightBoxProcess () {
+    this.lightBoxList.a1.process()
+    this.lightBoxList.a2.process()
+    this.lightBoxList.a3.process()
+    this.lightBoxList.b1.process()
+    this.lightBoxList.b2.process()
+    this.lightBoxList.b3.process()
+    this.lightBoxList.c1.process()
+    this.lightBoxList.c2.process()
+    this.lightBoxList.c3.process()
+    this.lightBoxList.s1.process()
+    this.lightBoxList.s2.process()
+    this.lightBoxList.s3.process()
+    this.lightBoxList.z1.process()
+    this.lightBoxList.z2.process()
   }
 
   setCourseGradientColor () {
@@ -2811,7 +2909,7 @@ class Round2_3 extends RoundData {
         case 1: this.courseName = 'b1'; break
         case 2: this.courseName = 'c1'; break
       }
-      if (this.currentTime < 20) {
+      if (this.currentTime <= 20) {
         this.setCurrentTime(20)
       }
     } else if (this.courseName === 'a1' || this.courseName === 'b1' || this.courseName === 'c1') {
@@ -2820,7 +2918,7 @@ class Round2_3 extends RoundData {
         case 1: this.courseName = 'b2'; break
         case 2: this.courseName = 'c2'; break
       }
-      if (this.currentTime < 80) {
+      if (this.currentTime <= 80) {
         this.setCurrentTime(80)
       }
     } else if (this.courseName === 'a2' || this.courseName === 'b2' || this.courseName === 'c2') {
@@ -2829,12 +2927,15 @@ class Round2_3 extends RoundData {
         case 1: this.courseName = 'b3'; break
         case 2: this.courseName = 'c3'; break
       }
-      if (this.currentTime < 140) {
+      if (this.currentTime <= 140) {
         this.setCurrentTime(140)
       }
     } else if (this.courseName === 'a3' || this.courseName === 'b3' || this.courseName === 'c3') {
       this.courseName = 'z2'
     }
+
+    // 시간 멈춤 해제
+    this.setCurrentTimePause(false)
     
     // z2는 해당 사항 없음 (더이상 변경 불가능)
 
@@ -2925,14 +3026,26 @@ class Round2_3 extends RoundData {
   processSaveString () {
     // 저장 방식
     // 현재 맵, 선택모드, 현재 커서 값, 
-    this.saveString = this.courseName + ',' + this.isCourseSelectMode + ',' + this.courseCursorNumber
+    // 그리고, 각 모드에 대한 추가적인 정보
+    let modInfo = ''
+    switch (this.courseName) {
+      case 'a1': modInfo = JSON.stringify(this.a1); break
+    }
+
+    // 참고: JSON 파싱 버그를 막기 위해 구분자는 |(막대기?) 로 사용합니다.
+    this.saveString = this.courseName + '|' + this.isCourseSelectMode + '|' + this.courseCursorNumber + '|' + modInfo
   }
 
   loadDataProgressSaveString () {
-    let str = this.saveString.split(',')
+    let str = this.saveString.split('|')
     this.courseName = str[0]
     this.isCourseSelectMode = str[1] === 'true' ? true : false
     this.courseCursorNumber = Number(str[2])
+
+    let modInfo = str[3]
+    switch (this.courseName) {
+      case 'a1': this.a1 = JSON.parse(modInfo); break
+    }
 
     // 불러올 때 그라디언트 배경도 변경함
     this.setCourseGradientColor()
@@ -2941,10 +3054,16 @@ class Round2_3 extends RoundData {
   processMapBox () {
     if (this.boxMap.y < 0) {
       this.boxMap.y += 10
+    } else {
+      this.boxMap.y = 0
     }
     if (this.boxCourse.y > 250) {
       this.boxCourse.y -= 20
+    } else {
+      this,this.boxCourse.y = 250
     }
+
+    this.lightBoxProcess()
   }
 
   displayBackground () {
@@ -2965,10 +3084,35 @@ class Round2_3 extends RoundData {
     // 선택 오브젝트 출력
     if (this.boxMap.isShow) {
       graphicSystem.imageView(this.boxMap.image, this.boxMap.x, this.boxMap.y)
+
+      switch (this.courseName) {
+        case 'z1':
+          if (this.courseCursorNumber === 0) this.lightBoxList.a1.display()
+          if (this.courseCursorNumber === 1) this.lightBoxList.b1.display()
+          if (this.courseCursorNumber === 2) this.lightBoxList.c1.display()
+          this.lightBoxList.z1.display()
+          break
+        case 'a1':
+        case 'b1':
+        case 'c1':
+          if (this.courseCursorNumber === 0) this.lightBoxList.a2.display()
+          if (this.courseCursorNumber === 1) this.lightBoxList.b2.display()
+          if (this.courseCursorNumber === 2) this.lightBoxList.c2.display()
+          if (this.courseName === 'a1') this.lightBoxList.a1.display()
+          if (this.courseName === 'b1') this.lightBoxList.b1.display()
+          if (this.courseName === 'c1') this.lightBoxList.c1.display()
+          break
+      }
     }
 
     if (this.boxCourse.isShow) {
       graphicSystem.imageView(this.boxCourse.image, this.boxCourse.x, this.boxCourse.y)
+
+      switch (this.courseCursorNumber) {
+        case 0: this.lightBoxList.s1.display(); break
+        case 1: this.lightBoxList.s2.display(); break
+        case 2: this.lightBoxList.s3.display(); break
+      }
     }
   }
 
@@ -3007,16 +3151,251 @@ class Round2_3 extends RoundData {
   roundPhase03 () {}
   roundPhase04 () {}
 
-  coursePhaseA1 () {
-    // 음악 관련 버그: musicPlay를 하지 않으면 종종 재생이 되지 않는 오류가 있음.
-    if (this.timeCheckFrame(21, 31)) {
-      this.musicChange(this.musicList.a1_battle_room)
+  display () {
+    super.display()
+    
+    if (this.courseName === 'a1') {
+      this.displayCoursePhaseA1()
+    }
+  }
+
+  displayCoursePhaseA1 () {
+    let phase1Start = this.phaseTime[1].startTime
+    const imgD = imageDataInfo.round2_3_result // result 이미지 데이터 타겟을 위한 정보
+    const imgSize = imageDataInfo.round2_3_result.complete // 모든 결과 이미지는 동일한 사이즈
+    let showD = imgD.complete
+    const centerX = graphicSystem.CANVAS_WIDTH_HALF - (imgSize.width / 2)
+
+    // 2초간 준비 화면 보여짐
+    if (this.timeCheckInterval(phase1Start + 3, phase1Start + 4)) {
+      showD = imgD.ready
+    } else if (this.timeCheckInterval(phase1Start + 5, phase1Start + 6)) { // 2초간 파이트 화면 보여짐
+      showD = imgD.fight
     }
 
-    // 참고: 판정방식에 대해...
-    let enemy = this.getEnemyObject()[0]
-    if (enemy != null) {
+    // 전투 도중의 스탯 표시
+    if (this.timeCheckInterval(phase1Start + 3, phase1Start + 50)) {
+      // 플레이어의 체력값과 적의 체력값 표시
+      digitalDisplay('PLAYER HP: ' + this.a1.playerHp + '%', 0, 70)
+      digitalDisplay('ENEMY HP: ' + this.a1.enemyHp + '%', 450, 70)
 
+      graphicSystem.imageView(imageSrc.round.round2_3_battle_status, 0, 0)
+      this.donggramiNumberDisplay(this.a1.battleLeftTime, 375, 30) // 동그라미 숫자로 남은시간 표시
+
+      // 플레이어의 체력은 왼쪽부터 오른쪽으로 이동하는 구조... 그리고 에니메이션 형태로 조작됨
+      let percent = this.a1.playerHpEnimation / 100
+      let divValue = 350 * percent
+      let playerHpColor = this.a1.playerHpEnimationFrame % 3 === 0 ? 'green' : 'yellow' 
+      graphicSystem.meterRect(350 - divValue, 30, divValue, 40, playerHpColor, 100, 100) // 엄밀히 따지면 meterRect를 사용하나 fillRect를 사용하나 같음
+
+      // 적 체력 표시
+      graphicSystem.meterRect(450, 30, 350, 40, 'red', this.a1.enemyHp, 100)
+    }
+
+    if (this.timeCheckInterval(phase1Start + 51, phase1Start + 54)) {
+      if (this.a1.result === 'win') {
+        showD = imgD.win
+      } else if (this.a1.result === 'lose') {
+        showD = imgD.lose
+      } else if (this.a1.result === 'draw') {
+        showD = imgD.draw
+      }
+    }
+    
+    // 이 결과를 보여주는 시간은 페이즈 시작하고 3 ~ 6초(준비, 시작) 그리고 51 ~ 54초(결과 화면)
+    if (this.timeCheckInterval(phase1Start + 3, phase1Start + 6) || this.timeCheckInterval(phase1Start + 51, phase1Start + 54)) {
+      graphicSystem.imageDisplay(imageSrc.round.round2_3_result, showD.x, showD.y, showD.width, showD.height, centerX, 200, showD.width, showD.height)
+    }
+  }
+
+  donggramiNumberDisplay = game.graphic.createCustomNumberDisplay(imageSrc.number.round2_3_number, 30, 40)
+
+  coursePhaseA1 () {
+    const phase1Start = this.phaseTime[1].startTime
+
+    // 준비 시간 (3초 후) 음악 재생 및 레디 표시
+    if (this.timeCheckFrame(phase1Start + 3)) {
+      this.musicChange(this.musicList.a1_battle_room)
+      this.musicPlay() // change만으로는 음악 재생을 할 수 없기 때문에 play를 해야합니다.
+      soundSystem.play(this.voiceList.ready)
+    }
+
+    // 준비 시간이 끝나고, 전투 시작 (이 때 적이 생성됩니다.)
+    if (this.timeCheckFrame(phase1Start + 5)) {
+      soundSystem.play(this.voiceList.fight)
+      this.createEnemy(ID.enemy.donggramiSpace.a1_fighter)
+    }
+
+    // 전투에 관한 처리
+    if (this.timeCheckInterval(phase1Start + 5, phase1Start + 49)) {
+      this.coursePhaseA1PlayerDamage()
+      this.coursePhaseA1EnemyDamage()
+      this.coursePhaseA1PlayerAutoMove()
+      this.coursePhaseA1PlayerHpEnimation()
+
+      // 시간 감소
+      if (this.currentTimeTotalFrame % 60 === 0) {
+        this.a1.battleLeftTime--
+      }
+
+      const result = this.coursePhaseA1Result()
+      if (result !== '') { // 결과값이 있을경우 그에 대한 처리
+        this.setCurrentTime(phase1Start + 50) // 중복 처리 방지를 위한 시간 이동
+        this.a1.result = result // 결과값 처리
+        this.musicStop()
+        this.playerMoveEnable() // 플레이어 이동 가능하도록 강제로 처리
+        switch (result) {
+          case 'win': soundSystem.play(this.voiceList.win); break
+          case 'lose': soundSystem.play(this.voiceList.lose); break
+          case 'draw': soundSystem.play(this.voiceList.draw); break
+        }
+
+        let enemy = this.getEnemyObject()[0]
+        if (enemy != null) {
+          enemy.state = 'end' // 적 상태 임의로 변경해서 전투 종료를 느껴지게끔 처리(적은 더이상 패턴을 사용하지 않음.)
+        }
+      }
+    }
+
+    // 다음 코스 선택 모드
+    if (this.timeCheckFrame(phase1Start + 55)) {
+      this.setCourseSelectMode()
+    }
+  }
+
+  coursePhaseA1Result () {
+    if (this.a1.playerHp <= 0 && this.a1.enemyHp >= 1) {
+      return 'lose'
+    } else if (this.a1.playerHp >= 1 && this.a1.enemyHp <= 0) {
+      return 'win'
+    } else if (this.a1.playerHp === 0 && this.a1.enemyHp === 0) {
+      return 'draw'
+    }
+
+    if (this.a1.battleLeftTime === 0) {
+      if (this.a1.playerHp > this.a1.enemyHp) {
+        return 'win'
+      } else if (this.a1.playerHp < this.a1.enemyHp) {
+        return 'lose'
+      } else if (this.a1.playerHp === this.a1.enemyHp) {
+        return 'draw'
+      }
+    }
+
+    return ''
+  }
+
+  /** (만약) 플레이어를 이동 불가능하게 설정했다면 해당 함수로 되돌려주세요. */
+  playerMoveEnable () {
+    let playerP = fieldState.getPlayerObject()
+    playerP.isMoveEnable = true
+  }
+
+  /** 플레이어를 강제 이동시키기 위한 함수 */
+  coursePhaseA1PlayerAutoMove () {
+    let playerP = fieldState.getPlayerObject()
+    if (this.a1.playerAutoMoveFrame >= 1) {
+      this.a1.playerAutoMoveFrame--
+      playerP.isMoveEnable = false
+      let distanceX = this.a1.playerAutoMoveX - playerP.x
+      let distanceY = this.a1.playerAutoMoveY - playerP.y
+      playerP.x += distanceX / 10
+      playerP.y += distanceY / 10
+    } else {
+      playerP.isMoveEnable = true
+    }
+  }
+
+  coursePhaseA1PlayerHpEnimation () {
+    // 플레이어 데미지 요소를 부드럽게 그리고 반짝이게 하기 위한 에니메이션 처리
+    if (this.a1.playerHp < this.a1.playerHpEnimation && this.currentTimeTotalFrame % 2 === 0) {
+      this.a1.playerHpEnimation--
+      this.a1.playerHpEnimationFrame += 3
+    }
+
+    if (this.a1.playerHpEnimationFrame > 0) {
+      this.a1.playerHpEnimationFrame--
+    }
+  }
+
+  /** 적 데미지를 처리하기 위한 함수 */
+  coursePhaseA1EnemyDamage () {
+    let enemy = this.getEnemyObject()[0]
+
+    // 적이 없거나 정해진 적이 아닐경우 함수 처리 무시
+    if (enemy == null || enemy.id !== ID.enemy.donggramiSpace.a1_fighter) return
+
+    const baseValue = 250000 // 실제 체력: 2000000
+    if (enemy.hpMax - enemy.hp >= baseValue) {
+      enemy.hp += baseValue
+      this.a1.enemyHp -= 10
+    }
+
+    const someValue = baseValue / 10
+    if (enemy.hpMax - enemy.hp >= someValue) {
+      enemy.hp += someValue
+      this.a1.enemyHp -= 1
+    }
+  }
+
+  /**
+   * 플레이어가 받는 데미지 판정방식
+   * 
+   * 적이 가지고 있는 좌표값에 임의의 값을 추가하여 비교한다. 그러나 적이 가진 상태에 따라, 판정을 다르게 해야 한다.
+   */
+  coursePhaseA1PlayerDamage () {
+    let enemy = this.getEnemyObject()[0]
+    let playerP = fieldState.getPlayerObject()
+
+    // 적이 없거나 정해진 적이 아닐경우 함수 처리 무시
+    if (enemy == null || enemy.id !== ID.enemy.donggramiSpace.a1_fighter) return
+
+    // 플레이어 무적 상태이면, 무시
+    if (this.a1.invincibleFrame > 0) {
+      this.a1.invincibleFrame--
+      return
+    }
+
+    // 해당 적이 가지고 있는 4가지 상태
+    const STATE_HAMMER = 'hammer'
+    const STATE_EARTHQUAKE = 'earthquake'
+    const STATE_NORMAL = 'normal'
+    const STATE_BOOST = 'boost'
+
+    // 각각의 판정범위를 가지는 오브젝트
+    let enemyObject = {x: enemy.x, y: enemy.y, width: enemy.width, height: enemy.height}
+    let earthQuakeObject = {x: 0, y: graphicSystem.CANVAS_HEIGHT - 320, width: graphicSystem.CANVAS_WIDTH, height: 320} // 밑 부분 영역
+    let earthQuakeObject2 = {x: enemy.x, y: 0, width: enemy.width, height: graphicSystem.CANVAS_HEIGHT} // 상하 영역 전체
+    let hammerObject = {x: enemy.centerX - (enemy.width / 2), y: enemy.y - (enemy.height) + 48, width: 180, height: 180}
+
+    let damage = 0
+    let isDamaged = false
+    if (enemy.state === STATE_NORMAL && collision(playerP, enemyObject)) {
+      isDamaged = true
+      damage = 4
+    } else if (enemy.state === STATE_BOOST && collision(playerP, enemyObject)) {
+      isDamaged = true
+      damage = 5
+    } else if (enemy.state === STATE_HAMMER && collision(playerP, hammerObject)) {
+      isDamaged = true
+      damage = 12
+    } else if (enemy.state === STATE_EARTHQUAKE) {
+      if (collision(playerP, earthQuakeObject) || collision(playerP, earthQuakeObject2)) {
+        isDamaged = true
+        damage = 15
+      }
+    }
+
+    // 데미지를 받은 경우, 사운드 및 플레이어 강제 이동 처리
+    if (isDamaged) {
+      soundSystem.play(soundSrc.round.r2_3_a1_damage)
+      this.a1.playerHp -= damage
+      this.a1.invincibleFrame = damage < 10 ? 30 : 90 // 무적프레임: 10데미지 미만 30, 이상 90
+      this.a1.playerAutoMoveFrame = 30
+      this.a1.playerAutoMoveX = (Math.random() * 60 - 120) + playerP.x
+
+      // 지진상태에서는 연속적으로 맞지 않도록 위로 보내지고, 나머지는 상하 왔다갔다
+      this.a1.playerAutoMoveY = this.state === STATE_EARTHQUAKE ? (Math.random() * 60 - 120) + 120 : (Math.random() * 60 - 120) + playerP.y
     }
   }
 

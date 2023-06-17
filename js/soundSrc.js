@@ -95,6 +95,18 @@ export class soundSrc {
     r1_4_jemulstar: './sound/round1_4_jemulstar.ogg',
     r1_4_jemulstart: './sound/round1_4_jemulstart.ogg',
     r1_4_jemulrun: './sound/round1_4_jemulrun.ogg',
+    r2_3_voiceComplete: './sound/round2_3_voiceComplete.ogg',
+    r2_3_voiceDraw: './sound/round2_3_voiceDraw.ogg',
+    r2_3_voiceFight: './sound/round2_3_voiceFight.ogg',
+    r2_3_voiceLose: './sound/round2_3_voiceLose.ogg',
+    r2_3_voiceReady: './sound/round2_3_voiceReady.ogg',
+    r2_3_voiceStart: './sound/round2_3_voiceStart.ogg',
+    r2_3_voiceWin: './sound/round2_3_voiceWin.ogg',
+    r2_3_a1_boost: './sound/round2_3_a1_boost.ogg',
+    r2_3_a1_damage: './sound/round2_3_a1_damage.ogg',
+    r2_3_a1_earthquake: './sound/round2_3_a1_earthquake.ogg',
+    r2_3_a1_earthquakeDamage: './sound/round2_3_a1_earthquakeDamage.ogg',
+    r2_3_a1_toyHammer: './sound/round2_3_a1_toyHammer.ogg',
   }
 
   static donggrami = {

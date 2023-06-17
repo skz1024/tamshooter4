@@ -4157,7 +4157,7 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
   constructor () {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.RED)
-    this.setEnemyStat(200000, 0, 0)
+    this.setEnemyStat(20000000, 0, 0)
     this.setWidthHeight(96, 96)
     this.isPossibleExit = false // 바깥으로 나갈 수 없음
     this.setMoveDirection('', '') // 이동방향 제거 (플레이어를 추적하는 알고리즘 때문)
@@ -4167,6 +4167,8 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
     this.STATE_BOOST = 'boost'
     this.STATE_HAMMER = 'hammer'
     this.STATE_EARTHQUAKE = 'earthquake'
+    this.STATE_EARTHQUAKE_WAIT = 'earthquakewait'
+    this.STATE_END = 'end'
     this.state = this.STATE_NORMAL // 상태 기본값 지정
     this.stateDelay = new DelayData(120)
 
@@ -4186,12 +4188,35 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
 
     /** 빠르게 이동해서 도착할 임시 좌표 */ this.boostPositionX = 0
     /** 빠르게 이동해서 도착할 임시 좌표 */ this.boostPositionY = 0
+
+    this.hammerSound = soundSrc.round.r2_3_a1_toyHammer
+    this.earthquakeSound = soundSrc.round.r2_3_a1_earthquake
+    this.earthquakeSoundDamage = soundSrc.round.r2_3_a1_earthquakeDamage
+    this.boostSound = soundSrc.round.r2_3_a1_boost
+
+    soundSystem.createAudio(this.hammerSound)
+    soundSystem.createAudio(this.earthquakeSound)
+    soundSystem.createAudio(this.earthquakeSoundDamage)
+    soundSystem.createAudio(this.boostSound)
+
+    // 공 튕기게 하는 용도
+    this.bounceSpeedY = Math.floor(Math.random() * 4) + 10
+    this.bounceDelay = new DelayData(120)
+    this.endDelay = 0 // 이것은 end상태가 되었을 때 일정시간이 지나면 자동으로 사라지게끔 처리할 목적으로 만듬
+  }
+
+  processDie () {
+    // 체력이 0이되어도 죽지않고 무적으로 처리함.
+    // 삭제하려면 수동으로 isDelted = true 하는 방식으로 삭제해야합니다.
+    if (this.hp <= 0) {
+      this.hp = this.hpMax
+    }
   }
 
   /** 현재 상태를 자동으로 변경하는 함수 */
   stateChange () {
     let random = Math.random() * 100
-    let arrayState = [this.STATE_NORMAL, this.STATE_BOOST, this.STATE_HAMMER, this.STATE_EARTHQUAKE]
+    let arrayState = [this.STATE_NORMAL, this.STATE_BOOST, this.STATE_HAMMER, this.STATE_EARTHQUAKE_WAIT]
     let arrayPercent = [0, 0, 0, 0, 0]
     let currentState = this.state
 
@@ -4205,12 +4230,12 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
       }
     } else if (this.state === this.STATE_BOOST) {
       switch (this.stateRepeat) {
-        case 5: arrayPercent = [0, 5, 90, 95, 100]; break // 부스트 상태 지속확률 85%
-        case 6: arrayPercent = [0, 10, 80, 90, 100]; break // 부스트 상태 지속확률 70%
-        case 7: arrayPercent = [0, 20, 60, 80, 100]; break // 부스트 상태 지속확률 40%
-        case 8: arrayPercent = [0, 25, 50, 75, 100]; break // 부스트 상태 지속확률 25%
-        case 9: arrayPercent = [0, 25, 50, 75, 100]; break // 부스트 상태 지속확률 25%
-        case 10: arrayPercent = [0, 33, 33, 66, 100]; break // 부스트 상태 지속 불가 
+        case 3: arrayPercent = [0, 5, 90, 95, 100]; break // 부스트 상태 지속확률 85%
+        case 4: arrayPercent = [0, 10, 80, 90, 100]; break // 부스트 상태 지속확률 70%
+        case 5: arrayPercent = [0, 20, 60, 80, 100]; break // 부스트 상태 지속확률 40%
+        case 6: arrayPercent = [0, 25, 50, 75, 100]; break // 부스트 상태 지속확률 25%
+        case 7: arrayPercent = [0, 25, 50, 75, 100]; break // 부스트 상태 지속확률 25%
+        case 8: arrayPercent = [0, 33, 33, 66, 100]; break // 부스트 상태 지속 불가 
         default: arrayPercent = [0, 0, 100, 0, 0]; break // 0 ~ 5사이는 부스트 상태 반복됨
       }
     } else if (this.state === this.STATE_HAMMER) {
@@ -4219,9 +4244,10 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
       // 5회 이상: 노말 10%, 부스트 30%, 해머 30%, 어스퀘이크 30%
       arrayPercent = this.stateRepeat < 5 ? [0, 0, 0, 100, 0] : [0, 10, 40, 70, 100]
     } else if (this.state === this.STATE_EARTHQUAKE) {
-      // 지진 상태는 최소 2회만 가동하고, 그 다음엔 일반 또는 부스트 또는 해머 상태가 된다.
+      // 지진 상태는 최소 1회만 가동하고, 그 다음엔 일반 또는 부스트 또는 해머 상태가 된다.
       // 일반 상태가 히트할 확률은 낮게 설정된다.
-      arrayPercent = this.stateRepeat < 2 ? [0, 0, 0, 0, 100] : [0, 20, 60, 100, 100]
+      // 중복 패턴 방지를 막기 위해 stateRepeat는 사용하지 않음 (지진은 2개의 상태를 가질 수 있기 때문에)
+      arrayPercent = [0, 20, 60, 100, 100]
     }
 
     // 아까 지정된 arrayState값을 이용해 확률값에 의해 상태를 변경
@@ -4240,9 +4266,53 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
     switch (this.state) {
       case this.STATE_NORMAL: this.processMoveNormal(); break
       case this.STATE_BOOST: this.processMoveBoost(); break
-      case this.STATE_EARTHQUAKE: this.processMoveEarthQuake(); break
       case this.STATE_HAMMER: this.processMoveHammer(); break
+
+      // 지진은 같은 함수를 사용하지만 2개의 상태가 있습니다.
+      case this.STATE_EARTHQUAKE: this.processMoveEarthQuake(); break
+      case this.STATE_EARTHQUAKE_WAIT: this.processMoveEarthQuake(); break
+
+      // 전투 종료 이후의 상태
+      case this.STATE_END: this.processMoveEnd(); break
     }
+  }
+
+  processMoveEnd () {
+    // 코드는 donggramiEnemyBounce의 코드를 복사하였음.
+    this.endDelay++
+    if (this.endDelay >= 360) {
+      this.isDeleted = true
+    }
+
+    this.moveSpeedX = 0
+
+    // 이 동그라미는 바운스 하듯이 움직입니다. (통 통 튀는 형태로)
+    // 2-2 공원부터 출현
+    // 참고: sin 값을 각도로 계산하려면 먼저 라디안을 각도로 변환해야 합니다.
+    this.bounceDelay.check()
+    let count = (this.bounceDelay.count / this.bounceDelay.delay) * 180
+    let degree = Math.PI / 180 * count
+    // sin 0은 0이고, sin 90도는 1이므로,
+    // 속도 0에서 시작해 1로 점점 가속됩니다.
+    let sinValue = Math.sin(degree)
+
+    // 절반의 딜레이 시간동안 추락하고, 절반의 딜레이 시간동안 올라갑니다.
+    // 이렇게 한 이유는, sin 값이 0 ~ 1 ~ 0 식으로 변화하기 때문
+    if (this.bounceDelay.count < this.bounceDelay.delay / 2) {
+      this.moveSpeedY = this.bounceSpeedY * sinValue
+
+      if (this.y > game.graphic.CANVAS_HEIGHT) {
+        // 화면 밑으로 이미 내려갔다면, 딜레이값을 조정해 강제로 위로 올라가도록 처리
+        this.bounceDelay.count = this.bounceDelay.delay / 2
+      } else if (this.bounceDelay.count >= this.bounceDelay.delay - 4) {
+        // 다만, 내려갈 때에는 하면 맨 밑에 닿지 않으면 계속 내려가도록 딜레이를 직접적으로 조정
+        this.bounceDelay.count--
+      }
+    } else {
+      this.moveSpeedY = -this.bounceSpeedY * sinValue
+    }
+
+    super.processMove()
   }
 
   processMoveNormal () {
@@ -4288,16 +4358,18 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
       if (this.hammerObject.degree <= -90) { // -90도 (맨 왼쪽에 뿅망치 부분이 닿으면)
         this.hammerObject.degreeChange = Math.abs(this.hammerObject.degreeChange) // 변경해야 될 각도변화값을 양수로 변경
         fieldState.createEffectObject(this.hammerStarEffect, this.hammerObject.x, this.hammerObject.y)
+        soundSystem.play(this.hammerSound)
       } else if (this.hammerObject.degree >= 90) { // 90도 (맨 오른쪽에 뿅망치 부분이 닿으면)
         this.hammerObject.degreeChange = -Math.abs(this.hammerObject.degreeChange) // 변경해야 될 각도변화값을 음수로 변경
         fieldState.createEffectObject(this.hammerStarEffect, this.hammerObject.x, this.hammerObject.y)
+        soundSystem.play(this.hammerSound)
       }
       super.processMove()
     }
 
     // 해머의 위치 설정
-    this.hammerObject.x = this.centerX - (this.width / 2)
-    this.hammerObject.y = this.centerY - (this.height) + 48 // 중심값 48 추가
+    this.hammerObject.x = this.centerX - (this.hammerObject.width / 2)
+    this.hammerObject.y = this.centerY - (this.hammerObject.height) + 48 // 중심값 48 추가
 
     if (this.stateDelay.check()) {
       this.stateChange()
@@ -4316,24 +4388,28 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
     }
     
     if (this.stateDelay.count >= 60) {
-      // 플레이어 오브젝트를 기준으로, 도착 지점 결정 [20프레임단위로]
-      if (this.stateDelay.count % 20 === 0) {
+      // 플레이어 오브젝트를 기준으로, 도착 지점 결정 [60프레임단위로]
+      if (this.stateDelay.count === 63) {
         let playerP = fieldState.getPlayerObject()
         this.boostPositionX = playerP.x
         this.boostPositionY = playerP.y
       }
 
+      if (this.stateDelay.count === 61) {
+        soundSystem.play(this.boostSound)
+      }
+
       // 속도는 갈수록 감소 [나눗셈 값을 증가시키면 최종 값이 낮아짐]
-      let divideCount = Math.floor((this.stateDelay.count - 60) / 10)
-      let divide = [11, 13, 15, 17, 22, 25, 28, 31, 40, 40, 40, 40]
+      let divideCount = Math.floor((this.stateDelay.count - 60) / 5)
+      let divide = [6, 11, 13, 15, 17, 21, 27, 31, 40, 40, 40, 40, 40, 40, 40]
       let distanceX = (this.boostPositionX - this.x) / divide[divideCount]
       let distanceY = (this.boostPositionY - this.y) / divide[divideCount]
 
       // 속도 최저치 보정
-      if (distanceX > 0 && distanceX < 5) distanceX = 5
-      else if (distanceX < 0 && distanceX > -5) distanceX = -5
-      if (distanceY > 0 && distanceY < 5) distanceY = 5
-      else if (distanceY < 0 && distanceY > -5) distanceY = -5
+      if (distanceX > 0 && distanceX < 2) distanceX = 2
+      else if (distanceX < 0 && distanceX > -2) distanceX = -2
+      if (distanceY > 0 && distanceY < 2) distanceY = 2
+      else if (distanceY < 0 && distanceY > -2) distanceY = -2
 
       // 이동속도 재설정
       this.setMoveSpeed(distanceX, distanceY)
@@ -4354,10 +4430,12 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
     // 지진 대기 이펙트
     if (this.stateDelay.count <= 60 && this.stateDelay.count % 10 === 0) {
       fieldState.createEffectObject(this.earthquakeEnergyEffect, this.x, this.y)
+      soundSystem.play(this.earthquakeSound)
     }
 
     // 1초 이후는 상하로 매우 빠르게 이동
     if (this.stateDelay.count >= 60) {
+      this.state = this.STATE_EARTHQUAKE
       this.setMoveSpeed(0, -96)
       super.processMove()
     }
@@ -4365,15 +4443,11 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
     // 일정시간마다 상태 변경
     if (this.stateDelay.check()) {
       this.stateChange()
-
-      // 상태 변경시 같은 상태라면, 해당 delay count를 0으로 변경함 (이렇게하면 해당 패턴을 다시해야함)
-      if (this.state === this.STATE_EARTHQUAKE) {
-        this.stateDelay.count = 0
-      }
     }
 
     // 지진효과로 인한 별모양 이펙트 출력
     if (this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
+      soundSystem.play(this.earthquakeSoundDamage)
       for (let i = 0; i < 5; i++) {
         fieldState.createEffectObject(this.hammerStarEffect, (160 * i), graphicSystem.CANVAS_HEIGHT - 160)
         fieldState.createEffectObject(this.hammerStarEffect, (160 * i), graphicSystem.CANVAS_HEIGHT - 320)

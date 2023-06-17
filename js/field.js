@@ -159,6 +159,10 @@ class PlayerObject extends FieldData {
     
     this.initSkill()
     this.initWeapon()
+
+    /** 이동 가능 여부 (false일경우 조작 불가 - 적이나 라운드에서 사용할 수도 있음) 
+     * 하지만 해제하지 못하면 영원히 이동할 수 없으므로 주의 바람.*/ 
+    this.isMoveEnable = true
   }
 
   /**
@@ -517,10 +521,18 @@ class PlayerObject extends FieldData {
     const buttonSkill2 = game.control.getButtonInput(game.control.buttonIndex.R1)
     const buttonSkill3 = game.control.getButtonInput(game.control.buttonIndex.R2)
 
-    if (buttonLeft) this.x -= 8
-    if (buttonRight) this.x += 8
-    if (buttonDown) this.y += 8
-    if (buttonUp) this.y -= 8
+    if (this.isMoveEnable) {
+      if (buttonLeft) this.x -= 8
+      if (buttonRight) this.x += 8
+      if (buttonDown) this.y += 8
+      if (buttonUp) this.y -= 8
+    }
+
+    // 공간 초과 금지
+    if (this.x < 0) this.x = 0
+    if (this.x > game.graphic.CANVAS_WIDTH - this.width) this.x = game.graphic.CANVAS_WIDTH - this.width
+    if (this.y < 0) this.y = 0
+    if (this.y > game.graphic.CANVAS_HEIGHT - this.height) this.y = game.graphic.CANVAS_HEIGHT - this.height
 
     this.centerX = this.x + (this.width / 2)
     this.centerY = this.y + (this.height / 2)

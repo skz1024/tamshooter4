@@ -25,6 +25,10 @@ export class imageSrc {
     weaponIcon: './image/system/weaponIcon.png',
   }
 
+  static number = {
+    round2_3_number: './image/round/round2_3_number.png'
+  }
+
   static effect = {
     jemulstar: './image/effect/jemulstar.png',
     jemulCreate: './image/effect/jemulCreate.png',
@@ -97,7 +101,9 @@ export class imageSrc {
     round2_3_road: './image/round/round2_3_road.png',
     round2_3_maeul_space: './image/round/round2_3_maeul_space.png',
     round2_3_map: './image/round/round2_3_map_2.png',
-    round2_3_course_select: './image/round/round2_3_course_select.png'
+    round2_3_course_select: './image/round/round2_3_course_select.png',
+    round2_3_result: './image/round/round2_3_result.png',
+    round2_3_battle_status: './image/round/round2_3_battle_status.png'
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -314,6 +320,16 @@ export class imageDataInfo {
     /** 뿅망치(멈춤이미지) */ toyHammerNoEnimation: {x: 540, y: 50, width: 60, height: 60, frame: 1},
     /** 뿅망치별... */ toyHammerStar: {x: 0, y: 110, width: 60, height: 60, frame: 8},
     /** 지진 기모으기 */ earthquakeEnergy: {x: 0, y: 180, width: 40, height: 40, frame: 8}
+  }
+
+  static round2_3_result = {
+    ready: {x: 0, y: 0, width: 300, height: 100, frame: 1},
+    start: {x: 0, y: 100, width: 300, height: 100, frame: 1},
+    fight: {x: 0, y: 200, width: 300, height: 100, frame: 1},
+    complete: {x: 0, y: 300, width: 300, height: 100, frame: 1},
+    win: {x: 0, y: 400, width: 300, height: 100, frame: 1},
+    draw: {x: 0, y: 500, width: 300, height: 100, frame: 1},
+    lose: {x: 0, y: 600, width: 300, height: 100, frame: 1}
   }
 
   static weapon = {
