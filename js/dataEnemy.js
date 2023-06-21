@@ -3348,6 +3348,9 @@ class DonggramiEnemy extends EnemyData {
   /** 느낌표 이펙트 데이터 */
   static exclamationMarkEffect = new CustomEffect(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.exclamationMark, 40, 40, 5, 2)
 
+  /** 느낌표 이펙트 짧게 표시용 */
+  static exclamationMarkEffectShort = new CustomEffect(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.exclamationMark, 40, 40, 3, 1)
+
   /** 물음표 이펙트 데이터 */
   static questionMarkEffect = new CustomEffect(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.questionMark, 40, 40, 5, 12)
 
@@ -4006,10 +4009,10 @@ class DonggramiEnemyBounce extends DonggramiEnemy {
     if (this.bounceDelay.count < this.bounceDelay.delay / 2) {
       this.moveSpeedY = this.bounceSpeedY * sinValue
 
-      if (this.y > game.graphic.CANVAS_HEIGHT) {
+      if (this.y + this.height > game.graphic.CANVAS_HEIGHT) {
         // 화면 밑으로 이미 내려갔다면, 딜레이값을 조정해 강제로 위로 올라가도록 처리
         this.bounceDelay.count = this.bounceDelay.delay / 2
-      } else if (this.bounceDelay.count >= this.bounceDelay.delay - 4) {
+      } else if (this.bounceDelay.count >= (this.bounceDelay.delay / 2) - 2 ) {
         // 다만, 내려갈 때에는 하면 맨 밑에 닿지 않으면 계속 내려가도록 딜레이를 직접적으로 조정
         this.bounceDelay.count--
       }
@@ -4280,7 +4283,7 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
   processMoveEnd () {
     // 코드는 donggramiEnemyBounce의 코드를 복사하였음.
     this.endDelay++
-    if (this.endDelay >= 360) {
+    if (this.endDelay >= 600) {
       this.isDeleted = true
     }
 
@@ -4470,6 +4473,59 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
   }
 }
 
+class DonggramiSpaceB1Bounce extends DonggramiEnemyBounce {
+  constructor () {
+    super()
+    this.setEnemyStat(200000, 0, 0)
+
+    // 충돌된경우, 서로 튕겨져 나갑니다.
+    this.STATE_COLLISION = 'collision'
+    this.STATE_COLLLISON_PROCESSING = 'collisionProcessing' // collision 중복 처리 방지용
+    this.STATE_NORMAL = ''
+
+    this.autoMovePositionX = 0
+    this.autoMovePositionY = 0
+    this.movePositionFrame = 0
+
+    this.currentEffect = null
+  }
+
+  processMove () {
+    if (this.state === this.STATE_COLLISION) {
+      let outMove = (Math.random() * 80) + 60
+      this.autoMovePositionX = Math.random() < 0.5 ? this.x + outMove : this.x - outMove
+      this.autoMovePositionY = Math.random() < 0.5 ? this.y + outMove : this.y - outMove
+      this.movePositionFrame = 60
+      this.state = this.STATE_COLLLISON_PROCESSING
+      this.currentEffect = fieldState.createEffectObject(DonggramiEnemy.exclamationMarkEffectShort, this.x, this.y - 40)
+    }
+
+    if (this.currentEffect != null) {
+      this.currentEffect.x = this.x
+      this.currentEffect.y = this.y - 40
+
+      if (this.currentEffect.isDeleted) {
+        this.currentEffect = null
+      }
+    }
+
+    if (this.movePositionFrame > 0) {
+      this.movePositionFrame--
+    } else {
+      this.state = this.STATE_NORMAL
+    }
+
+    if (this.movePositionFrame >= 1) {
+      let distanceX = (this.autoMovePositionX - this.x) / 12
+      let distanceY = (this.autoMovePositionY - this.y) / 12
+      this.x += distanceX
+      this.y += distanceY
+    } else {
+      super.processMove()
+    }
+  }
+}
+
 
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
@@ -4580,3 +4636,4 @@ dataExportEnemy.set(ID.enemy.donggramiEnemy.speed, DonggramiEnemySpeed)
 
 // donggramiSpace
 dataExportEnemy.set(ID.enemy.donggramiSpace.a1_fighter, DonggramiSpaceA1Fighter)
+dataExportEnemy.set(ID.enemy.donggramiSpace.b1_bounce, DonggramiSpaceB1Bounce)

@@ -140,6 +140,8 @@ class PlayerObject extends FieldData {
     this.debug = false
     this.dieAfterDelayCount = 0
     this.isDied = false
+    this.moveSpeedX = 8
+    this.moveSpeedY = 8
 
     this.x = 300
     this.y = 200
@@ -522,10 +524,10 @@ class PlayerObject extends FieldData {
     const buttonSkill3 = game.control.getButtonInput(game.control.buttonIndex.R2)
 
     if (this.isMoveEnable) {
-      if (buttonLeft) this.x -= 8
-      if (buttonRight) this.x += 8
-      if (buttonDown) this.y += 8
-      if (buttonUp) this.y -= 8
+      if (buttonLeft) this.x -= this.moveSpeedX
+      if (buttonRight) this.x += this.moveSpeedX
+      if (buttonDown) this.y += this.moveSpeedY
+      if (buttonUp) this.y -= this.moveSpeedY
     }
 
     // 공간 초과 금지
@@ -800,6 +802,13 @@ export class fieldState {
     this.enemyBulletObject.length = 0
     for (let i = 0; i < this.damageObject.length; i++) {
       this.damageObject[i].isUsing = false
+    }
+  }
+
+  /** 모든 적을 삭제합니다. */
+  static allEnemyDelete () {
+    for (let i = 0; i < this.enemyObject.length; i++) {
+      this.enemyObject[i].isDeleted = true
     }
   }
 

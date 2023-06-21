@@ -174,6 +174,7 @@ export class ID {
     },
     donggramiSpace: {
       a1_fighter: 20200,
+      b1_bounce: 20201,
     }
   }
 
