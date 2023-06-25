@@ -765,6 +765,15 @@ export class fieldState {
   /** @type {EffectData[]} */ static effectObject = []
   /** @type {DamageObject[]} */ static damageObject = []
   /** @type {EnemyBulletData[]} */ static enemyBulletObject = []
+  /** @type {FieldData[]} */ static spriteObject = []
+
+  static getPlayerObject () { return this.playerObject }
+  static getWeaponObject () { return this.weaponObject }
+  static getEnemyObject () { return this.enemyObject }
+  static getEffectObject () { return this.effectObject }
+  static getDamageObject () { return this.damageObject }
+  static getEnemyBulletObject () { return this.enemyBulletObject }
+  static getSpriteObject () { return this.spriteObject }
 
   /**
    * 다음 생성할 오브젝트의 Id
@@ -783,16 +792,9 @@ export class fieldState {
     return this.nextCreateId
   }
 
-  static getPlayerObject () { return this.playerObject }
-  static getPlayerWeaponObject () { return this.weaponObject }
-  static getEnemyObject () { return this.enemyObject }
-  static getEffectObject () { return this.effectObject }
-  static getDamageObject () { return this.damageObject }
-  static getEnemyBulletObject () { return this.enemyBulletObject }
-
   /**
    * fieldState에서 사용하는 모든 오브젝트를 리셋합니다.
-   * player는 초기화되고, weapon, enemy, effect는 전부 삭제되며, damage는 사용안함 처리합니다.
+   * player는 초기화되고, weapon, enemy, effect, sprite는 전부 삭제되며, damage는 사용안함 처리합니다.
    */
   static allObjectReset () {
     this.playerObject.init()
@@ -800,6 +802,7 @@ export class fieldState {
     this.enemyObject.length = 0
     this.effectObject.length = 0
     this.enemyBulletObject.length = 0
+    this.spriteObject.length = 0
     for (let i = 0; i < this.damageObject.length; i++) {
       this.damageObject[i].isUsing = false
     }
@@ -809,6 +812,13 @@ export class fieldState {
   static allEnemyDelete () {
     for (let i = 0; i < this.enemyObject.length; i++) {
       this.enemyObject[i].isDeleted = true
+    }
+  }
+
+  /** 모든 적을 죽입니다. 주의: 일부 적은 안통할 수도 있음... */
+  static allEnemyDie () {
+    for (let i = 0; i < this.enemyObject.length; i++) {
+      this.enemyObject[i].requestDie()
     }
   }
 
@@ -984,6 +994,32 @@ export class fieldState {
     return inputData
   }
 
+  /**
+   * 스프라이트 오브젝트를 생성합니다. (다만, 스프라이트는 FieldData와 동일한)
+   * @param {FieldData | any} targetClass FieldData를 상속받아 만든 클래스
+   * @param {number} x x좌표
+   * @param {number} y y좌표
+   */
+  static createSpriteObject (targetClass, x = 0, y = 0)  {
+    // 함수(클래스)가 들어온경우, 클래스의 인스턴스를 생성함.
+    if (typeof targetClass === 'function') {
+      targetClass = new targetClass()
+    } else if (typeof targetClass === 'object') {
+      // 오브젝트 타입은 변수를 그대로 씀
+    } else {
+      // 그 외 타입은 무시
+      return
+    }
+
+    /** @type {FieldData} */
+    const inputData = targetClass
+    inputData.createId = this.getNextCreateId()
+    inputData.setPosition(x, y)
+    this.spriteObject.push(inputData)
+
+    return inputData
+  }
+
   static process () {
     this.processPlayerObject()
     this.processWeaponObject()
@@ -991,6 +1027,7 @@ export class fieldState {
     this.processDamageObject()
     this.processEffectObject()
     this.processEnemyBulletObject()
+    this.processSpriteObject()
   }
 
   static processPlayerObject () {
@@ -1007,7 +1044,6 @@ export class fieldState {
     for (let i = 0; i < this.weaponObject.length; i++) {
       const currentObject = this.weaponObject[i]
       currentObject.process()
-      currentObject.fieldProcess()
 
       if (currentObject.isDeleted) {
         this.weaponObject.splice(i, 1)
@@ -1019,7 +1055,6 @@ export class fieldState {
     for (let i = 0; i < this.enemyObject.length; i++) {
       const currentObject = this.enemyObject[i]
       currentObject.process()
-      currentObject.fieldProcess()
 
       if (currentObject.isDeleted) {
         this.enemyObject.splice(i, 1)
@@ -1037,9 +1072,7 @@ export class fieldState {
   static processEffectObject () {
     for (let i = 0; i < this.effectObject.length; i++) {
       const currentEffect = this.effectObject[i]
-
       currentEffect.process()
-      currentEffect.fieldProcess()
 
       if (currentEffect.isDeleted) {
         this.effectObject.splice(i, 1)
@@ -1050,12 +1083,21 @@ export class fieldState {
   static processEnemyBulletObject () {
     for (let i = 0; i < this.enemyBulletObject.length; i++) {
       const currentEnemyBullet = this.enemyBulletObject[i]
-
       currentEnemyBullet.process()
-      currentEnemyBullet.fieldProcess()
 
       if (currentEnemyBullet.isDeleted) {
         this.enemyBulletObject.splice(i, 1)
+      }
+    }
+  }
+
+  static processSpriteObject () {
+    for (let i = 0; i < this.spriteObject.length; i++) {
+      const currentSprite = this.spriteObject[i]
+      currentSprite.process()
+
+      if (currentSprite.isDeleted) {
+        this.spriteObject.splice(i, 1)
       }
     }
   }
@@ -1067,6 +1109,7 @@ export class fieldState {
     this.displayEnemyBulletObject()
     this.displayDamageObject()
     this.displayPlayerObject()
+    this.displaySpriteObject()
   }
 
   static displayPlayerObject () {
@@ -1088,6 +1131,10 @@ export class fieldState {
     }
   }
 
+  /**
+   * 적의 체력을 막대바로 표시합니다.
+   * @param {EnemyData} currentEnemy 
+   */
   static displayEnemyHpMeter (currentEnemy) {
     if (currentEnemy.isDied) return // 죽은 적은 체력 안보여줌
 
@@ -1099,7 +1146,6 @@ export class fieldState {
     }
 
     const meterWidth = Math.floor(enemyHpPercent * currentEnemy.width)
-
     game.graphic.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height, currentEnemy.width, 2, 'red')
     game.graphic.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height, meterWidth, 2, 'green')
   }
@@ -1107,7 +1153,6 @@ export class fieldState {
   static displayDamageObject () {
     for (let i = 0; i < this.damageObject.length; i++) {
       const currentDamage = this.damageObject[i]
-
       currentDamage.display()
     }
   }
@@ -1118,7 +1163,6 @@ export class fieldState {
 
     for (let i = 0; i < this.effectObject.length; i++) {
       const currentEffect = this.effectObject[i]
-
       currentEffect.display()
     }
 
@@ -1128,8 +1172,14 @@ export class fieldState {
   static displayEnemyBulletObject () {
     for (let i = 0; i < this.enemyBulletObject.length; i++) {
       const currentEnemyBullet = this.enemyBulletObject[i]
-
       currentEnemyBullet.display()
+    }
+  }
+
+  static displaySpriteObject () {
+    for (let i = 0; i < this.spriteObject.length; i++) {
+      const currentSprite = this.spriteObject[i]
+      currentSprite.display()
     }
   }
 }
@@ -1530,6 +1580,9 @@ export class fieldSystem {
     let enemy = fieldState.enemyObject.map((data) => {
       return data.getSaveData()
     })
+    // let sprite = fieldState.spriteObject.map((data) => {
+    //   return data.getSaveData()
+    // })
     let player = fieldState.playerObject.getSaveData()
     let round = this.getRoundSaveData()
     let field = {
@@ -1545,7 +1598,7 @@ export class fieldSystem {
       enemy,
       player,
       round,
-      field
+      field,
     }
   }
 
@@ -1562,7 +1615,7 @@ export class fieldSystem {
 
   /**
    * 필드 상태를 불러옵니다. (반드시 JSON데이터를 parse해서 입력해야 합니다. string을 그냥 입력할 수 없습니다.)
-   * @param {Object} loadData parse된 JSON 데이터 (localStoarge에서 얻어온 값을 그대로 이 함수에 사용하지 마세요.)
+   * @param {any} loadData parse된 JSON 데이터 (localStoarge에서 얻어온 값을 그대로 이 함수에 사용하지 마세요.)
    */
   static setLoadData (loadData) {
     if (typeof loadData === 'string') {
@@ -1585,6 +1638,13 @@ export class fieldSystem {
         newData.setLoadData(current)
       }
     }
+
+    // for (let current of loadData.sprite) {
+    //   let newData = fieldState.createSpriteObject(FieldData, current.x, current.y)
+    //   if (newData != null) {
+    //     newData.setLoadData(current)
+    //   }
+    // }
 
     // for (let current of loadData.enemyBullet) {
     //   let newData = fieldState.createEnemyBulletObject(current.id, current.x, current.y, current.attack)
