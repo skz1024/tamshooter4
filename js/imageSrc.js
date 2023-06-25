@@ -58,7 +58,8 @@ export class imageSrc {
     spaceEnemy: './image/enemy/spaceEnemy.png',
     meteoriteEnemy: './image/enemy/meteoriteEnemy.png',
     jemulEnemy: './image/enemy/jemulEnemy.png',
-    donggramiEnemy: './image/enemy/donggramiEnemy.png'
+    donggramiEnemy: './image/enemy/donggramiEnemy.png',
+    donggramiSpace: './image/enemy/donggramiSpace.png'
   }
 
   static enemyBullet = {
@@ -103,7 +104,8 @@ export class imageSrc {
     round2_3_map: './image/round/round2_3_map_2.png',
     round2_3_course_select: './image/round/round2_3_course_select.png',
     round2_3_result: './image/round/round2_3_result.png',
-    round2_3_battle_status: './image/round/round2_3_battle_status.png'
+    round2_3_battle_status: './image/round/round2_3_battle_status.png',
+    round2_3_warpEffect: './image/round/round2_3_warpEffect.png'
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -248,6 +250,14 @@ export class imageDataInfo {
     bigRed: {x: 300, y: 200, width: 192, height: 192, frame: 1},
   }
 
+  static donggramiSpace = {
+    brick1: {x: 0, y: 0, width: 100, height: 100, frame: 1},
+    brick2: {x: 101, y: 0, width: 100, height: 100, frame: 1},
+    brick3: {x: 202, y: 0, width: 100, height: 100, frame: 1},
+    brick4: {x: 303, y: 0, width: 100, height: 100, frame: 1},
+    bomb: {x: 404, y: 0, width: 100, height: 100, frame: 1}
+  }
+
   static fieldSystem = {
     roundClear: { x: 0, y: 0, width: 400, height: 60 },
     gameOver: { x: 0, y: 60, width: 320, height: 60 },
@@ -330,6 +340,13 @@ export class imageDataInfo {
     win: {x: 0, y: 400, width: 300, height: 100, frame: 1},
     draw: {x: 0, y: 500, width: 300, height: 100, frame: 1},
     lose: {x: 0, y: 600, width: 300, height: 100, frame: 1}
+  }
+
+  static round2_3_warpEffect = {
+    yellow: {x: 0, y: 0, width: 50, height: 50, frame: 8},
+    mint: {x: 0, y: 50, width: 50, height: 50, frame: 8},
+    cyan: {x: 0, y: 100, width: 50, height: 50, frame: 8},
+    archomatic: {x: 0, y: 150, width: 50, height: 50, frame: 8},
   }
 
   static weapon = {

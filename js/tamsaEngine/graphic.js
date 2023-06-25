@@ -426,8 +426,8 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
       const image = this.getCacheImage(imageSrc)
       if (image == null) return
 
-      const BITMAP_WIDTH = wordWidth
-      const BITMAP_HEIGHT = wordHeight
+      const BITMAP_WIDTH = baseWordWidth
+      const BITMAP_HEIGHT = baseWordHeight
   
       // 변형이 확인된경우, 캔버스를 변형하고 출력좌표를 변경합니다.
       if (this.checkTransform()) {

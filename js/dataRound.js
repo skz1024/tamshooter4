@@ -480,6 +480,9 @@ export class RoundData {
   /**
    * 시간 간격 확인 함수 (적 생성 용도로 사용)
    * start이상 end이하일경우 true, 아닐경우 false
+   * 
+   * 참고: 만약, 무제한 범위로 하고, intervalFrame 간격만 확인하고 싶다면
+   * start를 0, end는 매우 큰 수(9999같은...)를 사용해주세요.
    */
   timeCheckInterval (start = 0, end = start, intervalFrame = 1) {
     if (this.currentTime >= start && this.currentTime <= end && this.currentTimeTotalFrame % intervalFrame === 0) {
@@ -750,6 +753,10 @@ export class RoundData {
 
   getPlayerObject () {
     return fieldState.getPlayerObject()
+  }
+
+  getSpriteObject () {
+    return fieldState.getSpriteObject()
   }
 }
 
@@ -2726,8 +2733,8 @@ class Round2_2 extends RoundData {
 
 class Round2_3 extends RoundData {
   constructor () {
-    super()
-    this.setAutoRoundStat(ID.round.round2_3)
+  super()
+  this.setAutoRoundStat(ID.round.round2_3)
 
     /** 음악의 리스트 (복도 구간은 음악 없음) */
     this.musicList = {
@@ -2921,6 +2928,45 @@ class Round2_3 extends RoundData {
       pHp: 100,
       totalDamage: 0
     }
+
+    this.a2 = {
+      brickCreate: 0,
+      pHp: 100,
+      totalDamage: 0,
+      brickPosition: 0,
+    }
+
+    this.b2 = {
+      warpWidth: 50,
+      warpObjectX: [0, 0, 0, 0],
+      warpObjectY: [0, 0, 0, 0],
+      warpObjectCount: 0,
+      warpTotalCount: 0,
+      warpRandomNumber: 0
+    }
+    
+    this.c2 = {
+      /** 남은 시간 */ time: 45,
+      /** 현재 구역의 점수 */ score: 0,
+      /** 검은 사각형을 모은 개수 */ squareBlack: 0,
+      /** 화면 내에 나올 수 있는 검은 사각형의 최대 개수 */ squareBlackMax: 16,
+      /** 시간 보너스 값 (해당 값이 6000이 되면 1점씩 추가) */ timeBonusValue: 100,
+      /** 시간 가속 배율 (시간 보너스값을 배수로 증가시킴) */ timeBonusMultiple: 1,
+      /** 빨간 사각형의 최대 개수 */ SQUARE_RED_MAX: 3,
+      /** 시간 플러스 (아이템을 먹었을 때만 발동) */ timeBonusPlus: 0,
+    }
+
+    this.a3 = {
+
+    }
+
+    this.b3 = {
+
+    }
+
+    this.c3 = {
+
+    }
   }
 
   lightBoxProcess () {
@@ -3072,7 +3118,8 @@ class Round2_3 extends RoundData {
 
   processDebug () {
     if (this.timeCheckFrame(0, 12)) {
-      this.currentTime = 14
+      this.currentTime = 74
+      this.courseName = 'b1'
     }
   }
 
@@ -3088,6 +3135,14 @@ class Round2_3 extends RoundData {
     let modInfo = ''
     switch (this.courseName) {
       case 'a1': modInfo = JSON.stringify(this.a1); break
+      case 'a2': modInfo = JSON.stringify(this.a2); break
+      case 'a3': modInfo = JSON.stringify(this.a3); break
+      case 'b1': modInfo = JSON.stringify(this.b1); break
+      case 'b2': modInfo = JSON.stringify(this.b2); break
+      case 'b3': modInfo = JSON.stringify(this.b3); break
+      case 'c1': modInfo = JSON.stringify(this.c1); break
+      case 'c2': modInfo = JSON.stringify(this.c2); break
+      case 'c3': modInfo = JSON.stringify(this.c3); break
     }
 
     // 참고: JSON 파싱 버그를 막기 위해 구분자는 |(막대기?) 로 사용합니다.
@@ -3103,6 +3158,14 @@ class Round2_3 extends RoundData {
     let modInfo = str[3]
     switch (this.courseName) {
       case 'a1': this.a1 = JSON.parse(modInfo); break
+      case 'a2': this.a2 = JSON.parse(modInfo); break
+      case 'a3': this.a3 = JSON.parse(modInfo); break
+      case 'b1': this.b1 = JSON.parse(modInfo); break
+      case 'b2': this.b2 = JSON.parse(modInfo); break
+      case 'b3': this.b3 = JSON.parse(modInfo); break
+      case 'c1': this.c1 = JSON.parse(modInfo); break
+      case 'c2': this.c2 = JSON.parse(modInfo); break
+      case 'c3': this.c3 = JSON.parse(modInfo); break
     }
 
     // 불러올 때 그라디언트 배경도 변경함
@@ -3205,8 +3268,21 @@ class Round2_3 extends RoundData {
     }
   }
 
-  roundPhase02 () {}
-  roundPhase03 () {}
+  roundPhase02 () {
+    switch (this.courseName) {
+      case 'a2': this.coursePhaseA2(); break
+      case 'b2': this.coursePhaseB2(); break
+      case 'c2': this.coursePhaseC2(); break
+    }
+  }
+
+  roundPhase03 () {
+    switch (this.courseName) {
+      case 'a3': this.coursePhaseA3(); break
+      case 'b3': this.coursePhaseB3(); break
+      case 'c3': this.coursePhaseC3(); break
+    }
+  }
   roundPhase04 () {}
 
   display () {
@@ -3214,10 +3290,17 @@ class Round2_3 extends RoundData {
     
     switch (this.courseName) {
       case 'a1': this.displayCoursePhaseA1(); break
+      case 'a2': this.displayCoursePhaseA2(); break
+      case 'a3': this.displayCoursePhaseA3(); break
       case 'b1': this.displayCoursePhaseB1(); break
+      case 'b2': this.displayCoursePhaseB2(); break
+      case 'b3': this.displayCoursePhaseB3(); break
       case 'c1': this.displayCoursePhaseC1(); break
+      case 'c2': this.displayCoursePhaseC2(); break
+      case 'c3': this.displayCoursePhaseC3(); break
     }
   }
+
 
   displayCoursePhaseA1 () {
     let phase1Start = this.phaseTime[1].startTime
@@ -3754,14 +3837,525 @@ class Round2_3 extends RoundData {
   }
 
   coursePhaseA2 () {
-    
+    let phase2Time = this.phaseTime[2].startTime
+    if (this.timeCheckFrame(phase2Time + 3)) {
+      this.musicChange(this.musicList.a2_break_room)
+      this.musicPlay()
+      soundSystem.play(this.voiceList.ready)
+    } else if (this.timeCheckFrame(phase2Time + 5)) {
+      soundSystem.play(this.voiceList.fight)
+    }
+
+    // 벽돌 생성
+    if (this.timeCheckInterval(phase2Time + 3, phase2Time + 4, 2) && this.getEnemyCount() < 24) {
+      const positionX = graphicSystem.CANVAS_WIDTH_HALF + (Math.floor(this.a2.brickPosition / 6) * 100)
+      const positionY = 100 * (this.a2.brickPosition % 6)
+      this.a2.brickCreate++
+      this.a2.brickPosition++
+      this.createEnemy(ID.enemy.donggramiSpace.a2_brick, positionX, positionY)
+    }
+
+    if (this.timeCheckInterval(phase2Time + 3, phase2Time + 4)) {
+      let enemyObject = this.getEnemyObject()
+      for (let i = 0; i < enemyObject.length; i++) {
+        let enemy = enemyObject[i]
+        enemy.state = 'stop'
+      }
+    } else if (this.timeCheckFrame(phase2Time + 6)) {
+      let enemyObject = this.getEnemyObject()
+      for (let i = 0; i < enemyObject.length; i++) {
+        let enemy = enemyObject[i]
+        if (enemy.moveDelay != null) {
+          enemy.state = 'move'
+          enemy.moveDelay.count = (-20 * i) + enemy.moveDelay.delay
+        }
+      }
+    }
+
+    // 지속적인 벽돌 생성
+    if (this.timeCheckInterval(phase2Time + 6, phase2Time + 50, 20)) {
+      for (let i = 0; i < 6; i++) {
+        let bombRandom = Math.random() * 100 < 2 ? true : false
+        const positionX = graphicSystem.CANVAS_WIDTH
+        const positionY = 100 * (this.a2.brickPosition % 6)
+        this.a2.brickCreate++
+        this.a2.brickPosition++
+        if (bombRandom) {
+          this.createEnemy(ID.enemy.donggramiSpace.a2_bomb, positionX, positionY)
+        } else {
+          this.createEnemy(ID.enemy.donggramiSpace.a2_brick, positionX, positionY)
+        }
+
+      }
+    }
+
+    if (this.a2.brickPosition >= 24) {
+      this.a2.brickPosition = 0
+    }
+
+    let playerP = this.getPlayerObject()
+    if (this.timeCheckInterval(phase2Time + 5, phase2Time + 50) && playerP.shield < playerP.shieldMax) {
+      playerP.shield += 10
+      this.a2.pHp -= 10
+      this.a2.totalDamage += 10
+      soundSystem.play(soundSrc.round.r2_3_a1_damage)
+    }
+
+    if (this.timeCheckFrame(phase2Time + 51)) {
+      fieldState.allEnemyDie()
+      soundSystem.play(this.voiceList.complete)
+      this.musicStop()
+    }
+
+    if (this.timeCheckFrame(phase2Time + 55)) {
+      this.setCourseSelectMode()
+    }
   }
 
   displayCoursePhaseA2 () {
+    const phase2Start = this.phaseTime[2].startTime
+    const imgD = imageDataInfo.round2_3_result // result 이미지 데이터 타겟을 위한 정보
+    const imgSize = imageDataInfo.round2_3_result.complete // 모든 결과 이미지는 동일한 사이즈
+    let showD = imgD.complete
+    const centerX = graphicSystem.CANVAS_WIDTH_HALF - (imgSize.width / 2)
+
+    // 2초간 준비 화면 보여짐
+    if (this.timeCheckInterval(phase2Start + 3, phase2Start + 4)) {
+      showD = imgD.ready
+    } else if (this.timeCheckInterval(phase2Start + 5, phase2Start + 6)) { // 2초간 파이트 화면 보여짐
+      showD = imgD.fight
+    }
+
+    // if (this.timeCheckInterval(phase2Start + 5, phase2Start + 50)) {
+    //   digitalDisplay('TIME LEFT: ', 10, 10)
+    //   this.donggramiNumberDisplay(phase2Start + 50 - this.currentTime, 120, 10)
+
+    //   digitalDisplay('TOTAL DAMAGED: ', 10, 50)
+    //   this.donggramiNumberDisplay(this.c1.totalDamage, 180, 50)
+    // }
+
+    if (this.timeCheckInterval(phase2Start + 51, phase2Start + 54)) {
+      showD = imgD.complete
+    }
+
+    // 이 결과를 보여주는 시간은 페이즈 시작하고 3 ~ 6초(준비, 시작) 그리고 51 ~ 54초(결과 화면)
+    if (this.timeCheckInterval(phase2Start + 3, phase2Start + 6) || this.timeCheckInterval(phase2Start + 51, phase2Start + 54)) {
+      graphicSystem.imageDisplay(imageSrc.round.round2_3_result, showD.x, showD.y, showD.width, showD.height, centerX, 200, showD.width, showD.height)
+    }
+  }
+  
+  coursePhaseA3 () {
 
   }
 
-  coursePhaseA3 () {
+  displayCoursePhaseA3 () {
+
+  }
+
+
+  coursePhaseB2 () {
+    let phase2Start = this.phaseTime[2].startTime
+
+    // warp set
+    // 워프는 랜덤한 곳에 생성되며, 사용자가 워프를 할 때마다 다시한번 랜덤한 곳에 배치됩니다.
+    // 플레이어가 워프를 하면 플레이어와 워프는 랜덤한 위치에 배치됩니다.
+    // 적 동그라미가 등장하지만 의미는 없습니다. 최대 5마리까지 등장하며, 동그라미랑 충돌하지 않습니다.
+    let randomWarpCreate = () => {
+      // 워프의 개수는 랜덤이지만, 최소 1개, 최대 3개입니다.
+      this.b2.warpObjectCount = Math.floor(Math.random() * (this.b2.warpObjectX.length - 1)) + 1
+      
+      // 참고: 워프의 위치는 서로 충돌되지 않도록, 개수에 따라서 위치가 재조정됩니다.
+      if (this.b2.warpObjectCount === 1) {
+        this.b2.warpObjectX[0] = Math.random() * 100 + graphicSystem.CANVAS_WIDTH - 200
+        this.b2.warpObjectY[0] = Math.random() * graphicSystem.CANVAS_HEIGHT
+      } else if (this.b2.warpObjectCount === 2) {
+        this.b2.warpObjectX[0] = Math.random() * 100 + graphicSystem.CANVAS_WIDTH - 200
+        this.b2.warpObjectY[0] = Math.random() * graphicSystem.CANVAS_HEIGHT_HALF
+        this.b2.warpObjectX[1] = Math.random() * 100 + graphicSystem.CANVAS_WIDTH - 200
+        this.b2.warpObjectY[1] = Math.random() * graphicSystem.CANVAS_HEIGHT_HALF + graphicSystem.CANVAS_HEIGHT_HALF
+      } else if (this.b2.warpObjectCount === 3) {
+        this.b2.warpObjectX[0] = Math.random() * 100 + graphicSystem.CANVAS_WIDTH - 200
+        this.b2.warpObjectY[0] = Math.random() * 200
+        this.b2.warpObjectX[1] = Math.random() * 100 + graphicSystem.CANVAS_WIDTH - 200
+        this.b2.warpObjectY[1] = Math.random() * 200 + 200
+        this.b2.warpObjectX[2] = Math.random() * 100 + graphicSystem.CANVAS_WIDTH - 200
+        this.b2.warpObjectY[2] = Math.random() * 200 + 400
+      } else if (this.b2.warpObjectCount === 4) {
+        this.b2.warpObjectX[0] = Math.random() * 100 + graphicSystem.CANVAS_WIDTH - 200
+        this.b2.warpObjectY[0] = Math.random() * 100
+        this.b2.warpObjectX[1] = Math.random() * 100 + graphicSystem.CANVAS_WIDTH - 200
+        this.b2.warpObjectY[1] = Math.random() * 100 + 100
+        this.b2.warpObjectX[2] = Math.random() * 100 + graphicSystem.CANVAS_WIDTH - 200
+        this.b2.warpObjectY[2] = Math.random() * 100 + 300
+        this.b2.warpObjectX[3] = Math.random() * 100 + graphicSystem.CANVAS_WIDTH - 200
+        this.b2.warpObjectY[3] = Math.random() * 100 + 400
+      }
+    }
+
+    // ready start
+    if (this.timeCheckFrame(phase2Start + 3)) {
+      this.musicChange(this.musicList.b2_warp_room)
+      this.musicPlay()
+      soundSystem.play(this.voiceList.ready)
+    } else if (this.timeCheckFrame(phase2Start + 5)) {
+      soundSystem.play(this.voiceList.start)
+      randomWarpCreate()
+    }
+
+    soundSystem.createAudio(soundSrc.round.r2_3_b2_warp)
+
+    let playerP = this.getPlayerObject()
+    let enemyObject = this.getEnemyObject()
+    for (let i = 0; i < enemyObject.length; i++) {
+      if (enemyObject[i].state === '' && collision(playerP, enemyObject[i])) {
+        enemyObject[i].state = 'collision'
+        soundSystem.play(soundSrc.round.r2_3_a1_damage)
+      }
+    }
+
+    // 무작위 적 생성 (1초마다 )
+    if (this.timeCheckInterval(phase2Start + 5, phase2Start + 50, 30) && this.getEnemyCount() < 10) {
+      this.createEnemy(ID.enemy.donggramiSpace.b2_mini)
+    }
+
+    if (this.timeCheckInterval(phase2Start + 5, phase2Start + 50)) {
+      for (let i = 0; i < this.b2.warpObjectCount; i++) {
+        let currentWarp = {x: this.b2.warpObjectX[i], y: this.b2.warpObjectY[i], width: 50, height: 50}
+
+        if (collision(playerP, currentWarp)) {
+          // 플레이어가 워프에 충돌하면, 플레이어를 랜덤한 위치로 보내고 워프처리
+          soundSystem.play(soundSrc.round.r2_3_b2_warp)
+          playerP.x = Math.random() * 100
+          playerP.y = Math.random() * 100
+          randomWarpCreate()
+          fieldState.allEnemyDelete()
+
+          // 랜덤 그라디언트 셋팅... (10 ~ 99) // 왜냐하면 숫자로 2자리여야 하므로...
+          let a = Math.floor(Math.random() * 89) + 10
+          let b = Math.floor(Math.random() * 89) + 10
+          let c = Math.floor(Math.random() * 89) + 10
+          let d = Math.floor(Math.random() * 89) + 10
+          let e = Math.floor(Math.random() * 89) + 10
+          let f = Math.floor(Math.random() * 89) + 10
+          this.currentGradientColor = ['#' + a + b + c, '#' + d + e + f]
+        }
+
+        // 적도 워프를 합니다.
+        let enemyObject = this.getEnemyObject()
+        for (let j = 0; j < enemyObject.length; j++) {
+          if (collision(enemyObject[j], currentWarp)) {
+            soundSystem.play(soundSrc.round.r2_3_b2_warp)
+            enemyObject[j].isDeleted = true
+          }
+        }
+      }
+    }
+
+    if (this.timeCheckFrame(phase2Start + 51)) {
+      soundSystem.play(this.voiceList.complete)
+      this.musicStop()
+    } else if (this.timeCheckFrame(phase2Start + 55)) {
+      this.setCourseSelectMode()
+    }
+  }
+
+  displayCoursePhaseB2 () {
+    const phase2Start = this.phaseTime[2].startTime
+    const imgD = imageDataInfo.round2_3_result // result 이미지 데이터 타겟을 위한 정보
+    const imgSize = imageDataInfo.round2_3_result.complete // 모든 결과 이미지는 동일한 사이즈
+    let showD = imgD.complete
+    const centerX = graphicSystem.CANVAS_WIDTH_HALF - (imgSize.width / 2)
+
+    // 2초간 준비 화면 보여짐
+    if (this.timeCheckInterval(phase2Start + 3, phase2Start + 4)) {
+      showD = imgD.ready
+    } else if (this.timeCheckInterval(phase2Start + 5, phase2Start + 6)) { // 2초간 파이트 화면 보여짐
+      showD = imgD.start
+    }
+
+    // if (this.timeCheckInterval(phase2Start + 5, phase2Start + 50)) {
+    //   digitalDisplay('TIME LEFT: ', 10, 10)
+    //   this.donggramiNumberDisplay(phase2Start + 50 - this.currentTime, 120, 10)
+
+    //   digitalDisplay('TOTAL DAMAGED: ', 10, 50)
+    //   this.donggramiNumberDisplay(this.c1.totalDamage, 180, 50)
+    // }
+
+    if (this.timeCheckInterval(phase2Start + 51, phase2Start + 54)) {
+      showD = imgD.complete
+    }
+
+    // 이 결과를 보여주는 시간은 페이즈 시작하고 3 ~ 6초(준비, 시작) 그리고 51 ~ 54초(결과 화면)
+    if (this.timeCheckInterval(phase2Start + 3, phase2Start + 6) || this.timeCheckInterval(phase2Start + 51, phase2Start + 54)) {
+      graphicSystem.imageDisplay(imageSrc.round.round2_3_result, showD.x, showD.y, showD.width, showD.height, centerX, 200, showD.width, showD.height)
+    }
+
+    let warpEffect1 = new CustomEffect(imageSrc.round.round2_3_warpEffect, imageDataInfo.round2_3_warpEffect.archomatic, 0, 0, 3)
+    let warpEffect2 = new CustomEffect(imageSrc.round.round2_3_warpEffect, imageDataInfo.round2_3_warpEffect.cyan, 0, 0, 3)
+    let warpEffect3 = new CustomEffect(imageSrc.round.round2_3_warpEffect, imageDataInfo.round2_3_warpEffect.mint, 0, 0, 3)
+    let warpEffect4 = new CustomEffect(imageSrc.round.round2_3_warpEffect, imageDataInfo.round2_3_warpEffect.yellow, 0, 0, 3)
+    if (this.timeCheckInterval(phase2Start + 5, phase2Start + 50, 24)) {
+      for (let i = 0; i < this.b2.warpObjectCount; i++) {
+        switch (i) {
+          case 0: fieldState.createEffectObject(warpEffect1, this.b2.warpObjectX[i], this.b2.warpObjectY[i]); break
+          case 1: fieldState.createEffectObject(warpEffect2, this.b2.warpObjectX[i], this.b2.warpObjectY[i]); break
+          case 2: fieldState.createEffectObject(warpEffect3, this.b2.warpObjectX[i], this.b2.warpObjectY[i]); break
+          case 3: fieldState.createEffectObject(warpEffect4, this.b2.warpObjectX[i], this.b2.warpObjectY[i]); break
+        }
+      }
+    }
+  }
+
+  coursePhaseB3 () {
+
+  }
+
+  displayCoursePhaseB3 () {
+
+  }
+
+  coursePhaseC2 () {
+    // 스퀘어 모으기
+    const phase2Start = this.phaseTime[2].startTime
+    const squareSpeed = this.c2.squareBlack * 0.1
+    let Square = class extends FieldData {
+      constructor () {
+        super()
+        this.speedMultiple = 3
+        this.width = 20
+        this.height = 20
+        this.color = 'black'
+        this.outAreaCount = 0
+      }
+
+      afterInit () {
+        // 메세지 값 설정 (외부에서 사용하기 위해서?)
+        this.message = this.color
+        this.resetPosition()
+      }
+
+      resetPosition () {
+        // 무작위 속도 설정 및, 벽쪽에서 안쪽으로 이동
+        // 모든 사각형은 왼쪽, 오른쪽, 아래, 위 에서 랜덤 출현
+        const layerLine = Math.floor(Math.random() * 4)
+        const targetSpeed = Math.floor(Math.random() * 2) + this.speedMultiple + squareSpeed
+        switch (layerLine) {
+          case 0: // 위 방향 (아래쪽으로 이동)
+            this.x = Math.random() * graphicSystem.CANVAS_WIDTH
+            this.y = 0 - this.height
+            this.setMoveSpeed(0, targetSpeed)
+            break
+          case 1: // 오른쪽 방향 (왼쪽으로 이동)
+            this.x = graphicSystem.CANVAS_WIDTH + this.width
+            this.y = Math.random() * graphicSystem.CANVAS_HEIGHT
+            this.setMoveSpeed(-targetSpeed, 0)
+            break
+          case 2: // 아래 방향 (위쪽으로 이동)
+            this.x = Math.random() * graphicSystem.CANVAS_WIDTH
+            this.y = graphicSystem.CANVAS_HEIGHT + this.height
+            this.setMoveSpeed(0, -targetSpeed)
+            break
+          case 3: // 왼쪽 방향 (오른쪽으로 이동)
+            this.x = 0 - this.width
+            this.y = Math.random() * graphicSystem.CANVAS_HEIGHT
+            this.setMoveSpeed(targetSpeed, 0)
+        }
+      }
+
+      processMove () {
+        super.processMove()
+        if (this.outAreaCheck()) {
+          this.isDeleted = true
+        }
+      }
+
+      display () {
+        graphicSystem.fillRect(this.x, this.y, this.width, this.height, this.color)
+      }
+    }
+
+    let BlackSquare = class extends Square {
+      constructor () {
+        super()
+        this.color = 'black'
+      }
+    }
+    let RedSquare = class extends Square {
+      constructor () {
+        super()
+        this.color = 'red'
+      }
+    }
+    let CyanSquare = class extends Square {
+      constructor () {
+        super()
+        this.color = 'cyan'
+      }
+    }
+    let LimeSquare = class extends Square {
+      constructor () {
+        super()
+        this.color = 'lime'
+      }
+    }
+    let PinkSquare = class extends Square {
+      constructor () {
+        super()
+        this.color = 'pink'
+      }
+    }
+
+    if (this.timeCheckFrame(phase2Start + 3)) {
+      this.musicChange(this.musicList.c2_square_room)
+      this.musicPlay()
+      soundSystem.play(this.voiceList.ready)
+    } else if (this.timeCheckFrame(phase2Start + 5)) {
+      soundSystem.play(this.voiceList.start)
+    }
+
+    soundSystem.createAudio(soundSrc.round.r2_3_c2_squareBlack)
+    soundSystem.createAudio(soundSrc.round.r2_3_c2_squareRed)
+    soundSystem.createAudio(soundSrc.round.r2_3_c2_squareCyan)
+    soundSystem.createAudio(soundSrc.round.r2_3_c2_squareLime)
+    soundSystem.createAudio(soundSrc.round.r2_3_c2_squarePink)
+
+    let tMultiple = Math.floor((this.c2.squareBlack / 5)) + this.c2.timeBonusMultiple
+    let tBonus = (100 + (this.c2.squareBlack * 5)) * this.c2.timeBonusMultiple
+    this.c2.timeBonusValue += tBonus
+    if (this.c2.timeBonusValue >= 6000) {
+      this.c2.timeBonusValue -= 6000
+      this.c2.score += 1
+    }
+    
+    if (this.c2.timeBonusValue >= 60000) {
+      this.c2.timeBonusValue -= 60000
+      this.c2.score += 10
+    }
+
+    if (this.c2.timeBonusPlus >= 1) {
+      this.c2.timeBonusPlus -= tBonus
+      this.c2.score += tBonus
+    }
+
+    if (this.timeCheckInterval(phase2Start + 5, phase2Start + 50)) {
+      // 스퀘어 충돌은 라운드에서 처리해야 합니다.
+      // 색상 구분을 통하여 어떤것을 얻었는지 정의합니다.
+      // 참고: fieldObject이기 때문에, 따로 sprite에 대해 process, display 함수를 사용할 필요는 없습니다.
+      let square = this.getSpriteObject()
+      let player = this.getPlayerObject()
+      for (let i = 0; i < square.length; i++) {
+        let currentSquare = square[i]
+        let squareScore = 100 + this.c2.squareBlack
+        let randomBonus = Math.floor(Math.random() * squareScore * this.c2.timeBonusMultiple) + squareScore
+        if (collision(player, currentSquare)) {
+          switch (currentSquare.message) {
+            case 'black':
+              soundSystem.play(soundSrc.round.r2_3_c2_squareBlack)
+              this.c2.score += squareScore
+              this.c2.combo++
+              this.c2.squareBlack++
+              break
+            case 'red':
+              soundSystem.play(soundSrc.round.r2_3_c2_squareRed)
+              this.c2.score -= squareScore * 10
+              break
+            case 'cyan':
+              // 보너스 점수
+              soundSystem.play(soundSrc.round.r2_3_c2_squareCyan)
+              this.c2.score += squareScore + randomBonus
+              break
+            case 'lime':
+              soundSystem.play(soundSrc.round.r2_3_c2_squareLime)
+              this.c2.timeBonusMultiple += 1
+              this.c2.timeBonusPlus = tBonus * tMultiple
+              break
+            case 'pink':
+              soundSystem.play(soundSrc.round.r2_3_c2_squarePink)
+              // 검은 사각형이 더 많이 나옴
+              this.c2.squareBlackMax += 4
+              break
+          }
+          currentSquare.isDeleted = true
+        }
+      }
+
+      if (this.timeCheckInterval(phase2Start + 5, phase2Start + 50, 10)) {
+        let squareBlackCount = 0
+        let squareRedCount = 0
+        let square = this.getSpriteObject()
+        for (let i = 0; i < square.length; i++) {
+          let current = square[i]
+          if (current.message === 'red') {
+            squareRedCount++
+          } else if (current.message === 'black') {
+            squareBlackCount++
+          }
+        }
+
+        if (squareBlackCount < 16) {
+          fieldState.createSpriteObject(BlackSquare)
+        }
+        if (squareRedCount < 3) {
+          fieldState.createSpriteObject(RedSquare)
+        }
+      }
+    }
+
+    if (this.timeCheckInterval(phase2Start + 5, phase2Start + 50, 300)) {
+      let random = Math.floor(Math.random() * 2)
+      switch (random) {
+        case 0: fieldState.createSpriteObject(CyanSquare); break
+        case 1: fieldState.createSpriteObject(LimeSquare); break
+      }
+    }
+
+    if (this.timeCheckInterval(phase2Start + 5, phase2Start + 50, 591)) {
+      fieldState.createSpriteObject(PinkSquare)
+    }
+
+    if (this.timeCheckFrame(phase2Start + 51)) {
+      soundSystem.play(this.voiceList.complete)
+      this.musicStop()
+    } else if (this.timeCheckFrame(phase2Start + 55)) {
+      this.setCourseSelectMode()
+    }
+  }
+
+  displayCoursePhaseC2 () {
+    const phase2Start = this.phaseTime[2].startTime
+    const imgD = imageDataInfo.round2_3_result // result 이미지 데이터 타겟을 위한 정보
+    const imgSize = imageDataInfo.round2_3_result.complete // 모든 결과 이미지는 동일한 사이즈
+    let showD = imgD.complete
+    const centerX = graphicSystem.CANVAS_WIDTH_HALF - (imgSize.width / 2)
+
+    // 2초간 준비 화면 보여짐
+    if (this.timeCheckInterval(phase2Start + 3, phase2Start + 4)) {
+      showD = imgD.ready
+    } else if (this.timeCheckInterval(phase2Start + 5, phase2Start + 6)) { // 2초간 파이트 화면 보여짐
+      showD = imgD.start
+    }
+
+    if (this.timeCheckInterval(phase2Start + 51, phase2Start + 54)) {
+      showD = imgD.complete
+    }
+
+    digitalDisplay('SCORE: ' + this.c2.score, 0, 0)
+    digitalDisplay('square: ' + this.c2.squareBlack, 0, 20)
+    digitalDisplay('TIME bonus value: ' + this.c2.timeBonusValue, 0, 40)
+    digitalDisplay('T multiple: ' + this.c2.timeBonusMultiple, 0, 60)
+    digitalDisplay('T plus: ' + this.c2.timeBonusPlus, 0, 80)
+
+    // 이 결과를 보여주는 시간은 페이즈 시작하고 3 ~ 6초(준비, 시작) 그리고 51 ~ 54초(결과 화면)
+    if (this.timeCheckInterval(phase2Start + 3, phase2Start + 6) || this.timeCheckInterval(phase2Start + 51, phase2Start + 54)) {
+      graphicSystem.imageDisplay(imageSrc.round.round2_3_result, showD.x, showD.y, showD.width, showD.height, centerX, 200, showD.width, showD.height)
+    }
+  }
+
+  coursePhaseC3 () {
+
+  }
+
+  displayCoursePhaseC3 () {
 
   }
 }

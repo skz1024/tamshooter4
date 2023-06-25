@@ -137,10 +137,10 @@ export class EnemyData extends FieldData {
 
   /**
    * 적 죽음 사운드와 적 죽음 이펙트를 설정합니다. 이펙트는 반드시 CustomEffectData 클래스로 생성해야 합니다.
-   * @param {HTMLAudioElement | null} dieSound 
+   * @param {string} dieSound 
    * @param {CustomEffect | null} dieEffect 
    */
-  setDieEffectOption (dieSound = null, dieEffect = null) {
+  setDieEffectOption (dieSound = '', dieEffect = null) {
     if (dieEffect != null && dieEffect.constructor != CustomEffect) {
       console.warn('경고: dieEffect는 CustomEffectData 클래스를 사용해 데이터를 생성해야 합니다. 다른 경우는 무시됩니다.')
       dieEffect = null
@@ -151,16 +151,20 @@ export class EnemyData extends FieldData {
   }
 
   process () {
+    super.process()
+
     this.afterInitProcess()
 
     // 적이 죽지 않았을 때 적과 관련된 행동 처리
     if (!this.isDied) {
-      this.processMove()
+      this.isMoveEnable = true
       this.processPossibleExit()
       this.processExitToReset()
       this.processPlayerCollision()
-      this.processEnimation()
       this.processAttack()
+    } else {
+      // 적이 죽었다면 이동할 수 없습니다.
+      this.isMoveEnable = false
     }
 
     // 적 죽었는지 체크
@@ -340,6 +344,12 @@ export class EnemyData extends FieldData {
     if (this.dieCheck()) {
       this.processDieDefault()
     }
+  }
+
+  /** 적을 (자기 자신이 스스로) 죽이도록 요청 */
+  requestDie () {
+    this.isDied = true
+    this.processDieDefault()
   }
 
   processDieDefault () {
@@ -4307,7 +4317,7 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
       if (this.y > game.graphic.CANVAS_HEIGHT) {
         // 화면 밑으로 이미 내려갔다면, 딜레이값을 조정해 강제로 위로 올라가도록 처리
         this.bounceDelay.count = this.bounceDelay.delay / 2
-      } else if (this.bounceDelay.count >= this.bounceDelay.delay - 4) {
+      } else if (this.bounceDelay.count >= (this.bounceDelay.delay / 2) - 4) {
         // 다만, 내려갈 때에는 하면 맨 밑에 닿지 않으면 계속 내려가도록 딜레이를 직접적으로 조정
         this.bounceDelay.count--
       }
@@ -4567,6 +4577,122 @@ class TestEnemy extends DonggramiEnemy {
   }
 }
 
+class DonggramiSpaceA2Brick extends EnemyData {
+  constructor () {
+    super()
+    this.setEnemyStat(4000, 0, 10)
+    let random = Math.floor(Math.random() * 4)
+    let imageDataList = [
+      imageDataInfo.donggramiSpace.brick1,
+      imageDataInfo.donggramiSpace.brick2,
+      imageDataInfo.donggramiSpace.brick3,
+      imageDataInfo.donggramiSpace.brick4
+    ]
+    this.setAutoImageData(imageSrc.enemy.donggramiSpace, imageDataList[random])
+    this.setDieEffectOption(soundSrc.round.r2_3_a2_break, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareGrey, this.width, this.height, 2))
+
+    this.STATE_STOP = 'stop'
+    this.STATE_MOVE = 'move'
+    this.moveDelay = new DelayData(120)
+    this.state = this.STATE_MOVE
+    this.setMoveSpeed(5, 0)
+
+    soundSystem.createAudio(soundSrc.round.r2_3_a2_break)
+  }
+
+  processMove () {
+    // 1. stop상태 (이동하지 않음)
+    // 2. round에서 stop, move 상태를 자동으로 조정
+    // 3. move가 되는 순간 벽돌은 계속 왼쪽으로 이동
+    if (this.state === this.STATE_MOVE) {
+      super.processMove()
+    } else if (this.state === this.STATE_STOP) {
+      this.hp = this.hpMax // 죽지 않게끔, 체력 무제한
+    }
+
+    if (this.x + this.width <= 0) {
+      this.isDeleted = true // 왼쪽 바깥으로 가면 삭제
+      // this.y = Math.floor(Math.random() * 8) * 100
+      // this.x = graphicSystem.CANVAS_WIDTH + this.width
+    }
+  }
+}
+
+class DonggramiSpaceA2Bomb extends DonggramiSpaceA2Brick {
+  constructor () {
+    super()
+    this.setEnemyStat(17000000, 0, 0)
+    this.setAutoImageData(imageSrc.enemy.donggramiSpace, imageDataInfo.donggramiSpace.bomb)
+    this.setDieEffectOption(soundSrc.round.r2_3_a2_bomb)
+    soundSystem.createAudio(soundSrc.round.r2_3_a2_bomb)
+  }
+
+  processAttack () {
+    let player = fieldState.getPlayerObject()
+    if (collision(player, this)) {
+      fieldState.allEnemyDie() // 자기 자신 포함 모두 죽이기
+    }
+  }
+
+  display () {
+    super.display()
+  }
+}
+
+class DonggramiSpaceB2Mini extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setEnemyStat(200000, 0, 0)
+
+    // 충돌된경우, 서로 튕겨져 나갑니다.
+    this.STATE_COLLISION = 'collision'
+    this.STATE_COLLLISON_PROCESSING = 'collisionProcessing' // collision 중복 처리 방지용
+    this.STATE_NORMAL = ''
+
+    this.autoMovePositionX = 0
+    this.autoMovePositionY = 0
+    this.movePositionFrame = 0
+
+    this.currentEffect = null
+  }
+
+  processMove () {
+    if (this.state === this.STATE_COLLISION) {
+      let outMove = (Math.random() * 80) + 60
+      this.autoMovePositionX = Math.random() < 0.5 ? this.x + outMove : this.x - outMove
+      this.autoMovePositionY = Math.random() < 0.5 ? this.y + outMove : this.y - outMove
+      this.movePositionFrame = 60
+      this.state = this.STATE_COLLLISON_PROCESSING
+      this.currentEffect = fieldState.createEffectObject(DonggramiEnemy.exclamationMarkEffectShort, this.x, this.y - 40)
+    }
+
+    if (this.currentEffect != null) {
+      this.currentEffect.x = this.x
+      this.currentEffect.y = this.y - 40
+
+      if (this.currentEffect.isDeleted) {
+        this.currentEffect = null
+      }
+    }
+
+    if (this.movePositionFrame > 0) {
+      this.movePositionFrame--
+    } else {
+      this.state = this.STATE_NORMAL
+    }
+
+    if (this.movePositionFrame >= 1) {
+      let distanceX = (this.autoMovePositionX - this.x) / 12
+      let distanceY = (this.autoMovePositionY - this.y) / 12
+      this.x += distanceX
+      this.y += distanceY
+    } else {
+      super.processMove()
+    }
+  }
+}
+
+
 //
 export const dataExportEnemy = new Map()
 
@@ -4637,3 +4763,6 @@ dataExportEnemy.set(ID.enemy.donggramiEnemy.speed, DonggramiEnemySpeed)
 // donggramiSpace
 dataExportEnemy.set(ID.enemy.donggramiSpace.a1_fighter, DonggramiSpaceA1Fighter)
 dataExportEnemy.set(ID.enemy.donggramiSpace.b1_bounce, DonggramiSpaceB1Bounce)
+dataExportEnemy.set(ID.enemy.donggramiSpace.a2_brick, DonggramiSpaceA2Brick)
+dataExportEnemy.set(ID.enemy.donggramiSpace.a2_bomb, DonggramiSpaceA2Bomb)
+dataExportEnemy.set(ID.enemy.donggramiSpace.b2_mini, DonggramiSpaceB2Mini)

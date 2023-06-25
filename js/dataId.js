@@ -175,6 +175,9 @@ export class ID {
     donggramiSpace: {
       a1_fighter: 20200,
       b1_bounce: 20201,
+      a2_brick: 20202,
+      a2_bomb: 20203,
+      b2_mini: 20204,
     }
   }
 

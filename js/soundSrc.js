@@ -107,6 +107,14 @@ export class soundSrc {
     r2_3_a1_earthquake: './sound/round2_3_a1_earthquake.ogg',
     r2_3_a1_earthquakeDamage: './sound/round2_3_a1_earthquakeDamage.ogg',
     r2_3_a1_toyHammer: './sound/round2_3_a1_toyHammer.ogg',
+    r2_3_a2_break: './sound/round2_3_a2_break.wav',
+    r2_3_a2_bomb: './sound/round2_3_a2_bomb.wav',
+    r2_3_b2_warp: './sound/round2_3_b2_warp.wav',
+    r2_3_c2_squareBlack: './sound/round2_3_c2_squareBlack.wav',
+    r2_3_c2_squareRed: './sound/round2_3_c2_squareRed.wav',
+    r2_3_c2_squareCyan: './sound/round2_3_c2_squareCyan.wav',
+    r2_3_c2_squareLime: './sound/round2_3_c2_squareLime.wav',
+    r2_3_c2_squarePink: './sound/round2_3_c2_squarePink.wav'
   }
 
   static donggrami = {

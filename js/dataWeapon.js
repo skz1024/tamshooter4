@@ -112,12 +112,10 @@ export class WeaponData extends FieldData {
    * 이 함수는 임의로 수정하지 마세요. Weapon 객체가 공통으로 사용해야 합니다.
    */
   process () {
-    this.afterInitProcess()
+    super.process()
     this.processChase()
-    this.processMove()
     this.processAttack()
     this.processDeleteCheck()
-    this.processEnimation()
     this.processLineChase()
   }
 

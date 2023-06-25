@@ -244,7 +244,7 @@ export class DelayData {
    * 넓값인 경우 설정할 수 없음.
    * @param {DelayData} delayObjectString
    */
-  setDelay (delayObjectString) {
+  setLoadDataDelay (delayObjectString) {
     if (delayObjectString == null) return
 
     this.delay = delayObjectString.delay
@@ -351,7 +351,7 @@ export class EnimationData {
   }
 
   /** 이 객체를 생성한 이후의 출력 사이즈 설정 */
-  setOutputSize (width, height) {
+  setOutputSize (width = 1, height = 1) {
     this.outputWidth = width
     this.outputHeight = height
   }
@@ -453,6 +453,7 @@ export class FieldData {
     /** 오브젝트의 가로 길이 */ this.width = 0
     /** 오브젝트의 세로 길이 */ this.height = 0
     /** 오브젝트의 현재 상태 (문자열) */ this.state = ''
+    /** 오브젝트가 가진 일종의 메세지 변수 (외부(fieldData가 아닌 round나 다른곳)에서 활용할 용도로 주로 사용) */ this.message = ''
 
     /** 
      * 프레임당 x좌표 이동 속도 (소수점 허용), moveSpeedX로 대체됨 
@@ -468,6 +469,7 @@ export class FieldData {
     
     /** 이동 방향에 따른 이동 속도 x좌표 (소수점 허용) 이 값이 있다면, 이 값을 speed값보다 우선 적용(정확하겐 speed에 덮어 씌워짐) */ this.moveSpeedX = 0
     /** 이동 방향에 따른 이동 속도 y좌표 (소수점 허용) 이 값이 있다면, 이 값을 speed값보다 우선 적용(정확하겐 speed에 덮어 씌워짐) */ this.moveSpeedY = 0
+    /** 이동 가능 여부 (이 값이 true 일경우만 이동이 가능) */ this.isMoveEnable = true
     /** 회전한 각도 (일부 객체에서만 사용) */ this.degree = 0
     /** 뒤집기 0: 없음, 1: 수직, 2: 수평, 3: 수직 + 수평, 나머지 무시(0으로 처리) */ this.flip = 0
 
@@ -581,6 +583,8 @@ export class FieldData {
    * 오직 대표클래스 (예: weaponData, enemyData 등등...) 만 이 함수 변경 가능.
    * 
    * (이 함수는 기본적으로 비어있으므로, super.afterInit()를 호출할 필요가 없습니다.
+   * 
+   * 함수 내부 처리는 processAfterInit 에서 이루어집니다.
    */
   afterInitDefault () {
 
@@ -676,7 +680,7 @@ export class FieldData {
     this.moveSpeedY = Math.random() * (maxY - minY) + minY
   }
 
-  /** 적 이동속도 결정 */
+  /** 개체 이동속도 결정 */
   setMoveSpeed (moveSpeedX = 1, moveSpeedY = 1) {
     this.moveSpeedX = moveSpeedX
     this.moveSpeedY = moveSpeedY
@@ -686,6 +690,9 @@ export class FieldData {
 
   /**
    * 오브젝트의 로직 처리 함수 (각 객체마다 다를 수 있고, 이것은 기본적인 기능만 있습니다.)
+   * 
+   * 주의: process 함수를 재작성할경우, 반드시 super.process를 호출하세요.
+   * 이 함수는 기본적으로 필드 객체의 모든 로직을 담고 있습니다.
    */
   process () {
     this.afterInitProcess()
@@ -698,8 +705,10 @@ export class FieldData {
     if (this.outAreaCheck()) {
       this.isDeleted = true
     }
-  }
 
+    // 필드 공통 프로세스
+    this.fieldProcess()
+  }
 
   processEnimation () {
     if (this.enimation == null) return
@@ -716,6 +725,9 @@ export class FieldData {
    * 이동 방향이 없다면, 기본값으로 처리합니다. (x축 right, y축 down)
    */
   processMove () {
+    // 이동 불가능한경우 이동 불가능
+    if (!this.isMoveEnable) return
+
     if (this.moveDirectionX === FieldData.direction.LEFT) {
       this.speedX = -this.moveSpeedX
     } else {
@@ -754,29 +766,36 @@ export class FieldData {
   }
 
   /**
-   * 필드 객체가 캔버스의 영역을 크게 벗어났는지 확인합니다.
+   * 필드 객체가 캔버스의 영역을 일정량 벗어났는지 확인합니다.
+   * 
+   * outAreaSize를 0으로 정의하면, 화면 바깥을 넘어간 오브젝트를 바로 판정할 수 있습니다.
+   * @param {number} [outAreaSize=800] 벗어난 구간의 픽셀 값 (캔버스의 공간을 기준으로 해당 픽셀만큼 벗어났는지를 확인)
    */
-  outAreaCheck () {
-    if (this.x < -graphicSystem.CANVAS_WIDTH ||
-    this.x > graphicSystem.CANVAS_WIDTH * 2 ||
-    this.y < -graphicSystem.CANVAS_HEIGHT ||
-    this.y > graphicSystem.CANVAS_HEIGHT * 2) {
+  outAreaCheck (outAreaSize = 800) {
+    if (this.x + this.width < -outAreaSize 
+    || this.x > graphicSystem.CANVAS_WIDTH + outAreaSize 
+    || this.y + this.height < -outAreaSize 
+    || this.y > graphicSystem.CANVAS_HEIGHT + outAreaSize) {
       return true
     } else {
       return false
     }
   }
 
+
   /**
-   * 필드 객체가 화면 영역을 완전히 벗어났는지 확인합니다. outAreaCheck와는 감지 범위가 다릅니다.
+   * 필드 객체가 화면 영역을 완전히 벗어났는지 확인합니다.
+   * 
+   * outAreaCheck(0) 과 동일합니다.
    */
   exitAreaCheck () {
-    if (this.x + this.width < 0 || this.x > graphicSystem.CANVAS_WIDTH ||
-      this.y + this.height < 0 || this.y > graphicSystem.CANVAS_HEIGHT) {
-      return true
-    } else {
-      return false
-    }
+    this.outAreaCheck(0)
+    // if (this.x + this.width < 0 || this.x > graphicSystem.CANVAS_WIDTH ||
+    //   this.y + this.height < 0 || this.y > graphicSystem.CANVAS_HEIGHT) {
+    //   return true
+    // } else {
+    //   return false
+    // }
   }
 
 
