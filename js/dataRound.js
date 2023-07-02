@@ -4090,10 +4090,10 @@ class Round2_3 extends RoundData {
       graphicSystem.imageDisplay(imageSrc.round.round2_3_result, showD.x, showD.y, showD.width, showD.height, centerX, 200, showD.width, showD.height)
     }
 
-    let warpEffect1 = new CustomEffect(imageSrc.round.round2_3_warpEffect, imageDataInfo.round2_3_warpEffect.archomatic, 0, 0, 3)
-    let warpEffect2 = new CustomEffect(imageSrc.round.round2_3_warpEffect, imageDataInfo.round2_3_warpEffect.cyan, 0, 0, 3)
-    let warpEffect3 = new CustomEffect(imageSrc.round.round2_3_warpEffect, imageDataInfo.round2_3_warpEffect.mint, 0, 0, 3)
-    let warpEffect4 = new CustomEffect(imageSrc.round.round2_3_warpEffect, imageDataInfo.round2_3_warpEffect.yellow, 0, 0, 3)
+    let warpEffect1 = new CustomEffect(imageSrc.round.round2_3_effect, imageDataInfo.round2_3_effect.warpArchomatic, 0, 0, 3)
+    let warpEffect2 = new CustomEffect(imageSrc.round.round2_3_effect, imageDataInfo.round2_3_effect.warpCyan, 0, 0, 3)
+    let warpEffect3 = new CustomEffect(imageSrc.round.round2_3_effect, imageDataInfo.round2_3_effect.warpMint, 0, 0, 3)
+    let warpEffect4 = new CustomEffect(imageSrc.round.round2_3_effect, imageDataInfo.round2_3_effect.warpYellow, 0, 0, 3)
     if (this.timeCheckInterval(phase2Start + 5, phase2Start + 50, 24)) {
       for (let i = 0; i < this.b2.warpObjectCount; i++) {
         switch (i) {
