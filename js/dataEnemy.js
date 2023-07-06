@@ -152,7 +152,6 @@ export class EnemyData extends FieldData {
 
   process () {
     super.process()
-
     this.afterInitProcess()
 
     // 적이 죽지 않았을 때 적과 관련된 행동 처리
@@ -4536,51 +4535,10 @@ class DonggramiSpaceB1Bounce extends DonggramiEnemyBounce {
   }
 }
 
-
-/**
- * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
- */
-class TestEnemy extends DonggramiEnemy {
-  constructor () {
-    super()
-    this.setDonggramiColor(DonggramiEnemy.colorGroup.RED)
-    this.setEnemyStat(2000000, 0, 0)
-    this.setWidthHeight(96, 96)
-    this.isPossibleExit = false
-
-    // 상태 값 종류: 4개
-    this.STATE_NORMAL = 'n'
-    this.STATE_BOOST = 'b'
-    this.STATE_HAMMER = 'h'
-    this.STATE_EARTHQUAKE = 'e'
-    this.state = this.STATE_HAMMER // 상태 기본값 지정
-    this.stateDelay = new DelayData(120)
-
-    // 상태 재시도 횟수
-    this.stateRepeat = 0
-
-    this.hammerStarEffect = new CustomEffect(
-      imageSrc.enemyEffect.donggramiSpace,
-      imageDataInfo.donggramiSpaceEffect.toyHammerStar,
-      imageDataInfo.donggramiSpaceEffect.toyHammerStar.width * 3,
-      imageDataInfo.donggramiSpaceEffect.toyHammerStar.height * 3,
-      1
-    )
-  }
-
-  processMove () {
-    
-  }
-
-  display () {
-    super.display()
-  }
-}
-
 class DonggramiSpaceA2Brick extends EnemyData {
   constructor () {
     super()
-    this.setEnemyStat(4000, 0, 10)
+    this.setEnemyStat(4000, 0, 0)
     let random = Math.floor(Math.random() * 4)
     let imageDataList = [
       imageDataInfo.donggramiSpace.brick1,
@@ -4610,8 +4568,8 @@ class DonggramiSpaceA2Brick extends EnemyData {
       this.hp = this.hpMax // 죽지 않게끔, 체력 무제한
     }
 
-    if (this.x + this.width <= 0) {
-      this.isDeleted = true // 왼쪽 바깥으로 가면 삭제
+    if (this.x + this.width <= -graphicSystem.CANVAS_WIDTH) {
+      this.isDeleted = true // 왼쪽 너무 바깥으로 가면 삭제함.
       // this.y = Math.floor(Math.random() * 8) * 100
       // this.x = graphicSystem.CANVAS_WIDTH + this.width
     }
@@ -4691,6 +4649,173 @@ class DonggramiSpaceB2Mini extends DonggramiEnemy {
     }
   }
 }
+class DonggramiSpaceA3Collector extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.ACHROMATIC)
+    this.setWidthHeight(100, 100)
+    this.setEnemyStat(1000000, 0, 0)
+    this.setMoveDirection('', '') // 좌표값을 직접 조정해야 하므로, 이동 방향을 제거합니다.
+    this.boostDelay = new DelayData(120)
+    this.MAX_SPEED = 6
+    
+    this.STATE_NORMAL = 'normal'
+    this.STATE_BOOST = 'boost'
+    this.STATE_STUN = 'stun'
+    this.state = this.STATE_NORMAL
+    this.isPossibleExit = false
+    this.stunFrame = 60 // 일시적인 기절 시간
+  }
+
+  process () {
+    super.process()
+    this.processCatch()
+
+    if (this.hp <= 500000) {
+      this.hp = 1000000
+      this.stunFrame = 300
+      this.state = this.STATE_STUN
+      fieldState.createEffectObject(DonggramiEnemy.exclamationMarkEffect, this.x, this.y - 40, 4)
+    }
+  }
+
+  processMove () {
+    if (this.state === this.STATE_STUN) {
+      // 아무것도 할 수 없음(이동불가, 다만 파워는 먹을 수도?)
+      this.stunFrame--
+      if (this.stunFrame <= 0) {
+        this.state = this.STATE_NORMAL
+      }
+      return
+    } else if (this.targetObject == null) {
+      return
+    }
+
+    // 이 동그라미는 파워를 모으는 역할을 하지만, 플레이어를 공격하지 않습니다.
+    if (this.state === this.STATE_NORMAL) {
+      if (this.targetObject != null) {
+        // 타겟 오브젝트가 있을 때, 해당 오브젝트를 추적합니다.
+        let distanceX = this.targetObject.x - this.x
+        let distanceY = this.targetObject.y - this.y
+        let speedX = distanceX / 80
+        let speedY = distanceY / 80
+        if (speedX >= 0 && speedX < 5) speedX = 4
+        else if (speedX < 0 && speedX >= -5) speedX = -4
+        if (speedY >= 0 && speedY < 5) speedY = 4
+        else if (speedY < 0 && speedY >= -5) speedY = -4
+
+        this.setMoveSpeed(speedX, speedY)
+        super.processMove()
+      }
+    } else if (this.state === this.STATE_BOOST) {
+      if (this.targetObject != null) {
+        // boost 상태에서는 더 빠른속도로 추적합니다.
+        let distanceX = this.targetObject.x - this.x
+        let distanceY = this.targetObject.y - this.y
+
+        this.x += (distanceX < 0) ? (distanceX / 20) - (this.boostDelay.count * 0.2) : (distanceX / 20) + (this.boostDelay.count * 0.2)
+        this.y += (distanceY < 0) ? (distanceY / 20) - (this.boostDelay.count * 0.2) : (distanceY / 20) + (this.boostDelay.count * 0.2)
+      }
+
+      if (this.boostDelay.count <= 30) {
+        super.processMove()
+      } else if (this.boostDelay.count >= 60) {
+        this.state = this.STATE_NORMAL
+        this.boostDelay.count = 0
+      }
+    }
+
+    if (this.boostDelay.check()) {
+      let random = Math.random() * 100
+      if (this.state === this.STATE_NORMAL && random <= 33) {
+        this.state = this.STATE_BOOST
+        this.speedBoost = 0
+      } else {
+        this.state = this.STATE_NORMAL
+      }
+    }
+  }
+
+  processCatch () {
+    if (this.targetObject == null) {
+      let sprite = fieldState.getSpriteObject()
+      let lowDistance = 99999 // 일부러 큰 숫자를 지정해서, 첫번째 스프라이트를 비교했을 때 작은 수를 찾을 수 있도록 유도
+      let random = Math.floor(Math.random() * sprite.length)
+      this.targetObject = sprite[random]
+
+      // for (let i = 0; i < sprite.length; i++) {
+      //   let currentSprite = sprite[i]
+      //   // 적과 스프라이트의 x좌표 차이와 y좌표 차이의 합을 계산
+      //   let totalDistance = (this.x - currentSprite.x) + (this.y - currentSprite.y)
+
+      //   // 가장 가까운 거리 (단 떨어져있는 거리가 음수일수도 있으므로 절댓값을 사용해서 비교해야합니다.)
+      //   if (lowDistance > Math.abs(totalDistance)) {
+      //     lowDistance = Math.abs(totalDistance)
+      //     this.targetObject = currentSprite
+      //   }
+      // }
+    } else {
+      // 타겟 오브젝트가 있는 경우
+      if (this.targetObject.isDeleted) {
+        this.targetObject = null // 오브젝트가 삭제되면 참조를 삭제함
+      }
+    }
+  }
+}
+
+class DonggramiSpaceB3Mini extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setEnemyStat(200000, 0, 0)
+    // 참고: b2와 b3는 알고리즘이 서로 다릅니다.
+    this.STATE_NORMAL = ''
+    this.STATE_AUTOMOVE = 'automove'
+    this.autoMovePositionX = 0
+    this.autoMovePositionY = 0
+    this.autoMoveFrame = 0
+    this.STATE_COLLISION = 'collision'
+    this.STATE_COLLLISON_PROCESSING = 'collisionProcessing' // collision 중복 처리 방지용
+    this.currentEffect = null
+  }
+
+  processMove () {
+    if (this.state === this.STATE_NORMAL) {
+      super.processMove()
+    } else if (this.state === this.STATE_AUTOMOVE) { 
+      let distanceX = (this.autoMovePositionX - this.x) / 12
+      let distanceY = (this.autoMovePositionY - this.y) / 12
+      this.x += distanceX
+      this.y += distanceY
+      if (this.autoMoveFrame <= 0) {
+        this.state = this.STATE_NORMAL
+      } else {
+        this.autoMoveFrame--
+      }
+    } else {
+      // 만약 다른 상태값이 들어왔다면, 아마도 공식은 이것일 것
+      // automove positionX, positionY
+      // 이것은 라운드 2-3 b3구역에 정의되어있습니다.
+      // EnemyData에 내장된 함수를 사용해 간편하게 조정하는 방법이 없어 이렇게 구현되었습니다.
+
+      let info = this.state.split(' ')
+      this.autoMovePositionX = this.x + Number(info[1])
+      this.autoMovePositionY = this.y + Number(info[2])
+      this.autoMoveFrame = 30
+      this.state = this.STATE_AUTOMOVE
+    }
+  }
+}
+
+
+/**
+ * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
+ */
+class TestEnemy extends DonggramiSpaceA2Brick {
+  constructor () {
+    super()
+    this.setEnemyStat(1000000, 10, 0)
+  }
+}
 
 
 //
@@ -4766,3 +4891,5 @@ dataExportEnemy.set(ID.enemy.donggramiSpace.b1_bounce, DonggramiSpaceB1Bounce)
 dataExportEnemy.set(ID.enemy.donggramiSpace.a2_brick, DonggramiSpaceA2Brick)
 dataExportEnemy.set(ID.enemy.donggramiSpace.a2_bomb, DonggramiSpaceA2Bomb)
 dataExportEnemy.set(ID.enemy.donggramiSpace.b2_mini, DonggramiSpaceB2Mini)
+dataExportEnemy.set(ID.enemy.donggramiSpace.a3_collector, DonggramiSpaceA3Collector)
+dataExportEnemy.set(ID.enemy.donggramiSpace.b3_mini, DonggramiSpaceB3Mini)

@@ -1,0 +1,38 @@
+(2023/07/05 갱신)
+참고: 음악 폴더 안에는 프로젝트 파일이 존재합니다. 대부분의 음악은 LMMS로 제작
+
+사용된 vsti 플러그인은 악기 이름으로 추측할 수 있음.
+주로 사용하는 vsti: VOPM
+
+만약, lmms로 파일을 열은 경우, 기본 플러그인만 사용한 음악은 바로 들을 수 있습니다.
+그러나 외부 플러그인(vsti, sample)을 사용하였다면,
+여러분이 직접 vsti플러그인을 다운로드 받고, 프리셋을 지정해야 합니다.
+vsti dll 로드 후, gui 보이기 버튼을 누르면, import/export 버튼이 있습니다.
+import 버튼을 누르고 미리 만들어진 preset 파일을 로드하면, 악기를 로드할 수 있습니다.
+
+
+
+music list
+// round 1
+1. music01_space_void (round 1-1)
+2. music02_meteorite_zone_field (round 1-2 ~ 1-3), (optionbattle music)
+3. music03_meteorite_zone_battle (round 1-3 ~ 1-4), (optionbattle music)
+4. music04_meteorite_zone_red (round 1-5), (optionbattle music)
+5. music05_space_tour (round 1-6), (optionbattle music)
+6. music06_round1_boss_thema (round 1-1, 1-3, 1-4, 1-6)
+7. music07_planet_entry (round 1-6)
+8. music08_round1_4_jemul (round 1-4)
+
+// round 2 (아직 모든 음악이 완성되지 않았습니다.)
+9. music09_paran_planet (round 2-1), (optionbattle music)
+10. music10_donggrami_maeul (round 2-2), (optionbattle music)
+11A1. music11A1_big_room (round 2-3)
+11A2. music11A2_break_room (round 2-3)
+11A3. music11A3_power_room (round 2-3)
+11B1. music11B1_jump_room (round 2-3)
+11B2. music11B2_warp_room (round 2-3)
+11B3. music11B3_move_room (round 2-3)
+11C1. music11C1_bullte_room (round 2-3)
+11C2. music11C2_square_room (round 2-3)
+11C3. music11C3_trap_room (round 2-3)
+(이 이후는 미정)

@@ -121,6 +121,10 @@ class PlayerObject extends FieldData {
     this.weaponSlotNumber = 0
     this.playerSubWeaponDelayCount = 0
 
+    this.autoMoveFrame = 0
+    this.autoMoveX = 0
+    this.autoMoveY = 0
+
     /** @type {SkillSlot[]} */ this.skillSlotA = []
     /** @type {SkillSlot[]} */ this.skillSlotB = []
     /** @type {WeaponSlot[]} */ this.weaponSlot = []
@@ -142,6 +146,9 @@ class PlayerObject extends FieldData {
     this.isDied = false
     this.moveSpeedX = 8
     this.moveSpeedY = 8
+    this.autoMoveFrame = 0
+    this.autoMoveX = 0
+    this.autoMoveY = 0
 
     this.x = 300
     this.y = 200
@@ -361,6 +368,7 @@ class PlayerObject extends FieldData {
       this.processShield()
       this.processDamage()
       this.processLevelupCheck()
+      this.processAutoMove()
     }
     this.processDie()
   }
@@ -418,6 +426,17 @@ class PlayerObject extends FieldData {
 
     // 스킬 사운드 출력
     targetSkill.skill.useSoundPlay()
+  }
+
+  processAutoMove () {
+    if (this.autoMoveFrame >= 1) {
+      this.autoMoveFrame--
+      // 참고: 플레이어는 autoMoveFrame이 있는 동안은 조작을 통해 이동할 수 없지만, 
+      // 예상 가능한 버그를 막기 위해서 isMoveEnable 설정을 하지 않습니다.
+
+      this.x += (this.autoMoveX - this.x) / 10
+      this.y += (this.autoMoveY - this.y) / 10
+    }
   }
 
   processDamage () {
@@ -512,6 +531,7 @@ class PlayerObject extends FieldData {
   }
 
   processButton () {
+    // 버튼의 목록
     const buttonLeft = game.control.getButtonDown(game.control.buttonIndex.LEFT)
     const buttonRight = game.control.getButtonDown(game.control.buttonIndex.RIGHT)
     const buttonUp = game.control.getButtonDown(game.control.buttonIndex.UP)
@@ -523,22 +543,25 @@ class PlayerObject extends FieldData {
     const buttonSkill2 = game.control.getButtonInput(game.control.buttonIndex.R1)
     const buttonSkill3 = game.control.getButtonInput(game.control.buttonIndex.R2)
 
-    if (this.isMoveEnable) {
+    // 이동 가능하거나, autoMoveFrame이 없을 때만 이동 가능합니다.
+    if (this.isMoveEnable && this.autoMoveFrame <= 0) {
       if (buttonLeft) this.x -= this.moveSpeedX
       if (buttonRight) this.x += this.moveSpeedX
       if (buttonDown) this.y += this.moveSpeedY
       if (buttonUp) this.y -= this.moveSpeedY
     }
 
-    // 공간 초과 금지
+    // 화면 영역에서 벗어나는거 금지
     if (this.x < 0) this.x = 0
     if (this.x > game.graphic.CANVAS_WIDTH - this.width) this.x = game.graphic.CANVAS_WIDTH - this.width
     if (this.y < 0) this.y = 0
     if (this.y > game.graphic.CANVAS_HEIGHT - this.height) this.y = game.graphic.CANVAS_HEIGHT - this.height
 
+    // 중앙 좌표값 설정
     this.centerX = this.x + (this.width / 2)
     this.centerY = this.y + (this.height / 2)
 
+    // 무기 교체 버튼
     if (buttonA) {
       this.weaponSlotNumber++
       if (this.weaponSlotNumber >= this.weaponSlot.length) {
@@ -546,10 +569,10 @@ class PlayerObject extends FieldData {
       }
     }
 
-    if (buttonB) {
-      this.usingSkillSlotA = !this.usingSkillSlotA
-    }
+    // 스킬 슬롯 변경 버튼
+    if (buttonB) this.usingSkillSlotA = !this.usingSkillSlotA
 
+    // 스킬 사용 버튼
     if (buttonSkill0) this.useSkill(0)
     if (buttonSkill1) this.useSkill(1)
     if (buttonSkill2) this.useSkill(2)
@@ -753,6 +776,22 @@ class PlayerObject extends FieldData {
       this.skillSlotB[i].skill = getSkillB != null ? new getSkillB() : null
     }
   }
+
+  /**
+   * 플레이어를 특정 위치로 튕겨나가게 합니다.
+   * 
+   * autoMove가 적용되는 동안 플레이어는 이동 가능 여부와 상관없이 이동을 할 수 없습니다.
+   * 
+   * 주의: 플레이어의 좌표를 변경하고 싶다면, 이 함수를 사용하는것이 아니라 플레이어의 x 또는 y 좌표를 직접 수정해야 합니다.
+   * @param {number} finishX 도착지점의 x좌표
+   * @param {number} finishY 도착지점의 y좌표
+   * @param {number} totalFrame 도착지점까지 이동하는데 걸리는 시간
+   */
+  setAutoMove (finishX = 0, finishY = 0, totalFrame = 60) {
+    this.autoMoveX = finishX
+    this.autoMoveY = finishY
+    this.autoMoveFrame = totalFrame
+  }
 }
 
 /**
@@ -812,6 +851,13 @@ export class fieldState {
   static allEnemyDelete () {
     for (let i = 0; i < this.enemyObject.length; i++) {
       this.enemyObject[i].isDeleted = true
+    }
+  }
+
+  /** 현재 화면의 모든 스프라이트를 삭제합니다. */
+  static allSpriteDelete () {
+    for (let i = 0; i < this.spriteObject.length; i++) {
+      this.spriteObject[i].isDeleted = true
     }
   }
 
@@ -1044,7 +1090,10 @@ export class fieldState {
     for (let i = 0; i < this.weaponObject.length; i++) {
       const currentObject = this.weaponObject[i]
       currentObject.process()
-
+    }
+    
+    for (let i = 0; i < this.weaponObject.length; i++) {
+      const currentObject = this.weaponObject[i]
       if (currentObject.isDeleted) {
         this.weaponObject.splice(i, 1)
       }
@@ -1055,7 +1104,12 @@ export class fieldState {
     for (let i = 0; i < this.enemyObject.length; i++) {
       const currentObject = this.enemyObject[i]
       currentObject.process()
-
+    }
+    
+    // 버그 없는 삭제를 위해 제거 과정은 따로 진행되었습니다.
+    // 해당 잠재적 설계 결함은, 무기, 적에게만 적용됩니다.
+    for (let i = 0; i < this.enemyObject.length; i++) {
+      const currentObject = this.enemyObject[i]
       if (currentObject.isDeleted) {
         this.enemyObject.splice(i, 1)
       }
@@ -1227,7 +1281,14 @@ export class fieldSystem {
     /** gameSystem의 */ INPUT_TEXT_LINE1: 'input1, '
   }
 
-  static requestAddScore (score) {
+  /** 
+   * 필드에서 점수를 강제로 추가하도록 요청합니다. 
+   * 
+   * 라운드 진행 상황에 따라 점수를 추가하고 싶다면, 다음 함수를 사용해주세요.
+   * 
+   * 주의: 필드 스코어 변수를 직접 수정하면 안됩니다. 점수가 추가되는 과정에서 플레이어의 경험치를 추가해야 하기 때문입니다.
+   */
+  static requestAddScore (score = 0) {
     this.fieldScore += score
     this.totalScore += score
     fieldState.playerObject.addExp(score)

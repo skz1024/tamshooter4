@@ -789,7 +789,7 @@ export class FieldData {
    * outAreaCheck(0) 과 동일합니다.
    */
   exitAreaCheck () {
-    this.outAreaCheck(0)
+    return this.outAreaCheck(0)
     // if (this.x + this.width < 0 || this.x > graphicSystem.CANVAS_WIDTH ||
     //   this.y + this.height < 0 || this.y > graphicSystem.CANVAS_HEIGHT) {
     //   return true
@@ -945,7 +945,10 @@ export class FieldData {
         
         // 지연시간은 클래스로 생성되기 때문에, 값을 수동으로 입력해야 합니다.
         if (saveData[key].hasOwnProperty('delay')) {
-          this[key].setDelay(saveData[key])
+          // 널 체크 (없을경우 무시)
+          if (this[key].setDelay != null) {
+            this[key].setDelay(saveData[key])
+          }
         }
       } else {
         this[key] = saveData[key]

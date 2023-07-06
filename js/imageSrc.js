@@ -101,8 +101,7 @@ export class imageSrc {
     round2_donggramiHp: './image/round/round2_donggramiHp.png',
     round2_3_road: './image/round/round2_3_road.png',
     round2_3_maeul_space: './image/round/round2_3_maeul_space.png',
-    round2_3_map: './image/round/round2_3_map_2.png',
-    round2_3_course_select: './image/round/round2_3_course_select.png',
+    round2_3_course: './image/round/round2_3_course.png',
     round2_3_result: './image/round/round2_3_result.png',
     round2_3_status: './image/round/round2_3_status.png',
     round2_3_effect: './image/round/round2_3_effect.png'
@@ -355,14 +354,14 @@ export class imageDataInfo {
     moveArrow: {x: 0, y: 450, width: 50, height: 50, frame: 10},
   }
 
-  static round2_3_battleStatus = {
+  static round2_3_status = {
     a1BattleRoom: {x: 0, y: 0, width: 800, height: 100, frame: 1},
     a2BreakRoom: {x: 0, y: 100, width: 800, height: 100, frame: 1},
     a3PowerRoom: {x: 0, y: 200, width: 800, height: 100, frame: 1},
     time: {x: 0, y: 300, width: 100, height: 100, frame: 1},
     b2Warp: {x: 100, y: 300, width: 100, height: 100, frame: 1},
     c1TotalDamage: {x: 200, y: 300, width: 200, height: 100, frame: 1},
-    c2Score: {x: 400, y: 300, width: 100, height: 100, frame: 1},
+    c2Score: {x: 400, y: 300, width: 200, height: 100, frame: 1},
     c2Square: {x: 600, y: 300, width: 100, height: 100, frame: 1},
     c3Goal: {x: 700, y: 300, width: 100, height: 100, frame: 1},
   }

@@ -178,6 +178,8 @@ export class ID {
       a2_brick: 20202,
       a2_bomb: 20203,
       b2_mini: 20204,
+      a3_collector: 20205,
+      b3_mini: 20206,
     }
   }
 
