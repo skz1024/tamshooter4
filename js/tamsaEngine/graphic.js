@@ -129,6 +129,24 @@ export class GraphicSystem {
     }
   }
 
+  /** 
+   * 이미지가 완전히 로드되었는지를 확인합니다.
+   * 로드가 완료된 총 개수를 리턴합니다.
+   * 
+   * @param {string[]} [src=[]] 이미지의 경로
+   */
+  getImageCompleteCount (src = []) {
+    let totalCount = 0
+    for (let i = 0; i < src.length; i++) {
+      let image = this.getCacheImage(src[i])
+      if (image.complete) {
+        totalCount++
+      }
+    }
+
+    return totalCount
+  }
+
   /**
    * 그래픽 시스템에서 static 변수에 사용되는 이미지를 지정하기 위한 함수
    * 

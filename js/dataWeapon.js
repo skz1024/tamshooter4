@@ -577,7 +577,7 @@ class MultyshotData extends WeaponData {
       imageDataInfo.weapon.multyshotBlue
     ]
 
-    this.setAutoImageData(imageSrc.weapon, imageDataList[colorNumber])
+    this.setAutoImageData(imageSrc.weaponImage, imageDataList[colorNumber])
 
     this.mainType = 'multyshot'
     this.subType = 'multyshot'
@@ -592,7 +592,7 @@ class MissileData extends WeaponData {
 
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.missile, 5)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.missile, 5)
     this.mainType = 'missile'
     this.subType = 'missileA'
     this.id = ID.weapon.missile
@@ -671,7 +671,7 @@ class MissileRocket extends MissileData {
    */
   constructor (option = [2]) {
     super()
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.missileRocket)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.missileRocket)
     this.subType = 'missileRocket'
     this.id = ID.weapon.missileRocket
     this.isChaseType = false
@@ -708,7 +708,7 @@ class Arrow extends WeaponData {
       imageDataInfo.weapon.arrowBrown
     ]
     let imageDataNumber = this.moveSpeedY >= 0 ? 0 : 1
-    this.setAutoImageData(imageSrc.weapon, imageDataList[imageDataNumber])
+    this.setAutoImageData(imageSrc.weaponImage, imageDataList[imageDataNumber])
     this.mainType = 'bounce'
     this.subType = 'arrow'
     this.id = ID.weapon.arrow
@@ -763,7 +763,7 @@ class Laser extends WeaponData {
    */
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.laser)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.laser)
     this.mainType = 'laser'
     this.subType = 'laser'
     this.id = ID.weapon.laser
@@ -779,7 +779,7 @@ class LaserBlue extends Laser {
     super()
     this.subType = 'laserBlue'
     this.id = ID.weapon.laserBlue
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.laserBlue)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.laserBlue)
     this.isChaseType = true
     this.chaseLimit = 1 // 적 1번만 추적 가능
     this.moveSpeedX = 0
@@ -817,7 +817,7 @@ class Sapia extends WeaponData {
    */
   constructor (option = [352]) {
     super()
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.sapia)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.sapia)
     this.sapiaShotAttack = option.length >= 1 ? option[0] : 352
     this.mainType = 'sapia'
     this.subType = 'sapia'
@@ -948,7 +948,7 @@ class SapiaShot extends Sapia {
    */
   constructor (option = [0, 0]) {
     super()
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.sapiaShot)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.sapiaShot)
     this.id = ID.weapon.sapiaShot
     this.subType = 'sapiaShot'
     this.targetX = option.length >= 1 ? option[0] : 0
@@ -989,7 +989,7 @@ class SapiaShot extends Sapia {
 class Parapo extends WeaponData {
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.parapo)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.parapo)
     this.mainType = 'parapo'
     this.subType = 'parapo'
     this.id = ID.weapon.parapo
@@ -1068,7 +1068,7 @@ class ParapoShockwave extends Parapo {
 class Blaster extends WeaponData {
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.blaster)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.blaster)
     this.mainType = 'blaster'
     this.subType = 'blaster'
     this.moveSpeedX = 24
@@ -1079,7 +1079,7 @@ class Blaster extends WeaponData {
 class BlasterMini extends Blaster {
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.blasterMini)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.blasterMini)
     this.subType = 'blastermini'
     this.isLineChase = true
   }
@@ -1092,7 +1092,7 @@ class Sidewave extends WeaponData {
    */
   constructor (option = ['']) {
     super()
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.sidewave)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.sidewave)
     this.mainType = 'sidewave'
     this.subType = 'sidewave'
     this.moveSpeedX = 11
@@ -1111,7 +1111,7 @@ class Sidewave extends WeaponData {
 class Rapid extends WeaponData {
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.rapid)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.rapid)
     this.mainType = 'rapid'
     this.subType = 'rapid'
     this.setMoveSpeed(40, 0)
@@ -1124,7 +1124,7 @@ class Ring extends WeaponData {
    */
   constructor (option = ['right']) {
     super()
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.ring)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.ring)
     this.mainType = 'ring'
     this.subType = 'ring'
 
@@ -1208,7 +1208,7 @@ class Ring extends WeaponData {
 class Seondanil extends WeaponData {
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.seondanil)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.seondanil)
     this.moveDelay = new DelayData(60) // 발사 대기 시간
     this.mainType = 'seondanil'
     this.subType = 'seondanil'
@@ -1238,7 +1238,7 @@ class Seondanil extends WeaponData {
 class Boomerang extends WeaponData {
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.boomerang)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.boomerang)
     this.mainType = 'boomerang'
     this.subType = 'boomerang'
     this.maxHitCount = 10
@@ -1275,7 +1275,7 @@ class SubMultyshot extends WeaponData {
     super()
     // 멀티샷 grey를 서브웨폰으로 취급하기로 변경되었습니다. (2022/12/05)
     // 이유는 서브웨폰 모양이 마음에 안들었고, 새로 무기를 만드는것은 귀찮기 때문입니다.
-    this.setAutoImageData(imageSrc.weapon, imageDataInfo.weapon.multyshotGrey)
+    this.setAutoImageData(imageSrc.weaponImage, imageDataInfo.weapon.multyshotGrey)
     this.mainType = 'subweapon'
     this.subType = 'subweapon'
     this.isChaseType = true
@@ -1287,7 +1287,7 @@ class SkillMultyshot extends WeaponData {
     // 기본적으로 skillMultyshot은 적을 추적함.
     // 다만 그외의 다른 특징 없음
     super()
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.multyshot)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.multyshot)
     this.mainType = 'skill'
     this.subType = 'multyshot'
     this.id = ID.weapon.skillMultyshot
@@ -1298,7 +1298,7 @@ class SkillMultyshot extends WeaponData {
 class SkillMissile extends MissileData {
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.missile, 1)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.missile, 1)
     this.mainType = 'skill'
     this.subType = 'missile'
     this.id = ID.weapon.skillMissile
@@ -1331,7 +1331,7 @@ class SkillArrow extends Arrow {
   // Arrow를 상속받아서, 그대로 옵션으로 활용
   constructor (option = [2]) {
     super(option)
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.arrow, 3)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.arrow, 3)
     this.mainType = 'skill'
     this.subType = 'arrow'
     this.color = 'purple'
@@ -1346,7 +1346,7 @@ class SkillArrow extends Arrow {
 class SkillLaser extends WeaponData {
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.laser)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.laser)
     this.mainType = 'skill'
     this.subType = 'laser'
     this.id = ID.weapon.skillLaser
@@ -1407,8 +1407,8 @@ class SkillSapia extends Sapia {
 
     let rect = imageDataInfo.skill.sapiaRect
     let circle = imageDataInfo.skill.sapiaCircle
-    this.enimationSapiaRect = new EnimationData(imageSrc.skill, rect.x, rect.y, rect.width, rect.height, rect.frame, 4, -1)
-    this.enimationSapiaCircle = new EnimationData(imageSrc.skill, circle.x, circle.y, circle.width, circle.height, circle.frame, 4, -1)
+    this.enimationSapiaRect = new EnimationData(imageSrc.skillImage, rect.x, rect.y, rect.width, rect.height, rect.frame, 4, -1)
+    this.enimationSapiaCircle = new EnimationData(imageSrc.skillImage, circle.x, circle.y, circle.width, circle.height, circle.frame, 4, -1)
   }
 
   /**
@@ -1529,7 +1529,7 @@ class SkillParapo extends Parapo {
 class SkillBlaster extends Blaster {
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.blaster)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.blaster)
     this.mainType = 'skill'
     this.subType = 'blaster'
     this.id = ID.weapon.skillBlaster
@@ -1547,7 +1547,7 @@ class SkillBlaster extends Blaster {
 class SkillSidewave extends Sidewave {
   constructor (option = [0, 'right']) {
     super()
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.sidewave)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.sidewave)
     this.mainType = 'skill'
     this.subType = 'sidewave'
     this.id = ID.weapon.skillSidewave
@@ -1562,7 +1562,7 @@ class SkillSword extends WeaponData {
 
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.sword)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.sword)
     this.mainType = 'skill'
     this.subType = 'sword'
     this.state = SkillSword.STATE_MOVE
@@ -1574,7 +1574,7 @@ class SkillSword extends WeaponData {
     this.repeatCount = 80
 
     let moveSword = imageDataInfo.skill.swordMove
-    this.moveEnimation = new EnimationData(imageSrc.skill, moveSword.x, moveSword.y, moveSword.width, moveSword.height, moveSword.frame, 1, -1)
+    this.moveEnimation = new EnimationData(imageSrc.skillImage, moveSword.x, moveSword.y, moveSword.width, moveSword.height, moveSword.frame, 1, -1)
   }
 
   processChase () {
@@ -1634,7 +1634,7 @@ class SkillSword extends WeaponData {
 class SkillHyperBall extends WeaponData {
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.hyperBall)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.hyperBall)
     this.mainType = 'skill'
     this.subType = 'hyperBall'
     this.repeatCount = 6
@@ -1674,7 +1674,7 @@ class SkillCriticalChaser extends WeaponData {
     super()
     this.mainType = 'skill'
     this.subType = 'criticalchaser'
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.criticalChase)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.criticalChase)
     this.splashEffect = new CustomEffect(imageSrc.skillEffect.criticalChaser, imageDataInfo.skillEffect.criticalChase)
     this.repeatCount = 4
     this.repeatDelay = new DelayData(6)
@@ -1822,7 +1822,7 @@ class SkillSantansu extends WeaponData {
     super()
     this.mainType = 'skill'
     this.subType = 'santansu'
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.santansu)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.santansu)
     this.repeatCount = 6
     this.repeatDelay = new DelayData(9)
     this.state = SkillSantansu.STATE_SANTANSU
@@ -1924,7 +1924,7 @@ class SkillWhiteflash extends WeaponData {
     this.repeatCount = 40
     this.setMultiTarget(12)
     this.repeatDelay = new DelayData(4)
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.whiteflash, 6)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.whiteflash, 6)
     this.setWidthHeight(120, 120)
     this.moveSpeedX = 30
     this.isChaseType = true // 해당 무기는 적을 추적하는 방식으로 이동하기 때문에 추적 타입입니다.
@@ -2001,7 +2001,7 @@ class SkillRing extends Ring {
     super()
     this.mainType = 'skill'
     this.subType = 'ring'
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.ring)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.ring)
     this.repeatCount = 1
     this.maxHitCount = 4
 
@@ -2018,7 +2018,7 @@ class SkillRapid extends WeaponData {
     super()
     this.mainType = 'skill'
     this.subType = 'rapid'
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.rapid)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.rapid)
     this.setMoveSpeed(40, 0)
   }
 }
@@ -2030,7 +2030,7 @@ class SkillSeondanil extends WeaponData {
 
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.seondanil)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.seondanil)
     this.setMoveSpeed(0, 0)
     this.repeatCount = 50
     this.repeatDelay = new DelayData(3)
@@ -2099,14 +2099,14 @@ class SkillHanjumeok extends WeaponData {
     super()
     this.mainType = 'skill'
     this.subType = 'hanjumeok'
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.hanjumoek, 4)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.hanjumoek, 4)
     this.setWidthHeight(300, 210)
     this.repeatCount = 30
     this.repeatDelay = new DelayData(5)
     this.moveSpeedX = 1
     this.setMultiTarget(10)
 
-    this.hitEffect = new CustomEffect(imageSrc.skill, imageDataInfo.skill.hanjumoek)
+    this.hitEffect = new CustomEffect(imageSrc.skillImage, imageDataInfo.skill.hanjumoek)
 
     let splashArea = this.getSplashArea()
     this.splashEffect = new CustomEffect(imageSrc.skillEffect.hanjumoekSplash, imageDataInfo.skillEffect.hanjumeokSplash, splashArea.width, splashArea.height, 2)
@@ -2198,7 +2198,7 @@ class SkillBoomerang extends WeaponData {
     super()
     this.mainType = 'skill'
     this.subType = 'boomerang'
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.boomerang)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.boomerang)
     this.setWidthHeight(this.width * 3, this.height * 3)
     this.repeatCount = 180
     this.maxHitCount = 10
@@ -2230,7 +2230,7 @@ class SkillMoon extends WeaponData {
     super()
     this.mainType = 'skill'
     this.subType = 'moon'
-    this.setAutoImageData(imageSrc.skill, imageDataInfo.skill.moon)
+    this.setAutoImageData(imageSrc.skillImage, imageDataInfo.skill.moon)
     this.repeatCount = 180
     this.setMultiTarget(9999) // 이론상 무제한의 적 공격 가능
     this.setMoveSpeed(0, 0)

@@ -16,6 +16,96 @@ let soundSystem = game.sound
 let controlSystem = game.control
 let digitalDisplay = gameFunction.digitalDisplay
 
+/** 
+ * 라운드에서 사용하는 추가적인 로딩 (적과 관련해서 파일이 분산되어 이 클래스에서 대신 데이터를 불러오도록 처리함)
+ * 
+ * 배경은 용량이 크므로 제외, 배경음악도 제외 특정 라운드에 의존되어있는 파일도 제외 (대표적인 예: 2-3)
+ * 다만, 그런 파일들은 파일 이름이 round로 시작함
+ */
+export class PackRoundLoad {
+  /** 라운드 1에서 사용하는 적들의 공통 이미지 데이터 */
+  static getRound1EnemyImage () {
+    return [
+      // enemy
+      imageSrc.enemy.spaceEnemy,
+      imageSrc.enemy.meteoriteEnemy,
+      imageSrc.enemy.jemulEnemy,
+
+      // enemyBullet
+      imageSrc.enemyBullet.energyBoltAttack,
+      imageSrc.enemyBullet.attackList,
+
+      imageSrc.enemyDie.effectList,
+      imageSrc.enemyDie.enemyDieMeteorite,
+      imageSrc.enemyDie.enemyDieSpaceComet,
+      imageSrc.enemyDie.enemyDieSpaceGamjigi
+    ]
+  }
+
+  /** 라운드 1에서 사용하는 적들의 사운드 데이터 */
+  static getRound1EnemySound () {
+    return [
+      soundSrc.enemyDie.enemyDieSpaceCar,
+      soundSrc.enemyDie.enemyDieSpaceComet,
+      soundSrc.enemyDie.enemyDieSpaceEnergy,
+      soundSrc.enemyDie.enemyDieSpaceGamjigi,
+      soundSrc.enemyDie.enemyDieSpaceLight,
+      soundSrc.enemyDie.enemyDieSpaceRocket,
+      soundSrc.enemyDie.enemyDieSpaceSmall,
+      soundSrc.enemyDie.enemyDieSpaceSquare,
+      soundSrc.enemyDie.enemyDieSpaceSusong,
+
+      soundSrc.enemyDie.enemyDieMeteorite1,
+      soundSrc.enemyDie.enemyDieMeteorite2,
+      soundSrc.enemyDie.enemyDieMeteorite3,
+      soundSrc.enemyDie.enemyDieMeteorite4,
+      soundSrc.enemyDie.enemyDieMeteorite5,
+      soundSrc.enemyDie.enemyDieMeteoriteBomb,
+      soundSrc.enemyDie.enemyDieMeteoriteRed,
+      
+      soundSrc.enemyDie.enemyDieJemulBoss,
+      soundSrc.enemyDie.enemyDieJemulBossEye,
+      soundSrc.enemyDie.enemyDieJemulDrill,
+      soundSrc.enemyDie.enemyDieJemulEnergyBolt,
+      soundSrc.enemyDie.enemyDieJemulHellAir,
+      soundSrc.enemyDie.enemyDieJemulHellShip,
+      soundSrc.enemyDie.enemyDieJemulRedAir,
+      soundSrc.enemyDie.enemyDieJemulRedJewel,
+      soundSrc.enemyDie.enemyDieJemulRocket,
+      soundSrc.enemyDie.enemyDieJemulSpike,
+
+      soundSrc.enemyDie.enemyDieDonggrami,
+
+      soundSrc.enemyAttack.jemulBossAttack,
+      soundSrc.enemyAttack.jemulBossAttack2,
+      soundSrc.enemyAttack.jemulBossAttack3,
+      soundSrc.enemyAttack.jemulEnergyBoltAttack,
+      soundSrc.enemyAttack.jemulHellDrillAttack,
+    ]
+  }
+
+  /** 라운드 2에서 사용하는 적들이 공통 데이터
+   * 단, 라운드 2-3은 제외
+   */
+  static getRound2EnemyImage () {
+    return [
+      imageSrc.enemy.donggramiEnemy,
+      imageSrc.enemy.donggramiSpace,
+      imageSrc.enemyDie.effectList
+    ]
+  }
+
+  static getRound2EnemySound () {
+    return [
+      soundSrc.donggrami.emoji,
+      soundSrc.donggrami.emojiThrow,
+      soundSrc.donggrami.exclamationMark,
+      soundSrc.donggrami.questionMark,
+      soundSrc.enemyDie.enemyDieDonggrami,
+    ]
+  }
+}
+
 export class RoundData {
   constructor () {
     /** 
@@ -90,6 +180,97 @@ export class RoundData {
 
     /** 저장 용도로 사용하는 문자열 (저장 형식이 무언지는 알 수 없음) */
     this.saveString = ''
+
+    /** 
+     * 이 라운드에서 사용해야 하는 이미지들의 리스트
+     * 
+     * 주의: 라운드에서는 round와 enemy도 같이 로드해야 합니다.
+     * 
+     * 이 변수를 직접 수정하기 보다는 setLoadingImageList 함수를 사용하는것을 권장합니다.
+     * 
+     * 반드시 클래스의 constructor(생성자)에서 작성해야 합니다.
+     * 다른곳에서 작성할경우 해당 파일을 정상적으로 로드할 수 없습니다.
+     * @type {string[]}
+     */
+    this.loadingImageList = []
+
+    /** 
+     * 이 라운드에서 로드해야 하는 사운드들의 리스트
+     * 
+     * 주의: 라운드에서는 round와 enemy도 같이 로드해야 합니다.
+     * 
+     * 이 변수를 직접 수정하기 보다는 setLoadingSoundList 함수를 사용하는것을 권장합니다.
+     * 
+     * 반드시 클래스의 constructor(생성자)에서 작성해야 합니다.
+     * 다른곳에서 작성할경우 해당 파일을 정상적으로 로드할 수 없습니다.
+     * @type {string[]}
+     */
+    this.loadingSoundList = []
+  }
+
+  /**
+   * loading image list를 설정하는 함수
+   * 
+   * 주의: 라운드에서는 round와 enemy도 같이 로드해야 합니다. 
+   * packRoundLoad 클래스를 참고해 라운드에 필요한 데이터를 추가로 지정해 주세요.
+   * 
+   * 이 함수는 반드시 각 라운드의 constructor에서 실행해야 합니다.
+   * 다른곳에서는 정상적으로 불러올 수 없습니다.
+   * @param {string[]} src 
+   */
+  addLoadingImageList (src = ['']) {
+    this.loadingImageList = this.loadingImageList.concat(src)
+  }
+
+  /**
+   * loading sound list를 설정하는 함수
+   * 
+   * 주의: 라운드에서는 round와 enemy도 같이 로드해야 합니다.
+   * packRoundLoad 클래스를 참고해 라운드에 필요한 데이터를 추가로 지정해 주세요.
+   * 
+   * 이 함수는 반드시 각 라운드의 constructor에서 실행해야 합니다.
+   * 다른곳에서는 정상적으로 불러올 수 없습니다.
+   * @param {string[]} src 
+   */
+  addLoadingSoundList (src = ['']) {
+    this.loadingSoundList = this.loadingSoundList.concat(src)
+  }
+
+  /** 
+   * 이미지와 사운드를 로딩합니다. (중복 로딩되지 않음.)
+   * 이 함수는 필드에서 라운드를 진행하기 전에 반드시 실행되어야 합니다.
+   * 또는 불러오기를 했을 때에도 실행되어야 합니다.
+   */
+  loadingImageSound () {
+    for (let i = 0; i < this.loadingImageList.length; i++) {
+      graphicSystem.createImage(this.loadingImageList[i])
+    }
+    for (let i = 0; i < this.loadingSoundList.length; i++) {
+      soundSystem.createAudio(this.loadingImageList[i])
+    }
+  }
+
+  /** 라운드와 관련된 이미지, 사운드 파일이 전부 로딩되었는지를 확인
+   * 단, 유저가 제스쳐 행위를 하지 않는다면, 사운드가 로딩되지 않으므로 사운드 로드 여부는 판단하지 않습니다. [표시만 될 뿐...]
+   */
+  loadCheck () {
+    let imageLoadCount = graphicSystem.getImageCompleteCount(this.loadingImageList)
+    let soundLoadCount = soundSystem.getAudioLoadCompleteCount(this.loadingSoundList)
+
+    if (imageLoadCount === this.loadingImageList.length) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+  /** 현재 로드된 상태를 출력하는 스트링 값을 얻음 */
+  getLoadStatus () {
+    return [
+      'image load: ' + graphicSystem.getImageCompleteCount(this.loadingImageList) + '/' + this.loadingImageList.length,
+      'sound load: ' + soundSystem.getAudioLoadCompleteCount(this.loadingSoundList) + '/' + this.loadingSoundList.length,
+      'Sounds are loaded when using user gestures.'
+    ]
   }
 
   /**
@@ -787,6 +968,22 @@ class Round1_1 extends RoundData {
     this.addRoundPhase(this.roundPhase03, 61, 90)
     this.addRoundPhase(this.roundPhase04, 91, 120)
     this.addRoundPhase(this.roundPhase05, 121, 148)
+
+    // 로드해야 할 파일 리스트 작성
+    this.addLoadingImageList([
+      imageSrc.round.round1_1_space,
+      imageSrc.round.round1_2_meteorite,
+      imageSrc.enemy.spaceEnemy,
+      imageSrc.enemyDie.enemyDieSpaceComet,
+      imageSrc.enemyDie.enemyDieSpaceGamjigi
+    ])
+    this.addLoadingSoundList([
+      soundSrc.music.music01_space_void,
+      soundSrc.music.music06_round1_boss_thema
+    ])
+
+    this.addLoadingImageList(PackRoundLoad.getRound1EnemyImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound1EnemySound())
   }
 
   roundPhase00 () {
@@ -950,6 +1147,22 @@ class Round1_2 extends RoundData {
     this.addRoundPhase(this.roundPhase05, 91, 120)
     this.addRoundPhase(this.roundPhase06, 121, 150)
     this.addRoundPhase(this.roundPhase07, 151, 176)
+
+    // 로드해야 할 파일 리스트 작성
+    this.addLoadingImageList([
+      imageSrc.round.round1_2_meteorite,
+      imageSrc.round.round1_3_meteoriteDeep,
+      imageSrc.enemy.spaceEnemy,
+      imageSrc.enemyDie.enemyDieSpaceComet,
+      imageSrc.enemyDie.enemyDieSpaceGamjigi
+    ])
+
+    this.addLoadingSoundList([
+      soundSrc.music.music02_meteorite_zone_field,
+    ])
+
+    this.addLoadingImageList(PackRoundLoad.getRound1EnemyImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound1EnemySound())
   }
 
   processBackground () {
@@ -1123,6 +1336,26 @@ class Round1_3 extends RoundData {
     this.addRoundPhase(this.roundPhase06, 161, 180)
     this.addRoundPhase(this.roundPhase07, 181, 200)
     this.addRoundPhase(this.roundPhase08, 201, 207)
+
+    // 로드해야 할 파일 리스트 작성
+    this.addLoadingImageList([
+      imageSrc.round.round1_3_meteoriteDeep,
+      imageSrc.round.round1_4_meteoriteDark,
+      imageSrc.round.round1_5_meteoriteRed,
+      imageSrc.enemy.spaceEnemy,
+      imageSrc.enemy.jemulEnemy,
+      imageSrc.enemy.meteoriteEnemy,
+      imageSrc.enemyDie.enemyDieSpaceComet,
+      imageSrc.enemyDie.enemyDieSpaceGamjigi
+    ])
+
+    this.addLoadingSoundList([
+      soundSrc.music.music02_meteorite_zone_field,
+      soundSrc.music.music03_meteorite_zone_battle,
+    ])
+
+    this.addLoadingImageList(PackRoundLoad.getRound1EnemyImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound1EnemySound())
   }
 
   processBackground () {
@@ -1441,16 +1674,6 @@ class Round1_4 extends RoundData {
     this.addRoundPhase(this.roundPhase02, 81, 110)
     this.addRoundPhase(this.roundPhase03, 111, 150)
 
-    // 이미지, 효과음 로드
-    soundSystem.createAudio(this.messageSound.message1)
-    soundSystem.createAudio(this.messageSound.message2)
-    soundSystem.createAudio(this.messageSound.jemulstar)
-    soundSystem.createAudio(this.messageSound.jemulstart)
-    soundSystem.createAudio(this.messageSound.jemulrun)
-
-    graphicSystem.createImage(imageSrc.effect.jemulstar)
-    graphicSystem.createImage(imageSrc.effect.jemulCreate)
-
     /** 제물스타 이펙트 */
     this.effectJemulstar = new CustomEffect(imageSrc.effect.jemulstar, imageDataInfo.effect.jemulstar, 500, 320, 3, 2)
 
@@ -1470,6 +1693,28 @@ class Round1_4 extends RoundData {
         }
       }
     }
+
+    this.addLoadingImageList([
+      imageSrc.round.round1_4_meteoriteDark,
+      imageSrc.round.round1_4_redzone,
+      imageSrc.enemy.jemulEnemy,
+      imageSrc.effect.jemulstar,
+      imageSrc.effect.jemulCreate,
+    ])
+
+    this.addLoadingSoundList([
+      soundSrc.music.music03_meteorite_zone_battle,
+      soundSrc.music.music06_round1_boss_thema,
+      soundSrc.music.music08_round1_4_jemul,
+      this.messageSound.message1,
+      this.messageSound.message2,
+      this.messageSound.jemulrun,
+      this.messageSound.jemulstar,
+      this.messageSound.jemulstart,
+    ])
+
+    this.addLoadingImageList(PackRoundLoad.getRound1EnemyImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound1EnemySound())
   }
 
   processBackground () {
@@ -1677,6 +1922,22 @@ class Round1_5 extends RoundData {
     this.addRoundPhase(this.roundPhase06, 151, 180)
     this.addRoundPhase(this.roundPhase07, 181, 200)
     this.addRoundPhase(this.roundPhase08, 201, 207)
+
+    this.addLoadingImageList([
+      imageSrc.round.round1_4_meteoriteDark,
+      imageSrc.round.round1_5_meteoriteRed,
+      imageSrc.enemy.jemulEnemy,
+      imageSrc.enemy.spaceEnemy,
+      imageSrc.enemy.meteoriteEnemy,
+    ])
+
+    this.addLoadingSoundList([
+      soundSrc.music.music04_meteorite_zone_red,
+      soundSrc.music.music02_meteorite_zone_field,
+    ])
+
+    this.addLoadingImageList(PackRoundLoad.getRound1EnemyImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound1EnemySound())
   }
 
   processBackground () {
@@ -1930,13 +2191,29 @@ class Round1_6 extends RoundData {
     this.addRoundPhase(this.roundPhase03, 91, 120)
     this.addRoundPhase(this.roundPhase04, 121, 148)
 
-    // 이 라운드에서만 사용하는 행성 이미지 추가
-    graphicSystem.createImage(imageSrc.round.round1_6_paran_planet)
-
     /**
      * 이 라운드에서 행성을 보여주기 위한 오브젝트
      */
     this.planet = this.createPlanet()
+
+    this.addLoadingImageList([
+      imageSrc.round.round1_2_meteorite,
+      imageSrc.round.round1_6_space,
+      imageSrc.round.round1_6_paran_planet,
+      imageSrc.enemy.jemulEnemy,
+      imageSrc.enemy.spaceEnemy,
+      imageSrc.enemy.meteoriteEnemy,
+    ])
+
+    this.addLoadingSoundList([
+      soundSrc.music.music02_meteorite_zone_field,
+      soundSrc.music.music05_space_tour,
+      soundSrc.music.music06_round1_boss_thema,
+      soundSrc.music.music07_paran_planet_entry,
+    ])
+
+    this.addLoadingImageList(PackRoundLoad.getRound1EnemyImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound1EnemySound())
   }
 
   /**
@@ -2216,6 +2493,18 @@ class Round2_1 extends RoundData {
     this.addRoundPhase(this.roundPhase03, 61, 90)
     this.addRoundPhase(this.roundPhase04, 91, 120)
     this.addRoundPhase(this.roundPhase05, 121, 148)
+
+    this.addLoadingImageList([
+      imageSrc.round.round2_1_cloud,
+      imageSrc.round.round2_2_maeul_entrance,
+    ])
+
+    this.addLoadingSoundList([
+      soundSrc.music.music09_paran_planet,
+    ])
+
+    this.addLoadingImageList(PackRoundLoad.getRound2EnemyImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound2EnemySound())
   }
 
   displayBackground () {
@@ -2468,6 +2757,24 @@ class Round2_2 extends RoundData {
     this.addRoundPhase(this.roundPhase04, 111, 130) // 아파트 2단지
     this.addRoundPhase(this.roundPhase05, 131, 160) // 상가
     this.addRoundPhase(this.roundPhase06, 161, 167) // 플래카드
+
+    this.addLoadingImageList([
+      imageSrc.round.round2_2_maeul_entrance,
+      imageSrc.round.round2_2_apartment1,
+      imageSrc.round.round2_2_apartment2,
+      imageSrc.round.round2_2_park,
+      imageSrc.round.round2_2_placard,
+      imageSrc.round.round2_2_shopping_mall,
+      imageSrc.round.round2_2_tunnel,
+      imageSrc.round.round2_2_tunnel_outload,
+    ])
+
+    this.addLoadingSoundList([
+      soundSrc.music.music10_donggrami_maeul,
+    ])
+
+    this.addLoadingImageList(PackRoundLoad.getRound2EnemyImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound2EnemySound())
   }
 
   displayBossHp () {
@@ -2830,18 +3137,6 @@ class Round2_3 extends RoundData {
     /** 현재 코스 선택 모드에 있는지에 대한 여부 */
     this.isCourseSelectMode = false
 
-
-    // 음악 추가
-    game.sound.createAudio(this.musicList.a1_battle_room)
-    game.sound.createAudio(this.musicList.a2_break_room)
-    game.sound.createAudio(this.musicList.a3_power_room)
-    game.sound.createAudio(this.musicList.b1_jump_room)
-    game.sound.createAudio(this.musicList.b2_warp_room)
-    game.sound.createAudio(this.musicList.b3_move_room)
-    game.sound.createAudio(this.musicList.c1_bullet_room)
-    game.sound.createAudio(this.musicList.c2_square_room)
-    game.sound.createAudio(this.musicList.c3_trap_room)
-
     /** 각 result에 따라 표시되는 보이스 목록 */
     this.voiceList = {
       complete: soundSrc.round.r2_3_voiceComplete,
@@ -2852,15 +3147,6 @@ class Round2_3 extends RoundData {
       fight: soundSrc.round.r2_3_voiceFight,
       ready: soundSrc.round.r2_3_voiceReady
     }
-
-    game.sound.createAudio(this.voiceList.complete)
-    game.sound.createAudio(this.voiceList.draw)
-    game.sound.createAudio(this.voiceList.win)
-    game.sound.createAudio(this.voiceList.lose)
-    game.sound.createAudio(this.voiceList.start)
-    game.sound.createAudio(this.voiceList.fight)
-    game.sound.createAudio(this.voiceList.ready)
-    game.sound.createAudio(soundSrc.round.r2_3_a1_damage) // 플레이어 데미지 용도
 
     /** 코스 선택시 표시되는 반짝이는 상자 */
     class LightBox {
@@ -2916,6 +3202,53 @@ class Round2_3 extends RoundData {
       LOSE2: 19200,
       LOSE3: 19500
     }
+
+    this.addLoadingImageList([
+      imageSrc.round.round2_3_course,
+      imageSrc.round.round2_3_effect,
+      imageSrc.round.round2_3_maeul_space,
+      imageSrc.round.round2_3_result,
+      imageSrc.round.round2_3_course,
+      imageSrc.round.round2_3_status,
+    ])
+
+    this.addLoadingSoundList([
+      soundSrc.music.music11A1_battle_room,
+      soundSrc.music.music11A2_break_room,
+      soundSrc.music.music11A3_power_room,
+      soundSrc.music.music11B1_jump_room,
+      soundSrc.music.music11B2_warp_room,
+      soundSrc.music.music11B3_move_room,
+      soundSrc.music.music11C1_bullet_room,
+      soundSrc.music.music11C2_square_room,
+      soundSrc.music.music11C3_trap_room,
+      this.voiceList.complete,
+      this.voiceList.win,
+      this.voiceList.lose,
+      this.voiceList.draw,
+      this.voiceList.ready,
+      this.voiceList.start,
+      this.voiceList.fight,
+      soundSrc.round.r2_3_a1_boost,
+      soundSrc.round.r2_3_a1_damage,
+      soundSrc.round.r2_3_a1_earthquake,
+      soundSrc.round.r2_3_a1_earthquakeDamage,
+      soundSrc.round.r2_3_a1_toyHammer,
+      soundSrc.round.r2_3_a2_bomb,
+      soundSrc.round.r2_3_a2_break,
+      soundSrc.round.r2_3_a3_power1,
+      soundSrc.round.r2_3_a3_power2,
+      soundSrc.round.r2_3_b2_warp,
+      soundSrc.round.r2_3_b3_move,
+      soundSrc.round.r2_3_c2_squareBlack,
+      soundSrc.round.r2_3_c2_squareCyan,
+      soundSrc.round.r2_3_c2_squareLime,
+      soundSrc.round.r2_3_c2_squarePink,
+      soundSrc.round.r2_3_c2_squareRed,
+    ])
+
+    this.addLoadingImageList(PackRoundLoad.getRound2EnemyImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound2EnemySound())
   }
 
   lightBoxProcess () {
@@ -4126,8 +4459,6 @@ class Round2_3 extends RoundData {
     // 세부 로직 처리 (시간 조건 확인)
     if (!this.areaRunningTimeCheck()) return
 
-    soundSystem.createAudio(soundSrc.round.r2_3_b2_warp)
-
     // 플레이어와 적과의 충돌
     let playerP = this.getPlayerObject()
     let enemyObject = this.getEnemyObject()
@@ -4431,12 +4762,6 @@ class Round2_3 extends RoundData {
 
       this.setCurrentTime(phase2Start + cTime.COMPLETE + 1)
     }
-
-    soundSystem.createAudio(soundSrc.round.r2_3_c2_squareBlack)
-    soundSystem.createAudio(soundSrc.round.r2_3_c2_squareRed)
-    soundSystem.createAudio(soundSrc.round.r2_3_c2_squareCyan)
-    soundSystem.createAudio(soundSrc.round.r2_3_c2_squareLime)
-    soundSystem.createAudio(soundSrc.round.r2_3_c2_squarePink)
 
     let tMultiple = Math.floor((this.areaStat.squareBlack / 10)) + this.areaStat.timeBonusMultiple
     let tBonus = (100 + (this.areaStat.squareBlack * 5)) * tMultiple

@@ -7,16 +7,59 @@ import { ID } from "./dataId.js";
 import { gameVar, userSystem } from "./game.js";
 import { fieldSystem } from "./field.js";
 import { game, gameFunction } from "./game.js";
-import { GraphicSystem } from "./tamsaEngine/graphic.js";
 
 let digitalDisplay = gameFunction.digitalDisplay
+let loadComplete = false
+
+/** 시스템에서 가장 먼저 로드될 이미지 목록 */
+let systemImageList = []
+for (let target in imageSrc.system) {
+  let src = imageSrc.system[target]
+  systemImageList.push(src)
+}
+systemImageList.push(imageSrc.weaponImage) // 무기 이미지
+systemImageList.push(imageSrc.system.roundIcon) // 라운드 아이콘 이미지
+
+// 이미지 생성 시작
+for (let i = 0; i < systemImageList.length; i++) {
+  game.graphic.createImage(systemImageList[i])
+}
+
+// 사운드 생성 시작
+let systemSoundList = []
+for (let target in soundSrc.system) {
+  let src = soundSrc.system[target]
+  systemSoundList.push(src)
+}
+for (let target in soundSrc.skill) {
+  let src = soundSrc.skill[target]
+  systemSoundList.push(src)
+}
+
+for (let i = 0; i < systemSoundList.length; i++) {
+  game.sound.createAudio(systemSoundList[i])
+}
 
 game.process = () => {
   gameSystem.process()
 }
 game.display = () => {
-  gameSystem.display()
+  if (loadComplete) {
+    gameSystem.display()
+  } else {
+    let imageLoadCount = game.graphic.getImageCompleteCount(systemImageList)
+    let soundLoadCount = game.sound.getAudioLoadCompleteCount(systemSoundList)
+    game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, 80, 'grey')
+    digitalDisplay('tamshooter 4 loading system', 0, 0)
+    digitalDisplay('image load: ' + imageLoadCount + '/' + systemImageList.length, 0, 20)
+    digitalDisplay('sound load: ' + soundLoadCount + '/' + systemSoundList.length, 0, 40)
+    if (imageLoadCount === systemImageList.length) {
+      // 사운드는 유저 제스처를 사용하기 전까지 로드 할 수 없으므로, 이미지 로드 여부만 파악합니다.
+      loadComplete = true
+    }
+  }
 }
+
 
 class BoxObject {
   /**
@@ -426,7 +469,7 @@ class MainSystem extends MenuSystem {
 
   display () {
     super.display()
-    game.graphic.imageView(imageSrc.tamshooter4Title, 0, 0)
+    game.graphic.imageView(imageSrc.system.tamshooter4Title, 0, 0)
   }
 }
 
@@ -695,7 +738,7 @@ class RoundSelectSystem extends MenuSystem {
   /** 커서 모드 */ cursorMode = this.CURSORMODE_MAIN
   /** 최소 라운드: 게임은 1라운드부터 시작 */ MIN_ROUND = 1
   /** 최대 라운드: 8 */ MAX_ROUND = 8
-  roundIcon = imageSrc.roundIcon
+  roundIcon = imageSrc.system.roundIcon
   roundIconSize = { width: 59, height: 59 }
 
 
@@ -917,7 +960,7 @@ class RoundSelectSystem extends MenuSystem {
         const imageSection = 60 // 이미지의 공간 (60x60의 공간중 59x59가 이미지 (나머지 공간은 확대/축소할 때 안티에일러싱 방지용))
         const positionX = position % 10
         const positionY = Math.floor(position / 10) 
-        game.graphic.imageDisplay(imageSrc.roundIcon, positionX * imageSection, positionY * imageSection, imageSize, imageSize, this.menuList[i].x, this.menuList[i].y, imageSize, imageSize)
+        game.graphic.imageDisplay(imageSrc.system.roundIcon, positionX * imageSection, positionY * imageSection, imageSize, imageSize, this.menuList[i].x, this.menuList[i].y, imageSize, imageSize)
       }
 
       // 이미지에 가려져서 무엇이 선택되었는지 알기 어려우므로, 따로 사격형을 먼저 칠합니다.
@@ -980,7 +1023,7 @@ class RoundSelectSystem extends MenuSystem {
         const imageSection = 60 // 이미지의 공간 (60x60의 공간중 59x59가 이미지 (나머지 공간은 확대/축소할 때 안티에일러싱 방지용))
         const positionX = position % 10
         const positionY = Math.floor(position / 10) 
-        game.graphic.imageDisplay(imageSrc.roundIcon, positionX * imageSection, positionY * imageSection, imageSize, imageSize, this.menuList[i].x, this.menuList[i].y, imageSize, imageSize)
+        game.graphic.imageDisplay(imageSrc.system.roundIcon, positionX * imageSection, positionY * imageSection, imageSize, imageSize, this.menuList[i].x, this.menuList[i].y, imageSize, imageSize)
       }
 
       // 이미지에 가려져서 무엇이 선택되었는지 알기 어려우므로, 따로 사격형을 먼저 칠합니다.
@@ -2024,36 +2067,36 @@ export class gameSystem {
     // 초기 불러오기 완료 설정
     this.initLoad = true
 
+    // saveFlag의 값을 불러오고, 만약 아무것도 없다면 불러오기 함수를 사용하지 않습니다.
+    const saveFlag = localStorage.getItem(this.saveKey.saveFlag)
+    if (!saveFlag) return
+    
+    // 플레이 타임 불러오기: 저장 규칙을 모르겠으면, saveKey 객체 내에 있는 변수들의 설명을 참고
+    const playTimeArray = localStorage.getItem(this.saveKey.playTime)
+    if (playTimeArray != null) {
+      const playTime = playTimeArray.split(',')
+      this.userSystem.setPlayTime(playTime[0], playTime[1], playTime[2])
+    }
+    
+    // 시작 날짜 및 시간 불러오기
+    const startDateArray = localStorage.getItem(this.saveKey.startDate)
+    if (startDateArray != null) {
+      const startDate = startDateArray.split(',')
+      this.userSystem.setStartDate(Number(startDate[0]), startDate[1], startDate[2], startDate[3], startDate[4], startDate[5])
+    }
+    
+    // 옵션 값 불러오기
+    const optionValue = localStorage.getItem(this.saveKey.optionValue)
+    if (optionValue != null) {
+      this.optionSystem.optionValue = JSON.parse(optionValue)
+    }
+    
+    const userData = localStorage.getItem(this.saveKey.userData)
+    if (userData != null) {
+      this.userSystem.setLoadData(userData)
+    }
+    
     try {
-      // saveFlag의 값을 불러오고, 만약 아무것도 없다면 불러오기 함수를 사용하지 않습니다.
-      const saveFlag = localStorage.getItem(this.saveKey.saveFlag)
-      if (!saveFlag) return
-  
-      // 플레이 타임 불러오기: 저장 규칙을 모르겠으면, saveKey 객체 내에 있는 변수들의 설명을 참고
-      const playTimeArray = localStorage.getItem(this.saveKey.playTime)
-      if (playTimeArray != null) {
-        const playTime = playTimeArray.split(',')
-        this.userSystem.setPlayTime(playTime[0], playTime[1], playTime[2])
-      }
-  
-      // 시작 날짜 및 시간 불러오기
-      const startDateArray = localStorage.getItem(this.saveKey.startDate)
-      if (startDateArray != null) {
-        const startDate = startDateArray.split(',')
-        this.userSystem.setStartDate(Number(startDate[0]), startDate[1], startDate[2], startDate[3], startDate[4], startDate[5])
-      }
-  
-      // 옵션 값 불러오기
-      const optionValue = localStorage.getItem(this.saveKey.optionValue)
-      if (optionValue != null) {
-        this.optionSystem.optionValue = JSON.parse(optionValue)
-      }
-  
-      const userData = localStorage.getItem(this.saveKey.userData)
-      if (userData != null) {
-        this.userSystem.setLoadData(userData)
-      }
-  
       const fieldSaveData = localStorage.getItem(this.saveKey.fieldData)
       if (fieldSaveData != null) {
         // 경고: localStoarge 특성상 string값으로 비교해야 합니다.
@@ -2147,6 +2190,9 @@ export class gameSystem {
         break
       case this.STATE_FIELD:
         // 필드에서는 필드 객체가 대신 이 값을 수정합니다.
+        if (gameVar.statLineText1.text === '') {
+          gameVar.statLineText1.setStatLineText('fps: ' + game.currentFps)
+        }
         break
       default:
         // 스탯라인 텍스트 지우기

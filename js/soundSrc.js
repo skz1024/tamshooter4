@@ -58,7 +58,7 @@ export class soundSrc {
     enemyDieMeteorite4: './sound/enemyDieMeteorite4.wav',
     enemyDieMeteorite5: './sound/enemyDieMeteorite5.wav',
     enemyDieMeteoriteBomb: './sound/enemyDieMeteoriteBomb.wav',
-    enemyDieMetoriteRed: './sound/enemyDieMeteoriteRed.wav',
+    enemyDieMeteoriteRed: './sound/enemyDieMeteoriteRed.wav',
     enemyDieSpaceCar: './sound/enemyDieSpaceCar.wav',
     enemyDieSpaceComet: './sound/enemyDieSpaceComet.wav',
     enemyDieSpaceEnergy: './sound/enemyDieSpaceEnergy.wav',

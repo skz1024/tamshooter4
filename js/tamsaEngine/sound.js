@@ -252,6 +252,22 @@ export class SoundSystem {
     this.createAudioSrcWaitList.push(audioSrc)
   }
 
+  /**
+   * 오디오가 얼마나 로드가 완료되었는지에 대한 개수를 표시합니다.
+   * @param {string[]} src 
+   */
+  getAudioLoadCompleteCount (src = []) {
+    let count = 0
+    for (let i = 0; i < src.length; i++) {
+      let audio = this.getCacheAudio(src[i])
+      if (audio != null && audio.networkState === audio.NETWORK_IDLE) {
+        count++
+      }
+    }
+
+    return count
+  }
+
   /** 이 함수는 반드시 터치, 클릭, 키보드 입력시에만 발동하도록 해당 이벤트 내에서 사용해주세요. */
   audioObjectCreate () {
     if (this.createAudioSrcWaitList.length === 0) return

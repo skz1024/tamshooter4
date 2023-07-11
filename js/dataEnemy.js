@@ -1918,7 +1918,7 @@ class MeteoriteEnemyRed extends MeteoriteEnemyData {
     this.setAutoImageData(this.imageSrc, imageDataList[imageDataNumber])
     this.setWidthHeight(this.width * 2, this.height * 2) // 크기 2배 증가
     this.setEnemyByCpStat(50, 40)
-    this.setDieEffectOption(soundSrc.enemyDie.enemyDieMetoriteRed, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.noiseRed, this.width, this.height, 4))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieMeteoriteRed, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.noiseRed, this.width, this.height, 4))
     this.setRandomSpeed(3, 2)
   }
 }
@@ -3039,7 +3039,7 @@ class JemulEnemyRedMeteorite extends JemulEnemyData {
     this.setAutoImageData(this.imageSrc, imageDataInfo.jemulEnemy.redMeteorite)
     this.setMoveSpeed((Math.random() * 4) - 1, (Math.random() * 4) - 1)
     this.setWidthHeight(this.width, this.height)
-    this.setDieEffectOption(soundSrc.enemyDie.enemyDieMetoriteRed)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieMeteoriteRed)
     this.isPossibleExit = false
   }
 }

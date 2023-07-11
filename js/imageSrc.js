@@ -4,9 +4,6 @@
  * 모든 변수는 static입니다.
  */
 export class imageSrc {
-  static tamshooter4Title = './image/title.png'
-  static roundIcon = './image/round/roundIcon.png'
-
   static system = {
     digitalFontBig: './image/system/digitalFont.png',
     digitalFontSmall: './image/system/digitalFontSmall.png',
@@ -19,10 +16,11 @@ export class imageSrc {
     playerDie: './image/system/playerDie.png',
     playerLevelup: './image/system/playerLevelup.png',
     playerStat: './image/system/playerStat.png',
-    bitmapFont: './image/system/bitmapFont.png',
     menuList: './image/system/menuList.png',
     skillInfo: './image/system/skillInfo.png',
     weaponIcon: './image/system/weaponIcon.png',
+    roundIcon: './image/system/roundIcon.png',
+    tamshooter4Title:'./image/system/title.png'
   }
 
   static number = {
@@ -34,8 +32,8 @@ export class imageSrc {
     jemulCreate: './image/effect/jemulCreate.png',
   }
 
-  static weapon = './image/weapon/weapon.png'
-  static skill = './image/weapon/skill.png'
+  static weaponImage = './image/weapon/weapon.png'
+  static skillImage = './image/weapon/skill.png'
 
   static weaponEffect = {
     missile: './image/weapon/missileEffect.png',

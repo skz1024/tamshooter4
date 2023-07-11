@@ -1245,23 +1245,25 @@ export class fieldSystem {
    */
   static round = null
 
-  static stateId = 0
-  static STATE_NORMAL = 0
-  static STATE_PAUSE = 1
-  static STATE_ROUND_CLEAR = 2
-  static STATE_GAME_OVER = 3
-  static STATE_EXIT = 4
+  /** 현재 상태값을 표시하는 ID */ static stateId = 0
+  /** 일반적인 게임 진행 상태 */ static STATE_NORMAL = 0
+  /** 게임 중 일시정지 */ static STATE_PAUSE = 1
+  /** 라운드를 클리어 한 경우 */ static STATE_ROUND_CLEAR = 2
+  /** 게임 오버가 된 경우 */ static STATE_GAME_OVER = 3
+  /** 사용자가 라운드 진행을 중단하고 나간 경우 */ static STATE_EXIT = 4
+  /** 로딩 중인 경우 */ static STATE_LOADING = 5
+  /** 불러오기를 한 직후의 로딩 상태: 이것은 PAUSE를 유도하기 위해 만들어졌습니다. */ static STATE_LOADING_PAUSE = 6
 
   /** pause 상태일 때, 커서 번호 */ static cursor = 0
-  static exitDelayCount = 0
-  static EXIT_ROUND_CLEAR_DELAY = 360
-  static EXIT_GAME_OVER_DELAY = 360
-  static EXIT_FAST_DELAY = 180
-  static SCORE_ENIMATION_MAX_FRAME = 60
-  static SCORE_ENIMATION_INTERVAL = 4
-  static enimationFrame = 0
-  static totalScore = 0
-  static fieldScore = 0
+  /** 라운드 결과에 따른 지연시간이 진행된 정도 */ static exitDelayCount = 0
+  /** 라운드를 클리어 했을 때, 지정된 프레임 만큼 시간이 지나면 자동으로 나갑니다. */ static EXIT_ROUND_CLEAR_DELAY = 360
+  /** 게임 오버가 되었을 때, 지정된 프레임 만큼 시간이 지나면 자동으로 나갑니다. */ static EXIT_GAME_OVER_DELAY = 360
+  /** 사용자가 나갔을 때, 지정된 프레임 만큼 시간이 지나면 자동으로 나갑니다. */ static EXIT_FAST_DELAY = 180
+  /** 에니메이션의 최대 프레임 */ static SCORE_ENIMATION_MAX_FRAME = 60
+  /** 점수 에니메이션이 표시되는 간격 */ static SCORE_ENIMATION_INTERVAL = 4
+  /** 현재까지 진행된 에니메이션의 총 프레임 */ static scoreEnimationFrame = 0
+  /** 총 점수 */ static totalScore = 0
+  /** 필드 점수 (필드 내에서 획득한 모든 점수) */ static fieldScore = 0
 
   /** 
    * 다른 객체에서 이 객체를 참조하는 도중에 전달되는 메세지 값  
@@ -1297,7 +1299,7 @@ export class fieldSystem {
   /**
    * 라운드 오브젝트를 생성하고 이 객체을 리턴합니다.
    */
-  static createRound (roundId) {
+  static createRound (roundId = 0) {
     const RoundClass = tamshooter4Data.getRound(roundId)
     if (RoundClass == null) return
 
@@ -1322,11 +1324,11 @@ export class fieldSystem {
 
     // 라운드가 시작되는 순간, 게임 상태가 필드로 변경되고, 게임이 시작됩니다.
     // 이 과정에서 필드 데이터에 대해 초기화가 진행됩니다.
-    
+    this.roundImageSoundLoad() // 라운드 데이터 로드
 
     this.message = this.messageList.STATE_FIELD
     fieldState.allObjectReset()
-    this.stateId = this.STATE_NORMAL
+    this.stateId = this.STATE_LOADING // 로딩 먼저 시작하고, 이것이 완료되면 로딩 과정을 생략
     this.cursor = 0
     this.enimationFrame = 0
     this.exitDelayCount = 0
@@ -1334,6 +1336,24 @@ export class fieldSystem {
     this.fieldScore = 0
 
     // 참고: 배경음악 재생 및 처리는 라운드 내부에서 처리합니다. 필드에서 처리하지 않습니다.
+    if (this.getRoundImageSoundLoadComplete()) {
+      this.stateId = this.STATE_NORMAL // 로드 완료시 자동으로 일반상태로 변경
+      // 아닌경우에는, 다시 로딩체크를 합니다. (process에서 추가로 진행)
+    }
+  }
+
+  /** 라운드에서 사용할 이미지와 사운드 파일을 로드합니다. */
+  static roundImageSoundLoad () {
+    if (this.round == null) return
+    this.round.loadingImageSound()
+  }
+
+  static getRoundImageSoundLoadComplete () {
+    if (this.round != null && this.round.loadCheck()) {
+      return true
+    } else {
+      return false
+    }
   }
 
   /**
@@ -1402,11 +1422,21 @@ export class fieldSystem {
     }
   }
 
+  static processLoad () {
+    if (this.getRoundImageSoundLoadComplete()) {
+      if (this.stateId === this.STATE_LOADING) {
+        this.stateId = this.STATE_NORMAL
+      } else {
+        this.stateId = this.STATE_PAUSE
+      }
+    }
+  }
+
   static processExit () {
     // 사용자가 나가면 현재까지 얻은 점수를 보여줌, 따로 출력할 배경 사운드는 없음
     this.scoreSound()
 
-    this.enimationFrame++
+    this.scoreEnimationFrame++
     this.exitDelayCount++
 
     if (this.exitDelayCount >= this.EXIT_FAST_DELAY) {
@@ -1424,7 +1454,7 @@ export class fieldSystem {
 
     this.scoreSound()
 
-    this.enimationFrame++
+    this.scoreEnimationFrame++
     this.exitDelayCount++
 
     if (this.exitDelayCount >= this.EXIT_ROUND_CLEAR_DELAY) {
@@ -1440,7 +1470,7 @@ export class fieldSystem {
 
     this.scoreSound()
 
-    this.enimationFrame++
+    this.scoreEnimationFrame++
     this.exitDelayCount++
 
     if (this.exitDelayCount >= this.EXIT_GAME_OVER_DELAY) {
@@ -1495,6 +1525,10 @@ export class fieldSystem {
         this.processExit()
         game.control.getButtonInput(game.control.buttonIndex.START) // 버튼 중복 누르기 방지용
         break
+      case this.STATE_LOADING:
+      case this.STATE_LOADING_PAUSE:
+        this.processLoad()
+        break
       default:
         this.processNormal()
         break
@@ -1502,6 +1536,11 @@ export class fieldSystem {
   }
 
   static display () {
+    if (this.stateId === this.STATE_LOADING || this.stateId === this.STATE_LOADING_PAUSE) {
+      this.displayLoading()
+      return
+    }
+
     // 라운드, 필드스테이트, 필드데이터는 항상 출력됩니다.
     if (this.round) this.round.display()
     fieldState.display()
@@ -1516,6 +1555,20 @@ export class fieldSystem {
       case this.STATE_EXIT:
         this.displayResult()
         break
+      case this.STATE_LOADING:
+        break
+    }
+  }
+
+  /** 로딩 중인 하면을 출력합니다. */
+  static displayLoading () {
+    game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, 100, 'grey')
+    digitalDisplay('tamshooter4 loading system', 0, 0)
+    if (this.round != null) {
+      let loadStatus = this.round.getLoadStatus()
+      digitalDisplay(loadStatus[0], 0, 20)
+      digitalDisplay(loadStatus[1], 0, 40)
+      digitalDisplay(loadStatus[2], 0, 60)
     }
   }
 
@@ -1650,7 +1703,7 @@ export class fieldSystem {
       stateId: this.stateId,
       fieldScore: this.fieldScore,
       totalScore: this.totalScore,
-      enimationFrame: this.enimationFrame,
+      enimationFrame: this.scoreEnimationFrame,
       exitDelayCount: this.exitDelayCount,
     }
     
@@ -1725,7 +1778,8 @@ export class fieldSystem {
       throw new Error('round id error. game load fail')
     }
 
-    this.round.setLoadData(loadData.round)
+    this.round.setLoadData(loadData.round) // 저장된 데이터 불러오기
+    this.roundImageSoundLoad() // 라운드 이미지 사운드 로드
     
     // 필드 불러오기
     this.stateId = loadData.field.stateId
@@ -1738,6 +1792,6 @@ export class fieldSystem {
     this.processNormal()
 
     // 게임을 불러오기 했다면, 일시정지 상태가 됩니다.
-    this.stateId = this.STATE_PAUSE
+    this.stateId = this.STATE_LOADING_PAUSE
   }
 }
