@@ -2871,15 +2871,16 @@ class Round2_2 extends RoundData {
 
     // 에코 효과 추가 (터널)
     // 각각 에코, 피드백, 딜레이, 시간 변경 기준임
-    const echoValue = [0.1, 0.3, 0.5, 0.6, 0.7, 0.6, 0.5, 0.3, 0.1, 0]
-    const feedValue = [0.1, 0.3, 0.4, 0.5, 0.6, 0.5, 0.4, 0.3, 0.1, 0]
-    const delayValue = 0.3
-    const changeTime = [24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54]
-    for (let i = 0; i < changeTime.length - 1; i++) {
-      if (this.currentTime >= changeTime[i] && this.currentTime < changeTime[i + 1]) {
-        game.sound.setEcho(echoValue[i], feedValue[i], delayValue)
-      }
-    }
+    // 해당값은 더이상 적용되지 않습니다.
+    // const echoValue = [0.1, 0.3, 0.5, 0.6, 0.7, 0.6, 0.5, 0.3, 0.1, 0]
+    // const feedValue = [0.1, 0.3, 0.4, 0.5, 0.6, 0.5, 0.4, 0.3, 0.1, 0]
+    // const delayValue = 0.3
+    // const changeTime = [24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54]
+    // for (let i = 0; i < changeTime.length - 1; i++) {
+    //   if (this.currentTime >= changeTime[i] && this.currentTime < changeTime[i + 1]) {
+    //     game.sound.setEcho(echoValue[i], feedValue[i], delayValue)
+    //   }
+    // }
 
     // 버그 방지용 에코 끄기 기능
     if (this.timeCheckInterval(55, 60)) {
@@ -3071,6 +3072,9 @@ class Round2_3 extends RoundData {
       /** 남은 플레이어의 체력(a1, a2 구역에서 사용) */ playerHp: 100,
       /** 남은 적의 체력 (a1, a2 구역에서 사용) */ enemyHp: 100,
 
+      // 기준 스탯
+      /** a2 구역에서 사용하는 HP의 기본 상수값 */ a2BaseHp: 800,
+
       // 플레이어 관련 이동 스탯
       /** 플레이어의 무적 프레임 */ playerInvincibleFrame: 0,
       /** 플레이어 체력에 대한 에니메이션 (현재값으로 서서히 감소하도록 에니메이션 처리) */ playerHpEnimation: 100,
@@ -3082,6 +3086,7 @@ class Round2_3 extends RoundData {
       /** 플레이어 이동 불가 시간 */ playerMoveImpossibleFrameCount: 0,
 
       // 기타 스탯
+      /** 적의 HP나 플레이어의 HP가 과도하게 빠르게 줄어들 수 없도록 지연시간이 추가됨 (a1 구역만 가능) */ hpLowMax: 100,
       /** 플레이어가 모은 파워 (a3 구역에서 사용) */ powerPlayer: 0,
       /** 적이 모은 파워 (a3 구역에서 사용) */ powerEnemy: 0,
       /** 총 워프 횟수 (b2 구역에서 사용) */ warpCount: 0,
@@ -3131,8 +3136,6 @@ class Round2_3 extends RoundData {
       isShow: false,
       image: imageSrc.round.round2_3_course,
     }
-
-    game.graphic.createImage(this.boxMap.image)
 
     /** 현재 코스 선택 모드에 있는지에 대한 여부 */
     this.isCourseSelectMode = false
@@ -3196,11 +3199,11 @@ class Round2_3 extends RoundData {
 
     this.scoreList = {
       COMPLETE1: 19200,
-      COMPLETE2: 19500,
+      COMPLETE2: 19400,
       COMPLETE3: 19800,
-      LOSE1: 18900,
+      LOSE1: 19100,
       LOSE2: 19200,
-      LOSE3: 19500
+      LOSE3: 19700
     }
 
     this.addLoadingImageList([
@@ -3210,6 +3213,7 @@ class Round2_3 extends RoundData {
       imageSrc.round.round2_3_result,
       imageSrc.round.round2_3_course,
       imageSrc.round.round2_3_status,
+      this.boxMap.image
     ])
 
     this.addLoadingSoundList([
@@ -3336,6 +3340,7 @@ class Round2_3 extends RoundData {
     this.setResult(this.resultList.NOTHING) // 결과 화면 표시 제거
   }
 
+  /** 코스 선택 모드로 변경 */
   setCourseSelectMode () {
     this.setResult(this.resultList.NOTHING) // 결과 화면 표시 제거
     this.isCourseSelectMode = true
@@ -3352,6 +3357,7 @@ class Round2_3 extends RoundData {
     this.playerMoveDisable()
   }
 
+  /** 일반 모드로 변경 */
   setNormalMode () {
     this.isCourseSelectMode = false
     this.boxMap.isShow = false
@@ -3377,6 +3383,7 @@ class Round2_3 extends RoundData {
       this.setCurrentTimePause(true)
     }
 
+    // 아래, 위 버튼으로 코스 변경
     if (controlSystem.getButtonInput(controlSystem.buttonIndex.DOWN) && this.courseCursorNumber < 2) {
       this.courseCursorNumber++
     } else if (controlSystem.getButtonInput(controlSystem.buttonIndex.UP) && this.courseCursorNumber > 0) {
@@ -3386,9 +3393,8 @@ class Round2_3 extends RoundData {
     // 박스 보여지도록 허용
     this.boxMap.isShow = true
 
-    // 코스 선택 버튼을 누르거나, 또는 플레이어를 앞으로 이동시킨 경우
-    if (controlSystem.getButtonInput(controlSystem.buttonIndex.A) || controlSystem.getButtonInput(controlSystem.buttonIndex.RIGHT)) {
-      // 코스 선택 종료 (해당 값을 선택한 것으로 처리)
+    // 코스 선택 버튼을 누르면 코스 선택 종료 (해당 값을 선택한 것으로 처리)
+    if (controlSystem.getButtonInput(controlSystem.buttonIndex.A)) {
       this.changeCourse()
     }
 
@@ -3412,8 +3418,8 @@ class Round2_3 extends RoundData {
 
   processDebug () {
     if (this.timeCheckFrame(0, 12)) {
-      // this.currentTime = 124
-      // this.courseName = 'a2'
+      this.currentTime = 124
+      this.courseName = 'a2'
     }
   }
 
@@ -3583,15 +3589,15 @@ class Round2_3 extends RoundData {
     this.displayResult()
     this.displayStatus()
     
-    // 일부 구역은 추가적인 출력 함수가 없을수도 있음.
+    // 일부 구역은 추가적인 출력 함수가 있을 수도 있음
     switch (this.courseName) {
       case 'a1': this.displayCoursePhaseA1(); break
       case 'a2': this.displayCoursePhaseA2(); break
       case 'a3': this.displayCoursePhaseA3(); break
-      case 'c3': this.displayCoursePhaseC3(); break
     }
   }
 
+  /** 결과 값에 따른 이미지 출력 */
   displayResult () {
     if (this.result === this.resultList.NOTHING) return
 
@@ -3614,6 +3620,7 @@ class Round2_3 extends RoundData {
     graphicSystem.imageDisplay(imageSrc.round.round2_3_result, showD.x, showD.y, showD.width, showD.height, centerX, 200, showD.width, showD.height)
   }
 
+  /** 각 구역에 대한 스탯을 보여줍니다. */
   displayStatus () {
     // 이 스탯 화면은 정해진 시간에만 보여집니다.
     const currentPhaseTime = this.phaseTime[this.getCurrentPhase()].startTime
@@ -3673,12 +3680,16 @@ class Round2_3 extends RoundData {
       this.donggramiNumberDisplay(this.areaStat.score, timeX - (imgWidth * 2) + 10, numberY)
       this.donggramiNumberDisplay(this.areaStat.squareBlack, timeX + imgWidth + 10, numberY)
     } else if (this.courseName === 'c3') {
-      this.donggramiNumberDisplay(this.areaStat.goal, timeX - (imgWidth * 2) + 10, numberY)
+      this.donggramiNumberDisplay(this.areaStat.goal, timeX - imgWidth + 10, numberY)
     }
   }
 
   /**
    * 결과를 설정합니다. (해당 함수를 사용하면, 잠시동안 결과 화면이 출력되고, 보이스가 출력됩니다.)
+   * 
+   * 결과 목록은 여러개가 있으며, ready는 준비 상태, start 또는 fight는 시작 상태
+   * win, lose, draw, complete는 결과 상태를 보여줍니다.
+   * 
    * @param {string} resultValue resultList 값 중 하나
    */
   setResult (resultValue) {
@@ -3724,12 +3735,14 @@ class Round2_3 extends RoundData {
       this.setResult(this.resultList.NOTHING)
     }
 
+    // HP 에니메이션은 areaRunning 여부와 관계없이 실행됨
+    this.coursePhaseA1PlayerHpEnimation()
+
     // 전투에 관한 처리
     if (!this.areaRunningTimeCheck()) return
 
     this.coursePhaseA1PlayerDamage()
     this.coursePhaseA1EnemyDamage()
-    this.coursePhaseA1PlayerHpEnimation()
     // 시간 감소
     if (this.currentTimeTotalFrame % 60 === 0) {
       this.areaStat.battleLeftTime--
@@ -3803,19 +3816,18 @@ class Round2_3 extends RoundData {
 
   /** 적 데미지를 처리하기 위한 함수 */
   coursePhaseA1EnemyDamage () {
+    // 이 규칙에 따라, 41초가 지나야 적을 죽이는것이 가능
+    // 플레이어는 무적시간이 긴 편이라서, 45초내에 죽는것은 어렵다.
+    this.areaStat.hpLowMax = (this.areaStat.time * 2)
+
     let enemy = this.getEnemyObject()[0]
 
     // 적이 없거나 정해진 적이 아닐경우 함수 처리 무시
     if (enemy == null || enemy.id !== ID.enemy.donggramiSpace.a1_fighter) return
 
-    const baseValue = 250000 // 실제 체력: 2500000
-    if (enemy.hpMax - enemy.hp >= baseValue) {
-      enemy.hp += baseValue
-      this.areaStat.enemyHp -= 10
-    }
-
+    const baseValue = 300000 // 실제 체력: 3000000
     const someValue = baseValue / 10
-    if (enemy.hpMax - enemy.hp >= someValue) {
+    if (enemy.hpMax - enemy.hp >= someValue && this.areaStat.enemyHp >= this.areaStat.hpLowMax) {
       enemy.hp += someValue
       this.areaStat.enemyHp -= 1
     }
@@ -3851,16 +3863,17 @@ class Round2_3 extends RoundData {
     let earthQuakeObject2 = {x: enemy.x, y: 0, width: enemy.width, height: graphicSystem.CANVAS_HEIGHT} // 상하 영역 전체
     let hammerObject = {x: enemy.centerX - (enemy.width / 2), y: enemy.y - (enemy.height) + 48, width: 180, height: 180}
 
+    // 적의 상태에 따라 판정 범위가 달라지며, 충돌이 된경우 각 조건에 따라 데미지 추가
     let damage = 0
     if (enemy.state === STATE_NORMAL && collision(playerP, enemyObject)) {
-      damage = 4
+      damage = 1
     } else if (enemy.state === STATE_BOOST && collision(playerP, enemyObject)) {
-      damage = 5
+      damage = 2
     } else if (enemy.state === STATE_HAMMER && collision(playerP, hammerObject)) {
-      damage = 12
+      damage = 4
     } else if (enemy.state === STATE_EARTHQUAKE) {
       if (collision(playerP, earthQuakeObject) || collision(playerP, earthQuakeObject2)) {
-        damage = 15
+        damage = 10
       }
     }
 
@@ -3868,7 +3881,7 @@ class Round2_3 extends RoundData {
     if (damage >= 1) {
       soundSystem.play(soundSrc.round.r2_3_a1_damage)
       this.areaStat.playerHp -= damage
-      this.areaStat.invincibleFrame = damage < 10 ? 30 : 90 // 무적프레임: 10데미지 미만 30, 이상 90
+      this.areaStat.invincibleFrame = damage < 10 ? 60 : 180 // 무적프레임: 10데미지 미만 30, 이상 90
       const autoMoveX = (Math.random() * 120 - 60) + playerP.x
       const autoMoveY = this.state === STATE_EARTHQUAKE ? (Math.random() * 120 - 60) + 120 : (Math.random() * 240 - 120) + playerP.y
       playerP.setAutoMove(autoMoveX, autoMoveY, 30)
@@ -3876,8 +3889,6 @@ class Round2_3 extends RoundData {
   }
 
   displayCoursePhaseA1 () {
-    const phase1Start = this.phaseTime[1].startTime
-    const cTime = this.checkTimeList
     if (!this.areaShowResultTimeCheck()) return
 
     // 플레이어의 체력값과 적의 체력값 표시
@@ -3919,7 +3930,10 @@ class Round2_3 extends RoundData {
     // 시간 범위에 해당하는 로직 처리 (아닐경우 리턴)
     if (!this.areaRunningTimeCheck()) return
 
+    // 플레이어는 강제로 특정 형태로만 이동됨
     this.coursePhaseB1PlayerMove()
+
+    // 적의 수가 10마리가 되도록 처리
     if (this.getEnemyCount() < 10) {
       this.createEnemy(ID.enemy.donggramiSpace.b1_bounce)
     }
@@ -4119,6 +4133,7 @@ class Round2_3 extends RoundData {
     // 구역 진행 (정해진 시간 외의 로직을 처리하지 않습니다.)
     if (!this.areaRunningTimeCheck()) return
 
+    // 각 시간마다 다른 종류의 총알 등장
     if (this.timeCheckInterval(phase1Start + 5, phase1Start + 11, 6)) {
       fieldState.createEnemyBulletObject(BulletBase)
     } else if (this.timeCheckInterval(phase1Start + 12, phase1Start + 17, 6)) {
@@ -4153,9 +4168,9 @@ class Round2_3 extends RoundData {
       this.musicPlay()
       this.setResult(this.resultList.READY)
       this.areaStat.time = 45
-      this.areaStat.playerHp = 1000
+      this.areaStat.playerHp = this.areaStat.a2BaseHp
       this.areaStat.playerHpEnimation = this.areaStat.playerHp
-      this.areaStat.enemyHp = 1000
+      this.areaStat.enemyHp = this.areaStat.a2BaseHp
       this.areaStat.createEnemyCount = 0
     } else if (this.timeCheckFrame(phase2Time + cTime.START)) {
       this.setResult(this.resultList.FIGHT)
@@ -4172,7 +4187,7 @@ class Round2_3 extends RoundData {
       this.setResult(this.resultList.NOTHING)
     }
 
-    // 벽돌 생성
+    // 결과값이 ready일 때 미리 벽돌 생성
     if (this.timeCheckInterval(phase2Time + cTime.READY + 1, phase2Time + cTime.READY + 2, 10) && this.getEnemyCount() < 5) {
       const positionX = graphicSystem.CANVAS_WIDTH - 100
       const positionY = 100 * ((this.getEnemyCount() % 5) + 1)
@@ -4196,6 +4211,7 @@ class Round2_3 extends RoundData {
     // 지속적인 벽돌 생성
     if (this.currentTimeTotalFrame % 20 === 0) {
       for (let i = 1; i < 6; i++) { // 맨 위의 벽돌은 생성시키지 않음
+        // 2% 확률로 폭탄 벽돌 생성
         let bombRandom = Math.random() * 100 < 2 ? true : false
         const positionX = graphicSystem.CANVAS_WIDTH
         const positionY = 100 * (i % 6)
@@ -4213,19 +4229,19 @@ class Round2_3 extends RoundData {
     // 생성된 개수가 적의 수보다 많으면 벽돌을 죽인것으로 생각하고 해당 카운트를 감소시킵니다.
     if (this.areaStat.createEnemyCount > this.getEnemyCount()) {
       this.areaStat.createEnemyCount--
-      this.areaStat.enemyHp -= 2
+      this.areaStat.enemyHp -= 1
     }
 
     // 플레이어와 벽돌의 충돌 판정
     let playerP = this.getPlayerObject()
     let enemy = this.getEnemyObject()
     for (let i = 0; i < enemy.length; i++) {
-      if (collision(playerP, enemy[i])) {
+      if (this.areaStat.damageSoundDelayCount <= 0 && collision(playerP, enemy[i])) {
         playerP.shield += 10
-        this.areaStat.playerHp -= 2
+        this.areaStat.playerHp -= 4
         if (this.areaStat.damageSoundDelayCount <= 0) {
           soundSystem.play(soundSrc.round.r2_3_a1_damage)
-          this.areaStat.damageSoundDelayCount = 10
+          this.areaStat.damageSoundDelayCount = 15
         }
         break
       }
@@ -4269,6 +4285,7 @@ class Round2_3 extends RoundData {
 
   coursePhaseA2PlayerHpEnimation () {
     // 플레이어 데미지 요소를 부드럽게 그리고 반짝이게 하기 위한 에니메이션 처리
+    // a1 구역에서 사용하는 함수와 데미지 변화 값이 서로 다릅니다.
     if (this.areaStat.playerHp < this.areaStat.playerHpEnimation && this.currentTimeTotalFrame % 2 === 0) {
       this.areaStat.playerHpEnimation--
       this.areaStat.playerHpEnimationFrame += 2
@@ -4282,11 +4299,16 @@ class Round2_3 extends RoundData {
     if (this.areaStat.playerHpEnimationFrame > 0) {
       this.areaStat.playerHpEnimationFrame--
     }
+
+    if (this.areaStat.playerHp <= 0) {
+      this.areaStat.playerHp = 0
+    }
+    if (this.areaStat.enemyHp <= 0) {
+      this.areaStat.enemyHp = 0
+    }
   }
 
   displayCoursePhaseA2 () {
-    const phase2Start = this.phaseTime[2].startTime
-    const cTime = this.checkTimeList
     if (!this.areaShowResultTimeCheck()) return
 
     // 플레이어의 체력값과 적의 체력값 표시
@@ -4294,15 +4316,13 @@ class Round2_3 extends RoundData {
     digitalDisplay('ENEMY HP: ' + this.areaStat.enemyHp, 450, 70)
 
     // 플레이어의 체력은 왼쪽부터 오른쪽으로 이동하는 구조... 그리고 에니메이션 형태로 조작됨
-    const percent = this.areaStat.playerHpEnimation / 1000
+    const percent = this.areaStat.playerHpEnimation / this.areaStat.a2BaseHp
     const divValue = 350 * percent
     const playerHpColor = this.areaStat.playerHpEnimationFrame % 3 === 0 ? 'green' : 'yellow' 
     graphicSystem.meterRect(350 - divValue, 30, divValue, 40, playerHpColor, 100, 100) // 엄밀히 따지면 meterRect를 사용하나 fillRect를 사용하나 같음
 
     // 적 체력 표시
-    graphicSystem.meterRect(450, 30, 350, 40, 'red', this.areaStat.enemyHp, 1000)
-
-    digitalDisplay('E: ' + this.areaStat.createEnemyCount + ', C: ' + this.getEnemyCount(), 0, 120)
+    graphicSystem.meterRect(450, 30, 350, 40, 'red', this.areaStat.enemyHp, this.areaStat.a2BaseHp)
   }
   
   coursePhaseA3 () {
@@ -4364,7 +4384,7 @@ class Round2_3 extends RoundData {
       fieldState.createSpriteObject(PowerObject, randomX, randomY)
     }
 
-    // 1 vs 1 승부이므로, 적은 한마리만 존재
+    // 1 vs 1 승부이므로, 적은 한마리만 존재, 그래서 0번 배열에 있는 적 데이터를 직접 가져옴
     let enemy = this.getEnemyObject()[0]
     let player = this.getPlayerObject()
 
@@ -4382,26 +4402,19 @@ class Round2_3 extends RoundData {
       }
 
       // 파워 사운드 결정 ('red', 그리고 나머지는 획득했을 때 효과음이 서로 다릅니다.)
+      // 사운드 번호는 powerPoint에 따라 지정됩니다.
       let soundNumber = 0
 
       if (collision(player, currentSprite)) {
         // 플레이어 파워 획득
         this.areaStat.powerPlayer += powerPoint
         currentSprite.isDeleted = true
-        if (powerPoint === 1) {
-          soundNumber = 1
-        } else {
-          soundNumber = 2
-        }
+        soundNumber = powerPoint === 1 ? 1 : 2
       } else if (enemy != null && collision(enemy, currentSprite)) {
         // 적 파워 획득
         this.areaStat.powerEnemy += powerPoint
         currentSprite.isDeleted = true
-        if (powerPoint === 1) {
-          soundNumber = 1
-        } else {
-          soundNumber = 2
-        }
+        soundNumber = powerPoint === 1 ? 1 : 2
       }
 
       if (soundNumber === 1) {
@@ -4574,11 +4587,12 @@ class Round2_3 extends RoundData {
         this.degree = Math.floor(Math.random() * 12) * 30
 
         // 에니메이션 개체는 enimation.degree를 사용해야 회전한 형태로 출력이 가능합니다.
+        // 참고: 추후에 이와 관련한 로직을 수정할 예정
         if (this.enimation != null) {
           this.enimation.degree = this.degree
         }
 
-        this.moveDelay = new DelayData(240)
+        this.moveDelay = new DelayData(120)
       }
 
       process () {
@@ -4748,7 +4762,7 @@ class Round2_3 extends RoundData {
 
     // 결과 처리
     if (this.areaStat.time === 0 && this.result === this.resultList.NOTHING) {
-      if (this.areaStat.score >= 10000) {
+      if (this.areaStat.score >= 5000) {
         this.setResult(this.resultList.COMPLETE)
       } else {
         this.setResult(this.resultList.LOSE)
@@ -4928,14 +4942,15 @@ class Round2_3 extends RoundData {
         }
       }
   
-      if (squareBlackCount < 16) {
+      if (squareBlackCount < this.areaStat.squareBlackMax) {
         fieldState.createSpriteObject(BlackSquare)
       }
-      if (squareRedCount < 3) {
+      if (squareRedCount < 4) {
         fieldState.createSpriteObject(RedSquare)
       }
     }
 
+    // 특수 사각형 생성
     if (this.currentTimeTotalFrame % 180 === 0) {
       let random = Math.floor(Math.random() * 2)
       switch (random) {
@@ -4944,6 +4959,7 @@ class Round2_3 extends RoundData {
       }
     }
 
+    // 특수 사각형 생성
     if (this.currentTimeTotalFrame % 359 === 0) {
       fieldState.createSpriteObject(PinkSquare)
     }
@@ -4972,21 +4988,24 @@ class Round2_3 extends RoundData {
 
     if (!this.areaRunningTimeCheck()) return
 
+    // 스프라이트가 없을 때만 스프라이트 생성
     let sprite = this.getSpriteObject()
     if (sprite.length === 0) {
       this.coursePhaseC3TrapCreate()
     }
     
+    // 플레이어가 goal 영역에 있는지를 확인합니다.
     for (let i = 0; i < sprite.length; i++) {
       if (sprite[i].message === 'green' && collision(player, sprite[i])) {
         this.soundPlay(soundSrc.round.r2_3_b2_warp)
-        player.x = 0
-        this.areaStat.goal++
-        // 모든 스프라이트 삭제
-        fieldState.allSpriteDelete()
+        player.x = 0 // 플레이어 위치 강제 이동
+        player.y = 100
+        this.areaStat.goal++ // 골 수 증가
+        fieldState.allSpriteDelete() // 모든 스프라이트 삭제
       }
     }
 
+    // 시간이 다 되었을 때 1개 이상의 골인경우는 컴플리트 처리, 5개를 클리어해도 마찬가지
     if (this.areaStat.goal >= 5 || this.areaStat.time === 0) {
       if (this.areaStat.goal >= 1) {
         this.setResult(this.resultList.COMPLETE)
@@ -5001,7 +5020,7 @@ class Round2_3 extends RoundData {
   }
 
   coursePhaseC3TrapClass () {
-    // 함정 표시
+    /** 함정 스프라이트 */
     let Trap = class extends FieldData {
       constructor () {
         super()
@@ -5013,6 +5032,7 @@ class Round2_3 extends RoundData {
       }
     }
 
+    /** 위쪽 영역의 벽 */
     let TrapWallUp = class extends Trap {
       afterInit () {
         this.x = 0
@@ -5030,6 +5050,7 @@ class Round2_3 extends RoundData {
       }
     }
 
+    /** 아래쪽 영역의 벽 */
     let TrapWallDown = class extends Trap {
       afterInit () {
         this.x = 0
@@ -5047,6 +5068,7 @@ class Round2_3 extends RoundData {
       }
     }
 
+    /** 닿으면 안되는 함정 */
     let TrapRed = class extends Trap {
       afterInit () {
         this.color = 'red'
@@ -5057,6 +5079,7 @@ class Round2_3 extends RoundData {
       process () {
         super.process()
         let player = fieldState.getPlayerObject()
+        // 플레이어랑 충돌한경우, 플레이어의 위치가 리셋됩니다.
         if (collision(player, this)) {
           soundSystem.play(soundSrc.round.r2_3_a1_damage)
           player.x = 0
@@ -5065,6 +5088,7 @@ class Round2_3 extends RoundData {
       }
     }
 
+    /** 왼쪽, 오른쪽으로 움직이는 빨간 사각형 */
     let TrapRedLeftRight = class extends TrapRed {
       constructor () {
         super()
@@ -5098,6 +5122,7 @@ class Round2_3 extends RoundData {
       }
     }
 
+    /** 아래, 위로 움직이는 사각형 */
     let TrapRedUpDown = class extends TrapRed {
       constructor () {
         super()
@@ -5131,6 +5156,7 @@ class Round2_3 extends RoundData {
       }
     }
 
+    /** 골인 지점 */
     let TrapGreen = class extends Trap {
       afterInit () {
         this.color = 'green'
@@ -5202,10 +5228,10 @@ class Round2_3 extends RoundData {
       case 2:
         // 구성
         // P |            |G
-        //   |     RRR    |
-        //      
-        //   |
-        //   |
+        //   |  R  R  R   |
+        //   |   
+        //   |  R  R  R |
+        //              |
         fieldState.createSpriteObject(trap.TrapGreen, 700, 100)
         for (let i = 0; i < 7; i++) {
           fieldState.createSpriteObject(trap.TrapRed, 150, i * 50 + 100)
@@ -5258,10 +5284,6 @@ class Round2_3 extends RoundData {
         fieldState.createSpriteObject(trap.TrapRed, 550, 110)
         break
     }
-  }
-
-  displayCoursePhaseC3 () {
-
   }
 }
 

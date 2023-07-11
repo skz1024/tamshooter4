@@ -11,7 +11,7 @@ import { TamsaEngine } from "./tamsaEngine/tamsaEngine.js"
 export let game = new TamsaEngine('tamshooter4', 800, 600, 'js/tamsaEngine/', 60)
 
 // 디버그용 전역변수로 만들기...
-window.debugGame = game
+// window.debugGame = game
 
 class StatLineText {
   /** 새로운 스탯라인 텍스트 생성 */

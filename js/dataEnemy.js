@@ -4485,7 +4485,7 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
 class DonggramiSpaceB1Bounce extends DonggramiEnemyBounce {
   constructor () {
     super()
-    this.setEnemyStat(200000, 0, 0)
+    this.setEnemyStat(20000000, 0, 0)
 
     // 충돌된경우, 서로 튕겨져 나갑니다.
     this.STATE_COLLISION = 'collision'
@@ -4538,7 +4538,7 @@ class DonggramiSpaceB1Bounce extends DonggramiEnemyBounce {
 class DonggramiSpaceA2Brick extends EnemyData {
   constructor () {
     super()
-    this.setEnemyStat(4000, 0, 0)
+    this.setEnemyStat(5000, 0, 0)
     let random = Math.floor(Math.random() * 4)
     let imageDataList = [
       imageDataInfo.donggramiSpace.brick1,
@@ -4600,7 +4600,7 @@ class DonggramiSpaceA2Bomb extends DonggramiSpaceA2Brick {
 class DonggramiSpaceB2Mini extends DonggramiEnemy {
   constructor () {
     super()
-    this.setEnemyStat(200000, 0, 0)
+    this.setEnemyStat(20000000, 0, 0)
 
     // 충돌된경우, 서로 튕겨져 나갑니다.
     this.STATE_COLLISION = 'collision'
@@ -4619,7 +4619,7 @@ class DonggramiSpaceB2Mini extends DonggramiEnemy {
       let outMove = (Math.random() * 80) + 60
       this.autoMovePositionX = Math.random() < 0.5 ? this.x + outMove : this.x - outMove
       this.autoMovePositionY = Math.random() < 0.5 ? this.y + outMove : this.y - outMove
-      this.movePositionFrame = 60
+      this.movePositionFrame = 40
       this.state = this.STATE_COLLLISON_PROCESSING
       this.currentEffect = fieldState.createEffectObject(DonggramiEnemy.exclamationMarkEffectShort, this.x, this.y - 40)
     }
@@ -4654,7 +4654,7 @@ class DonggramiSpaceA3Collector extends DonggramiEnemy {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.ACHROMATIC)
     this.setWidthHeight(100, 100)
-    this.setEnemyStat(1000000, 0, 0)
+    this.setEnemyStat(20000000, 0, 0)
     this.setMoveDirection('', '') // 좌표값을 직접 조정해야 하므로, 이동 방향을 제거합니다.
     this.boostDelay = new DelayData(120)
     this.MAX_SPEED = 6
@@ -4671,9 +4671,9 @@ class DonggramiSpaceA3Collector extends DonggramiEnemy {
     super.process()
     this.processCatch()
 
-    if (this.hp <= 500000) {
-      this.hp = 1000000
-      this.stunFrame = 300
+    if (this.hp <= this.hpMax - 1000000) {
+      this.hp = this.hpMax
+      this.stunFrame = 120
       this.state = this.STATE_STUN
       fieldState.createEffectObject(DonggramiEnemy.exclamationMarkEffect, this.x, this.y - 40, 4)
     }
@@ -4766,7 +4766,7 @@ class DonggramiSpaceA3Collector extends DonggramiEnemy {
 class DonggramiSpaceB3Mini extends DonggramiEnemy {
   constructor () {
     super()
-    this.setEnemyStat(200000, 0, 0)
+    this.setEnemyStat(20000000, 0, 0)
     // 참고: b2와 b3는 알고리즘이 서로 다릅니다.
     this.STATE_NORMAL = ''
     this.STATE_AUTOMOVE = 'automove'
@@ -4802,6 +4802,16 @@ class DonggramiSpaceB3Mini extends DonggramiEnemy {
       this.autoMovePositionY = this.y + Number(info[2])
       this.autoMoveFrame = 30
       this.state = this.STATE_AUTOMOVE
+      this.currentEffect = fieldState.createEffectObject(DonggramiEnemy.exclamationMarkEffectShort, this.x, this.y - 40)
+    }
+
+    if (this.currentEffect != null) {
+      this.currentEffect.x = this.x
+      this.currentEffect.y = this.y - 40
+
+      if (this.currentEffect.isDeleted) {
+        this.currentEffect = null
+      }
     }
   }
 }
