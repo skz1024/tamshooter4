@@ -171,8 +171,7 @@ export class ID {
       bounce: 20188,
       speed: 20189,
       talkShopping: 20190,
-    },
-    donggramiSpace: {
+
       a1_fighter: 20200,
       b1_bounce: 20201,
       a2_brick: 20202,
@@ -180,7 +179,7 @@ export class ID {
       b2_mini: 20204,
       a3_collector: 20205,
       b3_mini: 20206,
-    }
+    },
   }
 
   /** 더이상 사용하지 않을 수 있음. @deprecated */

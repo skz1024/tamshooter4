@@ -117,7 +117,11 @@ export class soundSrc {
     r2_3_c2_squarePink: './sound/round2_3_c2_squarePink.ogg',
     r2_3_a3_power1: './sound/round2_3_a3_power1.ogg',
     r2_3_a3_power2: './sound/round2_3_a3_power2.ogg',
-    r2_3_b3_move: './sound/round2_3_b3_move.ogg'
+    r2_3_b3_move: './sound/round2_3_b3_move.ogg',
+    r2_4_elevatorMove: './sound/round2_4_elevatorMove.ogg',
+    r2_4_elevatorDoorOpen: './sound/round2_4_elevatorDoorOpen.wav',
+    r2_4_elevatorDoorClose: './sound/round2_4_elevatorDoorClose.wav',
+    r2_4_elevatorFloor: './sound/round2_4_elevatorFloor.wav'
   }
 
   static donggrami = {

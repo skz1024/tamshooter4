@@ -57,7 +57,6 @@ export class imageSrc {
     meteoriteEnemy: './image/enemy/meteoriteEnemy.png',
     jemulEnemy: './image/enemy/jemulEnemy.png',
     donggramiEnemy: './image/enemy/donggramiEnemy.png',
-    donggramiSpace: './image/enemy/donggramiSpace.png'
   }
 
   static enemyBullet = {
@@ -67,7 +66,6 @@ export class imageSrc {
 
   static enemyEffect = {
     donggrami: './image/enemy/donggramiEnemyEffect.png',
-    donggramiSpace: './image/enemy/donggramiSpaceEffect.png'
   }
 
   static enemyDie = {
@@ -102,7 +100,23 @@ export class imageSrc {
     round2_3_course: './image/round/round2_3_course.png',
     round2_3_result: './image/round/round2_3_result.png',
     round2_3_status: './image/round/round2_3_status.png',
-    round2_3_effect: './image/round/round2_3_effect.png'
+    round2_3_effect: './image/round/round2_3_effect.png',
+    round2_4_firstArea: './image/round/round2_4_firstArea.png',
+    round2_4_elevator: './image/round/round2_4_elevator.png',
+    round2_4_elevator_number: './image/round/round2_4_elevator_number.png',
+    round2_4_elevator_inside: './image/round/round2_4_elevator_inside.png',
+    round2_4_elevator_rooftop: './image/round/round2_4_elevator_rooftop.png',
+    round2_4_elevator_hall: './image/round/round2_4_elevator_hall.png',
+    round2_4_inside_area1: './image/round/round2_4_inside_area1.png',
+    round2_4_inside_corridor: './image/round/round2_4_inside_corridor.png',
+    round2_4_mountain_deep: './image/round/round2_4_mountain_deep.png',
+    round2_4_mountain_down: './image/round/round2_4_mountain_down.png',
+    round2_4_mountain_path: './image/round/round2_4_mountain_path.png',
+    round2_4_park_load: './image/round/round2_4_park_load.png',
+    round2_4_park_path: './image/round/round2_4_park_path.png',
+    round2_4_rooftop: './image/round/round2_4_rooftop.png',
+    round2_4_rooftop_wayout: './image/round/round2_4_rooftop_wayout.png',
+
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -245,14 +259,17 @@ export class imageDataInfo {
     mix6: {x: 250, y: 250, width: 48, height: 48, frame: 1},
     bigBlue: {x: 300, y: 0, width: 192, height: 192, frame: 1},
     bigRed: {x: 300, y: 200, width: 192, height: 192, frame: 1},
-  }
 
-  static donggramiSpace = {
-    brick1: {x: 0, y: 0, width: 100, height: 100, frame: 1},
-    brick2: {x: 101, y: 0, width: 100, height: 100, frame: 1},
-    brick3: {x: 202, y: 0, width: 100, height: 100, frame: 1},
-    brick4: {x: 303, y: 0, width: 100, height: 100, frame: 1},
-    bomb: {x: 404, y: 0, width: 100, height: 100, frame: 1}
+    // donggramiSpace merged
+    brick1: {x: 0, y: 400, width: 100, height: 100, frame: 1},
+    brick2: {x: 100, y: 400, width: 100, height: 100, frame: 1},
+    brick3: {x: 200, y: 400, width: 100, height: 100, frame: 1},
+    brick4: {x: 300, y: 400, width: 100, height: 100, frame: 1},
+    bomb: {x: 400, y: 400, width: 100, height: 100, frame: 1},
+
+    // new added
+    tree: {x: 0, y: 510, width: 60, height: 120, frame: 1},
+    leaf: {x: 60, y: 510, width: 50, height: 50, frame: 1}
   }
 
   static fieldSystem = {
@@ -318,15 +335,24 @@ export class imageDataInfo {
     /** 말풍선(donggramiTalk 전용) */ speechBubble: {x: 0, y: 120, width: 200, height: 52, frame: 1},
     /** 말풍선 꼬리 */ speechBubbleTale: {x: 210, y: 120, width: 70, height: 26, frame: 1},
     /** 환영 대화창 */ welcomeText: {x: 0, y: 180, width: 198, height: 78, frame: 1},
-    /** 마을 대화창 */ welcomeMaeulText: {x: 200, y: 180, width: 198, height: 78, frame: 1}
-  }
+    /** 마을 대화창 */ welcomeMaeulText: {x: 200, y: 180, width: 198, height: 78, frame: 1},
 
-  static donggramiSpaceEffect = {
-    /** 물결 부스터 */ booster: {x: 0, y: 0, width: 40, height: 40, frame: 7},
-    /** 뿅망치 */ toyHammer: {x: 0, y: 50, width: 60, height: 60, frame: 10},
-    /** 뿅망치(멈춤이미지) */ toyHammerNoEnimation: {x: 540, y: 50, width: 60, height: 60, frame: 1},
-    /** 뿅망치별... */ toyHammerStar: {x: 0, y: 110, width: 60, height: 60, frame: 8},
-    /** 지진 기모으기 */ earthquakeEnergy: {x: 0, y: 180, width: 40, height: 40, frame: 8}
+    // a1 effect
+    /** 물결 부스터 */ booster: {x: 0, y: 300, width: 40, height: 40, frame: 7},
+    /** 뿅망치 */ toyHammer: {x: 0, y: 350, width: 60, height: 60, frame: 10},
+    /** 뿅망치(멈춤이미지) */ toyHammerNoEnimation: {x: 540, y: 350, width: 60, height: 60, frame: 1},
+    /** 뿅망치별... */ toyHammerStar: {x: 0, y: 410, width: 60, height: 60, frame: 8},
+    /** 지진 기모으기 */ earthquakeEnergy: {x: 0, y: 480, width: 40, height: 40, frame: 8},
+
+    // r2-4
+    /** 과일: 빨강 */ fruitRed: {x: 400, y: 100, width: 50, height: 50, frame: 1},
+    /** 과일: 초록 (사인머스켓?) */ fruitGreen: {x: 450, y: 100, width: 50, height: 50, frame: 1},
+    /** 과일: 오렌지 */ fruitOrange: {x: 500, y: 100, width: 50, height: 50, frame: 1},
+    /** 과일: 퍼플 (포도?) */ fruitPurple: {x: 550, y: 100, width: 50, height: 50, frame: 1},
+    /** 주스: 오렌지 */ juiceOrange: {x: 400, y: 150, width: 40, height: 50, frame: 1},
+    /** 주스: 콜라(?) */ juiceCola: {x: 450, y: 150, width: 40, height: 50, frame: 1},
+    /** 주스: 물(?) */ juiceWater: {x: 500, y: 150, width: 25, height: 50, frame: 1},
+    /** 폭죽 */ firecracker: {x: 550, y: 150, width: 50, height: 50, frame: 1},
   }
 
   static round2_3_result = {
@@ -362,6 +388,24 @@ export class imageDataInfo {
     c2Score: {x: 400, y: 300, width: 200, height: 100, frame: 1},
     c2Square: {x: 600, y: 300, width: 100, height: 100, frame: 1},
     c3Goal: {x: 700, y: 300, width: 100, height: 100, frame: 1},
+  }
+
+  static round2_4_elevator = {
+    elevatorClose: {x: 0, y: 0, width: 100, height: 100, frame: 1},
+    elevatorOpen: {x: 0, y: 100, width: 100, height: 100, frame: 1},
+    elevatorOpening: {x: 0, y: 0, width: 100, height: 100, frame: 10},
+    elevatorClosing: {x: 0, y: 100, width: 100, height: 100, frame: 10},
+    number1: {x: 0, y: 0, width: 35, height: 35, frame: 1},
+    number2: {x: 35, y: 0, width: 35, height: 35, frame: 1},
+    number3: {x: 70, y: 0, width: 35, height: 35, frame: 1},
+    number4: {x: 105, y: 0, width: 35, height: 35, frame: 1},
+    number5: {x: 140, y: 0, width: 35, height: 35, frame: 1},
+    numberB: {x: 175, y: 0, width: 35, height: 35, frame: 1},
+    numberUp: {x: 210, y: 50, width: 35, height: 35, frame: 1},
+    numberDown: {x: 210, y: 100, width: 35, height: 35, frame: 1},
+    numberUpRun: {x: 0, y: 50, width: 35, height: 35, frame: 8},
+    numberDownRun: {x: 0, y: 100, width: 35, height: 35, frame: 8},
+    numberScreen: {x: 0, y: 150, width: 200, height: 50, frame: 1},
   }
 
   static weapon = {

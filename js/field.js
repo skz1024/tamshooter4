@@ -1497,15 +1497,28 @@ export class fieldSystem {
     gameVar.statLineText2.setStatLineText(this.getFieldDataString(), this.round.currentTime, this.round.finishTime, '#D5F5E3' ,'#33ff8c')
   }
 
+  /**
+   * 라운드 시간이 일시정지 되었을 때에 대한 메세지 출력 함수
+   */
+  static processRoundTimePaused () {
+    if (this.round == null) return
+
+    // 게임이 일시정지 되지 않는다면 해당 메세지는 표시되지 않습니다.
+    if (!this.round.currentTimePaused) {
+      gameVar.statLineText1.text = ''
+      return
+    }
+
+    if (this.round.currentTimePausedMessage === '') {
+      gameVar.statLineText1.text = 'enemy count left: ' + fieldState.enemyObject.length
+    } else {
+      gameVar.statLineText1.text = this.round.currentTimePausedMessage
+    }
+  }
+
   static process () {
     // game.sound.musicProcess()
-    if (this.round != null) {
-      if (this.round.currentTimePaused) {
-        gameVar.statLineText1.text = 'enemy count left: ' + fieldState.enemyObject.length
-      } else {
-        gameVar.statLineText1.text = ''
-      }
-    }
+    this.processRoundTimePaused()
 
     switch (this.stateId) {
       case this.STATE_PAUSE:

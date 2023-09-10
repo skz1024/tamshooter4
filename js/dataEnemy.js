@@ -535,7 +535,6 @@ class TestAttackEnemy extends EnemyData {
     this.height = 48
     this.attack = 10
     this.isPossibleExit = false
-    this.imageSrc = imageSrc.enemyTemp
     this.moveSpeedX = -1
   }
 }
@@ -549,7 +548,6 @@ class TestShowDamageEnemy extends EnemyData {
     this.height = 48
     this.attack = 0
     this.isPossibleExit = false
-    this.imageSrc = imageSrc.enemyTemp
     this.moveSpeedX = 0
   }
 
@@ -4165,7 +4163,7 @@ class DonggramiEnemyBossBig2 extends DonggramiEnemyBossBig1 {
   }
 }
 
-class DonggramiSpaceA1Fighter extends DonggramiEnemy {
+class DonggramiEnemyA1Fighter extends DonggramiEnemy {
   constructor () {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.RED)
@@ -4191,8 +4189,8 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
     this.hammerObject = { x: 0, y: 0, width: 180, height: 180, degree: 0, degreeChange: 15 }
 
     // 이펙트 이름 길이를 줄이기 위해 만든 변수
-    let srcB = imageSrc.enemyEffect.donggramiSpace
-    let imageD = imageDataInfo.donggramiSpaceEffect
+    let srcB = imageSrc.enemyEffect.donggrami
+    let imageD = imageDataInfo.donggramiEnemyEffect
 
     this.hammerStarEffect = new CustomEffect(srcB, imageD.toyHammerStar, 180, 180, 1)
     this.boostEffect = new CustomEffect(srcB, imageD.booster, this.width, this.height, 1)
@@ -4476,13 +4474,13 @@ class DonggramiSpaceA1Fighter extends DonggramiEnemy {
 
   displayHammer () {
     if (this.stateDelay.count > 0) {
-      let hammer = imageDataInfo.donggramiSpaceEffect.toyHammerNoEnimation
-      graphicSystem.imageDisplay(imageSrc.enemyEffect.donggramiSpace, hammer.x, hammer.y, hammer.width, hammer.height, this.hammerObject.x, this.hammerObject.y, this.hammerObject.width, this.hammerObject.height, 0, this.hammerObject.degree)
+      let hammer = imageDataInfo.donggramiEnemyEffect.toyHammerNoEnimation
+      graphicSystem.imageDisplay(imageSrc.enemyEffect.donggrami, hammer.x, hammer.y, hammer.width, hammer.height, this.hammerObject.x, this.hammerObject.y, this.hammerObject.width, this.hammerObject.height, 0, this.hammerObject.degree)
     }
   }
 }
 
-class DonggramiSpaceB1Bounce extends DonggramiEnemyBounce {
+class DonggramiEnemyB1Bounce extends DonggramiEnemyBounce {
   constructor () {
     super()
     this.setEnemyStat(20000000, 0, 0)
@@ -4535,18 +4533,18 @@ class DonggramiSpaceB1Bounce extends DonggramiEnemyBounce {
   }
 }
 
-class DonggramiSpaceA2Brick extends EnemyData {
+class DonggramiEnemyA2Brick extends EnemyData {
   constructor () {
     super()
     this.setEnemyStat(5000, 0, 0)
     let random = Math.floor(Math.random() * 4)
     let imageDataList = [
-      imageDataInfo.donggramiSpace.brick1,
-      imageDataInfo.donggramiSpace.brick2,
-      imageDataInfo.donggramiSpace.brick3,
-      imageDataInfo.donggramiSpace.brick4
+      imageDataInfo.donggramiEnemy.brick1,
+      imageDataInfo.donggramiEnemy.brick2,
+      imageDataInfo.donggramiEnemy.brick3,
+      imageDataInfo.donggramiEnemy.brick4
     ]
-    this.setAutoImageData(imageSrc.enemy.donggramiSpace, imageDataList[random])
+    this.setAutoImageData(imageSrc.enemy.donggramiEnemy, imageDataList[random])
     this.setDieEffectOption(soundSrc.round.r2_3_a2_break, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareGrey, this.width, this.height, 2))
 
     this.STATE_STOP = 'stop'
@@ -4576,11 +4574,11 @@ class DonggramiSpaceA2Brick extends EnemyData {
   }
 }
 
-class DonggramiSpaceA2Bomb extends DonggramiSpaceA2Brick {
+class DonggramiEnemyA2Bomb extends DonggramiEnemyA2Brick {
   constructor () {
     super()
     this.setEnemyStat(17000000, 0, 0)
-    this.setAutoImageData(imageSrc.enemy.donggramiSpace, imageDataInfo.donggramiSpace.bomb)
+    this.setAutoImageData(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.bomb)
     this.setDieEffectOption(soundSrc.round.r2_3_a2_bomb)
     soundSystem.createAudio(soundSrc.round.r2_3_a2_bomb)
   }
@@ -4597,7 +4595,7 @@ class DonggramiSpaceA2Bomb extends DonggramiSpaceA2Brick {
   }
 }
 
-class DonggramiSpaceB2Mini extends DonggramiEnemy {
+class DonggramiEnemyB2Mini extends DonggramiEnemy {
   constructor () {
     super()
     this.setEnemyStat(20000000, 0, 0)
@@ -4649,7 +4647,7 @@ class DonggramiSpaceB2Mini extends DonggramiEnemy {
     }
   }
 }
-class DonggramiSpaceA3Collector extends DonggramiEnemy {
+class DonggramiEnemyA3Collector extends DonggramiEnemy {
   constructor () {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.ACHROMATIC)
@@ -4763,7 +4761,7 @@ class DonggramiSpaceA3Collector extends DonggramiEnemy {
   }
 }
 
-class DonggramiSpaceB3Mini extends DonggramiEnemy {
+class DonggramiEnemyB3Mini extends DonggramiEnemy {
   constructor () {
     super()
     this.setEnemyStat(20000000, 0, 0)
@@ -4820,7 +4818,7 @@ class DonggramiSpaceB3Mini extends DonggramiEnemy {
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
  */
-class TestEnemy extends DonggramiSpaceA2Brick {
+class TestEnemy extends DonggramiEnemyA2Brick {
   constructor () {
     super()
     this.setEnemyStat(1000000, 10, 0)
@@ -4896,10 +4894,10 @@ dataExportEnemy.set(ID.enemy.donggramiEnemy.bounce, DonggramiEnemyBounce)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.speed, DonggramiEnemySpeed)
 
 // donggramiSpace
-dataExportEnemy.set(ID.enemy.donggramiSpace.a1_fighter, DonggramiSpaceA1Fighter)
-dataExportEnemy.set(ID.enemy.donggramiSpace.b1_bounce, DonggramiSpaceB1Bounce)
-dataExportEnemy.set(ID.enemy.donggramiSpace.a2_brick, DonggramiSpaceA2Brick)
-dataExportEnemy.set(ID.enemy.donggramiSpace.a2_bomb, DonggramiSpaceA2Bomb)
-dataExportEnemy.set(ID.enemy.donggramiSpace.b2_mini, DonggramiSpaceB2Mini)
-dataExportEnemy.set(ID.enemy.donggramiSpace.a3_collector, DonggramiSpaceA3Collector)
-dataExportEnemy.set(ID.enemy.donggramiSpace.b3_mini, DonggramiSpaceB3Mini)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.a1_fighter, DonggramiEnemyA1Fighter)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.b1_bounce, DonggramiEnemyB1Bounce)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.a2_brick, DonggramiEnemyA2Brick)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.a2_bomb, DonggramiEnemyA2Bomb)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.b2_mini, DonggramiEnemyB2Mini)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.a3_collector, DonggramiEnemyA3Collector)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.b3_mini, DonggramiEnemyB3Mini)

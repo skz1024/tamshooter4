@@ -267,10 +267,10 @@ export class EnimationData {
    * @param {number} frameWidth 프레임 너비
    * @param {number} frameHeight 프레임 높이
    * @param {number} frameCount 프레임 개수
-   * @param {number} frameDelay 다음 프레임 재생까지의 지연시간, 기본값 1 (즉, 초당 30프레임, 0일경우 60프레임, 정수만 사용 가능)
+   * @param {number} frameDelay 다음 프레임 재생까지의 지연시간, 기본값 1 (즉, 초당 50프레임, 2일경우 30프레임, 정수만 사용 가능)
    * @param {number} frameRepeat 프레임 반복횟수, -1로 설정하면 무한반복, 기본값 1(1번 반복), 0으로 설정할경우 버그 및 에니메이션이 잘릴 수 있음.
-   * @param {number} outputWidth 출력 너비 >> 기본값: 프레임 너비 (이 숫자는 canvas 성능 문제때문에, 가급적 변경하지 않는게 좋습니다.)
-   * @param {number} outputHeight 출력 높이 >> 기본값: 프레임 높이 (이 숫자는 canvas 성능 문제때문에, 가급적 변경하지 않는게 좋습니다.)
+   * @param {number} outputWidth 출력 너비 >> 기본값: 프레임 너비
+   * @param {number} outputHeight 출력 높이 >> 기본값: 프레임 높이
    */
   constructor (
     imageSrc = '', silceStartX = 0, silceStartY = 0, frameWidth = 0, frameHeight = 0,
@@ -309,6 +309,22 @@ export class EnimationData {
 
     /** 이미지 뒤집기 */ this.flip = 0
     /** 이미지 회전값 */ this.degree = 0
+  }
+
+  /**
+   * 생성자 함수이 아닌 다른 함수으로 에니메이션 생성하는 함수
+   * 
+   * 참고: 이 함수는 imageData를 기준으로 에니메이션을 생성합니다. 따라서 수동으로 정보를 전부 넣어야 한다면
+   * 생성자 함수를 사용해 주세요.
+   * 
+   * @param {string} imageSrc 이미지의 경로
+   * @param {ImageDataObject} imageData 
+   * @param {number} frameDelay 다음 프레임 재생까지의 지연시간, 기본값 1 (즉, 초당 60프레임, 2일경우 30프레임, 정수만 사용 가능)
+   * @param {number} frameRepeat 프레임 반복횟수, -1로 설정하면 무한반복, 기본값 1(1번 반복), 0으로 설정할경우 버그 및 에니메이션이 잘릴 수 있음.
+   * @returns 
+   */
+  static createEnimation (imageSrc, imageData, frameDelay = 1, frameRepeat = 1) {
+    return new EnimationData(imageSrc, imageData.x, imageData.y, imageData.width, imageData.height, imageData.frame, frameDelay, frameRepeat)
   }
 
   /**
