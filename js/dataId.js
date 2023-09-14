@@ -171,6 +171,12 @@ export class ID {
       bounce: 20188,
       speed: 20189,
       talkShopping: 20190,
+      fruit: 20191,
+      juice: 20192,
+      party: 20193,
+
+      tree: 20195,
+      leaf: 20196,
 
       a1_fighter: 20200,
       b1_bounce: 20201,
@@ -180,6 +186,9 @@ export class ID {
       a3_collector: 20205,
       b3_mini: 20206,
     },
+    donggramiIntruder: {
+      jemuBoss: 20220,
+    }
   }
 
   /** 더이상 사용하지 않을 수 있음. @deprecated */

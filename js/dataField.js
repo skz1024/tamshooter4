@@ -195,7 +195,7 @@ export class collisionClass {
  * 딜레이 데이터, 지연시간 관련 클래스.
  */
 export class DelayData {
-  constructor (delay = 0) {
+  constructor (delay = 60) {
     /** 지연시간 */ this.delay = delay
     /** 지연시간을 계산하는 카운터 */ this.count = 0
   }
@@ -316,6 +316,8 @@ export class EnimationData {
    * 
    * 참고: 이 함수는 imageData를 기준으로 에니메이션을 생성합니다. 따라서 수동으로 정보를 전부 넣어야 한다면
    * 생성자 함수를 사용해 주세요.
+   * 
+   * 참고: 생성된 createEnimation을 재생하기 위해 이 클래스가 가진 process 함수를 사용해야 합니다.
    * 
    * @param {string} imageSrc 이미지의 경로
    * @param {ImageDataObject} imageData 
@@ -443,8 +445,8 @@ export class FieldData {
      */
     this.objectType = 'field'
 
-    /** 타입 세부 구분용 */ this.mainType = ''
-    /** 타입 세부 구분용 */ this.subType = ''
+    /** 타입 세부 구분용도 */ this.mainType = ''
+    /** 타입 세부 구분용도 (메인타입으로만 구분이 어려울 경우 추가적으로 사용) */ this.subType = ''
     /** 타입 세부 구분용 Id (Id는 number 입니다.) */ this.id = 0
     /** 생성 ID, 일부 객체에서 중복 확인용도로 사용 */ this.createId = 0
     
@@ -524,6 +526,8 @@ export class FieldData {
 
     /**
      * 지연시간 객체(지연시간이 없으면 null)
+     * 
+     * 이 변수는 일반적으로 사용되지 않습니다.
      * @type {DelayData | null}
      */
     this.delay = null
@@ -537,6 +541,15 @@ export class FieldData {
      * @type {DelayData | null}
      */
     this.moveDelay = null
+
+    /**
+     * 상태 변경을 위한 딜레이 요소
+     * 
+     * 여러 객체에서 moveDelay를 상태 변경 용도로 활용하는 경우가 많아서 이 값을 추가함.
+     * 
+     * @type {DelayData | null}
+     */
+    this.stateDelay = null
 
     /**
      * 객체가 공격이 가능할 때, 공격을 대기시키기 위한 딜레이 (만약 이 값이 없다면 매 프레임마다 공격할지도 모름.)
@@ -715,6 +728,7 @@ export class FieldData {
 
     this.processMove()
     this.processEnimation()
+    this.processState()
 
     // 캔버스의 영역을 크게 벗어나면 해당 객체는 자동으로 삭제요청을 합니다.
     // isDeleted 가 true라면, fieldState에서 해당 객체를 삭제합니다.
@@ -726,16 +740,23 @@ export class FieldData {
     this.fieldProcess()
   }
 
+  /** 에니메이션 출력 */
   processEnimation () {
     if (this.enimation == null) return
     
     this.enimation.process()
   }
 
+  /** 상태 변경 및 추가적인 처리를 위해 만들어진 함수 (다만 기본적으로는 아무것도 하지 않고, 객체의 기능 확장용으로 사용합니다.) */
+  processState () {
+
+  }
+
   /**
    * 객체를 이동시킵니다.
    * 
-   * 하위 호환성 문제 때문에 아직까지는 speedX, speedY를 사용하지만, 곧 해당 변수는 사라질 예정입니다.
+   * (참고: 이 함수는 다른 기능을 확장하기 위해서도 사용하는 경우가 많습니다. 예륻들어, 상태 변경 또는 적 스탯 변경 등...
+   * 그래서, super.processMove가 아니라면 객체 이동 이외에 다른 기능이 추가될 수도 있습니다.)
    * 
    * 이동 방향이 정해져 있는 경우, 방향에 따른 속도값을 speed에 대입합니다.
    * 이동 방향이 없다면, 기본값으로 처리합니다. (x축 right, y축 down)
@@ -863,7 +884,7 @@ export class FieldData {
    * 
    * 옵션을 통해 출력 사이즈를 조정할 수 있으며, 또는  setWidthHeight 함수를 사용해서 에니메이션의 크기를 변경할 수 있습니다.
    * @param {string} imageSrc
-   * @param {ImageDataObject} imageData
+   * @param {ImageDataObject | null} imageData
    * @param {number} enimationDelay 에니메이션 딜레이(프레임 단위)
    */
   setAutoImageData (imageSrc, imageData, enimationDelay = 1, {width = null, height = null} = {}) {
@@ -934,7 +955,7 @@ export class FieldData {
       hpMax: this.hpMax,
       score: this.score,
 
-      // 상태 값 (나중에 확장할 수 있음.)
+      // 상태 값
       state: this.state,
 
       // 지연 값

@@ -352,7 +352,14 @@ export class imageDataInfo {
     /** 주스: 오렌지 */ juiceOrange: {x: 400, y: 150, width: 40, height: 50, frame: 1},
     /** 주스: 콜라(?) */ juiceCola: {x: 450, y: 150, width: 40, height: 50, frame: 1},
     /** 주스: 물(?) */ juiceWater: {x: 500, y: 150, width: 25, height: 50, frame: 1},
+    /** 캔들 */ candle: {x: 500, y: 420, width: 64, height: 128, frame: 1},
     /** 폭죽 */ firecracker: {x: 550, y: 150, width: 50, height: 50, frame: 1},
+    /** 폭죽 이펙트 */ firecrackerEffect: {x: 0, y: 600, width: 50, height: 50, frame: 10},
+    /** 폭죽 이펙트(터지기 전)  */ firecrackerPrevEffect: {x: 0, y: 650, width: 50, height: 50, frame: 8},
+    /** 접시 */ plate: {x: 0, y: 520, width: 50, height: 30, frame: 1},
+    /** 접시 던지기 */ plateThrow: {x: 0, y: 520, width: 50, height: 30, frame: 9},
+    /** 접시 깨지기 */ plateBreak: {x: 0, y: 550, width: 50, height: 20, frame: 10},
+    /** 캔들 + 불 이펙트 */ candleFire: {x: 300, y: 280, width: 30, height: 60, frame: 10},
   }
 
   static round2_3_result = {

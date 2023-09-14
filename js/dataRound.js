@@ -24,7 +24,7 @@ let digitalDisplay = gameFunction.digitalDisplay
  */
 export class PackRoundLoad {
   /** 라운드 1에서 사용하는 적들의 공통 이미지 데이터 */
-  static getRound1EnemyImage () {
+  static getRound1ShareImage () {
     return [
       // enemy
       imageSrc.enemy.spaceEnemy,
@@ -43,7 +43,7 @@ export class PackRoundLoad {
   }
 
   /** 라운드 1에서 사용하는 적들의 사운드 데이터 */
-  static getRound1EnemySound () {
+  static getRound1ShareSound () {
     return [
       soundSrc.enemyDie.enemyDieSpaceCar,
       soundSrc.enemyDie.enemyDieSpaceComet,
@@ -85,22 +85,30 @@ export class PackRoundLoad {
   }
 
   /** 라운드 2에서 사용하는 적들이 공통 데이터
-   * 단, 라운드 2-3은 제외
    */
-  static getRound2EnemyImage () {
+  static getRound2ShareImage () {
     return [
       imageSrc.enemy.donggramiEnemy,
       imageSrc.enemyDie.effectList
     ]
   }
 
-  static getRound2EnemySound () {
+  static getRound2ShareSound () {
     return [
       soundSrc.donggrami.emoji,
-      soundSrc.donggrami.emojiThrow,
+      soundSrc.donggrami.throw,
       soundSrc.donggrami.exclamationMark,
       soundSrc.donggrami.questionMark,
       soundSrc.enemyDie.enemyDieDonggrami,
+      soundSrc.donggrami.createObject,
+      soundSrc.donggrami.juiceCola,
+      soundSrc.donggrami.juiceThrow,
+      soundSrc.donggrami.firecracker,
+      soundSrc.donggrami.plate,
+      soundSrc.donggrami.candle,
+
+      soundSrc.enemyDie.enemyDieDonggramiTree,
+      soundSrc.enemyDie.enemyDieDonggramiLeaf,
     ]
   }
 }
@@ -1008,8 +1016,8 @@ class Round1_1 extends RoundData {
       soundSrc.music.music06_round1_boss_thema
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound1EnemyImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound1EnemySound())
+    this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
   }
 
   roundPhase00 () {
@@ -1187,8 +1195,8 @@ class Round1_2 extends RoundData {
       soundSrc.music.music02_meteorite_zone_field,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound1EnemyImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound1EnemySound())
+    this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
   }
 
   processBackground () {
@@ -1380,8 +1388,8 @@ class Round1_3 extends RoundData {
       soundSrc.music.music03_meteorite_zone_battle,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound1EnemyImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound1EnemySound())
+    this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
   }
 
   processBackground () {
@@ -1739,8 +1747,8 @@ class Round1_4 extends RoundData {
       this.messageSound.jemulstart,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound1EnemyImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound1EnemySound())
+    this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
   }
 
   processBackground () {
@@ -1962,8 +1970,8 @@ class Round1_5 extends RoundData {
       soundSrc.music.music02_meteorite_zone_field,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound1EnemyImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound1EnemySound())
+    this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
   }
 
   processBackground () {
@@ -2238,8 +2246,8 @@ class Round1_6 extends RoundData {
       soundSrc.music.music07_paran_planet_entry,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound1EnemyImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound1EnemySound())
+    this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
   }
 
   /**
@@ -2472,25 +2480,22 @@ class Round1_test extends RoundData {
 
     this.backgroundImageSrc = imageSrc.round.round2_3_maeul_space
 
+    this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
+    this.addLoadingImageList(PackRoundLoad.getRound2ShareImage())
+    this.addLoadingImageList(PackRoundLoad.getRound1ShareSound())
+    this.addLoadingImageList(PackRoundLoad.getRound2ShareSound())
+
     this.addRoundPhase(() => {
-      if (this.timeCheckInterval(0, 99, 60)) {
-        this.createEnemy(ID.enemy.test, 800, 0)
-        this.createEnemy(ID.enemy.test, 800, 100)
-        this.createEnemy(ID.enemy.test, 800, 200)
-        this.createEnemy(ID.enemy.test, 800, 300)
-        this.createEnemy(ID.enemy.test, 800, 400)
-        this.createEnemy(ID.enemy.test, 800, 500)
+      
+      if (this.timeCheckInterval(0, 99, 60) && this.getEnemyCount() < 10) {
+        this.createEnemy(ID.enemy.donggramiEnemy.juice, 800, 0)
       }
     }, 0, 999)
   }
 
   display () {
-    graphicSystem.fillRect(0, 0, 999, 999, 'white')
     super.display()
-    let enemy = this.getEnemyObject()
-    for (let i = 0; i < enemy.length; i++) {
-      digitalDisplay('EX: ' + enemy[i].x + ', EY: ' + enemy[i].y, 0, i * 20)
-    }
+    graphicSystem.fillRect(0, 0, 999, 999, 'grey')
   }
 }
 
@@ -2529,8 +2534,8 @@ class Round2_1 extends RoundData {
       soundSrc.music.music09_paran_planet,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound2EnemyImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound2EnemySound())
+    this.addLoadingImageList(PackRoundLoad.getRound2ShareImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound2ShareSound())
   }
 
   displayBackground () {
@@ -2799,8 +2804,8 @@ class Round2_2 extends RoundData {
       soundSrc.music.music10_donggrami_maeul,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound2EnemyImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound2EnemySound())
+    this.addLoadingImageList(PackRoundLoad.getRound2ShareImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound2ShareSound())
   }
 
   displayBossHp () {
@@ -3277,8 +3282,8 @@ class Round2_3 extends RoundData {
       soundSrc.round.r2_3_c2_squareRed,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound2EnemyImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound2EnemySound())
+    this.addLoadingImageList(PackRoundLoad.getRound2ShareImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound2ShareSound())
   }
 
   lightBoxProcess () {

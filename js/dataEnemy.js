@@ -4,7 +4,7 @@ import { DelayData, FieldData, EnimationData, collision, collisionClass } from "
 import { EffectData, CustomEffect, CustomEditEffect } from "./dataEffect.js"
 import { ID } from "./dataId.js"
 import { fieldState, fieldSystem } from "./field.js"
-import { imageDataInfo, imageSrc } from "./imageSrc.js"
+import { ImageDataObject, imageDataInfo, imageSrc } from "./imageSrc.js"
 import { soundSrc } from "./soundSrc.js"
 import { game, gameFunction } from "./game.js"
 
@@ -444,7 +444,7 @@ export class EnemyBulletData extends FieldData {
   }
 
   process () {
-    this.processMove()
+    super.process()
     this.processCollision()
 
     if (this.outAreaCheck()) {
@@ -457,6 +457,8 @@ export class EnemyBulletData extends FieldData {
   }
 
   processCollision () {
+    if (this.attack === 0) return
+
     let player = fieldState.getPlayerObject()
     let playerSendXY = { x: player.x, y: player.y, width: player.width, height: player.height}
     
@@ -509,12 +511,17 @@ export class EnemyBulletData extends FieldData {
  * 커스텀 에너미 불릿. 이 클래스를 사용하여 적의 총알 객체를 구현합니다. 
  * 이것으로 데이터를 생성한 다음, getCreateObject 함수를 사용해 새 객체를 얻어서 필드에서 사용하세요.
  * 
- * 참고: 클래스를 넘겨도 되고, 인스턴스(getCreateObject)를 통해 넘겨도 됩니다. 다만, 클래스 자체 수정(process, display함수를 수정한다던가) 이 필요하다면, 클래스로 넘겨야합니다.
+ * 참고: 클래스를 넘겨도 되고, 인스턴스(getCreateObject)를 통해 넘겨도 됩니다. 
+ * 
+ * 다만, 클래스 자체 수정(process, display함수를 수정한다던가) 이 필요하다면, 이 클래스를 상속받아야 합니다.
  */
 export class CustomEnemyBullet extends EnemyBulletData {
-  constructor (image, imageData, attack, moveSpeedX, moveSpeedY, moveDirectionX = '', moveDirectionY = '') {
+  /**
+   * @param {ImageDataObject | null} imageData 
+   */
+  constructor (imageSrc = '', imageData = null, attack = 0, moveSpeedX = 0, moveSpeedY = 0, moveDirectionX = '', moveDirectionY = '') {
     super()
-    this.setAutoImageData(image, imageData)
+    this.setAutoImageData(imageSrc, imageData)
     this.attack = attack
     this.setMoveDirection(moveDirectionX, moveDirectionY)
     this.setMoveSpeed(moveSpeedX, moveSpeedY)
@@ -3662,7 +3669,7 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
     this.STATE_CATCH = 'catch'
 
     // 전용 사운드 생성
-    game.sound.createAudio(soundSrc.donggrami.emojiThrow)
+    game.sound.createAudio(soundSrc.donggrami.throw)
     game.sound.createAudio(soundSrc.donggrami.emoji)
   }
 
@@ -3773,7 +3780,7 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
   
         // 상태 변경 및, 이모지를 던짐
         this.state = this.STATE_THROW
-        soundSystem.play(soundSrc.donggrami.emojiThrow)
+        soundSystem.play(soundSrc.donggrami.throw)
 
         // 딜레이값 재설정
         this.emojiDelay.delay = 180
@@ -4814,6 +4821,490 @@ class DonggramiEnemyB3Mini extends DonggramiEnemy {
   }
 }
 
+/**
+ * 이 클래스는 DonggramiEnemyFruit, DonggramiEnemyJuice의 기능을 포함하고 있습니다.
+ * 
+ * 해당 클래스의 기능이 중복되었고 이 적들은 DonggramiEnemyParty로 분류되기 때문에, 이 클래스를 상속받는 형태로 구현되었습니다.
+ */
+class DonggramiEnemyParty extends DonggramiEnemy {
+  /** DonggramiParty 적이 사용하는 세부 타입 */
+  static subTypeList = {
+    JUICE_ORANGE: 'ornage',
+    JUICE_COLA: 'cola',
+    JUICE_WATER: 'water',
+    FRUIT_RED: 'red',
+    FRUIT_GREEN: 'green',
+    FRUIT_ORANGE: 'orange',
+    FRUIT_PURPLE: 'purple',
+    PARTY_FIRECRACKER: 'firecracker',
+    PARTY_CANDLE: 'candle',
+    PARTY_PLATE: 'plate'
+  }
+
+  static stateList = {
+    NORMAL: '',
+    CREATE: 'create',
+    THROW: 'throw',
+    DROP: 'drop',
+    EAT: 'eat'
+  }
+
+  /** DonggramiParty가 생성한 오브젝트를 표시하기 위해 만들어진 변수 (오브젝트 내에 있는 display 함수를 통해 표현)  */
+  static iconList = {
+    fruitRed: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitRed),
+    fruitGreen: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitGreen),
+    fruitOrange: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitOrange),
+    fruitPurple: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitPurple),
+    juiceCola: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.juiceCola),
+    juiceOrange: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.juiceOrange),
+    juiceWater: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.juiceWater),
+    partyCandle: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.candle),
+    partyFirecracker: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.firecracker),
+    partyPlate: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.plate),
+  }
+
+  constructor () {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.ALL)
+    this.setEnemyByCpStat(25, 10)
+
+    this.state = DonggramiEnemyParty.stateList.NORMAL
+    this.stateList = DonggramiEnemyParty.stateList
+    this.subTypeList = DonggramiEnemyParty.subTypeList
+    this.stateDelay = new DelayData(120)
+    this.delayChange()
+
+    /** 동그라미가 가지고 있는 오브젝트의 표시 위치 */ this.objX = 0
+    /** 동그라미가 가지고 있는 오브젝트의 표시 위치 */ this.objY = 0
+
+    this.setRandomType()
+  }
+
+  /** 현재 클래스를 기준으로 임의의 타입 지정 (상속을 하면 이 함수를 재정의해야 합니다.) */
+  setRandomType () {
+    let random = Math.floor(Math.random() * 3)
+    switch (random) {
+      default: this.subType = DonggramiEnemyParty.subTypeList.PARTY_CANDLE; break
+      case 1: this.subType = DonggramiEnemyParty.subTypeList.PARTY_FIRECRACKER; break
+      case 2: this.subType = DonggramiEnemyParty.subTypeList.PARTY_PLATE; break
+    }
+  }
+
+  processMove () {
+    if (this.state !== this.stateList.DROP) {
+      super.processMove()
+    }
+
+    // 오브젝트의 위치 설정 
+    // (주의: 이 값은 오브젝트의 크기가 50x50을 기준으로 하므로 이보다 다른 값의 오브젝트를 사용한다면 그에 맞게 다시 변경해야 함)
+    this.objX = this.x
+    this.objY = this.y - 40
+
+    if (this.subType === this.subTypeList.PARTY_CANDLE) {
+      this.objX = this.x - 12
+      this.objY = this.y - 128
+    }
+
+    // 오브젝트를 먹는 상태이면, 오브젝트가 동그라미쪽에 붙게끔 처리
+    if (this.state === this.stateList.EAT) {
+      this.objX = this.x - 20
+      this.objY = this.y - 20
+    }
+  }
+
+  processState () {
+    switch (this.state) {
+      case this.stateList.CREATE: this.processStateCreate(); break
+      case this.stateList.DROP: this.processStateDrop(); break
+      case this.stateList.EAT: this.processStateEat(); break
+      case this.stateList.NORMAL: this.processStateNormal(); break
+      case this.stateList.THROW: this.processStateThrow(); break
+    }
+
+  }
+
+  /** normal 상태: 일정 시간 후, create 상태로 변환 
+   * create 상태로 변환될 때 무작위의 아이템을 하나 생성합니다.
+  */
+  processStateNormal () {
+    if (this.stateDelay.check()) {
+      this.delayChange()
+      this.state = this.stateList.CREATE
+      soundSystem.play(soundSrc.donggrami.createObject)
+    }
+  }
+
+  /**
+   * 물건을 생성한 상태입니다. 이 이후 물건을 던지거나 떨어트리거나 먹습니다.
+   */
+  processStateCreate () {
+    if (this.stateDelay.check()) {
+      this.delayChange()
+      if (this.state === this.subTypeList.PARTY_CANDLE) {
+        this.state = this.stateList.NORMAL
+      } else {
+        this.state = Math.random() < 0.75 ? this.stateList.THROW : this.stateList.DROP
+      }
+      return
+    }
+    
+    switch (this.subType) {
+      case this.subTypeList.PARTY_CANDLE:
+        // 일정 시간 단위마다 촛불 생성
+        if (this.stateDelay.divCheck(40)) {
+          let candleBullet = new CustomEnemyBullet(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.candleFire, 12, 0, -4)
+          fieldState.createEnemyBulletObject(candleBullet, this.objX + 32, this.objY)
+          soundSystem.play(soundSrc.donggrami.candle)
+        }
+        break
+    }
+  }
+
+  static PlateBullet = class extends CustomEnemyBullet {
+    constructor (damage = 10, speedX = Math.random() * 2, speedY = 5) {
+      super(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.plate, damage, speedX, speedY)
+    }
+
+    process () {
+      super.process()
+      // 접시가 바닥에 닿으면 깨지는 이펙트가 생성되고, 이 오브젝트(접시)는 삭제됨
+      if (this.y + this.height >= graphicSystem.CANVAS_HEIGHT) {
+        let customEffect = new CustomEffect(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.plateBreak, this.width, this.height, 2)
+        soundSystem.play(soundSrc.donggrami.plate)
+        fieldState.createEffectObject(customEffect, this.x, this.y)
+        this.isDeleted = true
+      }
+    }
+  }
+
+  static FirecrackerBullet = class extends CustomEnemyBullet {
+    constructor (damage = 10, endPositionX = 0, endPositionY = 0) {
+      super(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.firecrackerPrevEffect, damage, 0, 0)
+      this.endPositionX = endPositionX
+      this.endPositionY = endPositionY
+      this.bombDamage = damage
+      this.attack = 0
+    }
+
+    process () {
+      super.process()
+      this.moveSpeedX = (this.endPositionX - this.x) / 10
+      this.moveSpeedY = (this.endPositionY - this.y) / 10
+
+      if (this.elapsedFrame === 60) {
+        let partyEffect = new CustomEffect(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.firecrackerEffect, 100, 100, 2)
+        let partyObject = { x: this.x - 25, y: this.y - 25, width: 100, height: 100}
+        let player = fieldState.getPlayerObject()
+        if (collision(player, partyObject)) {
+          player.addDamage(14)
+        }
+
+        fieldState.createEffectObject(partyEffect, partyObject.x, partyObject.y)
+        soundSystem.play(soundSrc.donggrami.firecracker)
+        this.isDeleted = true
+      } else if (this.elapsedFrame >= 75) {
+        this.isDeleted = true
+      }
+    }
+  }
+
+  /** 물건을 무작위의 속도로 던집니다. (단 일부 객체는 다른 패턴을 사용함) */
+  processStateThrow () {
+    if (this.stateDelay.check()) {
+      this.delayChange()
+      this.state = this.stateList.NORMAL
+      return
+    }
+
+    if (this.subType === this.subTypeList.PARTY_PLATE) {
+      if (this.stateDelay.count === 1) {
+        let plateBullet = new DonggramiEnemyParty.PlateBullet(10)
+        plateBullet.moveSpeedX = Math.random() < 0.5 ? Math.random() * 4 + 2 : Math.random() * -4 - 2
+        plateBullet.moveSpeedY = Math.random() * 4 + 2
+        fieldState.createEnemyBulletObject(plateBullet, this.objX, this.objY)
+        soundSystem.play(soundSrc.donggrami.throw)
+      }
+    } else if (this.subType === this.subTypeList.PARTY_FIRECRACKER) {
+      if (this.stateDelay.divCheck(60)) {
+        fieldState.createEnemyBulletObject(new DonggramiEnemyParty.FirecrackerBullet(10, this.x + Math.random() * 200 - 100, this.y + Math.random() * 200 - 100), this.objX, this.objY)
+      }
+    }
+  }
+
+  /** 물건을 실수로 떨어트립니다. 물건을 떨어트린 동그라미는 일시적으로 느낌표 아이콘을 띄웁니다.
+   * (DonggramiParty에서 사용하는 모든 오브젝트가 공통 코드가 적용됨)
+   */
+  processStateDrop () {
+    if (this.stateDelay.check()) {
+      this.delayChange()
+      this.state = this.stateList.NORMAL
+      return
+    }
+
+    // 떨어트리기 위한 총알 생성
+    if (this.stateDelay.count === 1) {
+      const imgSrc = imageSrc.enemyEffect.donggrami
+      let imgD = imageDataInfo.donggramiEnemyEffect.fruitRed
+      switch (this.subType) {
+        case this.subTypeList.FRUIT_GREEN: imgD = imageDataInfo.donggramiEnemyEffect.fruitGreen; break
+        case this.subTypeList.FRUIT_ORANGE: imgD = imageDataInfo.donggramiEnemyEffect.fruitOrange; break
+        case this.subTypeList.FRUIT_PURPLE: imgD = imageDataInfo.donggramiEnemyEffect.fruitPurple; break
+        case this.subTypeList.JUICE_COLA: imgD = imageDataInfo.donggramiEnemyEffect.juiceCola; break
+        case this.subTypeList.JUICE_ORANGE: imgD = imageDataInfo.donggramiEnemyEffect.juiceOrange; break
+        case this.subTypeList.JUICE_WATER: imgD = imageDataInfo.donggramiEnemyEffect.juiceWater; break
+        case this.subTypeList.PARTY_CANDLE: imgD = imageDataInfo.donggramiEnemyEffect.candle; break
+        case this.subTypeList.PARTY_FIRECRACKER: imgD = imageDataInfo.donggramiEnemyEffect.firecracker; break
+        case this.subTypeList.PARTY_PLATE: imgD = imageDataInfo.donggramiEnemyEffect.plate; break
+      }
+
+      let customBullet = new CustomEnemyBullet(imgSrc, imgD, 10, 0, 5)
+      if (this.subType === this.subTypeList.PARTY_PLATE) {
+        // 접시만 다른 알고리즘을 가진 총알을 사용하기 때문에 따로 생성함
+        customBullet = new DonggramiEnemyParty.PlateBullet()
+      }
+
+      fieldState.createEnemyBulletObject(customBullet, this.objX, this.objY)
+      soundSystem.play(soundSrc.donggrami.exclamationMark)
+      fieldState.createEffectObject(DonggramiEnemy.exclamationMarkEffectShort, this.x, this.y - 40)
+    }
+
+    if (this.stateDelay.count === 40 || this.stateDelay.count === 80) {
+      fieldState.createEffectObject(DonggramiEnemy.exclamationMarkEffectShort, this.x, this.y - 40)
+    }
+  }
+
+  /** 물건을 먹습니다. (주스, 과일 한정), 아무런 변화가 없습니다. (물건을 먹기 위해 물건이 90도 각도로 기울어지기만 합니다.) */
+  processStateEat () {
+    if (this.stateDelay.check()) {
+      this.state = this.stateList.NORMAL
+    }
+
+    if (this.stateDelay.count === 1) {
+      soundSystem.play(soundSrc.donggrami.juiceEat)
+      this.hp = this.hpMax // hp 회복
+    }
+  }
+  
+  /** 현재 상태에 따른 지연시간 재설정 (지연시간은 상태가 변경될 때 무작위로 지정됩니다.) */
+  delayChange () {
+    let min = 0
+    let max = 0
+    switch (this.state) {
+      case this.stateList.NORMAL: min = 120; max = 240; break
+      case this.stateList.CREATE: min = 120; max = 240; break
+      case this.stateList.EAT: min = 120; max = 142; break
+      case this.stateList.THROW: min = 240; max = 300; break
+      case this.stateList.DROP: min = 240; max = 300; break
+    }
+
+    this.stateDelay.delay = Math.floor(Math.random() * (max - min) + min)
+  }
+
+  display () {
+    super.display()
+    
+    if (this.state === this.stateList.CREATE || this.state === this.stateList.EAT) {
+      this.displayObject()
+    } else if (this.state === this.stateList.THROW && this.subType === this.subTypeList.PARTY_FIRECRACKER) {
+      this.displayObject() // 폭죽 보여주기 위한 용도
+    }
+  }
+
+  displayObject () {
+    const icon = DonggramiEnemyParty.iconList
+    let target = icon.fruitRed
+    switch (this.subType) {
+      case this.subTypeList.FRUIT_GREEN: target = icon.fruitGreen; break
+      case this.subTypeList.FRUIT_ORANGE: target = icon.fruitOrange; break
+      case this.subTypeList.FRUIT_PURPLE: target = icon.fruitPurple; break
+      case this.subTypeList.JUICE_COLA: target = icon.juiceCola; break
+      case this.subTypeList.JUICE_ORANGE: target = icon.juiceOrange; break
+      case this.subTypeList.JUICE_WATER: target = icon.juiceWater; break
+      case this.subTypeList.PARTY_CANDLE: target = icon.partyCandle; break
+      case this.subTypeList.PARTY_FIRECRACKER: target = icon.partyFirecracker; break
+      case this.subTypeList.PARTY_PLATE: target = icon.partyPlate; break
+    }
+
+    let degree = 0
+    if (this.state === this.stateList.EAT) {
+      degree = this.stateDelay.count < 30 ? this.stateDelay.count * 3 : 90
+    }
+
+    target.degree = degree
+    target.display(this.objX, this.objY)
+  }
+}
+
+class DonggramiEnemyFruit extends DonggramiEnemyParty {
+  static bulletFruitRed = new CustomEnemyBullet(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitRed, 10, 0, 0)
+  static bulletFruitGreen = new CustomEnemyBullet(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitGreen, 10, 0, 0)
+  static bulletFruitOrange = new CustomEnemyBullet(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitOrange, 10, 0, 0)
+  static bulletFruitPurple = new CustomEnemyBullet(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitPurple, 10, 0, 0)
+
+  constructor () {
+    super()
+    this.setDonggramiColor(DonggramiEnemy.colorGroup.ALL)
+    this.setEnemyByCpStat(25, 10)
+    
+    this.fruitChange()
+
+    this.stateList = DonggramiEnemyParty.stateList
+    this.stateDelay = new DelayData(120)
+    this.delayChange()
+  }
+
+  fruitChange () {
+    let random = Math.floor(Math.random() * 4)
+    switch (random) {
+      case 0: this.subType = DonggramiEnemyParty.subTypeList.FRUIT_GREEN; break
+      case 1: this.subType = DonggramiEnemyParty.subTypeList.FRUIT_RED; break
+      case 2: this.subType = DonggramiEnemyParty.subTypeList.FRUIT_ORANGE; break
+      default: this.subType = DonggramiEnemyParty.subTypeList.FRUIT_PURPLE; break
+    }
+  }
+
+  processStateNormal () {
+    super.processStateNormal()
+    if (this.stateDelay.count === 1) {
+      this.fruitChange()
+    }
+  }
+
+  processStateCreate () {
+    if (this.stateDelay.check()) {
+      // 일정 확률에 따라 상태를 변경합니다.
+      let random = Math.random()
+      if (random < 0.15) {
+        this.state = this.stateList.EAT
+      } else if (random > 0.87) {
+        this.state = this.stateList.DROP
+      } else {
+        this.state = this.stateList.THROW
+      }
+
+      this.delayChange()
+    }
+  }
+
+  processStateThrow () {
+    if (this.stateDelay.count === 1) {
+      let bulletType
+      switch (this.subType) {
+        case this.subTypeList.FRUIT_GREEN:
+          bulletType = DonggramiEnemyFruit.bulletFruitGreen
+          break
+        case this.subTypeList.FRUIT_ORANGE:
+          bulletType = DonggramiEnemyFruit.bulletFruitOrange
+          break
+        case this.subTypeList.FRUIT_PURPLE:
+          bulletType = DonggramiEnemyFruit.bulletFruitPurple
+          break
+        case this.subTypeList.FRUIT_RED:
+          bulletType = DonggramiEnemyFruit.bulletFruitRed
+          break
+        default: return
+      }
+
+      const minSpeed = 2
+      const plusSpeed = 2
+      // 이 코드의 의미는 속도값을 랜덤으로 설정하지만 50%확률로 양수 또는 음수로 결정됩니다.
+      let speedX = Math.random() < 0.5 ? Math.random() * plusSpeed + minSpeed : Math.random() * -plusSpeed - minSpeed
+      let speedY = Math.random() < 0.5 ? Math.random() * plusSpeed + minSpeed : Math.random() * -plusSpeed - minSpeed
+      let customBullet = bulletType.getCreateObject()
+      customBullet.moveSpeedX = speedX
+      customBullet.moveSpeedY = speedY
+
+      fieldState.createEnemyBulletObject(customBullet, this.x, this.y)
+      soundSystem.play(soundSrc.donggrami.throw)
+    }
+
+    if (this.stateDelay.check()) {
+      this.state = this.stateList.NORMAL
+    }
+  }
+}
+
+class DonggramiEnemyJuice extends DonggramiEnemyParty {
+  constructor () {
+    super()
+    this.setEnemyByCpStat(25, 10)
+
+    this.stateDelay = new DelayData(120)
+    this.fruitChange()
+  }
+  
+  fruitChange () {
+    let random = Math.floor(Math.random() * 3)
+    switch (random) {
+      case 0: this.subType = DonggramiEnemyParty.subTypeList.JUICE_COLA; break
+      case 1: this.subType = DonggramiEnemyParty.subTypeList.JUICE_ORANGE; break
+      default: this.subType = DonggramiEnemyParty.subTypeList.JUICE_WATER; break
+    }
+  }
+
+  processStateCreate () {
+    if (this.stateDelay.check()) {
+      let random = Math.random()
+      if (random < 0.33) {
+        this.state = this.stateList.EAT
+        soundSystem.play(soundSrc.donggrami.juiceEat)
+      } else if (random > 0.66) {
+        this.state = this.stateList.THROW
+        if (this.subType === this.subTypeList.JUICE_COLA) {
+          soundSystem.play(soundSrc.donggrami.juiceCola)
+        }
+      } else {
+        this.state = this.stateList.DROP
+      }
+    }
+  }
+
+  processStateThrow () {
+    let count = this.stateDelay.count
+    if (this.subType === this.subTypeList.JUICE_ORANGE && count === 1) {
+      let orangeBullet = new CustomEnemyBullet('', null, 13, 0, 9)
+      orangeBullet.width = 50
+      orangeBullet.height = 150
+      orangeBullet.display = () => {
+        graphicSystem.fillRect(orangeBullet.x, orangeBullet.y, orangeBullet.width, orangeBullet.height, 'orange')
+      }
+      fieldState.createEnemyBulletObject(orangeBullet, this.objX, this.objY)
+      soundSystem.play(soundSrc.donggrami.juiceThrow)
+    } else if (this.subType === this.subTypeList.JUICE_COLA && (count % 4 === 0 && count <= 48)) {
+      let colaBullet = new CustomEnemyBullet('', null, 2, Math.random() * 10 - 5, Math.random() * -12)
+      colaBullet.setMoveSpeed(Math.random() * 10 - 5, Math.random() * -12)
+      colaBullet.display = function () {
+        graphicSystem.fillEllipse(this.x, this.y, 8, 8, 0, 'grey')
+      }
+      fieldState.createEnemyBulletObject(colaBullet, this.objX, this.objY)
+    } else if (this.subType === this.subTypeList.JUICE_WATER && count === 1) {
+      soundSystem.play(soundSrc.donggrami.throw)
+      let juiceBullet = new CustomEnemyBullet(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.juiceWater, 17, Math.random() * 10 - 5, Math.random() * 10 - 5)
+      fieldState.createEnemyBulletObject(juiceBullet, this.objX, this.objY)
+    }
+
+    if (this.stateDelay.check()) {
+      this.delayChange()
+      this.fruitChange()
+      this.state = this.stateList.NORMAL
+    }
+  }
+}
+
+class DonggramiEnemyTree extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setEnemyByCpStat(150, 24)
+  }
+}
+
+class DonggramiEnemyLeaf extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.setEnemyByCpStat(50, 12)
+  }
+}
+
 
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
@@ -4893,7 +5384,7 @@ dataExportEnemy.set(ID.enemy.donggramiEnemy.bossBig2, DonggramiEnemyBossBig2)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.bounce, DonggramiEnemyBounce)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.speed, DonggramiEnemySpeed)
 
-// donggramiSpace
+// donggramiEnemy / round 2-3 only
 dataExportEnemy.set(ID.enemy.donggramiEnemy.a1_fighter, DonggramiEnemyA1Fighter)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.b1_bounce, DonggramiEnemyB1Bounce)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.a2_brick, DonggramiEnemyA2Brick)
@@ -4901,3 +5392,10 @@ dataExportEnemy.set(ID.enemy.donggramiEnemy.a2_bomb, DonggramiEnemyA2Bomb)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.b2_mini, DonggramiEnemyB2Mini)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.a3_collector, DonggramiEnemyA3Collector)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.b3_mini, DonggramiEnemyB3Mini)
+
+// donggramiEnemy / round 2-4 add
+dataExportEnemy.set(ID.enemy.donggramiEnemy.fruit, DonggramiEnemyFruit)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.juice, DonggramiEnemyJuice)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.party, DonggramiEnemyParty)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.tree, DonggramiEnemyTree)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.leaf, DonggramiEnemyLeaf)

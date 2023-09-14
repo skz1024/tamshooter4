@@ -866,3 +866,9 @@ shop는 상점이고, 아이템을 구매할 수 있습니다. (그러나 골드
 4. 그외 round2-4에서 사용할 이미지 추가
 5. donggramiSpace enemy가 삭제되고 전부 donggramiEnemy로 합쳐졌습니다. (이미지, 코드, 아이디, 적의 정보 포함)
 
+
+2023/09/14 ver 0.39.5 - round 2-4 데이터 추가, 알고리즘 세분화를 위해 processState 함수 추가, 적 총알 에니메이션 재생 가능
+1. FieldObject에 processState 추가 [기존에는 processMove를 상태 변경에 주로 사용했었음]
+2. enemyBullet이 에니메이션을 재생할 수 없는 문제 수정
+3. round 2-4에 사용할 적들이 추가되었습니다. (아직 보스는 완성되지 않음.)
+

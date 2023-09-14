@@ -79,6 +79,8 @@ export class soundSrc {
     enemyDieJemulRedJewel: './sound/enemyDieJemulRedJewel.wav',
     enemyDieJemulRedAir: './sound/enemyDieJemulRedAir.wav',
     enemyDieDonggrami: './sound/enemyDieDonggrami.wav',
+    enemyDieDonggramiTree: './sound/enemyDieDonggramiTree.ogg',
+    enemyDieDonggramiLeaf: './sound/enemyDieDonggramiLeaf.wav',
   }
 
   static enemyAttack = {
@@ -128,7 +130,14 @@ export class soundSrc {
     exclamationMark: './sound/donggramiExclamationMark.ogg',
     questionMark: './sound/donggramiQuestionMark.ogg',
     emoji: './sound/donggramiImoge.ogg',
-    emojiThrow: './sound/donggramiImogeThrow.ogg'
+    throw: './sound/donggramithrow.ogg',
+    candle: './sound/donggramiCandle.ogg',
+    firecracker: './sound/donggramiFirecracker.ogg',
+    createObject: './sound/donggramiCreateObject.wav',
+    juiceCola: './sound/donggramiJuiceCola.wav',
+    juiceThrow: './sound/donggramiJuiceThrow.wav',
+    plate: './sound/donggramiPlate.wav',
+    juiceEat: './sound/donggramiJuiceEat.ogg'
   }
 
   static music = {
