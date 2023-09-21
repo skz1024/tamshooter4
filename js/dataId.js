@@ -186,8 +186,8 @@ export class ID {
       a3_collector: 20205,
       b3_mini: 20206,
     },
-    donggramiIntruder: {
-      jemuBoss: 20220,
+    intruder: {
+      jemuBoss: 20210,
     }
   }
 

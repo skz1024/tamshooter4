@@ -309,7 +309,9 @@ export class EnemyData extends FieldData {
 
   /**
    * 만약 적이 공격해야 할 일이 있다면 이 함수를 작성해주세요.
-   * 다만 대부분의 적들은 공격을 하지 않고 충돌만 합니다. (참고로 충돌데미지와 공격데미지는 별개입니다.)
+   * 다만 대부분의 적들은 공격을 하지 않고 충돌만 합니다. 
+   * 
+   * 참고로 충돌데미지는 공격력 값을 사용하지만 공격데미지는 사용자가 새로 변수를 만들어서 값을 설정해주어야 합니다.
    */
   processAttack () {
 
@@ -1199,7 +1201,7 @@ class SpaceEnemyDonggrami extends SpaceEnemyData {
     this.setDieEffectOption(dieSoundTarget)
     this.dieAfterDeleteDelay = new DelayData(240)
     this.isPossibleExit = false
-    this.setRandomSpeed(3, 3)
+    this.setRandomMoveSpeed(3, 3)
   }
 
   processDieAfter () {
@@ -1827,7 +1829,7 @@ class MeteoriteEnemyStone extends MeteoriteEnemyData {
 
     this.setAutoImageData(imageSrc.enemy.meteoriteEnemy, imageDataList[imageNumber])
     this.setEnemyByCpStat(50, 20)
-    this.setRandomSpeed(2, 2)
+    this.setRandomMoveSpeed(2, 2)
     this.width = 160
     this.height = 160
     this.isExitToReset = true
@@ -1880,7 +1882,7 @@ class MeteoriteEnemyStonePiece extends MeteoriteEnemyData {
     this.setAutoImageData(imageSrc.enemy.meteoriteEnemy, imageDataList[this.stoneType][this.pieceNumber])
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceSmall, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareGrey, this.width, this.height, 1))
     this.setEnemyByCpStat(10, 10)
-    this.setRandomSpeed(4, 4)
+    this.setRandomMoveSpeed(4, 4)
     this.width = 80
     this.height = 80
 
@@ -1924,7 +1926,7 @@ class MeteoriteEnemyRed extends MeteoriteEnemyData {
     this.setWidthHeight(this.width * 2, this.height * 2) // 크기 2배 증가
     this.setEnemyByCpStat(50, 40)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieMeteoriteRed, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.noiseRed, this.width, this.height, 4))
-    this.setRandomSpeed(3, 2)
+    this.setRandomMoveSpeed(3, 2)
   }
 }
 
@@ -1988,7 +1990,7 @@ class JemulEnemyEnergyBolt extends JemulEnemyData {
     this.setAutoImageData(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.energyBolt)
     this.setEnemyByCpStat(12, 12)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulEnergyBolt, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.pulseDiamondBlue, this.width, this.height, 2))
-    this.setRandomSpeed(2, 3)
+    this.setRandomMoveSpeed(2, 3)
     this.moveDelay = new DelayData(180)
     this.attackDelay = new DelayData(180)
     this.bulletDamage = 15
@@ -2000,7 +2002,7 @@ class JemulEnemyEnergyBolt extends JemulEnemyData {
 
   processMove () {
     if (this.moveDelay.check()) {
-      this.setRandomSpeed(2, 3)
+      this.setRandomMoveSpeed(2, 3)
     }
     super.processMove()
   }
@@ -2047,7 +2049,7 @@ class JemulEnemyHellSpike extends JemulEnemyData {
     this.setAutoImageData(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.hellSpike)
     this.setEnemyByCpStat(10, 10)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulSpike, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.diamondMagenta, this.width, this.height, 2))
-    this.setRandomSpeed(3, 3)
+    this.setRandomMoveSpeed(3, 3)
     this.attackDelay = new DelayData(120)
     this.isExitToReset = true
   }
@@ -2079,7 +2081,7 @@ class JemulEnemyHellDrill extends JemulEnemyData {
 
     this.moveDelay = new DelayData(240)
     this.setMoveDirection()
-    this.setRandomSpeed(4, 2)
+    this.setRandomMoveSpeed(4, 2)
     this.isExitToReset = true
     this.state = ''
   }
@@ -2235,14 +2237,14 @@ class JemulEnemyHellAir extends JemulEnemyData {
     this.enimationDown  = new EnimationData(this.imageSrc, down.x, down.y, down.width, down.height, down.frame, 1, -1, this.width, this.height)
     this.state = 'front'
     this.isExitToReset = true
-    this.setRandomSpeed(4, 4)
+    this.setRandomMoveSpeed(4, 4)
     this.moveDelay = new DelayData(120)
     this.attackDelay = new DelayData(150)
   }
 
   processMove () {
     if (this.moveDelay.check()) {
-      this.setRandomSpeed(4, 4)
+      this.setRandomMoveSpeed(4, 4)
       let randomNumberA = Math.random() * 100
       let randomNumberB = Math.random() * 100
 
@@ -3063,7 +3065,7 @@ class JemulEnemyRedAir extends JemulEnemyData {
     this.setAutoImageData(this.imageSrc, imageDataInfo.jemulEnemy.redAir)
     this.setEnemyByCpStat(40, 23)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulRedAir, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireRed, this.width, this.height, 2))
-    this.setRandomSpeed(2, 2)
+    this.setRandomMoveSpeed(2, 2)
     this.moveDelay = new DelayData(300)
     this.attackDelay = new DelayData(240)
     this.isExitToReset = true
@@ -3071,7 +3073,7 @@ class JemulEnemyRedAir extends JemulEnemyData {
 
   processMove () {
     if (this.moveDelay.check()) {
-      this.setRandomSpeed(2, 2)
+      this.setRandomMoveSpeed(2, 2)
       let randomNumberA = Math.random() * 100
       let randomNumberB = Math.random() * 100
 
@@ -3109,7 +3111,7 @@ class JemulEnemyRedShip extends JemulEnemyData {
     this.setAutoImageData(this.imageSrc, imageDataInfo.jemulEnemy.redShip)
     this.setEnemyByCpStat(41, 24)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulRedAir, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireRed, this.width, this.height, 2))
-    this.setRandomSpeed(2, 2)
+    this.setRandomMoveSpeed(2, 2)
     this.moveDelay = new DelayData(240)
     this.attackDelay = new DelayData(60)
     this.isExitToReset = true
@@ -3117,7 +3119,7 @@ class JemulEnemyRedShip extends JemulEnemyData {
 
   processMove () {
     if (this.moveDelay.check()) {
-      this.setRandomSpeed(2, 2)
+      this.setRandomMoveSpeed(2, 2)
       let randomNumberA = Math.random() * 100
       let randomNumberB = Math.random() * 100
 
@@ -3180,7 +3182,7 @@ class DonggramiEnemy extends EnemyData {
     this.setEnemyByCpStat(10, 10)
     this.isPossibleExit = true
     this.isExitToReset = true
-    this.setRandomSpeed(3, 3, true)
+    this.setRandomMoveSpeed(3, 3, true)
   }
 
   /** 
@@ -3463,7 +3465,7 @@ class DonggramiEnemyExclamationMark extends DonggramiEnemy {
     /** 느낌표 딜레이 체크 간격 */ this.exclamationMarkDelay = new DelayData(4)
     /** 느낌표 상태가 지속된 시간 */ this.exclamationMarkElaspedFrame = 0
     this.state = ''
-    this.setRandomSpeed(3, 3)
+    this.setRandomMoveSpeed(3, 3)
 
     soundSystem.createAudio(soundSrc.donggrami.exclamationMark)
 
@@ -3545,7 +3547,7 @@ class DonggramiEnemyExclamationMark extends DonggramiEnemy {
           this.isPossibleExit = true
           this.isExitToReset = true // 다시 원래대로 복구
           // 이동속도 재설정(다만, 이전 이동속도를 기억하진 않으므로 랜덤으로 재설정됩니다.)
-          this.setRandomSpeed(3, 3)
+          this.setRandomMoveSpeed(3, 3)
         }
       }
     }
@@ -3653,7 +3655,7 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.ALL)
     this.setEnemyByCpStat(20, 10)
-    this.setRandomSpeed(3, 3)
+    this.setRandomMoveSpeed(3, 3)
     this.emojiDelay = new DelayData(120)
     this.subType = DonggramiEnemy.SUBTYPE_EMOJI
 
@@ -4001,7 +4003,7 @@ class DonggramiEnemyBounce extends DonggramiEnemy {
   constructor () {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.ALL)
-    this.setRandomSpeed(4, 0, true)
+    this.setRandomMoveSpeed(4, 0, true)
 
     this.bounceSpeedY = Math.floor(Math.random() * 4) + 10
     this.bounceDelay = new DelayData(120)
@@ -4043,7 +4045,7 @@ class DonggramiEnemySpeed extends DonggramiEnemy {
     super()
     this.boostDelay = new DelayData(60)
     this.waitDelay = new DelayData(180)
-    this.setRandomSpeed(12, 12)
+    this.setRandomMoveSpeed(12, 12)
     this.state = ''
 
     this.baseSpeedX = this.moveSpeedX
@@ -4060,7 +4062,7 @@ class DonggramiEnemySpeed extends DonggramiEnemy {
 
       if (this.waitDelay.check()) {
         this.state = this.STATE_BOOST
-        this.setRandomSpeed(12, 12, true)
+        this.setRandomMoveSpeed(12, 12, true)
 
         // 변경된 속도에 맞춰서 기준 속도 재설정
         this.baseSpeedX = this.moveSpeedX
@@ -4093,7 +4095,7 @@ class DonggramiEnemyBossBig1 extends DonggramiEnemy {
     this.setDonggramiColor(DonggramiEnemy.colorGroup.BIG1)
 
     // 이 보스는 많이 느림
-    this.setRandomSpeed(3, 3)
+    this.setRandomMoveSpeed(3, 3)
     this.isPossibleExit = false // 화면 바깥을 나갈 수 없음
 
     this.BASE_DELAY = 240
@@ -4141,7 +4143,7 @@ class DonggramiEnemyBossBig1 extends DonggramiEnemy {
     super.processMove()
     
     if (this.moveDelay.check()) {
-      this.setRandomSpeed(3, 3)
+      this.setRandomMoveSpeed(3, 3)
     }
 
     this.degree += this.moveSpeedX + this.moveSpeedY
@@ -4337,7 +4339,7 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
     // 매 이동마다 이동속도는 무작위
     if (this.stateDelay.count === 0) {
       // normal 상태가 반복되면, 자기 자신의 속도를 재조정
-      this.setRandomSpeedMinMax(2, 2, 6, 6)
+      this.setRandomMoveSpeedMinMax(2, 2, 6, 6)
       // 일정 확률로 방향 전환 (약 50%)
       this.moveSpeedX = Math.random() < 0.5 ? this.moveSpeedX : -this.moveSpeedX
       this.moveSpeedY = Math.random() < 0.5 ? this.moveSpeedY : -this.moveSpeedY
@@ -4359,7 +4361,7 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
     if (this.stateDelay.count === 59) {
       // 플레이어가 있는 방향쪽으로 우선 이동하도록 이동 방향을 결정
       let playerP = fieldState.getPlayerObject()
-      this.setRandomSpeedMinMax(14, 1, 20, 3)
+      this.setRandomMoveSpeedMinMax(14, 1, 20, 3)
 
       if (playerP.x > this.x) {
         this.moveSpeedX = -this.moveSpeedX
@@ -5305,6 +5307,348 @@ class DonggramiEnemyLeaf extends DonggramiEnemy {
   }
 }
 
+class IntruderEnemy extends EnemyData {
+  constructor () {
+    super()
+    this.baseCp = 50000
+    this.imageSrc = imageSrc.enemy.intruderEnemy
+  }
+}
+
+class IntruderJemuBoss extends IntruderEnemy {
+  constructor () {
+    super()
+    this.setEnemyByCpStat(4000, 0) // 내부 공격력 없음 (따라서, 적과 충돌했을때에는 데미지 0)
+    /** 번개 공격력 */ this.ATTACK_THUNDER = 4
+
+    this.setAutoImageData(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.jemuWing, 4)
+    this.setWidthHeight(this.width * 2, this.height * 2) // 기존 (이미지데이터)크기의 2배로 재설정
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderJemu)
+    this.mainType = 'boss'
+
+    this.eyeEffect = EnimationData.createEnimation(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.jemuEye, 4, -1)
+    this.eyeEffect.setOutputSize(imageDataInfo.intruderEnemy.jemuEye.width * 2, imageDataInfo.intruderEnemy.jemuEye.height * 2)
+
+    this.finishX = 0
+    this.finishY = 0
+    this.moveDelay = new DelayData(120)
+    this.attackDelay = new DelayData(300)
+    this.attackDelay.count = 180 // 이것은 첫번째 패턴 지연시간을 줄이기 위해 추가로 설정한 값입니다.
+
+    this.isPossibleExit = false
+    this.dieAfterDeleteDelay = new DelayData(60)
+
+    /** 에너지 24발 동시 발사 패턴 */ this.STATE_ENERGY12 = 'energy24'
+    /** 에너지 3발을 플레이어 근처에 발사하는 패턴 */ this.STATE_ENERGYP3 = 'energyp3'
+    /** 에너지를 발사하는데 그 에너지는 벽에 반사됨 */ this.STATE_ENERGYRE = 'energyre'
+    /** 좌우 양옆으로 번개 발사 */ this.STATE_THUNDERLR = 'thunderlr'
+    /** 번개를 생성시키고 크기를 커지게 함 */ this.STATE_THUNDERBIG = 'thunderbig'
+    /** 번개를 4방향으로 생성시키고 회전시킴 */ this.STATE_THUNDERLINE = 'thunderline'
+    this.STATE_NORMAL = 'normal'
+
+    soundSystem.createAudio(soundSrc.enemyAttack.intruderJemuEnergy)
+    soundSystem.createAudio(soundSrc.enemyAttack.intruderJemuEnergyHigh)
+    soundSystem.createAudio(soundSrc.enemyAttack.intruderJemuEnergyLow)
+    soundSystem.createAudio(soundSrc.enemyAttack.intruderJemuEnergyPurple)
+    soundSystem.createAudio(soundSrc.enemyAttack.intruderJemuEnergyReflect)
+
+    this.attackObjectThunder = {baseX: 0, baseY: 0, x: 0, y: 0, width: 0, height: 0}
+    this.attackObject1 = {x: 0, y: 0, width: 800, height: 60, degree: 0}
+    this.attackObject2 = {x: 0, y: 0, width: 800, height: 60, degree: 90}
+    this.bigThunderEnimation = EnimationData.createEnimation(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.energyThunder, 2, -1)
+
+    this.attackNumberIndex = 0
+    this.attackNumberStack = [0, 1, 2, 3, 4, 5]
+    // 공격 번호를 중복없이 랜덤배치
+    for (let i = 0; i < this.attackNumberStack.length; i++) {
+      let randomIndex = Math.floor(Math.random() * this.attackNumberStack.length)
+      let tempNumber = this.attackNumberStack[i] 
+      this.attackNumberStack[i] = this.attackNumberStack[randomIndex]
+      this.attackNumberStack[randomIndex] = tempNumber
+    }
+  }
+
+  static thunderEnimation = EnimationData.createEnimation(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.energyThunder, 4, -1)
+  static energyBullet = new CustomEnemyBullet(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.energyBolt, 10, 1, 0)
+  static EnergyReflectBullet = class extends CustomEnemyBullet {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.energyReflect)
+      this.attack = 10
+      this.reflectCount = 0
+    }
+
+    processMove () {
+      super.processMove()
+      if (this.elapsedFrame >= 300 || this.reflectCount >= 4) {
+        this.isDeleted = true
+      }
+
+      if (Math.abs(this.moveSpeedX) < 4) {
+        this.moveSpeedX = this.moveSpeedX > 0 ? 4 : -4
+      }
+      if (Math.abs(this.moveSpeedY) < 4) {
+        this.moveSpeedY = this.moveSpeedY > 0 ? 4 : -4
+      }
+
+      if (this.x < 0) {
+        this.x = 0
+        this.moveSpeedX = Math.abs(this.moveSpeedX)
+        this.reflectCount++
+      } else if (this.x + this.width > graphicSystem.CANVAS_WIDTH) {
+        this.x = graphicSystem.CANVAS_WIDTH - this.width
+        this.moveSpeedX = -Math.abs(this.moveSpeedX)
+        this.reflectCount++
+      }
+
+      if (this.y < 0) {
+        this.y = 0
+        this.moveSpeedY = Math.abs(this.moveSpeedY)
+        this.reflectCount++
+      } else if (this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
+        this.y = graphicSystem.CANVAS_HEIGHT - this.height
+        this.moveSpeedY = -Math.abs(this.moveSpeedY)
+        this.reflectCount++
+      }
+    }
+  }
+  static ThunderLRBullet = class extends CustomEnemyBullet {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.energyThunder, 4)
+      this.STATE_NORMAL = 'normal'
+      this.STATE_MOVE = 'move'
+      this.state = 'normal'
+      this.moveDelay = new DelayData(1)
+      this.attack = 10
+    }
+
+    static lineNumber = 0
+    static getLineNumber () {
+      this.lineNumber++
+      if (this.lineNumber >= 10) {
+        this.lineNumber = 0
+      }
+
+      return this.lineNumber
+    }
+
+    afterInit () {
+      const isLeft = Math.random() < 0.5 ? true : false
+      if (isLeft) {
+        this.x = -this.width
+        this.y = (Math.random() * 60) + (IntruderJemuBoss.ThunderLRBullet.getLineNumber() * 60)
+        this.moveSpeedX = 8
+        this.moveSpeedY = 0
+      } else {
+        this.x = graphicSystem.CANVAS_WIDTH + this.width
+        this.y = (Math.random() * 60) + (IntruderJemuBoss.ThunderLRBullet.getLineNumber() * 60)
+        this.moveSpeedX = -8
+        this.moveSpeedY = 0
+      }
+    }
+
+    processMove () {
+      if (this.state === this.STATE_NORMAL) {
+        if (this.moveDelay.check()) {
+          this.state = this.STATE_MOVE
+        }
+      } else {
+        super.processMove()
+      }
+
+      if (this.elapsedFrame >= 240) {
+        this.isDeleted = true
+      }
+    }
+  }
+
+  processMove () {
+    super.processMove()
+
+    if (this.moveDelay.check()) {
+      this.setRandomMoveSpeed(Math.random() * 1, Math.random() * 1, true)
+    }
+  }
+
+  soundEnergy () {
+    let random = Math.floor(Math.random() * 3)
+    switch (random) {
+      case 0: soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergy); break
+      case 1: soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergyHigh); break
+      case 2: soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergyLow); break
+    }
+  }
+
+  processState () {
+    if (this.attackDelay.check()) {
+      let getNumber = this.attackNumberStack[this.attackNumberIndex]
+      this.attackNumberIndex++
+      if (this.attackNumberIndex >= this.attackNumberStack.length) {
+        this.attackNumberIndex = 0
+      }
+
+      switch (getNumber) {
+        case 0: this.state = this.STATE_ENERGY12; break
+        case 1: this.state = this.STATE_ENERGYP3; break
+        case 2: this.state = this.STATE_ENERGYRE; break
+        case 3: this.state = this.STATE_THUNDERBIG; break
+        case 4: this.state = this.STATE_THUNDERLINE; break
+        case 5: this.state = this.STATE_THUNDERLR; break
+        default: this.state = this.STATE_NORMAL
+      }
+
+      // 2초간의 대기시간을 가지게 하기 위한 추가적인 딜레이
+      // 단, 공격 함수 내에서 이 count가 마이너스일때 공격 처리를 무시하도록 해야함
+      this.attackDelay.count = -120
+    }
+  }
+
+  processAttack () {
+    // 공격 지연시간 카운트가 음수이면 공격을 처리하지 않도록 함
+    if (this.attackDelay.count < 0) return
+
+    if (this.state === this.STATE_ENERGY12 && this.attackDelay.divCheck(30)) {
+      // 원 위방향(0, 1) 부터 시계방향으로 360도 회전)
+      for (let i = 0; i < 12; i++) {
+        const x = 0
+        const y = 4
+        const degree = 30
+        const radian = (Math.PI / 180) * degree * i
+        let rx = (Math.cos(radian) * x) - (Math.sin(radian) * y)
+        let ry = (Math.sin(radian) * x) + (Math.cos(radian) * y)
+        let bullet = IntruderJemuBoss.energyBullet.getCreateObject()
+        bullet.setMoveSpeed(rx, ry)
+        fieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2))
+      }
+      this.soundEnergy()
+    } else if (this.state === this.STATE_ENERGYP3 && this.attackDelay.divCheck(20)) {
+      let player = fieldState.getPlayerObject()
+      let speedX = (player.centerX - this.centerX) / 120
+      let speedY = (player.centerY - this.centerY) / 120
+      const minSpeed = 4
+      if (Math.abs(speedX) < minSpeed && Math.abs(speedY) < minSpeed) {
+        // speedX와 speedY의 값을 비교하여 가장 높은 값을 최소 속도에 맞춰지도록 조정합니다.
+        let mul = Math.abs(speedX) < Math.abs(speedY) ? minSpeed / Math.abs(speedY) : minSpeed / Math.abs(speedX)
+        speedX *= mul
+        speedY *= mul
+      }
+
+      for (let i = 0; i < 3; i++) {
+        let bullet = IntruderJemuBoss.energyBullet.getCreateObject()
+        bullet.setMoveSpeed(speedX + (Math.random() * 2 - 1), speedY + (Math.random() * 2 - 1))
+        fieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2))
+      }
+
+      this.soundEnergy()
+    } else if (this.state === this.STATE_ENERGYRE && this.attackDelay.divCheck(15)) {
+      let bullet = new IntruderJemuBoss.EnergyReflectBullet()
+      bullet.setRandomMoveSpeed(8, 8, true)
+      fieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2))
+      soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergyPurple)
+    } else if (this.state === this.STATE_THUNDERLR && this.attackDelay.divCheck(60)) {
+      for (let i = 0; i < 6; i++) {
+        let bullet = new IntruderJemuBoss.ThunderLRBullet()
+        fieldState.createEnemyBulletObject(bullet)
+      }
+      soundSystem.play(soundSrc.enemyAttack.intruderJemuThunderNormal)
+    } else if (this.state === this.STATE_THUNDERBIG) {
+      let count = this.attackDelay.count
+      if (this.attackDelay.count === 0) {
+        this.attackObjectThunder.baseX = Math.random() * 400 + 200
+        this.attackObjectThunder.baseY = Math.random() * 400 + 100
+        this.attackObjectThunder.width = 1
+        this.attackObjectThunder.height = 1
+        soundSystem.play(soundSrc.enemyAttack.intruderJemuThunderBig)
+      } else {
+        this.attackObjectThunder.width = count * 4
+        this.attackObjectThunder.height = Math.floor(count / 2)
+      }
+
+      this.attackObjectThunder.x = this.attackObjectThunder.baseX - (this.attackObjectThunder.width / 2)
+      this.attackObjectThunder.y = this.attackObjectThunder.baseY - (this.attackObjectThunder.height / 2)
+
+      // 플레이어 데미지 처리
+      let player = fieldState.getPlayerObject()
+      if (this.attackDelay.count >= 30 && this.attackDelay.divCheck(6) && collision(player, this.attackObjectThunder)) {
+        player.addDamage(this.ATTACK_THUNDER)
+      }
+
+      this.bigThunderEnimation.process()
+    } else if (this.state === this.STATE_THUNDERLINE) {
+      if (this.attackDelay.count === 1) {
+        soundSystem.play(soundSrc.enemyAttack.intruderJemuThunderBig)
+      }
+
+      this.attackObject1.degree += 1.2
+      this.attackObject2.degree += 1.2
+      this.attackObject1.x = this.centerX - (this.attackObject1.width / 2)
+      this.attackObject1.y = this.centerY - (this.attackObject1.height / 2)
+      this.attackObject2.x = this.centerX - (this.attackObject1.width / 2)
+      this.attackObject2.y = this.centerY - (this.attackObject1.height / 2)
+
+      this.bigThunderEnimation.process()
+
+      // 플레이어 데미지 처리
+      let player = fieldState.getPlayerObject()
+      if (this.attackDelay.count >= 60 && this.attackDelay.divCheck(6)) {
+        if (collisionClass.collisionOBB(player, this.attackObject1) || collisionClass.collisionOBB(player, this.attackObject2)) {
+          player.addDamage(this.ATTACK_THUNDER)
+        }
+      }
+    }
+  }
+
+  processEnimation () {
+    super.processEnimation()
+    this.eyeEffect.process()
+  }
+
+  display () {
+    let alpha = 1
+    if (this.dieAfterDeleteDelay.count >= 1) {
+      let leftFrame = 50 - this.dieAfterDeleteDelay.count
+      if (leftFrame <= 0) leftFrame = 0
+      alpha = leftFrame * (1 / 50)
+    }
+
+    if (alpha !== 1) {
+      graphicSystem.setAlpha(alpha)
+    }
+
+    super.display()
+    this.eyeEffect.display(this.x + (30 * 2), this.y + (32 * 2))
+
+    if (alpha !== 1) {
+      graphicSystem.setAlpha(1)
+    }
+
+    if (this.isDied) return
+
+    if (this.attackDelay.count >= 0 && this.state === this.STATE_THUNDERBIG) {
+      this.bigThunderEnimation.outputWidth = this.attackObjectThunder.width
+      this.bigThunderEnimation.outputHeight = this.attackObjectThunder.height
+      this.bigThunderEnimation.degree = 0
+      this.bigThunderEnimation.display(this.attackObjectThunder.x, this.attackObjectThunder.y)
+    } else if (this.attackDelay.count >= 0 && this.state === this.STATE_THUNDERLINE) {
+      if (this.attackDelay.count < 60) {
+        alpha = this.attackDelay.count * (1 / 60)
+      } else {
+        alpha = 1
+      }
+
+      graphicSystem.setAlpha(alpha)
+      this.bigThunderEnimation.outputWidth = this.attackObject1.width
+      this.bigThunderEnimation.outputHeight = this.attackObject1.height
+      this.bigThunderEnimation.degree = this.attackObject1.degree
+      this.bigThunderEnimation.display(this.attackObject1.x, this.attackObject1.y)
+      this.bigThunderEnimation.degree = this.attackObject2.degree
+      this.bigThunderEnimation.display(this.attackObject2.x, this.attackObject2.y)
+      graphicSystem.setAlpha(1)
+    }
+  }
+}
+
 
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
@@ -5399,3 +5743,6 @@ dataExportEnemy.set(ID.enemy.donggramiEnemy.juice, DonggramiEnemyJuice)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.party, DonggramiEnemyParty)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.tree, DonggramiEnemyTree)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.leaf, DonggramiEnemyLeaf)
+
+// intruderEnemy / round 2-4 boss, round 2-5
+dataExportEnemy.set(ID.enemy.intruder.jemuBoss, IntruderJemuBoss)

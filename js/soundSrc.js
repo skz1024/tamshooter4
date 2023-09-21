@@ -81,6 +81,7 @@ export class soundSrc {
     enemyDieDonggrami: './sound/enemyDieDonggrami.wav',
     enemyDieDonggramiTree: './sound/enemyDieDonggramiTree.ogg',
     enemyDieDonggramiLeaf: './sound/enemyDieDonggramiLeaf.wav',
+    enemyDieIntruderJemu: './sound/enemyDieIntruderJemu.ogg',
   }
 
   static enemyAttack = {
@@ -89,6 +90,13 @@ export class soundSrc {
     jemulBossAttack: './sound/enemyJemulBossAttackLaser.ogg',
     jemulBossAttack2: './sound/enemyJemulBossAttackLaser2.ogg',
     jemulBossAttack3: './sound/enemyJemulBossAttackLaser3.ogg',
+    intruderJemuEnergy: './sound/enemyIntruderJemuEnergy.ogg',
+    intruderJemuEnergyLow: './sound/enemyIntruderJemuEnergyLow.ogg',
+    intruderJemuEnergyHigh: './sound/enemyIntruderJemuEnergyHigh.ogg',
+    intruderJemuEnergyPurple: './sound/enemyIntruderJemuEnergyPurple.ogg',
+    intruderJemuEnergyReflect: './sound/enemyIntruderJemuEnergyReflect.ogg',
+    intruderJemuThunderBig: './sound/enemyIntruderJemuThunderBig.ogg',
+    intruderJemuThunderNormal: './sound/enemyIntruderJemuThunderNormal.ogg',
   }
 
   static round = {
@@ -160,6 +168,7 @@ export class soundSrc {
     music11C1_bullet_room: './music/music11C1_bullet_room.ogg',
     music11C2_square_room: './music/music11C2_square_room.ogg',
     music11C3_trap_room: './music/music11C3_trap_room.ogg',
+    music12_donggrami_hall_outside: './music/music12_donggrami_hall_outside.ogg'
   }
 
   

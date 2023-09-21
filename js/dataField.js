@@ -36,8 +36,8 @@ export class collisionClass {
    *
    * 이 코드는 이 사이트를 참고해 재구성한 후 리메이크 했습니다.
    * http://programmerart.weebly.com/separating-axis-theorem.html
-   * @param {FieldData} objectA
-   * @param {FieldData} objectB
+   * @param {FieldData | any} objectA
+   * @param {FieldData | any} objectB
    */
   static collisionOBB (objectA, objectB) {
     // 각 오브젝트의 꼭짓점과 모서리를 계산합니다.
@@ -331,6 +331,8 @@ export class EnimationData {
 
   /**
    * 에니메이션 처리 로직
+   * 
+   * (경고: 이 함수를 동작시키지 않을경우, 에니메이션은 재생되지 않습니다.)
    */
   process () {
     // 에니메이션 지연시간이 넘어가지 않았다면(null 체크 필수), 또는 에니메이션이 종료된경우 처리 로직 종료
@@ -681,7 +683,7 @@ export class FieldData {
    * @param {number} maxY 최대 속도 Y
    * @param {boolean} isMinusRangeInclued 마이너스 범위 포함
    */
-  setRandomSpeed (maxX = 2, maxY = 2, isMinusRangeInclued = false) {
+  setRandomMoveSpeed (maxX = 2, maxY = 2, isMinusRangeInclued = false) {
     if (isMinusRangeInclued) {
       // 부호 결정용 랜덤 마이너스 처리
       // 50% 확률로 양수 또는 음수 결정
@@ -704,7 +706,7 @@ export class FieldData {
    * @param {number} [maxX=2] x좌표의 최대 이동속도
    * @param {number} [maxY=2] y좌표의 최대 이동속도
    */
-  setRandomSpeedMinMax (minX = 1, minY = 1, maxX = 2, maxY = 2) {
+  setRandomMoveSpeedMinMax (minX = 1, minY = 1, maxX = 2, maxY = 2) {
     this.moveSpeedX = Math.random() * (maxX - minX) + minX
     this.moveSpeedY = Math.random() * (maxY - minY) + minY
   }

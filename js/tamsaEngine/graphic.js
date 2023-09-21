@@ -668,6 +668,8 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     // 그리고 각 옵션이 정해진 범위를 가지는지를 확인합니다.
     if (option.length >= 1 && option[0] >= 0 && option[0] <= 3) {
       flip = option[0]
+    } else {
+      flip = this.flip
     }
 
     // rotate
@@ -676,11 +678,15 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
       if (rotate >= 360 || rotate < -360) {
         rotate = rotate % 360
       }
+    } else {
+      rotate = this.rotateDegree
     }
 
-    // alpha
+    // alpha (없을 경우 글로벌 알파값 적용)
     if (option.length >= 3 && option[2] >= 0 && option[2] <= 1) {
       alpha = option[2]
+    } else {
+      alpha = this.context.globalAlpha
     }
 
     if (rotate !== 0) {

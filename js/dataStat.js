@@ -247,24 +247,24 @@ dataExportStatPlayerSkill.set(ID.playerSkill.moon, new StatPlayerSkill('moon', 2
 export const dataExportStatRound = new Map()
 dataExportStatRound.set(ID.round.UNUSED, new StatRound())
 // round 1
-dataExportStatRound.set(ID.round.round1_1, new StatRound('1-1', '우주 여행 - 행성을 찾아 떠나는 길', 0, 40000, 150, 30000, ''))
-dataExportStatRound.set(ID.round.round1_2, new StatRound('1-2', '운석 지대 - 운석이 많은 구역', 1, 40000, 180, 36000, ''))
-dataExportStatRound.set(ID.round.round1_3, new StatRound('1-3', '운석 지대 - 무인기 충돌 구역', 1, 40000, 210, 39000, ''))
-dataExportStatRound.set(ID.round.round1_4, new StatRound('1-4', '운석 지대 - 의식의 공간', 4, 40000, 151, 38000, ''))
+dataExportStatRound.set(ID.round.round1_1, new StatRound('1-1', '우주 여행 - 공허', 0, 40000, 150, 30000, ''))
+dataExportStatRound.set(ID.round.round1_2, new StatRound('1-2', '운석 지대', 1, 40000, 180, 36000, ''))
+dataExportStatRound.set(ID.round.round1_3, new StatRound('1-3', '운석 지대 - 무인기 충돌', 1, 40000, 210, 39000, ''))
+dataExportStatRound.set(ID.round.round1_4, new StatRound('1-4', '의식의 공간', 4, 40000, 151, 38000, ''))
 dataExportStatRound.set(ID.round.round1_5, new StatRound('1-5', '운석 지대 - 레드 존', 4, 40000, 210, 41000, ''))
-dataExportStatRound.set(ID.round.round1_6, new StatRound('1-6', '우주 여행 - 센티멘탈 행성계: 파란 행성', 6, 40000, 152, 35000, ''))
-dataExportStatRound.set(ID.round.round1_test, new StatRound('TEST1', 'TEST1', 0, 0, 300, 0, '임의 테스트 라운드 - 디버그 용도로 활용'))
+dataExportStatRound.set(ID.round.round1_6, new StatRound('1-6', '우주 여행 - 파란 행성 가는 길', 6, 40000, 152, 35000, ''))
+dataExportStatRound.set(ID.round.round1_test, new StatRound('TEST1', 'TEST1', 0, 0, 300, 0, '테스트 라운드 (디버그 용도)'))
 // round 2
-dataExportStatRound.set(ID.round.round2_1, new StatRound('2-1', '파란 행성 - 하늘권 300km ~ 250km', 8, 50000, 150, 40000, ''))
-dataExportStatRound.set(ID.round.round2_2, new StatRound('2-2', '동그라미 마을 - 마을 내부', 8, 50000, 170, 44000, ''))
-dataExportStatRound.set(ID.round.round2_3, new StatRound('2-3', '동그라미 마을 - 동그라미 스페이스', 12, 50000, 192, 48000, ''))
-dataExportStatRound.set(ID.round.round2_4, new StatRound('2-4', '동그라미 마을 - 캠퍼스 공간 (상점 포함)', 12, 50000, 220, 52000, ''))
-dataExportStatRound.set(ID.round.round2_5, new StatRound('2-5', '동그라미 마을 - 적과의 전투', 14, 50000, 180, 48000, ''))
-dataExportStatRound.set(ID.round.round2_6, new StatRound('2-6', '동그라미 마을 - 조용한 도로', 15, 50000, 150, 44000, ''))
+dataExportStatRound.set(ID.round.round2_1, new StatRound('2-1', '파란 행성 - 하늘 300km ~ 250km', 8, 50000, 150, 40000, ''))
+dataExportStatRound.set(ID.round.round2_2, new StatRound('2-2', '동그라미 마을', 8, 50000, 170, 44000, ''))
+dataExportStatRound.set(ID.round.round2_3, new StatRound('2-3', '동그라미 스페이스', 12, 50000, 192, 48000, ''))
+dataExportStatRound.set(ID.round.round2_4, new StatRound('2-4', '동그라미 마을 홀', 12, 50000, 220, 52000, ''))
+dataExportStatRound.set(ID.round.round2_5, new StatRound('2-5', '지하실의 전투', 14, 50000, 180, 48000, ''))
+dataExportStatRound.set(ID.round.round2_6, new StatRound('2-6', '조용한 도로', 15, 50000, 150, 44000, ''))
 // round 3
 dataExportStatRound.set(ID.round.round3_1, new StatRound('3-1', '다운 타워 - 1: 레이저 전투', 20, 70000, 240, 35000, ''))
 
-// 앞으로의 예정
+// 미정...
 // 3-2 다운타워 - 2: 액스 겹치기
 // 3-3 다운타워 - 3: 대형 전투기
 // 3-4 다운타워 - 4: 무서운 폭격

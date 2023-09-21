@@ -57,6 +57,7 @@ export class imageSrc {
     meteoriteEnemy: './image/enemy/meteoriteEnemy.png',
     jemulEnemy: './image/enemy/jemulEnemy.png',
     donggramiEnemy: './image/enemy/donggramiEnemy.png',
+    intruderEnemy: './image/enemy/intruderEnemy.png',
   }
 
   static enemyBullet = {
@@ -66,6 +67,7 @@ export class imageSrc {
 
   static enemyEffect = {
     donggrami: './image/enemy/donggramiEnemyEffect.png',
+    intruder: './image/enemy/intruderEnemyEffect.png'
   }
 
   static enemyDie = {
@@ -270,6 +272,17 @@ export class imageDataInfo {
     // new added
     tree: {x: 0, y: 510, width: 60, height: 120, frame: 1},
     leaf: {x: 60, y: 510, width: 50, height: 50, frame: 1}
+  }
+
+  static intruderEnemy = {
+    jemuEye: {x: 0, y: 0, width: 100, height: 60, frame: 8},
+    jemuWing: {x: 0, y: 60, width: 160, height: 120, frame: 5},
+  }
+
+  static intruderEnemyEffect = {
+    energyBolt: {x: 0, y: 0, width: 50, height: 50, frame: 10},
+    energyThunder: {x: 0, y: 50, width: 100, height: 30, frame: 8},
+    energyReflect: {x: 0, y: 80, width: 50, height: 50, frame: 10}
   }
 
   static fieldSystem = {

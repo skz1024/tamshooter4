@@ -2487,8 +2487,8 @@ class Round1_test extends RoundData {
 
     this.addRoundPhase(() => {
       
-      if (this.timeCheckInterval(0, 99, 60) && this.getEnemyCount() < 10) {
-        this.createEnemy(ID.enemy.donggramiEnemy.juice, 800, 0)
+      if (this.timeCheckInterval(0, 99, 60) && this.getEnemyCount() < 1) {
+        this.createEnemy(ID.enemy.intruder.jemuBoss, 800, 0)
       }
     }, 0, 999)
   }
@@ -5327,6 +5327,7 @@ class Round2_4 extends RoundData {
 
     this.backgroundAbsoluteX = 0
     this.backgroundAbsoluteY = 0
+    this.musicSrc = '' // 음악 없음 (초반 페이즈에는 음악이 재생되지 않습니다.)
 
     /** 배경 인사이드 리스트, 배경은 순서대로 진행됨 (다만 이동방향이 다를 수 있음) */
     this.bgListInside = [
@@ -5336,12 +5337,13 @@ class Round2_4 extends RoundData {
     // 기본 배경 설정
     this.backgroundImageSrc = imageSrc.round.round2_4_inside_corridor
 
-    this.addRoundPhase(this.roundPhase00, 0, 5)
-    this.addRoundPhase(this.roundPhase01, 6, 20)
+    this.addRoundPhase(this.roundPhase00, 0, 5) // 초기
+    this.addRoundPhase(this.roundPhase01, 6, 20) // 복도
     this.addRoundPhase(this.roundPhase02, 21, 44)
-    this.addRoundPhase(this.roundPhase03, 45, 90)
-    this.addRoundPhase(this.roundPhase04, 199, 199)
-
+    this.addRoundPhase(this.roundPhase03, 45, 84)
+    this.addRoundPhase(this.roundPhase04, 85, 124) 
+    this.addRoundPhase(this.roundPhase05, 125, 150) 
+    this.addRoundPhase(this.roundPhase06, 125, 150)
 
     /** 각 코스의 이름 상수 */
     this.courseName = {
@@ -5360,6 +5362,8 @@ class Round2_4 extends RoundData {
     soundSystem.createAudio(soundSrc.round.r2_4_elevatorDoorOpen)
     soundSystem.createAudio(soundSrc.round.r2_4_elevatorFloor)
     soundSystem.createAudio(soundSrc.round.r2_4_elevatorMove)
+    graphicSystem.createImage(imageSrc.round.round2_4_elevator)
+    graphicSystem.createImage(imageSrc.round.round2_4_elevator_number)
   }
 
   roundPhase00 () {
@@ -5453,7 +5457,7 @@ class Round2_4 extends RoundData {
     this.spriteElevator.process()
 
     // outside: 엘리베이터 탑승 -> 5층 -> 옥상
-    let pTime = this.phaseTime[2].startTime
+    const pTime = this.phaseTime[2].startTime
     if (this.currentCourseName === this.courseName.OUTSIDE) {
       if (this.timeCheckFrame(pTime + 0)) {
         this.changeBackgroundImage(imageSrc.round.round2_4_elevator_inside)
@@ -5471,22 +5475,52 @@ class Round2_4 extends RoundData {
         this.changeBackgroundImage(imageSrc.round.round2_4_elevator_rooftop, 60)
       } else if (this.timeCheckFrame(pTime + 20)) {
         this.spriteElevator.setDoorOpen(false)
+      } else if (this.timeCheckFrame(pTime + 22)) {
+        this.setCurrentTime(this.phaseTime[3].startTime)
       }
     }
   }
 
   roundPhase03 () {
+    const pTime = this.phaseTime[3].startTime
+    if (this.currentCourseName === this.courseName.OUTSIDE) {
+      if (this.timeCheckFrame(pTime + 0)) {
+        this.musicChange(soundSrc.music.music12_donggrami_hall_outside)
+        this.musicPlay()
+      }
+
+      // 적들 등장
+      if (this.timeCheckInterval(pTime + 0, pTime + 4, 30)) {
+        this.createEnemy(ID.enemy.donggramiEnemy.fruit)
+      } else if (this.timeCheckInterval(pTime + 7, pTime + 11, 30)) {
+        this.createEnemy(ID.enemy.donggramiEnemy.juice)
+      } else if (this.timeCheckInterval(pTime + 14, pTime + 18, 30)) {
+        this.createEnemy(ID.enemy.donggramiEnemy.party)
+      } else if (this.timeCheckInterval(pTime + 22, pTime + 40, 90)) {
+        this.createEnemy(ID.enemy.donggramiEnemy.fruit)
+        this.createEnemy(ID.enemy.donggramiEnemy.juice)
+        this.createEnemy(ID.enemy.donggramiEnemy.party)
+      }
+    }
+  }
+
+  roundPhase04 () {
+  }
+
+
+  roundPhase05 () {
 
   }
 
-  roundPhase04 () {}
+  roundPhase06 () {}
+  roundPhase07 () {}
 
   processDebug () {
     // 디버그할 때 코스 선택을 고려해주세요
-    // if (this.timeCheckFrame(0, 1)) {
-    //   this.currentTime = 20
-    //   this.currentCourseName = this.courseName.OUTSIDE
-    // }
+    if (this.timeCheckFrame(0, 1)) {
+      this.currentTime = 43
+      this.currentCourseName = this.courseName.OUTSIDE
+    }
   }
 
   processBackground () {
@@ -5537,12 +5571,46 @@ class Round2_4 extends RoundData {
         break
       case 3:
         if (this.currentCourseName === this.courseName.OUTSIDE) {
-          this.backgroundAbsoluteX++
-          this.backgroundX = this.backgroundAbsoluteX
-
           // 엘리베이터 좌표 설정 (엘리베이터는 배경 0, 0 기준으로 200, 100에 위치함)
           this.spriteElevator.x = 200 + -this.backgroundAbsoluteX
           this.spriteElevator.y = 100
+
+          if (this.backgroundAbsoluteX < 2400) {
+            this.backgroundAbsoluteX++
+            this.backgroundX = this.backgroundAbsoluteX
+          } else {
+            this.backgroundAbsoluteX = 2400
+            this.backgroundX = this.backgroundAbsoluteX
+          }
+        }
+        break
+      case 4:
+        if (this.timeCheckFrame(this.phaseTime[4].startTime, 0)) {
+          this.backgroundAbsoluteX = 0
+          this.backgroundX = this.backgroundAbsoluteX
+        } else if (this.currentCourseName === this.courseName.OUTSIDE) {
+
+          if (this.backgroundAbsoluteX < 2400) {
+            this.backgroundAbsoluteX++
+            this.backgroundX = this.backgroundAbsoluteX
+          } else {
+            this.backgroundAbsoluteX = 2400
+            this.backgroundX = this.backgroundAbsoluteX
+          }
+        }
+        break
+      case 5:
+        if (this.timeCheckFrame(this.phaseTime[5].startTime, 0)) {
+          this.backgroundAbsoluteX = 0
+          this.backgroundX = this.backgroundAbsoluteX
+        } else if (this.currentCourseName === this.courseName.OUTSIDE) {
+          if (this.backgroundAbsoluteX < 800) {
+            this.backgroundAbsoluteX++
+            this.backgroundX = this.backgroundAbsoluteX
+          } else {
+            this.backgroundAbsoluteX = 800
+            this.backgroundX = this.backgroundAbsoluteX
+          }
         }
         break
     }
@@ -5558,6 +5626,10 @@ class Round2_4 extends RoundData {
       case 1: this.displayPhase01(); break
       case 2: this.displayPhase02(); break
       case 3: this.displayPhase03(); break
+      case 4: this.displayPhase04(); break
+      case 5: this.displayPhase05(); break
+      case 6: this.displayPhase06(); break
+      case 7: this.displayPhase07(); break
     }
 
     digitalDisplay('absolX: ' + this.backgroundAbsoluteX + ', ' + 'absolY: ' + this.backgroundAbsoluteY, 0, 0)
@@ -5590,18 +5662,46 @@ class Round2_4 extends RoundData {
 
   displayPhase03 () {
     // 배경 이미지 구조
-    // 엘리베이터옥상루트탑 - 옥상 - 옥상 - 옥상 다리 - 옥상 다리 - 산길
+    // 엘리베이터옥상 - 옥상 - 옥상 - 옥상 다리 - 옥상 다리 - 산길 (총 80초 구간)
     graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
     let gWidth = graphicSystem.CANVAS_WIDTH
-    graphicSystem.imageView(imageSrc.round.round2_4_elevator_rooftop, 0 - this.backgroundAbsoluteX, 0)
+    graphicSystem.imageView(imageSrc.round.round2_4_elevator_rooftop, (gWidth * 0) - this.backgroundAbsoluteX, 0)
     graphicSystem.imageView(imageSrc.round.round2_4_rooftop, (gWidth * 1) - this.backgroundAbsoluteX, 0)
     graphicSystem.imageView(imageSrc.round.round2_4_rooftop, (gWidth * 2) - this.backgroundAbsoluteX, 0)
     graphicSystem.imageView(imageSrc.round.round2_4_rooftop_wayout, (gWidth * 3) - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(imageSrc.round.round2_4_mountain_path, (gWidth * 4) - this.backgroundAbsoluteX, 0)
     
     if (this.backgroundAbsoluteX <= graphicSystem.CANVAS_WIDTH) {
       this.spriteElevator.display()
     }
+  }
+
+  displayPhase04 () {
+    // 배경 이미지 구조
+    // 산길 - 산길 - 깊은산길 - 산길 우회로
+    // 중간 보스전 존재
+    graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
+    let gWidth = graphicSystem.CANVAS_WIDTH
+    graphicSystem.imageView(imageSrc.round.round2_4_rooftop_wayout, (gWidth * 0) - this.backgroundAbsoluteX, 0)
+    graphicSystem.imageView(imageSrc.round.round2_4_mountain_path, (gWidth * 1) - this.backgroundAbsoluteX, 0)
+    graphicSystem.imageView(imageSrc.round.round2_4_mountain_path, (gWidth * 2) - this.backgroundAbsoluteX, 0)
+    graphicSystem.imageView(imageSrc.round.round2_4_mountain_deep, (gWidth * 3) - this.backgroundAbsoluteX, 0)
+  }
+
+  displayPhase05 () {
+    // 배경 이미지 구조
+    // 산길 - 산길 - 깊은산길 - 산길 우회로
+    // 중간 보스전 존재
+    graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
+    let gWidth = graphicSystem.CANVAS_WIDTH
+    graphicSystem.imageView(imageSrc.round.round2_4_mountain_deep, (gWidth * 0) - this.backgroundAbsoluteX, 0)
+    graphicSystem.imageView(imageSrc.round.round2_4_mountain_deep, (gWidth * 1) - this.backgroundAbsoluteX, 0)
+    graphicSystem.imageView(imageSrc.round.round2_4_mountain_down, (gWidth * 2) - this.backgroundAbsoluteX, 0)
+  }
+  displayPhase06 () {
+    
+  }
+  displayPhase07 () {
+    
   }
 
   createSpriteElevator () {
@@ -5714,9 +5814,10 @@ class Round2_4 extends RoundData {
 
       displayNumber () {
         const displayAreaX = this.x + 100
+        const displayAreaY = this.y - 60
         const numberPositionXMinusB = displayAreaX + 50
         const numberPositionX = displayAreaX + 100
-        const numberPositionY = this.y - 60
+        const numberPositionY = this.y - 55
         const numberPositionArrowX = displayAreaX + 150
 
         let imgDbase = imageDataInfo.round2_4_elevator
@@ -5733,7 +5834,7 @@ class Round2_4 extends RoundData {
 
         // 배경 및 숫자 표시
         if (imgD == null) return
-        graphicSystem.imageDisplay(imageSrc.round.round2_4_elevator_number, imgBg.x, imgBg.y, imgBg.width, imgBg.height, displayAreaX, numberPositionY, imgBg.width, imgBg.height)
+        graphicSystem.imageDisplay(imageSrc.round.round2_4_elevator_number, imgBg.x, imgBg.y, imgBg.width, imgBg.height, displayAreaX, displayAreaY, imgBg.width, imgBg.height)
         graphicSystem.imageDisplay(imageSrc.round.round2_4_elevator_number, imgD.x, imgD.y, imgD.width, imgD.height, numberPositionX, numberPositionY, imgD.width, imgD.height)
         if (this.floor < 0) { // B 출력
           imgD = imgDbase.numberB
