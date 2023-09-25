@@ -2005,19 +2005,22 @@ export class gameSystem {
   static SAVE_DELAY = 60
 
   /**
-   * 저장 기능은, 1초에 한번씩 진행됩니다. 달래아 - 지연(시간)
+   * 저장 기능은, 1초에 한번씩 진행됩니다. 달래아 - 지연(프레임)
    * 이 게임 내에서는, 지연 시간을 딜레이란 단어로 표기합니다.
+   * 
+   * @param {boolean} [forceSave=false] 강제 세이브 여부 (딜레이를 무시함) 특정 상황에서만 이 변수의 값을 true로 설정해주세요.
    */
-  static processSave () {
+  static processSave (forceSave = false) {
     // 데이터 리셋이 되었다면, 게임을 자동 새로고침하므로 저장 함수를 실행하지 않음.
     if (this.isDataReset) return
 
     /** 저장 딜레이 시간 */ const SAVE_DELAY = this.SAVE_DELAY
 
     // 세이브 지연시간보다 세이브 지연 시간을 카운트 한 값이 낮으면 함수는 실행되지 않습니다.
-    // 즉, 60frame을 채울때까지 저장 기능은 미루어집니다. 쉽게말하면 1초에 1번씩 저장합니다.
+    // 즉, 60frame을 채울때까지 저장 기능은 미루어집니다. 따라서 1초에 1번씩 저장합니다.
     this.saveDelayCount++ // 세이브 딜레이에 카운트 증가
-    if (this.saveDelayCount < SAVE_DELAY) return
+    // 강제세이브의 경우, 저장딜레이를 무시하고 강제로 저장함
+    if (!forceSave && this.saveDelayCount < SAVE_DELAY) return
 
     // 세이브 딜레이 초기화
     this.saveDelayCount = 0
@@ -2047,8 +2050,8 @@ export class gameSystem {
     const userData = this.userSystem.getSaveData()
     localStorage.setItem(this.saveKey.userData, userData)
 
-    // 필드 저장 데이터는, 필드 상태일때만 저장됩니다.
-    if (this.stateId === this.STATE_FIELD) {
+    // 필드 저장 데이터는, 필드 상태에서, 게임이 진행 중일 때에만 저장됩니다. 클리어, 게임오버, 탈출상태가 되면 저장하지 않습니다.
+    if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
       const fieldSaveData = fieldSystem.getSaveData()
       localStorage.setItem(this.saveKey.fieldData, JSON.stringify(fieldSaveData))
     } else {
@@ -2174,6 +2177,10 @@ export class gameSystem {
         break
       case messageList.STATE_FIELD:
         this.stateId = this.STATE_FIELD
+        break
+      case messageList.REQUEST_SAVE:
+        this.processSave(true)
+        break
     }
 
     // 메세지는 처리된 후 지워져야 합니다.

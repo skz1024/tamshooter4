@@ -441,6 +441,9 @@ export class SoundSystem {
         this.currentMusicState = this.musicStateList.PLAYING
       }
     }
+
+    // 페이드 취소 (음악을 페이드 한 시간보다 더 빨리 재생시키면 버그가 발생할 수 있으므로, 버그 방지를 위해 추가함)
+    this.musicFadeCancle()
   }
 
   /** 현재 음악의 재생 시간 강제 조정 */
@@ -608,6 +611,9 @@ export class SoundSystem {
 
     this.currentMusic = null
     this.currentMusicState = this.musicStateList.STOP
+
+    // 페이드 취소 (음악을 페이드 한 시간보다 더 빨리 정지시키면 버그가 발생할 수 있으므로, 버그 방지를 위해 추가함)
+    this.musicFadeCancle()
 
     // this.musicFadeCancle()
 

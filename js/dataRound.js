@@ -99,16 +99,21 @@ export class PackRoundLoad {
       soundSrc.donggrami.throw,
       soundSrc.donggrami.exclamationMark,
       soundSrc.donggrami.questionMark,
-      soundSrc.enemyDie.enemyDieDonggrami,
-      soundSrc.donggrami.createObject,
       soundSrc.donggrami.juiceCola,
       soundSrc.donggrami.juiceThrow,
       soundSrc.donggrami.firecracker,
       soundSrc.donggrami.plate,
-      soundSrc.donggrami.candle,
-
-      soundSrc.enemyDie.enemyDieDonggramiTree,
+      
+      soundSrc.enemyDie.enemyDieDonggrami,
       soundSrc.enemyDie.enemyDieDonggramiLeaf,
+
+      soundSrc.enemyAttack.intruderJemuEnergy,
+      soundSrc.enemyAttack.intruderJemuEnergyHigh,
+      soundSrc.enemyAttack.intruderJemuEnergyLow,
+      soundSrc.enemyAttack.intruderJemuEnergyPurple,
+      soundSrc.enemyAttack.intruderJemuEnergyReflect,
+      soundSrc.enemyAttack.intruderJemuThunderBig,
+      soundSrc.enemyAttack.intruderJemuThunderNormal,
     ]
   }
 }
@@ -201,7 +206,7 @@ export class RoundData {
      * 
      * 주의: 라운드에서는 round와 enemy도 같이 로드해야 합니다.
      * 
-     * 이 변수를 직접 수정하기 보다는 setLoadingImageList 함수를 사용하는것을 권장합니다.
+     * 이 변수를 직접 수정하기 보다는 addLoadingImageList 함수를 사용하는것을 권장합니다.
      * 
      * 반드시 클래스의 constructor(생성자)에서 작성해야 합니다.
      * 다른곳에서 작성할경우 해당 파일을 정상적으로 로드할 수 없습니다.
@@ -214,7 +219,7 @@ export class RoundData {
      * 
      * 주의: 라운드에서는 round와 enemy도 같이 로드해야 합니다.
      * 
-     * 이 변수를 직접 수정하기 보다는 setLoadingSoundList 함수를 사용하는것을 권장합니다.
+     * 이 변수를 직접 수정하기 보다는 addLoadingSoundList 함수를 사용하는것을 권장합니다.
      * 
      * 반드시 클래스의 constructor(생성자)에서 작성해야 합니다.
      * 다른곳에서 작성할경우 해당 파일을 정상적으로 로드할 수 없습니다.
@@ -261,7 +266,7 @@ export class RoundData {
       graphicSystem.createImage(this.loadingImageList[i])
     }
     for (let i = 0; i < this.loadingSoundList.length; i++) {
-      soundSystem.createAudio(this.loadingImageList[i])
+      soundSystem.createAudio(this.loadingSoundList[i])
     }
   }
 
@@ -580,6 +585,28 @@ export class RoundData {
   displayBossHp () {
     if (!this.bossMode) return
 
+    let enemy = fieldState.getEnemyObject()
+    let firstEnemy
+    if (enemy[0] != null) {
+      firstEnemy = enemy[0]
+    } else {
+      return
+    }
+
+    let percent = firstEnemy.hp / firstEnemy.hpMax
+    graphicSystem.setAlpha(0.7)
+    graphicSystem.fillRect(0, 0, graphicSystem.CANVAS_WIDTH, 20, 'lightgrey')
+    if (percent >= 0.2) {
+      graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'yellow', 'orange')
+    } else {
+      graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'purple', 'red')
+    }
+    graphicSystem.setAlpha(1)
+    digitalDisplay('boss hp: ' + firstEnemy.hp + '/' + firstEnemy.hpMax, 0, 0)
+  }
+
+  /** 보스의 체력을 표시 (보스모드와 상관없음) 주의: 첫번째의 적의 hp만 체크합니다. */
+  defaultDisplayBossHp () {
     let enemy = fieldState.getEnemyObject()
     let firstEnemy
     if (enemy[0] != null) {
@@ -1753,13 +1780,13 @@ class Round1_4 extends RoundData {
 
   processBackground () {
     // 참고: 1-4는 여기에 배경을 조정하는 기능이 없고 각 roundPhase마다 적혀져있습니다.
-    this.backgroundSpeedX = 0.4
-
-    // 자연스러운 배경 변화를 위해 x축 위치를 고정시킴
-    // 다만, 다음 페이즈에서 배경을 흔드는 상황이 오기 때문에 이 처리는 페이즈 3에서만 적용
-    // 주의: 초반에 시간을 너무 끌어버린 경우, 부자연스럽게 배경이 이동할 수 있음.
-    // 이것은 버그로 취급하지 않음.
-    if (this.currentTime >= 80 && this.currentTime <= 110) {
+    if (this.getCurrentPhase() === 0 || this.getCurrentPhase() === 1) {
+      this.backgroundSpeedX = 0.4
+    } else if (this.getCurrentPhase() === 2 || this.getCurrentPhase() === 3) {
+      // 자연스러운 배경 변화를 위해 x축 위치를 고정시킴
+      // 다만, 다음 페이즈에서 배경을 흔드는 상황이 오기 때문에 이 처리는 페이즈 3에서만 적용
+      // 주의: 초반에 시간을 너무 끌어버린 경우, 부자연스럽게 배경이 이동할 수 있음.
+      // 이것은 버그로 취급하지 않음.
       this.backgroundSpeedX = 0
 
       // 만약 배경 X축이 앞으로 이동되었다면, 강제로 0으로 오도록 변경
@@ -2482,13 +2509,13 @@ class Round1_test extends RoundData {
 
     this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
     this.addLoadingImageList(PackRoundLoad.getRound2ShareImage())
-    this.addLoadingImageList(PackRoundLoad.getRound1ShareSound())
-    this.addLoadingImageList(PackRoundLoad.getRound2ShareSound())
+    this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
+    this.addLoadingSoundList(PackRoundLoad.getRound2ShareSound())
+    this.addLoadingImageList([imageSrc.round.round2_4_elevator])
 
     this.addRoundPhase(() => {
-      
-      if (this.timeCheckInterval(0, 99, 60) && this.getEnemyCount() < 1) {
-        this.createEnemy(ID.enemy.intruder.jemuBoss, 800, 0)
+      if (this.timeCheckFrame(4)) {
+      } else if (this.timeCheckFrame(6)) {
       }
     }, 0, 999)
   }
@@ -2626,7 +2653,7 @@ class Round2_1 extends RoundData {
     }
 
     // 빨강, 보라가 추가로 등장 (dps 80%)
-    if (this.timeCheckInterval(13, 27, 60)) {
+    if (this.timeCheckInterval(19, 27, 60)) {
       this.createEnemy(ID.enemy.donggramiEnemy.miniGreen)
       this.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
       this.createEnemy(ID.enemy.donggramiEnemy.miniRed)
@@ -5329,21 +5356,18 @@ class Round2_4 extends RoundData {
     this.backgroundAbsoluteY = 0
     this.musicSrc = '' // 음악 없음 (초반 페이즈에는 음악이 재생되지 않습니다.)
 
-    /** 배경 인사이드 리스트, 배경은 순서대로 진행됨 (다만 이동방향이 다를 수 있음) */
-    this.bgListInside = [
-
-    ]
-
     // 기본 배경 설정
     this.backgroundImageSrc = imageSrc.round.round2_4_inside_corridor
 
-    this.addRoundPhase(this.roundPhase00, 0, 5) // 초기
-    this.addRoundPhase(this.roundPhase01, 6, 20) // 복도
-    this.addRoundPhase(this.roundPhase02, 21, 44)
-    this.addRoundPhase(this.roundPhase03, 45, 84)
-    this.addRoundPhase(this.roundPhase04, 85, 124) 
-    this.addRoundPhase(this.roundPhase05, 125, 150) 
-    this.addRoundPhase(this.roundPhase06, 125, 150)
+    this.addRoundPhase(this.roundPhase00, 0, 1) // 초기
+    this.addRoundPhase(this.roundPhase01, 2, 15) // 복도
+    this.addRoundPhase(this.roundPhase02, 16, 39) // 엘리베이터
+    this.addRoundPhase(this.roundPhase03, 40, 79) // 필드1
+    this.addRoundPhase(this.roundPhase04, 80, 119) // 필드2
+    this.addRoundPhase(this.roundPhase05, 120, 159) // 필드3
+    this.addRoundPhase(this.roundPhase06, 160, 199) // 보스전/필드4
+    this.addRoundPhase(this.roundPhase07, 200, 219) // 지하실 이동
+    this.addRoundPhase(this.roundPhase08, 220, 237) // 엘리베이터
 
     /** 각 코스의 이름 상수 */
     this.courseName = {
@@ -5356,14 +5380,47 @@ class Round2_4 extends RoundData {
     /** 현재 코스의 이름: (총 3종류: inside, outside, ) */
     this.currentCourseName = this.courseName.FIRST
 
-    this.spriteElevator = this.createSpriteElevator()
+    this.addLoadingImageList([
+      imageSrc.round.round2_4_elevator,
+      imageSrc.round.round2_4_elevator_number
+    ])
+    
+    this.addLoadingSoundList([
+      soundSrc.round.r2_4_elevatorDoorClose,
+      soundSrc.round.r2_4_elevatorDoorOpen,
+      soundSrc.round.r2_4_elevatorFloor,
+      soundSrc.round.r2_4_elevatorMove,
+      soundSrc.round.r2_4_message1
+    ])
 
-    soundSystem.createAudio(soundSrc.round.r2_4_elevatorDoorClose)
-    soundSystem.createAudio(soundSrc.round.r2_4_elevatorDoorOpen)
-    soundSystem.createAudio(soundSrc.round.r2_4_elevatorFloor)
-    soundSystem.createAudio(soundSrc.round.r2_4_elevatorMove)
-    graphicSystem.createImage(imageSrc.round.round2_4_elevator)
-    graphicSystem.createImage(imageSrc.round.round2_4_elevator_number)
+    this.addLoadingImageList(PackRoundLoad.getRound2ShareImage())
+    this.addLoadingSoundList(PackRoundLoad.getRound2ShareSound())
+    this.spriteElevator = this.createSpriteElevator()
+  }
+
+  processSaveString () {
+    this.saveString = '' + this.backgroundAbsoluteX 
+      + ',' + this.backgroundAbsoluteY
+      + ',' + this.currentCourseName
+      + ',' + this.spriteElevator.state 
+      + ',' + this.spriteElevator.stateDelay.count 
+      + ',' + this.spriteElevator.floorDelay.count
+      + ',' + this.spriteElevator.floor
+      + ',' + this.spriteElevator.floorArrive
+      + ',' + this.spriteElevator.isFloorMove
+  }
+
+  loadDataProgressSaveString () {
+    let str = this.saveString.split(',')
+    this.backgroundAbsoluteX = Number(str[0])
+    this.backgroundAbsoluteY = Number(str[1])
+    this.currentCourseName = str[2]
+    this.spriteElevator.state = str[3]
+    this.spriteElevator.stateDelay.count = Number(str[4])
+    this.spriteElevator.floorDelay.count = Number(str[5])
+    this.spriteElevator.floor = Number(str[6])
+    this.spriteElevator.floorArrive = Number(str[7])
+    this.spriteElevator.isFloorMove = str[8] === 'true' ? true : false
   }
 
   roundPhase00 () {
@@ -5406,40 +5463,15 @@ class Round2_4 extends RoundData {
     let player = this.getPlayerObject()
 
     if (collision(player, areaInside)) {
-      this.currentCourseName = this.courseName.INSIDE
-      this.setCurrentTime(this.phaseTime[0].endTime + 1)
+      // this.currentCourseName = this.courseName.INSIDE
+      // this.setCurrentTime(this.phaseTime[1].startTime)
     } else if (collision(player, areaOutside)) {
       this.currentCourseName = this.courseName.OUTSIDE
-      this.setCurrentTime(this.phaseTime[0].endTime + 1)
+      this.setCurrentTime(this.phaseTime[1].startTime)
     } else if (collision(player, areaShop)) {
       // 상점에서는 현재 시간이 변경되지 않습니다.
       this.currentCourseName = this.courseName.SHOP
     }
-  }
-
-  processSaveString () {
-    this.saveString = '' + this.backgroundAbsoluteX 
-      + ',' + this.backgroundAbsoluteY
-      + ',' + this.currentCourseName
-      + ',' + this.spriteElevator.state 
-      + ',' + this.spriteElevator.stateDelay.count 
-      + ',' + this.spriteElevator.floorDelay.count
-      + ',' + this.spriteElevator.floor
-      + ',' + this.spriteElevator.floorArrive
-      + ',' + this.spriteElevator.isFloorMove
-  }
-
-  loadDataProgressSaveString () {
-    let str = this.saveString.split(',')
-    this.backgroundAbsoluteX = Number(str[0])
-    this.backgroundAbsoluteY = Number(str[1])
-    this.currentCourseName = str[2]
-    this.spriteElevator.state = str[3]
-    this.spriteElevator.stateDelay.count = Number(str[4])
-    this.spriteElevator.floorDelay.count = Number(str[5])
-    this.spriteElevator.floor = Number(str[6])
-    this.spriteElevator.floorArrive = Number(str[7])
-    this.spriteElevator.isFloorMove = str[8] === 'true' ? true : false
   }
 
   roundPhase00Shop () {
@@ -5449,11 +5481,13 @@ class Round2_4 extends RoundData {
   roundPhase01 () {
     // 시간 정지 해제
     this.setCurrentTimePause(false)
-
-    // 이후 미정
+    this.spriteElevator.process()
+    // 참고: 이 상태에서는 아무 일도 벌어지지 않음 ()
+    // 다만 확실하게 결정된 것은 아님
   }
 
   roundPhase02 () {
+    // 아웃사이드, 인사이드 동일
     this.spriteElevator.process()
 
     // outside: 엘리베이터 탑승 -> 5층 -> 옥상
@@ -5468,7 +5502,7 @@ class Round2_4 extends RoundData {
       } else if (this.timeCheckFrame(pTime + 4)) {
         this.spriteElevator.setDoorOpen(false)
       } else if (this.timeCheckFrame(pTime + 6)) {
-        this.spriteElevator.setFloor(5)
+        this.spriteElevator.setFloorMove(5)
       } else if (this.timeCheckFrame(pTime + 16)) {
         this.spriteElevator.setDoorOpen(true)
       } else if (this.timeCheckFrame(pTime + 18)) {
@@ -5482,43 +5516,177 @@ class Round2_4 extends RoundData {
   }
 
   roundPhase03 () {
+    if (this.currentCourseName === this.courseName.OUTSIDE) {
+      this.roundPhase03Outside()
+    } else {
+      this.roundPhase03Inside()
+    }
+  }
+
+  roundPhase03Outside () {
     const pTime = this.phaseTime[3].startTime
+    if (this.timeCheckFrame(pTime + 0)) {
+      // 음악 변경 및 재생
+      this.musicChange(soundSrc.music.music12_donggrami_hall_outside)
+      this.musicPlay()
+    }
+
+    // 적들 등장 (dps 60%, 90%)
+    if (this.timeCheckInterval(pTime + 0, pTime + 8, 20)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.fruit)
+    } else if (this.timeCheckInterval(pTime + 10, pTime + 18, 20)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.juice)
+    } else if (this.timeCheckInterval(pTime + 20, pTime + 28, 20)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.party)
+    } else if (this.timeCheckInterval(pTime + 30, pTime + 40, 40)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.fruit)
+      this.createEnemy(ID.enemy.donggramiEnemy.juice)
+      this.createEnemy(ID.enemy.donggramiEnemy.party)
+    }
+  }
+
+  roundPhase03Inside () {
+
+  }
+
+  roundPhase04 () {
+    if (this.currentCourseName === this.courseName.OUTSIDE) {
+      this.roundPhase04Outside()
+    } else {
+      this.roundPhase04Inside()
+    }
+  }
+
+  /** 해당 라운드에서 파티 동그라미 생성 */
+  createEnemyPartyDonggrami () {
+    let random = Math.floor(Math.random() * 3)
+    switch (random) {
+      case 0: this.createEnemy(ID.enemy.donggramiEnemy.party); break
+      case 1: this.createEnemy(ID.enemy.donggramiEnemy.juice); break
+      case 2: this.createEnemy(ID.enemy.donggramiEnemy.fruit); break
+    }
+  }
+
+  /** 해당 라운드에서 특수 동그라미 생성 */
+  createEnemySpecialDonggrami () {
+    // 특수 동그라미
+    let random = Math.floor(Math.random() * 5)
+    switch (random) {
+      case 0: this.createEnemy(ID.enemy.donggramiEnemy.emoji); break
+      case 1: this.createEnemy(ID.enemy.donggramiEnemy.bounce); break
+      case 2: this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark); break
+      case 3: this.createEnemy(ID.enemy.donggramiEnemy.questionMark); break
+      case 4: this.createEnemy(ID.enemy.donggramiEnemy.speed); break
+      default: this.createEnemy(ID.enemy.donggramiEnemy.talk); break
+    }
+  }
+
+  roundPhase04Outside () {
+    const pTime = this.phaseTime[4].startTime
+    
+    // 평균 dps: 90% ~ 100%
+    if (this.timeCheckInterval(pTime + 1, pTime + 8, 40)) {
+      // 일반 동그라미, 특수 동그라미, 파티 동그라미가 혼합하여 등장
+      this.createEnemy(ID.enemy.donggramiEnemy.normal)
+      this.createEnemyPartyDonggrami()
+      this.createEnemySpecialDonggrami()
+    } else if (this.timeCheckInterval(pTime + 10, pTime + 18, 60)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.normal)
+      this.createEnemyPartyDonggrami()
+      this.createEnemyPartyDonggrami()
+      this.createEnemyPartyDonggrami()
+      this.createEnemySpecialDonggrami()
+    } else if (this.timeCheckInterval(pTime + 20, pTime + 28, 60)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.normal)
+      this.createEnemySpecialDonggrami()
+      this.createEnemySpecialDonggrami()
+      this.createEnemySpecialDonggrami()
+      this.createEnemyPartyDonggrami()
+    } else if (this.timeCheckInterval(pTime + 30, pTime + 38, 40)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.party)
+      this.createEnemy(ID.enemy.donggramiEnemy.normal)
+      this.createEnemy(ID.enemy.donggramiEnemy.normal)
+    }
+  }
+
+  roundPhase04Inside () {
+
+  }
+
+  roundPhase05 () {
+    const pTime = this.phaseTime[5].startTime
+    if (this.timeCheckInterval(pTime + 1, pTime + 10, 60)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.party)
+      this.createEnemy(ID.enemy.donggramiEnemy.normal)
+      this.createEnemy(ID.enemy.donggramiEnemy.bounce)
+      this.createEnemy(ID.enemy.donggramiEnemy.speed)
+    } else if (this.timeCheckInterval(pTime + 11, pTime + 15, 120)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.normal)
+      this.createEnemy(ID.enemy.donggramiEnemy.tree)
+    } else if (this.timeCheckInterval(pTime + 16, pTime + 26, 90)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.tree)
+    }
+
+    if (this.timeCheckFrame(pTime + 37)) {
+      this.musicChange('', 1)
+    } else if (this.timeCheckFrame(pTime + 38)) {
+      this.musicStop()
+    }
+    
+    this.timePauseEnemyCount(pTime + 39)
+  }
+
+  roundPhase06 () {
+    const pTime = this.phaseTime[6].startTime
+    if (this.timeCheckFrame(pTime + 1)) {
+      this.createEnemy(ID.enemy.intruder.jemuBoss)
+      this.soundPlay(soundSrc.round.r2_4_message1)
+      this.musicChange(soundSrc.music.music13_round2_4_jemu)
+      this.musicPlay()
+    } else if (this.timeCheckFrame(pTime + 38)) {
+      this.musicStop()
+    }
+
+    this.timePauseEnemyCount(pTime + 39)
+
+    if (this.timeCheckInterval(pTime + 30, pTime + 36) && this.getEnemyCount() <= 0) {
+      this.setCurrentTime(pTime + 37)
+    }
+  }
+
+  roundPhase07 () {
+    this.spriteElevator.process()
+  }
+
+  roundPhase08 () {
+    this.spriteElevator.process()
+    const pTime = this.phaseTime[8].startTime
     if (this.currentCourseName === this.courseName.OUTSIDE) {
       if (this.timeCheckFrame(pTime + 0)) {
-        this.musicChange(soundSrc.music.music12_donggrami_hall_outside)
-        this.musicPlay()
-      }
-
-      // 적들 등장
-      if (this.timeCheckInterval(pTime + 0, pTime + 4, 30)) {
-        this.createEnemy(ID.enemy.donggramiEnemy.fruit)
-      } else if (this.timeCheckInterval(pTime + 7, pTime + 11, 30)) {
-        this.createEnemy(ID.enemy.donggramiEnemy.juice)
-      } else if (this.timeCheckInterval(pTime + 14, pTime + 18, 30)) {
-        this.createEnemy(ID.enemy.donggramiEnemy.party)
-      } else if (this.timeCheckInterval(pTime + 22, pTime + 40, 90)) {
-        this.createEnemy(ID.enemy.donggramiEnemy.fruit)
-        this.createEnemy(ID.enemy.donggramiEnemy.juice)
-        this.createEnemy(ID.enemy.donggramiEnemy.party)
+        this.spriteElevator.setFloorPosition(1)
+        this.changeBackgroundImage(imageSrc.round.round2_4_elevator_inside)
+        this.spriteElevator.setDoorOpen(true)
+      } else if (this.timeCheckFrame(pTime + 2)) {
+        // 배경 변경
+        this.changeBackgroundImage(imageSrc.round.round2_4_elevator_hall, 60)
+      } else if (this.timeCheckFrame(pTime + 4)) {
+        this.spriteElevator.setDoorOpen(false)
+      } else if (this.timeCheckFrame(pTime + 6)) {
+        this.spriteElevator.setFloorMove(-1)
+      } else if (this.timeCheckFrame(pTime + 10)) {
+        this.spriteElevator.setDoorOpen(true)
+      } else if (this.timeCheckFrame(pTime + 12)) {
+        this.changeBackgroundImage('', 60)
+      } else if (this.timeCheckFrame(pTime + 14)) {
+        this.spriteElevator.setDoorOpen(false)
       }
     }
   }
 
-  roundPhase04 () {
-  }
-
-
-  roundPhase05 () {
-
-  }
-
-  roundPhase06 () {}
-  roundPhase07 () {}
-
   processDebug () {
     // 디버그할 때 코스 선택을 고려해주세요
     if (this.timeCheckFrame(0, 1)) {
-      this.currentTime = 43
+      this.currentTime = 156
       this.currentCourseName = this.courseName.OUTSIDE
     }
   }
@@ -5528,6 +5696,7 @@ class Round2_4 extends RoundData {
     let currentPhase = this.getCurrentPhase()
     switch (currentPhase) {
       case 0:
+      case 6:
         this.backgroundSpeedX = 0
         this.backgroundSpeedY = 0
         this.backgroundAbsoluteX = 0
@@ -5560,6 +5729,7 @@ class Round2_4 extends RoundData {
         this.spriteElevator.y = 100
         break
       case 2:
+      case 8:
         if (this.currentCourseName === this.courseName.OUTSIDE) {
           this.backgroundAbsoluteX = 0
           this.backgroundAbsoluteY = 0
@@ -5568,49 +5738,63 @@ class Round2_4 extends RoundData {
           this.spriteElevator.x = 200
           this.spriteElevator.y = 100
         }
+
         break
       case 3:
-        if (this.currentCourseName === this.courseName.OUTSIDE) {
-          // 엘리베이터 좌표 설정 (엘리베이터는 배경 0, 0 기준으로 200, 100에 위치함)
-          this.spriteElevator.x = 200 + -this.backgroundAbsoluteX
-          this.spriteElevator.y = 100
-
-          if (this.backgroundAbsoluteX < 2400) {
-            this.backgroundAbsoluteX++
-            this.backgroundX = this.backgroundAbsoluteX
-          } else {
-            this.backgroundAbsoluteX = 2400
-            this.backgroundX = this.backgroundAbsoluteX
-          }
-        }
-        break
       case 4:
-        if (this.timeCheckFrame(this.phaseTime[4].startTime, 0)) {
-          this.backgroundAbsoluteX = 0
-          this.backgroundX = this.backgroundAbsoluteX
-        } else if (this.currentCourseName === this.courseName.OUTSIDE) {
+      case 5:
+        if (this.currentCourseName === this.courseName.OUTSIDE) {
+          if (currentPhase === 3) {
+            // 엘리베이터 좌표 설정 (엘리베이터는 배경 0, 0 기준으로 200, 100에 위치함)
+            this.spriteElevator.x = 200 + -this.backgroundAbsoluteX
+            this.spriteElevator.y = 100
+          }
 
-          if (this.backgroundAbsoluteX < 2400) {
-            this.backgroundAbsoluteX++
+          if (this.timeCheckFrame(this.phaseTime[currentPhase].startTime, 0)) {
+            this.backgroundAbsoluteX = 0
             this.backgroundX = this.backgroundAbsoluteX
-          } else {
-            this.backgroundAbsoluteX = 2400
-            this.backgroundX = this.backgroundAbsoluteX
+          } else if (this.currentCourseName === this.courseName.OUTSIDE) {
+            if (this.backgroundAbsoluteX < 2400) {
+              this.backgroundAbsoluteX++
+              this.backgroundX = this.backgroundAbsoluteX
+            } else {
+              this.backgroundAbsoluteX = 2400
+              this.backgroundX = this.backgroundAbsoluteX
+            }
           }
         }
         break
-      case 5:
-        if (this.timeCheckFrame(this.phaseTime[5].startTime, 0)) {
-          this.backgroundAbsoluteX = 0
-          this.backgroundX = this.backgroundAbsoluteX
-        } else if (this.currentCourseName === this.courseName.OUTSIDE) {
-          if (this.backgroundAbsoluteX < 800) {
-            this.backgroundAbsoluteX++
+      case 7:
+        if (this.currentCourseName === this.courseName.OUTSIDE) {
+          if (this.timeCheckFrame(this.phaseTime[currentPhase].startTime, 0)) {
+            this.backgroundAbsoluteX = 0
+            this.backgroundAbsoluteY = 0
             this.backgroundX = this.backgroundAbsoluteX
+            this.backgroundY = this.backgroundAbsoluteY
           } else {
-            this.backgroundAbsoluteX = 800
-            this.backgroundX = this.backgroundAbsoluteX
+            if (this.backgroundAbsoluteY < 1200) {
+              this.backgroundAbsoluteX = 0
+              this.backgroundAbsoluteY += 2
+              this.backgroundX = this.backgroundAbsoluteX
+              this.backgroundY = this.backgroundAbsoluteY
+            } else if (this.backgroundAbsoluteY === 1200 && this.backgroundAbsoluteX > -800) {
+              this.backgroundAbsoluteY = 1200
+              this.backgroundAbsoluteX -= 2
+              this.backgroundX = this.backgroundAbsoluteX
+              this.backgroundY = this.backgroundAbsoluteY
+            } else if (this.backgroundAbsoluteY === 1200 && this.backgroundAbsoluteX === -800) {
+              this.backgroundAbsoluteY = 1200
+              this.backgroundAbsoluteX = -800
+              this.backgroundX = this.backgroundAbsoluteX
+              this.backgroundY = this.backgroundAbsoluteY
+              this.changeBackgroundImage(imageSrc.round.round2_4_elevator_inside)
+            }
           }
+
+          // 엘리베이터 좌표 설정 (엘리베이터는 배경 0, 0 기준으로 200, 100에 위치함)
+          // 이 시점에서의 배경 기준 위치는 -800, 1200이므로 그에 맞춰서 +200, +100 해야함
+          this.spriteElevator.x = (-this.backgroundAbsoluteX - graphicSystem.CANVAS_WIDTH) + 200
+          this.spriteElevator.y = (graphicSystem.CANVAS_HEIGHT * 2) - this.backgroundAbsoluteY + 100
         }
         break
     }
@@ -5630,10 +5814,11 @@ class Round2_4 extends RoundData {
       case 5: this.displayPhase05(); break
       case 6: this.displayPhase06(); break
       case 7: this.displayPhase07(); break
+      case 8: this.displayPhase08(); break
     }
 
-    digitalDisplay('absolX: ' + this.backgroundAbsoluteX + ', ' + 'absolY: ' + this.backgroundAbsoluteY, 0, 0)
-    graphicSystem.fillText(`ele:${this.spriteElevator.state}, floor:${this.spriteElevator.floorArrive}, cF:${this.spriteElevator.floor}`, 0, 120, 'yellow')
+    digitalDisplay('absolX: ' + this.backgroundAbsoluteX + ', ' + 'absolY: ' + this.backgroundAbsoluteY, 0, 40)
+    graphicSystem.fillText(`ele:${this.spriteElevator.state}, floor:${this.spriteElevator.floorArrive}, cF:${this.spriteElevator.floor}, x:${this.spriteElevator.x}`, 0, 120, 'yellow')
   }
 
   displayPhase00 () {
@@ -5662,13 +5847,19 @@ class Round2_4 extends RoundData {
 
   displayPhase03 () {
     // 배경 이미지 구조
-    // 엘리베이터옥상 - 옥상 - 옥상 - 옥상 다리 - 옥상 다리 - 산길 (총 80초 구간)
+    // 엘리베이터옥상 - 옥상 - 옥상 - 옥상 (총 40초 구간)
     graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
     let gWidth = graphicSystem.CANVAS_WIDTH
-    graphicSystem.imageView(imageSrc.round.round2_4_elevator_rooftop, (gWidth * 0) - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(imageSrc.round.round2_4_rooftop, (gWidth * 1) - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(imageSrc.round.round2_4_rooftop, (gWidth * 2) - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(imageSrc.round.round2_4_rooftop_wayout, (gWidth * 3) - this.backgroundAbsoluteX, 0)
+    if (this.backgroundAbsoluteX >= 0 && this.backgroundAbsoluteX <= 800) {
+      graphicSystem.imageView(imageSrc.round.round2_4_elevator_rooftop, (gWidth * 0) - this.backgroundAbsoluteX, 0)
+      graphicSystem.imageView(imageSrc.round.round2_4_rooftop, (gWidth * 1) - this.backgroundAbsoluteX, 0)
+    } else if (this.backgroundAbsoluteX >= 800 && this.backgroundAbsoluteX <= 1600) {
+      graphicSystem.imageView(imageSrc.round.round2_4_rooftop, (gWidth * 1) - this.backgroundAbsoluteX, 0)
+      graphicSystem.imageView(imageSrc.round.round2_4_rooftop, (gWidth * 2) - this.backgroundAbsoluteX, 0)
+    } else if (this.backgroundAbsoluteX >= 1600 && this.backgroundAbsoluteX <= 2400) {
+      graphicSystem.imageView(imageSrc.round.round2_4_rooftop, (gWidth * 2) - this.backgroundAbsoluteX, 0)
+      graphicSystem.imageView(imageSrc.round.round2_4_rooftop, (gWidth * 3) - this.backgroundAbsoluteX, 0)
+    }
     
     if (this.backgroundAbsoluteX <= graphicSystem.CANVAS_WIDTH) {
       this.spriteElevator.display()
@@ -5677,14 +5868,20 @@ class Round2_4 extends RoundData {
 
   displayPhase04 () {
     // 배경 이미지 구조
-    // 산길 - 산길 - 깊은산길 - 산길 우회로
+    // 옥상 - 옥상 나가는 길 - 옥상 나가는 길 - 산길
     // 중간 보스전 존재
     graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
     let gWidth = graphicSystem.CANVAS_WIDTH
-    graphicSystem.imageView(imageSrc.round.round2_4_rooftop_wayout, (gWidth * 0) - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(imageSrc.round.round2_4_mountain_path, (gWidth * 1) - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(imageSrc.round.round2_4_mountain_path, (gWidth * 2) - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(imageSrc.round.round2_4_mountain_deep, (gWidth * 3) - this.backgroundAbsoluteX, 0)
+    if (this.backgroundAbsoluteX >= 0 && this.backgroundAbsoluteX <= 800) {
+      graphicSystem.imageView(imageSrc.round.round2_4_rooftop, (gWidth * 0) - this.backgroundAbsoluteX, 0)
+      graphicSystem.imageView(imageSrc.round.round2_4_rooftop_wayout, (gWidth * 1) - this.backgroundAbsoluteX, 0)
+    } else if (this.backgroundAbsoluteX >= 800 && this.backgroundAbsoluteX <= 1600) {
+      graphicSystem.imageView(imageSrc.round.round2_4_rooftop_wayout, (gWidth * 1) - this.backgroundAbsoluteX, 0)
+      graphicSystem.imageView(imageSrc.round.round2_4_rooftop_wayout, (gWidth * 2) - this.backgroundAbsoluteX, 0)
+    } else if (this.backgroundAbsoluteX >= 1600 && this.backgroundAbsoluteX <= 2400) {
+      graphicSystem.imageView(imageSrc.round.round2_4_rooftop_wayout, (gWidth * 2) - this.backgroundAbsoluteX, 0)
+      graphicSystem.imageView(imageSrc.round.round2_4_mountain_path, (gWidth * 3) - this.backgroundAbsoluteX, 0)
+    }
   }
 
   displayPhase05 () {
@@ -5693,15 +5890,61 @@ class Round2_4 extends RoundData {
     // 중간 보스전 존재
     graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
     let gWidth = graphicSystem.CANVAS_WIDTH
-    graphicSystem.imageView(imageSrc.round.round2_4_mountain_deep, (gWidth * 0) - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(imageSrc.round.round2_4_mountain_deep, (gWidth * 1) - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(imageSrc.round.round2_4_mountain_down, (gWidth * 2) - this.backgroundAbsoluteX, 0)
+    if (this.backgroundAbsoluteX >= 0 && this.backgroundAbsoluteX <= 800) {
+      graphicSystem.imageView(imageSrc.round.round2_4_mountain_path, (gWidth * 0) - this.backgroundAbsoluteX, 0)
+      graphicSystem.imageView(imageSrc.round.round2_4_mountain_deep, (gWidth * 1) - this.backgroundAbsoluteX, 0)
+    } else if (this.backgroundAbsoluteX >= 800 && this.backgroundAbsoluteX <= 1600) {
+      graphicSystem.imageView(imageSrc.round.round2_4_mountain_deep, (gWidth * 1) - this.backgroundAbsoluteX, 0)
+      graphicSystem.imageView(imageSrc.round.round2_4_mountain_deep, (gWidth * 2) - this.backgroundAbsoluteX, 0)
+    } else if (this.backgroundAbsoluteX >= 1600 && this.backgroundAbsoluteX <= 2400) {
+      graphicSystem.imageView(imageSrc.round.round2_4_mountain_deep, (gWidth * 2) - this.backgroundAbsoluteX, 0)
+      graphicSystem.imageView(imageSrc.round.round2_4_mountain_down, (gWidth * 3) - this.backgroundAbsoluteX, 0)
+    }
   }
   displayPhase06 () {
-    
+    if (this.getEnemyCount() === 0) {
+      graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
+    } else {
+      graphicSystem.gradientRect(0, 0, 800, 600, ['#1F1C2C', '#928DAB'])
+    }
+    graphicSystem.imageView(imageSrc.round.round2_4_mountain_down, 0, 0)
+
+    // 보스 체력 표시
+    let enemy = fieldState.getEnemyObject()
+    let firstEnemy
+    if (enemy[0] != null) {
+      firstEnemy = enemy[0]
+    } else {
+      return
+    }
+
+    let percent = firstEnemy.hp / firstEnemy.hpMax
+    graphicSystem.setAlpha(0.7)
+    graphicSystem.fillRect(0, 0, graphicSystem.CANVAS_WIDTH, 20, 'lightgrey')
+    if (percent >= 0.2) {
+      graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'yellow', 'orange')
+    } else {
+      graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'purple', 'red')
+    }
+    graphicSystem.setAlpha(1)
+    digitalDisplay('boss hp: ' + firstEnemy.hp + '/' + firstEnemy.hpMax, 0, 0)
   }
+
   displayPhase07 () {
-    
+    graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
+    let gHeight = graphicSystem.CANVAS_HEIGHT
+    let gWidth = graphicSystem.CANVAS_WIDTH
+    graphicSystem.imageView(imageSrc.round.round2_4_mountain_down, 0, (gHeight * 0) - this.backgroundAbsoluteY)
+    graphicSystem.imageView(imageSrc.round.round2_4_park_path, 0, (gHeight * 1) - this.backgroundAbsoluteY)
+    graphicSystem.imageView(imageSrc.round.round2_4_park_load, (gWidth * 0) - this.backgroundAbsoluteX, (gHeight * 2) - this.backgroundAbsoluteY)
+    graphicSystem.imageView(imageSrc.round.round2_4_elevator_inside, -(gWidth * 1) - this.backgroundAbsoluteX, (gHeight * 2) - this.backgroundAbsoluteY)
+    this.spriteElevator.display()
+  }
+
+  displayPhase08 () {
+    graphicSystem.gradientRect(0, 0, 800, 600, ['#373B44', '#434343'])
+    super.displayBackground()
+    this.spriteElevator.display()
   }
 
   createSpriteElevator () {
@@ -5716,12 +5959,6 @@ class Round2_4 extends RoundData {
         this.closeEnimation = EnimationData.createEnimation(imageSrc.round.round2_4_elevator, imageDataInfo.round2_4_elevator.elevatorClosing, 4, 1)
         this.closeEnimation.outputWidth = this.width
         this.closeEnimation.outputHeight = this.height
-        this.closeImage = EnimationData.createEnimation(imageSrc.round.round2_4_elevator, imageDataInfo.round2_4_elevator.elevatorClose)
-        this.closeImage.outputWidth = this.width
-        this.closeImage.outputHeight = this.height
-        this.openImage = EnimationData.createEnimation(imageSrc.round.round2_4_elevator, imageDataInfo.round2_4_elevator.elevatorOpen)
-        this.openImage.outputWidth = this.width
-        this.openImage.outputHeight = this.height
 
         this.floorArrive = 1
         this.isFloorMove = false
@@ -5735,7 +5972,7 @@ class Round2_4 extends RoundData {
         this.STATE_CLOSEING = 'closing'
         this.STATE_OPEN = 'open'
         this.STATE_OPENING = 'opening'
-        this.stateDelay = new DelayData(40)
+        this.stateDelay = new DelayData(36) // 4 * 9 frame enimation
         this.state = this.STATE_CLOSE
       }
 
@@ -5750,12 +5987,11 @@ class Round2_4 extends RoundData {
           this.arrowUpEnimation.process()
           this.arrowDownEnimation.process()
         }
-        
-        if (this.state === this.STATE_CLOSEING) {
-          this.closeEnimation.process()
-        } else if (this.state === this.STATE_OPENING) {
-          this.openEnimation.process()
-        }
+
+        // 이미지 출력을 확실하게 하기 위하여 에니메이션 프로세스는 강제로 재생됩니다.
+        // 해당 프로세스를 사용하지 않으면 이미지 로딩 문제로 이미지가 제대로 출력되지 않는 버그가 있습니다.
+        this.closeEnimation.process()
+        this.openEnimation.process()
       }
 
       processDoor () {
@@ -5798,13 +6034,18 @@ class Round2_4 extends RoundData {
       }
 
       /** 이동할 층을 설정합니다. -1 부터 5까지 가능, 0층은 무시됨, 단 엘리베이터가 닫혀있어야만 사용 가능 */
-      setFloor (floor = 1) {
+      setFloorMove (floorArrive = 1) {
         if (this.state !== this.STATE_CLOSE) return
 
-        if (floor !== 0 && floor >= -1 && floor <= 5) {
+        if (floorArrive !== 0 && floorArrive >= -1 && floorArrive <= 5) {
           this.isFloorMove = true
-          this.floorArrive = floor
+          this.floorArrive = floorArrive
         }
+      }
+
+      /** 엘리베이터의 층의 기본 위치를 설정합니다. -1 부터 5까지 가능, 0층은 무시됨, */
+      setFloorPosition (floor = 1) {
+        this.floor = floor
       }
 
       display () {
@@ -5851,11 +6092,21 @@ class Round2_4 extends RoundData {
 
       displayDoor () {
         switch (this.state) {
-          case this.STATE_OPEN: this.openImage.display(this.x, this.y); break
+          case this.STATE_OPEN: this.displayDoorOpen(); break
           case this.STATE_OPENING: this.openEnimation.display(this.x, this.y); break
-          case this.STATE_CLOSE: this.closeImage.display(this.x, this.y); break
+          case this.STATE_CLOSE: this.displayDoorClose(); break
           case this.STATE_CLOSEING: this.closeEnimation.display(this.x, this.y); break
         }
+      }
+
+      displayDoorOpen () {
+        let imgD = imageDataInfo.round2_4_elevator.elevatorOpen
+        graphicSystem.imageDisplay(imageSrc.round.round2_4_elevator, imgD.x, imgD.y, imgD.width, imgD.height, this.x, this.y, this.width, this.height)
+      }
+
+      displayDoorClose () {
+        let imgD = imageDataInfo.round2_4_elevator.elevatorClose
+        graphicSystem.imageDisplay(imageSrc.round.round2_4_elevator, imgD.x, imgD.y, imgD.width, imgD.height, this.x, this.y, this.width, this.height)
       }
 
       /**
@@ -5879,9 +6130,6 @@ class Round2_4 extends RoundData {
 
     return new ElevatorSprite()
   }
-
-  
-
 }
 
 class Round2_5 extends RoundData {}

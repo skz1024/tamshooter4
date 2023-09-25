@@ -386,10 +386,14 @@ export class EnimationData {
     if (this.imageSrc == '') return
 
     // 무한반복 상태가 아니면서 진행된 프레임이 최대 프레임보다 높으면 에니메이션 없음
-    if (this.frameRepeat != -1 && this.elapsedFrame >= this.maxFrame) return
+    if (this.frameRepeat != -1 && this.elapsedFrame >= this.maxFrame) {
+      return
+    }
 
     // 이미지를 정상적으로 불러오지 못해, 이미지의 너비 또는 높이가 0이될경우 출력 무시
-    if (this.imageWidth === 0 || this.imageHeight === 0) return
+    if (this.imageWidth === 0 || this.imageHeight === 0) {
+      return
+    }
 
     if (x == null || y == null) {
       // 의도적인 버그 방지용 경고 문구

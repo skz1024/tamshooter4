@@ -204,7 +204,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
   /**
    * 투명도 조절 (캔버스 전역적으로 적용)
    * 다른 변수들과 달리, 이 값은 context의 globalAlpha값을 직접 변경합니다.
-   * 매개변수가 없으면 기본값 설정
+   * 매개변수가 없으면 기본값 설정 (기본값은 1)
    * 
    * @param {number} value 0 ~ 1 사이의 값 (0: 투명, 1: 불투명), 이 이외는 무시
    */
@@ -1200,17 +1200,36 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     document.body.style.border = '0'
     document.body.style.overflowX = 'hidden' // 크기에 따른 스크롤바 표시를 막기 위함
     document.body.style.overflowY = 'hidden' // 크기에 따른 스크롤바 표시를 막기 위함
-    document.body.style.textAlign = 'center' // 중앙 정렬
-    if (isAutoResize) {
-      this.resizeFunction()
-      addEventListener('resize', () => this.resizeFunction())
+    this._resizeFunction = this._resizeFunction.bind(this) // 이벤트 등록을 한 후 this를 graphicSystem으로 고정시키기 위한 함수
+    this.setAutoResize(isAutoResize)
+  }
+
+  /** 그래픽 캔버스의 크기를 자동으로 설정할지 말지를 결정합니다. */
+  setAutoResize (isAutoReSize = true) {
+    // 이벤트 제거를 위하여 함수를 다시 만듬
+    if (isAutoReSize) {
+      document.body.style.textAlign = 'center' // 중앙 정렬
+      addEventListener('resize', this._resizeFunction)
+      this._resizeFunction()
+    } else {
+      this.canvas.style.width = this.canvas.width + 'px'
+      this.canvas.style.height = this.canvas.height + 'px'
+      removeEventListener('resize', this._resizeFunction)
+      document.body.style.textAlign = '' // 중앙 정렬 취소
     }
+  }
+
+  /** body 태그의 배경색을 변경합니다. */
+  setBodyColor (color = '') {
+    document.body.style.backgroundColor = color
   }
 
   /**
    * 브라우저 사이즈가 변경될경우 호출합니다.
+   * 
+   * 이 함수는 graphicSystem 전용 함수입니다. (외부에서 사용하는것을 권장하지 않음.)
    */
-  resizeFunction () {
+  _resizeFunction () {
     // 브라우저 사이즈가 변경될경우, canvas사이즈의 재조정(풀스크린 지원 안함)
     // 브라우저 사이즈가 가장 짧은쪽을 선택, 다만, 가로 세로 비율이 4:3 이기 때문에 이를 고려해야 함
     let width = innerWidth / 4

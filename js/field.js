@@ -1280,7 +1280,14 @@ export class fieldSystem {
     /** gameSystem의 stateId를 STATE_MAIN로 변경 요청합니다. */ STATE_MAIN: 'state:main',
     /** gameSystem의 option중 musicOn의 옵션을 변경 요청합니다. */ CHANGE_MUSICON: 'change:musicOn',
     /** gameSystem의 option중 soundOn의 옵션을 변경 요청합니다. */ CHANGE_SOUNDON: 'change:soundOn',
-    /** gameSystem의 */ INPUT_TEXT_LINE1: 'input1, '
+    /** gameSystem의 text1 라인에 출력할 텍스트 값을 입력합니다. */ INPUT_TEXT_LINE1: 'input1, ',
+    /** 
+     * gameSystem이 저장 기능을 강제로 호출하게 함(원래는 1초에 1번씩 자동 저장이지만, 이 경우에는 강제로 저장됨) 
+     * 
+     * 이 메세지는, 필드 시스템에서 결과 창이 출력한 직후 새로고침하거나 불러오기를 할 때 결과창이 다시 출력되지 않도록 하고
+     * 메인 화면으로 이동시키는것이 목적입니다.
+     */
+    REQUEST_SAVE: 'request:save'
   }
 
   /** 
@@ -1435,6 +1442,9 @@ export class fieldSystem {
   static processExit () {
     // 사용자가 나가면 현재까지 얻은 점수를 보여줌, 따로 출력할 배경 사운드는 없음
     this.scoreSound()
+    if (this.exitDelayCount === 0) {
+      this.message = this.messageList.REQUEST_SAVE // 강제 저장을 통해 필드 저장 데이터를 삭제하고, 메인화면으로 돌아가게끔 유도
+    }
 
     this.scoreEnimationFrame++
     this.exitDelayCount++
@@ -1450,6 +1460,7 @@ export class fieldSystem {
       game.sound.play(soundSrc.system.systemRoundClear)
       userSystem.plusExp(this.round.clearBonus)
       this.totalScore = this.fieldScore + this.round.clearBonus
+      this.message = this.messageList.REQUEST_SAVE // 강제 저장을 통해 필드 저장 데이터를 삭제하고, 메인화면으로 돌아가게끔 유도
     }
 
     this.scoreSound()
@@ -1466,6 +1477,7 @@ export class fieldSystem {
     // 라운드 실패 사운드 재생 (딜레이카운트가 0일때만 재생해서 중복 재생 방지)
     if (this.exitDelayCount === 0) {
       game.sound.play(soundSrc.system.systemGameOver)
+      this.message = this.messageList.REQUEST_SAVE // 강제 저장을 통해 필드 저장 데이터를 삭제하고, 메인화면으로 돌아가게끔 유도
     }
 
     this.scoreSound()

@@ -643,7 +643,8 @@ export class TamsaEngine {
     /** 해당 엔진에서 사용하는 사운드 시스템 */
     this.sound = new SoundSystem(true, resourceSrc)
 
-    document.body.style.backgroundColor = '#181818'
+    // 배경색 - graphicSystem에서 처리
+    // document.body.style.backgroundColor = '#181818'
 
     // canvas를 바로 body 영역에 삽입
     if (isAutoBodyInsertCanvas) {

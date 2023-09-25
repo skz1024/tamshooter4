@@ -10,6 +10,14 @@ import { TamsaEngine } from "./tamsaEngine/tamsaEngine.js"
 /** tamshooter4 게임 변수입니다. */
 export let game = new TamsaEngine('tamshooter4', 800, 600, 'js/tamsaEngine/', 60)
 
+// body 태그 색 변경 및 자동 크기 조절
+game.graphic.setBodyColor('#181818')
+if (game.currentDevice === game.device.MOBILE) {
+  game.graphic.setAutoResize(true)
+} else {
+  game.graphic.setAutoResize(true)
+}
+
 // 디버그용 전역변수로 만들기...
 // window.debugGame = game
 

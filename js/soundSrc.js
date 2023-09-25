@@ -79,7 +79,6 @@ export class soundSrc {
     enemyDieJemulRedJewel: './sound/enemyDieJemulRedJewel.wav',
     enemyDieJemulRedAir: './sound/enemyDieJemulRedAir.wav',
     enemyDieDonggrami: './sound/enemyDieDonggrami.wav',
-    enemyDieDonggramiTree: './sound/enemyDieDonggramiTree.ogg',
     enemyDieDonggramiLeaf: './sound/enemyDieDonggramiLeaf.wav',
     enemyDieIntruderJemu: './sound/enemyDieIntruderJemu.ogg',
   }
@@ -131,7 +130,8 @@ export class soundSrc {
     r2_4_elevatorMove: './sound/round2_4_elevatorMove.ogg',
     r2_4_elevatorDoorOpen: './sound/round2_4_elevatorDoorOpen.wav',
     r2_4_elevatorDoorClose: './sound/round2_4_elevatorDoorClose.wav',
-    r2_4_elevatorFloor: './sound/round2_4_elevatorFloor.wav'
+    r2_4_elevatorFloor: './sound/round2_4_elevatorFloor.wav',
+    r2_4_message1: './sound/round2_4_message1.ogg',
   }
 
   static donggrami = {
@@ -139,9 +139,7 @@ export class soundSrc {
     questionMark: './sound/donggramiQuestionMark.ogg',
     emoji: './sound/donggramiImoge.ogg',
     throw: './sound/donggramithrow.ogg',
-    candle: './sound/donggramiCandle.ogg',
     firecracker: './sound/donggramiFirecracker.ogg',
-    createObject: './sound/donggramiCreateObject.wav',
     juiceCola: './sound/donggramiJuiceCola.wav',
     juiceThrow: './sound/donggramiJuiceThrow.wav',
     plate: './sound/donggramiPlate.wav',
@@ -168,7 +166,8 @@ export class soundSrc {
     music11C1_bullet_room: './music/music11C1_bullet_room.ogg',
     music11C2_square_room: './music/music11C2_square_room.ogg',
     music11C3_trap_room: './music/music11C3_trap_room.ogg',
-    music12_donggrami_hall_outside: './music/music12_donggrami_hall_outside.ogg'
+    music12_donggrami_hall_outside: './music/music12_donggrami_hall_outside.ogg',
+    music13_round2_4_jemu: './music/music13_round2_4_jemu.ogg'
   }
 
   
