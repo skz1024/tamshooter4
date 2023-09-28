@@ -3397,6 +3397,19 @@ class DonggramiEnemy extends EnemyData {
     '난 돈이 없어.',
     '오! 할인은 못참아!'
   ]
+
+  /** 2-4 파티에 있는 동그라미가 하는 대화 리스트 */
+  static talkPartyList = [
+    '파티!',
+    '파티는 즐거워!',
+    '난장판이네.',
+    '이게 뭐야',
+    '정말 시끄럽다.',
+    '아무거나 막 던지네?',
+    '뭔가 이상해요.',
+    '즐겁게 놀자',
+    '바깥에 나가야겠다.'
+  ]
 }
 
 class DonggramiEnemyMiniBlue extends DonggramiEnemy {
@@ -4969,7 +4982,8 @@ class DonggramiEnemyParty extends DonggramiEnemy {
     process () {
       super.process()
       // 접시가 바닥에 닿으면 깨지는 이펙트가 생성되고, 이 오브젝트(접시)는 삭제됨
-      if (this.y + this.height >= graphicSystem.CANVAS_HEIGHT) {
+      // 플레이어랑 부딪힐경우에는 이 오브젝트가 삭제 예정이므로, 이를 이용해서 접시가 깨지는 이펙트를 출력
+      if (this.y + this.height >= graphicSystem.CANVAS_HEIGHT || this.isDeleted) {
         let customEffect = new CustomEffect(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.plateBreak, this.width, this.height, 2)
         soundSystem.play(soundSrc.donggrami.plate)
         fieldState.createEffectObject(customEffect, this.x, this.y)
@@ -5202,7 +5216,7 @@ class DonggramiEnemyFruit extends DonggramiEnemyParty {
         default: return
       }
 
-      const minSpeed = 2
+      const minSpeed = 5
       const plusSpeed = 2
       // 이 코드의 의미는 속도값을 랜덤으로 설정하지만 50%확률로 양수 또는 음수로 결정됩니다.
       let speedX = Math.random() < 0.5 ? Math.random() * plusSpeed + minSpeed : Math.random() * -plusSpeed - minSpeed
@@ -5266,12 +5280,12 @@ class DonggramiEnemyJuice extends DonggramiEnemyParty {
       fieldState.createEnemyBulletObject(orangeBullet, this.objX, this.objY)
       soundSystem.play(soundSrc.donggrami.juiceThrow)
     } else if (this.subType === this.subTypeList.JUICE_COLA && (count % 2 === 0 && count <= 60)) {
-      let colaBullet = new CustomEnemyBullet('', null, 1, Math.random() * 10 - 5, Math.random() * -12)
-      colaBullet.setMoveSpeed(Math.random() * 10 - 5, Math.random() * -12)
+      let colaBullet = new CustomEnemyBullet('', null, 1)
+      colaBullet.setMoveSpeed(Math.random() * 10 - 5, Math.random() * -6 - 6)
       colaBullet.display = function () {
         graphicSystem.fillEllipse(this.x, this.y, 10, 10, 0, '#995a32')
-        graphicSystem.fillEllipse(this.x, this.y, 8, 8, 0, '#6e3a20') // 카라멜 색
-        graphicSystem.fillEllipse(this.x, this.y, 6, 6, 0, '#85461e')
+        graphicSystem.fillEllipse(this.x + 1, this.y + 1, 8, 8, 0, '#6e3a20') // 카라멜 색
+        graphicSystem.fillEllipse(this.x + 2, this.y + 2, 6, 6, 0, '#85461e')
       }
       fieldState.createEnemyBulletObject(colaBullet, this.objX, this.objY)
     } else if (this.subType === this.subTypeList.JUICE_WATER && count === 1) {
@@ -5284,6 +5298,15 @@ class DonggramiEnemyJuice extends DonggramiEnemyParty {
       this.delayChange()
       this.fruitChange()
       this.state = this.stateList.NORMAL
+    }
+  }
+
+  display () {
+    super.display()
+
+    // 콜라만 예외적으로 던지기 상태일 때 오브젝트를 보여줌
+    if (this.state === this.stateList.THROW && this.subType === this.subTypeList.JUICE_COLA) {
+      this.displayObject()
     }
   }
 }
@@ -5387,6 +5410,61 @@ class DonggramiEnemyLeaf extends DonggramiEnemy {
   }
 }
 
+/** r2-4 에서 도망쳐! 를 외칩니다. 그 역할이 전부인 연출용 적이기 때문에 죽일 수는 없습니다. */
+class DonggramiEnemyTalkRunAwayR2_4 extends DonggramiEnemyTalk {
+  constructor () {
+    super()
+    this.BASE_DELAY = 120
+    this.talkDelay.delay = this.BASE_DELAY // 더 짧은 주기로 대화함
+    this.talkDelay.count = this.talkDelay.delay - 10 // 첫 대화를 더 빠르게 실행
+    this.setMoveSpeed(7, Math.random() * 2 - 1)
+    this.isPossibleExit = true // 이 동그라미는 바깥을 빠져나가야 합니다.
+    this.isExitToReset = false // 따라서 바깥으로 나가면 리셋되는걸 막아야함
+
+    // 이 동그라미는 죽일 수 없고, 연출용도로만 활용합니다.
+    this.setEnemyStat(39990000, 0, 10)
+  }
+
+  processMove () {
+    super.processMove()
+
+    // 화면 바깥을 어느 정도 벗어나면 삭제함
+    if (this.x + this.width < -240) {
+      this.isDeleted = true
+    } else if (this.x >= graphicSystem.CANVAS_WIDTH + 240) {
+      this.isDeleted = true
+    }
+  }
+
+  processTalk () {
+    super.processTalk()
+
+    // 60보다 더 큰 딜레이를 가질 경우, 이를 다시 재조정합니다.
+    if (this.talkDelay.delay > this.BASE_DELAY) {
+      soundSystem.play(soundSrc.donggrami.exclamationMark)
+      this.talkDelay.delay = this.BASE_DELAY
+    }
+  }
+
+  getRandomTalk () {
+    // 이 동그라미는 오직 도망챠! 만 말합니다.
+    return '도망쳐!'
+  }
+}
+
+class DonggramiEnemyTalkParty extends DonggramiEnemyTalk {
+  constructor () {
+    super()
+  }
+
+  /** 랜덤한 대화를 얻습니다. (무작위로 얻은 대사로 대화를 함.) */
+  getRandomTalk () {
+    let talk = DonggramiEnemy.talkPartyList
+    let index = Math.floor(Math.random() * talk.length)
+    return talk[index]
+  }
+}
+
 class IntruderEnemy extends EnemyData {
   constructor () {
     super()
@@ -5395,11 +5473,12 @@ class IntruderEnemy extends EnemyData {
   }
 }
 
-class IntruderJemuBoss extends IntruderEnemy {
+class IntruderEnemyJemuBoss extends IntruderEnemy {
   constructor () {
     super()
     // 적 체력 6000% 적용 (dps의 60배)
-    this.setEnemyByCpStat(6000, 0) // 내부 공격력 없음 (따라서, 적과 충돌했을때에는 데미지 0)
+    // 보스와 해당 구간(라운드 2-4)의 경험치를 조절하기 위해 얻는 경험치의 배율을 다르게 조정했습니다.
+    this.setEnemyByCpStat(6000, 0, 125) // 내부 공격력 없음 (따라서, 적과 충돌했을때에는 데미지 0)
     /** 번개 공격력 */ this.ATTACK_THUNDER = 4
 
     this.setAutoImageData(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.jemuWing, 4)
@@ -5515,12 +5594,12 @@ class IntruderJemuBoss extends IntruderEnemy {
       const isLeft = Math.random() < 0.5 ? true : false
       if (isLeft) {
         this.x = -this.width
-        this.y = (Math.random() * 60) + (IntruderJemuBoss.ThunderLRBullet.getLineNumber() * 60)
+        this.y = (Math.random() * 60) + (IntruderEnemyJemuBoss.ThunderLRBullet.getLineNumber() * 60)
         this.moveSpeedX = 7
         this.moveSpeedY = 0
       } else {
         this.x = graphicSystem.CANVAS_WIDTH + this.width
-        this.y = (Math.random() * 60) + (IntruderJemuBoss.ThunderLRBullet.getLineNumber() * 60)
+        this.y = (Math.random() * 60) + (IntruderEnemyJemuBoss.ThunderLRBullet.getLineNumber() * 60)
         this.moveSpeedX = -7
         this.moveSpeedY = 0
       }
@@ -5595,7 +5674,7 @@ class IntruderJemuBoss extends IntruderEnemy {
         const radian = (Math.PI / 180) * degree * i
         let rx = (Math.cos(radian) * x) - (Math.sin(radian) * y)
         let ry = (Math.sin(radian) * x) + (Math.cos(radian) * y)
-        let bullet = IntruderJemuBoss.energyBullet.getCreateObject()
+        let bullet = IntruderEnemyJemuBoss.energyBullet.getCreateObject()
         bullet.setMoveSpeed(rx, ry)
         fieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2))
       }
@@ -5613,20 +5692,20 @@ class IntruderJemuBoss extends IntruderEnemy {
       }
 
       for (let i = 0; i < 3; i++) {
-        let bullet = IntruderJemuBoss.energyBullet.getCreateObject()
+        let bullet = IntruderEnemyJemuBoss.energyBullet.getCreateObject()
         bullet.setMoveSpeed(speedX + (Math.random() * 2 - 1), speedY + (Math.random() * 2 - 1))
         fieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2))
       }
 
       this.soundEnergy()
     } else if (this.state === this.STATE_ENERGYRE && this.attackDelay.divCheck(15)) {
-      let bullet = new IntruderJemuBoss.EnergyReflectBullet()
+      let bullet = new IntruderEnemyJemuBoss.EnergyReflectBullet()
       bullet.setRandomMoveSpeed(8, 8, true)
       fieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2))
       soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergyPurple)
     } else if (this.state === this.STATE_THUNDERLR && this.attackDelay.divCheck(60)) {
       for (let i = 0; i < 6; i++) {
-        let bullet = new IntruderJemuBoss.ThunderLRBullet()
+        let bullet = new IntruderEnemyJemuBoss.ThunderLRBullet()
         fieldState.createEnemyBulletObject(bullet)
       }
       soundSystem.play(soundSrc.enemyAttack.intruderJemuThunderNormal)
@@ -5727,6 +5806,91 @@ class IntruderJemuBoss extends IntruderEnemy {
   }
 }
 
+class IntruderEnemySquare extends IntruderEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.square)
+    this.setEnemyByCpStat(20, 9)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderSquare, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareBlueLine, this.width, this.height, 3))
+
+    this.enimationMoveLeftRight = EnimationData.createEnimation(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.square3DLeft, 4, -1)
+    this.enimationMoveUpDown = EnimationData.createEnimation(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.square3DUp, 4, -1)
+    
+    this.setMoveDirection('', '') // 이동 방향을 기본값으로 변경 (왜냐하면 좌표를 기준으로 이동 방향을 연산하기 때문)
+    this.STATE_STOP = 'stop'
+    this.STATE_MOVE_LEFT_RIGHT = 'leftright'
+    this.STATE_MOVE_UP_DOWN = 'updown'
+    this.state = this.STATE_STOP
+    this.moveDelay = new DelayData(30)
+    this.moveDelay.count = this.moveDelay.delay // 다음 패턴을 즉시 실행시키기 위하여 딜레이 카운트 값을 조정
+  }
+
+  getCollisionArea () {
+    // 충돌 영역 보정
+    return [{
+      x: this.x + 10,
+      y: this.y + 10,
+      width: this.width - 20,
+      height: this.height - 20,
+    }]
+  }
+
+  processMove () {
+    super.processMove()
+
+    if (this.moveDelay.check()) {
+      // 이 사각형은 좌, 우, 상, 하 로만 이동하지만, 가능하다면 플레이어를 추적하기 쉬운 경로로 이동함
+      // 그리고 이동되는 방향에 따라 에니메이션이 결정됨 
+      let player = fieldState.getPlayerObject()
+      let distanceX = player.x - this.x
+      let distanceY = player.y - this.y
+      const divide = 40
+      const minSpeed = 2
+      const maxSpeed = 3
+      let speedX = distanceX / divide
+      let speedY = distanceY / divide
+      // 최대 속도 보정 및, 최소 속도 보정
+      if (Math.abs(speedX) > maxSpeed) {
+        speedX = speedX >= 0 ? maxSpeed : -maxSpeed
+      } else if (Math.abs(speedX) < minSpeed) {
+        speedX = speedX >= 0 ? minSpeed : -minSpeed
+      }
+
+      if (Math.abs(speedY) > maxSpeed) {
+        speedY = speedY >= 0 ? maxSpeed : -maxSpeed
+      } else if (Math.abs(speedY) < minSpeed) {
+        speedY = speedY >= 0 ? minSpeed : -minSpeed
+      }
+      
+      if (Math.abs(distanceX) >= Math.abs(distanceY)) {
+        // x축 거리가 더 많이 남은경우
+        this.setMoveSpeed(speedX, 0)
+        this.state = this.STATE_MOVE_LEFT_RIGHT
+      } else {
+        // y축 거리가 더 많이 남은 경우
+        this.setMoveSpeed(0, speedY)
+        this.state = this.STATE_MOVE_UP_DOWN
+      }
+    }
+  }
+
+  processEnimation () {
+    super.processEnimation()
+    this.enimationMoveLeftRight.process()
+    this.enimationMoveUpDown.process()
+  }
+
+  display () {
+    if (this.state === this.STATE_STOP) {
+      super.display()
+    } else if (this.state === this.STATE_MOVE_LEFT_RIGHT) {
+      this.enimationMoveLeftRight.display(this.x, this.y)
+    } else if (this.state === this.STATE_MOVE_UP_DOWN) {
+      this.enimationMoveUpDown.display(this.x, this.y)
+    }
+  }
+}
+
 
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
@@ -5821,6 +5985,9 @@ dataExportEnemy.set(ID.enemy.donggramiEnemy.juice, DonggramiEnemyJuice)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.party, DonggramiEnemyParty)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.tree, DonggramiEnemyTree)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.leaf, DonggramiEnemyLeaf)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.talkRunawayR2_4, DonggramiEnemyTalkRunAwayR2_4)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.talkParty, DonggramiEnemyTalkParty)
 
-// intruderEnemy / round 2-4 boss, round 2-5
-dataExportEnemy.set(ID.enemy.intruder.jemuBoss, IntruderJemuBoss)
+// intruderEnemy / round 2-4 boss, round 2-5, round 2-6
+dataExportEnemy.set(ID.enemy.intruder.jemuBoss, IntruderEnemyJemuBoss)
+dataExportEnemy.set(ID.enemy.intruder.square, IntruderEnemySquare)

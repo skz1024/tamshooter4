@@ -519,7 +519,10 @@ export class SoundSystem {
   musicFadeCancle () {
     // 지금까지 적용된 게인 값 변경 요청을 번부 취소하고, 해당 게인을 1로 조정합니다.
     this.audioNode.musicFadeGain.gain.cancelScheduledValues(this.audioContext.currentTime)
-    this.audioNode.musicFadeGain.gain.value = 1
+    // this.audioNode.musicFadeGain.gain.value = 1
+
+    // firefox에서는 gain.value가 직접 대입으로 적용되지 않아서, 값 변경 코드를 변경함.
+    this.audioNode.musicFadeGain.gain.setValueAtTime(1, this.audioContext.currentTime)
 
     // 페이드 해제
     this.fade.isFading = false

@@ -524,7 +524,11 @@ class OptionSystem extends MenuSystem {
     return this.optionValue
   }
 
-  setOption (optionIndex) {
+  /** 
+   * 옵션의 값을 설정하거나 해제합니다. (미완성된 함수) 
+   * @deprecated
+   * */
+  setOption (optionIndex = 0) {
     let option = this.optionValue
 
     switch (optionIndex) {
@@ -567,6 +571,30 @@ class OptionSystem extends MenuSystem {
         option.showDamage = !option.showDamage
         break
     }
+
+    this.optionEnable() // 설정된 옵션값을 적용
+  }
+
+  /** 옵션의 값을 실제 게임에 적용하는 함수 */
+  optionEnable () {
+    // 필드에게 옵션 값 전달
+    fieldSystem.option.resultAutoSkip = this.optionValue.resultAutoSkip
+    fieldSystem.option.showEnemyHp = this.optionValue.showEnemyHp
+    fieldSystem.option.showDamage = this.optionValue.showDamage
+    fieldSystem.option.musicOn = this.optionValue.musicOn
+    fieldSystem.option.soundOn = this.optionValue.soundOn
+
+    // 사운드가 켜져있으면, 현재 볼륨값으로 설정하고 아닐경우 0으로 설정
+    // 주의: 사운드 게인은 0 ~ 1 사이의 범위입니다.
+    let soundValue = this.optionValue.soundOn ? this.optionValue.soundVolume / 100 : 0
+    game.sound.setGain(soundValue)
+
+    let musicValue = this.optionValue.musicOn ? this.optionValue.musicVolume / 100 : 0
+    game.sound.setMusicGain(musicValue)
+  }
+  
+  process () {
+    super.process()
   }
 
   processButton () {
@@ -2072,7 +2100,11 @@ export class gameSystem {
 
     // saveFlag의 값을 불러오고, 만약 아무것도 없다면 불러오기 함수를 사용하지 않습니다.
     const saveFlag = localStorage.getItem(this.saveKey.saveFlag)
-    if (!saveFlag) return
+    if (!saveFlag) {
+      // 첫번째로 게임이 실행되었을 때 추가적인 실행 코드 (초기화)
+      userSystem.setSkillDisplayStatDefaultFunction()
+      return
+    }
     
     // 플레이 타임 불러오기: 저장 규칙을 모르겠으면, saveKey 객체 내에 있는 변수들의 설명을 참고
     const playTimeArray = localStorage.getItem(this.saveKey.playTime)
@@ -2092,6 +2124,7 @@ export class gameSystem {
     const optionValue = localStorage.getItem(this.saveKey.optionValue)
     if (optionValue != null) {
       this.optionSystem.optionValue = JSON.parse(optionValue)
+      this.optionSystem.optionEnable() // 불러온 옵션값을 적용
     }
     
     const userData = localStorage.getItem(this.saveKey.userData)
@@ -2109,7 +2142,7 @@ export class gameSystem {
         fieldSystem.setLoadData(JSON.parse(fieldSaveData))
       }
     } catch (e) {
-      alert('저장 데이터를 읽어오는 중 오류가 발생했습니다. 필드데이터는 삭제됩니다. (나머지는 해당 사항 없음)')
+      alert('저장 데이터를 읽어오는 중 오류가 발생했습니다. 필드데이터가 삭제되고 메인화면으로 이동합니다.')
       localStorage.removeItem(this.saveKey.fieldData)
       this.stateId = this.STATE_MAIN
     }
@@ -2185,6 +2218,10 @@ export class gameSystem {
 
     // 메세지는 처리된 후 지워져야 합니다.
     this.fieldSystem.message = ''
+
+    // 사운드 음악 옵션을 필드에게 전달
+    fieldSystem.option.musicOn = this.optionSystem.optionValue.musicOn
+    fieldSystem.option.soundOn = this.optionSystem.optionValue.soundOn
   }
 
   static processStatLine () {

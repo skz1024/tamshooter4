@@ -103,22 +103,28 @@ export class imageSrc {
     round2_3_result: './image/round/round2_3_result.png',
     round2_3_status: './image/round/round2_3_status.png',
     round2_3_effect: './image/round/round2_3_effect.png',
-    round2_4_firstArea: './image/round/round2_4_firstArea.png',
+    round2_4_courseSelect: './image/round/round2_4_courseSelect.png',
     round2_4_elevator: './image/round/round2_4_elevator.png',
-    round2_4_elevator_number: './image/round/round2_4_elevator_number.png',
-    round2_4_elevator_inside: './image/round/round2_4_elevator_inside.png',
-    round2_4_elevator_rooftop: './image/round/round2_4_elevator_rooftop.png',
-    round2_4_elevator_hall: './image/round/round2_4_elevator_hall.png',
-    round2_4_inside_area1: './image/round/round2_4_inside_area1.png',
-    round2_4_inside_corridor: './image/round/round2_4_inside_corridor.png',
-    round2_4_mountain_deep: './image/round/round2_4_mountain_deep.png',
-    round2_4_mountain_down: './image/round/round2_4_mountain_down.png',
-    round2_4_mountain_path: './image/round/round2_4_mountain_path.png',
-    round2_4_park_load: './image/round/round2_4_park_load.png',
-    round2_4_park_path: './image/round/round2_4_park_path.png',
+    round2_4_elevatorNumber: './image/round/round2_4_elevatorNumber.png',
+    round2_4_elevatorFloor1: './image/round/round2_4_elevatorFloor1.png',
+    round2_4_elevatorFloor3: './image/round/round2_4_elevatorFloor3.png',
+    round2_4_elevatorFloor4: './image/round/round2_4_elevatorFloor4.png',
+    round2_4_elevatorRooftop: './image/round/round2_4_elevatorRooftop.png',
+    round2_4_elevatorOutside: './image/round/round2_4_elevatorOutside.png',
+    round2_4_elevatorHall: './image/round/round2_4_elevatorHall.png',
+    round2_4_corridor: './image/round/round2_4_corridor.png',
+    round2_4_mountainDeep: './image/round/round2_4_mountainDeep.png',
+    round2_4_mountainPath: './image/round/round2_4_mountainPath.png',
+    round2_4_mountainRooftop: './image/round/round2_4_mountainRooftop.png',
+    round2_4_mountainEntrance: './image/round/round2_4_mountainEntrance.png',
+    round2_4_mountainWall: './image/round/round2_4_mountainWall.png',
     round2_4_rooftop: './image/round/round2_4_rooftop.png',
-    round2_4_rooftop_wayout: './image/round/round2_4_rooftop_wayout.png',
-
+    round2_4_rooftopWayout: './image/round/round2_4_rooftopWayout.png',
+    round2_4_roomSky: './image/round/round2_4_roomSky.png',
+    round2_4_roomParty: './image/round/round2_4_roomParty.png',
+    round2_4_roomYellow: './image/round/round2_4_roomYellow.png',
+    round2_4_roomBlue: './image/round/round2_4_roomBlue.png',
+    round2_4_floorB1: './image/round/round2_4_floorB1.png',
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -277,6 +283,9 @@ export class imageDataInfo {
   static intruderEnemy = {
     jemuEye: {x: 0, y: 0, width: 100, height: 60, frame: 8},
     jemuWing: {x: 0, y: 60, width: 160, height: 120, frame: 5},
+    square: {x: 0, y: 100, width: 100, height: 100, frame: 1},
+    square3DUp: {x: 0, y: 200, width: 100, height: 100, frame: 9},
+    square3DLeft: {x: 0, y: 300, width: 100, height: 100, frame: 9},
   }
 
   static intruderEnemyEffect = {
@@ -312,6 +321,7 @@ export class imageDataInfo {
     fireRed: {x: 0, y: 220, width: 20, height: 20, frame: 10},
     squareLineRed: {x: 0, y: 240, width: 20, height: 20, frame: 10},
     noiseRed: {x: 0, y: 260, width: 20, height: 20, frame: 10},
+    squareBlueLine: {x: 0, y: 280, width: 20, height: 20, frame: 10},
   }
   
   static enemyDieEffectEx = {
@@ -426,6 +436,7 @@ export class imageDataInfo {
     numberUpRun: {x: 0, y: 50, width: 35, height: 35, frame: 8},
     numberDownRun: {x: 0, y: 100, width: 35, height: 35, frame: 8},
     numberScreen: {x: 0, y: 150, width: 200, height: 50, frame: 1},
+    elevatorHall: {x: 0, y: 200, width: 100, height: 100, frame: 1},
   }
 
   static weapon = {

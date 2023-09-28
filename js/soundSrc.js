@@ -81,6 +81,7 @@ export class soundSrc {
     enemyDieDonggrami: './sound/enemyDieDonggrami.wav',
     enemyDieDonggramiLeaf: './sound/enemyDieDonggramiLeaf.wav',
     enemyDieIntruderJemu: './sound/enemyDieIntruderJemu.ogg',
+    enemyDieIntruderSquare: './sound/enemyDieIntruderSquare.ogg',
   }
 
   static enemyAttack = {

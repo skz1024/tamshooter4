@@ -27,6 +27,7 @@ export class ID {
 
   static playerSkill = {
     unused: 0,
+    /** 스킬 번호 ID의 시작점 */
     skillNumberStart: 15000,
     multyshot: 15001,
     missile: 15002,
@@ -174,9 +175,11 @@ export class ID {
       fruit: 20191,
       juice: 20192,
       party: 20193,
+      talkRunawayR2_4: 20194,
+      talkParty: 20195,
 
-      tree: 20195,
-      leaf: 20196,
+      tree: 20197,
+      leaf: 20198,
 
       a1_fighter: 20200,
       b1_bounce: 20201,
@@ -188,6 +191,7 @@ export class ID {
     },
     intruder: {
       jemuBoss: 20210,
+      square: 20211,
     }
   }
 

@@ -1,5 +1,6 @@
 //@ts-check
 
+import { ID } from "./dataId.js"
 import { imageSrc } from "./imageSrc.js"
 import { soundSrc } from "./soundSrc.js"
 import { TamsaEngine } from "./tamsaEngine/tamsaEngine.js"
@@ -93,15 +94,15 @@ export class userSystem {
   /** 데미지 경고 프레임 */ static damageWarningFrame = 0
   /** 레벨업 이펙트 프레임 */ static levelUpEffectFrame = 0
   
-  /** 스킬 리스트 (총 8개, 이중 0 ~ 3번은 A슬롯, 4 ~ 7번은 B슬롯) */ 
+  /** 스킬 리스트(기본값) (총 8개, 이중 0 ~ 3번은 A슬롯, 4 ~ 7번은 B슬롯) */ 
   static skillList = [
-    // ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.arrow, ID.playerSkill.blaster,
-    // ID.playerSkill.hyperBall, ID.playerSkill.santansu, ID.playerSkill.parapo, ID.playerSkill.critcalChaser
+    ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.sidewave, ID.playerSkill.critcalChaser,
+    ID.playerSkill.hyperBall, ID.playerSkill.sword, ID.playerSkill.santansu, ID.playerSkill.hanjumoek
   ]
 
-  /** 무기 리스트, 0 ~ 3번까지만 있음. 4번은 무기를 사용하기 싫을 때 사용 따라서 무기가 지정되지 않음. */
+  /** 무기 리스트(기본값), 0 ~ 3번까지만 있음. 4번은 무기를 사용하기 싫을 때 사용 따라서 무기가 지정되지 않음. */
   static weaponList = [
-    // ID.playerWeapon.multyshot, ID.playerWeapon.missile, ID.playerWeapon.arrow, ID.playerWeapon.laser
+    ID.playerWeapon.multyshot, ID.playerWeapon.missile, ID.playerWeapon.laser, ID.playerWeapon.sidewave
   ]
   
   /** 공격력(초당), 참고: 이 값은 processStat함수를 실행하지 않으면 값이 갱신되지 않습니다. */ 
@@ -247,6 +248,13 @@ export class userSystem {
   static setSkillDisplayStat (slotNumber, coolTime, id) {
     this.skillDisplayStat[slotNumber].coolTime = coolTime
     this.skillDisplayStat[slotNumber].id = id
+  }
+
+  /** 현재 스킬 상태를 그대로 보여지게 하는 함수 */
+  static setSkillDisplayStatDefaultFunction () {
+    for (let i = 0; i < this.skillDisplayStat.length; i++) {
+      this.skillDisplayStat[i].id = this.skillList[i]
+    }
   }
 
   static setSkillDisplayCooltimeZero () {
@@ -411,7 +419,7 @@ export class userSystem {
       // 해당하는 스킬이 없다면, 스킬은 표시되지 않습니다.
       if (this.skillDisplayStat[i].coolTime >= 1) {
         if (this.skillDisplayStat[i].id !== 0) {
-          const skillNumber = this.skillDisplayStat[i].id - 15000 // 스킬의 ID는 15001부터 시작이라, 15000을 빼면, 스킬 번호값을 얻을 수 있음.
+          const skillNumber = this.skillDisplayStat[i].id - ID.playerSkill.skillNumberStart // 스킬의 ID는 15001부터 시작이라, 15000을 빼면, 스킬 번호값을 얻을 수 있음.
           const skillXLine = skillNumber % 10
           const skillYLine = Math.floor(skillNumber / 10)
           game.graphic.imageDisplay(skillIconImage, skillXLine * SKILL_WIDTH, skillYLine * SKILL_HEIGHT, SKILL_WIDTH, SKILL_HEIGHT, OUTPUT_SKILL_X, LAYERY1, SKILL_WIDTH, SKILL_HEIGHT, 0, 0, 0.5)
@@ -419,7 +427,7 @@ export class userSystem {
         digitalDisplay(this.skillDisplayStat[i].coolTime, OUTPUT_TIME_X, OUTPUT_TIME_Y) // 스킬 쿨타임 시간
       } else {
         if (this.skillDisplayStat[i].id !== 0) {
-          const skillNumber = this.skillDisplayStat[i].id - 15000 // 스킬의 ID는 15001부터 시작이라, 15000을 빼면, 스킬 번호값을 얻을 수 있음.
+          const skillNumber = this.skillDisplayStat[i].id - ID.playerSkill.skillNumberStart // 스킬의 ID는 15001부터 시작이라, 15000을 빼면, 스킬 번호값을 얻을 수 있음.
           const skillXLine = skillNumber % 10
           const skillYLine = Math.floor(skillNumber / 10)
           game.graphic.imageDisplay(skillIconImage, skillXLine * SKILL_WIDTH, skillYLine * SKILL_HEIGHT, SKILL_WIDTH, SKILL_HEIGHT, OUTPUT_SKILL_X, LAYERY1, SKILL_WIDTH, SKILL_HEIGHT)

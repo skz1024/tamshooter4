@@ -1007,6 +1007,9 @@ export class fieldState {
 
   static damageObjectNumber = 0
   static createDamageObject (x = 0, y = 0, attack = 1) {
+    // 데미지 보여주기 없으면 데미지와 관련된 객체 작업은 동작하지 않음.
+    if (!fieldSystem.option.showDamage) return
+
     if (this.damageObject.length < 100) {
       this.damageObject.push(new DamageObject())
     }
@@ -1117,6 +1120,8 @@ export class fieldState {
   }
 
   static processDamageObject () {
+    if (!fieldSystem.option.showDamage) return
+
     for (let i = 0; i < this.damageObject.length; i++) {
       const currentDamage = this.damageObject[i]
       currentDamage.process()
@@ -1181,7 +1186,9 @@ export class fieldState {
       const currentEnemy = this.enemyObject[i]
 
       currentEnemy.display()
-      this.displayEnemyHpMeter(currentEnemy)
+      if (fieldSystem.option.showEnemyHp) {
+        this.displayEnemyHpMeter(currentEnemy)
+      }
     }
   }
 
@@ -1205,6 +1212,8 @@ export class fieldState {
   }
 
   static displayDamageObject () {
+    if (!fieldSystem.option.showDamage) return
+
     for (let i = 0; i < this.damageObject.length; i++) {
       const currentDamage = this.damageObject[i]
       currentDamage.display()
@@ -1264,6 +1273,15 @@ export class fieldSystem {
   /** 현재까지 진행된 에니메이션의 총 프레임 */ static scoreEnimationFrame = 0
   /** 총 점수 */ static totalScore = 0
   /** 필드 점수 (필드 내에서 획득한 모든 점수) */ static fieldScore = 0
+
+  /** 옵션 설정 값 */
+  static option = {
+    soundOn: true,
+    musicOn: true,
+    resultAutoSkip: true,
+    showEnemyHp: true,
+    showDamage: true,
+  }
 
   /** 
    * 다른 객체에서 이 객체를 참조하는 도중에 전달되는 메세지 값  
@@ -1372,7 +1390,14 @@ export class fieldSystem {
    * 다만 게임창을 닫을 경우에는 현재 상태가 임시 저장되기 때문에 라운드가 끝나지 않음.
    */
   static roundExit () {
-    this.message = this.messageList.STATE_MAIN
+    if (this.option.resultAutoSkip) {
+      this.message = this.messageList.STATE_MAIN
+    } else {
+      gameVar.statLineText1.text = 'ANY BUTTON TO CONTINUE...'
+      if (game.control.getButtonAnykey()) {
+        this.message = this.messageList.STATE_MAIN 
+      }
+    }
   }
 
   /**
@@ -1416,11 +1441,9 @@ export class fieldSystem {
           break
         case 1:
           this.message = this.messageList.CHANGE_SOUNDON
-          // game.sound.soundOn = !game.sound.soundOn
           break
         case 2:
           this.message = this.messageList.CHANGE_MUSICON
-          // game.sound.musicOn = !game.sound.musicOn
           break
         case 3:
           this.stateId = this.STATE_EXIT // 라운드를 나감
@@ -1618,8 +1641,8 @@ export class fieldSystem {
     const SELECT_Y = ARROW_Y
     const SCORE_X = (game.graphic.CANVAS_WIDTH / 2) - 200
     const SCORE_Y = MENU_Y + imageDataMenu.height
-    const imageDataSoundOn = false ? imageDataChecked : imageDataUnchecked // 사운드의 이미지데이터는 코드 길이를 줄이기 위해 체크/언체크에 따른 이미지 데이터를 대신 입력함
-    const imageDataMusicOn = false ? imageDataChecked : imageDataUnchecked
+    const imageDataSoundOn = this.option.soundOn ? imageDataChecked : imageDataUnchecked // 사운드의 이미지데이터는 코드 길이를 줄이기 위해 체크/언체크에 따른 이미지 데이터를 대신 입력함
+    const imageDataMusicOn = this.option.musicOn ? imageDataChecked : imageDataUnchecked
 
     game.graphic.imageDisplay(image, imageDataPause.x, imageDataPause.y, imageDataPause.width, imageDataPause.height, MID_X, MID_Y, imageDataPause.width, imageDataPause.height)
     game.graphic.imageDisplay(image, imageDataMenu.x, imageDataMenu.y, imageDataMenu.width, imageDataMenu.height, MENU_X, MENU_Y, imageDataMenu.width, imageDataMenu.height)

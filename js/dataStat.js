@@ -258,7 +258,7 @@ dataExportStatRound.set(ID.round.round1_test, new StatRound('TEST1', 'TEST1', 0,
 dataExportStatRound.set(ID.round.round2_1, new StatRound('2-1', '파란 행성 - 하늘 300km ~ 250km', 8, 50000, 150, 40000, ''))
 dataExportStatRound.set(ID.round.round2_2, new StatRound('2-2', '동그라미 마을', 8, 50000, 170, 44000, ''))
 dataExportStatRound.set(ID.round.round2_3, new StatRound('2-3', '동그라미 스페이스', 12, 50000, 192, 48000, ''))
-dataExportStatRound.set(ID.round.round2_4, new StatRound('2-4', '동그라미 마을 홀', 12, 50000, 240, 52000, ''))
+dataExportStatRound.set(ID.round.round2_4, new StatRound('2-4', '동그라미 마을 홀', 12, 50000, 207, 52000, ''))
 dataExportStatRound.set(ID.round.round2_5, new StatRound('2-5', '지하실의 전투', 14, 50000, 180, 48000, ''))
 dataExportStatRound.set(ID.round.round2_6, new StatRound('2-6', '조용한 도로', 15, 50000, 150, 44000, ''))
 // round 3
