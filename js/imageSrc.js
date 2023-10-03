@@ -286,12 +286,33 @@ export class imageDataInfo {
     square: {x: 0, y: 100, width: 100, height: 100, frame: 1},
     square3DUp: {x: 0, y: 200, width: 100, height: 100, frame: 9},
     square3DLeft: {x: 0, y: 300, width: 100, height: 100, frame: 9},
+    metal: {x: 1700, y: 0, width: 100, height: 100, frame: 1},
+    diacore: {x: 1700, y: 100, width: 100, height: 100, frame: 1},
+    daseok: {x: 1800, y: 0, width: 200, height: 240, frame: 1},
+    hanoi: {x: 1800, y: 250, width: 200, height: 170, frame: 1},
+    rendownBlue: {x: 0, y: 200, width: 140, height: 120, frame: 11},
+    rendownGreen: {x: 0, y: 320, width: 140, height: 120, frame: 11},
+    reverRight: {x: 0, y: 450, width: 80, height: 80, frame: 12},
+    reverLeft: {x: 1000, y: 450, width: 80, height: 80, frame: 12},
+    flying1: {x: 0, y: 530, width: 100, height: 40, frame: 12},
+    flying2: {x: 0, y: 570, widht: 100, height: 60, frame: 11},
+    gami: {x: 0, y: 630, width: 160, height: 80, frame: 6},
+    momi: {x: 0, y: 710, width: 120, height: 60, frame: 12},
+    flyingRocket: {x: 0, y: 780, width: 150, height: 60, frame: 10}
   }
 
   static intruderEnemyEffect = {
-    energyBolt: {x: 0, y: 0, width: 50, height: 50, frame: 10},
-    energyThunder: {x: 0, y: 50, width: 100, height: 30, frame: 8},
-    energyReflect: {x: 0, y: 80, width: 50, height: 50, frame: 10}
+    energyThunder: {x: 0, y: 0, width: 100, height: 30, frame: 8},
+    energyBolt: {x: 0, y: 30, width: 50, height: 50, frame: 10},
+    energyReflect: {x: 0, y: 80, width: 50, height: 50, frame: 10},
+    lightMetal: {x: 0, y: 130, width: 50, height: 50, frame: 15},
+    lightDiacore: {x: 0, y: 180, width: 50, height: 50, frame: 15},
+    leverMissileBomb: {x: 0, y: 230, width: 80, height: 80, frame: 10},
+    hanoiRing: {x: 0, y: 310, width: 100, height: 40, frame: 7},
+    leverLaser: {x: 500, y: 30, width: 30, height: 100, frame: 1},
+    flyingGreenLaser: {x: 530, y: 30, width: 10, height: 50, frame: 1},
+    leverMissileLeft: {x: 540, y: 30, width: 60, height: 60, frame: 1},
+    leverMissileRight: {x: 600, y: 30, width: 60, height: 60, frame: 1},
   }
 
   static fieldSystem = {
