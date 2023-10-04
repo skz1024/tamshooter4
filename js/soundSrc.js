@@ -82,6 +82,16 @@ export class soundSrc {
     enemyDieDonggramiLeaf: './sound/enemyDieDonggramiLeaf.wav',
     enemyDieIntruderJemu: './sound/enemyDieIntruderJemu.ogg',
     enemyDieIntruderSquare: './sound/enemyDieIntruderSquare.ogg',
+    enemyDieIntruderDaseok: './sound/enemyDieIntruderDaseok.ogg',
+    enemyDieIntruderDiacore: './sound/enemyDieIntruderDiacore.ogg',
+    enemyDieIntruderFlying1: './sound/enemyDieIntruderFlying1.ogg',
+    enemyDieIntruderFlying2: './sound/enemyDieIntruderFlying2.ogg',
+    enemyDieIntruderFlyingRocket: './sound/enemyDieIntruderFlyingRocket.ogg',
+    enemyDieIntruderGami: './sound/enemyDieIntruderGami.ogg',
+    enemyDieIntruderHanoi: './sound/enemyDieIntruderHanoi.ogg',
+    enemyDieIntruderMetal: './sound/enemyDieIntruderMetal.ogg',
+    enemyDieIntruderMomi: './sound/enemyDieIntruderMomi.ogg',
+    enemyDieIntruderRendown: './sound/enemyDieIntruderRendown.ogg',
   }
 
   static enemyAttack = {
@@ -97,6 +107,8 @@ export class soundSrc {
     intruderJemuEnergyReflect: './sound/enemyIntruderJemuEnergyReflect.ogg',
     intruderJemuThunderBig: './sound/enemyIntruderJemuThunderBig.ogg',
     intruderJemuThunderNormal: './sound/enemyIntruderJemuThunderNormal.ogg',
+    intruderLeverLaser: './sound/enemyIntruderLeverLaser.ogg',
+    intruderRendownMissile: './sound/enemyIntruderRendownMissile.ogg',
   }
 
   static round = {
@@ -133,6 +145,8 @@ export class soundSrc {
     r2_4_elevatorDoorClose: './sound/round2_4_elevatorDoorClose.wav',
     r2_4_elevatorFloor: './sound/round2_4_elevatorFloor.wav',
     r2_4_message1: './sound/round2_4_message1.ogg',
+    r2_5_start: './sound/round2_5_start.ogg',
+    r2_5_breakRoom: './sound/round2_5_breakRoom.ogg',
   }
 
   static donggrami = {
