@@ -2500,12 +2500,7 @@ class Round1_6 extends RoundData {
 class Round1_test extends RoundData {
   constructor () {
     super()
-    this.roundName = 'test'
-    this.roundText = 'test'
-    this.standardPower = 40000
-    this.requireLevel = 3
-    this.finishTime = 200
-    this.clearBonus = 0
+    this.setAutoRoundStat(ID.round.round1_test)
 
     this.backgroundImageSrc = imageSrc.round.round2_3_maeul_space
 
@@ -2513,11 +2508,11 @@ class Round1_test extends RoundData {
     this.addLoadingImageList(PackRoundLoad.getRound2ShareImage())
     this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
     this.addLoadingSoundList(PackRoundLoad.getRound2ShareSound())
-    this.addLoadingImageList([imageSrc.round.round2_4_elevator])
 
     this.addRoundPhase(() => {
-      if (this.timeCheckInterval(0, 999, 60)) {
-        this.createEnemy(ID.enemy.donggramiEnemy.talkParty)
+      if (this.timeCheckInterval(0, 999, 60) && this.getEnemyCount() < 1) {
+        this.createEnemy(ID.enemy.intruder.lever)
+        this.createEnemy(ID.enemy.intruder.hanoi)
       }
     }, 0, 999)
   }
@@ -6359,7 +6354,49 @@ class Round2_4 extends RoundData {
   }
 }
 
-class Round2_5 extends RoundData {}
+class Round2_5 extends RoundData {
+  constructor () {
+    super()
+    this.setAutoRoundStat(ID.round.round2_5)
+    this.backgroundImageSrc = imageSrc.round.round2_4_floorB1
+    this.backgroundSpeedX = 0
+
+    this.addRoundPhase(this.roundPhase00, 0, 40)
+
+    this.addLoadingSoundList([
+      soundSrc.round.r2_5_start,
+      soundSrc.round.r2_5_breakRoom,
+      soundSrc.music.music14_intruder_battle
+    ])
+
+    this.customRoomBreakEffect = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedWhite, 400, 400, 1, 6)
+  }
+
+  roundPhase00 () {
+    let pTime = this.phaseTime[this.getCurrentPhase()].startTime
+    if (this.timeCheckFrame(pTime + 2)) {
+      this.soundPlay(soundSrc.round.r2_5_start)
+    } else if (this.timeCheckFrame(pTime + 5)) {
+      this.soundPlay(soundSrc.round.r2_5_breakRoom)
+      fieldState.createEffectObject(this.customRoomBreakEffect.getObject(), 200, 100)
+    } else if (this.timeCheckFrame(pTime + 7)) {
+      this.musicChange(soundSrc.music.music14_intruder_battle)
+      this.musicPlay()
+    }
+  }
+
+  displayBackground () {
+    if (this.timeCheckInterval(0, 6)) {
+      graphicSystem.gradientRect(0, 0, 800, 600, ['#141519', '#171d40'])
+    } else {
+      graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
+    }
+
+    super.displayBackground()
+  }
+}
+
+
 class Round2_6 extends RoundData {}
 
 

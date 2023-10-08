@@ -192,6 +192,17 @@ export class ID {
     intruder: {
       jemuBoss: 20210,
       square: 20211,
+      metal: 20212,
+      diacore: 20123,
+      rendown: 20214,
+      lever: 20125,
+      flying1: 20126,
+      flying2: 20127,
+      flyingRocket: 20128,
+      gami: 20129,
+      momi: 20130,
+      hanoi: 20131,
+      daseok: 20132,
     }
   }
 

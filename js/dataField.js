@@ -250,6 +250,13 @@ export class DelayData {
     this.delay = delayObjectString.delay
     this.count = delayObjectString.count
   }
+
+  /** 
+   * count값을 delay값으로 변경합니다. 이 함수는 카운트가 채워지는 과정을 생략하기 위해 사용합니다. (딜레이 없이 즉시 실행용도)
+   */
+  setCountMax () {
+    this.count = this.delay
+  }
 }
 
 /**
@@ -284,7 +291,7 @@ export class EnimationData {
     /** 에니메이션 프레임의 총 카운트 수 */ this.frameCount = frameCount
     /** 에니메이션이 총 진행된 프레임 수(지연시간과 관계없음) */ this.elapsedFrame = 0
     /** 에니메이션 반복 횟수 (-1: 무제한) */ this.frameRepeat = frameRepeat
-    /** 에니메이션 반복 횟수 카운트 */ this.frameRepeatCount = 0
+    /** 에니메이션 반복 횟수 카운트 */ this.frameRepeatCount = EnimationData.DEFAULT_FRAME_REPEAT // 에니메이션 1번 재생이 반복 1회를 의미하기 때문에 이 값은 기본값이 1입니다.
     /** 에니메이션의 총 최대 프레임 수(프레임 개수 * 프레임 반복 횟수) */ this.maxFrame = this.frameCount * this.frameRepeat
     /** 에니메이션의 출력할 너비 */ this.outputWidth = outputWidth
     /** 에니메이션의 출력할 높이 */ this.outputHeight = outputHeight
@@ -309,7 +316,11 @@ export class EnimationData {
 
     /** 이미지 뒤집기 */ this.flip = 0
     /** 이미지 회전값 */ this.degree = 0
+    /** 이미지 알파값 */ this.alpha = 1
   }
+
+  /** 프레임 반복의 기본 값 (이 값은 다른 값들과 달리 0으로 초기화 되는 것이 아니기 때문에 따로 기본값을 지정하였습니다.) */
+  static DEFAULT_FRAME_REPEAT = 1
 
   /**
    * 생성자 함수이 아닌 다른 함수으로 에니메이션 생성하는 함수
@@ -367,7 +378,7 @@ export class EnimationData {
   reset () {
     this.elapsedFrame = 0 // 현재 에니메이션 프레임은 0으로 리셋
     this.finished = false // 에니메이션이 재시작되어 종료된 것이 아니므로 finished가 false입니다.
-    this.frameRepeatCount = 0 // 프레임 반복한 횟수 카운트 0으로 재설정
+    this.frameRepeatCount = EnimationData.DEFAULT_FRAME_REPEAT // 프레임 반복한 횟수 카운트 기본값으로 재설정
   }
 
   /** 이 객체를 생성한 이후의 출력 사이즈 설정 */
@@ -421,8 +432,8 @@ export class EnimationData {
     const sliceY = this.sliceStartY + (sliceLine * this.frameHeight)
 
     // 이미지 출력
-    if (this.flip || this.degree) {
-      graphicSystem.imageDisplay(this.imageSrc, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight, this.flip, this.degree)
+    if (this.flip || this.degree || this.alpha !== 1) {
+      graphicSystem.imageDisplay(this.imageSrc, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight, this.flip, this.degree, this.alpha)
     } else {
       graphicSystem.imageDisplay(this.imageSrc, sliceX, sliceY, this.frameWidth, this.frameHeight, x, y, this.outputWidth, this.outputHeight)
     }
@@ -655,11 +666,11 @@ export class FieldData {
   /**
    * 이동 방향 설정, x축, y축 동시 설정 가능, 이동 방향을 없앨거면, 공백 '' 을 넣어주세요.
    * 
-   * 주의: FieldData.direction에 방향과 관련된 상수가 있으므로 해당 값을 사용해야 합니다.
+   * 아무런 값도 사용하지 않는 경우 공백으로 처리됩니다. 이 경우 기본적인 좌표방식을 사용합니다. 그러나 잘못된 값을 넣을경우, 해당 설정은 무시(취소됨)
    * 
-   * 잘못된 값을 넣을경우, 해당 설정은 무시(취소됨)
-   * @param {string} directionX x축 방향, 'left', 'right', ''(이 경우 right가 기본값) 사용 가능
-   * @param {string} directionY y축 방향, 'up', 'down', ''(이 경우 down이 기본값) 사용 가능
+   * 주의: FieldData.direction에 방향과 관련된 상수가 있으므로 해당 값을 사용해야 합니다.
+   * @param {string} directionX x축 방향, 'left', 'right', ''(이 경우 right처럼 사용됨) 사용 가능
+   * @param {string} directionY y축 방향, 'up', 'down', ''(이 경우 down처럼 사용됨) 사용 가능
    */
   setMoveDirection (directionX = '', directionY = '') {
     const LEFT = FieldData.direction.LEFT
@@ -671,13 +682,13 @@ export class FieldData {
     if (directionX === LEFT || directionX === RIGHT) {
       this.moveDirectionX = directionX
     } else if (directionX === SPACE) {
-      this.moveDirectionX = RIGHT
+      this.moveDirectionX = SPACE
     }
 
     if (directionY === UP || directionY === DOWN) {
       this.moveDirectionY = directionY
     } else if (directionY === SPACE) {
-      this.moveDirectionY = DOWN
+      this.moveDirectionY = SPACE
     }
   }
 
@@ -751,9 +762,14 @@ export class FieldData {
     if (this.enimation == null) return
     
     this.enimation.process()
+    this.enimation.degree = this.degree
   }
 
-  /** 상태 변경 및 추가적인 처리를 위해 만들어진 함수 (다만 기본적으로는 아무것도 하지 않고, 객체의 기능 확장용으로 사용합니다.) */
+  /** 
+   * 상태 변경 및 추가적인 처리를 위해 만들어진 함수 (다만 기본적으로는 아무것도 하지 않고, 객체의 기능 확장용으로 사용합니다.)  
+   * 
+   * 따라서 이 함수는 super.processState를 사용할 필요는 없습니다.
+   */
   processState () {
 
   }

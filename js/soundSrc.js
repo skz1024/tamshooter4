@@ -87,6 +87,7 @@ export class soundSrc {
     enemyDieIntruderFlying1: './sound/enemyDieIntruderFlying1.ogg',
     enemyDieIntruderFlying2: './sound/enemyDieIntruderFlying2.ogg',
     enemyDieIntruderFlyingRocket: './sound/enemyDieIntruderFlyingRocket.ogg',
+    enemyDieIntruderLever: './sound/enemyDieIntruderLever.ogg',
     enemyDieIntruderGami: './sound/enemyDieIntruderGami.ogg',
     enemyDieIntruderHanoi: './sound/enemyDieIntruderHanoi.ogg',
     enemyDieIntruderMetal: './sound/enemyDieIntruderMetal.ogg',
@@ -109,6 +110,10 @@ export class soundSrc {
     intruderJemuThunderNormal: './sound/enemyIntruderJemuThunderNormal.ogg',
     intruderLeverLaser: './sound/enemyIntruderLeverLaser.ogg',
     intruderRendownMissile: './sound/enemyIntruderRendownMissile.ogg',
+    intruderHanoiAttack: './sound/enemyIntruderHanoiAttack.ogg',
+    intruderHanoiReflect: './sound/enemyIntruderHanoiReflect.ogg',
+    intruderDaseokLaserGreen: './sound/enemyIntruderDaseokLaserGreen.ogg',
+    intruderDaseokLaserYellow: './sound/enemyIntruderDaseokLaserYellow.ogg',
   }
 
   static round = {
@@ -182,7 +187,8 @@ export class soundSrc {
     music11C2_square_room: './music/music11C2_square_room.ogg',
     music11C3_trap_room: './music/music11C3_trap_room.ogg',
     music12_donggrami_hall_outside: './music/music12_donggrami_hall_outside.ogg',
-    music13_round2_4_jemu: './music/music13_round2_4_jemu.ogg'
+    music13_round2_4_jemu: './music/music13_round2_4_jemu.ogg',
+    music14_intruder_battle: './music/music14_intruder_battle.ogg'
   }
 
   

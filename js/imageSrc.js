@@ -75,6 +75,7 @@ export class imageSrc {
     enemyDieSpaceComet: './image/enemy/enemyDieSpaceComet.png',
     enemyDieSpaceGamjigi: './image/enemy/enemyDieSpaceGamjigi.png',
     enemyDieMeteorite: './image/enemy/enemyDieMeteorite.png',
+    enemyDieIntruder: './image/enemy/enemyDieIntruder.png',
   }
 
   static round = {
@@ -283,21 +284,25 @@ export class imageDataInfo {
   static intruderEnemy = {
     jemuEye: {x: 0, y: 0, width: 100, height: 60, frame: 8},
     jemuWing: {x: 0, y: 60, width: 160, height: 120, frame: 5},
-    square: {x: 0, y: 100, width: 100, height: 100, frame: 1},
-    square3DUp: {x: 0, y: 200, width: 100, height: 100, frame: 9},
-    square3DLeft: {x: 0, y: 300, width: 100, height: 100, frame: 9},
+    square: {x: 800, y: 0, width: 100, height: 100, frame: 1},
+    square3DUp: {x: 800, y: 0, width: 100, height: 100, frame: 9},
+    square3DLeft: {x: 800, y: 100, width: 100, height: 100, frame: 9},
     metal: {x: 1700, y: 0, width: 100, height: 100, frame: 1},
     diacore: {x: 1700, y: 100, width: 100, height: 100, frame: 1},
-    daseok: {x: 1800, y: 0, width: 200, height: 240, frame: 1},
+    daseok: {x: 1800, y: 0, width: 160, height: 240, frame: 1},
     hanoi: {x: 1800, y: 250, width: 200, height: 170, frame: 1},
     rendownBlue: {x: 0, y: 200, width: 140, height: 120, frame: 11},
     rendownGreen: {x: 0, y: 320, width: 140, height: 120, frame: 11},
-    reverRight: {x: 0, y: 450, width: 80, height: 80, frame: 12},
-    reverLeft: {x: 1000, y: 450, width: 80, height: 80, frame: 12},
+    rendownDie: {x: 1540, y: 200, width: 140, height: 120, frame: 1},
+    leverImage: {x: 0, y: 450, width: 80, height: 80, frame: 1},
+    leverRight: {x: 0, y: 450, width: 80, height: 80, frame: 12},
+    leverLeft: {x: 1000, y: 450, width: 80, height: 80, frame: 12},
     flying1: {x: 0, y: 530, width: 100, height: 40, frame: 12},
-    flying2: {x: 0, y: 570, widht: 100, height: 60, frame: 11},
+    flying2: {x: 0, y: 570, width: 100, height: 60, frame: 11},
     gami: {x: 0, y: 630, width: 160, height: 80, frame: 6},
+    gamiDie: {x: 960, y: 630, width: 160, height: 80, frame: 1},
     momi: {x: 0, y: 710, width: 120, height: 60, frame: 12},
+    momiDie: {x: 1440, y: 710, width: 120, height: 60, frame: 1},
     flyingRocket: {x: 0, y: 780, width: 150, height: 60, frame: 10}
   }
 
@@ -310,7 +315,7 @@ export class imageDataInfo {
     leverMissileBomb: {x: 0, y: 230, width: 80, height: 80, frame: 10},
     hanoiRing: {x: 0, y: 310, width: 100, height: 40, frame: 7},
     leverLaser: {x: 500, y: 30, width: 30, height: 100, frame: 1},
-    flyingGreenLaser: {x: 530, y: 30, width: 10, height: 50, frame: 1},
+    flyingGreenLaser: {x: 540, y: 100, width: 50, height: 10, frame: 1},
     leverMissileLeft: {x: 540, y: 30, width: 60, height: 60, frame: 1},
     leverMissileRight: {x: 600, y: 30, width: 60, height: 60, frame: 1},
   }
@@ -343,6 +348,9 @@ export class imageDataInfo {
     squareLineRed: {x: 0, y: 240, width: 20, height: 20, frame: 10},
     noiseRed: {x: 0, y: 260, width: 20, height: 20, frame: 10},
     squareBlueLine: {x: 0, y: 280, width: 20, height: 20, frame: 10},
+    metalSlash: {x: 0, y: 300, width: 20, height: 20, frame: 10},
+    circleBlue: {x: 0, y: 320, width: 20, height: 20, frame: 10},
+    circleGreenStroke: {x: 0, y: 340, width: 20, height: 20, frame: 10},
   }
   
   static enemyDieEffectEx = {
@@ -356,6 +364,12 @@ export class imageDataInfo {
     enemyDieMeteorite3: {x: 0, y: 100, width: 50, height: 50, frame: 10},
     enemyDieMeteoriteWhite: {x: 0, y: 150, width: 70, height: 50, frame: 10},
     enemyDieMeteoriteBlack: {x: 0, y: 200, width: 80, height: 45, frame: 10},
+  }
+
+  static enemyDieIntruder = {
+    enemyDieIntruderDaseok: {x: 0, y: 0, width: 160, height: 240, frame: 10},
+    enemyDieIntruderHanoi: {x: 0, y: 240, width: 200, height: 170, frame: 7},
+    enemyDieIntruderLever: {x: 0, y: 410, width: 80, height: 80, frame: 11},
   }
 
   static enemyBullet = {

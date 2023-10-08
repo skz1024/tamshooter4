@@ -253,7 +253,7 @@ dataExportStatRound.set(ID.round.round1_3, new StatRound('1-3', '운석 지대 -
 dataExportStatRound.set(ID.round.round1_4, new StatRound('1-4', '의식의 공간', 4, 40000, 151, 38000, ''))
 dataExportStatRound.set(ID.round.round1_5, new StatRound('1-5', '운석 지대 - 레드 존', 4, 40000, 210, 41000, ''))
 dataExportStatRound.set(ID.round.round1_6, new StatRound('1-6', '우주 여행 - 파란 행성 가는 길', 6, 40000, 152, 35000, ''))
-dataExportStatRound.set(ID.round.round1_test, new StatRound('TEST1', 'TEST1', 0, 0, 300, 0, '테스트 라운드 (디버그 용도)'))
+dataExportStatRound.set(ID.round.round1_test, new StatRound('TEST1', 'TEST1', 0, 0, 600, 0, '테스트 라운드 (디버그 용도)'))
 // round 2
 dataExportStatRound.set(ID.round.round2_1, new StatRound('2-1', '파란 행성 - 하늘 300km ~ 250km', 8, 50000, 150, 40000, ''))
 dataExportStatRound.set(ID.round.round2_2, new StatRound('2-2', '동그라미 마을', 8, 50000, 170, 44000, ''))

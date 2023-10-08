@@ -47,7 +47,7 @@ import { ImageDataObject } from "./imageSrc.js"
     /**
      * 해당 에니메이션의 총합 프레임. 에니메이션 객체가 있을때는 해당 요소를 사용하지 않음.
      */
-    this.totalFrame = 0
+    // this.totalFrame = 0
 
     /**
      * 프레임 반복 수 (에니메이션 용도로 사용합니다.). 가본값 1

@@ -80,9 +80,11 @@ export class EnemyData extends FieldData {
 
   /**
    * 충돌 영역 얻기.
+   * 
    * 무기와 다르게 적의 충돌 영역은 여러개입니다. 물론 하나일 수도 있습니다.
-   * 충돌 영역은 배열로 리턴되므로 참고해주세요.
-   * 충돌 영역은 이 함수를 재정의해서 설정해주세요.
+   * 
+   * 충돌 영역은 배열로 리턴되므로 참고해주세요. 충돌 영역은 이 함수를 재정의해서 설정해주세요.
+   * 
    * 다만, 이 방식은 회전한 사각형을 판정할 순 없기 때문에, 회전한 사각형까지 판정하려면 다른 함수를 사용해야 합니다.
    * 그러나, 이것은 일부 적에 한정되는 상황이므로, 해당하는 일부 적의 알고리즘을 살펴봐주세요.
    * @returns {{x: number, y: number, width: number, height: number}[]} 객체의 영역
@@ -471,9 +473,9 @@ export class EnemyBulletData extends FieldData {
   }
 
   outAreaCheck () {
-    if (this.x < -graphicSystem.CANVAS_WIDTH / 2 ||
+    if (this.x + this.width < -graphicSystem.CANVAS_WIDTH / 2 ||
       this.x > graphicSystem.CANVAS_WIDTH + (graphicSystem.CANVAS_WIDTH / 2) ||
-      this.y < -graphicSystem.CANVAS_HEIGHT / 2 ||
+      this.y + this.height < -graphicSystem.CANVAS_HEIGHT / 2 ||
       this.y > graphicSystem.CANVAS_HEIGHT + (graphicSystem.CANVAS_HEIGHT / 2)) {
         return true
       } else {
@@ -861,6 +863,8 @@ class SpaceEnemyGamjigi extends SpaceEnemyData {
     this.degree = 0
     this.state = 'chase'
   }
+
+  static gamjigiRotate
 
   processMove () {
     // 이동 지연시간마다 추적할지 말지를 설정
@@ -5470,6 +5474,17 @@ class IntruderEnemy extends EnemyData {
     super()
     this.baseCp = 50000
     this.imageSrc = imageSrc.enemy.intruderEnemy
+    this.isExitToReset = true
+    this.isPossibleExit = false
+    this.moveDelay = new DelayData(120) // 기본 이동 주기 (120프레임, 2초 간격)
+    this.moveDelay.setCountMax() // 이동방식을 변경하기 위한 지연시간은 생성하는 순간에는 적용되지 않습니다.
+    this.attackDelay = new DelayData(180) // 기본 공격 주기 (180프레임, 3초 간격)
+  }
+
+  /** intruderEnemy 전용 함수: 딜레이 값을 재설정합니다. */
+  setIntruderDelay (moveDelay = 0, attackDelay = 0) {
+    this.moveDelay.delay = moveDelay
+    this.attackDelay.delay = attackDelay
   }
 }
 
@@ -5491,8 +5506,7 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
 
     this.finishX = 0
     this.finishY = 0
-    this.moveDelay = new DelayData(120)
-    this.attackDelay = new DelayData(180)
+    this.setIntruderDelay(120, 180)
     this.attackDelay.count = 50 // 이것은 첫번째 패턴 지연시간을 줄이기 위해 추가로 설정한 값입니다.
     this.ATTACK_PRE_DELAY = 20
 
@@ -5821,8 +5835,7 @@ class IntruderEnemySquare extends IntruderEnemy {
     this.STATE_MOVE_LEFT_RIGHT = 'leftright'
     this.STATE_MOVE_UP_DOWN = 'updown'
     this.state = this.STATE_STOP
-    this.moveDelay = new DelayData(30)
-    this.moveDelay.count = this.moveDelay.delay // 다음 패턴을 즉시 실행시키기 위하여 딜레이 카운트 값을 조정
+    this.setIntruderDelay(30)
   }
 
   getCollisionArea () {
@@ -5888,6 +5901,731 @@ class IntruderEnemySquare extends IntruderEnemy {
     } else if (this.state === this.STATE_MOVE_UP_DOWN) {
       this.enimationMoveUpDown.display(this.x, this.y)
     }
+  }
+}
+
+class IntruderEnemyMetal extends IntruderEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.metal)
+    this.setEnemyByCpStat(20, 12)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderMetal, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.metalSlash, this.width, this.height, 2))
+    this.STATE_MOVE = 'move'
+    this.STATE_AFTERIMAGE = 'afterimage'
+    this.state = this.STATE_MOVE
+
+    // 잔상 이미지 좌표의 기본값이 -9999인 이유는 화면 내에 표시하지 못하게 하기 위함
+    /** 잔상 개수 */ this.afterimageCount = 0 
+    /** 잔상 출력용 이미지 좌표 */ this.afterimageX = [-9999, -9999, -9999, -9999, -9999, -9999, -9999, -9999, -9999, -9999]
+    /** 잔상 출력용 이미지 좌표 */ this.afterimageY = [-9999, -9999, -9999, -9999, -9999, -9999, -9999, -9999, -9999, -9999]
+    /** 잔상 유지용 남은 프레임 값 */ this.afterimageFrame = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    /** 잔상 출력용 이미지 처리 */ this.afterimage = EnimationData.createEnimation(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.metal)
+    /** 잔상 유지 프레임 */ this.AFTERIMAGE_DISPLAY_FRAME = 60
+
+    /** 이펙트 출력용 에니메이션 */
+    this.effectLightEnimation = EnimationData.createEnimation(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.lightMetal, 2)
+    this.effectLightEnimationDelay = new DelayData(120)
+  }
+
+  processState () {
+    if (this.moveDelay.check()) {
+      // 75% 확률로 기본 이동 상태, 25%확률로 잔상 이동 상태
+      this.state = Math.random() < 0.75 ? this.STATE_MOVE : this.STATE_AFTERIMAGE
+      this.afterimageCount = 0
+
+      if (this.state === this.STATE_MOVE) {
+        this.setRandomMoveSpeed(2, 2, true)
+      } else if (this.state === this.STATE_AFTERIMAGE) {
+        let player = fieldState.getPlayerObject()
+        let distanceX = player.x - this.x
+        let distanceY = player.y - this.y
+        const minSpeed = 4
+        let speedX = distanceX > 0 ? minSpeed : -minSpeed
+        let speedY = distanceY > 0 ? minSpeed : -minSpeed
+        this.setMoveSpeed(speedX, speedY)
+        this.setMoveDirection()
+      }
+    }
+
+    // 잔상 이미지 출력 프레임 감소
+    for (let i = 0; i < this.afterimageFrame.length; i++) {
+      if (this.afterimageFrame[i] >= 0) {
+        this.afterimageFrame[i]--
+      }
+    }
+
+    if (this.effectLightEnimationDelay.check()) {
+      this.effectLightEnimation.reset()
+    }
+  }
+
+  processEnimation () {
+    super.processEnimation()
+    this.effectLightEnimation.process()
+
+    // 참고: afterImage는 에니메이션이 1프레임이라, process를 사용하지 않아도 결과는 같습니다.
+  }
+
+  processMove () {
+    if (this.state === this.STATE_MOVE) {
+      super.processMove()
+    } else if (this.state === this.STATE_AFTERIMAGE) {
+      if (this.moveDelay.divCheck(4)) {
+        // 이동할 때마다 잔상 추가 (일정 간격 단위)
+        if (this.afterimageCount < this.afterimageX.length) {
+          this.afterimageX[this.afterimageCount] = this.x
+          this.afterimageY[this.afterimageCount] = this.y
+          this.afterimageFrame[this.afterimageCount] = this.AFTERIMAGE_DISPLAY_FRAME
+          this.afterimageCount++
+        } else {
+          // 잔상 배열이 꽉차면 나머지 원소를 앞으로 밀어내고 새 원소를 추가
+          this.afterimageX.shift()
+          this.afterimageY.shift()
+          this.afterimageFrame.shift()
+          this.afterimageX.push(this.x)
+          this.afterimageY.push(this.y)
+          this.afterimageFrame.push(this.AFTERIMAGE_DISPLAY_FRAME)
+        }
+      }
+
+      super.processMove() // 그리고 이동
+    }
+  }
+
+  display () {
+    // 잔상 이미지
+    for (let i = 0; i < this.afterimageX.length || i < this.afterimageCount - 1; i++) {
+      if (this.afterimageFrame[i] >= 0) {
+        this.afterimage.alpha = (1 / this.AFTERIMAGE_DISPLAY_FRAME * this.afterimageFrame[i])
+        this.afterimage.display(this.afterimageX[i], this.afterimageY[i])
+      }
+    }
+
+    super.display() // 기본 이미지 (이미지를 잔상 위에 출력하기 위해 잔상 이미지보다 더 늦게 그려짐)
+
+    // 이펙트 이미지
+    this.effectLightEnimation.display(this.x + 4, this.y + 4)
+  }
+}
+
+class IntruderEnemyDiacore extends IntruderEnemyMetal {
+  constructor () {
+    super()
+    this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.diacore)
+    this.setEnemyByCpStat(20, 14)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderDiacore, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.diamondBlue, this.width, this.height, 2))
+
+    // 적 총알
+    this.energyBullet = new CustomEnemyBullet(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.energyBolt, 10, 4, 4)
+
+    // 잔상 이미지 수정
+    this.afterimage = EnimationData.createEnimation(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.diacore)
+
+    // 빛 이미지 수정
+    this.effectLightEnimation = EnimationData.createEnimation(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.lightDiacore, 2)
+  }
+
+  getCollisionArea () {
+    return [
+      {x: this.x, y: this.y + 35, width: this.width, height: 30},
+      {x: this.x + 35, y: this.y, width: 30, height: this.height}
+    ]
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let customBullet = this.energyBullet.getCreateObject()
+      let directionLR = Math.random() < 0.5 ? FieldData.direction.LEFT : FieldData.direction.RIGHT
+      let dircetionUD = Math.random() < 0.5 ? FieldData.direction.UP : FieldData.direction.DOWN
+      customBullet.setMoveDirection(directionLR, dircetionUD)
+      fieldState.createEnemyBulletObject(customBullet, this.centerX - (customBullet.width / 2), this.centerY - (customBullet.height / 2))
+      soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergy)
+    }
+  }
+}
+
+class IntruderEnemyRendown extends IntruderEnemy {
+  constructor () {
+    super()
+    let targetImageData = Math.random() < 0.3 ? imageDataInfo.intruderEnemy.rendownBlue : imageDataInfo.intruderEnemy.rendownGreen
+    this.setAutoImageData(this.imageSrc, targetImageData, 6)
+    this.setEnemyByCpStat(100, 20)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderRendown, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.pulseDiamondBlue, this.width, this.height, 3))
+    this.dieAfterDeleteDelay = new DelayData(60)
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+
+    if (this.isDied) {
+      if (this.y + this.height >= graphicSystem.CANVAS_HEIGHT) {
+        this.y = graphicSystem.CANVAS_HEIGHT - this.height
+      } else {
+        // 땅으로 떨어질때까지 넘어짐
+        this.degree++
+        this.x++
+        this.y += this.dieAfterDeleteDelay.count
+      }
+    }
+  }
+
+  static EnergyBulletLeft = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.leverMissileLeft, 0, -2, 5)
+    }
+
+    processMove () {
+      super.processMove()
+      this.degree += 4
+
+      if (this.y + this.height >= graphicSystem.CANVAS_HEIGHT) {
+        if (this.elapsedFrame >= 60) {
+          let enemyBullet = new IntruderEnemyRendown.EnergyBombBullet()
+          enemyBullet.x = this.x
+          enemyBullet.y = graphicSystem.CANVAS_HEIGHT - enemyBullet.height
+          fieldState.createEnemyBulletObject(enemyBullet, enemyBullet.x, enemyBullet.y)
+          soundSystem.play(soundSrc.enemyAttack.intruderRendownMissile)
+          this.isDeleted = true
+        } else {
+          this.y = graphicSystem.CANVAS_HEIGHT - this.height
+          this.moveSpeedX = 0
+        }
+      }
+    }
+
+    processCollision () {}
+  }
+
+  static EnergyBulletRight = class extends IntruderEnemyRendown.EnergyBulletLeft {
+    constructor () {
+      super()
+      this.setMoveSpeed(Math.abs(this.moveSpeedX), this.moveSpeedY)
+    }
+  }
+
+  static EnergyBombBullet = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.leverMissileBomb, 5, 0, 0)
+      this.setWidthHeight(this.width * 2, this.height * 2)
+      this.attackDelay = new DelayData(4)
+      this.customEffect = new CustomEffect(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.leverMissileBomb, this.width, this.height, 3)
+      this.baseHeight = this.height
+
+      this.totalFrame = 0
+      if (this.customEffect.frameDelay != null && this.customEffect.enimation != null) {
+        this.totalFrame = this.customEffect.frameDelay * this.customEffect.enimation?.frameCount
+      }
+    }
+
+    afterInit () {
+      this.y = graphicSystem.CANVAS_HEIGHT - this.height
+      fieldState.createEffectObject(this.customEffect, this.x, this.y)
+    }
+
+    processCollision () {
+      if (this.attackDelay.check()) {
+        super.processCollision()
+      }
+
+      if (this.elapsedFrame >= this.totalFrame) {
+        this.isDeleted = true
+      } else {
+        this.isDeleted = false
+      }
+    }
+
+    // 아무것도 출력하지 않습니다.
+    display () {}
+  }
+
+  processMove () {
+    if (this.moveDelay.check()) {
+      if (Math.random() < 0.5) {
+        this.setRandomMoveSpeed(2, 0, true)
+      } else {
+        this.setRandomMoveSpeed(0, 2, true)
+      }
+    }
+
+    super.processMove()
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let customBullet = Math.random() < 0.5 ? new IntruderEnemyRendown.EnergyBulletLeft() : new IntruderEnemyRendown.EnergyBulletRight()
+      fieldState.createEnemyBulletObject(customBullet, this.x, this.y + this.height)
+    }
+  }
+
+  display () {
+    if (this.isDied) {
+      let imgD = imageDataInfo.intruderEnemy.rendownDie
+      let alpha = (this.dieAfterDeleteDelay.delay - this.dieAfterDeleteDelay.count) * (1 / this.dieAfterDeleteDelay.delay)
+      graphicSystem.imageDisplay(this.imageSrc, imgD.x, imgD.y, imgD.width, imgD.height, this.x, this.y, this.width, this.height, 0, this.degree, alpha)
+    } else {
+      super.display()
+    }
+  }
+}
+
+class IntruderEnemyLever extends IntruderEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.leverImage)
+    this.setEnemyByCpStat(50, 11)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderLever, new CustomEffect(imageSrc.enemyDie.enemyDieIntruder, imageDataInfo.enemyDieIntruder.enemyDieIntruderLever, this.width, this.height, 2))
+
+    this.STATE_LEFT = 'left'
+    this.STATE_RIGHT = 'right'
+    this.STATE_NORMAL = ''
+    this.state = this.STATE_NORMAL
+
+    this.enimationLeft = EnimationData.createEnimation(this.imageSrc, imageDataInfo.intruderEnemy.leverLeft)
+    this.enimationRight = EnimationData.createEnimation(this.imageSrc, imageDataInfo.intruderEnemy.leverRight)
+  }
+
+  static LaserBullet = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.leverLaser, 3, 0, -20, '', '')
+      this.setWidthHeight(imageDataInfo.intruderEnemy.leverImage.width, graphicSystem.CANVAS_HEIGHT)
+      this.attackDelay = new DelayData(5)
+    }
+
+    processCollision () {
+      if (this.attackDelay.check()) {
+        super.processCollision()
+      }
+      
+      if (this.elapsedFrame <= 120) {
+        this.isDeleted = false 
+      } else {
+        this.isDeleted = true
+      }
+    }
+  }
+
+  processMove () {
+    super.processMove()
+    if (this.moveDelay.check()) {
+      this.setRandomMoveSpeedMinMax(-2, -2, 2, 2)
+    }
+  }
+
+  processEnimation () {
+    super.processEnimation()
+    this.enimationLeft.process()
+    this.enimationRight.process()
+  }
+
+  processState () {
+    if (this.attackDelay.check()) {
+      this.state = Math.random() < 0.5 ? this.STATE_LEFT : this.STATE_RIGHT
+      if (this.state === this.STATE_LEFT) {
+        // create laser
+        let bullet = new IntruderEnemyLever.LaserBullet()
+        fieldState.createEnemyBulletObject(bullet, this.x, graphicSystem.CANVAS_HEIGHT)
+        soundSystem.play(soundSrc.enemyAttack.intruderLeverLaser)
+        this.enimationLeft.reset()
+      } else if (this.state === this.STATE_RIGHT) {
+        // create Bomb
+        let bullet = new IntruderEnemyRendown.EnergyBulletLeft()
+        fieldState.createEnemyBulletObject(bullet, this.x, this.y)
+        this.enimationRight.reset()
+      }
+    }
+  }
+
+  display () {
+    if (this.state === this.STATE_NORMAL) {
+      super.display()
+    } else if (this.state === this.STATE_LEFT) {
+      if (this.enimationLeft.finished) {
+        super.display()
+      } else {
+        this.enimationLeft.display(this.x, this.y)
+      }
+    } else if (this.state === this.STATE_RIGHT) {
+      if (this.enimationRight.finished) {
+        super.display()
+      } else {
+        this.enimationRight.display(this.x, this.y)
+      }
+    }
+  }
+}
+
+class IntruderEnemyFlying1 extends IntruderEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.flying1, 4)
+    this.setEnemyByCpStat(30, 8)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderFlying1, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleGreenStroke, this.width, this.height))
+    this.moveDelay = new DelayData(120)
+    this.moveDelay.count = this.moveDelay.delay
+
+    this.attackDelay = new DelayData(120)
+  }
+
+  processMove () {
+    if (this.moveDelay.check()) {
+      this.setRandomMoveSpeed(7, 1)
+    }
+
+    super.processMove()
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let bullet = new IntruderEnemyFlying1.LaserBullet()
+      fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
+    }
+  }
+
+  static LaserBullet = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.flyingGreenLaser, 10, 0, 0)
+    }
+
+    afterInit () {
+      let player = fieldState.getPlayerObject()
+      let speedX = (player.x - this.x) / 35
+      let speedY = (player.y - this.y) / 35
+      if (Math.abs(speedX) < 4) {
+        speedX = speedX < 0 ? 4 : -4
+      }
+      
+      if (Math.abs(speedY) < 4) {
+        speedY = speedY < 0 ? 4 : -4
+      }
+
+      const atangent = Math.atan2(speedY, speedX)
+      this.degree = atangent * (180 / Math.PI)
+
+      this.moveSpeedX = speedX
+      this.moveSpeedY = speedY
+    }
+  }
+}
+
+class IntruderEnemyFlying2 extends IntruderEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.flying2)
+    this.setEnemyByCpStat(60, 8)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderFlying2, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleGreenStroke, this.width, this.height, 2))
+  }
+
+  processMove () {
+    super.processMove()
+    if (this.moveDelay.check()) {
+      this.setRandomMoveSpeed(4, 2)
+    }
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let bullet = new IntruderEnemyJemuBoss.EnergyReflectBullet()
+      fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
+      soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergyHigh)
+    }
+  }
+}
+
+class IntruderEnemyFlyingRocket extends IntruderEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.flyingRocket)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderFlyingRocket, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleBlue, this.width, this.width, 2))
+    this.setEnemyByCpStat(20, 11)
+    this.setMoveDirection('', '')
+  }
+
+  processMove () {
+    if (this.moveDelay.check()) {
+      let player = fieldState.getPlayerObject()
+      let speedX = (player.centerX - this.centerX) / 90
+      let speedY = (player.centerY - this.centerY) / 90
+      const minSpeed = 3
+      if (Math.abs(speedX) < minSpeed && Math.abs(speedY) < minSpeed) {
+        // speedX와 speedY의 값을 비교하여 가장 높은 값을 최소 속도에 맞춰지도록 조정합니다.
+        let mul = Math.abs(speedX) < Math.abs(speedY) ? minSpeed / Math.abs(speedY) : minSpeed / Math.abs(speedX)
+        speedX *= mul
+        speedY *= mul
+      }
+
+      this.setMoveSpeed(speedX, speedY)
+    }
+
+    const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
+    this.degree = atangent * (180 / Math.PI)
+    console.log(this.moveSpeedY, this.moveSpeedX, this.degree, this.moveDirectionX, this.moveDirectionY)
+
+    super.processMove()
+  }
+
+}
+
+class IntruderEnemyGami extends IntruderEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.gami)
+    this.setEnemyByCpStat(100, 17)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderGami)
+    this.setIntruderDelay(66, 0)
+
+    this.STATE_NORMAL = ''
+    this.STATE_STOP = 'stop'
+    this.STATE_DIE = 'die'
+    this.state = this.STATE_NORMAL
+    this.dieAfterDeleteDelay = new DelayData(33)
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+    if (this.isDied) {
+      if (this.x < graphicSystem.CANVAS_WIDTH_HALF) {
+        this.x -= 5
+      } else {
+        this.x += 5
+      }
+  
+      if (this.y < graphicSystem.CANVAS_HEIGHT_HALF) {
+        this.y -= 5
+      } else {
+        this.y += 5
+      }
+    }
+  }
+
+  processMove () {
+    if (this.moveDelay.check()) {
+      this.state = Math.random() < 0.75 ? this.STATE_NORMAL : this.STATE_STOP
+      if (this.state === this.STATE_NORMAL) {
+        this.setRandomMoveSpeed(4, 4, true)
+      } else {
+        this.setMoveSpeed(0, 0)
+      }
+
+      if (this.enimation != null && this.enimation.frameDelay != null) {
+        if (this.state === this.STATE_NORMAL) {
+          this.enimation.frameDelay.delay = Math.floor(Math.random() * 3) + 1
+          if (this.enimation.finished) {
+            this.enimation.reset()
+          }
+        } else {
+          this.enimation.finished = true // 강제로 에니메이션 완료처리
+        }
+      }
+    }
+
+    super.processMove()
+  }
+
+  display () {
+    if (this.isDied) {
+      let imgD = imageDataInfo.intruderEnemy.gamiDie
+      let alpha = (this.dieAfterDeleteDelay.delay - this.dieAfterDeleteDelay.count) * (1 / this.dieAfterDeleteDelay.delay)
+      graphicSystem.imageDisplay(this.imageSrc, imgD.x, imgD.y, imgD.width, imgD.height, this.x, this.y, this.width, this.height, 0, 0, alpha)
+    } else {
+      super.display()
+    }
+  }
+}
+
+class IntruderEnemyMomi extends IntruderEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.momi)
+    this.setEnemyByCpStat(40, 10)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderMomi)
+    this.baseSpeed = 6
+    this.MAX_SPEED = 18
+    this.setIntruderDelay(33, 10)
+    this.dieAfterDeleteDelay = new DelayData(33)
+    this.isPossibleExit = true
+    this.isExitToReset = true
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+    if (this.isDied) {
+      this.x += this.moveSpeedX
+    }
+  }
+
+  processMove () {
+    if (this.moveDelay.check()) {
+      let speedX = this.baseSpeed + (Math.random() * 3) + (this.elapsedFrame * 0.02)
+      let speedY = Math.random() * 1
+      if (speedX > this.MAX_SPEED) speedX = this.MAX_SPEED
+      this.setMoveSpeed(speedX, speedY)
+    }
+
+    super.processMove()
+  }
+
+  display () {
+    if (this.isDied) {
+      let imgD = imageDataInfo.intruderEnemy.momiDie
+      let alpha = (this.dieAfterDeleteDelay.delay - this.dieAfterDeleteDelay.count) * (1 / this.dieAfterDeleteDelay.delay)
+      graphicSystem.imageDisplay(this.imageSrc, imgD.x, imgD.y, imgD.width, imgD.height, this.x, this.y, this.width, this.height, 0, 0, alpha)
+    } else {
+      super.display()
+    }
+  }
+}
+
+class IntruderEnemyHanoi extends IntruderEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.hanoi)
+    this.setEnemyByCpStat(200, 22)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderHanoi, new CustomEffect(imageSrc.enemyDie.enemyDieIntruder, imageDataInfo.enemyDieIntruder.enemyDieIntruderHanoi, this.width, this.height, 6))
+    this.setRandomMoveSpeed(1, 0)
+  }
+
+  static HanoiBullet = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.hanoiRing, 12)
+      this.setAutoImageData(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.hanoiRing, 3)
+      this.baseWidth = this.width
+      this.baseHeight = this.height
+      this.setRandomMoveSpeed(1, 0, true)
+      this.setMoveSpeed(this.moveSpeedX, 5)
+    }
+
+    processMove () {
+      super.processMove()
+      if (this.y < 0) {
+        this.y = 0
+        this.moveSpeedY = Math.abs(this.moveSpeedY)
+        if (this.elapsedFrame >= 180) {
+          this.isDeleted = true
+        } else {
+          soundSystem.play(soundSrc.enemyAttack.intruderHanoiReflect)
+        }
+      } else if (this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
+        this.y = graphicSystem.CANVAS_HEIGHT - this.height - 2
+        this.moveSpeedY = -Math.abs(this.moveSpeedY)
+        if (this.elapsedFrame >= 180) {
+          this.isDeleted = true
+        } else {
+          soundSystem.play(soundSrc.enemyAttack.intruderHanoiReflect)
+        }
+      }
+
+      let sizeMultiple = (this.elapsedFrame / 60)
+      if (sizeMultiple > 2) sizeMultiple = 2
+      this.setWidthHeight(this.baseWidth * sizeMultiple, this.baseHeight * sizeMultiple)
+    }
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let bullet = new IntruderEnemyHanoi.HanoiBullet()
+      fieldState.createEnemyBulletObject(bullet, this.x, this.y)
+      soundSystem.play(soundSrc.enemyAttack.intruderHanoiAttack)
+    }
+  }
+
+  processMove () {
+    if (this.y + this.height >= graphicSystem.CANVAS_HEIGHT) {
+      this.y = graphicSystem.CANVAS_HEIGHT - this.height
+    } else {
+      this.y += 10
+    }
+
+    super.processMove()
+  }
+}
+
+class IntruderEnemyDaseok extends IntruderEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.daseok)
+    this.setEnemyByCpStat(500, 33)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderDaseok, new CustomEffect(imageSrc.enemyDie.enemyDieIntruder, imageDataInfo.enemyDieIntruder.enemyDieIntruderDaseok, this.width, this.height, 3))
+    this.setMoveSpeed(0, 0) // 이동하지 않음
+
+    this.STATE_YELLOW = 'yellow'
+    this.STATE_GREEN = 'green'
+    this.STATE_ENERGY = 'energy'
+    this.setIntruderDelay(40, 240)
+
+    // 이것은 첫번째 공격을 더 빨리 시도하기 위해서입니다.
+    this.attackDelay.count = this.attackDelay.delay - 120
+  }
+
+  static LaserYellowBullet = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.leverLaser, 6, 0, -12)
+    }
+  }
+
+  static LaserGreenBullet = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.flyingGreenLaser, 4, 0, 0)
+    }
+    
+    afterInit () {
+      let player = fieldState.getPlayerObject()
+      let speedX = (player.x - this.x) / 65
+      let speedY = (player.y - this.y) / 65
+      const minSpeed = 4
+      if (Math.abs(speedX) < minSpeed && Math.abs(speedY) < minSpeed) {
+        // speedX와 speedY의 값을 비교하여 가장 높은 값을 최소 속도에 맞춰지도록 조정합니다.
+        let mul = Math.abs(speedX) < Math.abs(speedY) ? minSpeed / Math.abs(speedY) : minSpeed / Math.abs(speedX)
+        speedX *= mul
+        speedY *= mul
+      }
+
+      const atangent = Math.atan2(speedY, speedX)
+      this.degree = atangent * (180 / Math.PI)
+
+      this.moveSpeedX = speedX
+      this.moveSpeedY = speedY
+    }
+  }
+
+  static EnergyBullet = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.energyBolt, 6, Math.random() * 6 - 3, Math.random() * -4)
+    }
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let random = Math.floor(Math.random() * 3)
+      switch (random) {
+        case 0: this.state = this.STATE_YELLOW; break
+        case 1: this.state = this.STATE_GREEN; break
+        case 2: this.state = this.STATE_ENERGY; break
+      }
+    }
+
+    if (this.state === this.STATE_YELLOW && this.attackDelay.divCheck(6) && this.attackDelay.count <= 60) {
+      let bullet = new IntruderEnemyDaseok.LaserYellowBullet()
+      fieldState.createEnemyBulletObject(bullet, this.x + (Math.random() * this.width), this.y)
+      soundSystem.play(soundSrc.enemyAttack.intruderDaseokLaserYellow)
+    } else if (this.state === this.STATE_GREEN && this.attackDelay.divCheck(6) && this.attackDelay.count <= 60) {
+      let bullet = new IntruderEnemyDaseok.LaserGreenBullet()
+      fieldState.createEnemyBulletObject(bullet, this.centerX, this.y)
+      soundSystem.play(soundSrc.enemyAttack.intruderDaseokLaserGreen)
+    } else if (this.state === this.STATE_ENERGY && this.attackDelay.divCheck(6) && this.attackDelay.count <= 60) {
+      let bullet = new IntruderEnemyDaseok.EnergyBullet()
+      fieldState.createEnemyBulletObject(bullet, this.centerX, this.y)
+      soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergyHigh)
+    }
+  }
+
+  processMove () {
+    if (this.y + this.height >= graphicSystem.CANVAS_HEIGHT) {
+      this.y = graphicSystem.CANVAS_HEIGHT - this.height
+    } else {
+      this.y += 10
+    }
+
+    super.processMove()
   }
 }
 
@@ -5991,3 +6729,14 @@ dataExportEnemy.set(ID.enemy.donggramiEnemy.talkParty, DonggramiEnemyTalkParty)
 // intruderEnemy / round 2-4 boss, round 2-5, round 2-6
 dataExportEnemy.set(ID.enemy.intruder.jemuBoss, IntruderEnemyJemuBoss)
 dataExportEnemy.set(ID.enemy.intruder.square, IntruderEnemySquare)
+dataExportEnemy.set(ID.enemy.intruder.metal, IntruderEnemyMetal)
+dataExportEnemy.set(ID.enemy.intruder.diacore, IntruderEnemyDiacore)
+dataExportEnemy.set(ID.enemy.intruder.rendown, IntruderEnemyRendown)
+dataExportEnemy.set(ID.enemy.intruder.lever, IntruderEnemyLever)
+dataExportEnemy.set(ID.enemy.intruder.flying1, IntruderEnemyFlying1)
+dataExportEnemy.set(ID.enemy.intruder.flying2, IntruderEnemyFlying2)
+dataExportEnemy.set(ID.enemy.intruder.flyingRocket, IntruderEnemyFlyingRocket)
+dataExportEnemy.set(ID.enemy.intruder.gami, IntruderEnemyGami)
+dataExportEnemy.set(ID.enemy.intruder.momi, IntruderEnemyMomi)
+dataExportEnemy.set(ID.enemy.intruder.hanoi, IntruderEnemyHanoi)
+dataExportEnemy.set(ID.enemy.intruder.daseok, IntruderEnemyDaseok)
