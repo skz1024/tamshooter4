@@ -126,6 +126,7 @@ export class imageSrc {
     round2_4_roomYellow: './image/round/round2_4_roomYellow.png',
     round2_4_roomBlue: './image/round/round2_4_roomBlue.png',
     round2_4_floorB1: './image/round/round2_4_floorB1.png',
+    round2_5: './image/round/round2_5.png'
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.

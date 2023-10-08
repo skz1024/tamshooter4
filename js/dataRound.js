@@ -6358,7 +6358,7 @@ class Round2_5 extends RoundData {
   constructor () {
     super()
     this.setAutoRoundStat(ID.round.round2_5)
-    this.backgroundImageSrc = imageSrc.round.round2_4_floorB1
+    this.backgroundImageSrc = imageSrc.round.round2_5
     this.backgroundSpeedX = 0
 
     this.addRoundPhase(this.roundPhase00, 0, 40)
@@ -6369,7 +6369,7 @@ class Round2_5 extends RoundData {
       soundSrc.music.music14_intruder_battle
     ])
 
-    this.customRoomBreakEffect = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedWhite, 400, 400, 1, 6)
+    this.customRoomBreakEffect = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareRed, 400, 400, 2, 3)
   }
 
   roundPhase00 () {
@@ -6382,6 +6382,10 @@ class Round2_5 extends RoundData {
     } else if (this.timeCheckFrame(pTime + 7)) {
       this.musicChange(soundSrc.music.music14_intruder_battle)
       this.musicPlay()
+    }
+
+    if (this.timeCheckInterval(pTime + 8, pTime + 14, 60)) {
+      this.createEnemy(ID.enemy.intruder.metal)
     }
   }
 
