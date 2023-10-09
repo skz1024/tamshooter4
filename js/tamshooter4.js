@@ -2196,7 +2196,13 @@ export class gameSystem {
   }
 
   static fieldProcess () {
-    this.fieldSystem.process()
+    try {
+      this.fieldSystem.process()
+    } catch (e) {
+      console.error('콘솔에서 에러 발생')
+      console.error(e)
+    }
+
     const messageList = this.fieldSystem.messageList
     switch (this.fieldSystem.message) {
       case messageList.CHANGE_MUSICON:

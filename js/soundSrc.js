@@ -114,6 +114,7 @@ export class soundSrc {
     intruderHanoiReflect: './sound/enemyIntruderHanoiReflect.ogg',
     intruderDaseokLaserGreen: './sound/enemyIntruderDaseokLaserGreen.ogg',
     intruderDaseokLaserYellow: './sound/enemyIntruderDaseokLaserYellow.ogg',
+    intruderRendownMissileCreate: './sound/enemyIntruderRendownMissileCreate.ogg'
   }
 
   static round = {

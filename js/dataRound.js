@@ -9,7 +9,7 @@ import { fieldState, fieldSystem } from "./field.js"
 import { soundSrc } from "./soundSrc.js"
 import { game, gameFunction } from "./game.js"
 import { dataExportStatRound } from "./dataStat.js"
-import { CustomEnemyBullet, EnemyData } from "./dataEnemy.js"
+import { CustomEnemyBullet, EnemyData, dataExportEnemy } from "./dataEnemy.js"
 
 let graphicSystem = game.graphic
 let soundSystem = game.sound
@@ -22,7 +22,7 @@ let digitalDisplay = gameFunction.digitalDisplay
  * 배경은 용량이 크므로 제외, 배경음악도 제외 특정 라운드에 의존되어있는 파일도 제외 (대표적인 예: 2-3)
  * 다만, 그런 파일들은 파일 이름이 round로 시작함
  */
-export class PackRoundLoad {
+export class RoundPackLoad {
   /** 라운드 1에서 사용하는 적들의 공통 이미지 데이터 */
   static getRound1ShareImage () {
     return [
@@ -84,12 +84,15 @@ export class PackRoundLoad {
     ]
   }
 
-  /** 라운드 2에서 사용하는 적들이 공통 데이터
+  /** 라운드 2에서 사용하는 이미지 공통 데이터
    */
   static getRound2ShareImage () {
     return [
       imageSrc.enemy.donggramiEnemy,
-      imageSrc.enemyDie.effectList
+      imageSrc.enemyDie.effectList,
+      imageSrc.enemy.intruderEnemy,
+      imageSrc.enemyEffect.intruder,
+      imageSrc.enemyDie.enemyDieIntruder,
     ]
   }
 
@@ -108,6 +111,17 @@ export class PackRoundLoad {
       soundSrc.enemyDie.enemyDieDonggramiLeaf,
       soundSrc.enemyDie.enemyDieIntruderJemu,
       soundSrc.enemyDie.enemyDieIntruderSquare,
+      soundSrc.enemyDie.enemyDieIntruderDaseok,
+      soundSrc.enemyDie.enemyDieIntruderDiacore,
+      soundSrc.enemyDie.enemyDieIntruderFlying1,
+      soundSrc.enemyDie.enemyDieIntruderFlying2,
+      soundSrc.enemyDie.enemyDieIntruderFlyingRocket,
+      soundSrc.enemyDie.enemyDieIntruderGami,
+      soundSrc.enemyDie.enemyDieIntruderHanoi,
+      soundSrc.enemyDie.enemyDieIntruderLever,
+      soundSrc.enemyDie.enemyDieIntruderMetal,
+      soundSrc.enemyDie.enemyDieIntruderMomi,
+      soundSrc.enemyDie.enemyDieIntruderRendown,
 
       soundSrc.enemyAttack.intruderJemuEnergy,
       soundSrc.enemyAttack.intruderJemuEnergyHigh,
@@ -116,6 +130,13 @@ export class PackRoundLoad {
       soundSrc.enemyAttack.intruderJemuEnergyReflect,
       soundSrc.enemyAttack.intruderJemuThunderBig,
       soundSrc.enemyAttack.intruderJemuThunderNormal,
+      soundSrc.enemyAttack.intruderDaseokLaserGreen,
+      soundSrc.enemyAttack.intruderDaseokLaserYellow,
+      soundSrc.enemyAttack.intruderHanoiAttack,
+      soundSrc.enemyAttack.intruderHanoiReflect,
+      soundSrc.enemyAttack.intruderLeverLaser,
+      soundSrc.enemyAttack.intruderRendownMissile,
+      soundSrc.enemyAttack.intruderRendownMissileCreate,
     ]
   }
 }
@@ -185,6 +206,8 @@ export class RoundData {
     /** 
      * 모든 페이즈가 끝나는 시간 (그리고 적 전부 죽었는지 확인) 
      * 참고로 이 시간은 addRoundPhase를 사용할 때마다 해당 라운드의 종료 시점으로 자동으로 맞춰집니다.
+     * 
+     * 페이즈 종료 시간은 마지막 페이즈 시간에서 1초를 추가
      */ 
     this.phaseAllEndTime = 0
 
@@ -331,7 +354,7 @@ export class RoundData {
     this.phaseTime.push({startTime: startTime, endTime: endTime})
 
     // 만약 페이즈 시간이랑 페이즈 종료 시간이 잘못 겹치면 해당 라운드에 영원히 갇힐 수 있음,
-    // 페이즈 종료 시간은 마지막 시간에서 1초를 추가
+    // 페이즈 종료 시간은 마지막 페이즈 시간에서 1초를 추가
     this.phaseAllEndTime = endTime + 1
   }
 
@@ -726,14 +749,15 @@ export class RoundData {
   }
 
   /**
-   * 시간 간격 확인 함수 (적 생성 용도로 사용)
+   * 시간 간격 확인 함수 (적 생성 용도로 사용), 프레임 단위 계산을 totalFrame으로 하기 때문에 시간이 멈추어도 함수는 작동합니다.
+   * 
    * start이상 end이하일경우 true, 아닐경우 false
    * 
    * 참고: 만약, 시간 범위를 무제한 범위로 하고, intervalFrame 간격만 확인하고 싶다면
    * start를 0, end는 매우 큰 수(9999같은...)를 사용해주세요.
    */
   timeCheckInterval (start = 0, end = start, intervalFrame = 1) {
-    if (this.currentTime >= start && this.currentTime <= end && this.currentTimeTotalFrame % intervalFrame === 0) {
+    if (this.currentTime >= start && this.currentTime <= end && this.totalFrame % intervalFrame === 0) {
       return true
     } else {
       return false
@@ -1045,8 +1069,8 @@ class Round1_1 extends RoundData {
       soundSrc.music.music06_round1_boss_thema
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
+    this.addLoadingImageList(RoundPackLoad.getRound1ShareImage())
+    this.addLoadingSoundList(RoundPackLoad.getRound1ShareSound())
   }
 
   roundPhase00 () {
@@ -1224,8 +1248,8 @@ class Round1_2 extends RoundData {
       soundSrc.music.music02_meteorite_zone_field,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
+    this.addLoadingImageList(RoundPackLoad.getRound1ShareImage())
+    this.addLoadingSoundList(RoundPackLoad.getRound1ShareSound())
   }
 
   processBackground () {
@@ -1417,8 +1441,8 @@ class Round1_3 extends RoundData {
       soundSrc.music.music03_meteorite_zone_battle,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
+    this.addLoadingImageList(RoundPackLoad.getRound1ShareImage())
+    this.addLoadingSoundList(RoundPackLoad.getRound1ShareSound())
   }
 
   processBackground () {
@@ -1776,8 +1800,8 @@ class Round1_4 extends RoundData {
       this.messageSound.jemulstart,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
+    this.addLoadingImageList(RoundPackLoad.getRound1ShareImage())
+    this.addLoadingSoundList(RoundPackLoad.getRound1ShareSound())
   }
 
   processBackground () {
@@ -1999,8 +2023,8 @@ class Round1_5 extends RoundData {
       soundSrc.music.music02_meteorite_zone_field,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
+    this.addLoadingImageList(RoundPackLoad.getRound1ShareImage())
+    this.addLoadingSoundList(RoundPackLoad.getRound1ShareSound())
   }
 
   processBackground () {
@@ -2275,8 +2299,8 @@ class Round1_6 extends RoundData {
       soundSrc.music.music07_paran_planet_entry,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
+    this.addLoadingImageList(RoundPackLoad.getRound1ShareImage())
+    this.addLoadingSoundList(RoundPackLoad.getRound1ShareSound())
   }
 
   /**
@@ -2504,10 +2528,10 @@ class Round1_test extends RoundData {
 
     this.backgroundImageSrc = imageSrc.round.round2_3_maeul_space
 
-    this.addLoadingImageList(PackRoundLoad.getRound1ShareImage())
-    this.addLoadingImageList(PackRoundLoad.getRound2ShareImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound1ShareSound())
-    this.addLoadingSoundList(PackRoundLoad.getRound2ShareSound())
+    this.addLoadingImageList(RoundPackLoad.getRound1ShareImage())
+    this.addLoadingImageList(RoundPackLoad.getRound2ShareImage())
+    this.addLoadingSoundList(RoundPackLoad.getRound1ShareSound())
+    this.addLoadingSoundList(RoundPackLoad.getRound2ShareSound())
 
     this.addRoundPhase(() => {
       if (this.timeCheckInterval(0, 999, 60) && this.getEnemyCount() < 1) {
@@ -2558,8 +2582,8 @@ class Round2_1 extends RoundData {
       soundSrc.music.music09_paran_planet,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound2ShareImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound2ShareSound())
+    this.addLoadingImageList(RoundPackLoad.getRound2ShareImage())
+    this.addLoadingSoundList(RoundPackLoad.getRound2ShareSound())
   }
 
   displayBackground () {
@@ -2828,8 +2852,8 @@ class Round2_2 extends RoundData {
       soundSrc.music.music10_donggrami_maeul,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound2ShareImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound2ShareSound())
+    this.addLoadingImageList(RoundPackLoad.getRound2ShareImage())
+    this.addLoadingSoundList(RoundPackLoad.getRound2ShareSound())
   }
 
   displayBossHp () {
@@ -3306,8 +3330,8 @@ class Round2_3 extends RoundData {
       soundSrc.round.r2_3_c2_squareRed,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound2ShareImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound2ShareSound())
+    this.addLoadingImageList(RoundPackLoad.getRound2ShareImage())
+    this.addLoadingSoundList(RoundPackLoad.getRound2ShareSound())
   }
 
   lightBoxProcess () {
@@ -5410,8 +5434,8 @@ class Round2_4 extends RoundData {
       soundSrc.music.music13_round2_4_jemu,
     ])
 
-    this.addLoadingImageList(PackRoundLoad.getRound2ShareImage())
-    this.addLoadingSoundList(PackRoundLoad.getRound2ShareSound())
+    this.addLoadingImageList(RoundPackLoad.getRound2ShareImage())
+    this.addLoadingSoundList(RoundPackLoad.getRound2ShareSound())
     this.spriteElevator = this.createSpriteElevator()
   }
 
@@ -5674,7 +5698,8 @@ class Round2_4 extends RoundData {
       this.createEnemy(ID.enemy.donggramiEnemy.talkRunawayR2_4, 900)
     }
 
-    if (this.timeCheckFrame(pTime + 37)) {
+    // 적 제거가 2번 발동되는 이유는, 나무가 죽으면서 또다른 적들을 소환하기 때문
+    if (this.timeCheckFrame(pTime + 37) || this.timeCheckFrame(pTime + 38)) {
       let enemy = this.getEnemyObject()
       for (let i = 0; i < enemy.length; i++) {
         let e = enemy[i]
@@ -5683,6 +5708,8 @@ class Round2_4 extends RoundData {
           e.setMoveDirection(FieldData.direction.LEFT, '')
           e.isPossibleExit = true
           e.isExitToReset = false
+        } else {
+          e.requestDie()
         }
       }
     }
@@ -5722,15 +5749,16 @@ class Round2_4 extends RoundData {
     // 획득 경험치 비율을 조정하기 위해 적 수를 증가시킴
     if (this.timeCheckInterval(pTime + 1, pTime + 10, 12)) {
       this.createEnemy(ID.enemy.intruder.square)
-    } else if (this.timeCheckInterval(pTime + 11, pTime + 20, 10)) {
-      this.createEnemy(ID.enemy.intruder.square)
-    } else if (this.timeCheckInterval(pTime + 21, pTime + 30, 9)) {
-      this.createEnemy(ID.enemy.intruder.square)
-    } else if (this.timeCheckInterval(pTime + 31, pTime + 38, 8)) {
+    } else if (this.timeCheckInterval(pTime + 11, pTime + 36, 10)) {
       this.createEnemy(ID.enemy.intruder.square)
     }
+    
+    this.timePauseEnemyCount(pTime + 38)
 
-    this.timePauseEnemyCount(pTime + 39)
+    // outside코스와의 점수를 보정하기 위해 일정 점수를 추가함
+    if (this.timeCheckFrame(pTime + 39)) {
+      fieldSystem.requestAddScore(4500)
+    }
   }
 
   roundPhase05Outside () {
@@ -5799,7 +5827,7 @@ class Round2_4 extends RoundData {
   processDebug () {
     // 디버그할 때 코스 선택을 고려해주세요
     // if (this.timeCheckFrame(0, 1)) {
-    //   this.currentTime = this.phaseTime[4].startTime
+    //   this.currentTime = this.phaseTime[5].startTime + 0
     //   this.currentCourseName = this.courseName.INSIDE
     // }
   }
@@ -6358,45 +6386,583 @@ class Round2_5 extends RoundData {
   constructor () {
     super()
     this.setAutoRoundStat(ID.round.round2_5)
-    this.backgroundImageSrc = imageSrc.round.round2_5
+    this.backgroundImageSrc = imageSrc.round.round2_5_floorB1Light
     this.backgroundSpeedX = 0
 
-    this.addRoundPhase(this.roundPhase00, 0, 40)
+    // 타입 지정용 임시 클래스 (자동완성 목적)
+    class SpriteDonggrami extends this.SpriteDonggrami {}
+    class SpriteIntruder extends this.SpriteIntruder {}
+    /** @type {SpriteDonggrami[]} */ this.spriteDonggrami = []
+    /** @type {SpriteIntruder[]} */ this.spriteIntruder = []
+
+    this.addRoundPhase(this.roundPhase00, 0, 60)
+    this.addRoundPhase(this.roundPhase01, 61, 90)
+    this.addRoundPhase(this.roundPhase02, 91, 120)
+    this.addRoundPhase(this.roundPhase03, 121, 150)
+    this.addRoundPhase(this.roundPhase04, 151, 190)
+    this.addRoundPhase(this.roundPhase05, 191, 197)
+
+    this.addLoadingImageList([
+      imageSrc.round.round2_5_floorB1Light,
+      imageSrc.round.round2_5_floorB1Dark,
+      imageSrc.round.round2_5_floorB1Break,
+    ])
 
     this.addLoadingSoundList([
       soundSrc.round.r2_5_start,
       soundSrc.round.r2_5_breakRoom,
-      soundSrc.music.music14_intruder_battle
+      soundSrc.music.music14_intruder_battle,
+      soundSrc.round.r2_4_message1,
+      soundSrc.round.r2_3_a1_toyHammer
     ])
+
+    this.addLoadingImageList(RoundPackLoad.getRound2ShareImage())
+    this.addLoadingSoundList(RoundPackLoad.getRound2ShareSound())
 
     this.customRoomBreakEffect = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareRed, 400, 400, 2, 3)
   }
 
+  SpriteDonggrami = class extends FieldData {
+    constructor () {
+      super()
+      this.BASEDPS = 5000
+      this.color = 'red'
+      this.setRandomColor()
+      this.setDonggramiColor()
+      this.setRandomMoveSpeed(6, 6)
+      this.moveDelay = new DelayData(60)
+      this.attackDelay = new DelayData(30)
+      this.hpMax = this.BASEDPS * 12
+      this.hp = this.hpMax
+      this.attack = this.BASEDPS
+      this.dieAfterDelay = new DelayData(60)
+      this.x = 0
+      this.y = Math.random() * graphicSystem.CANVAS_HEIGHT
+
+      this.getTargetAndSetSpeed()
+    }
+
+    getTargetAndSetSpeed () {
+      let enemy = fieldState.getRandomEnemyObject()
+      if (enemy != null) {
+        let distanceX = enemy.x - this.x
+        let distanceY = enemy.y - this.y
+
+        this.setMoveSpeed(distanceX / 55, distanceY / 55)
+      }
+    }
+
+    setRandomColor () {
+      let random = Math.floor(Math.random() * 6)
+      switch (random) {
+        case 0: this.color = 'green'; break
+        case 1: this.color = 'blue'; break
+        case 2: this.color = 'orange'; break
+        case 3: this.color = 'yellow'; break
+        case 4: this.color = 'purple'; break
+        default: this.color = 'red'; break
+      }
+    }
+
+    /** 동그라미의 색에 따른 이미지 데이터 설정*/
+    setDonggramiColor () {
+      switch (this.color) {
+        case 'red': this.setAutoImageData(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.red); break
+        case 'blue': this.setAutoImageData(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.blue); break
+        case 'green': this.setAutoImageData(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.green); break
+        case 'orange': this.setAutoImageData(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.orange); break
+        case 'purple': this.setAutoImageData(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.purple); break
+        case 'yellow': this.setAutoImageData(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.yellow); break
+      }
+    }
+
+    /** 동그라미의 스탯을 설정 (이것은 자동 저장된 데이터를 불러올때만 사용합니다.) */
+    setLoadDonggramiStat (color = '', x = 0, y = 0, moveSpeedX = 0, moveSpeedY = 0, hp = 0) {
+      this.color = color
+      this.x = x
+      this.y = y
+      this.moveSpeedX = moveSpeedX
+      this.moveSpeedY = moveSpeedY
+      this.hp = hp
+      this.setDonggramiColor()
+    }
+
+    /** 동그라미가 가지고 있는 스탯값을 저장 */
+    getSaveDonggramiData () {
+      return {x: this.x, y: this.y, color: this.color, hp: this.hp, moveSpeedX: this.moveSpeedX, moveSpeedY: this.moveSpeedY}
+    }
+
+    processState () {
+      if (this.isDied) {
+        this.y += 10
+        if (this.dieAfterDelay.check()) {
+          this.isDeleted = true
+        }
+      }
+    }
+
+    processMove () {
+      if (this.isDied) return
+
+      super.processMove()
+
+      if (this.moveDelay.check()) {
+        this.getTargetAndSetSpeed()
+      }
+
+      // 화면 바깥 이동 금지
+      if (this.outAreaCheck(0)) {
+        if (this.x + this.width <= 0) this.x = 1
+        if (this.x >= graphicSystem.CANVAS_WIDTH) this.x = graphicSystem.CANVAS_WIDTH - 1
+        if (this.y + this.height <= 0) this.y = 1
+        if (this.y >= graphicSystem.CANVAS_HEIGHT) this.y = graphicSystem.CANVAS_HEIGHT - 1
+
+        this.moveSpeedX *= -1
+        this.moveSpeedY *= -1
+      }
+
+      // 충돌 처리 (딜레이카운트는 적에게 충돌했을때에만 0으로 리셋됩니다.)
+      if (this.attackDelay.check(false, true)) {
+        let enemyObject = fieldState.getEnemyObject()
+        for (let i = 0; i < enemyObject.length; i++) {
+          let enemy = enemyObject[i]
+          if (!enemy.isDied && collision(this, enemy)) {
+            enemy.hp -= this.attack
+            this.hp -= this.attack
+            this.attackDelay.count = 0
+            this.moveSpeedX *= -1
+            this.moveSpeedY *= -1
+            this.moveDelay.count = this.moveDelay.delay / 2
+            soundSystem.play(soundSrc.round.r2_3_a1_toyHammer)
+            fieldState.createDamageObject(enemy.x, enemy.y, this.attack)
+            break // 반복문 종료 (1회 공격에 1마리만 공격 가능)
+          }
+        }
+      }
+
+      // 적의 총알 대신 맞기 처리
+      let enemyBulletObject = fieldState.getEnemyBulletObject()
+      for (let i = 0; i < enemyBulletObject.length; i++) {
+        let enemyBullet = enemyBulletObject[i]
+        if (collision(this, enemyBullet)) {
+          this.hp -= (this.attack / 10)
+          enemyBullet.isDeleted = true
+        }
+      }
+
+      // 죽음 처리
+      if (this.hp <= 0) {
+        soundSystem.play(soundSrc.enemyDie.enemyDieDonggrami)
+        this.isDied = true
+      }
+    }
+
+    display () {
+      super.display()
+      // 동그라미의 체력 표시
+      graphicSystem.meterRect(this.x, this.y + this.height, this.width, 1, 'darkblue', this.hp, this.hpMax, true, 'skyblue')
+    }
+  }
+
+  SpriteIntruder = class {
+    constructor (id = 0, x = 200, y = 100, z = -120) {
+      this.id = id
+      this.x = x
+      this.y = y
+      this.z = z
+      this.ZBASE = -120
+      switch (this.id) {
+        case ID.enemy.intruder.diacore: this.imageData = imageDataInfo.intruderEnemy.diacore; break
+        case ID.enemy.intruder.rendown: this.imageData = imageDataInfo.intruderEnemy.rendownGreen; break
+        case ID.enemy.intruder.lever: this.imageData = imageDataInfo.intruderEnemy.leverImage; break
+        case ID.enemy.intruder.flying1: this.imageData = imageDataInfo.intruderEnemy.flying1; break
+        case ID.enemy.intruder.flying2: this.imageData = imageDataInfo.intruderEnemy.flying2; break
+        default: this.imageData = imageDataInfo.intruderEnemy.metal; break
+      }
+    }
+
+    process () {
+      if (this.z >= 0) return
+
+      this.z++
+      this.x -= (this.imageData.width / Math.abs(this.ZBASE) / 2)
+      this.y -= (this.imageData.height / Math.abs(this.ZBASE) / 2)
+
+      if (this.z === 0) {
+        fieldState.createEnemyObject(this.id, this.x, this.y)
+      }
+    }
+
+    getSaveIntruderData () {
+      return {id: this.id, x: this.x, y: this.y, z: this.z}
+    }
+    
+    display () {
+      let imgSrc = imageSrc.enemy.intruderEnemy
+      let imgD = this.imageData
+      let outputMultiple = Math.abs((1 / this.ZBASE) * (this.z + Math.abs(this.ZBASE)))
+      let outputWidth = imgD.width * outputMultiple
+      let outputHeight= imgD.height * outputMultiple
+      let alpha = outputMultiple
+      graphicSystem.imageDisplay(imgSrc, imgD.x, imgD.y, imgD.width, imgD.height, this.x, this.y, outputWidth, outputHeight, 0, 0, alpha)
+    }
+  }
+
+  process () {
+    super.process()
+    this.processSprite()
+  }
+
+  processSaveString () {
+    let arrayDonggrami = []
+    let arrayIntruder = []
+    for (let i = 0; i < this.spriteDonggrami.length; i++) {
+      arrayDonggrami.push(this.spriteDonggrami[i].getSaveDonggramiData())
+    }
+    for (let i = 0; i < this.spriteIntruder.length; i++) {
+      arrayIntruder.push(this.spriteIntruder[i].getSaveIntruderData())
+    }
+
+    this.saveString = JSON.stringify(arrayDonggrami) + '|' + JSON.stringify(arrayIntruder)
+  }
+
+  loadDataProgressSaveString () {
+    let str = this.saveString.split('|')
+    /** @type {Array} */ let arrayDonggrami = JSON.parse(str[0])
+    /** @type {Array} */ let arrayIntruder = JSON.parse(str[1])
+
+    for (let i = 0; i < arrayDonggrami.length; i++) {
+      let donggrami = new this.SpriteDonggrami()
+      let current = arrayDonggrami[i]
+      donggrami.setLoadDonggramiStat(current.color, current.x, current.y, current.moveSpeedX, current.moveSpeedY, current.hp)
+      this.spriteDonggrami.push(donggrami)
+    }
+
+    for (let i = 0; i < arrayIntruder.length; i++) {
+      let current = arrayIntruder[i]
+      let intruder = new this.SpriteIntruder(current.id, current.x, current.y, current.z)
+      this.spriteIntruder.push(intruder)
+    }
+  }
+
+  processSprite () {
+    for (let i = 0; i < this.spriteIntruder.length; i++) {
+      let sprite = this.spriteIntruder[i]
+      sprite.process()
+    }
+
+    for (let i = 0; i < this.spriteIntruder.length; i++) {
+      let sprite = this.spriteIntruder[i]
+      if (sprite.z >= 0) {
+        this.spriteIntruder.splice(i, 1)
+        continue
+      }
+    }
+
+    for (let i = 0; i < this.spriteDonggrami.length; i++) {
+      let sprite = this.spriteDonggrami[i]
+      sprite.process()
+    }
+
+    for (let i = 0; i < this.spriteDonggrami.length; i++) {
+      let sprite = this.spriteDonggrami[i]
+      if (sprite.isDeleted) {
+        this.spriteDonggrami.splice(i, 1)
+      }
+    }
+  }
+
+  processDebug () {
+    if (this.timeCheckFrame(0, 7)) {
+      // this.setCurrentTime(this.phaseTime[3].startTime)
+    }
+  }
+
+  /** 
+   * intruder 입장용 적을 생성합니다. (적을 들어오는 형태로 표현하려면 이 함수로 적을 생성해야 함) 
+   * 
+   * 각 값들은 정해진 기준값이 존재
+   * @param {number} id 적의 id
+   * @param {number} x 적의 x좌표 (범위: 200 ~ 600)
+   * @param {number} y 적의 y좌표 (범위: 100 ~ 500)
+   */
+  createSpriteIntruder (id, x = 200, y = 100) {
+    this.spriteIntruder.push(new this.SpriteIntruder(id, x, y))
+  }
+
+  /** 동그라미를 생성합니다. */
+  createSpriteDonggrami () {
+    this.spriteDonggrami.push(new this.SpriteDonggrami())
+  }
+
   roundPhase00 () {
-    let pTime = this.phaseTime[this.getCurrentPhase()].startTime
-    if (this.timeCheckFrame(pTime + 2)) {
+    const pTime = this.phaseTime[this.getCurrentPhase()].startTime
+
+    // 초반 인트로
+    if (this.timeCheckFrame(pTime + 1)) {
       this.soundPlay(soundSrc.round.r2_5_start)
-    } else if (this.timeCheckFrame(pTime + 5)) {
+      this.changeBackgroundImage(imageSrc.round.round2_5_floorB1Dark, 120)
+    } else if (this.timeCheckFrame(pTime + 4)) {
       this.soundPlay(soundSrc.round.r2_5_breakRoom)
       fieldState.createEffectObject(this.customRoomBreakEffect.getObject(), 200, 100)
-    } else if (this.timeCheckFrame(pTime + 7)) {
+      this.changeBackgroundImage(imageSrc.round.round2_5_floorB1Break, 60)
+    } else if (this.timeCheckFrame(pTime + 6)) {
       this.musicChange(soundSrc.music.music14_intruder_battle)
       this.musicPlay()
     }
 
-    if (this.timeCheckInterval(pTime + 8, pTime + 14, 60)) {
+    // 각각의 적들이 차례대로 출현 (해당 페이즈에서만 진입하는 형태로 출연합니다.)
+    if (this.timeCheckFrame(pTime + 7)) {
+      for (let i = 0; i < 9; i++) {
+        this.createSpriteIntruder(ID.enemy.intruder.metal, 300 + ((i % 3) * 100), 200 + (Math.floor(i / 3) * 100))
+      }
+    } else if (this.timeCheckFrame(pTime + 12)) {
+      for (let i = 0; i < 9; i++) {
+        this.createSpriteIntruder(ID.enemy.intruder.diacore, 300 + ((i % 3) * 100), 200 + (Math.floor(i / 3) * 100))
+      }
+    } else if (this.timeCheckFrame(pTime + 18)) {
+      for (let i = 0; i < 4; i++) {
+        this.createSpriteIntruder(ID.enemy.intruder.rendown, 300 + ((i % 2) * 200), 200 + (Math.floor(i / 2) * 200))
+      }
+    } else if (this.timeCheckFrame(pTime + 24)) {
+      for (let i = 0; i < 6; i++) {
+        this.createSpriteIntruder(ID.enemy.intruder.lever, 200 + ((i % 3) * 200), 200 + (Math.floor(i / 3) * 150))
+      }
+    } else if (this.timeCheckFrame(pTime + 30)) {
+      for (let i = 0; i < 4; i++) {
+        this.createSpriteIntruder(ID.enemy.intruder.flying1, 250 + ((i % 2) * 300), 200 + (Math.floor(i / 2) * 200))
+      }
+      for (let i = 0; i < 2; i++) {
+        this.createSpriteIntruder(ID.enemy.intruder.flying2, 400, 200 + (Math.floor(i / 1) * 200))
+      }
+    } else if (this.timeCheckFrame(pTime + 38)) {
+      for (let i = 0; i < 3; i++) {
+        this.createEnemy(ID.enemy.intruder.gami, 700)
+      }
+      for (let i = 0; i < 3; i++) {
+        this.createEnemy(ID.enemy.intruder.momi, 700)
+      }
+    }
+
+    this.timePauseEnemyCount(pTime + 44)
+    if (this.timeCheckInterval(pTime + 45, pTime + 57, 10)) {
+      this.createEnemy(ID.enemy.intruder.flyingRocket)
+    }
+    this.timePauseEnemyCount(pTime + 59)
+  }
+
+  roundPhase01 () {
+    const pTime = this.phaseTime[this.getCurrentPhase()].startTime
+
+    // total phase dps: 240% (first 6 seconds 100%) (main dps 120%, donggrami dps: 120%)
+
+    // group 1 (dps 60%), (first 6 seconds 100%)
+    if (this.timeCheckInterval(pTime + 0, pTime + 6, 12) || this.timeCheckInterval(pTime + 7, pTime + 28, 20)) {
+      let random = Math.floor(Math.random() * 3)
+      switch (random) {
+        case 0: this.createEnemy(ID.enemy.intruder.metal); break
+        case 1: this.createEnemy(ID.enemy.intruder.diacore); break
+        default: this.createEnemy(ID.enemy.intruder.square); break
+      }
+    }
+
+    // group 2 (dps 100%)
+    if (this.timeCheckInterval(pTime + 7, pTime + 28, 60)) {
+      if (Math.floor(Math.random() * 2) === 0) {
+        this.createEnemy(ID.enemy.intruder.rendown, 839, 100)
+      } else {
+        this.createEnemy(ID.enemy.intruder.lever, 839, 200)
+        this.createEnemy(ID.enemy.intruder.lever, 839, 400)
+      }
+    }
+
+    // group 3 (dps 80%)
+    if (this.timeCheckInterval(pTime + 7, pTime + 28, 90)) {
+      this.createEnemy(ID.enemy.intruder.flying1) // 40%
+      this.createEnemy(ID.enemy.intruder.flying2) // 80%
+    }
+
+    if (this.timeCheckFrame(pTime + 7)) {
+      for (let i = 0; i < 10; i++) {
+        this.createSpriteDonggrami()
+      }
+    }
+
+    if (this.timeCheckInterval(pTime + 10, pTime + 28, 60)) {
+      this.createSpriteDonggrami()
+    }
+
+    this.timePauseEnemyCount(pTime + 29, 6)
+  }
+
+  roundPhase02 () {
+    const pTime = this.phaseTime[this.getCurrentPhase()].startTime
+
+    // tower
+    if (this.timeCheckInterval(pTime + 0, pTime + 10, 180)) {
+      this.createEnemy(ID.enemy.intruder.hanoi, Math.random() * 400, 400) 
+      this.createEnemy(ID.enemy.intruder.hanoi, Math.random() * 400, 400) 
+      this.createSpriteDonggrami()
+    } else if (this.timeCheckFrame(pTime + 10)) {
+      for (let i = 0; i < 5; i++) {
+        this.createEnemy(ID.enemy.intruder.daseok, i * 160, 400)
+      }
+    }
+
+    // donggrami
+    if (this.timeCheckInterval(pTime + 12, pTime + 18, 120)) {
+      for (let i = 0; i < 3; i++) {
+        this.createSpriteDonggrami()
+      }
+    }
+
+    this.timePauseEnemyCount(pTime + 19, 3)
+
+    // monster + flying
+    if (this.timeCheckInterval(pTime + 20, pTime + 28, 60)) {
+      this.createEnemy(ID.enemy.intruder.flyingRocket)
+      this.createEnemy(ID.enemy.intruder.flying1)
+      this.createEnemy(ID.enemy.intruder.flying2)
+      this.createEnemy(ID.enemy.intruder.gami)
+      this.createEnemy(ID.enemy.intruder.momi)
+    }
+
+    // donggrami
+    if (this.timeCheckInterval(pTime + 20, pTime + 28, 90)) {
+      this.createSpriteDonggrami()
+      this.createSpriteDonggrami()
+    }
+
+    this.timePauseEnemyCount(pTime + 29, 10)
+  }
+
+  roundPhase03 () {
+    const pTime = this.phaseTime[this.getCurrentPhase()].startTime
+    // phase dps: 360% (player 120%, donggrami 240%)
+    // 참고: dps에 오차가 있을 수 있음
+
+    // group 1 part 1 (dps ~150%) (+0 ~ +5)
+    if (this.timeCheckInterval(pTime + 0, pTime + 15, 16)) {
       this.createEnemy(ID.enemy.intruder.metal)
+      this.createEnemy(ID.enemy.intruder.diacore)
+    }
+
+    // group 2 part 1 (dps ~130% x 1.8)
+    if (this.timeCheckInterval(pTime + 0, pTime + 15, 24)) {
+      this.createEnemy(ID.enemy.intruder.flying1)
+      this.createEnemy(ID.enemy.intruder.flying2)
+      this.createEnemy(ID.enemy.intruder.flyingRocket)
+    }
+
+    // group 1 part 2 (dps ~240%)
+    if (this.timeCheckInterval(pTime + 16, pTime + 28, 54)) {
+      this.createEnemy(ID.enemy.intruder.lever)
+      this.createEnemy(ID.enemy.intruder.lever)
+      this.createEnemy(ID.enemy.intruder.rendown)
+    }
+
+    // group 2 part 2 (dps ~130%)
+    if (this.timeCheckInterval(pTime + 16, pTime + 28, 60)) {
+      this.createEnemy(ID.enemy.intruder.gami)
+      this.createEnemy(ID.enemy.intruder.momi)
+      this.createEnemy(ID.enemy.intruder.flyingRocket)
+    }
+
+    // group 3 (9 seconds 1 time // total 3)
+    if (this.timeCheckFrame(pTime + 3) || this.timeCheckFrame(pTime + 13), this.timeCheckFrame(pTime + 23)) {
+      this.createEnemy(ID.enemy.intruder.hanoi, Math.random() * 600)
+      this.createEnemy(ID.enemy.intruder.daseok, Math.random() * 600)
+    }
+
+    // donggrami (1 second per 4)
+    if (this.timeCheckInterval(pTime + 0, pTime + 28, 30)) {
+      this.createSpriteDonggrami()
+    } else if (this.timeCheckInterval(pTime + 29, pTime + 29, 60) && this.spriteDonggrami.length <= 2) {
+      this.createSpriteDonggrami()
+    }
+
+    this.timePauseEnemyCount(pTime + 29, 10)
+  }
+
+  roundPhase04 () {
+    const pTime = this.phaseTime[this.getCurrentPhase()].startTime
+    // boss
+    if (this.timeCheckFrame(pTime + 1)) {
+      this.soundPlay(soundSrc.round.r2_4_message1)
+      this.createEnemy(ID.enemy.intruder.jemuBoss)
+    }
+
+    // avg dps 100%
+    if (this.timeCheckInterval(pTime + 4, pTime + 10, 12)) {
+      this.createEnemy(ID.enemy.intruder.square)
+    } else if (this.timeCheckInterval(pTime + 11, pTime + 20, 12)) {
+      this.createEnemy(ID.enemy.intruder.metal)
+    } else if (this.timeCheckInterval(pTime + 21, pTime + 28, 12)) {
+      this.createEnemy(ID.enemy.intruder.diacore)
+    }
+
+    if (this.spriteDonggrami.length <= 10 && this.timeCheckInterval(pTime + 5, pTime + 39, 60) && this.getEnemyCount() >= 3) {
+      this.createSpriteDonggrami()
+    }
+
+    if (this.timeCheckInterval(pTime + 29, pTime + 38) && this.enemyNothingCheck()) {
+      this.setCurrentTime(pTime + 39)
+    }
+
+    this.timePauseEnemyCount(pTime + 39)
+  }
+
+  roundPhase05 () {
+    const pTime = this.phaseTime[this.getCurrentPhase()].startTime
+    if (this.timeCheckInterval(pTime + 0, pTime + 6, 10)) {
+      this.createEnemy(ID.enemy.intruder.flyingRocket)
+    }
+    if (this.timeCheckInterval(pTime + 0, pTime + 6, 60)) {
+      this.createEnemy(ID.enemy.intruder.momi)
+    }
+
+    if (this.timeCheckFrame(pTime + 4)) {
+      this.createSpriteDonggrami()
+      this.createSpriteDonggrami()
+    }
+
+    if (this.timeCheckFrame(pTime + 4)) {
+      this.musicChange('', 3)
+    } else if (this.timeCheckFrame(pTime + 7)) {
+      this.musicStop()
+    }
+  }
+
+  display () {
+    super.display()
+    this.displaySprite()
+
+    if (this.getCurrentPhase() === 4) {
+      let enemyObject = this.getEnemyObject()
+      for (let i = 0; i < enemyObject.length; i++) {
+        let enemy = enemyObject[i]
+        if (enemy.id === ID.enemy.intruder.jemuBoss) {
+          graphicSystem.meterRect(0, 0, graphicSystem.CANVAS_WIDTH, 25, ['#7D7D7D', '#7B84A4'], enemy.hp, enemy.hpMax, true, '#B9D7FF', 2)
+          digitalDisplay('BOSS HP: ' + enemy.hp + '/' + enemy.hpMax, 10, 3)
+          break
+        }
+      }
     }
   }
 
   displayBackground () {
-    if (this.timeCheckInterval(0, 6)) {
-      graphicSystem.gradientRect(0, 0, 800, 600, ['#141519', '#171d40'])
-    } else {
-      graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
+    graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
+    super.displayBackground()
+  }
+
+  displaySprite () {
+    for (let i = 0; i < this.spriteIntruder.length; i++) {
+      this.spriteIntruder[i].display()
     }
 
-    super.displayBackground()
+    for (let i = 0; i < this.spriteDonggrami.length; i++) {
+      this.spriteDonggrami[i].display()
+    }
   }
 }
 

@@ -1207,8 +1207,8 @@ export class fieldState {
     }
 
     const meterWidth = Math.floor(enemyHpPercent * currentEnemy.width)
-    game.graphic.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height, currentEnemy.width, 2, 'red')
-    game.graphic.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height, meterWidth, 2, 'green')
+    game.graphic.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height - 1, currentEnemy.width, 2, 'red')
+    game.graphic.fillRect(currentEnemy.x, currentEnemy.y + currentEnemy.height - 1, meterWidth, 2, 'green')
   }
 
   static displayDamageObject () {

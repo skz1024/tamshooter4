@@ -626,7 +626,8 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
       image = this.getCacheImage(image)
     }
 
-    if (image == null) return
+    // 참고: 이미지의 크기가 0이면 이미지가 정상적으로 로드된게 아니므로, 이미지 출력을 무시합니다.
+    if (image == null || image.width === 0) return
 
     if (arguments.length === 3 || arguments.length === 5) {
       this.imageView(image, sliceX, sliceY, sliceWidth, sliceHeight)

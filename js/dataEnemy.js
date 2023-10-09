@@ -5481,6 +5481,8 @@ class IntruderEnemy extends EnemyData {
     this.attackDelay = new DelayData(180) // 기본 공격 주기 (180프레임, 3초 간격)
   }
 
+  static DIV_SCORE = 200
+
   /** intruderEnemy 전용 함수: 딜레이 값을 재설정합니다. */
   setIntruderDelay (moveDelay = 0, attackDelay = 0) {
     this.moveDelay.delay = moveDelay
@@ -5493,7 +5495,7 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
     super()
     // 적 체력 6000% 적용 (dps의 60배)
     // 보스와 해당 구간(라운드 2-4)의 경험치를 조절하기 위해 얻는 경험치의 배율을 다르게 조정했습니다.
-    this.setEnemyByCpStat(6000, 0, 125) // 내부 공격력 없음 (따라서, 적과 충돌했을때에는 데미지 0)
+    this.setEnemyByCpStat(6000, 0, IntruderEnemy.DIV_SCORE) // 내부 공격력 없음 (따라서, 적과 충돌했을때에는 데미지 0)
     /** 번개 공격력 */ this.ATTACK_THUNDER = 4
 
     this.setAutoImageData(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.jemuWing, 4)
@@ -5824,7 +5826,7 @@ class IntruderEnemySquare extends IntruderEnemy {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.square)
-    this.setEnemyByCpStat(20, 9)
+    this.setEnemyByCpStat(20, 9, IntruderEnemy.DIV_SCORE)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderSquare, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareBlueLine, this.width, this.height, 3))
 
     this.enimationMoveLeftRight = EnimationData.createEnimation(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.square3DLeft, 4, -1)
@@ -5908,7 +5910,7 @@ class IntruderEnemyMetal extends IntruderEnemy {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.metal)
-    this.setEnemyByCpStat(20, 12)
+    this.setEnemyByCpStat(20, 12, IntruderEnemy.DIV_SCORE)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderMetal, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.metalSlash, this.width, this.height, 2))
     this.STATE_MOVE = 'move'
     this.STATE_AFTERIMAGE = 'afterimage'
@@ -6012,7 +6014,7 @@ class IntruderEnemyDiacore extends IntruderEnemyMetal {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.diacore)
-    this.setEnemyByCpStat(20, 14)
+    this.setEnemyByCpStat(20, 14, IntruderEnemy.DIV_SCORE)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderDiacore, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.diamondBlue, this.width, this.height, 2))
 
     // 적 총알
@@ -6049,7 +6051,7 @@ class IntruderEnemyRendown extends IntruderEnemy {
     super()
     let targetImageData = Math.random() < 0.3 ? imageDataInfo.intruderEnemy.rendownBlue : imageDataInfo.intruderEnemy.rendownGreen
     this.setAutoImageData(this.imageSrc, targetImageData, 6)
-    this.setEnemyByCpStat(100, 20)
+    this.setEnemyByCpStat(100, IntruderEnemy.DIV_SCORE)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderRendown, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.pulseDiamondBlue, this.width, this.height, 3))
     this.dieAfterDeleteDelay = new DelayData(60)
   }
@@ -6172,7 +6174,7 @@ class IntruderEnemyLever extends IntruderEnemy {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.leverImage)
-    this.setEnemyByCpStat(50, 11)
+    this.setEnemyByCpStat(50, 11, IntruderEnemy.DIV_SCORE)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderLever, new CustomEffect(imageSrc.enemyDie.enemyDieIntruder, imageDataInfo.enemyDieIntruder.enemyDieIntruderLever, this.width, this.height, 2))
 
     this.STATE_LEFT = 'left'
@@ -6258,7 +6260,7 @@ class IntruderEnemyFlying1 extends IntruderEnemy {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.flying1, 4)
-    this.setEnemyByCpStat(30, 8)
+    this.setEnemyByCpStat(40, 6, IntruderEnemy.DIV_SCORE)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderFlying1, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleGreenStroke, this.width, this.height))
     this.moveDelay = new DelayData(120)
     this.moveDelay.count = this.moveDelay.delay
@@ -6283,7 +6285,7 @@ class IntruderEnemyFlying1 extends IntruderEnemy {
 
   static LaserBullet = class extends CustomEnemyBullet {
     constructor () {
-      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.flyingGreenLaser, 10, 0, 0)
+      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.flyingGreenLaser, 6, 0, 0)
     }
 
     afterInit () {
@@ -6311,7 +6313,7 @@ class IntruderEnemyFlying2 extends IntruderEnemy {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.flying2)
-    this.setEnemyByCpStat(60, 8)
+    this.setEnemyByCpStat(80, 6, IntruderEnemy.DIV_SCORE)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderFlying2, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleGreenStroke, this.width, this.height, 2))
   }
 
@@ -6336,7 +6338,7 @@ class IntruderEnemyFlyingRocket extends IntruderEnemy {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.flyingRocket)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderFlyingRocket, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleBlue, this.width, this.width, 2))
-    this.setEnemyByCpStat(20, 11)
+    this.setEnemyByCpStat(10, 4, IntruderEnemy.DIV_SCORE)
     this.setMoveDirection('', '')
   }
 
@@ -6358,7 +6360,6 @@ class IntruderEnemyFlyingRocket extends IntruderEnemy {
 
     const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
     this.degree = atangent * (180 / Math.PI)
-    console.log(this.moveSpeedY, this.moveSpeedX, this.degree, this.moveDirectionX, this.moveDirectionY)
 
     super.processMove()
   }
@@ -6369,7 +6370,7 @@ class IntruderEnemyGami extends IntruderEnemy {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.gami)
-    this.setEnemyByCpStat(100, 17)
+    this.setEnemyByCpStat(100, 17, IntruderEnemy.DIV_SCORE)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderGami)
     this.setIntruderDelay(66, 0)
 
@@ -6436,7 +6437,7 @@ class IntruderEnemyMomi extends IntruderEnemy {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.momi)
-    this.setEnemyByCpStat(40, 10)
+    this.setEnemyByCpStat(40, 10, IntruderEnemy.DIV_SCORE)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderMomi)
     this.baseSpeed = 6
     this.MAX_SPEED = 18
@@ -6479,7 +6480,7 @@ class IntruderEnemyHanoi extends IntruderEnemy {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.hanoi)
-    this.setEnemyByCpStat(200, 22)
+    this.setEnemyByCpStat(200, 22, IntruderEnemy.DIV_SCORE)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderHanoi, new CustomEffect(imageSrc.enemyDie.enemyDieIntruder, imageDataInfo.enemyDieIntruder.enemyDieIntruderHanoi, this.width, this.height, 6))
     this.setRandomMoveSpeed(1, 0)
   }
@@ -6543,7 +6544,7 @@ class IntruderEnemyDaseok extends IntruderEnemy {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.daseok)
-    this.setEnemyByCpStat(500, 33)
+    this.setEnemyByCpStat(500, 33, IntruderEnemy.DIV_SCORE)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderDaseok, new CustomEffect(imageSrc.enemyDie.enemyDieIntruder, imageDataInfo.enemyDieIntruder.enemyDieIntruderDaseok, this.width, this.height, 3))
     this.setMoveSpeed(0, 0) // 이동하지 않음
 
@@ -6641,7 +6642,7 @@ class TestEnemy extends DonggramiEnemyA2Brick {
 }
 
 
-//
+/** @type {Map<number, FieldData | EnemyData | any>} */
 export const dataExportEnemy = new Map()
 
 // testEnemy
