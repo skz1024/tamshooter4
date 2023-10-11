@@ -189,7 +189,8 @@ export class soundSrc {
     music11C3_trap_room: './music/music11C3_trap_room.ogg',
     music12_donggrami_hall_outside: './music/music12_donggrami_hall_outside.ogg',
     music13_round2_4_jemu: './music/music13_round2_4_jemu.ogg',
-    music14_intruder_battle: './music/music14_intruder_battle.ogg'
+    music14_intruder_battle: './music/music14_intruder_battle.ogg',
+    music15_donggrami_ruin: './music/music15_donggrami_ruin.ogg'
   }
 
   

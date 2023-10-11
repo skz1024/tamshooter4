@@ -198,7 +198,7 @@ export class EnemyData extends FieldData {
         this.moveSpeedX = Math.abs(this.moveSpeedX)
       }
 
-      if (this.moveSpeedX === 0 || this.moveSpeedX === 0) {
+      if (this.moveSpeedX === 0) {
         this.x++
       }
     } else if (this.x + this.width > graphicSystem.CANVAS_WIDTH) {
@@ -213,7 +213,7 @@ export class EnemyData extends FieldData {
         this.moveSpeedX = -Math.abs(this.moveSpeedX)
       }
 
-      if (this.moveSpeedX === 0 || this.moveSpeedX === 0) {
+      if (this.moveSpeedX === 0) {
         this.x--
       }
     }
@@ -230,7 +230,7 @@ export class EnemyData extends FieldData {
         this.moveSpeedY = Math.abs(this.moveSpeedY)
       }
 
-      if (this.moveSpeedY === 0 || this.moveSpeedY === 0) {
+      if (this.moveSpeedY === 0) {
         this.y++
       }
     } else if (this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
@@ -245,7 +245,7 @@ export class EnemyData extends FieldData {
         this.moveSpeedY = -Math.abs(this.moveSpeedY)
       }
 
-      if (this.moveSpeedY === 0 || this.moveSpeedY === 0) {
+      if (this.moveSpeedY === 0) {
         this.y--
       }
     }
@@ -3414,6 +3414,12 @@ class DonggramiEnemy extends EnemyData {
     '즐겁게 놀자',
     '바깥에 나가야겠다.'
   ]
+
+  static talkRuinList = [
+    '어쩌다가 이렇게 되었지?',
+    '정말 슬픈일이야.',
+    '집이 전부 부셔졌다.'
+  ]
 }
 
 class DonggramiEnemyMiniBlue extends DonggramiEnemy {
@@ -4042,7 +4048,7 @@ class DonggramiEnemyBounce extends DonggramiEnemy {
     if (this.bounceDelay.count < this.bounceDelay.delay / 2) {
       this.moveSpeedY = this.bounceSpeedY * sinValue
 
-      if (this.y + this.height > game.graphic.CANVAS_HEIGHT) {
+      if (this.y + this.height >= game.graphic.CANVAS_HEIGHT) {
         // 화면 밑으로 이미 내려갔다면, 딜레이값을 조정해 강제로 위로 올라가도록 처리
         this.bounceDelay.count = this.bounceDelay.delay / 2
       } else if (this.bounceDelay.count >= (this.bounceDelay.delay / 2) - 2 ) {
@@ -4337,7 +4343,7 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
     if (this.bounceDelay.count < this.bounceDelay.delay / 2) {
       this.moveSpeedY = this.bounceSpeedY * sinValue
 
-      if (this.y > game.graphic.CANVAS_HEIGHT) {
+      if (this.y + this.height >= game.graphic.CANVAS_HEIGHT) {
         // 화면 밑으로 이미 내려갔다면, 딜레이값을 조정해 강제로 위로 올라가도록 처리
         this.bounceDelay.count = this.bounceDelay.delay / 2
       } else if (this.bounceDelay.count >= (this.bounceDelay.delay / 2) - 4) {
@@ -4471,8 +4477,11 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
 
     // 1초 이후는 상하로 매우 빠르게 이동
     if (this.stateDelay.count >= 60) {
+      // 카운트가 60이 되는 시점에서 속도 변경 (버그 방지용도)
+      if (this.stateDelay.count === 60) this.setMoveSpeed(0, -96)
+
+      // 상태 변경 및 이동 처리
       this.state = this.STATE_EARTHQUAKE
-      this.setMoveSpeed(0, -96)
       super.processMove()
     }
 
@@ -5469,6 +5478,14 @@ class DonggramiEnemyTalkParty extends DonggramiEnemyTalk {
   }
 }
 
+class DonggramiEnemyTalkRuinR2_6 extends DonggramiEnemyTalk {
+  getRandomTalk () {
+    let talk = DonggramiEnemy.talkRuinList
+    let index = Math.floor(Math.random() * talk.length)
+    return talk[index]
+  }
+}
+
 class IntruderEnemy extends EnemyData {
   constructor () {
     super()
@@ -6280,6 +6297,7 @@ class IntruderEnemyFlying1 extends IntruderEnemy {
     if (this.attackDelay.check()) {
       let bullet = new IntruderEnemyFlying1.LaserBullet()
       fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
+      soundSystem.play(soundSrc.enemyAttack.intruderDaseokLaserGreen)
     }
   }
 
@@ -6630,6 +6648,31 @@ class IntruderEnemyDaseok extends IntruderEnemy {
   }
 }
 
+class IntruderEnemyNextEnemy extends IntruderEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.nextEnemy)
+    this.setEnemyByCpStat(50, 20, IntruderEnemy.DIV_SCORE)
+    this.isPossibleExit = false
+    this.setMoveSpeed(0, 4)
+    this.setMoveDirection()
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderFlyingRocket, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareRed, this.height, this.height, 2))
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let bullet = new IntruderEnemyNextEnemy.LaserBullet()
+      fieldState.createEnemyBulletObject(bullet, this.x, this.y)
+    }
+  }
+
+  static LaserBullet = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.flyingGreenLaser, 3, -10, 0)
+    }
+  }
+}
+
 
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
@@ -6726,6 +6769,7 @@ dataExportEnemy.set(ID.enemy.donggramiEnemy.tree, DonggramiEnemyTree)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.leaf, DonggramiEnemyLeaf)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.talkRunawayR2_4, DonggramiEnemyTalkRunAwayR2_4)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.talkParty, DonggramiEnemyTalkParty)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.talkRuinR2_6, DonggramiEnemyTalkRuinR2_6)
 
 // intruderEnemy / round 2-4 boss, round 2-5, round 2-6
 dataExportEnemy.set(ID.enemy.intruder.jemuBoss, IntruderEnemyJemuBoss)
@@ -6741,3 +6785,4 @@ dataExportEnemy.set(ID.enemy.intruder.gami, IntruderEnemyGami)
 dataExportEnemy.set(ID.enemy.intruder.momi, IntruderEnemyMomi)
 dataExportEnemy.set(ID.enemy.intruder.hanoi, IntruderEnemyHanoi)
 dataExportEnemy.set(ID.enemy.intruder.daseok, IntruderEnemyDaseok)
+dataExportEnemy.set(ID.enemy.intruder.nextEnemy, IntruderEnemyNextEnemy)

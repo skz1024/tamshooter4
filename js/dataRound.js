@@ -587,7 +587,8 @@ export class RoundData {
       let originalAlpha = 1 - prevAlpha
        
       // 투명도를 페이드 하는 방식이라, 검은색 배경을 먼저 출력하고, 배경을 출력하도록 하였다.
-      graphicSystem.fillRect(0, 0, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT, 'black')
+      // 이 기능은 오히려 일부 그라디언트 배경을 무효화했기 때문에 삭제되었습니다.
+      // graphicSystem.fillRect(0, 0, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT, 'black')
       graphicSystem.setAlpha(originalAlpha)
       this.displayBackgroundImage(current)
       graphicSystem.setAlpha(prevAlpha)
@@ -2525,25 +2526,64 @@ class Round1_test extends RoundData {
   constructor () {
     super()
     this.setAutoRoundStat(ID.round.round1_test)
-
-    this.backgroundImageSrc = imageSrc.round.round2_3_maeul_space
+    this.backgroundSpeedX = 0
 
     this.addLoadingImageList(RoundPackLoad.getRound1ShareImage())
     this.addLoadingImageList(RoundPackLoad.getRound2ShareImage())
     this.addLoadingSoundList(RoundPackLoad.getRound1ShareSound())
     this.addLoadingSoundList(RoundPackLoad.getRound2ShareSound())
 
+    this.addLoadingImageList([
+      imageSrc.round.round2_4_elevator,
+      imageSrc.round.round2_4_elevatorHall,
+      imageSrc.round.round2_4_elevatorNumber,
+      imageSrc.round.round2_4_floorB1,
+
+      imageSrc.round.round2_6_original1,
+      imageSrc.round.round2_6_original2,
+      imageSrc.round.round2_6_ruin1,
+      imageSrc.round.round2_6_ruin2,
+      imageSrc.round.round2_6_quiteRoad,
+      imageSrc.round.round2_6_downtowerEntrance,
+    ])
+
+    this.backgroundImageSrc = imageSrc.round.round2_6_ruin1
+
+    this.backgroundAbsoluteX = 0
+    this.backgroundAbsoluteY = 0
+
     this.addRoundPhase(() => {
       if (this.timeCheckInterval(0, 999, 60) && this.getEnemyCount() < 1) {
-        this.createEnemy(ID.enemy.intruder.lever)
-        this.createEnemy(ID.enemy.intruder.hanoi)
+        this.createEnemy(ID.enemy.intruder.nextEnemy)
       }
     }, 0, 999)
   }
 
   display () {
+    graphicSystem.setAlpha(0.01 * this.currentTimeTotalFrame)
+    graphicSystem.gradientRect(0, 0, 800, 600, ['yellow'])
     super.display()
-    graphicSystem.fillRect(0, 0, 999, 999, 'grey')
+    graphicSystem.imageView(imageSrc.round.round2_6_ruin2, 1800 - this.backgroundAbsoluteX, 0)  
+  }
+
+  processBackground () {
+    if (this.timeCheckInterval(0, 30)) {
+      this.backgroundAbsoluteX++
+    }
+
+    this.backgroundX = this.backgroundAbsoluteX
+  }
+  
+  displayBackground () {
+    graphicSystem.fillRect(0, 0, 999, 999, 'skyblue')
+    super.displayBackground()
+    
+    let time = this.currentTime
+    if (this.timeCheckFrame(4) || this.timeCheckFrame(12) || this.timeCheckFrame(20) || this.timeCheckFrame(28) || this.timeCheckFrame(36)) {
+      this.changeBackgroundImage(imageSrc.round.round2_6_original1, 120)
+    } else if (this.timeCheckFrame(8) || this.timeCheckFrame(16) || this.timeCheckFrame(24) || this.timeCheckFrame(32) || this.timeCheckFrame(40)) {
+      this.changeBackgroundImage(imageSrc.round.round2_6_ruin1, 120)
+    }
   }
 }
 
@@ -3093,6 +3133,7 @@ class Round2_3 extends RoundData {
   constructor () {
     super()
     this.setAutoRoundStat(ID.round.round2_3)
+    this.backgroundSpeedX = 0 // 배경 이동 없음
 
     /** 음악의 리스트 (복도 구간은 음악 없음) */
     this.musicList = {
@@ -3183,8 +3224,9 @@ class Round2_3 extends RoundData {
     /** 현재 적용된 그라디언트의 색상 */
     this.currentGradientColor = ['#4995E1', '#67B2FF']
 
-    this.bgRoadSrc = imageSrc.round.round2_3_road
+    this.bgRoadSrc = imageSrc.round.round2_2_placard
     this.bgSpaceSrc = imageSrc.round.round2_3_maeul_space
+    this.bgAfterSrc = imageSrc.round.round2_3_placard
 
     this.backgroundImageSrc = this.bgRoadSrc
 
@@ -3408,11 +3450,13 @@ class Round2_3 extends RoundData {
     this.setCourseGradientColor()
 
     // 배경 변경
-    if (this.courseName !== 'z1' && this.courseName !== 'z2') {
-      this.changeBackgroundImage(this.bgSpaceSrc, 30)
+    if (this.courseName === 'z1') {
+      this.changeBackgroundImage(this.bgRoadSrc, 60)
+    } else if (this.courseName === 'z2') {
+      this.changeBackgroundImage(this.bgAfterSrc, 60)
     } else {
-      this.changeBackgroundImage(this.bgRoadSrc, 30)
-    }
+      this.changeBackgroundImage(this.bgSpaceSrc, 60)
+    } 
 
     // 일반 모드로 전환
     this.setNormalMode()
@@ -3496,6 +3540,7 @@ class Round2_3 extends RoundData {
   }
 
   processDebug () {
+    // 디버그 할 때 코스 이름을 생각해주세요.
     // if (this.timeCheckFrame(0, 12)) {
     //   this.currentTime = 124
     //   this.courseName = 'a2'
@@ -3659,7 +3704,6 @@ class Round2_3 extends RoundData {
       this.setResult(this.resultList.NOTHING)
     } else if (this.timeCheckFrame(this.phaseTime[3].endTime)) {
       this.changeCourse()
-      this.changeBackgroundImage(this.bgRoadSrc, 120)
     }
   }
 
@@ -5412,7 +5456,7 @@ class Round2_4 extends RoundData {
       imageSrc.round.round2_4_elevatorRooftop,
       imageSrc.round.round2_4_floorB1,
       imageSrc.round.round2_4_mountainDeep,
-      imageSrc.round.round2_4_mountainEntrance,
+      imageSrc.round.round2_4_placard,
       imageSrc.round.round2_4_mountainPath,
       imageSrc.round.round2_4_mountainRooftop,
       imageSrc.round.round2_4_mountainWall,
@@ -5436,32 +5480,32 @@ class Round2_4 extends RoundData {
 
     this.addLoadingImageList(RoundPackLoad.getRound2ShareImage())
     this.addLoadingSoundList(RoundPackLoad.getRound2ShareSound())
-    this.spriteElevator = this.createSpriteElevator()
+    this.spriteElevator = Round2_4.createSpriteElevator()
   }
 
   processSaveString () {
     this.saveString = '' + this.backgroundAbsoluteX 
       + ',' + this.backgroundAbsoluteY
-      + ',' + this.currentCourseName
       + ',' + this.spriteElevator.state 
       + ',' + this.spriteElevator.stateDelay.count 
       + ',' + this.spriteElevator.floorDelay.count
       + ',' + this.spriteElevator.floor
       + ',' + this.spriteElevator.floorArrive
       + ',' + this.spriteElevator.isFloorMove
+      + ',' + this.currentCourseName
   }
 
   loadDataProgressSaveString () {
     let str = this.saveString.split(',')
     this.backgroundAbsoluteX = Number(str[0])
     this.backgroundAbsoluteY = Number(str[1])
-    this.currentCourseName = str[2]
-    this.spriteElevator.state = str[3]
-    this.spriteElevator.stateDelay.count = Number(str[4])
-    this.spriteElevator.floorDelay.count = Number(str[5])
-    this.spriteElevator.floor = Number(str[6])
-    this.spriteElevator.floorArrive = Number(str[7])
-    this.spriteElevator.isFloorMove = str[8] === 'true' ? true : false
+    this.spriteElevator.state = str[2]
+    this.spriteElevator.stateDelay.count = Number(str[3])
+    this.spriteElevator.floorDelay.count = Number(str[4])
+    this.spriteElevator.floor = Number(str[5])
+    this.spriteElevator.floorArrive = Number(str[6])
+    this.spriteElevator.isFloorMove = str[7] === 'true' ? true : false
+    this.currentCourseName = str[8]
   }
 
   roundPhase00 () {
@@ -6176,7 +6220,7 @@ class Round2_4 extends RoundData {
         graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
         graphicSystem.imageView(imageSrc.round.round2_4_mountainPath, 0, (gHeight * 0) - this.backgroundAbsoluteY)
         graphicSystem.imageView(imageSrc.round.round2_4_mountainWall, 0, (gHeight * 1) - this.backgroundAbsoluteY)
-        graphicSystem.imageView(imageSrc.round.round2_4_mountainEntrance, (gWidth * 0) - this.backgroundAbsoluteX, (gHeight * 2) - this.backgroundAbsoluteY)
+        graphicSystem.imageView(imageSrc.round.round2_4_placard, (gWidth * 0) - this.backgroundAbsoluteX, (gHeight * 2) - this.backgroundAbsoluteY)
         graphicSystem.imageView(imageSrc.round.round2_4_elevatorOutside, -(gWidth * 1) - this.backgroundAbsoluteX, (gHeight * 2) - this.backgroundAbsoluteY)
       } else {
         graphicSystem.gradientRect(0, 0, 800, 600, ['#141519', '#171d40'])
@@ -6187,7 +6231,7 @@ class Round2_4 extends RoundData {
     this.spriteElevator.display()
   }
 
-  createSpriteElevator () {
+  static createSpriteElevator () {
     class ElevatorSprite extends FieldData {
       constructor () {
         super()
@@ -6967,7 +7011,343 @@ class Round2_5 extends RoundData {
 }
 
 
-class Round2_6 extends RoundData {}
+class Round2_6 extends RoundData {
+  constructor () {
+    super()
+    this.setAutoRoundStat(ID.round.round2_6)
+    this.backgroundAbsoluteX = 0
+    this.backgroundAbsoluteY = 0
+    
+    /** 배경 전환을 위한 해당 라운드 전용 값 */ this.ruinValue = 120
+    /** 배경 전환을 위한 해당 라운드의 전용값의 최대치 */ this.RUIN_VALUE_MAX = 120
+
+    this.addRoundPhase(this.roundPhase00, 0, 29)
+    this.addRoundPhase(this.roundPhase01, 30, 59)
+    this.addRoundPhase(this.roundPhase02, 60, 89)
+    this.addRoundPhase(this.roundPhase03, 90, 119)
+    this.addRoundPhase(this.roundPhase04, 120, 151)
+
+    this.addLoadingSoundList([
+      soundSrc.round.r2_4_elevatorDoorClose,
+      soundSrc.round.r2_4_elevatorDoorOpen,
+      soundSrc.round.r2_4_elevatorFloor,
+      soundSrc.round.r2_4_elevatorMove,
+    ])
+
+    this.addLoadingImageList([
+      imageSrc.round.round2_4_elevator,
+      imageSrc.round.round2_4_elevatorHall,
+      imageSrc.round.round2_4_elevatorNumber,
+      imageSrc.round.round2_4_floorB1,
+
+      imageSrc.round.round2_6_original1,
+      imageSrc.round.round2_6_original2,
+      imageSrc.round.round2_6_ruin1,
+      imageSrc.round.round2_6_ruin2,
+      imageSrc.round.round2_6_quiteRoad,
+      imageSrc.round.round2_6_downtowerEntrance,
+    ])
+
+    this.addLoadingImageList(RoundPackLoad.getRound2ShareImage())
+    this.addLoadingSoundList(RoundPackLoad.getRound2ShareSound())
+
+    this.spriteElevator = Round2_4.createSpriteElevator()
+  }
+
+  processSaveString () {
+    // 2-4 코드와의 차이점은, course에 대한 정보가 없음
+    this.saveString = '' + this.backgroundAbsoluteX 
+      + ',' + this.backgroundAbsoluteY
+      + ',' + this.spriteElevator.state 
+      + ',' + this.spriteElevator.stateDelay.count 
+      + ',' + this.spriteElevator.floorDelay.count
+      + ',' + this.spriteElevator.floor
+      + ',' + this.spriteElevator.floorArrive
+      + ',' + this.spriteElevator.isFloorMove
+  }
+
+  loadDataProgressSaveString () {
+    let str = this.saveString.split(',')
+    this.backgroundAbsoluteX = Number(str[0])
+    this.backgroundAbsoluteY = Number(str[1])
+    this.spriteElevator.state = str[2]
+    this.spriteElevator.stateDelay.count = Number(str[3])
+    this.spriteElevator.floorDelay.count = Number(str[4])
+    this.spriteElevator.floor = Number(str[5])
+    this.spriteElevator.floorArrive = Number(str[6])
+    this.spriteElevator.isFloorMove = str[7] === 'true' ? true : false
+  }
+
+  processDebug () {
+    if (this.timeCheckFrame(0, 7)) {
+      // this.setCurrentTime(29)
+    }
+  }
+
+  roundPhase00 () {
+    const pTime = this.phaseTime[this.getCurrentPhase()].startTime
+    if (this.timeCheckInterval(pTime + 2, pTime + 6, 60)) {
+      this.createEnemy(ID.enemy.intruder.gami)
+      this.createEnemy(ID.enemy.intruder.momi)
+    } else if (this.timeCheckInterval(pTime + 8, pTime + 12, 30)) {
+      this.createEnemy(ID.enemy.intruder.diacore)
+      this.createEnemy(ID.enemy.intruder.metal)
+      this.createEnemy(ID.enemy.intruder.square)
+    }
+
+    if (this.timeCheckFrame(pTime + 11)) {
+      this.createEnemy(ID.enemy.intruder.daseok, 0)
+      this.createEnemy(ID.enemy.intruder.daseok, graphicSystem.CANVAS_WIDTH - imageDataInfo.intruderEnemy.daseok.width)
+    }
+
+    if (this.timeCheckFrame(1)) {
+      this.spriteElevator.setFloorPosition(1)
+      this.changeBackgroundImage(imageSrc.round.round2_4_floorB1)
+    }
+    this.timePauseEnemyCount(18)
+
+    this.spriteElevator.process()
+    if (this.timeCheckFrame(pTime + 20)) {
+      this.spriteElevator.setFloorMove(-1)
+      // 이동 시간 1초 후 1초 대기
+    } else if (this.timeCheckFrame(pTime + 22)) {
+      this.spriteElevator.setDoorOpen(true)
+    } else if (this.timeCheckFrame(pTime + 23)) {
+      this.changeBackgroundImage(imageSrc.round.round2_4_elevatorHall, 60)
+    } else if (this.timeCheckFrame(pTime + 24)) {
+      this.spriteElevator.setDoorOpen(false)
+    } else if (this.timeCheckFrame(pTime + 25)) {
+      this.spriteElevator.setFloorMove(1)
+    } else if (this.timeCheckFrame(pTime + 27)) {
+      this.spriteElevator.setDoorOpen(true)
+    } else if (this.timeCheckFrame(pTime + 28)) {
+      this.changeBackgroundImage(imageSrc.round.round2_4_elevatorOutside, 60)
+    } else if (this.timeCheckFrame(pTime + 29)) {
+      this.spriteElevator.setDoorOpen(false)
+    }
+  }
+
+  roundPhase01 () {
+    const pTime = this.phaseTime[this.getCurrentPhase()].startTime
+
+    // music
+    if (this.timeCheckFrame(pTime + 0)) {
+      this.musicChange(soundSrc.music.music12_donggrami_hall_outside, 3)
+      this.musicPlay()
+    } else if (this.timeCheckFrame(pTime + 26)) {
+      this.musicChange('', 3)
+    } else if (this.timeCheckFrame(pTime + 29)) {
+      this.musicStop()
+    }
+
+    // donggramiParty (dps 120%)
+    if (this.timeCheckInterval(pTime + 1, pTime + 17, 30)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.party)
+      this.createEnemy(ID.enemy.donggramiEnemy.exclamationMark)
+      this.createEnemy(ID.enemy.donggramiEnemy.questionMark)
+    } else if (this.timeCheckInterval(pTime + 18, pTime + 25, 60)) {
+      // donggrami (dps 50%)
+      this.createEnemy(ID.enemy.donggramiEnemy.mini)
+      this.createEnemy(ID.enemy.donggramiEnemy.bounce)
+      this.createEnemy(ID.enemy.donggramiEnemy.speed)
+    }
+  }
+
+  roundPhase02 () {
+    const pTime = this.phaseTime[this.getCurrentPhase()].startTime
+
+    if (this.timeCheckFrame(pTime + 0)) {
+      this.musicChange(soundSrc.music.music15_donggrami_ruin, 2)
+      this.musicPlay()
+    }
+
+    // dps 100%
+    if (this.timeCheckInterval(pTime + 1, pTime + 24, 12)) {
+      this.createEnemy(ID.enemy.donggramiEnemy.talkRuinR2_6)
+    }
+  }
+
+  roundPhase03 () {
+    const pTime = this.phaseTime[this.getCurrentPhase()].startTime
+
+    if (this.timeCheckFrame(pTime + 26)) {
+      this.musicChange('', 3)
+    } else if (this.timeCheckFrame(pTime + 29)) {
+      this.musicStop()
+    }
+
+    // dps 120%
+    if (this.timeCheckInterval(pTime + 1, pTime + 15, 60)) {
+      this.createEnemy(ID.enemy.intruder.flying1)
+      this.createEnemy(ID.enemy.intruder.flying2)
+    } else if (this.timeCheckInterval(pTime + 16, pTime + 28, 72)) {
+      this.createEnemy(ID.enemy.intruder.lever)
+      this.createEnemy(ID.enemy.intruder.rendown)
+    }
+
+    if (this.timeCheckFrame(pTime + 5) || this.timeCheckFrame(pTime + 10) || this.timeCheckFrame(pTime + 15)) {
+      this.createEnemy(ID.enemy.intruder.hanoi)
+    }
+  }
+
+  roundPhase04 () {
+    const pTime = this.phaseTime[this.getCurrentPhase()].startTime
+    if (this.timeCheckFrame(pTime + 18)) {
+      this.createEnemy(ID.enemy.intruder.daseok, 600, 300)
+      this.createEnemy(ID.enemy.intruder.daseok, 400, 300)
+    }
+
+    if (this.timeCheckInterval(pTime + 2, pTime + 15, 60)) {
+      this.createEnemy(ID.enemy.intruder.flyingRocket)
+      this.createEnemy(ID.enemy.intruder.metal)
+      this.createEnemy(ID.enemy.intruder.square)
+      this.createEnemy(ID.enemy.intruder.diacore)
+      this.createEnemy(ID.enemy.intruder.lever)
+    } else if (this.timeCheckInterval(pTime + 18, pTime + 27, 20)) {
+      this.createEnemy(ID.enemy.intruder.nextEnemy)
+    }
+
+    this.timePauseEnemyCount(pTime + 28)
+  }
+
+  displayBackground () {
+    // 모든 페이즈에서 해당 함수를 사용하지 않아 주석처리
+    // super.displayBackground()
+
+    switch (this.getCurrentPhase()) {
+      case 0: this.displayPhase00(); break
+      case 1: this.displayPhase01(); break
+      case 2: this.displayPhase02(); break
+      case 3: this.displayPhase03(); break
+      case 4: this.displayPhase04(); break
+    }
+
+    if (this.getCurrentPhase() === 0 || this.getCurrentPhase() === 1) {
+      this.spriteElevator.display()
+    }
+  }
+
+  processBackground () {
+    /** 현재 페이즈 시작 시간 */ const pTime = this.phaseTime[this.getCurrentPhase()].startTime
+    /** 현재 페이즈 */ const cPhase = this.getCurrentPhase()
+    /** 이 게임의 기준 FPS: 1프레임당 1px씩 이동하므로, 초당 60px씩 배경 이동 */ const FPS = 60
+    /** 한 페이즈당의 시간: 1페이즈당 30초이고, 초당 60px씩 이동하므로 배경은 1800px 이동하게됨 */ const TIME = 30
+
+    // phase Reset 할때마다 x좌표 리셋
+    if (this.timeCheckFrame(pTime)) { 
+      this.backgroundAbsoluteX = 0
+      if (cPhase === 2 || cPhase === 3) {
+        this.changeBackgroundImage(imageSrc.round.round2_6_quiteRoad)
+      } else if (cPhase === 4) {
+        this.changeBackgroundImage(imageSrc.round.round2_6_downtowerEntrance)
+      }
+    }
+
+    if (cPhase === 0) {
+      if (this.backgroundAbsoluteX < graphicSystem.CANVAS_WIDTH) {
+        this.backgroundAbsoluteX++
+      }
+
+      // 엘리베이터 위치 설정
+      this.spriteElevator.x = (graphicSystem.CANVAS_WIDTH) - this.backgroundAbsoluteX + this.spriteElevator.BASE_X
+      this.spriteElevator.y = this.spriteElevator.BASE_Y
+    } else if (cPhase === 1) {
+      if (this.backgroundAbsoluteX < graphicSystem.CANVAS_WIDTH * 3) {
+        this.backgroundAbsoluteX++
+      }
+
+      this.spriteElevator.x = -this.backgroundAbsoluteX + this.spriteElevator.BASE_X
+      this.spriteElevator.y = this.spriteElevator.BASE_Y
+    } else if (cPhase === 2 || cPhase === 3) {
+      // 폐허와 오리지널 이미지를 페이드 형식으로 출력 하기 위해서 ruinValue의 값을 변경
+      if (this.timeCheckInterval(pTime + 2, pTime + 4) || this.timeCheckInterval(pTime + 16, pTime + 18)) {
+        if (this.ruinValue >= 1) this.ruinValue--
+      } else if (this.timeCheckInterval(pTime + 8, pTime + 10) || this.timeCheckInterval(pTime + 24, pTime + 26)) {
+        if (this.ruinValue < this.RUIN_VALUE_MAX) this.ruinValue++
+      }
+
+      if (this.backgroundAbsoluteX <= FPS * TIME) {
+        this.backgroundAbsoluteX++
+      } else {
+        this.backgroundAbsoluteX = FPS * TIME
+      }
+    } else if (cPhase === 4) {
+      if (this.backgroundAbsoluteX <= (FPS * TIME) - graphicSystem.CANVAS_WIDTH) {
+        this.backgroundAbsoluteX++
+      } else {
+        this.backgroundAbsoluteX = (FPS * TIME) - graphicSystem.CANVAS_WIDTH
+      }
+    }
+
+    this.backgroundX = this.backgroundAbsoluteX
+    this.backgroundY = this.backgroundAbsoluteY
+  }
+
+  displayPhase00 () {
+    const pTime = this.phaseTime[this.getCurrentPhase()].startTime
+    const gWidth = graphicSystem.CANVAS_WIDTH
+    if (this.timeCheckInterval(pTime + 0, pTime + 20)) {
+      graphicSystem.imageView(imageSrc.round.round2_5_floorB1Light, (gWidth * 0) - this.backgroundAbsoluteX, 0)
+      graphicSystem.imageView(imageSrc.round.round2_4_floorB1, (gWidth * 1) - this.backgroundAbsoluteX, 0)
+    } else {
+      graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
+      super.displayBackground()
+    }
+  }
+
+  displayPhase01 () {
+    const gWidth = graphicSystem.CANVAS_WIDTH
+    graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
+    graphicSystem.imageView(imageSrc.round.round2_4_elevatorOutside, (gWidth * 0) - this.backgroundAbsoluteX, 0)
+    graphicSystem.imageView(imageSrc.round.round2_4_placard, (gWidth * 1) - this.backgroundAbsoluteX, 0)
+    graphicSystem.imageView(imageSrc.round.round2_6_quiteRoad, (gWidth * 2) - this.backgroundAbsoluteX, 0)
+    graphicSystem.imageView(imageSrc.round.round2_6_ruin1, (gWidth * 2 + 200) - this.backgroundAbsoluteX, 0)
+  }
+
+  displayPhase02 () {
+    graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
+    super.displayBackground()
+
+    let ruinAlpha = (1 / this.RUIN_VALUE_MAX) * this.ruinValue
+    let originalAlpha = 1 - ruinAlpha
+    const FPS = 60
+    const TIME = 30
+    graphicSystem.setAlpha(ruinAlpha)
+    graphicSystem.imageView(imageSrc.round.round2_6_ruin1, 0 - this.backgroundAbsoluteX, 0)
+    graphicSystem.imageView(imageSrc.round.round2_6_ruin2, (FPS * TIME) - this.backgroundAbsoluteX, 0)
+    graphicSystem.setAlpha(originalAlpha)
+    graphicSystem.imageView(imageSrc.round.round2_6_original1, 0 - this.backgroundAbsoluteX, 0)
+    graphicSystem.imageView(imageSrc.round.round2_6_original2, (FPS * TIME) - this.backgroundAbsoluteX, 0)
+    graphicSystem.setAlpha()
+  }
+
+  displayPhase03 () {
+    graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
+    super.displayBackground()
+
+    let ruinAlpha = (1 / this.RUIN_VALUE_MAX) * this.ruinValue
+    let originalAlpha = 1 - ruinAlpha
+    const FPS = 60
+    const TIME = 30
+    graphicSystem.setAlpha(ruinAlpha)
+    graphicSystem.imageView(imageSrc.round.round2_6_ruin2, 0 - this.backgroundAbsoluteX, 0)
+    graphicSystem.setAlpha(originalAlpha)
+    graphicSystem.imageView(imageSrc.round.round2_6_original2, 0 - this.backgroundAbsoluteX, 0)
+    graphicSystem.setAlpha()
+    
+    graphicSystem.imageView(imageSrc.round.round2_6_downtowerEntrance, (FPS * TIME) - this.backgroundAbsoluteX, 0)
+  }
+
+  displayPhase04 () {
+    graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
+    super.displayBackground()
+  }
+}
+
+class Round2_OS95 extends RoundData {
+  // ?!
+  // windows 95??
+}
 
 
 /**

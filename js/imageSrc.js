@@ -98,7 +98,7 @@ export class imageSrc {
     round2_2_tunnel: './image/round/round2_2_tunnel.png',
     round2_2_tunnel_outload: './image/round/round2_2_tunnel_outload.png',
     round2_donggramiHp: './image/round/round2_donggramiHp.png',
-    round2_3_road: './image/round/round2_3_road.png',
+    round2_3_placard: './image/round/round2_3_placard.png',
     round2_3_maeul_space: './image/round/round2_3_maeul_space.png',
     round2_3_course: './image/round/round2_3_course.png',
     round2_3_result: './image/round/round2_3_result.png',
@@ -117,7 +117,7 @@ export class imageSrc {
     round2_4_mountainDeep: './image/round/round2_4_mountainDeep.png',
     round2_4_mountainPath: './image/round/round2_4_mountainPath.png',
     round2_4_mountainRooftop: './image/round/round2_4_mountainRooftop.png',
-    round2_4_mountainEntrance: './image/round/round2_4_mountainEntrance.png',
+    round2_4_placard: './image/round/round2_4_placard.png',
     round2_4_mountainWall: './image/round/round2_4_mountainWall.png',
     round2_4_rooftop: './image/round/round2_4_rooftop.png',
     round2_4_rooftopWayout: './image/round/round2_4_rooftopWayout.png',
@@ -129,6 +129,12 @@ export class imageSrc {
     round2_5_floorB1Dark: './image/round/round2_5_floorB1Dark.png',
     round2_5_floorB1Break: './image/round/round2_5_floorB1Break.png',
     round2_5_floorB1Light: './image/round/round2_5_floorB1Light.png',
+    round2_6_downtowerEntrance: './image/round/round2_6_downtowerEntrance.png',
+    round2_6_original1: './image/round/round2_6_original1.png',
+    round2_6_original2: './image/round/round2_6_original2.png',
+    round2_6_ruin1: './image/round/round2_6_ruin1.png',
+    round2_6_ruin2: './image/round/round2_6_ruin2.png',
+    round2_6_quiteRoad: './image/round/round2_6_quiteRoad.png',
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -306,7 +312,8 @@ export class imageDataInfo {
     gamiDie: {x: 960, y: 630, width: 160, height: 80, frame: 1},
     momi: {x: 0, y: 710, width: 120, height: 60, frame: 12},
     momiDie: {x: 1440, y: 710, width: 120, height: 60, frame: 1},
-    flyingRocket: {x: 0, y: 780, width: 150, height: 60, frame: 10}
+    flyingRocket: {x: 0, y: 780, width: 150, height: 60, frame: 10},
+    nextEnemy: {x: 1700, y: 200, width: 80, height: 40, frame: 1}
   }
 
   static intruderEnemyEffect = {

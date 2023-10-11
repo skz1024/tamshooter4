@@ -36,3 +36,6 @@ music list
 11C2. music11C2_square_room (round 2-3)
 11C3. music11C3_trap_room (round 2-3)
 (이 이후는 미정)
+
+임시 내용 추가
+music15 -> audacity -> faulstretch -> speed 80% -> some part delete and skip(first node)

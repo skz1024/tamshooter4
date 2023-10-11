@@ -177,6 +177,7 @@ export class ID {
       party: 20193,
       talkRunawayR2_4: 20194,
       talkParty: 20195,
+      talkRuinR2_6: 20196,
 
       tree: 20197,
       leaf: 20198,
@@ -203,6 +204,7 @@ export class ID {
       momi: 20230,
       hanoi: 20231,
       daseok: 20232,
+      nextEnemy: 20233,
     }
   }
 
