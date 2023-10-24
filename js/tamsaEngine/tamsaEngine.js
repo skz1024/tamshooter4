@@ -764,7 +764,7 @@ export class TamsaEngine {
         if (this.graphicFps === 60) {
           this.display() // 60프레임 매 출력
         } else if (this.graphicFps === 30) {
-          if (this.elaspedFrame % 2 === 1) {
+          if (this.frameCount % 2 === 1) {
             this.display() // 30프레임 매 출력
           }
         }

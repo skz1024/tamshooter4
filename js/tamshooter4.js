@@ -43,6 +43,7 @@ for (let i = 0; i < systemSoundList.length; i++) {
 game.process = () => {
   gameSystem.process()
 }
+game.graphicFps = 60
 game.display = () => {
   if (loadComplete) {
     gameSystem.display()

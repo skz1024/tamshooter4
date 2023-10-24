@@ -1,10 +1,15 @@
+//@ts-check
+
 /**
  * HTML의 canvas의 2d contex를 사용하기 위한 함수.
  * 
- * 참고로 직접적인 context를 이용한 접근은 하지 말아주세요.
+ * 참고로 클래스 내부에 있는 context를 이용한 접근은 하지 말아주세요.
  * graphicSystem에 있는 함수를 사용하는게 좋습니다. (그래야 유지보수 및 관리가 편합니다.)
  */
 export class GraphicSystem {
+  /** 그래픽 시스템에서 사용하는 폰트의 기본값 */
+  static DEFAULT_FONT = '20px arial'
+
   /**
    * 그래픽을 출력할 수 있는 캔버스를 만듭니다.
    * 
@@ -55,10 +60,13 @@ export class GraphicSystem {
     // 캔버스 폰트 출력에 대한 기본값 설정 (다만 폰트가 없을경우, 다른 폰트가 사용될 수 있음.)
     // 이 폰트는 윈도우만 가지고 있음.
     // 폰트의 pixel은 20px로 정의됩니다.
-    this.context.font = '20px 바탕체'
+    this.context.font = GraphicSystem.DEFAULT_FONT
 
     /** 폰트의 기본 사이즈 (이 값을 변경하지 마세요.)
-     * @type {number} 
+     * 이 값은 현재는 사용하지 않습니다.
+     * 
+     * @type {number}
+     * @deprecated
      */
     this.FONT_SIZE = 20
 
@@ -102,6 +110,7 @@ export class GraphicSystem {
    * 
    * 없을 경우 가져오지 않음.
    * @param {string} imageSrc 이미지 파일의 경로
+   * @returns {HTMLImageElement | undefined}
    */
   getImage (imageSrc) {
     return this.cacheImage.get(imageSrc)
@@ -148,11 +157,11 @@ export class GraphicSystem {
   }
 
   /**
-   * 그래픽 시스템에서 static 변수에 사용되는 이미지를 지정하기 위한 함수
+   * 그래픽 시스템에서 static 변수에 사용되는 이미지를 지정하기 위한 함수 (tamsaEngine 전용)
    * 
    * 이 함수는 이 js파일을 불러오는 즉시 실행됩니다.
    * 
-   * 경고: 이 함수가 초기에 실행되지 않으면 bitmapFont, digitalFont는 그려지지 않습니다. (이미지가 없으므로)
+   * 경고: 이 함수가 초기에 실행되지 않으면 bitmapFont는 그려지지 않습니다. (이미지가 없으므로)
    * 
    * @param {string} resourceSrc 리소스의 기준 경로 (HTML 파일에 따라 달라지므로 지정 필요)
    */
@@ -264,7 +273,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * 
    * 리턴된 output 좌표 및 크기값을 무시하고 x, y좌표 및 크기를 그대로 사용하게 되면, 예상하지 못한 출력을 할 수 있습니다.
    * 
-   * 이 함수에서는 설정값을 조절할 수 없습니다. 해당 값을 변경하려면 setFlip, setRotate, setAlpha를 사용해주세요.
+   * 이 함수에서는 캔버스 변형 설정값을 조절할 수 없습니다. 해당 값을 변경하려면 setFlip, setRotate, setAlpha를 사용해주세요.
    * 
    * graphicSystem 내부에서 사용하는 함수이므로, 직접적으로 이 함수를 호출하면 안됩니다.
    * @param {number} x
@@ -340,11 +349,9 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
   }
 
   /**
-   * 내장되어있는 비트맵 font (bitmapFont2.png) 파일을 이용해서 글자를 출력합니다.
+   * 내장되어있는 비트맵 font (bitmapFont.png) 파일을 이용해서 글자를 출력합니다.
    * 
    * 아스키 코드만 지원(한글 사용불가능), 대소문자는 구분됩니다.
-   * 
-   * 경고2: 크기를 늘릴 경우, 안티에일리싱 효과로 글자주위에 선이 칠해지는 경우가 있음.
    * @param {number | string} inputText 출력할 텍스트
    * @param {number} x x좌표
    * @param {number} y y좌표
@@ -573,11 +580,11 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * @param {string | HTMLImageElement} image 이미지의 경로 또는 이미지 객체
    * @param {number} x  x좌표
    * @param {number} y  y좌표
-   * @param {number | null} width 이미지의 너비 (없을경우 해당 이미지의 기본 너비)
-   * @param {number | null} height 이미지의 높이 (없을경우 해당 이미지의 기본 높이)
+   * @param {number | null | undefined} width 이미지의 너비 (없을경우 해당 이미지의 기본 너비)
+   * @param {number | null | undefined} height 이미지의 높이 (없을경우 해당 이미지의 기본 높이)
    * @param {number[]} options 기타 옵션 (flip, rotate, alpha) 참고: 이값을 설정했다면, imageDisplay 함수를 사용합니다.
    */
-  imageView (image, x, y, width = null, height = null, ...options) {
+  imageView (image, x, y, width = undefined, height = undefined, ...options) {
     if (typeof image === 'string') {
       image = this.getCacheImage(image)
     }
@@ -589,7 +596,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     if (height == null) height = image.height
 
     if (options.length !== 0) {
-      this.imageExpandDisplay(image, 0, 0, image.width, image.height, x, y, width, height, ...options)
+      this._imageExpandDisplay(image, 0, 0, image.width, image.height, x, y, width, height, ...options)
     } else {
       if (this.checkTransform()) {
         const output = this.canvasTransform(arguments[1], arguments[2], width, height)
@@ -599,7 +606,6 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
         this.context.drawImage(image, x, y, width, height)
       }
     }
-
   }
 
   /**
@@ -621,7 +627,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * @param {number} height 출력할 높이
    * @param {number[]} option 추가 옵션: flip(0: none, 1: vertical, 2: horizontal, 3:all), rotate(0 ~ 360), alpha(0 ~ 1)
    */
-  imageDisplay (image, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, ...option) {
+  imageDisplay (image, sliceX = 0, sliceY = 0, sliceWidth, sliceHeight, x = 0, y = 0, width = 1, height = 1, ...option) {
     if (typeof image === 'string') {
       image = this.getCacheImage(image)
     }
@@ -641,7 +647,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
       }
     } else if (arguments.length >= 10 && arguments.length <= 12) {
       // 함수의 내용이 길어 따로 분리
-      this.imageExpandDisplay(image, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, ...option)
+      this._imageExpandDisplay(image, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, ...option)
     } else {
       throw new Error(GraphicSystem.errorMessage.IMAGE_DISPLAY_ARGUMENT_ERROR)
     }
@@ -654,7 +660,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * 
    * imageDisplay랑 받는 인수가 같으므로, 가급적이면 imageDisplay의 함수를 사용해주세요.
    */
-  imageExpandDisplay (image, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, ...option) {
+  _imageExpandDisplay (image, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, ...option) {
     // 현재 캔버스의 상태를 저장. 이렇게 하는 이유는, 캔버스의 설정을 너무 많이 바꿔 현재 상태를 저장하지 않으면 원래대로 되돌리기 어렵기 때문
     this.context.save()
     let flip = 0
@@ -992,6 +998,9 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * 
    * 내부적으로는 meterRect의 함수를 사용합니다.
    * 
+   * 이 함수의 사용은 권장하지 않습니다. 대신 meterRect 함수를 사용해주세요.
+   * 
+   * @deprecated
    * @param {{x: number, y: number, width: number, height: number}} rect 사각형
    * @param {{color: string | string[], value: number, maxValue: number, 
    * isVertical: boolean, backgroundColor: string | string[], boarderLength: number}} option 
@@ -1081,10 +1090,10 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
   /**
    * canvas의 font를 수정합니다.
    * 참고: font의 값은 이런 형태입니다. -> font = '24px 바탕체' -> 24px 바탕체
-   * 아무것도 설정하지 않는다면 기본값은 20px 바탕체입니다.
+   * 아무것도 설정하지 않는다면 그래픽 시스템에 지정된 기본값을 사용합니다.
    * @param {string} fontText
    */
-  setCanvasFont (fontText = '20px 바탕체') {
+  setCanvasFont (fontText = GraphicSystem.DEFAULT_FONT) {
     this.context.font = fontText
   }
 
@@ -1097,6 +1106,8 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * @param {number | null} maxWidth 해당 텍스트 출력의 최대길이(옵션), null일경우 사용하지 않음.
    */
   fillText (text = '', x, y, color = 'black', maxWidth = null) {
+    this.setCanvasFont(GraphicSystem.DEFAULT_FONT)
+    // this.context.font = '16px NaNum'
     this.context.fillStyle = color
 
     if (this.checkTransform()) {
@@ -1137,8 +1148,10 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
   }
 
   /**
-   * 선을 그립니다. (안타깝게도... 곡선은 내가 어떻게 그리는지 모름...)
-   * 선은 캔버스의 변형에 영향을 받지 않습니다.
+   * 선을 그립니다.
+   * 
+   * 선은 캔버스의 변형에 영향을 받지 않습니다. 따라서 회전을 해야 한다면, 대신 fillRect를 사용해주세요.
+   * 
    * @param {number} x1 첫번째 지점의 x좌표
    * @param {number} y1 첫번째 지점의 y좌표
    * @param {number} x2 두번째 지점의 x좌표
@@ -1157,7 +1170,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
   }
 
   /**
-   * 참고: 이 함수는 fillRect처럼 출력합니다. (따라서, x, y좌표는 중심좌표가 아닙니다.)
+   * 참고: 이 함수는 fillRect처럼 출력합니다. (따라서, x, y좌표는 원의 중심좌표가 아니라 원의 출력 좌표입니다.)
    * @param {number} x 
    * @param {number} y 
    * @param {number} width 
@@ -1245,4 +1258,149 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
       this.canvas.style.height = '100%'
     }
   }
+
+  /** backgroundDisplay에서 사용하는 옵션 목록 */
+  optionBG = {
+    /** 이미지 크기와의 상관없이 이미지를 캔버스 사이즈로 채운 후 출력합니다. */ FILL: 'fill',
+    /** 이미지가 크기가 작은경우, 타일 형태로 출력합니다. 이미지 크기가 큰 경우 그대로 출력합니다.  */ TILE: 'tile',
+    /** 이미지 크기가 작은경우 이미지를 늘립니다. 이미지 크기가 큰 경우 그대로 출력합니다. */ NORMAL: 'normal'
+  }
+
+  /**
+   * 이미지를 배경으로 출력합니다. 스크롤 형태의 출력을 지원합니다.
+   * 
+   * (다만, 스크롤 배경을 사용하기 위해서는 imageStartX, imageStartY를 지속적으로 변경해야 합니다.)
+   * 
+   * @param {string | HTMLImageElement} imageSrc 이미지의 경로
+   * @param {number} imageStartX 이미지 파일 내부의 시작 x좌표 (해당 좌표부터 출력하여 계속 스크롤됨)
+   * @param {number} imageStartY 이미지 파일 내부의 시작 y좌표 (해당 좌표부터 출력하여 계속 스크롤됨)
+   * @param {string} option 이미지 출력 옵션: 자세한것은 GraphicSystem.optionBG 내부의 값을 참조
+   */
+  backgroundDisplay (imageSrc = '', imageStartX = 0, imageStartY = 0, option = this.optionBG.NORMAL) {
+    // 이미지가 문자열일경우, 캐시된 이미지를 가져옵니다. 아닐경우 해당 이미지를 그대로 대입합니다.
+    const image = typeof imageSrc === 'string' ? this.getCacheImage(imageSrc) : imageSrc
+    if (image == null || image.width === 0) return
+
+    let imageWidth = image.width
+    let imageHeight = image.height
+    const canvasWidth = this.canvas.width
+    const canvasHeight = this.canvas.height
+
+    /** 이미지가 캔버스보다 작으면 이미지를 채워야하므로 이미지를 확대하기 위한 배율을 계산해야함
+     * 그러나 이미지가 캔버스보다 큰 경우 확대를 할 필요가 없으므로 배율은 1
+     */
+    const multipleWidth = imageWidth < canvasWidth ? canvasWidth / imageWidth : 1
+    const multipleHeight = imageWidth < canvasWidth ? canvasHeight / imageHeight : 1
+
+    /**  
+     * 결과 이미지
+     * 
+     * 이미지를 채움으로 표현하거나, 크기가 캔버스보다 작을경우, 이미지를 캔버스사이즈에 맞춰서 다시 생성합니다.
+     */
+    let resultImage
+    if (option === this.optionBG.FILL || imageWidth < canvasWidth || imageHeight < canvasHeight) {
+      let offCanvas = new OffscreenCanvas(canvasWidth, canvasHeight).getContext('2d')
+      offCanvas.drawImage(image, 0, 0, canvasWidth, canvasHeight)
+      resultImage = offCanvas.canvas
+      imageWidth = canvasWidth
+      imageHeight = canvasHeight
+    } else {
+      resultImage = image
+    }
+
+    // 이미지의 시작점이 이미지의 너비 초과 또는 음수일경우, 이미지 X 좌표 변경
+    if (imageStartX > imageWidth) {
+      imageStartX = imageStartX % imageWidth
+    } else if (imageStartX < 0) {
+      imageStartX = imageWidth - Math.abs(imageStartX % imageWidth)
+    }
+
+    // 이미지의 시작점이 이미지의 높이 초과 또는 음수인경우, 이미지 Y 좌표 변경
+    if (imageStartY > imageHeight) {
+      imageStartY = imageStartY % imageHeight
+    } else if (imageStartY < 0) {
+      imageStartY = imageHeight - Math.abs(imageStartY % imageHeight)
+    }
+
+    if (imageStartX === 0 && imageStartY === 0) {
+      // 백그라운드의 좌표가 (0, 0) 일 때
+      // 참고: 이미지 크기를 전부 출력하는것이 아닌, 캔버스의 크기로만 출력됩니다.
+      // 캔버스보다 이미지가 작다면 나머지 부분은 그려지지 않습니다.
+      this.imageDisplay(resultImage, 0, 0, canvasWidth, canvasHeight, imageStartX, imageStartY, canvasWidth, canvasHeight)
+    } else if (imageStartX !== 0 && imageStartY === 0) {
+      // x축 좌표가 0이 아니고 y축 좌표가 0일 때 (수평 스크롤)
+      // 만약 x축과 출력길이가 이미지 길이를 초과하면 배경을 2번에 나누어 출력됩니다.
+      if (imageStartX + canvasWidth >= imageWidth) {
+        const screenAStart = multipleWidth !== 1 ? Math.round(imageStartX * multipleWidth) : imageStartX
+        const screenAWidth = multipleWidth !== 1 ? canvasWidth - screenAStart : imageWidth - screenAStart
+        const screenBWidth = canvasWidth - screenAWidth
+        this.imageDisplay(resultImage, screenAStart, 0, screenAWidth, canvasHeight, 0, 0, screenAWidth, canvasHeight)
+        this.imageDisplay(resultImage, 0, 0, screenBWidth, canvasHeight, screenAWidth, 0, screenBWidth, canvasHeight)
+      } else {
+        // 출력길이가 초과하지 않는다면, 좌표에 맞게 그대로 출력
+        this.imageDisplay(resultImage, imageStartX, imageStartY, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight)
+      }
+    } else if (imageStartX === 0 && imageStartY !== 0) {
+      // y축 좌표가 0이 아니고 x축 좌표는 0일 때 (수직 스크롤 포함)
+      // 스크롤 원리는 x축과 동일하다.
+      if (imageStartY + canvasHeight >= imageHeight) {
+        const screenAStart = multipleHeight !== 1 ? Math.floor(imageStartY * multipleHeight) : imageStartY
+        const screenAHeight = multipleHeight !== 1 ? canvasHeight - screenAStart : imageHeight - screenAStart
+        const screenBHeight = canvasHeight - screenAHeight
+        this.imageDisplay(resultImage, 0, screenAStart, canvasWidth, screenAHeight, 0, 0, canvasWidth, screenAHeight)
+        this.imageDisplay(resultImage, 0, 0, canvasWidth, screenBHeight, 0, screenAHeight, canvasWidth, screenBHeight)
+      } else {
+        // 출력길이가 초과하지 않는다면, 좌표에 맞게 그대로 출력
+        this.imageDisplay(resultImage, imageStartX, imageStartY, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight)
+      }
+    } else {
+      // x축과 y축이 모두 0이 아닌경우, (수직 + 수평 스크롤)
+      // 만약 어느 축도 이미지의 길이를 초과하지 않았다면, 그대로 이미지를 출력합니다.
+      if (imageStartX + canvasWidth <= imageWidth && imageStartY + canvasHeight <= imageHeight) {
+        this.imageDisplay(resultImage, imageStartX, imageStartY, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight)
+      } else {
+        // 어느 쪽도 초과라면 4번에 나누어져 출력
+        const screenBaseStartX = multipleWidth !== 1 ? Math.floor(imageStartX * multipleWidth) : imageStartX
+        const screenBaseStartY = multipleHeight !== 1 ? Math.floor(imageStartY * multipleHeight) : imageStartY
+        const screenBaseWidth = multipleWidth !== 1 ? canvasWidth - screenBaseStartX : imageWidth - screenBaseStartX
+        const screenBaseHeight = multipleWidth !== 1 ? canvasHeight - screenBaseStartY : imageHeight - screenBaseStartY
+        const screenExtendWidth = multipleWidth !== 1 ? canvasWidth - screenBaseWidth : imageWidth - screenBaseWidth
+        const screenExtendHeight = multipleWidth !== 1 ? canvasHeight - screenBaseHeight : imageHeight - screenBaseHeight
+
+        // 오류 방지를 위해 이미지를 자르는 사이즈가 0이 되지 않도록 조건을 정한 후 출력
+        // 첫번째 기본 이미지
+        if (screenBaseWidth !== 0 || screenBaseHeight !== 0) {
+          this.imageDisplay(resultImage, screenBaseStartX, screenBaseStartY, screenBaseWidth, screenBaseHeight, 0, 0, screenBaseWidth, screenBaseHeight)
+        }
+
+        // 두번째 x축 이미지 (첫번째 이미지를 기준으로 X축의 다른 위치[이미지가 스크롤 하면서 잘린 지점])
+        if (imageStartX + canvasWidth >= imageWidth && screenBaseWidth !== 0) {
+          this.imageDisplay(resultImage, 0, screenBaseStartY, screenExtendWidth, screenBaseHeight, screenBaseWidth, 0, screenExtendWidth, screenBaseHeight)
+        } else if (screenBaseWidth === 0) {
+          this.imageDisplay(resultImage, 0, screenBaseStartY, screenExtendWidth, screenBaseHeight, 0, 0, screenExtendWidth, screenBaseHeight)
+        }
+
+        // 세번째 y축 이미지 (첫번째 이미지를 기준으로 Y축 다른 위치[이미지가 스크롤 하면서 잘린 지점])
+        if (imageStartY + canvasHeight >= imageHeight && screenBaseHeight !== 0) {
+          this.imageDisplay(resultImage, screenBaseStartX, 0, screenBaseWidth, screenExtendHeight, 0, screenBaseHeight, screenBaseWidth, screenExtendHeight)
+        } else if (screenBaseHeight === 0) { // 만약 baseHeight가 0이라면, x, 0 위치에 출력합니다.
+          this.imageDisplay(resultImage, screenBaseStartX, 0, screenBaseWidth, screenExtendHeight, 0, 0, screenBaseWidth, screenExtendHeight )
+        }
+
+        // 네번째 x, y축 이미지 (첫번째 이미지를 기준으로 대각선에 위치)
+        if (screenBaseWidth !== 0 && screenBaseHeight !== 0) {
+          this.imageDisplay(resultImage, 0, 0, screenExtendWidth, screenExtendHeight, screenBaseWidth, screenBaseHeight, screenExtendWidth, screenExtendHeight)
+        } else if (screenBaseWidth === 0 && screenBaseHeight !== 0) { // width(가로축)만 0인 경우
+          this.imageDisplay(resultImage, 0, 0, screenExtendWidth, screenExtendHeight, 0, screenBaseHeight, screenExtendWidth, screenExtendHeight)
+        } else if (screenBaseWidth !== 0 && screenBaseHeight === 0) { // height(세로축)만 0인 경우
+          this.imageDisplay(resultImage, 0, 0, screenExtendWidth, screenExtendHeight, screenBaseWidth, 0, screenExtendWidth, screenExtendHeight)
+        } else if (screenBaseWidth === 0 && screenBaseHeight === 0) { // 둘 다 0인 경우
+          this.imageDisplay(resultImage, 0, 0, screenExtendWidth, screenExtendHeight, 0, 0, screenExtendWidth, screenExtendHeight)
+        }
+      }
+    }
+  }
+
+  backgroundDisplayTile () {}
+  backgroundDisplayFill () {}
 }

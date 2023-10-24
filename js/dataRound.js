@@ -2526,64 +2526,28 @@ class Round1_test extends RoundData {
   constructor () {
     super()
     this.setAutoRoundStat(ID.round.round1_test)
-    this.backgroundSpeedX = 0
-
-    this.addLoadingImageList(RoundPackLoad.getRound1ShareImage())
-    this.addLoadingImageList(RoundPackLoad.getRound2ShareImage())
-    this.addLoadingSoundList(RoundPackLoad.getRound1ShareSound())
-    this.addLoadingSoundList(RoundPackLoad.getRound2ShareSound())
-
-    this.addLoadingImageList([
-      imageSrc.round.round2_4_elevator,
-      imageSrc.round.round2_4_elevatorHall,
-      imageSrc.round.round2_4_elevatorNumber,
-      imageSrc.round.round2_4_floorB1,
-
-      imageSrc.round.round2_6_original1,
-      imageSrc.round.round2_6_original2,
-      imageSrc.round.round2_6_ruin1,
-      imageSrc.round.round2_6_ruin2,
-      imageSrc.round.round2_6_quiteRoad,
-      imageSrc.round.round2_6_downtowerEntrance,
-    ])
-
-    this.backgroundImageSrc = imageSrc.round.round2_6_ruin1
-
-    this.backgroundAbsoluteX = 0
-    this.backgroundAbsoluteY = 0
-
+    this.backgroundSpeedY = 0
+    this.backgroundSpeedX = -1
+    this.backgroundX = 0
+    this.backgroundImageSrc = 'image/round8.png'
     this.addRoundPhase(() => {
-      if (this.timeCheckInterval(0, 999, 60) && this.getEnemyCount() < 1) {
-        this.createEnemy(ID.enemy.intruder.nextEnemy)
-      }
+      // if (this.timeCheckInterval(0, 999, 60) && this.getEnemyCount() < 1) {
+      //   // this.createEnemy(ID.enemy.intruder.nextEnemy)
+      // }
+      // this.backgroundX = 1600
+      // this.backgroundY = 500
+      this.backgroundSpeedY = 2
+      this.backgroundSpeedX = 2
+      // this.backgroundSpeedX = 1
+      // this.setCurrentTimePause(true, 'TEST')
     }, 0, 999)
   }
 
-  display () {
-    graphicSystem.setAlpha(0.01 * this.currentTimeTotalFrame)
-    graphicSystem.gradientRect(0, 0, 800, 600, ['yellow'])
-    super.display()
-    graphicSystem.imageView(imageSrc.round.round2_6_ruin2, 1800 - this.backgroundAbsoluteX, 0)  
-  }
-
-  processBackground () {
-    if (this.timeCheckInterval(0, 30)) {
-      this.backgroundAbsoluteX++
-    }
-
-    this.backgroundX = this.backgroundAbsoluteX
-  }
-  
-  displayBackground () {
-    graphicSystem.fillRect(0, 0, 999, 999, 'skyblue')
-    super.displayBackground()
-    
-    let time = this.currentTime
-    if (this.timeCheckFrame(4) || this.timeCheckFrame(12) || this.timeCheckFrame(20) || this.timeCheckFrame(28) || this.timeCheckFrame(36)) {
-      this.changeBackgroundImage(imageSrc.round.round2_6_original1, 120)
-    } else if (this.timeCheckFrame(8) || this.timeCheckFrame(16) || this.timeCheckFrame(24) || this.timeCheckFrame(32) || this.timeCheckFrame(40)) {
-      this.changeBackgroundImage(imageSrc.round.round2_6_ruin1, 120)
-    }
+  displayBackgroundImage () {
+    graphicSystem.backgroundDisplay(this.backgroundImageSrc, this.backgroundX, this.backgroundY, graphicSystem.optionBG.FILL)
+    graphicSystem.fillText('bgXY: ' + this.backgroundX + ',' + this.backgroundY, 0, 0, 'white')
+    graphicSystem.fillText('pTime: ' + game.pTime + ', ' + game.pTimeAvg, 0, 40, 'skyblue')
+    graphicSystem.fillText('dTime: ' + game.dTime + ', ' + game.dTimeAvg, 0, 60, 'blue')
   }
 }
 
@@ -7367,3 +7331,4 @@ dataExportRound.set(ID.round.round2_3, Round2_3)
 dataExportRound.set(ID.round.round2_4, Round2_4)
 dataExportRound.set(ID.round.round2_5, Round2_5)
 dataExportRound.set(ID.round.round2_6, Round2_6)
+

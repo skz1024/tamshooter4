@@ -270,7 +270,7 @@ export class EnemyData extends FieldData {
         // 오른쪽 영역을 넘어갈때, 왼쪽 방향에서 나옴
         this.x = 0 - this.width - moveAdjust
       }
-    } else if (this.moveDirectionX === FieldData.direction.RIGHT) {
+    } else if (this.moveDirectionX === FieldData.direction.RIGHT || this.moveDirectionX === '') {
       // 오른쪽 방향 이동값이 양수일경우, 왼쪽 끝부분(보정치 포함)으로 이동
       if (this.moveSpeedX > 0 && this.x > graphicSystem.CANVAS_WIDTH + scopeSize) {
         this.x = 0 - this.width - moveAdjust
@@ -288,7 +288,7 @@ export class EnemyData extends FieldData {
       } else if (this.moveSpeedY <= 0 && this.y > graphicSystem.CANVAS_HEIGHT + scopeSize) {
         this.y = 0 - this.height - moveAdjust
       }
-    } else if (this.moveDirectionY === FieldData.direction.DOWN) {
+    } else if (this.moveDirectionY === FieldData.direction.DOWN || this.moveDirectionY === '') {
       if (this.moveSpeedY > 0 && this.y > graphicSystem.CANVAS_HEIGHT + scopeSize) {
         this.y = 0 - this.height - moveAdjust
       } else if (this.moveSpeedY <= 0 && this.y + this.height < -scopeSize) {
