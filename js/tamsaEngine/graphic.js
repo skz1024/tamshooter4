@@ -944,6 +944,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     let percent = maxValue === 0 ? 0 : value / maxValue
     if (percent < 0) percent = 0
     if (percent > 1) percent = 1
+    console.log(percent)
 
     // 수평방향이냐 수직방향이냐의 따라서 출력 width, height 조정
     // 수평방향일경우 width가 percent만큼 영향을 받고, 수직이면 height가 percent만큼 영향을 받음
@@ -960,6 +961,9 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     } else if (backgroundColor !== '') {
       this.fillRect(x, y, width, height, backgroundColor)
     }
+
+    // 해당 값이 0인경우, 미터는 출력하지 않습니다.
+    if (percent <= 0) return
 
     // 일반 영역 출력 (참고: 배경색이 없어도 border가 계산되니 주의하세요.)
     if (Array.isArray(color)) {
@@ -1271,7 +1275,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * 
    * (다만, 스크롤 배경을 사용하기 위해서는 imageStartX, imageStartY를 지속적으로 변경해야 합니다.)
    * 
-   * @param {string | HTMLImageElement} imageSrc 이미지의 경로
+   * @param {string | HTMLImageElement | OffscreenCanvas | ImageBitmap} imageSrc 이미지의 경로
    * @param {number} imageStartX 이미지 파일 내부의 시작 x좌표 (해당 좌표부터 출력하여 계속 스크롤됨)
    * @param {number} imageStartY 이미지 파일 내부의 시작 y좌표 (해당 좌표부터 출력하여 계속 스크롤됨)
    * @param {string} option 이미지 출력 옵션: 자세한것은 GraphicSystem.optionBG 내부의 값을 참조

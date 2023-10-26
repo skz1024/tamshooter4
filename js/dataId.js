@@ -247,6 +247,7 @@ export class ID {
     round2_4: 70024,
     round2_5: 70025,
     round2_6: 70026,
+    round2_test: 70029,
     //
     round3_1: 70031,
     round3_2: 70032,

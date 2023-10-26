@@ -131,7 +131,7 @@ export class StatRound {
    * @param {number} clearBonus 
    * @param {string} roundInfo 
    */
-  constructor (roundText = '', roundName = '', requireLevel = 0, standardPower = 0, finishTime = 10, clearBonus = 0, roundInfo = '') {
+  constructor (roundText = 'NULL', roundName = 'NULL', requireLevel = 0, standardPower = 0, finishTime = 1, clearBonus = 0, roundInfo = '') {
     this.roundText = roundText
     this.roundName = roundName
     this.requireLevel = requireLevel
@@ -261,6 +261,7 @@ dataExportStatRound.set(ID.round.round2_3, new StatRound('2-3', '동그라미 �
 dataExportStatRound.set(ID.round.round2_4, new StatRound('2-4', '동그라미 마을 홀', 12, 60000, 207, 52000, ''))
 dataExportStatRound.set(ID.round.round2_5, new StatRound('2-5', '지하실의 전투', 14, 60000, 200, 32000, ''))
 dataExportStatRound.set(ID.round.round2_6, new StatRound('2-6', '조용한 도로', 15, 60000, 150, 48000, ''))
+dataExportStatRound.set(ID.round.round2_test, new StatRound('TEST2', 'TEST2', 0, 0, 600, 0))
 // round 3
 dataExportStatRound.set(ID.round.round3_1, new StatRound('3-1', '다운 타워 - 1: 레이저 전투', 20, 70000, 240, 35000, ''))
 

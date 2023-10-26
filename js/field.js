@@ -1309,13 +1309,15 @@ export class fieldSystem {
   }
 
   /** 
-   * 필드에서 점수를 강제로 추가하도록 요청합니다. 
+   * 필드에서 점수를 강제로 추가하도록 요청합니다. (단 점수를 감소할 수 없음)
    * 
    * 라운드 진행 상황에 따라 점수를 추가하고 싶다면, 다음 함수를 사용해주세요.
    * 
    * 주의: 필드 스코어 변수를 직접 수정하면 안됩니다. 점수가 추가되는 과정에서 플레이어의 경험치를 추가해야 하기 때문입니다.
    */
   static requestAddScore (score = 0) {
+    if (score < 0) return
+
     this.fieldScore += score
     this.totalScore += score
     fieldState.playerObject.addExp(score)
@@ -1370,11 +1372,11 @@ export class fieldSystem {
   /** 라운드에서 사용할 이미지와 사운드 파일을 로드합니다. */
   static roundImageSoundLoad () {
     if (this.round == null) return
-    this.round.loadingImageSound()
+    this.round.load.loadStart()
   }
 
   static getRoundImageSoundLoadComplete () {
-    if (this.round != null && this.round.loadCheck()) {
+    if (this.round != null && this.round.load.check()) {
       return true
     } else {
       return false
@@ -1436,7 +1438,7 @@ export class fieldSystem {
         case 0:
           this.stateId = this.STATE_NORMAL // pause 상태 해제
           if (this.round != null) { // round 음악 다시 재생
-            this.round.musicPlay()
+            this.round.sound.musicPlay()
           }
           break
         case 1:
@@ -1481,8 +1483,8 @@ export class fieldSystem {
     // 라운드 클리어 사운드 재생 (딜레이카운트가 0일때만 재생해서 중복 재생 방지)
     if (this.exitDelayCount === 0 && this.round != null) {
       game.sound.play(soundSrc.system.systemRoundClear)
-      userSystem.plusExp(this.round.clearBonus)
-      this.totalScore = this.fieldScore + this.round.clearBonus
+      userSystem.plusExp(this.round.stat.clearBonus)
+      this.totalScore = this.fieldScore + this.round.stat.clearBonus
       this.message = this.messageList.REQUEST_SAVE // 강제 저장을 통해 필드 저장 데이터를 삭제하고, 메인화면으로 돌아가게끔 유도
     }
 
@@ -1529,7 +1531,7 @@ export class fieldSystem {
     this.round.process()
     fieldState.process()
 
-    gameVar.statLineText2.setStatLineText(this.getFieldDataString(), this.round.currentTime, this.round.finishTime, '#D5F5E3' ,'#33ff8c')
+    gameVar.statLineText2.setStatLineText(this.getFieldDataString(), this.round.time._currentTime, this.round.stat.finishTime, '#D5F5E3' ,'#33ff8c')
   }
 
   /**
@@ -1539,15 +1541,15 @@ export class fieldSystem {
     if (this.round == null) return
 
     // 게임이 일시정지 되지 않는다면 해당 메세지는 표시되지 않습니다.
-    if (!this.round.currentTimePaused) {
+    if (!this.round.time.currentTimePaused) {
       gameVar.statLineText1.text = ''
       return
     }
 
-    if (this.round.currentTimePausedMessage === '') {
+    if (this.round.time.currentTimePausedMessage === '') {
       gameVar.statLineText1.text = 'enemy count left: ' + fieldState.enemyObject.length
     } else {
-      gameVar.statLineText1.text = this.round.currentTimePausedMessage
+      gameVar.statLineText1.text = this.round.time.currentTimePausedMessage
     }
   }
 
@@ -1613,7 +1615,7 @@ export class fieldSystem {
     game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, 100, 'grey')
     digitalDisplay('tamshooter4 loading system', 0, 0)
     if (this.round != null) {
-      let loadStatus = this.round.getLoadStatus()
+      let loadStatus = this.round.load.getStatus()
       digitalDisplay(loadStatus[0], 0, 20)
       digitalDisplay(loadStatus[1], 0, 40)
       digitalDisplay(loadStatus[2], 0, 60)
@@ -1685,7 +1687,7 @@ export class fieldSystem {
 
     let clearBonus = 0
     if (this.stateId === this.STATE_ROUND_CLEAR && this.round != null) {
-      clearBonus = this.round.clearBonus
+      clearBonus = this.round.stat.clearBonus
     }
 
     game.graphic.imageDisplay(image, imageData.x, imageData.y, imageData.width, imageData.height, titleX, titleY, imageData.width, imageData.height)
@@ -1706,10 +1708,10 @@ export class fieldSystem {
     const LAYER_Y = 570
     const LAYER_DIGITAL_Y = 570 + 5
     const HEIGHT = 30
-    const roundText = this.round != null ? this.round.roundText : 'NULL'
-    const currentTime = this.round != null ? this.round.currentTime : '999'
-    const finishTime = this.round != null ? this.round.finishTime : '999'
-    const plusTime = this.round != null ? this.round.plusTime : '0'
+    const roundText = this.round != null ? this.round.stat.roundText : 'NULL'
+    const currentTime = this.round != null ? this.round.time._currentTime : '999'
+    const finishTime = this.round != null ? this.round.stat.finishTime : '999'
+    const plusTime = this.round != null ? this.round.time.plusTime : '0'
     const meterMultiple = Number(currentTime) / Number(finishTime)
     game.graphic.fillRect(LAYER_X, LAYER_Y, game.graphic.CANVAS_WIDTH_HALF, HEIGHT, 'silver')
     game.graphic.fillRect(LAYER_X, LAYER_Y, game.graphic.CANVAS_WIDTH_HALF * meterMultiple, HEIGHT, '#D5F5E3')
@@ -1719,10 +1721,10 @@ export class fieldSystem {
 
   static getFieldDataString () {
     if (this.round != null) {
-      const roundText = this.round.roundText
-      const currentTime = this.round.currentTime
-      const finishTime = this.round.finishTime
-      const plusTime = this.round.plusTime
+      const roundText = this.round.stat.roundText
+      const currentTime = this.round.time._currentTime
+      const finishTime = this.round.stat.finishTime
+      const plusTime = this.round.time.plusTime
       const sign = plusTime >= 0 ? '+' : '' // 플러스 마이너스 구분 // 의외로 마이너스부분도 같이 출력됨
 
       return `R:${roundText}, T:${currentTime}/${finishTime} ${sign}${plusTime}`
