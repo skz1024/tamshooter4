@@ -935,16 +935,15 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * @param {number} value 기준이 되는 현재 값
    * @param {number} maxValue 기준이 되는 최대 값
    * @param {boolean} isVertical 방향설정: 기본값은 수평, true일경우 수평, false일경우 수직
-   * @param {string | string[]} backgroundColor 배경색(배열로 2개 이상의 값을 전달하면 그라디언트 효과 적용), 값이 비어있으면 무시, 배열로 전달하면 값이 있는것으로 간주함. 
+   * @param {string | string[]} borderColor 배경색(배열로 2개 이상의 값을 전달하면 그라디언트 효과 적용), 값이 비어있으면 무시, 배열로 전달하면 값이 있는것으로 간주함. 
    * @param {number} borderLength 배경색의 테두리 길이(단 사각형의 너비와 높이를 초과하지 않음), 테두리가 길어지면 배경이 차지하는 영역이 넓어짐
    */
-  meterRect (x, y, width, height, color = 'black', value, maxValue = value, isVertical = true, backgroundColor = '', borderLength = 0) {
+  meterRect (x, y, width, height, color = 'black', value, maxValue = value, isVertical = true, borderColor = '', borderLength = 0) {
     // 비율 값 계산. 최대값이 0이면, 0으로 나누기 문제가 발생하므로, 0퍼센트로 처리함.
     // 그리고, 퍼센트 결과가 0과 1사이가 되도록 조정(0%미만 100%를 초과할 수 없습니다.)
     let percent = maxValue === 0 ? 0 : value / maxValue
     if (percent < 0) percent = 0
     if (percent > 1) percent = 1
-    console.log(percent)
 
     // 수평방향이냐 수직방향이냐의 따라서 출력 width, height 조정
     // 수평방향일경우 width가 percent만큼 영향을 받고, 수직이면 height가 percent만큼 영향을 받음
@@ -956,10 +955,10 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     outputHeight -= borderLength
 
     // 배경색 출력(배열로 지정되거나, 값이 정해진 경우), 배경은 전체가 칠해집니다.
-    if (Array.isArray(backgroundColor)) {
-      this.gradientRect(x, y, width, height, backgroundColor, isVertical)
-    } else if (backgroundColor !== '') {
-      this.fillRect(x, y, width, height, backgroundColor)
+    if (Array.isArray(borderColor)) {
+      this.gradientRect(x, y, width, height, borderColor, isVertical)
+    } else if (borderColor !== '') {
+      this.fillRect(x, y, width, height, borderColor)
     }
 
     // 해당 값이 0인경우, 미터는 출력하지 않습니다.

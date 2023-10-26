@@ -65,7 +65,7 @@ export class systemText {
   }
 
   static gameError = {
-
+    FILED_LOAD_ERROR: 'fieldData가 호환되지 않거나 잘못되어 이 데이터를 불러올 수 없습니다. 메인 화면으로 이동합니다.'
   }
 
   static fieldError = {

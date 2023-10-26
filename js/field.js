@@ -1269,7 +1269,7 @@ export class fieldSystem {
   /** 게임 오버가 되었을 때, 지정된 프레임 만큼 시간이 지나면 자동으로 나갑니다. */ static EXIT_GAME_OVER_DELAY = 360
   /** 사용자가 나갔을 때, 지정된 프레임 만큼 시간이 지나면 자동으로 나갑니다. */ static EXIT_FAST_DELAY = 180
   /** 에니메이션의 최대 프레임 */ static SCORE_ENIMATION_MAX_FRAME = 60
-  /** 점수 에니메이션이 표시되는 간격 */ static SCORE_ENIMATION_INTERVAL = 4
+  /** 점수 에니메이션이 표시되는 간격 */ static SCORE_ENIMATION_INTERVAL = 6
   /** 현재까지 진행된 에니메이션의 총 프레임 */ static scoreEnimationFrame = 0
   /** 총 점수 */ static totalScore = 0
   /** 필드 점수 (필드 내에서 획득한 모든 점수) */ static fieldScore = 0
@@ -1474,7 +1474,8 @@ export class fieldSystem {
     this.scoreEnimationFrame++
     this.exitDelayCount++
 
-    if (this.exitDelayCount >= this.EXIT_FAST_DELAY) {
+    // 참고로 필드 점수가 0이면, 결과 계산 없이 바로 나갈 수 있습니다.
+    if (this.exitDelayCount >= this.EXIT_FAST_DELAY || this.fieldScore === 0) {
       this.roundExit()
     }
   }

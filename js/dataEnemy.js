@@ -2636,12 +2636,8 @@ class JemulEnemyBossEye extends JemulEnemyData {
     soundSystem.createAudio(this.laserSound3)
   }
 
-  requestStateStop () {
-    this.state = this.STATE_STOP
-  }
-
   requestDie () {
-    this.state = this.STATE_DIE
+    // this.state = this.STATE_DIE
   }
 
   laserReset () {
@@ -2688,6 +2684,13 @@ class JemulEnemyBossEye extends JemulEnemyData {
 
     if (this.state === this.STATE_DIE) {
       this.hp = 0
+    }
+
+    // 간접적인 전달을 위한 메세지 처리
+    if (this.message === this.STATE_STOP) {
+      this.state = this.STATE_STOP
+    } else if (this.message === this.STATE_DIE) {
+      this.state = this.STATE_DIE
     }
 
     super.process()
@@ -5935,11 +5938,11 @@ class IntruderEnemyMetal extends IntruderEnemy {
 
     // 잔상 이미지 좌표의 기본값이 -9999인 이유는 화면 내에 표시하지 못하게 하기 위함
     /** 잔상 개수 */ this.afterimageCount = 0 
-    /** 잔상 출력용 이미지 좌표 */ this.afterimageX = [-9999, -9999, -9999, -9999, -9999, -9999, -9999, -9999, -9999, -9999]
-    /** 잔상 출력용 이미지 좌표 */ this.afterimageY = [-9999, -9999, -9999, -9999, -9999, -9999, -9999, -9999, -9999, -9999]
-    /** 잔상 유지용 남은 프레임 값 */ this.afterimageFrame = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    /** 잔상 출력용 이미지 좌표 */ this.afterimageX = [-9999, -9999, -9999, -9999, -9999]
+    /** 잔상 출력용 이미지 좌표 */ this.afterimageY = [-9999, -9999, -9999, -9999, -9999]
+    /** 잔상 유지용 남은 프레임 값 */ this.afterimageFrame = [0, 0, 0, 0, 0]
     /** 잔상 출력용 이미지 처리 */ this.afterimage = EnimationData.createEnimation(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.metal)
-    /** 잔상 유지 프레임 */ this.AFTERIMAGE_DISPLAY_FRAME = 60
+    /** 잔상 유지 프레임 */ this.AFTERIMAGE_DISPLAY_FRAME = 30
 
     /** 이펙트 출력용 에니메이션 */
     this.effectLightEnimation = EnimationData.createEnimation(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.lightMetal, 2)
@@ -5989,7 +5992,7 @@ class IntruderEnemyMetal extends IntruderEnemy {
     if (this.state === this.STATE_MOVE) {
       super.processMove()
     } else if (this.state === this.STATE_AFTERIMAGE) {
-      if (this.moveDelay.divCheck(4)) {
+      if (this.moveDelay.divCheck(6)) {
         // 이동할 때마다 잔상 추가 (일정 간격 단위)
         if (this.afterimageCount < this.afterimageX.length) {
           this.afterimageX[this.afterimageCount] = this.x
@@ -6012,7 +6015,7 @@ class IntruderEnemyMetal extends IntruderEnemy {
   }
 
   display () {
-    // 잔상 이미지
+    // 잔상 이미지 (이미지 출력수를 줄이기 위해 너프)
     for (let i = 0; i < this.afterimageX.length || i < this.afterimageCount - 1; i++) {
       if (this.afterimageFrame[i] >= 0) {
         this.afterimage.alpha = (1 / this.AFTERIMAGE_DISPLAY_FRAME * this.afterimageFrame[i])

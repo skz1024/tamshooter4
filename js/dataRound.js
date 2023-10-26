@@ -250,7 +250,14 @@ class BgLayer {
       /** 알파값을 fade 하는데 지정된 딜레이 @type {number} */ this.alphaDelay = 0
       /** 알파값을 fade 하는데 딜레이 카운트를 세는 변수 @type {number} */ this.alphaDelayCount = 0
       /** 알파값 페이드의 시작지점 @type {number} */ this.alphaStart = 0
-      /** 알파값 페이드의 끝지점 @type {number} */ this.alphaEnd = 0
+      /** 알파값 페이드의 끝지점 (참고: 이 데이터는 알파 최종값을 표시하기도 하기 때문에 저장되는 알파값의 기준으로 사용됩니다.) @type {number} */ this.alphaEnd = 0
+      /** 레이어 자체의 x좌표 (참고: isSynchroized가 false때만 제대로 동작합니다.) @type {number} */ this.x = 0
+      /** 레이어 자체의 y좌표 (참고: isSynchroized가 false때만 제대로 동작합니다.) @type {number} */ this.y = 0
+      /** 레이어 자체의 이동속도 x값 (참고: isSynchroized가 false때만 제대로 동작합니다.) @type {number} */ this.speedX = 0
+      /** 레이어 자체의 이동속도 y값 (참고: isSynchroized가 false때만 제대로 동작합니다.) @type {number} */ this.speedY = 0
+      /** 레이어 이미지의 너비 @type {number} */ this.width = 0
+      /** 레이어 이미지의 높이 @type {number} */ this.height = 0
+      /** 레이어의 배경 동기화 여부 @type {boolean} */ this.isSynchronized = true
     }
 
     /**
@@ -258,26 +265,49 @@ class BgLayer {
      * @param {number} alpha 페이드 완료시점의 알파값
      * @param {number} delay 페이드 완료가 될 때까지 걸리는 지연 프레임
      */
-    fade (alpha = 0, delay = 60) {
+    fadeAlpha (alpha = 0, delay = 60) {
       this.alphaStart = this.alpha
       this.alphaEnd = alpha
       this.alphaDelay = delay
-      this.alphaDelayCount = delay
+      this.alphaDelayCount = 0
     }
 
     /** 
-     * 해당 레이어의 알파값을 설정합니다.  
+     * 해당 레이어의 알파값을 설정합니다. (페이드 효과를 사용하고 싶다면 fadeAlpha 함수 참고)
      * 
      * 버그 방지를 위해서 페이드 진행중인 경우에는 페이드를 무시하고 해당 알파값을 바로 적용합니다.
      */
     setAlpha (alpha = 1) {
       this.alpha = alpha
+      this.alphaEnd = alpha
       this.alphaDelay = 0
       this.alphaDelayCount = 0
     }
 
     process () {
-      if (this.alphaDelayCount >= 1) {
+      // 동기화가 아닌 상태에서는 이 좌표가 내부적으로 변경되지 않습니다.
+      if (!this.isSynchronized) {
+        this.x += this.speedX
+        this.y += this.speedY
+
+        // 이미지 너비 또는 높이가 0이라면, 이미지를 가져와 크기를 다시 확인합니다.
+        if (this.width === 0 || this.height === 0) {
+          let image = graphicSystem.getCacheImage(this.imageSrc)
+          if (image != null) {
+            this.width = image.width
+            this.height = image.height
+          }
+        }
+  
+        // 배경의 위치가 캔버스의 크기를 벗어나는 경우 배경의 위치를 재조정 합니다.
+        if (this.x >= this.width) this.x -= this.width
+        else if (this.x < 0) this.x += this.width
+  
+        if (this.y >= this.height) this.y -= this.height
+        else if (this.y < 0) this.y += this.height
+      }
+
+      if (this.alphaDelay >= 1) {
         let changeAlpha = Math.abs(this.alphaEnd - this.alphaStart) * this.alphaDelayCount / this.alphaDelay
         if (this.alphaStart < this.alphaEnd) {
           this.alpha = this.alphaStart + changeAlpha
@@ -285,9 +315,13 @@ class BgLayer {
           this.alpha = this.alphaStart - changeAlpha
         }
 
-        this.alphaDelayCount--
-        if (this.alphaDelayCount === 0) {
+        // 알파딜레이 카운트 수 증가
+        this.alphaDelayCount++
+
+        // 알파딜레이가 기준값을 넘어갈경우 페이드 효과를 종료하고 알파 딜레이를 제거
+        if (this.alphaDelayCount >= this.alphaDelay) {
           this.alpha = this.alphaEnd
+          this.alphaDelay = 0
         }
       }
     }
@@ -311,6 +345,29 @@ class BgLayer {
     }
   }
 
+  /** 스크롤이 가능한 그라디언트 배경 (color랑 다른 개념) */
+  static _BackGradient = class {
+    /**
+     * 스크롤이 가능한 그라디언트 배경을 생성합니다.
+     * @param {string} startColor 시작 색
+     * @param {string} endColor 끝 색
+     * @param {number} x x좌표
+     * @param {number} y y좌표
+     * @param {number} width 너비
+     * @param {number} height 높이
+     * @param {boolean} isVertical 수평여부 (아닐경우 수직)
+     */
+    constructor (startColor, endColor, x, y, width, height, isVertical) {
+      this.startColor = startColor
+      this.endColor = endColor
+      this.x = x
+      this.y = y
+      this.width = width
+      this.height = height
+      this.isVertical = isVertical
+    }
+  }
+
   constructor () {
     /** 배경을 표시할 기준점의 x좌표 @type {number} */ this._x = 0
     /** 배경을 표시할 기준점의 y좌표 @type {number} */ this._y = 0
@@ -318,7 +375,7 @@ class BgLayer {
     /** 배경을 움직이는 이동속도 @type {number} */ this._speedY = 0
     /** 배경의 현재 너비 @type {number} */ this._width = graphicSystem.CANVAS_WIDTH
     /** 배경의 현재 높이 @type {number} */ this._height = graphicSystem.CANVAS_HEIGHT
-    /** 배경의 색 @type {string | string[]} */ this._color = ''
+    /** 배경의 색 (제일 처음에 출력됨) @type {string | string[]} */ this._color = ''
     /** 배경의 오프스크린 캔버스 */ this._offCanvas = new OffscreenCanvas(this._width, this._height)
     /** 배경의 오프스크린 캔버스의 컨텍스트 */ this._offContext = this._offCanvas.getContext('2d')
     /** 배경의 이미지가 존재하는경우 @type {boolean} */ this._hasBackgroundImage = false
@@ -329,6 +386,42 @@ class BgLayer {
     /** 배경 레이어 각각의 데이터 @type {BgLayerClass[]} */ this._layer = []
     /** 배경의 typeDef(타입 정의, 코드 힌트용)... */ class Background extends BgLayer._Background {}
     /** 배경의 이미지 목록 @type {Background[]} */ this._background = []
+    /** 배경용 그라디언트의 typeDef */ class BackGradient extends BgLayer._BackGradient {}
+    /** 배경의 그라디언트 목록 @type {BackGradient[]} */ this._backGradient = []
+
+    /** x축 스크롤 무한루프 @type {boolean} */ this._isScroolLoopX = true
+    /** y축 스크롤 무한루프 @type {boolean} */ this._isScroolLoopY = true
+  }
+
+  /** bgLayer의 layer 정보들을 저장한 정보 (background는 다른 형식으로 이미 저장되어있습니다.) */
+  getSaveLayerData () {
+    let str = ''
+    for (let i = 0; i < this._layer.length; i++) {
+      let layer = this._layer[i]
+      let splitWord = i === 0 ? '' : '|' // 각 레이어를 문자열로 구분하기 위해 설정한 값
+      // 첫번째 레이어 앞에는 구분자가 와야 할 필요가 없으므로, 설정하지 않음
+      // 알파값은 알파 최종값(alphaEnd)만 저장합니다. 이렇게 하는 이유는, 데이터를 최소한으로 저장하기 위해서입니다.
+
+      str += splitWord + layer.x + ' ' + layer.y + ' ' + layer.speedX + ' ' + layer.speedY + ' ' + layer.alphaEnd
+    }
+
+    return str
+  }
+
+  /** 
+   * 저장된 layer 정보들을 레이어에게 입력합니다.
+   * @param {string} str 저장된 문자열
+   */
+  setLoadLayerData (str) {
+    let strArray = str.split('|')
+    for (let i = 0; i < this._layer.length; i++) {
+      let value = strArray[i].split(' ')
+      this._layer[i].x = Number(value[0])
+      this._layer[i].y = Number(value[1])
+      this._layer[i].speedX = Number(value[2])
+      this._layer[i].speedY = Number(value[3])
+      this._layer[i].setAlpha(Number(value[4]))
+    }
   }
 
   /** 
@@ -373,9 +466,143 @@ class BgLayer {
     // 배경이 등록된경우 이 값을 변경하여, 배경이 있을때에만 배경을 출력합니다.
     this._hasBackgroundImage = true
 
+    this.renderReset()
+  }
+
+  /** 
+   * 배경화면 무한루프 여부 설정 (무한루프가 되지 않을경우, 더이상 스크롤되지 않고 멈춥니다.)
+   * 
+   * 참고: 동기화 되지 않는 레이어는 이 설정을 무시합니다.
+   * @param {boolean} isScroolLoopX x축 스크롤 무한루프
+   * @param {boolean} isScroolLoopY y축 스크롤 무한루프
+   */
+  setBackgroundScroolLoop (isScroolLoopX, isScroolLoopY) {
+    this._isScroolLoopX = isScroolLoopX
+    this._isScroolLoopY = isScroolLoopY
+  }
+
+  /** 렌더링 확인 변수 재조정 (참고: 배경을 수정할때만 렌더링을 다시 합니다.) */
+  renderReset () {
     // 렌더링 완료여부를 다시 false로 변경 (다시 그려야 하므로)
     this._isRenderComplete = false
     this._isRenderRunning = false
+  }
+
+  /**
+   * 배경과 레이어를 강제로 동기화합니다.
+   * 
+   * 참고: 동기화를 해제하려면 각 레이어의 속도를 조절하거나 또는 좌표를 변경하면 해당 레이어는 자동으로 동기화를 해제합니다.
+   */
+  setBackgroundSynchronize () {
+    for (let i = 0; i < this._layer.length; i++) {
+      this._layer[i].x = this._x
+      this._layer[i].y = this._y
+      this._layer[i].isSynchronized = false
+    }
+  }
+
+  /**
+   * 특정 레이어의 좌표값 및 속도를 변경합니다. (참고: 좌표가 이미지 범위보다 클 경우 좌표는 자동으로 조정됩니다.)
+   * 
+   * 이 함수를 실행하는 순간, 지정된 레이어는 동기화가 해제되고 독자적으로 좌표와 속도를 계산하게 됩니다.
+   * 따라서, 속도 설정을 하지 않는다면, 해당 레이어는 이동하지 않습니다.
+   * 
+   * @param {number} layerNumber 레이어의 번호 (레이어를 생성한 순서대로 0번부터 시작합니다.)
+   * @param {number} x 변경할 x좌표
+   * @param {number} y 변경할 y좌표
+   */
+  setLayerPosition (layerNumber, x = this._x, y = this._y) {
+    if (layerNumber >= this._layer.length) return
+
+    this._layer[layerNumber].x = x
+    this._layer[layerNumber].y = y
+    this._layer[layerNumber].isSynchronized = false
+  }
+
+  /**
+   * 특정 레이어의 이동속도를 설정합니다. 이것을 사용하면 레이어는 동기화가 해제되고, 독자적으로 움직입니다.
+   * @param {number} layerNumber 레이어의 번호 (레이어를 생성한 순서대로 0번부터 시작합니다.)
+   * @param {number} speedX x 좌표 이동속도
+   * @param {number} speedY y 좌표 이동속도
+   */
+  setLayerSpeed (layerNumber, speedX, speedY) {
+    this._layer[layerNumber].speedX = speedX
+    this._layer[layerNumber].speedY = speedY
+    this._layer[layerNumber].isSynchronized = false
+  }
+
+  /** 
+   * 특정 레이어의 알파값을 설정합니다. (레이어의 동기화는 해제되지 않습니다.)
+   * @param {number} layerNumber 레이어의 번호
+   * @param {number} alpha 알파값
+   */
+  setLayerAlpha (layerNumber, alpha) {
+    if (layerNumber >= this._layer.length) return
+    this._layer[layerNumber].setAlpha(alpha)
+  }
+
+  /**
+   * 특정 레이어에 알파값을 페이드 형태로 적용 (레이어의 동기화는 해제되지 않습니다.)
+   * @param {number} layerNumber 레이어의 번호
+   * @param {number} alphaEnd 알파값 (페이드가 종료된 시점의)
+   * @param {number} fadeFrame 페이드 진행 프레임(60프레임 = 1초)
+   */
+  setLayerAlphaFade (layerNumber, alphaEnd, fadeFrame) {
+    if (layerNumber >= this._layer.length) return
+    this._layer[layerNumber].fadeAlpha(alphaEnd, fadeFrame)
+  }
+
+  /** 
+   * 모든 레이어의 정보를 가져옵니다.
+   * 
+   * 이 정보를 이용하여 레이어의 알파값을 수정하거나 레이어의 좌표 또는 이미지를 변경할 수 있습니다.
+   */
+  getLayer () {
+    return this._layer
+  }
+
+  /** 
+   * 특정 레이어의 정보를 가져옵니다. (인수를 입력하지 않으면 0번 레이어를 가져옵니다.)
+   * 
+   * 이 정보를 이용하여 레이어의 알파값을 수정하거나 레이어의 좌표 또는 이미지를 변경할 수 있습니다.
+   * @param {number} [layerNumber] 레이어의 번호: 기본값 0
+   */
+  getLayerNumber (layerNumber = 0) {
+    return this._layer[layerNumber]
+  }
+
+  /**
+   * 스크롤이 가능한 그라디언트 배경을 생성합니다. startColor와 endColor가 같다면 그라디언트 대신 단색 사각형을 출력합니다.
+   * 
+   * 참고로 이미지보다 먼저 출력됩니다.
+   * 
+   * 이 함수는 setBackgroundImage와 같은 원리로 동작합니다.
+   * @param {string} startColor 시작 색
+   * @param {string} endColor 끝 색
+   * @param {number} x x좌표
+   * @param {number} y y좌표
+   * @param {number} width 너비
+   * @param {number} height 높이
+   * @param {boolean} isVertical 수평 여부 (아닐경우 수직방향)
+   */
+  setBackgroundGadient (startColor, endColor, x, y, width, height, isVertical) {
+    this._backGradient.push(new BgLayer._BackGradient(startColor, endColor, x, y, width, height, isVertical))
+
+    // 그라디언트도 배경으로 처리하기 때문에 배경이 등록된것으로 처리됩니다.
+    this._hasBackgroundImage = true
+
+    this.renderReset()
+  }
+
+  /**
+   * 배경의 색을 설정합니다. (그라디언트 적용 가능)
+   * 
+   * 주의: setBackgadient랑 방식이 완전히 다르며, 이 색은 모든 배경 중 맨 먼저 출력되는 색입니다. (배경보다 더 이전 레이어임)
+   * 
+   * @param {string | string[]} color 
+   */
+  setColor (color) {
+    this._color = color
   }
 
   /** 배경 로딩이 완료되었는지의 대한 여부 */
@@ -400,7 +627,7 @@ class BgLayer {
    * 배경을 렌더링 합니다. 
    * (이 함수를 사용하지 않아도 display 함수를 사용하는 순간 배경은 자동으로 렌더링되지만 로딩을 하는 시점이 달라질 수 있습니다.)
    */
-  render () {
+  BackgroundRender () {
     // 렌더링이 완료되거나 진행중인경우 렌더링을 다시 하지 않습니다. (무한 렌더링 방지)
     if (this._isRenderComplete) return
     if (this._isRenderRunning) return
@@ -408,27 +635,61 @@ class BgLayer {
     // 로딩이 완료되지 않으면 다시 한번 렌더함수를 호출합니다.
     // 재귀 호출하는 방식이지만, 함수를 호출 후 return문을 통해 로딩이 완료되었을 때 함수가 반복호출되지 않습니다.
     if (!this.backgroundLoadCheck()) {
-      setTimeout(() => this.render(), 100)
+      setTimeout(() => this.BackgroundRender(), 100)
       return
     }
 
     if (this._isRenderRunning) return // 만약 setTimeout이 여러번 호출되어 렌더링이 연속적으로 진행된다면 이후 렌더링은 무시됩니다.
     this._isRenderRunning = true // 렌더링을 진행 중으로 변경
 
+    // 캔버스 크기 자동 측정 (캔버스의 크기가 변경될 때마다 캔버스가 리셋되므로, 다시 그려야 합니다.)
+    for (let i = 0; i < this._backGradient.length; i++) {
+      let bg = this._backGradient[i]
+      if (bg.x + bg.width > this._width) this._width = bg.x + bg.width
+      if (bg.y + bg.height > this._height) this._height = bg.y + bg.height
+    }
+
+    for (let i = 0; i < this._background.length; i++) {
+      let image = graphicSystem.getCacheImage(this._background[i].imageSrc)
+      if (image == null) continue
+      let bg = this._background[i]
+      this._background[i].width = image.width
+      this._background[i].height = image.height
+      
+      if (bg.x + bg.width > this._width) this._width = bg.x + bg.width
+      if (bg.y + bg.height > this._height) this._height = bg.y + bg.height
+    }
+
+    // 캔버스 크기 변경
+    this._offCanvas.width = this._width
+    this._offCanvas.height = this._height
+
+    // 그라디언트 그리기 (그라디언트는 로딩과정이 필요 없습니다.)
+    for (let i = 0; i < this._backGradient.length; i++) {
+      if (this._offContext != null) {
+        let bg = this._backGradient[i]
+        if (bg.startColor !== bg.endColor) {
+          // 수직, 수평에 따라 그라디언트 기준점 변경 (출력좌표는 동일)
+          let startX = bg.isVertical ? bg.x : bg.x + Math.floor(bg.width / 2)
+          let startY = bg.isVertical ? bg.y + Math.floor(bg.height / 2) : bg.y
+          let endX = bg.isVertical ? bg.x + bg.width: bg.x + Math.floor(bg.width / 2)
+          let endY = bg.isVertical ? bg.y + Math.floor(bg.height / 2) : bg.y + bg.height
+          let gradient = this._offContext.createLinearGradient(startX, startY, endX, endY)
+          gradient.addColorStop(0, bg.startColor)
+          gradient.addColorStop(1, bg.endColor)
+          this._offContext.fillStyle = gradient
+        } else {
+          this._offContext.fillStyle = bg.startColor          
+        }
+
+        this._offContext.fillRect(bg.x, bg.y, bg.width, bg.height)
+      }
+    }
+
     // 배경을 오프스크린에 그리고 캔버스의 크기를 다시 측정합니다.
     for (let i = 0; i < this._background.length; i++) {
       let image = graphicSystem.getCacheImage(this._background[i].imageSrc)
       if (image == null) continue
-      this._background[i].width = image.width
-      this._background[i].height = image.height
-
-      if (this._background[i].x + this._background[i].width > this._width) {
-        this._width = this._background[i].x + this._background[i].width
-      }
-
-      if (this._background[i].y + this._background[i].height > this._height) {
-        this._height = this._background[i].y + this._background[i].height
-      }
 
       // 배경을 오프스크린에 그립니다.
       if (this._offContext != null) {
@@ -436,16 +697,49 @@ class BgLayer {
       }
     }
 
+    // 렌더링 완료
     this._isRenderComplete = true
   }
 
   /**
    * 배경의 너비와 높이를 설정합니다. 기본값은 현재 캔버스 사이즈랑 동일합니다.
+   * 
+   * 캔버스의 크기 자체는 자동으로 설정되지만, 배경 위치를 세이브해야 하기 때문에, 
+   * 라운드 데이터를 불러왔을 때는 이 함수로 캔버스의 크기를 강제로 설정해야 합니다.
+   * 
+   * (만약 스크롤을 허용하지 않으면, x, y축 위치를 불러왔을 때 캔버스의 크기를 초과하는 버그가 발생하기 때문에 로드할 때만 캔버스의 크기를 재설정해주세요.)
+   * 
    * @param {number} width 
    * @param {number} height 
    */
   setBackgroundWidthHeight (width = graphicSystem.CANVAS_WIDTH, height = graphicSystem.CANVAS_HEIGHT) {
     this._width = width, this._height = height
+    this._offCanvas.width = this._width
+    this._offCanvas.height = this._height
+  }
+
+  /**
+   * 배경의 x, y좌표를 설정합니다.
+   * @param {number} x 
+   * @param {number} y 
+   */
+  setBackgroundPosition (x, y) {
+    this._x = x
+    this._y = y
+  }
+
+  /** 배경의 현재 좌표를 얻어옵니다. */
+  getBackgroundPosition () {
+    return {x: this._x, y: this._y}
+  }
+
+  /** 배경의 현재 속도값을 얻어옵니다. */
+  getBackgroundSpeed () {
+    return {speedX: this._speedX, speedY: this._speedY}
+  }
+
+  getBackgroundWidthHeight () {
+    return {width: this._width, height: this._height}
   }
 
   /**
@@ -464,7 +758,7 @@ class BgLayer {
     if (this._color === '' && !this._hasBackgroundImage && this._layer.length === 0) return
 
     // 렌더링이 완료되지 않은경우 렌더 함수를 불러옵니다.
-    if (!this._isRenderComplete) this.render()
+    if (!this._isRenderComplete) this.BackgroundRender()
 
     // 그라디언트 레이어 출력
     if (typeof this._color === 'string' && this._color !== '') {
@@ -483,24 +777,44 @@ class BgLayer {
       if (this._layer[i].alpha === 0) continue
       if (this._layer[i].alpha !== 1) {
         graphicSystem.setAlpha(this._layer[i].alpha)
-        graphicSystem.backgroundDisplay(this._layer[i].imageSrc, this._x, this._y)
+        graphicSystem.backgroundDisplay(this._layer[i].imageSrc, this._layer[i].x, this._layer[i].y)
         graphicSystem.setAlpha()
       } else {
-        graphicSystem.backgroundDisplay(this._layer[i].imageSrc, this._x, this._y)
+        graphicSystem.backgroundDisplay(this._layer[i].imageSrc, this._layer[i].x, this._layer[i].y)
       }
     }
   }
 
   process () {
-    this._x + this._speedX
-    this._y + this._speedY
+    this._x += this._speedX
+    this._y += this._speedY
 
     // 배경의 위치가 캔버스의 크기를 벗어나는 경우 배경의 위치를 재조정 합니다.
-    if (this._x >= this._width) this._x -= this._width
-    else if (this._x < 0) this._x += this._width
+    if (this._isScroolLoopX) {
+      if (this._x >= this._width) this._x -= this._width
+      else if (this._x < 0) this._x += this._width
+    } else {
+      // 스크롤이 무한루프되지 않으면, 마지막 지점에서 고정됨
+      if (this._x < 0) this._x = 0
+      if (this._x > this._width - graphicSystem.CANVAS_WIDTH) this._x = this._width - graphicSystem.CANVAS_WIDTH
+    }
 
-    if (this._y >= this._height) this._y -= this._height
-    else if (this._y < 0) this._y += this._height
+    if (this._isScroolLoopY) {
+      if (this._y >= this._height) this._y -= this._height
+      else if (this._y < 0) this._y += this._height
+    } else {
+      if (this._y < 0) this._y += this._width
+      if (this._y > this._height - graphicSystem.CANVAS_HEIGHT) this._y = this._height - graphicSystem.CANVAS_HEIGHT
+    }
+
+    // 레이어 위치 재조정
+    for (let i = 0; i < this._layer.length; i++) {
+      this._layer[i].process()
+      if (this._layer[i].isSynchronized) {
+        this._layer[i].x = this._x
+        this._layer[i].y = this._y
+      }
+    }
   }
 }
 
@@ -557,6 +871,8 @@ class BaseSound {
 
   /**
    * 현재 재생중인 음악을 변경합니다.
+   * 
+   * 만약 다음 재생 음악을 지정하지 않는다면, 음악은 정지될 수 있으므로, 음악을 다시 재생(musicPlay 사용 해야 합니다.
    * 
    * (라운드가 끝나기 전까지 재생중인 음악은 초기화되지 않습니다.)
    * @param {string} soundSrc 오디오 파일의 경로, 없을경우 현재 음악을 페이드
@@ -826,12 +1142,15 @@ class BaseStat extends StatRound {
 class BaseTime {
   constructor () {
     /** 현재 시간의 프레임 */ this.currentTimeFrame = 0
-    /** 현재 시간, 기본값은 반드시 0이어야 합니다. (currentTime의 전환 효과를 위해 가급적이면 set함수를 사용해주세요.) */ this._currentTime = 0
     /** 총합 프레임 (적 출현을 일정시간으로 나눌 때 주로 사용) */ this.currentTimeTotalFrame = 0
     /** 현재 시간이 정지된 상태 (이 값은 set함수를 이용해 수정해주세요.) */ this.currentTimePaused = false
     /** 추가 시간, 현재 시간이 일시 정지된 시점에서 사용됨 */ this.plusTime = 0
     /** 추가 시간 프레임 */ this.plusTimeFrame = 0
     /** 전체 시간 프레임 (pause 상관없이 시간 프레임 증가) */ this.totalFrame = 0
+
+    /** 현재 시간, 기본값은 반드시 0이어야 합니다. 
+     * (currentTime의 전환 효과를 위해 가급적이면 set함수를 사용해주세요.), 유일한 예외는 저장데이터를 불러왔을 때 뿐입니다. */ 
+    this._currentTime = 0
 
     /**
      * 시간이 정지된 경우 필드에 전송할 메세지, 값이 없으면 필드 시스템이 정한 기본값을 사용 
@@ -882,8 +1201,6 @@ class BaseTime {
     this.currentTimePaused = boolValue
     this.currentTimePausedMessage = message
   }
-
-  getCurrentTime () { return this._currentTime }
 
   process () {
     // 종합 프레임은 조건에 상관없이 증가
@@ -1020,13 +1337,16 @@ class BaseMeter {
    * @param {number} width 
    * @param {number} height 
    * @param {string | string[]} color 
+   * @param {string | string[]} borderColor 테두리 색
+   * @param {number} [borderLength=0] 테두리 너비
    * @returns 
    */
-  static bossHpUserStyle (enemyId, x, y, width, height, color = []) {
+  static bossHpUserStyle (enemyId, x, y, width, height, color = '', borderColor = '', borderLength = 0) {
     let enemy = BaseField.getEnemyObjectById(enemyId)
     if (enemy == null) return
 
-    graphicSystem.meterRect(x, y, width, height, color, enemy.hp, enemy.hpMax)
+    graphicSystem.meterRect(x, y, width, height, color, enemy.hp, enemy.hpMax, true, borderColor, borderLength)
+    digitalDisplay('BOSS HP: ' + enemy.hp + '/' + enemy.hpMax, x + 2, y + 2)
   }
 }
 
@@ -1135,6 +1455,8 @@ export class RoundData {
 
     /** 사운드 객체들을 간편하게 사용하기 위한 함수 집합 */
     this.sound = BaseSound
+    this.sound.musicStop() // 미리 저장된 음악이 출력되는것을 막기 위해 음악을 정지시킴
+    this.sound.musicSrc = '' // 음악의 기본값 설정 (다른 라운드가 이 값을 공유하기 때문에 라운드 시작시마다 갱신해야함)
 
     /** 라운드의 상태 (저장용도) @type {string} */ 
     this.state = ''
@@ -1167,9 +1489,6 @@ export class RoundData {
      */ 
     this.currentBoss = null
 
-    /** 보스 모드(적용될 경우 적이 다 사라질때까지 시간이 멈춤) @deprecated */ this.bossMode = false
-    /** 보스전 음악, 설정되지 않을경우 필드음악이 계속 재생됨.(음악이 꺼지진 않음.) @deprecated */ this.bossMusic = null
-
     /** 
      * 모든 페이즈가 끝나는 시간 (그리고 적 전부 죽었는지 확인) 
      * 참고로 이 시간은 addRoundPhase를 사용할 때마다 해당 라운드의 종료 시점으로 자동으로 맞춰집니다.
@@ -1180,36 +1499,6 @@ export class RoundData {
      * @deprecated 
      */ 
     this.phaseAllEndTime = 0
-  }
-
-  /**
-   * 라운드의 페이즈 추가.
-   * 참고로 이 함수를 사용하면 마지막 라운드 페이즈가 마지막 페이즈가 종료되는 시점으로 자동으로 맞춰집니다.
-   * 
-   * 참고: 이 함수는 this.phase.addRoundPhase 로 대체되었습니다.
-   * 
-   * 그러나 하위 호환을 위해 이 함수는 제거되지 않습니다.
-   * 
-   * @param {Function} inputFunction 라운드의 내용이 구현되어있는 함수
-   * @param {number} startTime 페이즈의 시작 시간
-   * @param {number} endTime 페이즈의 종료 시간
-   * @deprecated
-   */
-  addRoundPhase (inputFunction, startTime, endTime = startTime) {
-    if (inputFunction == null) {
-      console.warn('라운드 페이즈가 구현된 함수를 입력해 주세요. 데이터가 없으면 추가되지 않습니다.')
-      return
-    }
-
-    // 경고: 일부 주석은 이 함수의 내용과 맞지 않습니다.
-
-    // 참고, 라운드를 건네주었을 때, this값이 사라지기 때문에 이 라운드 함수를 사용할 수 있게끔 this를 이 클래스에 바인드 해야함.
-    this.phase.addRoundPhase(this, inputFunction, startTime, endTime)
-    // this.phase.phaseTime.push({startTime: startTime, endTime: endTime})
-
-    // 만약 페이즈 시간이랑 페이즈 종료 시간이 잘못 겹치면 해당 라운드에 영원히 갇힐 수 있음,
-    // 페이즈 종료 시간은 마지막 페이즈 시간에서 1초를 추가
-    this.phaseAllEndTime = endTime + 1
   }
 
   /**
@@ -1235,29 +1524,13 @@ export class RoundData {
 
   }
 
-  /**
-   * 보스 모드를 요청합니다. 이 함수를 사용하면, 보스 모드가 설정되며, 적을 전부 죽여야 다음 구간으로 진행할 수 있습니다.
+  /** 
+   * 라운드 출력 함수 
    * 
-   * 주의: 보스모드 설정 상태에서 중복으로 호출할 수 없음.
+   * 이 함수는 기본적인 배경 출력 기능만 있습니다. 상속받을 때 참고해주세요.
    * 
-   * 보스모드가 종료될경우, 중복 설정 방지를 위해 진행시간이 1초가 추가됩니다.
-   * 
-   * (경고: 보스 모드의 체력 표시는 첫번째 적을 기준으로 하므로, 모든 적이 없는 상테에서 생성해야만 제대로 된 표시가 가능)
-   * @param {number} enemyId 생성할 적 Id. 없을 경우 무시(적을 생성하지 않음.)
-   * @param {string} setMusic 보스전으로 설정할 음악, 이 값이 없다면 bossMusic으로 설정하고, bossMusic도 없다면 음악 변화 없음.
-   * @deprecated
+   * (다른 형태의 출력 함수는 존재하지 않습니다.)
    */
-  requestBossMode (enemyId = 0, setMusic = this.bossMusic) {
-    if (this.bossMode) return // 보스모드 설정 상태에서 중복으로 호출할 수 없음.
-
-    this.bossMode = true
-    this.field.createEnemy(enemyId)
-    this.sound.musicChange(setMusic)
-
-    // 중복 또는 연속 호출을 방지하기 위해, 보스모드를 호출하면 시간이 1초 추가됩니다.
-    this.time._currentTime++
-  }
-
   display () {
     if (this.bgLayer.getIsUsing()) {
       this.bgLayer.display()
@@ -1266,100 +1539,43 @@ export class RoundData {
     }
   }
 
-  /** @deprecated */
-  displayBossHp () {
-    if (!this.bossMode) return
-
-    let enemy = fieldState.getEnemyObject()
-    let firstEnemy
-    if (enemy[0] != null) {
-      firstEnemy = enemy[0]
-    } else {
-      return
-    }
-
-    let percent = firstEnemy.hp / firstEnemy.hpMax
-    graphicSystem.setAlpha(0.7)
-    graphicSystem.fillRect(0, 0, graphicSystem.CANVAS_WIDTH, 20, 'lightgrey')
-    if (percent >= 0.2) {
-      graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'yellow', 'orange')
-    } else {
-      graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'purple', 'red')
-    }
-    graphicSystem.setAlpha(1)
-    digitalDisplay('boss hp: ' + firstEnemy.hp + '/' + firstEnemy.hpMax, 0, 0)
-  }
-
-  /** 보스의 체력을 표시 (보스모드와 상관없음) 주의: 첫번째의 적의 hp만 체크합니다. @deprecated  */
-  defaultDisplayBossHp () {
-    let enemy = fieldState.getEnemyObject()
-    let firstEnemy
-    if (enemy[0] != null) {
-      firstEnemy = enemy[0]
-    } else {
-      return
-    }
-
-    let percent = firstEnemy.hp / firstEnemy.hpMax
-    graphicSystem.setAlpha(0.7)
-    graphicSystem.fillRect(0, 0, graphicSystem.CANVAS_WIDTH, 20, 'lightgrey')
-    if (percent >= 0.2) {
-      graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'yellow', 'orange')
-    } else {
-      graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'purple', 'red')
-    }
-    graphicSystem.setAlpha(1)
-    digitalDisplay('boss hp: ' + firstEnemy.hp + '/' + firstEnemy.hpMax, 0, 0)
-  }
-
   process () {
+    this.processPhase()
+    this.processBackground()
     this.processDebug()
     this.time.process()
-    this.processBackground()
-    this.processBoss()
-    this.processPhase()
-    this.processPhaseEndEnemyNothing()
     this.processFirstMusicPlay()
     this.processSaveString()
   }
 
-  processBoss () {
-    if (!this.bossMode) return
-
-    // 보스모드인 상태에서는 자동으로 시간 멈춤
-    // 보스모드 상태에서 모든 적이 죽을 경우, 다음 구간 진행 가능
-    // 다만 재생중인 음악이 종료되므로 주의
-    // 가능하다면, 보스모드는 마지막 페이즈에만 사용해주세요.
-    if (this.field.enemyNothingCheck()) {
-      this.bossMode = false
-      this.time.currentTimePaused = false
-      soundSystem.musicStop()
-    } else {
-      this.time.currentTimePaused = true
-    }
-  }
-
+  /** 
+   * 배경 출력시 사용하는 함수: 이 함수를 상속받으면 각 라운드별로 추가적인 배경작업을 할 수 있습니다. 
+   * 
+   * (당연히 super.processBackground도 같이 사용해야 함) 
+   */
   processBackground () {
-    if (this.bgLayer.getIsUsing()) {
-      this.bgLayer.process()
-    } else {
-      this.bgLegacy.process()
-    }
-
+    // bgLayer를 사용중일 때에는 bgLayer를 사용하고 아니라면 bgLegacy를 사용합니다.
+    this.bgLayer.getIsUsing() ? this.bgLayer.process() : this.bgLegacy.process()
   }
 
   /**
-   * 라운드 진행에 관한 처리. 라운드 구성에 관해서는 roundPhase 부분을 참고
+   * 라운드 진행에 관한 함수, 이 함수를 상속받으면 좀 더 세부적인 구현을 할 수 있습니다.
+   * 
+   * (이 함수를 상속받은 이후 super.processPhase를 사용하지 않으면 페이즈 진행이 불가능합니다.)
    */
   processPhase () {
     this.phase.process(this.time.currentTime)
   }
 
-  /** 디버그를 원한다면 이 함수에 내용을 넣어주세요. */
+  /** 
+   * 디버그할 때 임시로 사용하는 함수 (이 함수는 기본적으로 아무것도 하지 않습니다.)
+   * 
+   * 주로 특정 페이즈를 테스트 할 때 사용합니다.
+   */
   processDebug () {}
 
   /**
-   * 시간 간격 확인 함수 (적 생성 용도로 사용), 프레임 단위 계산을 totalFrame으로 하기 때문에 시간이 멈추어도 함수는 작동합니다.
+   * 시간 간격 확인 함수, 프레임 단위 계산을 totalFrame으로 하기 때문에 시간이 멈추어도 함수는 작동합니다.
    * 
    * start이상 end이하일경우 true, 아닐경우 false
    * 
@@ -1367,11 +1583,8 @@ export class RoundData {
    * start를 0, end는 매우 큰 수(9999같은...)를 사용해주세요.
    */
   timeCheckInterval (start = 0, end = start, intervalFrame = 1) {
-    if (this.time._currentTime >= start && this.time._currentTime <= end && this.time.totalFrame % intervalFrame === 0) {
-      return true
-    } else {
-      return false
-    }
+    // 이 조건 결과가 그대로 리턴값과 일치하므로, 해당 값을 바로 리턴합니다.
+    return (this.time.currentTime >= start && this.time.currentTime <= end && this.time.totalFrame % intervalFrame === 0)
   }
 
   /**
@@ -1384,93 +1597,28 @@ export class RoundData {
    * @param {number} frame 해당 프레임(없을 경우 기본값 0)
    */
   timeCheckFrame (time, frame = 0) {
-    if (this.time._currentTime === time) {
-      if (frame === undefined) {
-        return true
-      } else if (this.time.currentTimeFrame === frame) {
-        return true
-      }
-    }
-    
-    return false
+    // 이 조건 결과가 그대로 리턴값과 일치하므로, 해당 값을 바로 리턴합니다.
+    return (this.time.currentTime === time && this.time.currentTimeFrame === frame)
   }
 
   /**
-   * 모든 페이즈 종료 상태에서, 적이 전부 죽을 때까지 시간이 진행되지 않습니다.
-   * 만약, 적이 없는 상태에서 다음 페이즈로 넘어가고 싶다면, 따로 enemyNothingCheck 함수를 사용해야 합니다.
-   * 
-   * 참고: 이 함수의 조건 자체를 무효화할거면, processPhaseEndEnemyNoting 함수를 상속받아 재정의해주세요.
-   * 
-   * 이 함수는 현재시점에서는 필요가 없으며, 적이 남아있을때 시간 정지를 원한다면 직접적으로 시간을 정지시켜주세요.
-   * 
-   * @deprecated
-   */
-  processPhaseEndEnemyNothing () {
-    if (this.phaseAllEndTime === 0) return
-
-    if (this.time._currentTime === this.phaseAllEndTime) {
-      if (this.field.enemyNothingCheck()) {
-        this.time.currentTimePaused = false
-      } else {
-        this.time.currentTimePaused = true
-      }
-    }
-  }
-
-  /**
-   * 남은 적의 수 조건에 따라 시간을 일시정지 시키고 싶을 때 사용하는 함수
+   * 남은 적의 수 조건에 따라 시간을 일시정지 시키고 싶을 때 사용하는 함수 (추가로 남은 적 수를 알려주는 메세지도 표시합니다.)
    * 
    * 주의: 이 함수를 사용하고 나서 적을 지속적으로 생성하면 안됩니다. 그러면 게임을 영원히 진행할 수 없습니다.
    * @param time 시간을 멈추는 기준 시간
    * @param minEnemyCount 최소 적의 수 (해당 적 수 초과일경우 시간이 멈춤)
    */
   timePauseWithEnemyCount (time = 0, minEnemyCount = 0) {
-    if (time == null) return // 시간설정안하면 무효(언제 멈춰야 하는지 알 수 없기 때문)
-
     if (this.timeCheckInterval(time)) {
       if (minEnemyCount < this.field.getEnemyCount()) {
         this.time.currentTimePaused = true
-        this.time.currentTimePausedMessage = 'enemy left count: ' + this.field.getEnemyCount() + ' / ' + minEnemyCount
+        // 최소 적이 0이면 남은 적 수만 표시하고, 아닐경우, 기준이 되는 적의 수도 표시합니다.
+        const inputText = minEnemyCount === 0 ? 'enemy: ' + this.field.getEnemyCount() : 'enemy: ' + this.field.getEnemyCount() + '/' + minEnemyCount
+        this.time.currentTimePausedMessage = inputText
       } else {
         this.time.currentTimePaused = false
       }
     }
-  }
-
-  /**
-   * 보스 체력 보여주기 용도, 다만 어떤 적의 체력을 보여주는지는 알 수 없음. (아직 미정, 특별한 경우에만 사용)
-   * // 다른 함수로 대체 예정
-   * @deprecated
-   */
-  showBossHp () {
-    // 첫번째 에너미 한정
-    let enemy = fieldState.getEnemyObject()
-    let firstEnemy = null
-    if (enemy[0] != null) {
-      firstEnemy = enemy[0]
-    } else {
-      return
-    }
-
-    let percent = firstEnemy.hp / firstEnemy.hpMax
-    graphicSystem.fillRect(0, 0, graphicSystem.CANVAS_WIDTH, 20, 'lightgrey')
-    if (percent >= 0.2) {
-      graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'yellow', 'orange')
-    } else {
-      graphicSystem.gradientDisplay(0, 0, graphicSystem.CANVAS_WIDTH * percent, 20, 'purple', 'red')
-    }
-    digitalDisplay('boss hp: ' + firstEnemy.hp + '/' + firstEnemy.hpMax, 0, 0)
-
-  }
-
-  /**
-   * 보스를 생성합니다.
-   * 
-   * 적이랑 큰 차이가 없기 때문에 삭제되었습니다.
-   * @deprecated
-   */
-  createBoss (enemyId, x = graphicSystem.CANVAS_WIDTH + 50, y = Math.random() * graphicSystem.CANVAS_HEIGHT) {
-    this.currentBoss = fieldState.createEnemyBoss(enemyId, x, y)
   }
 
   getSaveData () {
@@ -1482,13 +1630,16 @@ export class RoundData {
       
       // 배경화면
       backgroundImageSrc: isBgLayerUsing ? '' : this.bgLegacy.imageSrc,
-      backgroundX: isBgLayerUsing ? this.bgLayer._x : this.bgLegacy.x,
-      backgroundY: isBgLayerUsing ? this.bgLayer._y : this.bgLegacy.y,
-      backgroundSpeedX: isBgLayerUsing ? this.bgLayer._speedX : this.bgLegacy.backgroundSpeedX,
-      backgroundSpeedY: isBgLayerUsing ? this.bgLayer._speedY : this.bgLegacy.backgroundSpeedY,
+      backgroundX: isBgLayerUsing ? this.bgLayer.getBackgroundPosition().x : this.bgLegacy.x,
+      backgroundY: isBgLayerUsing ? this.bgLayer.getBackgroundPosition().y : this.bgLegacy.y,
+      backgroundSpeedX: isBgLayerUsing ? this.bgLayer.getBackgroundSpeed().speedX : this.bgLegacy.backgroundSpeedX,
+      backgroundSpeedY: isBgLayerUsing ? this.bgLayer.getBackgroundSpeed().speedY : this.bgLegacy.backgroundSpeedY,
+      backgroundWidth: isBgLayerUsing ? this.bgLayer.getBackgroundWidthHeight().width : 0,
+      backgroundHeight: isBgLayerUsing ? this.bgLayer.getBackgroundWidthHeight().height : 0,
+      bgLayer: isBgLayerUsing ? this.bgLayer.getSaveLayerData() : '',
 
       // 현재시간
-      currentTime: this.time._currentTime,
+      currentTime: this.time.currentTime,
       currentTimeFrame: this.time.currentTimeFrame,
       currentTimeTotalFrame: this.time.currentTimeTotalFrame,
       currentTimePaused: this.time.currentTimePaused,
@@ -1498,9 +1649,6 @@ export class RoundData {
       // 음악 시간
       loadCurrentMusicTime: game.sound.getMusicCurrentTime(),
       currentMusicSrc: this.sound.currentMusicSrc,
-
-      // 보스 모드
-      bossMode: this.bossMode,
 
       // 특수한 경우
       saveString: this.saveString
@@ -1541,7 +1689,7 @@ export class RoundData {
    * 
    * 경고: 이 함수를 상속받았다면, 반드시 saveData의 매개변수를 받아야 정상적으로 저장된걸 불러올 수 있습니다.
    * 
-   * @param {*} saveData 
+   * @param {*} saveData 이 데이터의 정보는 getSaveData 가 return 하는 오브젝트를 참고해주세요.
    */
   setLoadData (saveData) {
     // id 및 상태
@@ -1551,9 +1699,12 @@ export class RoundData {
     // 배경화면
     let isBgLayerUsing = this.bgLayer.getIsUsing()
     if (isBgLayerUsing) {
-      this.bgLayer._x = saveData.backgroundX
-      this.bgLayer._y = saveData.backgroundY
+      this.bgLayer.setBackgroundPosition(saveData.backgroundX, saveData.backgroundY)
       this.bgLayer.setBackgroundSpeed(saveData.backgroundSpeedX, saveData.backgroundSpeedY)
+      this.bgLayer.setBackgroundWidthHeight(saveData.backgroundWidth, saveData.backgroundHeight)
+
+      // 배경 레이어 (bgLayer 전용)
+      this.bgLayer.setLoadLayerData(saveData.bgLayer)
     } else {
       this.bgLegacy.imageSrc = saveData.backgroundImageSrc
       this.bgLegacy.x = saveData.backgroundX
@@ -1603,7 +1754,7 @@ class Round1_1 extends RoundData {
     this.phase.addRoundPhase(this, this.roundPhase02, 31, 60)
     this.phase.addRoundPhase(this, this.roundPhase03, 61, 90)
     this.phase.addRoundPhase(this, this.roundPhase04, 91, 120)
-    this.phase.addRoundPhase(this, this.roundPhase05, 121, 148)
+    this.phase.addRoundPhase(this, this.roundPhase05, 121, 150)
 
     // 로드해야 할 파일 리스트 작성
     this.load.addImageList([
@@ -1707,6 +1858,7 @@ class Round1_1 extends RoundData {
     }
   }
 
+
   roundPhase05 () {
     // 이제 수송선, 감지기, 운석만 등장...
     if (this.timeCheckInterval(121, 141, 240)) {
@@ -1718,13 +1870,20 @@ class Round1_1 extends RoundData {
       this.field.createEnemy(ID.enemy.spaceEnemy.meteorite)
     }
 
+    // 보스 직전 타임 스탑 체크
     this.timePauseWithEnemyCount(144)
 
+    // 보스 출현
     if (this.timeCheckFrame(147, 0)) {
       this.sound.musicChange(soundSrc.music.music06_round1_boss_thema)
       this.field.createEnemy(ID.enemy.spaceEnemy.boss, 0, 0)
     }
+
+    // 보스 전 시간 정지 및, 보스가 죽은 이후 음악 정지
     this.timePauseWithEnemyCount(148)
+    if (this.timeCheckInterval(148) && this.field.enemyNothingCheck()) {
+      this.sound.musicStop()
+    }
   }
 
   processBackground () {
@@ -1791,7 +1950,7 @@ class Round1_2 extends RoundData {
     this.phase.addRoundPhase(this, this.roundPhase04, 61, 90)
     this.phase.addRoundPhase(this, this.roundPhase05, 91, 120)
     this.phase.addRoundPhase(this, this.roundPhase06, 121, 150)
-    this.phase.addRoundPhase(this, this.roundPhase07, 151, 176)
+    this.phase.addRoundPhase(this, this.roundPhase07, 151, 180)
 
     // 로드해야 할 파일 리스트 작성
     this.load.addImageList([
@@ -1957,6 +2116,11 @@ class Round1_2 extends RoundData {
     if (this.timeCheckInterval(151, 176, 60)) {
       this.field.createEnemy(ID.enemy.meteoriteEnemy.bomb)
     }
+
+    this.timePauseWithEnemyCount(178)
+    if (this.timeCheckInterval(178) && this.field.enemyNothingCheck()) {
+      this.sound.musicChange('', 1)
+    }
   }
 }
 
@@ -1980,7 +2144,7 @@ class Round1_3 extends RoundData {
     this.phase.addRoundPhase(this, this.roundPhase05, 141, 160)
     this.phase.addRoundPhase(this, this.roundPhase06, 161, 180)
     this.phase.addRoundPhase(this, this.roundPhase07, 181, 200)
-    this.phase.addRoundPhase(this, this.roundPhase08, 201, 207)
+    this.phase.addRoundPhase(this, this.roundPhase08, 201, 210)
 
     // 로드해야 할 파일 리스트 작성
     this.load.addImageList([
@@ -2035,15 +2199,7 @@ class Round1_3 extends RoundData {
    * 1-3 라운드에서만 사용하는 특별한 함수.
    */
   displayJemulBossMeter () {
-    let enemyObject = fieldState.getEnemyObject()
-    for (let i = 0; i < enemyObject.length; i++) {
-      let currentEnemy = enemyObject[i]
-
-      if (currentEnemy.id === ID.enemy.jemulEnemy.boss) {
-        graphicSystem.meterRect(0, 0, graphicSystem.CANVAS_WIDTH, 20, ['#DDA7A7', '#FF4545'], currentEnemy.hp, currentEnemy.hpMax, true)
-        digitalDisplay(`boss hp: ${currentEnemy.hp}/${currentEnemy.hpMax}`, 10, 2)
-      }
-    }
+    this.meter.bossHpUserStyle(ID.enemy.jemulEnemy.boss, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 25, ['#DDA7A7', '#FF4545'])
   }
 
   roundPhase00 () {
@@ -2055,7 +2211,7 @@ class Round1_3 extends RoundData {
       this.field.createEnemy(ID.enemy.meteoriteEnemy.class4)
     }
 
-    this.timePauseWithEnemyCount(10, 5)
+    this.timePauseWithEnemyCount(10, 6)
   }
 
   roundPhase01 () {
@@ -2068,13 +2224,11 @@ class Round1_3 extends RoundData {
 
     // 보스가 죽었다면, 스킵 (이 구간은 건너뜀)
     if (this.timeCheckInterval(18, 29, 4) && this.field.enemyNothingCheck()) {
-      this.time._currentTime = 30
+      this.time.setCurrentTime(30)
     }
 
     // 적이 있다면, 시간을 멈춥니다.
-    if (this.timeCheckInterval(30)) {
-      this.time.currentTimePaused = this.field.enemyNothingCheck() ? false : true
-    }
+    this.timePauseWithEnemyCount(30)
   }
 
   roundPhase02 () {
@@ -2100,6 +2254,11 @@ class Round1_3 extends RoundData {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellShip)
     }
 
+    // 배경음악 정지
+    if (this.timeCheckFrame(67)) {
+      this.sound.musicChange('', 1)
+    }
+
     // 적의 수가 2 초과라면, 시간이 일시정지합니다.
     this.timePauseWithEnemyCount(69, 2)
   }
@@ -2108,24 +2267,21 @@ class Round1_3 extends RoundData {
     // 이 페이즈 이후 부터 해당 음악이 적용됩니다.
     if (this.timeCheckFrame(71, 1)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss, 900)
-      this.sound.musicChange(this.battleMusic, 2)
-    }
-    
-    if (this.timeCheckFrame(73, 33)) {
-      // 라운드 내의 함수로 만들기에는 애매해서 부득이하게 직접 조정함.
+      this.sound.musicChange(this.battleMusic, 1)
+      this.sound.musicPlay()
+
+      // 라운드 내의 함수로 만들기에는 애매해서 어쩔 수 없이 직접 조정함.
       // 음악을 처음부터 재생하는것이 아닌 중간부터 재생함.
-      soundSystem.setCurrentMusicCurrentTime(23)
+      soundSystem.setCurrentMusicCurrentTime(19.194)
     }
 
-    // 보스가 죽었다면, 지속적으로 적이 등장
-    if (this.timeCheckInterval(75, 88, 30) && this.field.enemyNothingCheck()) {
-      this.field.createEnemy(ID.enemy.jemulEnemy.rotateRocket)
+    // 보스가 죽었다면, 해당 구간 스킵 처리
+    if (this.timeCheckInterval(75, 89, 30) && this.field.enemyNothingCheck()) {
+      this.time.setCurrentTime(90)
     }
 
     // 적이 있다면, 시간을 멈춥니다.
-    if (this.timeCheckInterval(90, 90)) {
-      this.time.currentTimePaused = this.field.enemyNothingCheck() ? false : true
-    }
+    this.timePauseWithEnemyCount(90)
   }
 
   roundPhase04_1 () {
@@ -2207,7 +2363,7 @@ class Round1_3 extends RoundData {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss, 900)
     }
 
-    // 보스가 죽었다면 지속적으로 적이 등장
+    // 보스가 죽었다면 지속적으로 적이 등장 (이 구간부터 스킵할 수 없음)
     if (this.timeCheckInterval(145, 158, 60) && this.field.enemyNothingCheck()) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellAir)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellShip)
@@ -2240,27 +2396,32 @@ class Round1_3 extends RoundData {
   }
 
   roundPhase07 () {
+    // 한번 더?
     if (this.timeCheckInterval(181) && this.time.currentTimeFrame === 0) {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss, 900)
       this.field.createEnemy(ID.enemy.spaceEnemy.gamjigi)
     }
 
+    // 감지기 출현
     if (this.timeCheckInterval(184, 191, 60)) {
       this.field.createEnemy(ID.enemy.spaceEnemy.gamjigi)
     }
 
+    // 비행기의 추가적인 공격
     if (this.timeCheckInterval(185, 185, 30)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellShip, graphicSystem.CANVAS_WIDTH, 0)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellShip, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT_HALF)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellShip, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT)
     }
 
+    // 비행기의 추가적인 공격
     if (this.timeCheckInterval(189, 189, 30)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellAir, graphicSystem.CANVAS_WIDTH, 0)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellAir, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT_HALF)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellAir, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT)
     }
 
+    // 감지기 또 출현...
     if (this.timeCheckInterval(195, 198, 20)) {
       this.field.createEnemy(ID.enemy.spaceEnemy.gamjigi)
     }
@@ -2274,14 +2435,21 @@ class Round1_3 extends RoundData {
     if (this.timeCheckInterval(200, 206, 10)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellDrill)
     }
+
+    // 적이 있다면, 시간을 멈춥니다.
+    this.timePauseWithEnemyCount(208, 0)
   }
 
   process () {
     super.process()
+  }
 
-    if (this.phase.getCurrentPhase() >= 4 && this.sound.currentMusicSrc != this.battleMusic) {
-      this.sound.musicChange(this.battleMusic, 2)
-    }
+  loadDataSaveString () {
+
+    // 꼼수긴 하지만 어쩔 수 없음
+    // if (this.phase.getCurrentPhase() >= 4 && this.sound.currentMusicSrc != this.battleMusic) {
+    //   this.sound.musicChange(this.battleMusic, 2)
+    // }
   }
 
   display () {
@@ -2317,7 +2485,7 @@ class Round1_4 extends RoundData {
     this.phase.addRoundPhase(this, this.roundPhase00, 1, 20)
     this.phase.addRoundPhase(this, this.roundPhase01, 21, 80)
     this.phase.addRoundPhase(this, this.roundPhase02, 81, 110)
-    this.phase.addRoundPhase(this, this.roundPhase03, 111, 150)
+    this.phase.addRoundPhase(this, this.roundPhase03, 111, 152)
 
     /** 제물스타 이펙트 */
     this.effectJemulstar = new CustomEffect(imageSrc.effect.jemulstar, imageDataInfo.effect.jemulstar, 500, 320, 3, 2)
@@ -2386,15 +2554,15 @@ class Round1_4 extends RoundData {
 
     if (this.timeCheckInterval(phase3Time, phase3Time + 10, 2)) {
       // 엄청나게 배경 흔들기
-      this.bgLegacy.x = Math.random() * (phase3End - this.time._currentTime) * 4
-      this.bgLegacy.y = Math.random() * (phase3End - this.time._currentTime) * 4
+      this.bgLegacy.x = Math.random() * (phase3End - this.time.currentTime) * 4
+      this.bgLegacy.y = Math.random() * (phase3End - this.time.currentTime) * 4
     } else if (this.timeCheckInterval(phase3Time + 10, phase3Time + 20, 3)) {
       // 위력 약화
-      this.bgLegacy.x = Math.random() * (phase3End - this.time._currentTime) * 3
-      this.bgLegacy.y = Math.random() * (phase3End - this.time._currentTime) * 3
+      this.bgLegacy.x = Math.random() * (phase3End - this.time.currentTime) * 3
+      this.bgLegacy.y = Math.random() * (phase3End - this.time.currentTime) * 3
     } else if (this.timeCheckInterval(phase3Time + 20, phase3End - 4, 4)) {
-      this.bgLegacy.x = Math.random() * (phase3End - this.time._currentTime) * 2
-      this.bgLegacy.y = Math.random() * (phase3End - this.time._currentTime) * 2
+      this.bgLegacy.x = Math.random() * (phase3End - this.time.currentTime) * 2
+      this.bgLegacy.y = Math.random() * (phase3End - this.time.currentTime) * 2
     }
 
     super.processBackground()
@@ -2408,59 +2576,57 @@ class Round1_4 extends RoundData {
     }
 
     // 보스가 일찍 죽으면 해당 페이즈 스킵
-    if (this.timeCheckInterval(7, 15) && this.field.enemyNothingCheck()) {
-      this.time._currentTime = 15
+    if (this.timeCheckInterval(5, 15) && this.field.enemyNothingCheck()) {
+      this.time.setCurrentTime(15)
     }
 
-    if (this.timeCheckInterval(16)) {
-      this.time.currentTimePaused = this.field.enemyNothingCheck() ? false : true
-    }
+    this.timePauseWithEnemyCount(16)
 
     if (this.timeCheckInterval(17)) {
-      soundSystem.musicStop()
+      this.sound.musicChange('', 2)
     }
   }
 
   roundPhase01 () {
     // 진짜 보스 등장(...)
-    if (this.timeCheckInterval(21) && this.time.currentTimeFrame === 0) {
+    if (this.timeCheckFrame(21)) {
       this.sound.musicChange(this.sound.musicSrc)
+      this.sound.musicPlay()
       this.field.createEnemy(ID.enemy.jemulEnemy.bossEye, graphicSystem.CANVAS_WIDTH_HALF - 100, graphicSystem.CANVAS_HEIGHT_HALF - 100)
     }
     
+    // 참고: 아직 이 코드는 미완성입니다. 라운드 3이 완성된 이후 새로운 루트를 만들때 다시 만들 예정입니다.
+    // 원래 이 코드는 보스를 죽인 이후에 상황을 표현해야 하지만, 아직 업데이트 되지 않았습니다.
     if (this.timeCheckInterval(22, 79) && this.field.enemyNothingCheck()) {
       this.waitTimeFrame++
 
       if (this.waitTimeFrame >= 600) {
-        this.time._currentTime = 80
+        // this.time._currentTime = 80
       }
     }
   }
 
   roundPhase02 () {
-    // 필드에 있는 보스 데이터 얻어오기
-    let enemyObject = fieldState.getEnemyObject()
+    const phase2Time = this.phase.phaseTime[2].startTime
+    if (this.timeCheckFrame(phase2Time, 15)) this.sound.musicStop() // 음악 강제 정지
 
-    // 특정 보스의 데이터 얻어오기 (뭔가 이상한 방식이긴 하지만...)
-    /** 
-     * @type {any} // JemulEnemyBossEye
-     */
-    let boss = null
-    for (let i = 0; i < enemyObject.length; i++) {
-      if (enemyObject[i].id === ID.enemy.jemulEnemy.bossEye) {
-        boss = enemyObject[i]
-        break
+    // 특정 보스의 데이터 얻어오기
+    let boss = this.field.getEnemyObjectById(ID.enemy.jemulEnemy.bossEye)
+    if (boss != null) {
+      if (this.timeCheckInterval(phase2Time)) {
+        // 보스의 모든 행동을 강제로 멈춤
+        boss.message = 'stop'
+      }
+
+      if (this.timeCheckInterval(phase2Time + 20, phase2Time + 23, 30)) {
+        fieldState.createEffectObject(this.effectJemulstar, boss.x - 50, boss.y - 50, 20)
+      }
+
+      if (this.timeCheckFrame(phase2Time + 25)) {
+        // 보스 죽이기 (점수도 얻음.)
+        boss.message = 'die'
       }
     }
-
-    let phase2Time = this.phase.phaseTime[2].startTime
-
-    if (this.timeCheckInterval(phase2Time)) {
-      // 보스의 모든 행동을 강제로 멈춤
-      boss.requestStateStop()
-    }
-
-    this.sound.musicStop() // 음악 강제 정지
 
     if (this.timeCheckFrame(phase2Time + 5, 0)) {
       this.bgLegacy.changeImage(this.specialImage, 150)
@@ -2472,25 +2638,18 @@ class Round1_4 extends RoundData {
     }
 
     // 사운드 출력
-    if (this.timeCheckFrame(phase2Time + 10, 0)) soundSystem.play(this.messageSound.message1)
-    if (this.timeCheckFrame(phase2Time + 15, 0)) soundSystem.play(this.messageSound.message2)
-    if (this.timeCheckFrame(phase2Time + 20, 0)) soundSystem.play(this.messageSound.jemulstar)
+    if (this.timeCheckFrame(phase2Time + 10, 0)) this.sound.play(this.messageSound.message1)
+    if (this.timeCheckFrame(phase2Time + 15, 0)) this.sound.play(this.messageSound.message2)
+    if (this.timeCheckFrame(phase2Time + 20, 0)) this.sound.play(this.messageSound.jemulstar)
 
-    if (this.timeCheckInterval(phase2Time + 20, phase2Time + 23, 30)) {
-      if (boss != null) {
-        fieldState.createEffectObject(this.effectJemulstar, boss.x - 50, boss.y - 50, 20)
-      } else {
-        fieldState.createEffectObject(this.effectJemulstar, 250, 150, 20)
-      }
-    }
-
-    if (this.timeCheckFrame(phase2Time + 25)) {
-      // 보스 죽이기 (점수도 얻음.)
-      if (boss != null) {
-        boss.requestDie()
-      }
-    }
-    
+    // 임시 주석처리: 나중에 활용할 수도 있음
+    // if (this.timeCheckInterval(phase2Time + 20, phase2Time + 23, 30)) {
+    //   if (boss != null) {
+    //     fieldState.createEffectObject(this.effectJemulstar, boss.x - 50, boss.y - 50, 20)
+    //   } else {
+    //     fieldState.createEffectObject(this.effectJemulstar, 250, 150, 20)
+    //   }
+    // }
   }
 
   roundPhase03 () {
@@ -2512,7 +2671,7 @@ class Round1_4 extends RoundData {
     }
 
     // 운석 최대 개수 = 1초에 1씩 증가하고 최대 25로 고정
-    let meteoriteMaxCount = this.time._currentTime - phase3Time + 1
+    let meteoriteMaxCount = this.time.currentTime - phase3Time + 1
     if (meteoriteMaxCount > 25) meteoriteMaxCount = 25
 
     // 운석을 아무리 죽여봤자 의미 없을 뿐... 더 강한 운석이 나온다.
@@ -2527,25 +2686,16 @@ class Round1_4 extends RoundData {
 
     // 사운드 출력
     if (this.timeCheckFrame(phase3Time, 0)) {
-      soundSystem.play(this.messageSound.jemulstart)
+      this.sound.play(this.messageSound.jemulstart)
     } else if (this.timeCheckInterval(phase3Time + 4, phase3End - 4, 240)) {
-      soundSystem.play(this.messageSound.jemulrun)
+      this.sound.play(this.messageSound.jemulrun)
     }
-  }
-
-  processPhaseEndEnemyNothing () {
-    // 페이즈 끝일 때, 적이 있어도 시간 진행됨
-    // 즉, 적이 남아있어도 라운드 클리어 가능
-  }
-
-  processDebug () {
-
   }
 
   display () {
     super.display()
-    if (this.phase.getCurrentPhase() >= 0 && this.phase.getCurrentPhase() <= 3 && this.time._currentTime <= 110) {
-      this.showBossHp()
+    if (this.phase.getCurrentPhase() >= 0 && this.phase.getCurrentPhase() <= 3 && this.time.currentTime <= 110) {
+      this.meter.bossHpDefaultStyle()
     }
   }
 }
@@ -2566,7 +2716,7 @@ class Round1_5 extends RoundData {
     this.phase.addRoundPhase(this, this.roundPhase05, 121, 150)
     this.phase.addRoundPhase(this, this.roundPhase06, 151, 180)
     this.phase.addRoundPhase(this, this.roundPhase07, 181, 200)
-    this.phase.addRoundPhase(this, this.roundPhase08, 201, 207)
+    this.phase.addRoundPhase(this, this.roundPhase08, 201, 210)
 
     this.load.addImageList([
       imageSrc.round.round1_4_meteoriteDark,
@@ -2715,9 +2865,7 @@ class Round1_5 extends RoundData {
       this.field.createEnemy(ID.enemy.jemulEnemy.redShip)
     }
 
-    if (this.timeCheckInterval(107)) {
-      this.time.currentTimePaused = this.field.enemyNothingCheck() ? false : true
-    }
+    this.timePauseWithEnemyCount(107)
   }
 
   roundPhase04 () {
@@ -2727,12 +2875,10 @@ class Round1_5 extends RoundData {
     }
 
     if (this.timeCheckInterval(110, 118) && this.field.enemyNothingCheck()) {
-      this.time._currentTime = 120
+      this.time.setCurrentTime(120)
     }
 
-    if (this.timeCheckInterval(119)) {
-      this.time.currentTimePaused = this.field.enemyNothingCheck() ? false : true
-    }
+    this.timePauseWithEnemyCount(119)
   }
 
   roundPhase05 () {
@@ -2778,9 +2924,7 @@ class Round1_5 extends RoundData {
     }
 
     // 적이 많다면, 시간 멈춤
-    if (this.timeCheckInterval(179)) {
-      this.time.currentTimePaused = this.field.enemyNothingCheck() ? false : true
-    }
+    this.timePauseWithEnemyCount(179)
   }
 
   roundPhase07 () {
@@ -2810,12 +2954,13 @@ class Round1_5 extends RoundData {
     if (this.timeCheckInterval(201, 207, 60)) {
       this.field.createEnemy(ID.enemy.meteoriteEnemy.stone)
     }
+
+    this.timePauseWithEnemyCount(208)
   }
 
-  displayBossHp () {
-    if (this.phase.getCurrentPhase() === 4) {
-      this.showBossHp()
-    }
+  display () {
+    super.display()
+    if (this.phase.getCurrentPhase() === 4) this.meter.bossHpDefaultStyle(ID.enemy.jemulEnemy.boss)
   }
 }
 
@@ -2828,13 +2973,12 @@ class Round1_6 extends RoundData {
     this.sound.musicSrc = soundSrc.music.music02_meteorite_zone_field
     this.musicTour = soundSrc.music.music05_space_tour
     this.musicPlanet = soundSrc.music.music07_paran_planet_entry
-    this.bossMusic = soundSrc.music.music06_round1_boss_thema
 
     this.phase.addRoundPhase(this, this.roundPhase00, 1, 30)
     this.phase.addRoundPhase(this, this.roundPhase01, 31, 60)
     this.phase.addRoundPhase(this, this.roundPhase02, 61, 90)
     this.phase.addRoundPhase(this, this.roundPhase03, 91, 120)
-    this.phase.addRoundPhase(this, this.roundPhase04, 121, 148)
+    this.phase.addRoundPhase(this, this.roundPhase04, 121, 152)
 
     /**
      * 이 라운드에서 행성을 보여주기 위한 오브젝트
@@ -2929,12 +3073,18 @@ class Round1_6 extends RoundData {
       this.field.createEnemy(ID.enemy.spaceEnemy.gamjigi)
     }
 
-    if (this.timeCheckInterval(26)) {
-      this.time.currentTimePaused = this.field.enemyNothingCheck() ? false : true
+    this.timePauseWithEnemyCount(26)
+
+    // 보스 출현: 중복 생성을 방지하기 위해 시간값을 강제로 변경했습니다.
+    if (this.timeCheckFrame(27)) {
+      this.field.createEnemy(ID.enemy.spaceEnemy.boss)
+      this.sound.musicChange(soundSrc.music.music06_round1_boss_thema)
+      this.time.setCurrentTime(28)
     }
 
-    if (this.timeCheckFrame(27)) {
-      this.requestBossMode(ID.enemy.spaceEnemy.boss)
+    this.timePauseWithEnemyCount(28)
+    if (this.timeCheckInterval(28) && this.field.enemyNothingCheck()) {
+      this.sound.musicStop()
     }
   }
 
@@ -3044,14 +3194,9 @@ class Round1_6 extends RoundData {
       this.sound.musicChange(this.musicPlanet, fadeTime)
     }
   }
-
-  processPhaseEndEnemyNothing () {
-    // 적 남아있어도 클리어 가능
-  }
-
   processSaveString () {
     // 행성을 배경에 표시하기 위해 데이터의 일부를 저장
-    if (this.time._currentTime >= this.stat.finishTime - this.planet.totalDisplayTime) {
+    if (this.time.currentTime >= this.stat.finishTime - this.planet.totalDisplayTime) {
       this.planet.process()
       this.saveString = this.planet.x + ',' + this.planet.size + ',' + this.planet.elapsedFrame
     }
@@ -3066,7 +3211,8 @@ class Round1_6 extends RoundData {
 
   display () {
     super.display()
-    if (this.time._currentTime >= this.stat.finishTime - this.planet.totalDisplayTime) {
+    if (this.timeCheckInterval(28)) this.meter.bossHpDefaultStyle(ID.enemy.spaceEnemy.boss)
+    if (this.time.currentTime >= this.stat.finishTime - this.planet.totalDisplayTime) {
       this.planet.display()
     }
   }
@@ -3105,26 +3251,14 @@ class Round2_1 extends RoundData {
   constructor () {
     super()
     this.stat.setStat(ID.round.round2_1)
-    this.bgLegacy.imageSrc = imageSrc.round.round2_1_cloud
     this.sound.musicSrc = soundSrc.music.music09_paran_planet
-    this.bgLegacy.backgroundSpeedX = 0
-    this.bgLegacy.backgroundSpeedY = 1
-    this.bgLegacy.x = 0
     this.maeulImage = imageSrc.round.round2_2_maeul_entrance
-    this.bossMusic = '' // 보스전 음악 없음. 기존 음악이 그대로 재생됨.
-
-    this.gradientBg = {
-      y: 0,
-      number: 0,
-      maxLength: 9, 
-      height: 1200, // 20 second * 60 frame
-    }
 
     this.phase.addRoundPhase(this, this.roundPhase01, 0, 30)
     this.phase.addRoundPhase(this, this.roundPhase02, 31, 60)
     this.phase.addRoundPhase(this, this.roundPhase03, 61, 90)
     this.phase.addRoundPhase(this, this.roundPhase04, 91, 120)
-    this.phase.addRoundPhase(this, this.roundPhase05, 121, 148)
+    this.phase.addRoundPhase(this, this.roundPhase05, 121, 150)
 
     this.load.addImageList([
       imageSrc.round.round2_1_cloud,
@@ -3137,32 +3271,39 @@ class Round2_1 extends RoundData {
 
     this.load.addImageList(RoundPackLoad.getRound2ShareImage())
     this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
+
+    this.setBgLayer()
   }
 
-  display () {
-    // 색은, 그라디언트 형태로 표현하고 그라디언트의 출력값을 변경하는 방식을 사용
+  /** bgLayer를 설정할게 많아서 따로 함수로 분리: 참고 setBgLayer라는 함수는 RoundData에는 없는 함수입니다. */
+  setBgLayer () {
     const darkSky = '#001A33'
     const darklight = '#002E5B'
     const sky = '#00478D'
     const skylight = '#1D6FC0'
     const light = '#4995E1'
     const maeulsky = '#67B2FF'
-
+    const gradientWidth = 800
+    const gradientHeight = 1200 // 20 second * 60 frame
     const colorA = [darkSky, darklight, darkSky, sky, skylight, sky, light, maeulsky, light, light]
     const colorB = [darklight, darkSky, sky, skylight, sky, light, maeulsky, light, light, light]
 
-    const gradientWidth = 800
-    const gradientHeight = 1200 // 20 second * 60 frame
-    game.graphic.gradientRect(this.bgLegacy.x, this.gradientBg.y, gradientWidth, gradientHeight, [colorA[this.gradientBg.number], colorB[this.gradientBg.number]], false)
-    game.graphic.gradientRect(this.bgLegacy.x, this.gradientBg.y + gradientHeight, gradientWidth, gradientHeight, [colorA[this.gradientBg.number + 1], colorB[this.gradientBg.number + 1]], false)
+    for (let i = 0; i < colorA.length; i++) {
+      this.bgLayer.setBackgroundGadient(colorA[i], colorB[i], 0, gradientHeight * i, gradientWidth, gradientHeight, false)
+    }
 
-    // digitalDisplay('b: ' + this.gradientBg.y + ', y: ' + this.backgroundY + ', ' + this.gradientBg.number, 0, 0)
-    this.bgLegacy.display()
+    // 구름 레이어 추가: 구름은 배경과 다르게 정지하지 않고 계속 스크롤됩니다. // 배경은 중간에 멈출 수 있음.
+    this.bgLayer.addLayerImage(imageSrc.round.round2_1_cloud)
+    this.bgLayer.setLayerSpeed(0, 0, 1) // 구름은 배경과 다르게 지속적으로 이동하도록 변경
+  }
+
+  display () {
+    super.display()
 
     // 마을 보여주기
-    if (this.time._currentTime >= 125) {
+    if (this.time.currentTime >= 125) {
       // 마을은 125초부터 140초까지 서서히 등장합니다.
-      const leftTime = 140 - this.time._currentTime
+      const leftTime = 140 - this.time.currentTime
       const baseElapsed = 1200
       let elapsed = baseElapsed - (60 * leftTime) + this.time.currentTimeFrame
       if (elapsed > baseElapsed) elapsed = baseElapsed
@@ -3175,39 +3316,14 @@ class Round2_1 extends RoundData {
       game.graphic.imageView(this.maeulImage, maeulX, maeulY, maeulWidth, maeulHeight)
       game.graphic.setAlpha(1)
     }
-  }
 
-  processDebug () {
-    if (this.timeCheckFrame(0, 5)) {
-      // this.currentTime = 31
-    }
+    // 보스 체력 보여주기 (동그라미가 등장했을 때)
+    if (this.time.currentTime === 147) Round2_1.displayBossHp()
   }
 
   processBackground () {
     super.processBackground()
-    
-    if (this.gradientBg.number < this.gradientBg.maxLength - 1) {
-      this.gradientBg.y--
-      if (Math.abs(this.gradientBg.y) >= this.gradientBg.height) {
-        // 참고: y축의 절대값을 사용하여 비교하는 이유는, y축이 음수값이 증가하는 형태로 되어있기 때문
-        this.gradientBg.y = 0
-        this.gradientBg.number++
-      }
-    } else {
-      this.gradientBg.y = 0
-    }
-  }
-
-  loadDataSaveString () {
-    let getText = this.saveString.split(',')
-    this.gradientBg.y = Number(getText[0])
-    this.gradientBg.number = Number(getText[1])
-  }
-  
-  processSaveString () {
-    // 그라디언트 배경의 y축값과 number값만 저장
-    // 마을 등장은 시간상으로 처리하므로 따로 저장할 필요 없음
-    this.saveString = this.gradientBg.y + ',' + this.gradientBg.number
+    this.bgLayer.setBackgroundPosition(0, this.time.currentTimeTotalFrame)
   }
 
   roundPhase01 () {
@@ -3318,17 +3434,17 @@ class Round2_1 extends RoundData {
     this.timePauseWithEnemyCount(145)
 
     // 146초 보스전
-    if (this.timeCheckFrame(146, 1) && !this.bossMode) {
-      this.requestBossMode()
+    if (this.timeCheckFrame(146, 1)) {
       this.field.createEnemy(ID.enemy.donggramiEnemy.bossBig1)
       this.field.createEnemy(ID.enemy.donggramiEnemy.bossBig2)
+      this.time.setCurrentTime(147)
     }
+    this.timePauseWithEnemyCount(147)
   }
 
-  displayBossHp () {
-    if (!this.bossMode) return
-
-    let enemy = this.field.getEnemyObject()
+  /** 동그라미 보스 hp를 표시하는 전용 함수 ?! */
+  static displayBossHp () {
+    let enemy = BaseField.getEnemyObject()
     let src = imageSrc.round.round2_donggramiHp
     let cacheImage = game.graphic.getCacheImage(src)
 
@@ -3354,6 +3470,11 @@ class Round2_1 extends RoundData {
       digitalDisplay(e.hp + '/' + e.hpMax, meterX, y)
     }
   }
+
+  /** 동그라미 마을에서 사용하는 그라디언트 얻기 (round 2 전역적으로 사용함) */
+  static getMaeulGradientColor () {
+    return ['#4995E1', '#67B2FF']
+  }
 }
 
 class Round2_2 extends RoundData {
@@ -3361,19 +3482,6 @@ class Round2_2 extends RoundData {
     super()
     this.stat.setStat(ID.round.round2_2)
     this.sound.musicSrc = soundSrc.music.music10_donggrami_maeul
-    this.bgList = [
-      imageSrc.round.round2_2_maeul_entrance,
-      imageSrc.round.round2_2_tunnel,
-      imageSrc.round.round2_2_tunnel_outload,
-      imageSrc.round.round2_2_apartment1,
-      imageSrc.round.round2_2_park,
-      imageSrc.round.round2_2_apartment2,
-      imageSrc.round.round2_2_shopping_mall,
-      imageSrc.round.round2_2_placard
-    ]
-    this.bgWidth = [800, 800, 800, 1600, 1600, 1600, 1600, 800]
-    this.bgNumber = 0
-    this.bgBlackAlpha = 0
 
     // 시간이 배경에 맞추어서 진행되기 때문에, 배경이 변경되는 것을 기준으로 대략적인 시간 값이 설정되었습니다.
     // 1초에 60frame = 60px씩 이동
@@ -3388,7 +3496,7 @@ class Round2_2 extends RoundData {
     this.phase.addRoundPhase(this, this.roundPhase03, 81, 110) // 공원
     this.phase.addRoundPhase(this, this.roundPhase04, 111, 130) // 아파트 2단지
     this.phase.addRoundPhase(this, this.roundPhase05, 131, 160) // 상가
-    this.phase.addRoundPhase(this, this.roundPhase06, 161, 167) // 플래카드
+    this.phase.addRoundPhase(this, this.roundPhase06, 161, 170) // 플래카드
 
     this.load.addImageList([
       imageSrc.round.round2_2_maeul_entrance,
@@ -3407,118 +3515,41 @@ class Round2_2 extends RoundData {
 
     this.load.addImageList(RoundPackLoad.getRound2ShareImage())
     this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
+    this.setBgLayer()
   }
 
-  displayBossHp () {
-    if (this.time._currentTime > this.phase.phaseTime[0].endTime) return
+  setBgLayer () {
+    this.bgLayer.setColor(Round2_1.getMaeulGradientColor())
 
-    let enemy = this.field.getEnemyObject()
-    let src = imageSrc.round.round2_donggramiHp
-    let cacheImage = game.graphic.getCacheImage(src)
+    const bgList = [
+      imageSrc.round.round2_2_maeul_entrance,
+      imageSrc.round.round2_2_tunnel,
+      imageSrc.round.round2_2_tunnel_outload,
+      imageSrc.round.round2_2_apartment1,
+      imageSrc.round.round2_2_park,
+      imageSrc.round.round2_2_apartment2,
+      imageSrc.round.round2_2_shopping_mall,
+      imageSrc.round.round2_2_placard
+    ]
+    const bgWidth = [800, 800, 800, 1600, 1600, 1600, 1600, 800]
+    let totalX = 0
 
-    if (cacheImage != null && enemy.length > 0) {
-      let x = game.graphic.CANVAS_WIDTH - cacheImage.width
-      game.graphic.imageView(src, x, 0)
+    for (let i = 0; i < bgList.length; i++) {
+      this.bgLayer.setBackgroundImage(bgList[i], totalX, 0)
+      totalX += bgWidth[i]
     }
 
-    const meterLength = 200
-    const meterX = graphicSystem.CANVAS_WIDTH - meterLength
-    const layer1Y = 40
-    const layer2Y = 80
-    for (let i = 0; i < enemy.length; i++) {
-      let e = enemy[i]
-      let y = i === 0 ? layer1Y : layer2Y // y축 위치 결정 (적 배열 번호에 따라서...)
-
-      if (e.id === ID.enemy.donggramiEnemy.bossBig1) {
-        game.graphic.meterRect(meterX, y, meterLength, layer1Y, ['#2C52B0', '#6486D9'], e.hp, e.hpMax)
-      } else if (e.id === ID.enemy.donggramiEnemy.bossBig2) {
-        game.graphic.meterRect(meterX, y, meterLength, layer1Y, ['#9B442F', '#B87C6D'], e.hp, e.hpMax)
-      }
-
-      digitalDisplay(e.hp + '/' + e.hpMax, meterX, y)
-    }
-  }
-
-  display () {
-    const lightsky = '#4995E1'
-    const maeulsky = '#67B2FF'
-    game.graphic.gradientRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, [lightsky, maeulsky])
-
-    // 배경 출력 (좌우 스크롤에 대한 여러 이미지를 순차 출력하는 알고리즘은 아직 RoundData에 없습니다.)
-    game.graphic.imageView(this.bgList[this.bgNumber], this.bgLegacy.x, 0)
-    if (this.bgNumber + 1 < this.bgWidth.length) {
-      game.graphic.imageView(this.bgList[this.bgNumber + 1], this.bgLegacy.x + this.bgWidth[this.bgNumber], 0)
-    }
-
-    // 검은색 배경 출력
-    game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, 'black', this.bgBlackAlpha)
-  }
-
-  processSaveString () {
-    // 배경 화면 저장: backgroundX, bgNumber, bgBlackAlpha
-    this.saveString = this.bgLegacy.x + ',' + this.bgNumber + ',' + this.bgBlackAlpha
-  }
-
-  loadDataSaveString () {
-    let split = this.saveString.split(',')
-    this.bgLegacy.x = Number(split[0])
-    this.bgNumber = Number(split[1])
-    this.bgBlackAlpha = Number(split[2])
+    // 배경 스크롤은 무한루프되지 않습니다. (끝지점에 도착하면 화면 이동 끝)
+    this.bgLayer.setBackgroundScroolLoop(false, false)
   }
 
   processBackground () {
-    // 배경 이동 및 다음 배경으로 이동
-    if (this.bgNumber === this.bgWidth.length - 1) {
-      this.bgLegacy.backgroundSpeedX = 0
-      this.bgLegacy.x = 0
-    } else if (this.time._currentTime >= 20) {
-      this.bgLegacy.backgroundSpeedX = -1
-    } else {
-      // 20초 이전일때는 배경이 이동하지 않음
-      this.bgLegacy.backgroundSpeedX = 0
-    }
-
-    if (this.bgLegacy.x < -this.bgWidth[this.bgNumber] && this.bgNumber < this.bgWidth.length) {
-      this.bgNumber++
-      this.bgLegacy.x = 0
-    }
-
-    // 검은 배경화면 출력 (터널)
-    if (this.timeCheckInterval(25, 37, 10)) {
-      // 일정시간 단위로 점점 어두워짐
-      this.bgBlackAlpha += 0.004
-    } else if (this.timeCheckInterval(38, 50, 10)) {
-      // 일정시간 단위로 점점 밝아짐
-      this.bgBlackAlpha -= 0.004
-    } else if (this.timeCheckInterval(51, 55, 20)) {
-      // (밝기가) 원래대로 되돌아옴
-      this.bgBlackAlpha = 0
-    }
-
-    // blackAlpha가 잘못된 값이 되면, 오류가 발생할 수 있으므로, 0미만이 되지 않도록 처리
-    if (this.bgBlackAlpha < 0) {
-      this.bgBlackAlpha = 0
-    }
-
-    // 에코 효과 추가 (터널)
-    // 각각 에코, 피드백, 딜레이, 시간 변경 기준임
-    // 해당값은 더이상 적용되지 않습니다.
-    // const echoValue = [0.1, 0.3, 0.5, 0.6, 0.7, 0.6, 0.5, 0.3, 0.1, 0]
-    // const feedValue = [0.1, 0.3, 0.4, 0.5, 0.6, 0.5, 0.4, 0.3, 0.1, 0]
-    // const delayValue = 0.3
-    // const changeTime = [24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54]
-    // for (let i = 0; i < changeTime.length - 1; i++) {
-    //   if (this.currentTime >= changeTime[i] && this.currentTime < changeTime[i + 1]) {
-    //     game.sound.setEcho(echoValue[i], feedValue[i], delayValue)
-    //   }
-    // }
-
-    // 버그 방지용 에코 끄기 기능
-    if (this.timeCheckInterval(55, 60)) {
-      game.sound.setEchoDisable()
-    }
-
     super.processBackground()
+    if (this.time.currentTime <= 19) {
+      this.bgLayer.setBackgroundSpeed(0, 0)
+    } else if (this.time.currentTime >= 20) {
+      this.bgLayer.setBackgroundSpeed(1, 0)
+    }
   }
 
   roundPhase00 () {
@@ -3529,12 +3560,11 @@ class Round2_2 extends RoundData {
     if (this.timeCheckFrame(2)) {
       this.field.createEnemy(ID.enemy.donggramiEnemy.bossBig1)
       this.field.createEnemy(ID.enemy.donggramiEnemy.bossBig2)
-      // this.requestBossMode()
-      this.time._currentTime++
+      this.time.setCurrentTime(3)
     }
 
     if (this.timeCheckInterval(5, 18) && this.field.getEnemyCount() <= 0) {
-      this.time._currentTime = 19
+      this.time.setCurrentTime(19)
     }
 
     this.timePauseWithEnemyCount(19)
@@ -3635,9 +3665,19 @@ class Round2_2 extends RoundData {
       this.field.createEnemy(ID.enemy.donggramiEnemy.bounce)
     }
 
-    if (this.timeCheckFrame(166, 12)) {
+    if (this.timeCheckFrame(167, 12)) {
       this.sound.musicChange('', 3)
     }
+
+    // 적 남아있으면 시간 멈춤
+    this.timePauseWithEnemyCount(168)
+  }
+
+  display () {
+    super.display()
+
+    // 동그라미 보스전 체력 표시용도
+    if (this.phase.getCurrentPhase() === 0 && this.field.getEnemyCount() !== 0) Round2_1.displayBossHp()
   }
 }
 
@@ -3645,7 +3685,27 @@ class Round2_3 extends RoundData {
   constructor () {
     super()
     this.stat.setStat(ID.round.round2_3)
-    this.bgLegacy.backgroundSpeedX = 0 // 배경 이동 없음
+    this.bgLayer.setBackgroundSpeed(0, 0)
+    this.bgLayer.addLayerImage(imageSrc.round.round2_3_maeul_space) // 0번 레이어: 스페이스 배경 표시
+    this.bgLayer.addLayerImage(imageSrc.round.round2_2_placard) // 1번 레이어: 플래카드 2-2(동그라미 마을 끝 부분)
+    this.bgLayer.addLayerImage(imageSrc.round.round2_3_placard) // 2번 레이어: 플래카드 2-3
+
+    this.layerNumber = {
+      SPACE: 0,
+      PLACARD2_2: 1,
+      PLACARD2_3: 2,
+    }
+
+    // 레이어들의 알파값 수정
+    let getLayer = this.bgLayer.getLayer()
+    getLayer[this.layerNumber.SPACE].setAlpha(0)
+    getLayer[this.layerNumber.PLACARD2_2].setAlpha(1) // 2-2 플래카드만 표시
+    getLayer[this.layerNumber.PLACARD2_3].setAlpha(0)
+
+    this.phase.addRoundPhase(this, this.roundPhase00, 0, 9)
+    this.phase.addRoundPhase(this, this.roundPhase01, 10, 69)
+    this.phase.addRoundPhase(this, this.roundPhase02, 70, 129)
+    this.phase.addRoundPhase(this, this.roundPhase03, 130, 187)
 
     /** 음악의 리스트 (복도 구간은 음악 없음) */
     this.musicList = {
@@ -3663,7 +3723,7 @@ class Round2_3 extends RoundData {
 
     /** 배경 그라디언트의 색 리스트 (배열) */
     this.bgGradientColor = {
-      normal_road: ['#4995E1', '#67B2FF'],
+      normal_road: Round2_1.getMaeulGradientColor(),
       a1_battle_room: ['#9E5D3D', '#944C4A'],
       a2_break_room: ['#5D1C1C', '#644C29'],
       a3_power_room: ['#96705A', '#9A5C50'],
@@ -3734,18 +3794,12 @@ class Round2_3 extends RoundData {
     }
 
     /** 현재 적용된 그라디언트의 색상 */
-    this.currentGradientColor = ['#4995E1', '#67B2FF']
-
-    this.bgRoadSrc = imageSrc.round.round2_2_placard
-    this.bgSpaceSrc = imageSrc.round.round2_3_maeul_space
-    this.bgAfterSrc = imageSrc.round.round2_3_placard
-
-    this.bgLegacy.imageSrc = this.bgRoadSrc
+    this.currentGradientColor = this.bgGradientColor.normal_road
 
     /**
      * 맵의 스트링 값
      * 
-     * 맵의 종류 = a1 ~ a3, b1 ~ b3, c1 ~ c3, z1(1번째 공간)
+     * 맵의 종류 = a1 ~ a3, b1 ~ b3, c1 ~ c3, z1(1번째 공간) ~ z2(라운드 종료 후 표시되는 공간)
      */
     this.courseName = 'z1'
 
@@ -3755,11 +3809,6 @@ class Round2_3 extends RoundData {
     /** 코스 선택 시간 */
     this.courseSelectTime = 6
 
-    this.phase.addRoundPhase(this, this.roundPhase00, 0, 9)
-    this.phase.addRoundPhase(this, this.roundPhase01, 10, 69)
-    this.phase.addRoundPhase(this, this.roundPhase02, 70, 129)
-    this.phase.addRoundPhase(this, this.roundPhase03, 130, 188)
-    
     /** 선택 창에 관한 오브젝트 */
     this.boxMap = {
       x: 100,
@@ -3929,7 +3978,7 @@ class Round2_3 extends RoundData {
         case 2: this.courseName = 'c1'; break
       }
       // 다음 코스에 맞게 시간을 변경
-      if (this.time._currentTime <= this.phase.phaseTime[0].endTime) {
+      if (this.time.currentTime <= this.phase.phaseTime[0].endTime) {
         this.time.setCurrentTime(this.phase.phaseTime[1].startTime)
       }
     } else if (this.courseName === 'a1' || this.courseName === 'b1' || this.courseName === 'c1') {
@@ -3938,7 +3987,7 @@ class Round2_3 extends RoundData {
         case 1: this.courseName = 'b2'; break
         case 2: this.courseName = 'c2'; break
       }
-      if (this.time._currentTime <= this.phase.phaseTime[1].endTime) {
+      if (this.time.currentTime <= this.phase.phaseTime[1].endTime) {
         this.time.setCurrentTime(this.phase.phaseTime[2].startTime)
       }
     } else if (this.courseName === 'a2' || this.courseName === 'b2' || this.courseName === 'c2') {
@@ -3947,7 +3996,7 @@ class Round2_3 extends RoundData {
         case 1: this.courseName = 'b3'; break
         case 2: this.courseName = 'c3'; break
       }
-      if (this.time._currentTime <= this.phase.phaseTime[2].endTime) {
+      if (this.time.currentTime <= this.phase.phaseTime[2].endTime) {
         this.time.setCurrentTime(this.phase.phaseTime[3].startTime)
       }
     } else if (this.courseName === 'a3' || this.courseName === 'b3' || this.courseName === 'c3') {
@@ -3961,14 +4010,24 @@ class Round2_3 extends RoundData {
     // 코스가 변경되면 그라디언트 배경색도 변경됨
     this.setCourseGradientColor()
 
-    // 배경 변경
+    // 배경 변경 (배경 그라디언트 색은 별도의 함수(displayBackground)에서 출력함)
     if (this.courseName === 'z1') {
-      this.bgLegacy.changeImage(this.bgRoadSrc, 60)
+      // z1 구간의 페이드 배경 코드는 임시로 넣어둠
+      this.bgLayer.setLayerAlphaFade(this.layerNumber.SPACE, 0, 60)
+      this.bgLayer.setLayerAlphaFade(this.layerNumber.PLACARD2_2, 1, 60)
+      this.bgLayer.setLayerAlpha(this.layerNumber.PLACARD2_3, 0)
+      this.bgLayer.setLayerSpeed(this.layerNumber.SPACE, 0, 0)
     } else if (this.courseName === 'z2') {
-      this.bgLegacy.changeImage(this.bgAfterSrc, 60)
+      this.bgLayer.setLayerAlphaFade(this.layerNumber.SPACE, 0, 60)
+      this.bgLayer.setLayerAlpha(this.layerNumber.PLACARD2_2, 0)
+      this.bgLayer.setLayerAlphaFade(this.layerNumber.PLACARD2_3, 1, 60)
+      this.bgLayer.setLayerSpeed(this.layerNumber.SPACE, 0, 0)
     } else {
-      this.bgLegacy.changeImage(this.bgSpaceSrc, 60)
-    } 
+      this.bgLayer.setLayerAlphaFade(this.layerNumber.SPACE, 1, 60)
+      this.bgLayer.setLayerAlphaFade(this.layerNumber.PLACARD2_2, 0, 60)
+      this.bgLayer.setLayerAlpha(this.layerNumber.PLACARD2_3, 0)
+      this.bgLayer.setLayerSpeed(this.layerNumber.SPACE, 1, 0)
+    }
 
     // 일반 모드로 전환
     this.setNormalMode()
@@ -4014,7 +4073,7 @@ class Round2_3 extends RoundData {
     }
 
     // 현재 페이즈 종료시까지 이 선택모드를 해제하지 않으면 시간은 진행되지 않습니다.
-    if (this.time._currentTime >= this.phase.phaseTime[this.phase.getCurrentPhase()].endTime - 1 && this.isCourseSelectMode) {
+    if (this.time.currentTime >= this.phase.phaseTime[this.phase.getCurrentPhase()].endTime - 1 && this.isCourseSelectMode) {
       this.time.setCurrentTimePause(true)
     }
 
@@ -4051,18 +4110,13 @@ class Round2_3 extends RoundData {
     }
   }
 
-  processDebug () {
-    // 디버그 할 때 코스 이름을 생각해주세요.
-    // if (this.timeCheckFrame(0, 12)) {
-    //   this.currentTime = 124
-    //   this.courseName = 'a2'
-    // }
-  }
-
   process () {
     super.process()
     this.processCourse()
     this.processAreaTime()
+
+    let layer = this.bgLayer.getLayer()
+    console.log(layer[0].alpha, layer[1].alpha, layer[2].alpha)
   }
 
   /** 
@@ -4116,53 +4170,9 @@ class Round2_3 extends RoundData {
     this.areaStat = JSON.parse(str[3])
     this.result = str[4]
 
-    // 그라디언트 배경 불러오기 (b2 때문에 이렇게 변경함)
+    // 그라디언트 배경 불러오기 (b2 에서 그라디언트 값을 지속적으로 변경하기 때문에 해당 값도 따로 저장)
     this.currentGradientColor[0] = str[5]
     this.currentGradientColor[1] = str[6]
-  }
-
-  displayBackground () {
-    // 그라디언트 출력
-    if (this.currentGradientColor.length >= 2) {
-      graphicSystem.gradientRect(
-        0,
-        0,
-        graphicSystem.CANVAS_WIDTH, 
-        graphicSystem.CANVAS_HEIGHT, 
-        [this.currentGradientColor[0], this.currentGradientColor[1]]
-      )
-    }
-
-    // 배경 출력
-    this.bgLegacy.display()
-
-    // 선택 오브젝트 출력, 현재 선택할 예정인 코스 반짝이도록 처리
-    if (this.boxMap.isShow) {
-      graphicSystem.imageView(this.boxMap.image, this.boxMap.x, this.boxMap.y)
-      this.donggramiNumberDisplay(this.courseSelectTime, 600, 40)
-
-      switch (this.courseName) {
-        case 'z1':
-          if (this.courseCursorNumber === 0) this.lightBoxList.a1.display()
-          if (this.courseCursorNumber === 1) this.lightBoxList.b1.display()
-          if (this.courseCursorNumber === 2) this.lightBoxList.c1.display()
-          break
-        case 'a1':
-        case 'b1':
-        case 'c1':
-          if (this.courseCursorNumber === 0) this.lightBoxList.a2.display()
-          if (this.courseCursorNumber === 1) this.lightBoxList.b2.display()
-          if (this.courseCursorNumber === 2) this.lightBoxList.c2.display()
-          break
-        case 'a2':
-        case 'b2':
-        case 'c2':
-          if (this.courseCursorNumber === 0) this.lightBoxList.a3.display()
-          if (this.courseCursorNumber === 1) this.lightBoxList.b3.display()
-          if (this.courseCursorNumber === 2) this.lightBoxList.c3.display()
-          break
-      }
-    }
   }
 
   roundPhase00 () {
@@ -4220,16 +4230,51 @@ class Round2_3 extends RoundData {
   }
 
   display () {
-    super.display()
-    this.displayBackground()
+    this.displayBackground() // 2-3 전용 그라디언트 배경 출력
+    super.display() // 배경 출력
     this.displayResult()
     this.displayStatus()
+    this.displayCourse()
     
     // 일부 구역은 추가적인 출력 함수가 있을 수도 있음
     switch (this.courseName) {
       case 'a1': this.displayCoursePhaseA1(); break
       case 'a2': this.displayCoursePhaseA2(); break
       case 'a3': this.displayCoursePhaseA3(); break
+    }
+  }
+
+  displayBackground () {
+    graphicSystem.gradientRect(0, 0, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT, this.currentGradientColor)
+  }
+
+  displayCourse () {
+    // 선택 오브젝트 출력, 현재 선택할 예정인 코스 반짝이도록 처리
+    if (this.boxMap.isShow) {
+      graphicSystem.imageView(this.boxMap.image, this.boxMap.x, this.boxMap.y)
+      this.donggramiNumberDisplay(this.courseSelectTime, 600, 40)
+
+      switch (this.courseName) {
+        case 'z1':
+          if (this.courseCursorNumber === 0) this.lightBoxList.a1.display()
+          if (this.courseCursorNumber === 1) this.lightBoxList.b1.display()
+          if (this.courseCursorNumber === 2) this.lightBoxList.c1.display()
+          break
+        case 'a1':
+        case 'b1':
+        case 'c1':
+          if (this.courseCursorNumber === 0) this.lightBoxList.a2.display()
+          if (this.courseCursorNumber === 1) this.lightBoxList.b2.display()
+          if (this.courseCursorNumber === 2) this.lightBoxList.c2.display()
+          break
+        case 'a2':
+        case 'b2':
+        case 'c2':
+          if (this.courseCursorNumber === 0) this.lightBoxList.a3.display()
+          if (this.courseCursorNumber === 1) this.lightBoxList.b3.display()
+          if (this.courseCursorNumber === 2) this.lightBoxList.c3.display()
+          break
+      }
     }
   }
 
@@ -4515,7 +4560,7 @@ class Round2_3 extends RoundData {
 
     // 데미지를 받은 경우, 사운드 및 플레이어 강제 이동 처리
     if (damage >= 1) {
-      soundSystem.play(soundSrc.round.r2_3_a1_damage)
+      this.sound.play(soundSrc.round.r2_3_a1_damage)
       this.areaStat.playerHp -= damage
       this.areaStat.invincibleFrame = damage < 10 ? 60 : 180 // 무적프레임: 10데미지 미만 30, 이상 90
       const autoMoveX = (Math.random() * 120 - 60) + playerP.x
@@ -4556,7 +4601,7 @@ class Round2_3 extends RoundData {
     }
 
     // 결과 처리
-    if (this.areaStat.time === 0 && this.result !== this.resultList.COMPLETE && this.time._currentTime <= phase1Start + cTime.COMPLETE) {
+    if (this.areaStat.time === 0 && this.result !== this.resultList.COMPLETE && this.time.currentTime <= phase1Start + cTime.COMPLETE) {
       this.setResult(this.resultList.COMPLETE)
       this.playerMoveEnable()
       this.time.setCurrentTime(phase1Start + cTime.COMPLETE + 1)
@@ -4581,7 +4626,7 @@ class Round2_3 extends RoundData {
       let enemyC = enemyArray[i]
       if (enemyC.state === '' && collision(playerP, enemyC)) {
         enemyC.state = 'collision'
-        soundSystem.play(soundSrc.round.r2_3_a1_damage)
+        this.sound.play(soundSrc.round.r2_3_a1_damage)
         const autoMoveX = playerP.x + (Math.random() * 200) - 100
         const autoMoveY = playerP.y + (Math.random() * 200) - 100
 
@@ -4749,7 +4794,7 @@ class Round2_3 extends RoundData {
     }
 
     // 결과 판정
-    if (this.areaStat.time === 0 && this.result === this.resultList.NOTHING && this.time._currentTime <= phase1Start + cTime.COMPLETE) {
+    if (this.areaStat.time === 0 && this.result === this.resultList.NOTHING && this.time.currentTime <= phase1Start + cTime.COMPLETE) {
       if (this.areaStat.totalDamage >= 100) {
         this.setResult(this.resultList.LOSE)
       } else {
@@ -4792,7 +4837,7 @@ class Round2_3 extends RoundData {
     if (playerP.shield < playerP.shieldMax) {
       playerP.shield += 1
       this.areaStat.totalDamage += 1
-      soundSystem.play(soundSrc.round.r2_3_a1_damage)
+      this.sound.play(soundSrc.round.r2_3_a1_damage)
     }
   }
 
@@ -4876,7 +4921,7 @@ class Round2_3 extends RoundData {
         playerP.shield += 10
         this.areaStat.playerHp -= 4
         if (this.areaStat.damageSoundDelayCount <= 0) {
-          soundSystem.play(soundSrc.round.r2_3_a1_damage)
+          this.sound.play(soundSrc.round.r2_3_a1_damage)
           this.areaStat.damageSoundDelayCount = 15
         }
         break
@@ -5115,7 +5160,7 @@ class Round2_3 extends RoundData {
       if (enemyObject[i].state === '' && collision(playerP, enemyObject[i])) {
         enemyObject[i].state = 'collision'
         playerP.setAutoMove(playerP.x + Math.random() * 200 - 100, playerP.y + Math.random() * 200 - 100, 20)
-        soundSystem.play(soundSrc.round.r2_3_a1_damage)
+        this.sound.play(soundSrc.round.r2_3_a1_damage)
       }
     }
 
@@ -5129,7 +5174,7 @@ class Round2_3 extends RoundData {
     for (let i = 0; i < sprite.length; i++) {
       if (collision(playerP, sprite[i])) {
         // 플레이어가 워프에 충돌하면, 플레이어를 랜덤한 위치로 보내고 워프처리
-        soundSystem.play(soundSrc.round.r2_3_b2_warp)
+        this.sound.play(soundSrc.round.r2_3_b2_warp)
         playerP.x = graphicSystem.CANVAS_WIDTH_HALF
         playerP.y = graphicSystem.CANVAS_HEIGHT_HALF
         fieldState.allEnemyDelete()
@@ -5140,7 +5185,7 @@ class Round2_3 extends RoundData {
 
       for (let j = 0; j < enemyObject.length; j++) {
         if (collision(enemyObject[j], sprite[i])) {
-          soundSystem.play(soundSrc.round.r2_3_b2_warp)
+          this.sound.play(soundSrc.round.r2_3_b2_warp)
           enemyObject[j].isDeleted = true
         }
       }
@@ -5928,14 +5973,32 @@ class Round2_4 extends RoundData {
     super()
     this.stat.setStat(ID.round.round2_4)
 
-    this.backgroundNumber = 0
+    const bWidth = 800
+    const bHeight = 600
 
-    this.backgroundAbsoluteX = 0
-    this.backgroundAbsoluteY = 0
-    this.sound.musicSrc = '' // 음악 없음 (초반 페이즈에는 음악이 재생되지 않습니다.)
-
-    // 기본 배경 설정
-    this.bgLegacy.imageSrc = imageSrc.round.round2_4_corridor
+    /** 배경 위치의 기준값 */
+    this.bgXY = {
+      /** backgroundWidth */ BG_WIDTH: bWidth,
+      /** backgroundHeight */ BG_HEIGHT: bHeight,
+      /** 1층 시작지점 X값 */ F1_START_X: bWidth * 1,
+      /** 1층 시작지점 Y값 (변화하지 않음) */ F1_START_Y: bHeight * 2,
+      /** 1층 왼쪽 X값 */ F1_LEFT_X: bWidth * 0,
+      /** 1층 오른쪽 최대이동 X값 */ F1_RIGHT_X: bWidth * 2,
+      /** 옥상 시작지점 X값 */ ROOFTOP_START_X: bWidth * 0,
+      /** 옥상 시작지점 Y값 (변화하지 않음) */ ROOFTOP_START_Y: bHeight * 0,
+      /** 옥상 체크포인트 지점 X값 (산 옥상에서 잠시 멈춥니다.) */ ROOFTOP_CHECKPOINT_X: bWidth * 6,
+      /** 옥상 마지막지점 X값 */ ROOFTOP_END_X: bWidth * 9,
+      /** 옥상 지하실 가는 구간 - x축방향 (y축방향 이동한 이후에 이동함) */ ROOFTOP_B1_X: bWidth * 8,
+      /** 옥상 지하실 가는 구간 - y축방향 */ ROOFTOP_B1_Y: bHeight * 2,
+      /** 4층 시작지점 X값 */ F4_START_X: bWidth * 1,
+      /** 4층 시작지점 Y값 (변화하지 않음) */ F4_START_Y: bHeight * 1,
+      /** 4층 끝지점 X값 */ F4_END_X: bWidth * 6,
+      /** 3층 시작지점 X값 (여기서는 왼쪽이동) */ F3_START_X: bWidth * 6,
+      /** 3층 시작지점 Y값 (변화하지 않음) */ F3_START_Y: bHeight * 2,
+      /** 3층 끝지점 X값 */ F3_END_X: bWidth * 3,
+      /** 지하실 X값 */ B1_X: bWidth * 7,
+      /** 지하실 Y값 */ B1_Y: bHeight * 2,
+    }
 
     this.phase.addRoundPhase(this, this.roundPhase00, 0, 1) // 초기
     this.phase.addRoundPhase(this, this.roundPhase01, 2, 19) // 복도 + 엘리베이터
@@ -5994,31 +6057,102 @@ class Round2_4 extends RoundData {
     this.load.addImageList(RoundPackLoad.getRound2ShareImage())
     this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
     this.spriteElevator = Round2_4.createSpriteElevator()
+
+    this.setLayerBg()
+  }
+
+  /** 해당 라운드 전용 layerBg 수정 */
+  setLayerBg () {
+    // 배경색 설정
+    this.bgLayer.setColor(Round2_1.getMaeulGradientColor())
+    this.bgLayer.setBackgroundScroolLoop(false, false) // 스크롤 무한루프 불가능
+
+    // 시작 지점 설정
+    this.bgLayer.setBackgroundPosition(this.bgXY.F1_START_X, this.bgXY.F1_START_Y)
+
+    const bWidth = 800
+    const bHeight = 600
+    // 아웃사이드 - 옥상 구간 (총 10장의 이미지)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_elevatorRooftop, bWidth * 0, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_rooftop, bWidth * 1, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_rooftop, bWidth * 2, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_rooftop, bWidth * 3, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_rooftopWayout, bWidth * 4, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_rooftopWayout, bWidth * 5, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_mountainRooftop, bWidth * 6, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_mountainDeep, bWidth * 7, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_mountainDeep, bWidth * 8, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_mountainPath, bWidth * 9, 0)
+
+    // 아웃사이드 - 지하실 가는 길 (아래로 내려간 후 왼쪽으로 이동)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_mountainWall, bWidth * 9, bHeight * 1)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_placard, bWidth * 9, bHeight * 2)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_elevatorOutside, bWidth * 8, bHeight * 2)
+
+    // 인사이드 - 4층 구간
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_elevatorFloor4, bWidth * 1, bHeight * 1)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_roomYellow, bWidth * 2, bHeight * 1)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_roomParty, bWidth * 3, bHeight * 1)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_roomParty, bWidth * 4, bHeight * 1)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_roomYellow, bWidth * 5, bHeight * 1)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_elevatorFloor4, bWidth * 6, bHeight * 1)
+
+    // 인사이드 - 3층 구간 (이 구간에서는 지하실로 갈 때 3층 엘리베이터가 있는쪽으로 되돌아갑니다.)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_elevatorFloor3, bWidth * 6, bHeight * 2)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_roomBlue, bWidth * 5, bHeight * 2)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_roomBlue, bWidth * 4, bHeight * 2)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_roomSky, bWidth * 3, bHeight * 2)
+
+    // 1층 복도 구간
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_elevatorFloor1, bWidth * 0, bHeight * 2)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_corridor, bWidth * 1, bHeight * 2)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_elevatorFloor1, bWidth * 2, bHeight * 2)
+
+    // 지하실 (배경 공간을 아끼기 위해서 위치를 서로 사이에 넣었지만 뭐 상관없겠지...)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_floorB1, bWidth * 7, bHeight * 2)
+
+    // 엘리베이터 레이어 (엘리베이터 탑승시에만 표시하는 용도)
+    this.bgLayer.addLayerImage(imageSrc.round.round2_4_elevatorHall, 0)
+
+    // 코스 선택 레이어 (코스 선택시에만 표시하는 용도)
+    this.bgLayer.addLayerImage(imageSrc.round.round2_4_courseSelect, 1)
+  }
+
+  /** 
+   * 엘리베이터 내부를 표시합니다. (참고: 엘리베이터 배경 전환시간은 1초입니다.)
+   * @param {boolean} isElevator 엘리베이터 내부에 있는가?
+   */
+  changeElevatorDisplay (isElevator) {
+    if (isElevator) {
+      this.bgLayer.setLayerAlphaFade(0, 1, 60)
+    } else {
+      this.bgLayer.setLayerAlphaFade(0, 0, 60)
+    }
   }
 
   processSaveString () {
-    this.saveString = '' + this.backgroundAbsoluteX 
-      + ',' + this.backgroundAbsoluteY
-      + ',' + this.spriteElevator.state 
+    this.saveString = this.spriteElevator.state 
       + ',' + this.spriteElevator.stateDelay.count 
       + ',' + this.spriteElevator.floorDelay.count
       + ',' + this.spriteElevator.floor
       + ',' + this.spriteElevator.floorArrive
       + ',' + this.spriteElevator.isFloorMove
       + ',' + this.currentCourseName
+      + ',' + this.spriteElevator.x
+      + ',' + this.spriteElevator.y
   }
 
   loadDataSaveString () {
     let str = this.saveString.split(',')
-    this.backgroundAbsoluteX = Number(str[0])
-    this.backgroundAbsoluteY = Number(str[1])
-    this.spriteElevator.state = str[2]
-    this.spriteElevator.stateDelay.count = Number(str[3])
-    this.spriteElevator.floorDelay.count = Number(str[4])
-    this.spriteElevator.floor = Number(str[5])
-    this.spriteElevator.floorArrive = Number(str[6])
-    this.spriteElevator.isFloorMove = str[7] === 'true' ? true : false
-    this.currentCourseName = str[8]
+    this.spriteElevator.state = str[0]
+    this.spriteElevator.stateDelay.count = Number(str[1])
+    this.spriteElevator.floorDelay.count = Number(str[2])
+    this.spriteElevator.floor = Number(str[3])
+    this.spriteElevator.floorArrive = Number(str[4])
+    this.spriteElevator.isFloorMove = str[5] === 'true' ? true : false
+    this.currentCourseName = str[6]
+    this.spriteElevator.x = Number(str[7])
+    this.spriteElevator.y = Number(str[8])
   }
 
   roundPhase00 () {
@@ -6050,9 +6184,11 @@ class Round2_4 extends RoundData {
     if (collision(player, areaInside)) {
       this.currentCourseName = this.courseName.INSIDE
       this.time.setCurrentTime(this.phase.phaseTime[1].startTime)
+      this.bgLayer.setLayerAlpha(1, 0) // 첫번째 레이어(코스 선택) 배경을 제거
     } else if (collision(player, areaOutside)) {
       this.currentCourseName = this.courseName.OUTSIDE
       this.time.setCurrentTime(this.phase.phaseTime[1].startTime)
+      this.bgLayer.setLayerAlpha(1, 0) // 첫번째 레이어(코스 선택) 배경을 제거
     } else if (collision(player, areaShop)) {
       // 상점에서는 현재 시간이 변경되지 않습니다.
       this.currentCourseName = this.courseName.SHOP
@@ -6072,30 +6208,27 @@ class Round2_4 extends RoundData {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
     const ElevatorTime = pTime + 7
     if (this.timeCheckFrame(ElevatorTime + 0)) {
-      this.bgLegacy.changeImage(imageSrc.round.round2_4_elevatorFloor1)
       this.spriteElevator.setDoorOpen(true) // 엘리베이터 열림
     } else if (this.timeCheckFrame(ElevatorTime + 1)) {
-      this.bgLegacy.changeImage(imageSrc.round.round2_4_elevatorHall, 60) // 배경 전환
+      this.changeElevatorDisplay(true) // 엘리베이터 배경 전환
     } else if (this.timeCheckFrame(ElevatorTime + 2)) {
       this.spriteElevator.setDoorOpen(false) // 엘리베이터 닫힘
     } else if (this.timeCheckFrame(ElevatorTime + 3)) {
       if (this.currentCourseName === this.courseName.INSIDE) {
         this.spriteElevator.setFloorMove(4) // 인사이드 코스에서는 4층으로 이동
+        this.bgLayer.setBackgroundPosition(this.bgXY.F4_START_X, this.bgXY.F4_START_Y) // 배경좌표를 인사이드 코스에 맞게 변경
       } else {
         this.spriteElevator.setFloorMove(5) // 아웃사이드 코스에서는 5층으로 이동
+        this.bgLayer.setBackgroundPosition(this.bgXY.ROOFTOP_START_X, this.bgXY.ROOFTOP_START_Y) // 배경좌표를 아웃사이드 코스에 맞게 변경
       }
     } else if (this.timeCheckFrame(ElevatorTime + 8)) {
-      this.spriteElevator.setDoorOpen(true)
+      this.spriteElevator.setDoorOpen(true) // 엘리베이터 열림
     } else if (this.timeCheckFrame(ElevatorTime + 9)) {
-      if (this.currentCourseName === this.courseName.INSIDE) {
-        this.bgLegacy.changeImage(imageSrc.round.round2_4_elevatorFloor4, 60)
-      } else {
-        this.bgLegacy.changeImage(imageSrc.round.round2_4_elevatorRooftop, 60)
-      }
+      this.changeElevatorDisplay(false) // 엘리베이터 배경 전환 (이제 도착한 지점의 배경이 보일거임)
     } else if (this.timeCheckFrame(ElevatorTime + 10)) {
-      this.spriteElevator.setDoorOpen(false)
+      this.spriteElevator.setDoorOpen(false) // 엘리베이터 닫힘
     } else if (this.timeCheckFrame(ElevatorTime + 11)) {
-      this.time.setCurrentTime(this.phase.phaseTime[1].endTime)
+      this.time.setCurrentTime(this.phase.phaseTime[1].endTime) // 다음 페이즈로 변경
     }
   }
 
@@ -6176,21 +6309,24 @@ class Round2_4 extends RoundData {
       this.createEnemyPartyDonggrami()
     }
 
+    // 적이 남아있으면 시간 정지
+    this.timePauseWithEnemyCount(pTime + 32)
+
     // 엘리베이터 탑승
     this.spriteElevator.process()
-    this.timePauseWithEnemyCount(pTime + 32)
     if (this.timeCheckFrame(pTime + 33)) {
       this.spriteElevator.setDoorOpen(true)
     } else if (this.timeCheckFrame(pTime + 34)) {
-      this.bgLegacy.changeImage(imageSrc.round.round2_4_elevatorHall, 60)
+      this.changeElevatorDisplay(true)
     } else if (this.timeCheckFrame(pTime + 35)) {
       this.spriteElevator.setDoorOpen(false)
     } else if (this.timeCheckFrame(pTime + 36)) {
       this.spriteElevator.setFloorMove(3)
+      this.bgLayer.setBackgroundPosition(this.bgXY.F3_START_X, this.bgXY.F3_START_Y) // 배경 위치 변경
     } else if (this.timeCheckFrame(pTime + 37)) {
       this.spriteElevator.setDoorOpen(true)
     } else if (this.timeCheckFrame(pTime + 38)) {
-      this.bgLegacy.changeImage(imageSrc.round.round2_4_elevatorFloor3, 60)
+      this.changeElevatorDisplay(false)
     } else if (this.timeCheckFrame(pTime + 39)) {
       this.spriteElevator.setDoorOpen(false)
     }
@@ -6312,7 +6448,7 @@ class Round2_4 extends RoundData {
     
     this.timePauseWithEnemyCount(pTime + 38)
 
-    // outside코스와의 점수를 보정하기 위해 일정 점수를 추가함
+    // outside코스와의 점수 차이를 보정하기 위해 일정 점수를 추가함
     if (this.timeCheckFrame(pTime + 39)) {
       fieldSystem.requestAddScore(4500)
     }
@@ -6332,7 +6468,7 @@ class Round2_4 extends RoundData {
 
     this.timePauseWithEnemyCount(pTime + 39)
 
-    if (this.timeCheckInterval(pTime + 30, pTime + 36) && this.field.getEnemyCount() <= 0) {
+    if (this.timeCheckInterval(pTime + 25, pTime + 36) && this.field.getEnemyCount() <= 0) {
       this.time.setCurrentTime(pTime + 37)
     }
   }
@@ -6344,18 +6480,18 @@ class Round2_4 extends RoundData {
       if (this.timeCheckFrame(pTime + 5)) {
         this.spriteElevator.setFloorPosition(3)
       } else if (this.timeCheckFrame(pTime + 15)) {
-        this.bgLegacy.changeImage(imageSrc.round.round2_4_elevatorFloor3)
         this.spriteElevator.setDoorOpen(true)
       } else if (this.timeCheckFrame(pTime + 16)) {
-        this.bgLegacy.changeImage(imageSrc.round.round2_4_elevatorHall, 60)
+        this.changeElevatorDisplay(true)
       } else if (this.timeCheckFrame(pTime + 17)) {
         this.spriteElevator.setDoorOpen(false)
       } else if (this.timeCheckFrame(pTime + 18)) {
         this.spriteElevator.setFloorMove(-1)
+        this.bgLayer.setBackgroundPosition(this.bgXY.B1_X, this.bgXY.B1_Y)
       } else if (this.timeCheckFrame(pTime + 22)) {
         this.spriteElevator.setDoorOpen(true)
       } else if (this.timeCheckFrame(pTime + 23)) {
-        this.bgLegacy.changeImage(imageSrc.round.round2_4_floorB1, 60)
+        this.changeElevatorDisplay(false)
       } else if (this.timeCheckFrame(pTime + 24)) {
         this.spriteElevator.setDoorOpen(false)
       }
@@ -6363,385 +6499,170 @@ class Round2_4 extends RoundData {
       if (this.timeCheckFrame(pTime + 10)) {
         this.spriteElevator.setFloorPosition(1)
       } else if (this.timeCheckFrame(pTime + 17)) {
-        this.bgLegacy.changeImage(imageSrc.round.round2_4_elevatorOutside)
         this.spriteElevator.setDoorOpen(true)
       } else if (this.timeCheckFrame(pTime + 18)) {
-        this.bgLegacy.changeImage(imageSrc.round.round2_4_elevatorHall, 60)
+        this.changeElevatorDisplay(true)
       } else if (this.timeCheckFrame(pTime + 19)) {
         this.spriteElevator.setDoorOpen(false)
       } else if (this.timeCheckFrame(pTime + 20)) {
         this.spriteElevator.setFloorMove(-1)
+        this.bgLayer.setBackgroundPosition(this.bgXY.B1_X, this.bgXY.B1_Y)
       } else if (this.timeCheckFrame(pTime + 22)) {
         this.spriteElevator.setDoorOpen(true)
       } else if (this.timeCheckFrame(pTime + 23)) {
-        this.bgLegacy.changeImage(imageSrc.round.round2_4_floorB1, 60)
+        this.changeElevatorDisplay(false)
       } else if (this.timeCheckFrame(pTime + 24)) {
         this.spriteElevator.setDoorOpen(false)
       }
     }
   }
 
-  processDebug () {
-    // 디버그할 때 코스 선택을 고려해주세요
-    // if (this.timeCheckFrame(0, 1)) {
-    //   this.currentTime = this.phaseTime[5].startTime + 0
-    //   this.currentCourseName = this.courseName.INSIDE
-    // }
-  }
-
   processBackground () {
-    // 매 페이즈 시작마다 배경위치는 리셋됩니다.
-    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    if (this.timeCheckFrame(pTime + 0)) {
-      this.backgroundAbsoluteX = 0
-      this.backgroundAbsoluteY = 0
-    }
-
     super.processBackground()
     let currentPhase = this.phase.getCurrentPhase()
+    const x = this.bgLayer.getBackgroundPosition().x
+    const y = this.bgLayer.getBackgroundPosition().y
+
+    // 엘리베이터 y 좌표는 고정되어 있습니다.
+    this.spriteElevator.y = this.spriteElevator.BASE_Y
+
+    if (currentPhase !== 0) this.bgLayer.setLayerAlpha(1, 0)
+
+    // 알고리즘 변경
     switch (currentPhase) {
-      case 0: this.processBackgroundPhase00NoMove(); break
-      case 1: this.processBackgroundPhase01Corridor(); break
-      case 2: this.processBackgroundPhase02Right(); break
-      case 3: this.processBackgroundPhase03(); break
-      case 4: this.processBackgroundPhase04(); break
-      case 5: this.processBackgroundPhase00NoMove(); break
-      case 6: this.processBackgroundPhase06(); break
-    }
+      case 0:
+        this.bgLayer.setBackgroundSpeed(0, 0) // 이동 없음
+        break
+      case 1:
+        // 복도 이동 -> 엘리베이터 -> 특정 지점에 도착 (다만, 도착지점 좌표를 결정하는것은 roundPhase에서 진행함)
+        // 엘리베이터 좌표는 배경 0, 0 기준으로 200, 100에 위치함
+        // 1층에서만 이동하는걸 적용하기 위해, y축 조건도 추가하였음
+        if (this.currentCourseName === this.courseName.OUTSIDE) {
+          if (x > this.bgXY.F1_LEFT_X && y === this.bgXY.F1_START_Y) {
+            this.bgLayer.setBackgroundSpeed(-2, 0)
+          } else if (y === this.bgXY.F1_START_Y) {
+            this.bgLayer.setBackgroundPosition(this.bgXY.F1_LEFT_X, y)
+            this.bgLayer.setBackgroundSpeed(0, 0)
+          }
+          this.spriteElevator.x = 0 - x + this.spriteElevator.BASE_X
+        } else {
+          if (x < this.bgXY.F1_RIGHT_X && y === this.bgXY.F1_START_Y) {
+            this.bgLayer.setBackgroundSpeed(2, 0)
+          } else if (y === this.bgXY.F1_START_Y) {
+            this.bgLayer.setBackgroundPosition(this.bgXY.F1_RIGHT_X, y)
+            this.bgLayer.setBackgroundSpeed(0, 0)
+          }
+          this.spriteElevator.x = this.bgXY.F1_RIGHT_X - x + this.spriteElevator.BASE_X
+        }
 
-    // 배경 절대값 좌표를 실제 사용하는 좌표에 대입
-    this.bgLegacy.x = this.backgroundAbsoluteX
-    this.bgLegacy.y = this.backgroundAbsoluteY
-  }
-
-  processBackgroundPhase00NoMove () {
-    this.bgLegacy.backgroundSpeedX = 0
-    this.bgLegacy.backgroundSpeedY = 0
-    this.backgroundAbsoluteX = 0
-    this.backgroundAbsoluteY = 0
-  }
-
-  processBackgroundPhase01Corridor () {
-    // 엘리베이터로 이동하는 과정
-    // 참고: 배경은 루프되기 때문에, 도착 지점(800, 0)상 배경 자체는 자연스럽게 보입니다.
-    // 따라서 페이즈에서 배경 전환만 하고, 여기서는 좌표만 이동하거나 고정합니다.
-    // 페이즈 시간 +0 ~ +7 동안만 스크롤을 진행하고, 그 다음 좌표값이 기준을 넘어가면 배경을 다음 배경으로 교체해
-    // 자연스럽게 엘리베이터 배경이 전환되도록 했습니다.
-    let pTime = this.phase.phaseTime[1].startTime
-    if (this.timeCheckInterval(pTime + 0, pTime + 7)) {
-      if (this.currentCourseName === this.courseName.OUTSIDE) {
-        if (this.backgroundAbsoluteX > -graphicSystem.CANVAS_WIDTH) {
-          this.backgroundAbsoluteX -= 2
-  
-          // 자연스러운 배경 전환을 위해 배경 그림을 자동으로 변경 (스크롤이 끝나면 배경 전환이 이루어져야 함)
-          if (this.backgroundAbsoluteX <= graphicSystem.CANVAS_WIDTH) {
-            this.bgLegacy.changeImage(imageSrc.round.round2_4_elevatorFloor1)
+        // 깜빡거림 방지용 엘리베이터 위치 고정 (y축으로 몇층인지를 확인해서 x축의 값을 고정시킴)
+        // 순간적으로 (inside구간) x좌표가 변경될 때 엘리베이터의 좌표가 일시적으로 다른값으로 변경되었다가 되돌아옵니다.
+        // 그래서 깜빡거림이 발생하기 때문에 이를 따로 보정하는 코드를 넣었습니다.
+        if (y !== this.bgXY.F1_START_Y) this.spriteElevator.x = this.spriteElevator.BASE_X
+        break
+      case 2:
+        this.bgLayer.setBackgroundSpeed(1, 0)
+        if (this.currentCourseName === this.courseName.OUTSIDE) {
+          this.spriteElevator.x = 0 - x + this.spriteElevator.BASE_X
+        } else {
+          this.spriteElevator.x = -x + this.bgXY.F4_START_X + this.spriteElevator.BASE_X
+        }
+        break
+      case 3:
+        // 아웃사이드: 옥상 -> 체크포인트(산 옥상)
+        // 인사이드: 4층 엘리베이터 -> 파티룸 -> 4층 엘리베이터 체크포인트
+        if (this.currentCourseName === this.courseName.OUTSIDE) {
+          if (x < this.bgXY.ROOFTOP_CHECKPOINT_X) {
+            this.bgLayer.setBackgroundSpeed(1, 0)
+          } else {
+            this.bgLayer.setBackgroundPosition(this.bgXY.ROOFTOP_CHECKPOINT_X, this.bgXY.ROOFTOP_START_Y)
+            this.bgLayer.setBackgroundSpeed(0, 0)
+          }
+          this.spriteElevator.x = -x + this.bgXY.ROOFTOP_START_X + this.spriteElevator.BASE_X
+        } else {
+          // 4층 구간에 있을때만 오른쪽으로 이동합니다.
+          if (x < this.bgXY.F4_END_X && y === this.bgXY.F4_START_Y) {
+            this.bgLayer.setBackgroundSpeed(1, 0)
+          } else if (y === this.bgXY.F4_START_Y) {
+            this.bgLayer.setBackgroundPosition(this.bgXY.F4_END_X, this.bgXY.F4_START_Y)
+            this.bgLayer.setBackgroundSpeed(0, 0)
+          }
+          this.spriteElevator.x = -x + this.bgXY.F4_END_X + this.spriteElevator.BASE_X
+        }
+        break
+      case 4:
+        // 아웃사이드: 산 옥상 -> 산 깊은곳 -> 산길
+        // 인사이드(왼쪽이동): 스카이룸 <- 블루 룸 <- 3층 엘리베이터(시작지점)
+        if (this.currentCourseName === this.courseName.OUTSIDE) {
+          if (x < this.bgXY.ROOFTOP_END_X) {
+            this.bgLayer.setBackgroundSpeed(1, 0)
+          } else {
+            this.bgLayer.setBackgroundPosition(this.bgXY.ROOFTOP_END_X, this.bgXY.ROOFTOP_START_Y)
+            this.bgLayer.setBackgroundSpeed(0, 0)
           }
         } else {
-          this.backgroundAbsoluteX = -graphicSystem.CANVAS_WIDTH
+          // 이번엔 왼쪽으로 이동합니다.
+          if (x > this.bgXY.F3_END_X) {
+            this.bgLayer.setBackgroundSpeed(-1, 0)
+          } else {
+            this.bgLayer.setBackgroundPosition(this.bgXY.F3_END_X, this.bgXY.F3_START_Y)
+            this.bgLayer.setBackgroundSpeed(0, 0)
+          }
+          this.spriteElevator.x = -x + this.bgXY.F3_START_X + this.spriteElevator.BASE_X
         }
-      } else if (this.currentCourseName === this.courseName.INSIDE) {
-        if (this.backgroundAbsoluteX < graphicSystem.CANVAS_WIDTH) {
-          this.backgroundAbsoluteX += 2
-  
-          // 자연스러운 배경 전환을 위해 배경 그림을 자동으로 변경 (스크롤이 끝나면 배경 전환이 이루어져야 함)
-          if (this.backgroundAbsoluteX >= graphicSystem.CANVAS_WIDTH) {
-            this.bgLegacy.changeImage(imageSrc.round.round2_4_elevatorFloor1)
+        break
+      case 5:
+        this.bgLayer.setBackgroundSpeed(0, 0) // 이동 없음
+        break
+      case 6:
+        // 아웃사이드: 산길 -> 내려감 -> 플래카드 2-4 -> 왼쪽 -> 엘리베이터 -> 지하실
+        // 인사이드: 스카이룸 -> 블루룸 -> 3층 엘리베이터 -> 지하실
+        // 기존속도보다 2배 빠르게 이동합니다.
+        // 배경 이동이 멈추면 엘리베이터는 고정 위치에 출력되도록 변경됩니다. (왜냐하면 화면 좌표가 중간에 변경되기 때문)
+        if (this.currentCourseName === this.courseName.OUTSIDE) {
+          if (y < this.bgXY.ROOFTOP_B1_Y) {
+            this.bgLayer.setBackgroundSpeed(0, 2)
+            this.spriteElevator.x = -x + this.bgXY.ROOFTOP_B1_X + this.spriteElevator.BASE_X
+          } else if (y === this.bgXY.ROOFTOP_B1_Y && x > this.bgXY.ROOFTOP_B1_X) {
+            this.bgLayer.setBackgroundSpeed(-2, 0)
+            this.spriteElevator.x = -x + this.bgXY.ROOFTOP_B1_X + this.spriteElevator.BASE_X
+          } else {
+            this.bgLayer.setBackgroundSpeed(0, 0)
+            this.spriteElevator.x = this.spriteElevator.BASE_X
           }
         } else {
-          this.backgroundAbsoluteX = graphicSystem.CANVAS_WIDTH
+          // 다시 오른쪽으로 이동... (속도는 아주 빠름)
+          if (x < this.bgXY.F3_START_X && y === this.bgXY.F3_START_Y) {
+            this.bgLayer.setBackgroundSpeed(3, 0)
+            this.spriteElevator.x = -x + this.bgXY.F3_START_X + this.spriteElevator.BASE_X
+          } else {
+            this.bgLayer.setBackgroundSpeed(0, 0)
+            this.spriteElevator.x = this.spriteElevator.BASE_X
+          }
         }
-      }
-    } else {
-      this.processBackgroundPhase00NoMove()
-    }
-
-    // 엘리베이터 좌표 설정 (엘리베이터는 배경 0, 0 기준으로 200, 100에 위치함)
-    if (this.backgroundAbsoluteX < 0) {
-      this.spriteElevator.x = -graphicSystem.CANVAS_WIDTH + this.spriteElevator.BASE_X + -this.backgroundAbsoluteX
-    } else if (this.backgroundAbsoluteX > 0) {
-      this.spriteElevator.x = graphicSystem.CANVAS_WIDTH + this.spriteElevator.BASE_X + -this.backgroundAbsoluteX
-    } else {
-      this.spriteElevator.x = this.spriteElevator.BASE_X
-    }
-
-    this.spriteElevator.y = this.spriteElevator.BASE_Y
-  }
-
-  processBackgroundPhase02Right () {
-    if (this.backgroundAbsoluteX < graphicSystem.CANVAS_WIDTH * 3) {
-      this.backgroundAbsoluteX++
-    } else {
-      this.backgroundAbsoluteX = graphicSystem.CANVAS_WIDTH * 3
-    }
-
-    // 엘리베이터 좌표 설정
-    this.spriteElevator.x = this.spriteElevator.BASE_X - this.backgroundAbsoluteX
-    this.spriteElevator.y = this.spriteElevator.BASE_Y
-  }
-
-  processBackgroundPhase03 () {
-    if (this.currentCourseName === this.courseName.INSIDE) {
-      // 왼쪽 이동
-      if (this.backgroundAbsoluteX < graphicSystem.CANVAS_WIDTH * 2) {
-        this.backgroundAbsoluteX++
-      } else {
-        this.backgroundAbsoluteX = graphicSystem.CANVAS_WIDTH * 2
-      }
-
-      // 엘리베이터 좌표 설정 (이번엔 마지막 배경에서 엘리베이터가 등장합니다.)
-      this.spriteElevator.x = this.spriteElevator.BASE_X - this.backgroundAbsoluteX + (graphicSystem.CANVAS_WIDTH * 2)
-      this.spriteElevator.y = this.spriteElevator.BASE_Y
-    } else {
-      this.processBackgroundPhase02Right()
+        break
     }
   }
-
-  processBackgroundPhase04 () {
-    if (this.currentCourseName === this.courseName.INSIDE) {
-      // 왼쪽 이동
-      if (this.backgroundAbsoluteX > -graphicSystem.CANVAS_WIDTH * 3) {
-        this.backgroundAbsoluteX--
-      } else {
-        this.backgroundAbsoluteX = -graphicSystem.CANVAS_WIDTH * 3
-      }
-
-      // 엘리베이터 좌표 설정
-      this.spriteElevator.x = this.spriteElevator.BASE_X - this.backgroundAbsoluteX
-      this.spriteElevator.y = this.spriteElevator.BASE_Y
-    } else {
-      this.processBackgroundPhase02Right()
-    }
-  }
-
-  processBackgroundPhase06 () {
-    if (this.currentCourseName === this.courseName.INSIDE) {
-      const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-      if (this.timeCheckInterval(pTime + 0, pTime + 15)) {
-        if (this.backgroundAbsoluteX < graphicSystem.CANVAS_WIDTH * 3) {
-          this.backgroundAbsoluteX += 3
-        } else {
-          this.backgroundAbsoluteX = graphicSystem.CANVAS_WIDTH * 3
-        }
-      }
-
-      // 엘리베이터 좌표 설정 (엘리베이터는 배경 0, 0 기준으로 200, 100에 위치함)
-      // 이 시점에서의 배경 기준 위치는 1600, 0이므로 그에 맞춰서 +200, +100 해야함
-      this.spriteElevator.x = (graphicSystem.CANVAS_WIDTH * 3) -this.backgroundAbsoluteX + this.spriteElevator.BASE_X
-      this.spriteElevator.y = this.spriteElevator.BASE_Y
-    } else {
-      const gHeightx2 = graphicSystem.CANVAS_HEIGHT * 2
-      if (this.backgroundAbsoluteY < gHeightx2) {
-        this.backgroundAbsoluteY += 2
-      } else if (this.backgroundAbsoluteY === gHeightx2 && this.backgroundAbsoluteX > -graphicSystem.CANVAS_WIDTH) {
-        this.backgroundAbsoluteY = gHeightx2
-        this.backgroundAbsoluteX -= 2
-      } else if (this.backgroundAbsoluteY === gHeightx2 && this.backgroundAbsoluteX === -graphicSystem.CANVAS_WIDTH) {
-        this.backgroundAbsoluteY = gHeightx2
-        this.backgroundAbsoluteX = -graphicSystem.CANVAS_WIDTH
-      }
-
-      // 엘리베이터 좌표 설정 (엘리베이터는 배경 0, 0 기준으로 200, 100에 위치함)
-      // 이 시점에서의 배경 기준 위치는 -800, 1200이므로 그에 맞춰서 +200, +100 해야함
-      this.spriteElevator.x = (-this.backgroundAbsoluteX - graphicSystem.CANVAS_WIDTH) + this.spriteElevator.BASE_X
-      this.spriteElevator.y = (graphicSystem.CANVAS_HEIGHT * 2) - this.backgroundAbsoluteY + this.spriteElevator.BASE_Y
-    }
-  }
-
 
   display () {
-    // 기본 배경 출력 (모든 페이즈에서 이 함수를 사용하지 않기 때문에, 이 코드는 주석처리되었습니다.)
-    // super.displayBackground()
-
-    // 배경 지정 방식
+    super.display()
     let currentPhase = this.phase.getCurrentPhase()
-    switch (currentPhase) {
-      case 0: this.displayPhase00(); break
-      case 1: this.displayPhase01(); break
-      case 2: this.displayPhase02(); break
-      case 3: this.displayPhase03(); break
-      case 4: this.displayPhase04(); break
-      case 5: this.displayPhase05(); break
-      case 6: this.displayPhase06(); break
+    let elevatorShow = currentPhase === 1
+      || currentPhase === 2
+      || (currentPhase === 3 && this.currentCourseName === this.courseName.INSIDE)
+      || (currentPhase === 4 && this.currentCourseName === this.courseName.INSIDE)
+      || currentPhase === 6
+
+    if (elevatorShow) this.spriteElevator.display()
+
+    if (currentPhase === 5) {
+      // 적이 존재하면 배경 그라디언트가 변경됨
+      let targetColor = this.field.getEnemyCount() === 0 ? Round2_1.getMaeulGradientColor() : ['#1F1C2C', '#928DAB']
+      this.bgLayer.setColor(targetColor)
+
+      // 보스전 체력 표시
+      if (this.currentCourseName === this.courseName.OUTSIDE) this.meter.bossHpDefaultStyle(ID.enemy.intruder.jemuBoss)
     }
-  }
-
-  displayPhase00 () {
-    this.bgLegacy.display()
-    graphicSystem.imageView(imageSrc.round.round2_4_courseSelect, 0, 0)
-  }
-
-  displayPhase01 () {
-    // graphicSystem.imageView(imageSrc.round.round2_4_firstArea, 0 - this.backgroundX, this.backgroundY)
-    // 배경은 계속 무한루프되므로, 엘리베이터 구간만 따로 겹쳐쓰면 됩니다.
-    // 첫번째 겹쳐쓰는 위치는 -800, 0 위치이고, 두번째는 +800, 0 위치입니다.
-    // 이로써 실제 출력되는 형태는 [엘리베이터, 배경(기본 출력), 엘리베이터]
-    // 실시간으로 배경 상태를 간접적으로 저장해야 하기 때문에, 임시 배경 저장 값을 추가로 사용합니다.
-    const pTime = this.phase.phaseTime[1].startTime
-    if (this.timeCheckInterval(pTime + 0, pTime + 7)) {
-      graphicSystem.imageView(imageSrc.round.round2_4_elevatorFloor1, -800 + (-this.backgroundAbsoluteX), 0)
-      graphicSystem.imageView(imageSrc.round.round2_4_corridor, 0 - this.backgroundAbsoluteX, 0)
-      graphicSystem.imageView(imageSrc.round.round2_4_elevatorFloor1, 800 + (-this.backgroundAbsoluteX), 0)
-    } else {
-      graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
-      this.bgLegacy.display()
-    }
-
-    this.spriteElevator.display()
-  }
-
-  displayPhase02 () {
-    // 배경 이미지 구조 (총 40초 구간)
-    // 인사이드: 엘리베이터4층 - 파티 - 파티 - 하늘
-    // 아웃사이드: 엘리베이터옥상 - 옥상 - 옥상 - 옥상 
-    let mapList = this.currentCourseName === this.courseName.INSIDE ? [
-      imageSrc.round.round2_4_elevatorFloor4,
-      imageSrc.round.round2_4_roomYellow,
-      imageSrc.round.round2_4_roomParty,
-      imageSrc.round.round2_4_roomParty,
-    ] : [
-      imageSrc.round.round2_4_elevatorRooftop,
-      imageSrc.round.round2_4_rooftop,
-      imageSrc.round.round2_4_rooftop,
-      imageSrc.round.round2_4_rooftop
-    ]
-
-    const gWidth = graphicSystem.CANVAS_WIDTH
-    let mapNumber = Math.round(this.backgroundAbsoluteX / 800)
-    if (mapNumber >= mapList.length) mapNumber = mapList.length - 1
-
-    // 배경은 총 3장이 출력됩니다. [왼쪽, 가운데, 오른쪽]
-    graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
-    if (mapNumber !== 0) graphicSystem.imageView(mapList[mapNumber - 1], (gWidth * (mapNumber - 1)) - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(mapList[mapNumber + 0], (gWidth * mapNumber) - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(mapList[mapNumber + 1], (gWidth * (mapNumber + 1)) - this.backgroundAbsoluteX, 0)
-
-    if (this.backgroundAbsoluteX <= graphicSystem.CANVAS_WIDTH) {
-      this.spriteElevator.display()
-    }
-  }
-
-  displayPhase03 () {
-    // 배경 이미지 구조 (총 40초 구간)
-    // 인사이드: 하늘 - 하늘 - 엘리베이터 4층 - 엘리베이터 3층
-    // 아웃사이드: 옥상 - 옥상 나가는 길 - 옥상 나가는 길 - 산길
-    let mapList = this.currentCourseName === this.courseName.INSIDE ? [
-      imageSrc.round.round2_4_roomParty,
-      imageSrc.round.round2_4_roomYellow,
-      imageSrc.round.round2_4_elevatorFloor4,
-      imageSrc.round.round2_4_roomYellow,
-    ] : [
-      imageSrc.round.round2_4_rooftop,
-      imageSrc.round.round2_4_rooftopWayout,
-      imageSrc.round.round2_4_rooftopWayout,
-      imageSrc.round.round2_4_mountainRooftop
-    ]
-
-    const gWidth = graphicSystem.CANVAS_WIDTH
-    let mapNumber = Math.floor(this.backgroundAbsoluteX / 800)
-    if (mapNumber >= mapList.length) mapNumber = mapList.length - 1
-
-    if (this.currentCourseName === this.courseName.INSIDE && mapNumber === 2) {
-      this.bgLegacy.display()
-    } else {
-      // 배경은 총 3장이 출력됩니다. [왼쪽, 가운데, 오른쪽]
-      graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
-      if (mapNumber !== 0) graphicSystem.imageView(mapList[mapNumber - 1], (gWidth * (mapNumber - 1)) - this.backgroundAbsoluteX, 0)
-      graphicSystem.imageView(mapList[mapNumber + 0], (gWidth * mapNumber) - this.backgroundAbsoluteX, 0)
-      graphicSystem.imageView(mapList[mapNumber + 1], (gWidth * (mapNumber + 1)) - this.backgroundAbsoluteX, 0)
-    }
-
-    if (this.currentCourseName === this.courseName.INSIDE) {
-      this.spriteElevator.display()
-    }
-  }
-
-  displayPhase04 () {
-    // 배경 이미지 구조 (총 40초 구간)
-    // 인사이드: 엘리베이터 3층 - 노란색 - 노란색 - 하늘색 (단, 왼쪽으로 이동)
-    // 아웃사이드: 산길 - 산길 - 깊은산길 - 산길 우회로
-    let mapList = this.currentCourseName === this.courseName.INSIDE ? [
-      imageSrc.round.round2_4_elevatorFloor3,
-      imageSrc.round.round2_4_roomBlue,
-      imageSrc.round.round2_4_roomBlue,
-      imageSrc.round.round2_4_roomSky,
-    ] : [
-      imageSrc.round.round2_4_mountainRooftop,
-      imageSrc.round.round2_4_mountainDeep,
-      imageSrc.round.round2_4_mountainDeep,
-      imageSrc.round.round2_4_mountainPath
-    ]
-
-    const gWidth = graphicSystem.CANVAS_WIDTH
-    let mapNumber = Math.abs(Math.round(this.backgroundAbsoluteX / 800))
-    if (mapNumber >= mapList.length) mapNumber = mapList.length - 1
-
-    if (this.currentCourseName === this.courseName.INSIDE) {
-      // 배경은 총 3장이 출력됩니다. [왼쪽, 가운데, 오른쪽]
-      // 다만 방향이 아웃사이드와는 다르게 왼쪽으로 이동합니다.
-      graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
-      if (mapNumber !== 0) graphicSystem.imageView(mapList[mapNumber - 1], (-gWidth * (mapNumber - 1)) - this.backgroundAbsoluteX, 0)
-      graphicSystem.imageView(mapList[mapNumber + 0], (-gWidth * mapNumber) - this.backgroundAbsoluteX, 0)
-      graphicSystem.imageView(mapList[mapNumber + 1], (-gWidth * (mapNumber + 1)) - this.backgroundAbsoluteX, 0)
-
-      // 배경 출력 후 엘리베이터 출력
-      if (this.backgroundAbsoluteX >= -graphicSystem.CANVAS_WIDTH) {
-        this.spriteElevator.display()
-      }
-    } else {
-      // 배경은 총 3장이 출력됩니다. [왼쪽, 가운데, 오른쪽]
-      graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
-      if (mapNumber !== 0) graphicSystem.imageView(mapList[mapNumber - 1], (gWidth * (mapNumber - 1)) - this.backgroundAbsoluteX, 0)
-      graphicSystem.imageView(mapList[mapNumber + 0], (gWidth * mapNumber) - this.backgroundAbsoluteX, 0)
-      graphicSystem.imageView(mapList[mapNumber + 1], (gWidth * (mapNumber + 1)) - this.backgroundAbsoluteX, 0)
-    }
-  }
-
-  displayPhase05 () {
-    // 적이 존재하면 배경 그라디언트가 변경됨
-    if (this.field.getEnemyCount() === 0) {
-      graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
-    } else {
-      graphicSystem.gradientRect(0, 0, 800, 600, ['#1F1C2C', '#928DAB'])
-    }
-    
-    if (this.currentCourseName === this.courseName.INSIDE) {
-      graphicSystem.imageView(imageSrc.round.round2_4_roomSky, 0, 0)
-    } else {
-      this.showBossHp()
-      graphicSystem.imageView(imageSrc.round.round2_4_mountainPath, 0, 0)
-    }
-  }
-
-  displayPhase06 () {
-    const gHeight = graphicSystem.CANVAS_HEIGHT
-    const gWidth = graphicSystem.CANVAS_WIDTH
-    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    if (this.currentCourseName === this.courseName.INSIDE) {
-      if (this.timeCheckInterval(pTime + 0, pTime + 14)) {
-        graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
-        graphicSystem.imageView(imageSrc.round.round2_4_roomSky, (gWidth * 0) - this.backgroundAbsoluteX, 0)
-        graphicSystem.imageView(imageSrc.round.round2_4_roomBlue, (gWidth * 1) - this.backgroundAbsoluteX, 0)
-        graphicSystem.imageView(imageSrc.round.round2_4_roomBlue, (gWidth * 2) - this.backgroundAbsoluteX, 0)
-        graphicSystem.imageView(imageSrc.round.round2_4_elevatorFloor3, (gWidth * 3) - this.backgroundAbsoluteX, 0)
-      } else {
-        graphicSystem.gradientRect(0, 0, 800, 600, ['#141519', '#171d40'])
-        this.bgLegacy.display()
-      }
-    } else {
-      if (this.timeCheckInterval(pTime + 0, pTime + 17)) {
-        graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
-        graphicSystem.imageView(imageSrc.round.round2_4_mountainPath, 0, (gHeight * 0) - this.backgroundAbsoluteY)
-        graphicSystem.imageView(imageSrc.round.round2_4_mountainWall, 0, (gHeight * 1) - this.backgroundAbsoluteY)
-        graphicSystem.imageView(imageSrc.round.round2_4_placard, (gWidth * 0) - this.backgroundAbsoluteX, (gHeight * 2) - this.backgroundAbsoluteY)
-        graphicSystem.imageView(imageSrc.round.round2_4_elevatorOutside, -(gWidth * 1) - this.backgroundAbsoluteX, (gHeight * 2) - this.backgroundAbsoluteY)
-      } else {
-        graphicSystem.gradientRect(0, 0, 800, 600, ['#141519', '#171d40'])
-        this.bgLegacy.display()
-      }
-    }
-
-    this.spriteElevator.display()
   }
 
   static createSpriteElevator () {
@@ -6945,6 +6866,7 @@ class Round2_5 extends RoundData {
     this.stat.setStat(ID.round.round2_5)
     this.bgLegacy.imageSrc = imageSrc.round.round2_5_floorB1Light
     this.bgLegacy.backgroundSpeedX = 0
+    this.bgLegacy.color = Round2_1.getMaeulGradientColor()
 
     // 타입 지정용 임시 클래스 (자동완성 목적)
     class SpriteDonggrami extends this.SpriteDonggrami {}
@@ -7229,12 +7151,6 @@ class Round2_5 extends RoundData {
     }
   }
 
-  processDebug () {
-    if (this.timeCheckFrame(0, 7)) {
-      // this.setCurrentTime(this.phaseTime[3].startTime)
-    }
-  }
-
   /** 
    * intruder 입장용 적을 생성합니다. (적을 들어오는 형태로 표현하려면 이 함수로 적을 생성해야 함) 
    * 
@@ -7259,10 +7175,14 @@ class Round2_5 extends RoundData {
     if (this.timeCheckFrame(pTime + 1)) {
       this.sound.soundPlay(soundSrc.round.r2_5_start)
       this.bgLegacy.changeImage(imageSrc.round.round2_5_floorB1Dark, 120)
+      this.bgLegacy.color = 'black'
     } else if (this.timeCheckFrame(pTime + 4)) {
       this.sound.soundPlay(soundSrc.round.r2_5_breakRoom)
       fieldState.createEffectObject(this.customRoomBreakEffect.getObject(), 200, 100)
       this.bgLegacy.changeImage(imageSrc.round.round2_5_floorB1Break, 60)
+      this.bgLegacy.color = '#FF5C5C'
+    } else if (this.timeCheckFrame(pTime + 5)) {
+      this.bgLegacy.color = Round2_1.getMaeulGradientColor()
     } else if (this.timeCheckFrame(pTime + 6)) {
       this.sound.musicChange(soundSrc.music.music14_intruder_battle)
       this.sound.musicPlay()
@@ -7493,9 +7413,10 @@ class Round2_5 extends RoundData {
   display () {
     super.display()
     this.displaySprite()
-    this.displayBackground()
 
     if (this.phase.getCurrentPhase() === 4) {
+      this.meter.bossHpUserStyle(ID.enemy.intruder.jemuBoss, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 25, ['#7D7D7D', '#7B84A4'])
+
       let enemyObject = this.field.getEnemyObject()
       for (let i = 0; i < enemyObject.length; i++) {
         let enemy = enemyObject[i]
@@ -7506,11 +7427,6 @@ class Round2_5 extends RoundData {
         }
       }
     }
-  }
-
-  displayBackground () {
-    graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
-    this.bgLegacy.display()
   }
 
   displaySprite () {
@@ -7529,17 +7445,21 @@ class Round2_6 extends RoundData {
   constructor () {
     super()
     this.stat.setStat(ID.round.round2_6)
-    this.backgroundAbsoluteX = 0
-    this.backgroundAbsoluteY = 0
-    
-    /** 배경 전환을 위한 해당 라운드 전용 값 */ this.ruinValue = 120
-    /** 배경 전환을 위한 해당 라운드의 전용값의 최대치 */ this.RUIN_VALUE_MAX = 120
+
+    /** 배경 기준값의 좌표 */
+    this.bgXY = {
+      /** 지하 1층 시작점 x좌표 */ B1_START_X: 0,
+      /** 지하 1층 시작점 y좌표 (변화하지 않음) */ B1_START_Y: 800,
+      /** 자하 1층 끝점 x좌표 */ B1_END_X: 800,
+      /** 1층 시작지점 */ F1_START_X: 0,
+      /** 1층 끝지점 */ F1_START_Y: 0,
+    }
 
     this.phase.addRoundPhase(this, this.roundPhase00, 0, 29)
     this.phase.addRoundPhase(this, this.roundPhase01, 30, 59)
     this.phase.addRoundPhase(this, this.roundPhase02, 60, 89)
     this.phase.addRoundPhase(this, this.roundPhase03, 90, 119)
-    this.phase.addRoundPhase(this, this.roundPhase04, 120, 151)
+    this.phase.addRoundPhase(this, this.roundPhase04, 120, 150)
 
     this.load.addSoundList([
       soundSrc.round.r2_4_elevatorDoorClose,
@@ -7553,6 +7473,7 @@ class Round2_6 extends RoundData {
       imageSrc.round.round2_4_elevatorHall,
       imageSrc.round.round2_4_elevatorNumber,
       imageSrc.round.round2_4_floorB1,
+      imageSrc.round.round2_5_floorB1Light,
 
       imageSrc.round.round2_6_original1,
       imageSrc.round.round2_6_original2,
@@ -7566,36 +7487,75 @@ class Round2_6 extends RoundData {
     this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
 
     this.spriteElevator = Round2_4.createSpriteElevator()
+    this.setBgLayer()
+  }
+
+  setBgLayer () {
+    // 배경색 설정
+    this.bgLayer.setColor(Round2_1.getMaeulGradientColor())
+
+    // 지하 1층
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_5_floorB1Light, 0, 800)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_floorB1, 800, 800)
+
+    // 지상
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_elevatorOutside, 0, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_4_placard, 800, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_quiteRoad, 1600, 0)
+
+    // 폐허 1 -> 다운타워까지 (참고: quiteLoad는 1800px 크기지만, 다른 배경과 완전히 겹치기 때문에, 폐허 1은 겹쳐서 출력됩니다.)
+    // 위치를 1800px로 정의한것은 30second x 60frame = 1800px 때문
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_ruin1, 1800, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_ruin2, 3600, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_downtowerEntrance, 5400, 0)
+
+    // 엘리베이터 배경 레이어
+    this.bgLayer.addLayerImage(imageSrc.round.round2_4_elevatorHall, 0)
+    this.bgLayer.setLayerSpeed(0, 0, 0) // 레이어 이동 금지 및 고정
+
+    // 스크롤 무한루프 불가능
+    this.bgLayer.setBackgroundScroolLoop(false, false)
+
+    // 기본 위치 지정
+    this.bgLayer.setBackgroundPosition(0, 800)
+  }
+
+  /** 
+   * 2-4 코드를 복사하였습니다.
+   * 
+   * 엘리베이터 내부를 표시합니다. (참고: 엘리베이터 배경 전환시간은 1초입니다.)
+   * @param {boolean} isElevator 엘리베이터 내부에 있는가?
+   */
+  changeElevatorDisplay (isElevator) {
+    if (isElevator) {
+      this.bgLayer.setLayerAlphaFade(0, 1, 60)
+    } else {
+      this.bgLayer.setLayerAlphaFade(0, 0, 60)
+    }
   }
 
   processSaveString () {
     // 2-4 코드와의 차이점은, course에 대한 정보가 없음
-    this.saveString = '' + this.backgroundAbsoluteX 
-      + ',' + this.backgroundAbsoluteY
-      + ',' + this.spriteElevator.state 
+    this.saveString = this.spriteElevator.state
       + ',' + this.spriteElevator.stateDelay.count 
       + ',' + this.spriteElevator.floorDelay.count
       + ',' + this.spriteElevator.floor
       + ',' + this.spriteElevator.floorArrive
       + ',' + this.spriteElevator.isFloorMove
+      + ',' + this.spriteElevator.x
+      + ',' + this.spriteElevator.y
   }
 
   loadDataSaveString () {
     let str = this.saveString.split(',')
-    this.backgroundAbsoluteX = Number(str[0])
-    this.backgroundAbsoluteY = Number(str[1])
-    this.spriteElevator.state = str[2]
-    this.spriteElevator.stateDelay.count = Number(str[3])
-    this.spriteElevator.floorDelay.count = Number(str[4])
-    this.spriteElevator.floor = Number(str[5])
-    this.spriteElevator.floorArrive = Number(str[6])
-    this.spriteElevator.isFloorMove = str[7] === 'true' ? true : false
-  }
-
-  processDebug () {
-    if (this.timeCheckFrame(0, 7)) {
-      // this.setCurrentTime(29)
-    }
+    this.spriteElevator.state = str[0]
+    this.spriteElevator.stateDelay.count = Number(str[1])
+    this.spriteElevator.floorDelay.count = Number(str[2])
+    this.spriteElevator.floor = Number(str[3])
+    this.spriteElevator.floorArrive = Number(str[4])
+    this.spriteElevator.isFloorMove = str[5] === 'true' ? true : false
+    this.spriteElevator.x = Number(str[6])
+    this.spriteElevator.y = Number(str[7])
   }
 
   roundPhase00 () {
@@ -7627,15 +7587,16 @@ class Round2_6 extends RoundData {
     } else if (this.timeCheckFrame(pTime + 22)) {
       this.spriteElevator.setDoorOpen(true)
     } else if (this.timeCheckFrame(pTime + 23)) {
-      this.bgLegacy.changeImage(imageSrc.round.round2_4_elevatorHall, 60)
+      this.changeElevatorDisplay(true)
     } else if (this.timeCheckFrame(pTime + 24)) {
       this.spriteElevator.setDoorOpen(false)
     } else if (this.timeCheckFrame(pTime + 25)) {
       this.spriteElevator.setFloorMove(1)
+      this.bgLayer.setBackgroundPosition(this.bgXY.F1_START_X, this.bgXY.F1_START_Y) // 배경 위치 변경(F1층으로)
     } else if (this.timeCheckFrame(pTime + 27)) {
       this.spriteElevator.setDoorOpen(true)
     } else if (this.timeCheckFrame(pTime + 28)) {
-      this.bgLegacy.changeImage(imageSrc.round.round2_4_elevatorOutside, 60)
+      this.changeElevatorDisplay(false)
     } else if (this.timeCheckFrame(pTime + 29)) {
       this.spriteElevator.setDoorOpen(false)
     }
@@ -7643,6 +7604,7 @@ class Round2_6 extends RoundData {
 
   roundPhase01 () {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+    this.spriteElevator.process()
 
     // music
     if (this.timeCheckFrame(pTime + 0)) {
@@ -7725,135 +7687,38 @@ class Round2_6 extends RoundData {
   }
 
   display () {
-    // 모든 페이즈에서 해당 함수를 사용하지 않아 주석처리
-
-    switch (this.phase.getCurrentPhase()) {
-      case 0: this.displayPhase00(); break
-      case 1: this.displayPhase01(); break
-      case 2: this.displayPhase02(); break
-      case 3: this.displayPhase03(); break
-      case 4: this.displayPhase04(); break
-    }
-
+    super.display()
     if (this.phase.getCurrentPhase() === 0 || this.phase.getCurrentPhase() === 1) {
       this.spriteElevator.display()
     }
   }
 
   processBackground () {
-    /** 현재 페이즈 시작 시간 */ const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+    super.processBackground()
+
     /** 현재 페이즈 */ const cPhase = this.phase.getCurrentPhase()
-    /** 이 게임의 기준 FPS: 1프레임당 1px씩 이동하므로, 초당 60px씩 배경 이동 */ const FPS = 60
-    /** 한 페이즈당의 시간: 1페이즈당 30초이고, 초당 60px씩 이동하므로 배경은 1800px 이동하게됨 */ const TIME = 30
+    const x = this.bgLayer.getBackgroundPosition().x
+    const y = this.bgLayer.getBackgroundPosition().y
 
-    // phase Reset 할때마다 x좌표 리셋
-    if (this.timeCheckFrame(pTime)) { 
-      this.backgroundAbsoluteX = 0
-      if (cPhase === 2 || cPhase === 3) {
-        this.bgLegacy.changeImage(imageSrc.round.round2_6_quiteRoad)
-      } else if (cPhase === 4) {
-        this.bgLegacy.changeImage(imageSrc.round.round2_6_downtowerEntrance)
-      }
+    switch (cPhase) {
+      case 0:
+        if (x < this.bgXY.B1_END_X && y === this.bgXY.B1_START_Y) {
+          this.bgLayer.setBackgroundSpeed(1, 0)
+          this.spriteElevator.x = this.bgXY.B1_END_X - x + this.spriteElevator.BASE_X
+        } else if (y === this.bgXY.B1_START_Y) {
+          this.bgLayer.setBackgroundSpeed(0, 0)
+          this.spriteElevator.x = this.bgXY.B1_END_X - x + this.spriteElevator.BASE_X
+        } else {
+          this.spriteElevator.x = this.spriteElevator.BASE_X
+        }
+
+        this.spriteElevator.y = this.spriteElevator.BASE_Y
+        break
+      default:
+        this.bgLayer.setBackgroundSpeed(1, 0)
+        this.spriteElevator.x = -x + this.spriteElevator.BASE_X
+        break
     }
-
-    if (cPhase === 0) {
-      if (this.backgroundAbsoluteX < graphicSystem.CANVAS_WIDTH) {
-        this.backgroundAbsoluteX++
-      }
-
-      // 엘리베이터 위치 설정
-      this.spriteElevator.x = (graphicSystem.CANVAS_WIDTH) - this.backgroundAbsoluteX + this.spriteElevator.BASE_X
-      this.spriteElevator.y = this.spriteElevator.BASE_Y
-    } else if (cPhase === 1) {
-      if (this.backgroundAbsoluteX < graphicSystem.CANVAS_WIDTH * 3) {
-        this.backgroundAbsoluteX++
-      }
-
-      this.spriteElevator.x = -this.backgroundAbsoluteX + this.spriteElevator.BASE_X
-      this.spriteElevator.y = this.spriteElevator.BASE_Y
-    } else if (cPhase === 2 || cPhase === 3) {
-      // 폐허와 오리지널 이미지를 페이드 형식으로 출력 하기 위해서 ruinValue의 값을 변경
-      if (this.timeCheckInterval(pTime + 2, pTime + 4) || this.timeCheckInterval(pTime + 16, pTime + 18)) {
-        if (this.ruinValue >= 1) this.ruinValue--
-      } else if (this.timeCheckInterval(pTime + 8, pTime + 10) || this.timeCheckInterval(pTime + 24, pTime + 26)) {
-        if (this.ruinValue < this.RUIN_VALUE_MAX) this.ruinValue++
-      }
-
-      if (this.backgroundAbsoluteX <= FPS * TIME) {
-        this.backgroundAbsoluteX++
-      } else {
-        this.backgroundAbsoluteX = FPS * TIME
-      }
-    } else if (cPhase === 4) {
-      if (this.backgroundAbsoluteX <= (FPS * TIME) - graphicSystem.CANVAS_WIDTH) {
-        this.backgroundAbsoluteX++
-      } else {
-        this.backgroundAbsoluteX = (FPS * TIME) - graphicSystem.CANVAS_WIDTH
-      }
-    }
-
-    this.bgLegacy.x = this.backgroundAbsoluteX
-    this.bgLegacy.y = this.backgroundAbsoluteY
-  }
-
-  displayPhase00 () {
-    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    const gWidth = graphicSystem.CANVAS_WIDTH
-    if (this.timeCheckInterval(pTime + 0, pTime + 20)) {
-      graphicSystem.imageView(imageSrc.round.round2_5_floorB1Light, (gWidth * 0) - this.backgroundAbsoluteX, 0)
-      graphicSystem.imageView(imageSrc.round.round2_4_floorB1, (gWidth * 1) - this.backgroundAbsoluteX, 0)
-    } else {
-      graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
-      this.bgLegacy.display()
-    }
-  }
-
-  displayPhase01 () {
-    const gWidth = graphicSystem.CANVAS_WIDTH
-    graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
-    graphicSystem.imageView(imageSrc.round.round2_4_elevatorOutside, (gWidth * 0) - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(imageSrc.round.round2_4_placard, (gWidth * 1) - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(imageSrc.round.round2_6_quiteRoad, (gWidth * 2) - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(imageSrc.round.round2_6_ruin1, (gWidth * 2 + 200) - this.backgroundAbsoluteX, 0)
-  }
-
-  displayPhase02 () {
-    graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
-    this.bgLegacy.display()
-
-    let ruinAlpha = (1 / this.RUIN_VALUE_MAX) * this.ruinValue
-    let originalAlpha = 1 - ruinAlpha
-    const FPS = 60
-    const TIME = 30
-    graphicSystem.setAlpha(ruinAlpha)
-    graphicSystem.imageView(imageSrc.round.round2_6_ruin1, 0 - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(imageSrc.round.round2_6_ruin2, (FPS * TIME) - this.backgroundAbsoluteX, 0)
-    graphicSystem.setAlpha(originalAlpha)
-    graphicSystem.imageView(imageSrc.round.round2_6_original1, 0 - this.backgroundAbsoluteX, 0)
-    graphicSystem.imageView(imageSrc.round.round2_6_original2, (FPS * TIME) - this.backgroundAbsoluteX, 0)
-    graphicSystem.setAlpha()
-  }
-
-  displayPhase03 () {
-    graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
-    this.bgLegacy.display()
-
-    let ruinAlpha = (1 / this.RUIN_VALUE_MAX) * this.ruinValue
-    let originalAlpha = 1 - ruinAlpha
-    const FPS = 60
-    const TIME = 30
-    graphicSystem.setAlpha(ruinAlpha)
-    graphicSystem.imageView(imageSrc.round.round2_6_ruin2, 0 - this.backgroundAbsoluteX, 0)
-    graphicSystem.setAlpha(originalAlpha)
-    graphicSystem.imageView(imageSrc.round.round2_6_original2, 0 - this.backgroundAbsoluteX, 0)
-    graphicSystem.setAlpha()
-    
-    graphicSystem.imageView(imageSrc.round.round2_6_downtowerEntrance, (FPS * TIME) - this.backgroundAbsoluteX, 0)
-  }
-
-  displayPhase04 () {
-    graphicSystem.gradientRect(0, 0, 800, 600, ['#4995E1', '#67B2FF'])
-    this.bgLegacy.display()
   }
 }
 
@@ -7866,24 +7731,30 @@ class Round2_test extends RoundData {
   constructor () {
     super()
     this.stat.setStat(ID.round.round2_test)
-    this.bgLayer = new BgLayer()
-    this.bgLayer.setBackgroundImage(imageSrc.round.round2_5_floorB1Break)
+    this.bgLayer.addLayerImage(imageSrc.round.round1_1_space, 1)
+    this.bgLayer.addLayerImage(imageSrc.round.round1_2_meteorite, 0)
     this.phase.addRoundPhase(this, this.roundPhase00, 0, 200)
   }
 
   processPhase () {
-    this.phase.process(this.time._currentTime)
-    
+    this.phase.process(this.time.currentTime)
   }
 
   roundPhase00 () {
-    if(this.timeCheckInterval(3, 6)) {
-      console.log('^^;')
+    if (this.timeCheckFrame(3)) {
+      let getLayer = this.bgLayer.getLayer()
+      getLayer[0].fadeAlpha(0, 300)
+      getLayer[1].fadeAlpha(1, 300)
+      console.log('!!!')
     }
   }
 
   display () {
     this.bgLayer.display()
+
+    let layer = this.bgLayer.getLayer()
+    graphicSystem.fillText(layer[0].alpha + ', ' + layer[0].alpha, 0, 20, 'yellow')
+    graphicSystem.fillText(layer[0].alphaDelayCount + ', ' + layer[0].alphaDelayCount, 0, 0, 'white')
   }
 }
 

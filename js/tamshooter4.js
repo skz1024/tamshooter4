@@ -7,6 +7,7 @@ import { ID } from "./dataId.js";
 import { gameVar, userSystem } from "./game.js";
 import { fieldSystem } from "./field.js";
 import { game, gameFunction } from "./game.js";
+import { stringText, systemText } from "./text.js";
 
 let digitalDisplay = gameFunction.digitalDisplay
 let loadComplete = false
@@ -2143,7 +2144,7 @@ export class gameSystem {
         fieldSystem.setLoadData(JSON.parse(fieldSaveData))
       }
     } catch (e) {
-      alert('저장 데이터를 읽어오는 중 오류가 발생했습니다. 필드데이터가 삭제되고 메인화면으로 이동합니다.')
+      alert(systemText.gameError.FILED_LOAD_ERROR)
       localStorage.removeItem(this.saveKey.fieldData)
       this.stateId = this.STATE_MAIN
     }
