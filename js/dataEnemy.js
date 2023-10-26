@@ -2562,13 +2562,13 @@ class JemulEnemyBoss extends JemulEnemyData {
   display () {
     if (this.state === this.STATE_LASER) {
       graphicSystem.setAlpha(0.6)
-      graphicSystem.gradientDisplay(this.laserObject1.x, this.laserObject1.y, this.laserObject1.width, this.laserObject1.height, '#ff9090', '#ff9090', '#ff3030')
-      graphicSystem.gradientDisplay(this.laserObject2.x, this.laserObject2.y, this.laserObject2.width, this.laserObject2.height, '#ff9090', '#ff9090', '#ff3030')
+      graphicSystem.gradientRect(this.laserObject1.x, this.laserObject1.y, this.laserObject1.width, this.laserObject1.height, ['#ff9090', '#ff9090', '#ff3030'])
+      graphicSystem.gradientRect(this.laserObject2.x, this.laserObject2.y, this.laserObject2.width, this.laserObject2.height, ['#ff9090', '#ff9090', '#ff3030'])
       graphicSystem.setAlpha(1)
     } else if (this.state === this.STATE_ROTATE_LASER) {
       graphicSystem.setAlpha(0.6)
       graphicSystem.setDegree(this.laserObjectR.degree)
-      graphicSystem.gradientDisplay(this.laserObjectR.x, this.laserObjectR.y, this.laserObjectR.width, this.laserObjectR.height, '#d61d1d', '#d61d1d', '#5e0000')
+      graphicSystem.gradientRect(this.laserObjectR.x, this.laserObjectR.y, this.laserObjectR.width, this.laserObjectR.height, ['#d61d1d', '#d61d1d', '#5e0000'])
       graphicSystem.restoreTransform()
       graphicSystem.setAlpha(1)
     }
@@ -3024,7 +3024,8 @@ class JemulEnemyBossEye extends JemulEnemyData {
       if (laser.degree != 0) {
         graphicSystem.setDegree(laser.degree)
       }
-      graphicSystem.gradientDisplay(laser.x, laser.y, laser.width, laser.height, laser.sideColor, laser.sideColor, laser.middleColor)
+
+      graphicSystem.gradientRect(laser.x, laser.y, laser.width, laser.height, [laser.sideColor, laser.sideColor, laser.middleColor])
       graphicSystem.restoreTransform()
     }
   }

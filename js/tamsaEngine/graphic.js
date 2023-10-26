@@ -741,52 +741,6 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
   }
 
   /**
-   * 해당 함수는 다른 함수로 변경할 예정입니다.
-   * 
-   * 그라디언트를 그리는 함수, 다만 createLinearGradient를 사용하는것과 비교해 옵션이 제한되어있습니다.
-   * @param {number} x 그라디언트 시작점의 x좌표
-   * @param {number} y 그라디언트 시작점의 y좌표
-   * @param {number} width 그라디언트 길이
-   * @param {number} height 그라디언트 높이
-   * @param {string} startColor 그라디언트 시작 색깔의 css값
-   * @param {string} endColor 그라디언트 끝 색깔의 css값 (anotherColor가 추가되어도 끝 색깔은 끝부분에 적용됩니다.)
-   * @param {anotherColor} anotherColor 또다른 컬러들... (그라디언트를 여러개의 색상으로 만들 때 사용, 단 이 값은 중간에 들어가는 색입니다.)
-   * 
-   * @deprecated
-   */
-  gradientDisplay (x, y, width, height, startColor = 'black', endColor = startColor, ...anotherColor) {
-    // 그라디언트 backGround
-    let gradient
-    try {
-      gradient = this.context.createLinearGradient(x, y, x + width, y + height)
-
-      gradient.addColorStop(0, startColor)
-      gradient.addColorStop(1, endColor)
-
-      // 또다른 컬러도 있다면 추가
-      for (let i = 0; i < anotherColor.length; i++) {
-        let totalColorCount = 2 + anotherColor.length
-        let position = (1 / totalColorCount) * (i + 1)
-        gradient.addColorStop(position, anotherColor[i])
-      }
-
-      // 그라디언트 그리기
-      this.context.fillStyle = gradient
-      if (this.checkTransform()) {
-        const output = this.canvasTransform(x, y, width, height)
-        this.context.fillRect(output.x, output.y, output.width, output.height)
-        this.restoreTransform()
-      } else {
-        this.context.fillRect(x, y, width, height)
-      }
-    } catch (e) {
-      alert(e)
-    }
-
-    
-  }
-
-  /**
    * 그라디언트 형태의 사각형을 출력합니다.
    * 
    * 좀 더 상세한 linearGradient 형태를 사용하고 싶다면 이 함수를 사용하세요.
@@ -882,41 +836,6 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
       this.restoreTransform()
     } else {
       this.context.fillRect(x, y, width, height)
-    }
-  }
-
-  /**
-   * 미터 형태로(전체 값중 일부만큼 비율에 맞춰서 출력) 그라디언트 그리기
-   * 그려지는 크기는 현재 값 / 최대 값 을 계산한 비율입니다. 즉 10%비율이면, 총 크기의 10%만 그려집니다.
-   * 
-   * 이 함수는 제거될 예정입니다.
-   * 
-   * 이 함수는 내부적으로 gradientDisplay 함수를 사용합니다.
-   * @deprecated
-   * @param {number} x x좌표
-   * @param {number} y y좌표
-   * @param {number} width 너비 (최대 값 기준)
-   * @param {number} height 높이 (최대 값 기준)
-   * @param {number} value 현재 값
-   * @param {number} maxValue 최대 값
-   * @param {string | number} meterType 미터 타입 (수직: 0 or 'vertical', 수평: 1 or 'horizontal)
-   * @param {string} startColor 시작 색깔
-   * @param {string} endColor 끝 색깔 (경고: 이 색은 여러개의 색깔이 더 추가되어도, 가장 마지막 색으로 지정됨.)
-   * @param  {string[]} anotherColor 추가 색깔 (경고: 이 색은 마지막 색이 될 수 없음.)
-   */
-  meterGradient (x, y, width, height, value, maxValue, meterType, startColor, endColor, ...anotherColor) {
-    let percent = value / maxValue
-
-    // 받아온 미터 타입이 숫자라면, 문자열로 변경
-    if (typeof meterType === 'number') {
-      let setType = ['vertical', 'horizontal']
-      meterType = setType[meterType]
-    }
-
-    switch (meterType) {
-      case 'vertical': this.gradientDisplay(x, y, width, Math.floor(height * percent), startColor, endColor, ...anotherColor); break
-      case 'horizontal': this.gradientDisplay(x, y, Math.floor(width * percent), height, startColor, endColor, ...anotherColor); break
-      default: console.log('잘못된 값 입력!, meterType은 vertical 또는 horizontal입니다. 그라디언트 출력은 무시됩니다.'); break
     }
   }
 

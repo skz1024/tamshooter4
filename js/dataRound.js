@@ -250,7 +250,7 @@ class BgLayer {
       /** 알파값을 fade 하는데 지정된 딜레이 @type {number} */ this.alphaDelay = 0
       /** 알파값을 fade 하는데 딜레이 카운트를 세는 변수 @type {number} */ this.alphaDelayCount = 0
       /** 알파값 페이드의 시작지점 @type {number} */ this.alphaStart = 0
-      /** 알파값 페이드의 끝지점 (참고: 이 데이터는 알파 최종값을 표시하기도 하기 때문에 저장되는 알파값의 기준으로 사용됩니다.) @type {number} */ this.alphaEnd = 0
+      /** 알파값 페이드의 끝지점 (참고: 이 데이터는 알파 최종값을 표시하기도 하기 때문에 저장되는 알파값의 기준으로 사용됩니다.) @type {number} */ this.alphaEnd = alpha
       /** 레이어 자체의 x좌표 (참고: isSynchroized가 false때만 제대로 동작합니다.) @type {number} */ this.x = 0
       /** 레이어 자체의 y좌표 (참고: isSynchroized가 false때만 제대로 동작합니다.) @type {number} */ this.y = 0
       /** 레이어 자체의 이동속도 x값 (참고: isSynchroized가 false때만 제대로 동작합니다.) @type {number} */ this.speedX = 0
@@ -2576,14 +2576,14 @@ class Round1_4 extends RoundData {
     }
 
     // 보스가 일찍 죽으면 해당 페이즈 스킵
-    if (this.timeCheckInterval(5, 15) && this.field.enemyNothingCheck()) {
+    if (this.timeCheckInterval(5, 14) && this.field.enemyNothingCheck()) {
       this.time.setCurrentTime(15)
     }
 
-    this.timePauseWithEnemyCount(16)
+    this.timePauseWithEnemyCount(15)
 
-    if (this.timeCheckInterval(17)) {
-      this.sound.musicChange('', 2)
+    if (this.timeCheckInterval(15) && this.field.enemyNothingCheck()) {
+      this.sound.musicChange('', 1)
     }
   }
 
@@ -3293,7 +3293,7 @@ class Round2_1 extends RoundData {
     }
 
     // 구름 레이어 추가: 구름은 배경과 다르게 정지하지 않고 계속 스크롤됩니다. // 배경은 중간에 멈출 수 있음.
-    this.bgLayer.addLayerImage(imageSrc.round.round2_1_cloud)
+    this.bgLayer.addLayerImage(imageSrc.round.round2_1_cloud, 1)
     this.bgLayer.setLayerSpeed(0, 0, 1) // 구름은 배경과 다르게 지속적으로 이동하도록 변경
   }
 

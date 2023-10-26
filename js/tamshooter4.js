@@ -114,7 +114,7 @@ class BoxObject {
     if (this.color === '') return
     
     if (this.endColor != '') {
-      game.graphic.gradientDisplay(this.x + this.borderWidth, this.y + this.borderWidth, this.width - (this.borderWidth * 2), this.height - (this.borderWidth * 2), this.color, this.endColor)
+      game.graphic.gradientRect(this.x + this.borderWidth, this.y + this.borderWidth, this.width - (this.borderWidth * 2), this.height - (this.borderWidth * 2), [this.color, this.endColor])
     } else {
       game.graphic.fillRect(this.x + this.borderWidth, this.y + this.borderWidth, this.width - (this.borderWidth * 2), this.height - (this.borderWidth * 2), this.color)
     }
@@ -370,11 +370,7 @@ class MenuSystem {
   }
 
   displayBackground () {
-    if (this.backgroundColor.length === 1) {
-      game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, this.backgroundColor[0])
-    } else if (this.backgroundColor.length >= 2) {
-      game.graphic.gradientDisplay(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, this.backgroundColor[0], this.backgroundColor[this.backgroundColor.length - 1], ...this.backgroundColor.slice(2))
-    }
+    game.graphic.gradientRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, this.backgroundColor)
   }
 
 }
@@ -1869,8 +1865,8 @@ class StatSystem {
     for (let i = 0; i < this.lineData.length; i++) {
       const OUTPUT_Y = LAYERY + (LAYER_HEIGHT * i)
       game.graphic.fillRect(LAYERX, OUTPUT_Y, LAYER_WIDTH, LAYER_HEIGHT, this.lineData[i].backgroundColor)
-      game.graphic.gradientDisplay(LAYERX, OUTPUT_Y, LAYER_WIDTH * this.lineData[i].multiple, LAYER_HEIGHT, this.lineData[i].colorA, this.lineData[i].colorB)
-      digitalDisplay(this.lineData[i].text, LAYERX, OUTPUT_Y)
+      game.graphic.meterRect(LAYERX, OUTPUT_Y, LAYER_WIDTH, LAYER_HEIGHT, [this.lineData[i].colorA, this.lineData[i].colorB], this.lineData[i].multiple, 1)
+      digitalDisplay(this.lineData[i].text, LAYERX + 1, OUTPUT_Y + 1)
 
       // 테두리도 추가로 그려야 함.
       game.graphic.strokeRect(LAYERX, OUTPUT_Y, LAYER_WIDTH, LAYER_HEIGHT, 'black')

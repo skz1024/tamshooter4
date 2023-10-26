@@ -410,7 +410,7 @@ export class userSystem {
       const OUTPUT_NUMBER_X = NUMBER_X + (i * AREA_WIDTH)
       const OUTPUT_SKILL_X = SKILL_X + (i * AREA_WIDTH)
       const OUTPUT_TIME_X = OUTPUT_SKILL_X
-      const OUTPUT_TIME_Y = LAYERY1 + 2
+      const OUTPUT_TIME_Y = LAYERY1 + 1
 
       game.graphic.imageDisplay(skillNumberImage, NUMBER_SLICEX, NUMBER_SLICEY, NUMBER_SLICE_WIDTH, NUMBER_SLICE_HEIGHT, OUTPUT_NUMBER_X, LAYERY1, NUMBER_SLICE_WIDTH, NUMBER_SLICE_HEIGHT)
       
@@ -438,27 +438,26 @@ export class userSystem {
     // hp + shield display
     const hpPercent = this.hp / this.hpMax
     const HP_WIDTH = Math.floor(LAYER_WIDTH / 2) * hpPercent
-    const shieldPercent = this.shield / this.shieldMax
-    const SHIELD_WIDTH = Math.floor(LAYER_WIDTH / 2) * shieldPercent
 
+    // 참고로 체력게이지 바로 뒤에 쉴드 게이지를 표시하기 때문에, 좌표값 계산을 위하여 hp는 따로 퍼센트와 길이를 계산했습니다.
     if (this.damageWarningFrame > 0) {
       let targetFrame = this.damageWarningFrame % H_COLORA.length
 
       // 체력 게이지 그라디언트
-      game.graphic.gradientDisplay(LAYERX, LAYERY2, HP_WIDTH, LAYER_HEIGHT, H_COLORA[targetFrame], H_COLORB[targetFrame])
+      game.graphic.meterRect(LAYERX, LAYERY2, LAYER_WIDTH / 2, LAYER_HEIGHT, [H_COLORA[targetFrame], H_COLORB[targetFrame]], this.hp, this.hpMax)
 
       // 쉴드 게이지 그라디언트
-      game.graphic.gradientDisplay(LAYERX + HP_WIDTH, LAYERY2, SHIELD_WIDTH, LAYER_HEIGHT, S_COLORA[targetFrame], S_COLORB[targetFrame])
+      game.graphic.meterRect(LAYERX + HP_WIDTH, LAYERY2, LAYER_WIDTH / 2, LAYER_HEIGHT, [S_COLORA[targetFrame], S_COLORB[targetFrame]], this.shield, this.shieldMax)
     } else {
       // 체력 게이지 그라디언트 [파란색]
-      game.graphic.gradientDisplay(LAYERX, LAYERY2, HP_WIDTH, LAYER_HEIGHT, H_COLORA[0], H_COLORB[0])
+      game.graphic.meterRect(LAYERX, LAYERY2, LAYER_WIDTH / 2, LAYER_HEIGHT, [H_COLORA[0], H_COLORB[0]], this.hp, this.hpMax)
 
       // 쉴드 게이지 그라디언트 [하늘색]
-      game.graphic.gradientDisplay(LAYERX + HP_WIDTH, LAYERY2, SHIELD_WIDTH, LAYER_HEIGHT, S_COLORA[0], S_COLORB[0])
+      game.graphic.meterRect(LAYERX + HP_WIDTH, LAYERY2, LAYER_WIDTH / 2, LAYER_HEIGHT, [S_COLORA[0], S_COLORB[0]], this.shield, this.shieldMax)
     }
 
     const hpText = this.hp + ' + ' + this.shield + '/' + this.shieldMax
-    digitalDisplay(hpText, LAYERX, LAYERY2)
+    digitalDisplay(hpText, LAYERX + 1, LAYERY2 + 1)
 
 
     // lv + exp display
@@ -467,13 +466,13 @@ export class userSystem {
 
     if (this.levelUpEffectFrame > 0) {
       let targetFrame = this.levelUpEffectFrame % EXP_COLORA.length
-      game.graphic.gradientDisplay(LAYERX, LAYERY3, LAYER_WIDTH, LAYER_HEIGHT, EXP_COLORA[targetFrame], EXP_COLORB[targetFrame])
+      game.graphic.meterRect(LAYERX, LAYERY3, LAYER_WIDTH, LAYER_HEIGHT, [EXP_COLORA[targetFrame], EXP_COLORB[targetFrame]], this.exp, this.getExpMax())
     } else {
-      game.graphic.gradientDisplay(LAYERX, LAYERY3, LAYER_WIDTH * expPercent, LAYER_HEIGHT, EXP_COLORA[0], EXP_COLORB[0])
+      game.graphic.meterRect(LAYERX, LAYERY3, LAYER_WIDTH * expPercent, LAYER_HEIGHT, [EXP_COLORA[0], EXP_COLORB[0]], this.exp, this.getExpMax())
     }
 
     const lvText = 'Lv.' + this.lv + ' ' + this.exp + '/' + this.expTable[this.lv]
-    digitalDisplay(lvText, LAYERX, LAYERY3)
+    digitalDisplay(lvText, LAYERX + 1, LAYERY3 + 1)
   }
 
   /**
