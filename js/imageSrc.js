@@ -1,4 +1,19 @@
 /**
+ * 이 클래스는 자동완성을 쉽게 하기 위해 만들어진 클래스입니다.
+ * 
+ */
+export class ImageDataObject {
+  constructor () {
+    this.x = 0
+    this.y = 0
+    this.width = 0
+    this.height = 0
+    this.frame = 10
+    // throw new Error('이 클래스는 생성할 수 없습니다. This class cannot be created. ')
+  }
+}
+
+/**
  * tamshooter4 에서 사용하는 이미지의 경로
  * 
  * 모든 변수는 static입니다.
@@ -135,6 +150,7 @@ export class imageSrc {
     round2_6_ruin1: './image/round/round2_6_ruin1.png',
     round2_6_ruin2: './image/round/round2_6_ruin2.png',
     round2_6_quiteRoad: './image/round/round2_6_quiteRoad.png',
+    round3_optionWeapon: './image/round/round3_optionWeapon.png',
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -484,6 +500,27 @@ export class imageDataInfo {
     elevatorHall: {x: 0, y: 200, width: 100, height: 100, frame: 1},
   }
 
+  static round3_optionWeapon = {
+    orange: {x: 0, y: 0, width: 40, width: 40, height: 40, frame: 1},
+    skyblue: new ImageDataObject(400, 0, 40, 40, 10),
+    green: new ImageDataObject(0, 40, 40, 40, 10),
+    black: new ImageDataObject(400, 40, 40, 40, 10),
+    pink: new ImageDataObject(0, 80, 40, 40, 10),
+    purple: new ImageDataObject(400, 80, 40, 40, 10),
+    orangeShot: new ImageDataObject(805, 0, 30, 12, 1),
+    skyblueShot: new ImageDataObject(880, 0, 32, 32, 1),
+    greenShot: new ImageDataObject(840, 0, 30, 12, 1),
+    blackShot: new ImageDataObject(800, 40, 64, 64, 1),
+    purpleShot: new ImageDataObject(0, 130, 40, 40, 10),
+    pinkShot: new ImageDataObject(0, 200, 100, 100, 10),
+    orangeItem: new ImageDataObject(0, 120, 40, 40, 1),
+    skyblueItem: new ImageDataObject(40, 120, 40, 40, 1),
+    greenItem: new ImageDataObject(80, 120, 40, 40, 1),
+    blackItem: new ImageDataObject(120, 120, 40, 40, 1),
+    pinkItem: new ImageDataObject(160, 120, 40, 40, 1),
+    purpleItem: new ImageDataObject(200, 120, 40, 40, 1),
+  }
+
   static weapon = {
     arrowGreen: {x: 0, y: 0, width: 20, height: 20, frame: 7},
     arrowBrown: {x: 0, y: 20, width: 20, height: 20, frame: 7},
@@ -583,14 +620,15 @@ export class imageDataInfo {
 
 /**
  * 이 클래스는 자동완성을 쉽게 하기 위해 만들어진 클래스입니다.
+ * 
  */
 export class ImageDataObject {
-  constructor () {
-    this.x = 0
-    this.y = 0
-    this.width = 0
-    this.height = 0
-    this.frame = 10
+  constructor (x = 0, y = 0, width = 0, height = 0, frame = 1) {
+    this.x = x
+    this.y = y
+    this.width = width
+    this.height = height
+    this.frame = frame
     // throw new Error('이 클래스는 생성할 수 없습니다. This class cannot be created. ')
   }
 }
