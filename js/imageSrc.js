@@ -1,14 +1,19 @@
+//@ts-check
+
 /**
- * 이 클래스는 자동완성을 쉽게 하기 위해 만들어진 클래스입니다.
+ * 이 클래스는 자동완성을 쉽게 하기 위해 만들어진 클래스이지만, 
  * 
+ * 라운드 3부터는 이 클래스를 사용해 이미지데이터 오브젝트를 생성하도록 변경했습니다.
+ * 
+ * (다만 추후에 JSON 방식으로도 변경할 수 있을지도 모름)
  */
 export class ImageDataObject {
-  constructor () {
-    this.x = 0
-    this.y = 0
-    this.width = 0
-    this.height = 0
-    this.frame = 10
+  constructor (x = 0, y = 0, width = 0, height = 0, frame = 1) {
+    this.x = x
+    this.y = y
+    this.width = width
+    this.height = height
+    this.frame = frame
     // throw new Error('이 클래스는 생성할 수 없습니다. This class cannot be created. ')
   }
 }
@@ -151,6 +156,24 @@ export class imageSrc {
     round2_6_ruin2: './image/round/round2_6_ruin2.png',
     round2_6_quiteRoad: './image/round/round2_6_quiteRoad.png',
     round3_optionWeapon: './image/round/round3_optionWeapon.png',
+    round3_1_level1: './image/round/round3_1_level1.png',
+    round3_1_level2: './image/round/round3_1_level2.png',
+    round3_1_level3: './image/round/round3_1_level3.png',
+    round3_1_level4: './image/round/round3_1_level4.png',
+    round3_2_level1: './image/round/round3_2_level1.png',
+    round3_2_level2: './image/round/round3_2_level2.png',
+    round3_2_level3: './image/round/round3_2_level3.png',
+    round3_2_level4: './image/round/round3_2_level4.png',
+    round3_3_level1: './image/round/round3_3_level1.png',
+    round3_3_level2: './image/round/round3_3_level2.png',
+    round3_3_level3: './image/round/round3_3_level3.png',
+    round3_3_level4: './image/round/round3_3_level4.png',
+    round3_4_level: './image/round/round3_4_level.png',
+    round3_4_level2: './image/round/round3_4_level2.png',
+    round3_4_level3: './image/round/round3_4_level3.png',
+    round3_4_level4: './image/round/round3_4_level4.png',
+    round3_4_level5: './image/round/round3_4_level5.png',
+    round3_5_level1: './image/round/round3_5_level1.png',
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -501,7 +524,7 @@ export class imageDataInfo {
   }
 
   static round3_optionWeapon = {
-    orange: {x: 0, y: 0, width: 40, width: 40, height: 40, frame: 1},
+    orange: {x: 0, y: 0, width: 40, height: 40, frame: 1},
     skyblue: new ImageDataObject(400, 0, 40, 40, 10),
     green: new ImageDataObject(0, 40, 40, 40, 10),
     black: new ImageDataObject(400, 40, 40, 40, 10),
@@ -616,19 +639,4 @@ export class imageDataInfo {
   }
 
   // : {x: , y: , width: , height: , frame: 1},
-}
-
-/**
- * 이 클래스는 자동완성을 쉽게 하기 위해 만들어진 클래스입니다.
- * 
- */
-export class ImageDataObject {
-  constructor (x = 0, y = 0, width = 0, height = 0, frame = 1) {
-    this.x = x
-    this.y = y
-    this.width = width
-    this.height = height
-    this.frame = frame
-    // throw new Error('이 클래스는 생성할 수 없습니다. This class cannot be created. ')
-  }
 }
