@@ -264,6 +264,7 @@ dataExportStatRound.set(ID.round.round2_6, new StatRound('2-6', '조용한 도�
 dataExportStatRound.set(ID.round.round2_test, new StatRound('TEST2', 'TEST2', 0, 0, 600, 0))
 // round 3
 dataExportStatRound.set(ID.round.round3_1, new StatRound('3-1', '다운 타워 - 1: 레이저 전투', 20, 70000, 240, 35000, ''))
+dataExportStatRound.set(ID.round.round3_test, new StatRound('TEST3', 'round 3 test mode', 20, 0, 999, 0, 'round3을 제작하는 과정에서 만들어진 테스트 라운드'))
 
 // 미정...
 // 3-2 다운타워 - 2: 액스 겹치기

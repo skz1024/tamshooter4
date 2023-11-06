@@ -260,6 +260,8 @@ export class ID {
     round3_A1: 70041,
     round3_A2: 70042,
     round3_A3: 70043,
+    round3_A4: 70044,
+    round3_test: 70045,
     //
     round4_1: 70101,
   }

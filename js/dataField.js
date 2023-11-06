@@ -808,9 +808,12 @@ export class FieldData {
   }
 
   /**
-   * 오브젝트의 이미지 출력 함수 (각 객체마다 다름, 직접 구현 필요)
+   * 오브젝트의 이미지 출력 함수 (각 객체마다 다를 수 있습니다.)
    * 이 함수는 기본값이 존재하지만, 만약 display() 재정의로 이 기본함수를 사용할 수 없게 된다면,
    * display() 함수를 재작성 할 때 FildData 클래스의 함수인 defaultDisplay() 를 사용해주세요.
+   * 
+   * 참고: 이 함수는 인수를 받을 수 없습니다. 만약 다른 이유로 현재 오브젝트의 좌표가 아닌 특정 위치에도 해당 오브젝트를 출력하고 싶다면
+   * defaultDisplay 함수를 사용해주세요.
    */
   display () {
     this.defaultDisplay()
@@ -876,23 +879,28 @@ export class FieldData {
 
   /**
    * 만약 이런저런 상속으로 인해서, fieldData가 가지고 있는 display함수를 사용하고 싶다면, 이 static 함수를 사용하세요.
-   * display 함수를 재작성한 후, defaultDisplay() 함수를 실행하면 됩니다. (인수는 필요 없음.)
+   * display 함수를 재작성한 후, defaultDisplay() 함수를 실행하면 됩니다.
+   * 
+   * 참고: 만약 특정한 위치에 해당 오브젝트를 출력하고 싶다면 defaultDisplay를 사용해야 합니다.
+   * 
+   * @param {number} [x=this.x] 출력할 x좌표, 매개변수가 없으면 현재 오브젝트의 x좌표
+   * @param {number} [y=this.y] 출력할 y좌표, 매개변수가 없으면 현재 오브젝트의 y좌표
    */
-  defaultDisplay () {
+  defaultDisplay (x = this.x, y = this.y) {
     if (this.enimation) {
-      this.enimation.display(this.x, this.y)
+      this.enimation.display(x, y)
     } else if (this.imageSrc) {
       if (this.imageData) {
         if (this.degree !== 0 || this.flip !== 0) {
-          graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height, this.flip, this.degree)
+          graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, x, y, this.width, this.height, this.flip, this.degree)
         } else {
-          graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height)
+          graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, x, y, this.width, this.height)
         }
       } else {
         if (this.degree !== 0 || this.flip !== 0) {
-          graphicSystem.imageDisplay(this.imageSrc, 0, 0, this.width, this.height, this.x, this.y, this.width, this.height, this.flip, this.degree)
+          graphicSystem.imageDisplay(this.imageSrc, 0, 0, this.width, this.height, x, y, this.width, this.height, this.flip, this.degree)
         } else {
-          graphicSystem.imageView(this.imageSrc, this.x, this.y)
+          graphicSystem.imageView(this.imageSrc, x, y)
         }
       }
     }
@@ -918,6 +926,7 @@ export class FieldData {
     this.height = height == null ? this.imageData.height : height
     
     if (this.imageData.frame >= 2) {
+      this.enimation = null // 기존 애니메이션 버리고 재할당
       this.enimation = new EnimationData(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, enimationDelay, -1)
     }
   }

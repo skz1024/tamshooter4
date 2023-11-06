@@ -775,14 +775,16 @@ class RoundSelectSystem extends MenuSystem {
     const unused = ID.round.UNUSED
     this.roundIdTable = {
       r1: [r.round1_1, r.round1_2, r.round1_3, r.round1_4, r.round1_5, r.round1_6, unused, unused, r.round1_test, unused],
-      r2: [r.round2_1, r.round2_2, r.round2_3, r.round2_4, r.round2_5, r.round2_6, unused, unused, r.round2_test, unused]
+      r2: [r.round2_1, r.round2_2, r.round2_3, r.round2_4, r.round2_5, r.round2_6, unused, unused, r.round2_test, unused],
+      r3: [r.round3_test],
     }
 
     this.roundWorldIconNumber = [1, 10]
 
     this.roundIconTable = {
       r1: [2, 3, 4, 5, 6, 7, -1, -1, 8, -1],
-      r2: [11, 12, -1, -1, -1, -1, -1, -1, -1, -1]
+      r2: [11, 12, -1, -1, -1, -1, -1, -1, -1, -1],
+      r3: [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
     }
 
     const layerX = 10
@@ -1012,6 +1014,7 @@ class RoundSelectSystem extends MenuSystem {
     switch (this.cursorRound) {
       case 0: return this.roundIconTable.r1
       case 1: return this.roundIconTable.r2
+      case 2: return this.roundIconTable.r3
       default: return []
     }
   }
@@ -1020,6 +1023,7 @@ class RoundSelectSystem extends MenuSystem {
     switch (this.cursorRound) {
       case 0: return this.roundIdTable.r1
       case 1: return this.roundIdTable.r2
+      case 2: return this.roundIdTable.r3
     }
   }
 

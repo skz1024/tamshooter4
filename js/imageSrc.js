@@ -524,7 +524,7 @@ export class imageDataInfo {
   }
 
   static round3_optionWeapon = {
-    orange: {x: 0, y: 0, width: 40, height: 40, frame: 1},
+    orange: {x: 0, y: 0, width: 40, height: 40, frame: 10},
     skyblue: new ImageDataObject(400, 0, 40, 40, 10),
     green: new ImageDataObject(0, 40, 40, 40, 10),
     black: new ImageDataObject(400, 40, 40, 40, 10),
@@ -534,7 +534,7 @@ export class imageDataInfo {
     skyblueShot: new ImageDataObject(880, 0, 32, 32, 1),
     greenShot: new ImageDataObject(840, 0, 30, 12, 1),
     blackShot: new ImageDataObject(800, 40, 64, 64, 1),
-    purpleShot: new ImageDataObject(0, 130, 40, 40, 10),
+    purpleShot: new ImageDataObject(400, 130, 40, 40, 10),
     pinkShot: new ImageDataObject(0, 200, 100, 100, 10),
     orangeItem: new ImageDataObject(0, 120, 40, 40, 1),
     skyblueItem: new ImageDataObject(40, 120, 40, 40, 1),
@@ -542,6 +542,7 @@ export class imageDataInfo {
     blackItem: new ImageDataObject(120, 120, 40, 40, 1),
     pinkItem: new ImageDataObject(160, 120, 40, 40, 1),
     purpleItem: new ImageDataObject(200, 120, 40, 40, 1),
+    skyblueSplash: new ImageDataObject(0, 300, 60, 60, 10)
   }
 
   static weapon = {
