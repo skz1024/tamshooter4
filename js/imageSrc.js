@@ -78,6 +78,7 @@ export class imageSrc {
     jemulEnemy: './image/enemy/jemulEnemy.png',
     donggramiEnemy: './image/enemy/donggramiEnemy.png',
     intruderEnemy: './image/enemy/intruderEnemy.png',
+    towerEnemyGroup1: './image/enemy/towerEnemyGroup1.png'
   }
 
   static enemyBullet = {
@@ -367,6 +368,34 @@ export class imageDataInfo {
     flyingGreenLaser: {x: 540, y: 100, width: 50, height: 10, frame: 1},
     leverMissileLeft: {x: 540, y: 30, width: 60, height: 60, frame: 1},
     leverMissileRight: {x: 600, y: 30, width: 60, height: 60, frame: 1},
+  }
+
+  static towerEnemyGroup1 = {
+    moveViolet: new ImageDataObject(0, 0, 80, 60, 4),
+    movePurple: new ImageDataObject(0, 60, 80, 60, 4),
+    moveDarkViolet: new ImageDataObject(0, 120, 80, 60, 8),
+    moveYellowBall: new ImageDataObject(0, 180, 100, 80, 8),
+    sandglass: new ImageDataObject(0, 260, 100, 150, 9),
+    daepo: new ImageDataObject(0, 410, 130, 100, 7),
+    hellgi: new ImageDataObject(0, 524, 170, 66, 7),
+    heeljeon: new ImageDataObject(0, 600, 120, 70, 5),
+    hellba: new ImageDataObject(700, 600, 100, 50, 1),
+    hellspeed: new ImageDataObject(800, 600, 120, 60, 1),
+    hellpu: new ImageDataObject(920, 600, 100, 50, 1),
+    laserAlpha: new ImageDataObject(0, 700, 120, 80, 1),
+    laserMini: new ImageDataObject(0, 780, 80, 40, 1),
+    laserMiniGrey: new ImageDataObject(80, 780, 80, 40, 1),
+    hwapo: new ImageDataObject(200, 780, 120, 40, 1),
+    punchBall: new ImageDataObject(400, 0, 50, 50, 1),
+    punchSpring: new ImageDataObject(450, 0, 100, 50, 1),
+    punchModule: new ImageDataObject(550, 0, 50, 50, 1),
+    X: new ImageDataObject(700, 0, 65, 80, 1),
+    gasiUp: new ImageDataObject(800, 0, 20, 60, 1),
+    gasiDown: new ImageDataObject(820, 0, 20, 60, 1),
+    I: new ImageDataObject(900, 0, 85, 80, 1),
+    pentagon: new ImageDataObject(1000, 0, 100, 100, 1),
+    hexagon: new ImageDataObject(1000, 110, 110, 100, 1),
+    octagon: new ImageDataObject(1000, 230, 130, 130, 1),
   }
 
   static fieldSystem = {
