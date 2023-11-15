@@ -52,13 +52,7 @@ export class soundSrc {
   }
 
   static enemyDie = {
-    enemyDieMeteorite1: './sound/enemyDieMeteorite1.wav',
-    enemyDieMeteorite2: './sound/enemyDieMeteorite2.wav',
-    enemyDieMeteorite3: './sound/enemyDieMeteorite3.wav',
-    enemyDieMeteorite4: './sound/enemyDieMeteorite4.wav',
-    enemyDieMeteorite5: './sound/enemyDieMeteorite5.wav',
-    enemyDieMeteoriteBomb: './sound/enemyDieMeteoriteBomb.wav',
-    enemyDieMeteoriteRed: './sound/enemyDieMeteoriteRed.wav',
+    // space (1-1)
     enemyDieSpaceCar: './sound/enemyDieSpaceCar.wav',
     enemyDieSpaceComet: './sound/enemyDieSpaceComet.wav',
     enemyDieSpaceEnergy: './sound/enemyDieSpaceEnergy.wav',
@@ -68,6 +62,17 @@ export class soundSrc {
     enemyDieSpaceSmall: './sound/enemyDieSpaceSmall.wav',
     enemyDieSpaceSquare: './sound/enemyDieSpaceSquare.wav',
     enemyDieSpaceSusong: './sound/enemyDieSpaceSusong.ogg',
+
+    // meteorite (1-2)
+    enemyDieMeteorite1: './sound/enemyDieMeteorite1.wav',
+    enemyDieMeteorite2: './sound/enemyDieMeteorite2.wav',
+    enemyDieMeteorite3: './sound/enemyDieMeteorite3.wav',
+    enemyDieMeteorite4: './sound/enemyDieMeteorite4.wav',
+    enemyDieMeteorite5: './sound/enemyDieMeteorite5.wav',
+    enemyDieMeteoriteBomb: './sound/enemyDieMeteoriteBomb.wav',
+    enemyDieMeteoriteRed: './sound/enemyDieMeteoriteRed.wav',
+
+    // jemul (1-3)
     enemyDieJemulDrill: './sound/enemyDieJemulDrill.wav',
     enemyDieJemulEnergyBolt: './sound/enemyDieJemulEnergyBolt.wav',
     enemyDieJemulHellAir: './sound/enemyDieJemulHellAir.ogg',
@@ -78,8 +83,12 @@ export class soundSrc {
     enemyDieJemulBossEye: './sound/enemyDieJemulBossEye.ogg',
     enemyDieJemulRedJewel: './sound/enemyDieJemulRedJewel.wav',
     enemyDieJemulRedAir: './sound/enemyDieJemulRedAir.wav',
+
+    // donggrami (2-1)
     enemyDieDonggrami: './sound/enemyDieDonggrami.wav',
     enemyDieDonggramiLeaf: './sound/enemyDieDonggramiLeaf.wav',
+
+    // intruder (2-5)
     enemyDieIntruderJemu: './sound/enemyDieIntruderJemu.ogg',
     enemyDieIntruderSquare: './sound/enemyDieIntruderSquare.ogg',
     enemyDieIntruderDaseok: './sound/enemyDieIntruderDaseok.ogg',
@@ -93,6 +102,32 @@ export class soundSrc {
     enemyDieIntruderMetal: './sound/enemyDieIntruderMetal.ogg',
     enemyDieIntruderMomi: './sound/enemyDieIntruderMomi.ogg',
     enemyDieIntruderRendown: './sound/enemyDieIntruderRendown.ogg',
+
+    // tower (3-1)
+    enemyDieTowerBossRobot1: './sound/enemyDieTowerBossRobot1.ogg',
+    enemyDieTowerBossRobot2: './sound/enemyDieTower2.ogg',
+    enemyDieTowerDaepo: './sound/enemyDieTowerDaepo.ogg',
+    enemyDieTowerDarkViolet: './sound/enemyDieTowerDarkViolet.ogg',
+    enemyDieTowerDiamond: './sound/enemyDieTowerDiamond.ogg',
+    enemyDieTowerHellba: './sound/enemyDieTowerHellba.ogg',
+    enemyDieTowerHellcho: './sound/enemyDieTowerHellcho.ogg',
+    enemyDieTowerHellgal: './sound/enemyDieTowerHellgal.ogg',
+    enemyDieTowerHellgi: './sound/enemyDieTowerHellgi.ogg',
+    enemyDieTowerHelljeon: './sound/enemyDieTowerHelljeon.ogg',
+    enemyDieTowerHexagon: './sound/enemyDieTowerHexagon.ogg',
+    enemyDieTowerI: './sound/enemyDieTowerI.ogg',
+    enemyDieTowerLaserAlpha: './sound/enemyDieTowerLaserAlpha.ogg',
+    enemyDieTowerLaserMini: './sound/enemyDieTowerLaserMini.ogg',
+    enemyDieTowerMoveBlue: './sound/enemyDieTowerMoveBlue.ogg',
+    enemyDieTowerMoveViolet: './sound/enemyDieTowerMoveViolet.ogg',
+    enemyDieTowerOctagon: './sound/enemyDieTowerOctagon.ogg',
+    enemyDieTowerPentagon: './sound/enemyDieTowerPentagon.ogg',
+    enemyDieTowerPunch: './sound/enemyDieTowerPunch.ogg',
+    enemyDieTowerSandglass: './sound/enemyDieTowerSandglass.ogg',
+    enemyDieTowerSquare: './sound/enemyDieTowerSquare.ogg',
+    enemyDieTowerTapo: './sound/enemyDieTowerTapo.ogg',
+    enemyDieTowerX: './sound/enemyDieTowerX.ogg',
+    enemyDieTowerYellowEnergy: './sound/enemyDieTowerYellowEnergy.ogg',
   }
 
   static enemyAttack = {
@@ -114,7 +149,10 @@ export class soundSrc {
     intruderHanoiReflect: './sound/enemyIntruderHanoiReflect.ogg',
     intruderDaseokLaserGreen: './sound/enemyIntruderDaseokLaserGreen.ogg',
     intruderDaseokLaserYellow: './sound/enemyIntruderDaseokLaserYellow.ogg',
-    intruderRendownMissileCreate: './sound/enemyIntruderRendownMissileCreate.ogg'
+    intruderRendownMissileCreate: './sound/enemyIntruderRendownMissileCreate.ogg',
+    towerAttackDaepo: './sound/enemyTowerAttackDaepo.ogg',
+    towerAttackRocket: './sound/enemyTowerAttackRocket.ogg',
+    towerPunchAttack: './sound/enemyTowerPunchAttack.ogg',
   }
 
   static round = {
@@ -190,7 +228,8 @@ export class soundSrc {
     music12_donggrami_hall_outside: './music/music12_donggrami_hall_outside.ogg',
     music13_round2_4_jemu: './music/music13_round2_4_jemu.ogg',
     music14_intruder_battle: './music/music14_intruder_battle.ogg',
-    music15_donggrami_ruin: './music/music15_donggrami_ruin.ogg'
+    music15_donggrami_ruin: './music/music15_donggrami_ruin.ogg',
+    music16_down_tower: './music/music16_down_tower.ogg'
   }
 
   
