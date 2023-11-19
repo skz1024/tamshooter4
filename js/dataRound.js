@@ -3249,15 +3249,10 @@ class Round1_test extends RoundData {
     this.bgLegacy.x = 0
     this.bgLegacy.imageSrc = imageSrc.round.round1_1_space
     this.phase.addRoundPhase(this, () => {
-      if (this.timeCheckFrame(1)) {
-        this.field.createEnemy(ID.enemy.spaceEnemy.boss)
+      if (this.timeCheckInterval(1, 999, 60) && this.field.getEnemyCount() === 0) {
+        this.field.createEnemy(ID.enemy.towerG1.laserMini2, 600)
       }
     }, 0, 999)
-  }
-
-  display () {
-    super.display()
-    this.meter.bossHpDefaultStyle(ID.enemy.spaceEnemy.boss)
   }
 }
 

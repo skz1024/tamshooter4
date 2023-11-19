@@ -123,7 +123,7 @@ export class collisionClass {
   static getVertex (objectA) {
     const vertex = [] // 꼭짓점
 
-    if (objectA.degree !== 0) {
+    if (objectA.degree != null && objectA.degree !== 0) {
       // 사각형이 회전한 경우
       const radian = Math.PI / 180 * objectA.degree // 라디안 계산
       const sin = Math.sin(radian) // 사인값
@@ -494,16 +494,16 @@ export class FieldData {
      * 프레임당 x좌표 이동 속도 (소수점 허용), moveSpeedX로 대체됨 
      * @deprecated 
      */ 
-    this.speedX = 0
+    this._speedX = 0
     /** 프레임당 y좌표 이동 속도 (소수점 허용), moveSpeedY로 대체됨 
-     * @deprecated */ this.speedY = 0
+     * @deprecated */ this._speedY = 0
     /** 프레임당 z좌표 이동 속도 (소수점 허용), 현재 사용하지 않음. 
      * (z좌표는 일반적으로 사용하지 않습니다.) 
      * @deprecated 
-     * */ this.speedZ = 0
+     * */ this._speedZ = 0
     
-    /** 이동 방향에 따른 이동 속도 x좌표 (소수점 허용) 이 값이 있다면, 이 값을 speed값보다 우선 적용(정확하겐 speed에 덮어 씌워짐) */ this.moveSpeedX = 0
-    /** 이동 방향에 따른 이동 속도 y좌표 (소수점 허용) 이 값이 있다면, 이 값을 speed값보다 우선 적용(정확하겐 speed에 덮어 씌워짐) */ this.moveSpeedY = 0
+    /** 이동 방향에 따른 이동 속도 x좌표 (소수점 허용) */ this.moveSpeedX = 0
+    /** 이동 방향에 따른 이동 속도 y좌표 (소수점 허용) */ this.moveSpeedY = 0
     /** 이동 가능 여부 (이 값이 true 일경우만 이동이 가능) */ this.isMoveEnable = true
     /** 회전한 각도 (일부 객체에서만 사용) */ this.degree = 0
     /** 뒤집기 0: 없음, 1: 수직, 2: 수평, 3: 수직 + 수평, 나머지 무시(0으로 처리) */ this.flip = 0
@@ -730,8 +730,8 @@ export class FieldData {
   setMoveSpeed (moveSpeedX = 1, moveSpeedY = 1) {
     this.moveSpeedX = moveSpeedX
     this.moveSpeedY = moveSpeedY
-    this.speedX = moveSpeedX
-    this.speedY = moveSpeedY
+    this._speedX = moveSpeedX
+    this._speedY = moveSpeedY
   }
 
   /**
@@ -763,6 +763,7 @@ export class FieldData {
     
     this.enimation.process()
     this.enimation.degree = this.degree
+    this.enimation.flip = this.flip
   }
 
   /** 
@@ -775,7 +776,7 @@ export class FieldData {
   }
 
   /**
-   * 객체를 이동시킵니다.
+   * 객체를 이동시킵니다. (이 함수를 상속받은경우 해당 객체의 이동을 위하여 super.processMove 함수를 호출해주세요.)
    * 
    * (참고: 이 함수는 다른 기능을 확장하기 위해서도 사용하는 경우가 많습니다. 예륻들어, 상태 변경 또는 적 스탯 변경 등...
    * 그래서, super.processMove가 아니라면 객체 이동 이외에 다른 기능이 추가될 수도 있습니다.)
@@ -788,20 +789,20 @@ export class FieldData {
     if (!this.isMoveEnable) return
 
     if (this.moveDirectionX === FieldData.direction.LEFT) {
-      this.speedX = -this.moveSpeedX
+      this._speedX = -this.moveSpeedX
     } else {
-      this.speedX = this.moveSpeedX
+      this._speedX = this.moveSpeedX
     }
 
     if (this.moveDirectionY === FieldData.direction.UP) {
-      this.speedY = -this.moveSpeedY
+      this._speedY = -this.moveSpeedY
     } else {
-      this.speedY = this.moveSpeedY
+      this._speedY = this.moveSpeedY
     }
 
     // 이동 속도에 따른 좌표값 변경
-    this.x += this.speedX
-    this.y += this.speedY
+    this.x += this._speedX
+    this.y += this._speedY
 
     this.centerX = this.x + Math.floor(this.width / 2)
     this.centerY = this.y + Math.floor(this.height / 2)
@@ -817,6 +818,58 @@ export class FieldData {
    */
   display () {
     this.defaultDisplay()
+  }
+
+  /**
+   * 만약 이런저런 상속으로 인해서, fieldData가 가지고 있는 display함수를 사용하고 싶다면, 이 static 함수를 사용하세요.
+   * display 함수를 재작성한 후, defaultDisplay() 함수를 실행하면 됩니다.
+   * 
+   * 참고: 만약 특정한 위치에 해당 오브젝트를 출력하고 싶다면 defaultDisplay를 사용해야 합니다.
+   * 
+   * @param {number} [x=this.x] 출력할 x좌표, 매개변수가 없으면 현재 오브젝트의 x좌표
+   * @param {number} [y=this.y] 출력할 y좌표, 매개변수가 없으면 현재 오브젝트의 y좌표
+   */
+  defaultDisplay (x = this.x, y = this.y) {
+    if (this.enimation) {
+      this.enimation.display(x, y)
+    } else if (this.imageSrc) {
+      if (this.imageData) {
+        if (this.degree !== 0 || this.flip !== 0) {
+          graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, x, y, this.width, this.height, this.flip, this.degree)
+        } else {
+          graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, x, y, this.width, this.height)
+        }
+      } else {
+        if (this.degree !== 0 || this.flip !== 0) {
+          graphicSystem.imageDisplay(this.imageSrc, 0, 0, this.width, this.height, x, y, this.width, this.height, this.flip, this.degree)
+        } else {
+          graphicSystem.imageView(this.imageSrc, x, y)
+        }
+      }
+    }
+  }
+
+  /**
+   * 특정 이미지 데이터를 포함한 이미지를 출력합니다.
+   * 
+   * 자기 자신의 객체를 출력하려면 defaultDisplay 함수를 사용해주세요.
+   * 
+   * @param {string} imageSrc 
+   * @param {ImageDataObject} imageData 이미지 데이터
+   * @param {number} x 출력할 x좌표
+   * @param {number} y 출력할 y좌표
+   * @param {number} width 출력할 너비
+   * @param {number} height 출력할 높이
+   * @param {number} flip 뒤집기 (자세한것은 graphicSystem.setFilp(또는 game.grapic.setFlip) 참고)
+   * @param {number} degree 회전각도 (자세한것은 graphicSystem.setDegree(또는 game.grapic.setDegree) 참고) 
+   * @param {number} alpha 알파값 (자세한것은 graphicSystem.setAlpha(또는 game.grapic.setAlpha) 참고)
+   */
+  imageObjectDisplay (imageSrc, imageData, x, y, width = imageData.width, height = imageData.height, flip = 0, degree = 0, alpha = 1) {
+    if (flip !== 0 || degree !== 0 || alpha !== 1) {
+      graphicSystem.imageDisplay(imageSrc, imageData.x, imageData.y, imageData.width, imageData.height, x, y, width, height, flip, degree, alpha)
+    } else {
+      graphicSystem.imageDisplay(imageSrc, imageData.x, imageData.y, imageData.width, imageData.height, x, y, width, height)
+    }
   }
 
   /**
@@ -875,35 +928,6 @@ export class FieldData {
 
     this.centerX = this.x + Math.floor(this.width / 2)
     this.centerY = this.y + Math.floor(this.height / 2)
-  }
-
-  /**
-   * 만약 이런저런 상속으로 인해서, fieldData가 가지고 있는 display함수를 사용하고 싶다면, 이 static 함수를 사용하세요.
-   * display 함수를 재작성한 후, defaultDisplay() 함수를 실행하면 됩니다.
-   * 
-   * 참고: 만약 특정한 위치에 해당 오브젝트를 출력하고 싶다면 defaultDisplay를 사용해야 합니다.
-   * 
-   * @param {number} [x=this.x] 출력할 x좌표, 매개변수가 없으면 현재 오브젝트의 x좌표
-   * @param {number} [y=this.y] 출력할 y좌표, 매개변수가 없으면 현재 오브젝트의 y좌표
-   */
-  defaultDisplay (x = this.x, y = this.y) {
-    if (this.enimation) {
-      this.enimation.display(x, y)
-    } else if (this.imageSrc) {
-      if (this.imageData) {
-        if (this.degree !== 0 || this.flip !== 0) {
-          graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, x, y, this.width, this.height, this.flip, this.degree)
-        } else {
-          graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, x, y, this.width, this.height)
-        }
-      } else {
-        if (this.degree !== 0 || this.flip !== 0) {
-          graphicSystem.imageDisplay(this.imageSrc, 0, 0, this.width, this.height, x, y, this.width, this.height, this.flip, this.degree)
-        } else {
-          graphicSystem.imageView(this.imageSrc, x, y)
-        }
-      }
-    }
   }
 
   /**

@@ -461,8 +461,8 @@ export class WeaponData extends FieldData {
     this.moveSpeedY = Math.floor(distanceY / 10)
 
     // 각 타겟의 이동 속도값(절대값으로 얻음)
-    const absTargetSpeedX = Math.abs(this.targetObject.speedX)
-    const absTargetSpeedY = Math.abs(this.targetObject.speedY)
+    const absTargetSpeedX = Math.abs(this.targetObject._speedX)
+    const absTargetSpeedY = Math.abs(this.targetObject._speedY)
     let minSpeedX = (this.elapsedFrame / 20) + absTargetSpeedX
     let minSpeedY = (this.elapsedFrame / 20) + absTargetSpeedY
 

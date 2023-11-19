@@ -105,10 +105,14 @@ export class soundSrc {
 
     // tower (3-1)
     enemyDieTowerBossRobot1: './sound/enemyDieTowerBossRobot1.ogg',
-    enemyDieTowerBossRobot2: './sound/enemyDieTower2.ogg',
+    enemyDieTowerBossRobot2: './sound/enemyDieTowerBossRobot2.ogg',
     enemyDieTowerDaepo: './sound/enemyDieTowerDaepo.ogg',
-    enemyDieTowerDarkViolet: './sound/enemyDieTowerDarkViolet.ogg',
+    enemyDieTowerMoveBlue: './sound/enemyDieTowerMoveBlue.ogg',
+    enemyDieTowerMoveViolet: './sound/enemyDieTowerMoveViolet.ogg',
+    enemyDieTowerMoveDarkViolet: './sound/enemyDieTowerMoveDarkViolet.ogg',
+    enemyDieTowerMoveYellowEnergy: './sound/enemyDieTowerMoveYellowEnergy.ogg',
     enemyDieTowerDiamond: './sound/enemyDieTowerDiamond.ogg',
+    enemyDieTowerGasi: './sound/enemyDieTowerGasi.ogg',
     enemyDieTowerHellba: './sound/enemyDieTowerHellba.ogg',
     enemyDieTowerHellcho: './sound/enemyDieTowerHellcho.ogg',
     enemyDieTowerHellgal: './sound/enemyDieTowerHellgal.ogg',
@@ -118,8 +122,6 @@ export class soundSrc {
     enemyDieTowerI: './sound/enemyDieTowerI.ogg',
     enemyDieTowerLaserAlpha: './sound/enemyDieTowerLaserAlpha.ogg',
     enemyDieTowerLaserMini: './sound/enemyDieTowerLaserMini.ogg',
-    enemyDieTowerMoveBlue: './sound/enemyDieTowerMoveBlue.ogg',
-    enemyDieTowerMoveViolet: './sound/enemyDieTowerMoveViolet.ogg',
     enemyDieTowerOctagon: './sound/enemyDieTowerOctagon.ogg',
     enemyDieTowerPentagon: './sound/enemyDieTowerPentagon.ogg',
     enemyDieTowerPunch: './sound/enemyDieTowerPunch.ogg',
@@ -127,7 +129,6 @@ export class soundSrc {
     enemyDieTowerSquare: './sound/enemyDieTowerSquare.ogg',
     enemyDieTowerTapo: './sound/enemyDieTowerTapo.ogg',
     enemyDieTowerX: './sound/enemyDieTowerX.ogg',
-    enemyDieTowerYellowEnergy: './sound/enemyDieTowerYellowEnergy.ogg',
   }
 
   static enemyAttack = {
