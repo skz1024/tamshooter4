@@ -1073,3 +1073,4 @@ shop는 상점이고, 아이템을 구매할 수 있습니다. (그러나 골드
 - 이에따라, 기존에 사용중이던 일부 적들의 imageData와 imageSrc를 호출하는 코드가 변경됩니다.
 2. round 3-1 적 죽음 이미지, 알고리즘 추가
 3. imageDataObject의 enemyBullet 삭제
+4. 불필요하게 만들어졌던 텍스트 파일 병합(image/enemy 폴더 내부)
