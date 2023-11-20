@@ -81,22 +81,8 @@ export class imageSrc {
     towerEnemyGroup1: './image/enemy/towerEnemyGroup1.png'
   }
 
-  static enemyBullet = {
-    energyBoltAttack: './image/enemy/energyBoltAttack.png',
-    attackList: './image/enemy/enemyAttackList.png',
-  }
-
-  static enemyEffect = {
-    donggrami: './image/enemy/donggramiEnemyEffect.png',
-    intruder: './image/enemy/intruderEnemyEffect.png'
-  }
-
   static enemyDie = {
     effectList: './image/enemy/enemyDieEffect.png',
-    enemyDieSpaceComet: './image/enemy/enemyDieSpaceComet.png',
-    enemyDieSpaceGamjigi: './image/enemy/enemyDieSpaceGamjigi.png',
-    enemyDieMeteorite: './image/enemy/enemyDieMeteorite.png',
-    enemyDieIntruder: './image/enemy/enemyDieIntruder.png',
   }
 
   static round = {
@@ -207,6 +193,10 @@ export class imageDataInfo {
     bossSqaure: { x: 0, y: 340, width: 60, height: 60, frame: 8 },
     donggrami1: { x: 500, y: 340, width: 50, height: 50, frame: 1},
     donggrami2: { x: 550, y: 340, width: 50, height: 50, frame: 1},
+
+    // dieEffect
+    enemyDieComet: {x: 0, y: 400, width: 35, height: 35, frame: 10},
+    enemyDieGamjigi: {x: 400, y: 400, width: 30, height: 50, frame: 10},
   }
   // { x: 0, y: 0, width: 0, height: 0, frame: 1 },
 
@@ -226,18 +216,18 @@ export class imageDataInfo {
     class33: { x: 100, y: 99, width: 50, height: 50, frame: 1 },
     class34: { x: 150, y: 99, width: 50, height: 50, frame: 1 },
     class35: { x: 200, y: 99, width: 50, height: 50, frame: 1 },
-    whiteMeteo1: { x: 0, y: 150, width: 70, height: 50, frame: 1 },
-    whiteMeteo2: { x: 70, y: 150, width: 70, height: 50, frame: 1 },
-    whiteMeteo3: { x: 140, y: 150, width: 70, height: 50, frame: 1 },
-    whiteMeteo4: { x: 210, y: 150, width: 70, height: 50, frame: 1 },
-    whiteMeteo5: { x: 280, y: 150, width: 70, height: 50, frame: 1 },
-    blackMeteo1: { x: 0, y: 200, width: 80, height: 45, frame: 1 },
-    blackMeteo2: { x: 80, y: 200, width: 80, height: 45, frame: 1 },
-    blackMeteo3: { x: 160, y: 200, width: 80, height: 45, frame: 1 },
-    blackMeteo4: { x: 240, y: 200, width: 80, height: 45, frame: 1 },
-    blackMeteo5: { x: 320, y: 200, width: 80, height: 45, frame: 1 },
-    bomb: {x: 0, y: 250, width: 60, height: 60, frame: 8},
-    bombBig: {x: 0, y: 250, width: 60, height: 60, frame: 1},
+    whiteMeteo1: { x: 50, y: 0, width: 70, height: 50, frame: 1 },
+    whiteMeteo2: { x: 570, y: 0, width: 70, height: 50, frame: 1 },
+    whiteMeteo3: { x: 640, y: 0, width: 70, height: 50, frame: 1 },
+    whiteMeteo4: { x: 710, y: 0, width: 70, height: 50, frame: 1 },
+    whiteMeteo5: { x: 780, y: 0, width: 70, height: 50, frame: 1 },
+    blackMeteo1: { x: 50, y: 50, width: 80, height: 45, frame: 1 },
+    blackMeteo2: { x: 580, y: 50, width: 80, height: 45, frame: 1 },
+    blackMeteo3: { x: 660, y: 50, width: 80, height: 45, frame: 1 },
+    blackMeteo4: { x: 740, y: 50, width: 80, height: 45, frame: 1 },
+    blackMeteo5: { x: 820, y: 50, width: 80, height: 45, frame: 1 },
+    bomb: {x: 500, y: 95, width: 60, height: 60, frame: 8},
+    bombBig: {x: 500, y: 95, width: 60, height: 60, frame: 1},
     stoneBrown: {x: 250, y: 0, width: 80, height: 80, frame: 1},
     stoneBrownPiece1: {x: 250, y: 0, width: 40, height: 40, frame: 1},
     stoneBrownPiece2: {x: 290, y: 0, width: 40, height: 40, frame: 1},
@@ -256,7 +246,14 @@ export class imageDataInfo {
     red1: {x: 251, y: 81, width: 50, height: 50, frame: 1},
     red2: {x: 305, y: 81, width: 70, height: 50, frame: 1},
     red3: {x: 376, y: 81, width: 80, height: 45, frame: 1},
-    red4: {x: 440, y: 140, width: 50, height: 50, frame: 1},
+    red4: {x: 900, y: 0, width: 50, height: 50, frame: 1},
+
+    // enemyDie
+    enemyDieMeteorite1: {x: 0, y: 150, width: 50, height: 50, frame: 10},
+    enemyDieMeteorite2: {x: 0, y: 200, width: 50, height: 50, frame: 10},
+    enemyDieMeteorite3: {x: 0, y: 250, width: 50, height: 50, frame: 10},
+    enemyDieMeteoriteWhite: {x: 0, y: 300, width: 70, height: 50, frame: 10},
+    enemyDieMeteoriteBlack: {x: 0, y: 350, width: 80, height: 45, frame: 10},
   }
 
   static jemulEnemy = {
@@ -275,7 +272,13 @@ export class imageDataInfo {
     redAir: {x: 1450, y: 200, width: 120, height: 90, frame: 4},
     redShip: {x: 1590, y: 140, width: 110, height: 40, frame: 3},
     redJewel: {x: 1550, y: 331, width: 40, height: 45, frame: 10},
-    redMeteorite: {x: 1920, y: 140, width: 70, height: 50, frame: 1}
+    redMeteorite: {x: 1920, y: 140, width: 70, height: 50, frame: 1},
+
+    // enemyAttack
+    energyBoltAttack: new ImageDataObject(0, 400, 100, 100, 6),
+    jemulEnemyAir: {x: 620, y: 400, width: 30, height: 20, frame: 1},
+    jemulEnemyShip: {x: 600, y: 400, width: 20, height: 20, frame: 1},
+    jemulEnemyHellSpike: {x: 650, y: 400, width: 15, height: 20, frame: 1},
   }
 
   static donggramiEnemy = {
@@ -327,7 +330,47 @@ export class imageDataInfo {
 
     // new added
     tree: {x: 0, y: 510, width: 60, height: 120, frame: 1},
-    leaf: {x: 60, y: 510, width: 50, height: 50, frame: 1}
+    leaf: {x: 60, y: 510, width: 50, height: 50, frame: 1},
+
+    // effect
+    /** 느낌표 */ exclamationMark: {x: 600, y: 0, width: 40, height: 40, frame: 11},
+    /** 물음표 */ questionMark: {x: 600, y: 40, width: 40, height: 40, frame: 12},
+    /** 웃음 */ EmojiSmile: {x: 600, y: 80, width: 40, height: 40, frame: 1},
+    /** 행복 */ EmojiHappy: {x: 640, y: 80, width: 40, height: 40, frame: 1},
+    /** 행복과슬픔 */ EmojiHappySad: {x: 680, y: 80, width: 40, height: 40, frame: 1},
+    /** 찡그림 */ EmojiFrown: {x: 720, y: 80, width: 40, height: 40, frame: 1},
+    /** 어메이즈(놀람?) */ EmojiAmaze: {x: 760, y: 80, width: 40, height: 40, frame: 1},
+    /** 슬픔 */ EmojiSad: {x: 800, y: 80, width: 40, height: 40, frame: 1},
+    /** 화남 */ EmojiAngry: {x: 840, y: 80, width: 40, height: 40, frame: 1},
+    /** 생각중... */ EmojiThinking: {x: 880, y: 80, width: 40, height: 40, frame: 1},
+    /** 말풍선(donggramiTalk 전용) */ speechBubble: {x: 600, y: 120, width: 200, height: 52, frame: 1},
+    /** 말풍선 꼬리 */ speechBubbleTale: {x: 810, y: 120, width: 70, height: 26, frame: 1},
+    /** 환영 대화창 */ welcomeText: {x: 600, y: 180, width: 198, height: 78, frame: 1},
+    /** 마을 대화창 */ welcomeMaeulText: {x: 800, y: 180, width: 198, height: 78, frame: 1},
+
+    // a1 effect
+    /** 물결 부스터 */ booster: {x: 600, y: 300, width: 40, height: 40, frame: 7},
+    /** 뿅망치 */ toyHammer: {x: 600, y: 350, width: 60, height: 60, frame: 10},
+    /** 뿅망치(멈춤이미지) */ toyHammerNoEnimation: {x: 1140, y: 350, width: 60, height: 60, frame: 1},
+    /** 뿅망치별... */ toyHammerStar: {x: 600, y: 410, width: 60, height: 60, frame: 8},
+    /** 지진 기모으기 */ earthquakeEnergy: {x: 600, y: 480, width: 40, height: 40, frame: 8},
+
+    // r2-4
+    /** 과일: 빨강 */ fruitRed: {x: 1000, y: 100, width: 50, height: 50, frame: 1},
+    /** 과일: 초록 (사인머스켓?) */ fruitGreen: {x: 1050, y: 100, width: 50, height: 50, frame: 1},
+    /** 과일: 오렌지 */ fruitOrange: {x: 1100, y: 100, width: 50, height: 50, frame: 1},
+    /** 과일: 퍼플 (포도?) */ fruitPurple: {x: 1150, y: 100, width: 50, height: 50, frame: 1},
+    /** 주스: 오렌지 */ juiceOrange: {x: 1000, y: 150, width: 40, height: 50, frame: 1},
+    /** 주스: 콜라(?) */ juiceCola: {x: 1050, y: 150, width: 40, height: 50, frame: 1},
+    /** 주스: 물(?) */ juiceWater: {x: 1100, y: 150, width: 25, height: 50, frame: 1},
+    /** 캔들 */ candle: {x: 1100, y: 420, width: 64, height: 128, frame: 1},
+    /** 폭죽 */ firecracker: {x: 1150, y: 150, width: 50, height: 50, frame: 1},
+    /** 폭죽 이펙트 */ firecrackerEffect: {x: 600, y: 600, width: 50, height: 50, frame: 10},
+    /** 폭죽 이펙트(터지기 전)  */ firecrackerPrevEffect: {x: 600, y: 650, width: 50, height: 50, frame: 8},
+    /** 접시 */ plate: {x: 600, y: 520, width: 50, height: 30, frame: 1},
+    /** 접시 던지기 */ plateThrow: {x: 600, y: 520, width: 50, height: 30, frame: 9},
+    /** 접시 깨지기 */ plateBreak: {x: 600, y: 550, width: 50, height: 20, frame: 10},
+    /** 캔들 + 불 이펙트 */ candleFire: {x: 900, y: 280, width: 30, height: 60, frame: 10},
   }
 
   static intruderEnemy = {
@@ -353,21 +396,25 @@ export class imageDataInfo {
     momi: {x: 0, y: 710, width: 120, height: 60, frame: 12},
     momiDie: {x: 1440, y: 710, width: 120, height: 60, frame: 1},
     flyingRocket: {x: 0, y: 780, width: 150, height: 60, frame: 10},
-    nextEnemy: {x: 1700, y: 200, width: 80, height: 40, frame: 1}
-  }
+    nextEnemy: {x: 1700, y: 200, width: 80, height: 40, frame: 1},
 
-  static intruderEnemyEffect = {
-    energyThunder: {x: 0, y: 0, width: 100, height: 30, frame: 8},
-    energyBolt: {x: 0, y: 30, width: 50, height: 50, frame: 10},
-    energyReflect: {x: 0, y: 80, width: 50, height: 50, frame: 10},
-    lightMetal: {x: 0, y: 130, width: 50, height: 50, frame: 15},
-    lightDiacore: {x: 0, y: 180, width: 50, height: 50, frame: 15},
-    leverMissileBomb: {x: 0, y: 230, width: 80, height: 80, frame: 10},
-    hanoiRing: {x: 0, y: 310, width: 100, height: 40, frame: 7},
-    leverLaser: {x: 500, y: 30, width: 30, height: 100, frame: 1},
-    flyingGreenLaser: {x: 540, y: 100, width: 50, height: 10, frame: 1},
-    leverMissileLeft: {x: 540, y: 30, width: 60, height: 60, frame: 1},
-    leverMissileRight: {x: 600, y: 30, width: 60, height: 60, frame: 1},
+    // effect
+    energyThunder: {x: 0, y: 1350, width: 100, height: 30, frame: 8},
+    energyBolt: {x: 0, y: 1380, width: 50, height: 50, frame: 10},
+    energyReflect: {x: 0, y: 1430, width: 50, height: 50, frame: 10},
+    lightMetal: {x: 0, y: 1480, width: 50, height: 50, frame: 15},
+    lightDiacore: {x: 0, y: 1530, width: 50, height: 50, frame: 15},
+    leverMissileBomb: {x: 0, y: 1350, width: 80, height: 80, frame: 10},
+    hanoiRing: {x: 0, y: 1430, width: 100, height: 40, frame: 7},
+    leverLaser: {x: 500, y: 1380, width: 30, height: 100, frame: 1},
+    flyingGreenLaser: {x: 540, y: 1450, width: 50, height: 10, frame: 1},
+    leverMissileLeft: {x: 540, y: 1380, width: 60, height: 60, frame: 1},
+    leverMissileRight: {x: 600, y: 1380, width: 60, height: 60, frame: 1},
+
+    // enemyDie
+    enemyDieIntruderDaseok: {x: 0, y: 850, width: 160, height: 240, frame: 10},
+    enemyDieIntruderHanoi: {x: 0, y: 1090, width: 200, height: 170, frame: 7},
+    enemyDieIntruderLever: {x: 0, y: 1260, width: 80, height: 80, frame: 11},
   }
 
   static towerEnemyGroup1 = {
@@ -414,6 +461,19 @@ export class imageDataInfo {
     bulletDaepo: new ImageDataObject(210, 700, 100, 100, 1),
     bulletPurpleEnergy: new ImageDataObject(320, 700, 50, 50),
     bulletBossRocket: new ImageDataObject(380, 700, 120, 40, 1),
+
+    // enemyDie
+    enemyDieSandglass: new ImageDataObject(0, 800, 100, 150, 10),
+    enemyDieTapo: new ImageDataObject(0, 1050, 130, 100, 6),
+    enemyDieX: new ImageDataObject(0, 1200, 65, 80, 8),
+    enemyDieI: new ImageDataObject(0, 960, 85, 80, 14),
+    enemyDieTapoFront: new ImageDataObject(1000, 850, 80, 40, 1),
+    enemyDieTapoBack: new ImageDataObject(1080, 850, 80, 40, 1),
+    enemyDiePunchBall: new ImageDataObject(1000, 800, 50, 50, 1),
+    enemyDiePunchSpring: new ImageDataObject(1050, 800, 100, 50, 1),
+    enemyDiePunchModule: new ImageDataObject(1150, 800, 50, 50, 1),
+    enemyDieGasiUp: new ImageDataObject(1000, 890, 20, 60, 6),
+    enemyDieGasiDown: new ImageDataObject(1000, 950, 20, 60, 6),
   }
 
   static fieldSystem = {
@@ -447,74 +507,6 @@ export class imageDataInfo {
     metalSlash: {x: 0, y: 300, width: 20, height: 20, frame: 10},
     circleBlue: {x: 0, y: 320, width: 20, height: 20, frame: 10},
     circleGreenStroke: {x: 0, y: 340, width: 20, height: 20, frame: 10},
-  }
-  
-  static enemyDieEffectEx = {
-    enemyDieSpaceGamjigi: {x: 0, y: 0, width: 30, height: 50, frame: 10},
-    enemyDieSapceComet: {x: 0, y: 0, width: 35, height: 35, frame: 10}
-  }
-
-  static enemyDieMeteorite = {
-    enemyDieMeteorite1: {x: 0, y: 0, width: 50, height: 50, frame: 10},
-    enemyDieMeteorite2: {x: 0, y: 50, width: 50, height: 50, frame: 10},
-    enemyDieMeteorite3: {x: 0, y: 100, width: 50, height: 50, frame: 10},
-    enemyDieMeteoriteWhite: {x: 0, y: 150, width: 70, height: 50, frame: 10},
-    enemyDieMeteoriteBlack: {x: 0, y: 200, width: 80, height: 45, frame: 10},
-  }
-
-  static enemyDieIntruder = {
-    enemyDieIntruderDaseok: {x: 0, y: 0, width: 160, height: 240, frame: 10},
-    enemyDieIntruderHanoi: {x: 0, y: 240, width: 200, height: 170, frame: 7},
-    enemyDieIntruderLever: {x: 0, y: 410, width: 80, height: 80, frame: 11},
-  }
-
-  /** @deprecated 이 항목은 잠정적으로 사용 중지됩니다. (더이상 적의 총알이미지데이터는 따로 분류되지 않고 적 이미지 데이터에 포함됩니다.) */
-  static enemyBullet = {
-    jemulEnergyBoltAttack: {x: 0, y: 0, width: 60, height: 60, frame: 6},
-    jemulEnemyAir: {x: 20, y: 0, width: 30, height: 20, frame: 1},
-    jemulEnemyShip: {x: 0, y: 0, width: 20, height: 20, frame: 1},
-    jemulEnemyHellSpike: {x: 50, y: 0, width: 15, height: 20, frame: 1},
-  }
-
-  static donggramiEnemyEffect = {
-    exclamationMark: {x: 0, y: 0, width: 40, height: 40, frame: 11},
-    questionMark: {x: 0, y: 40, width: 40, height: 40, frame: 12},
-    /** 웃음 */ EmojiSmile: {x: 0, y: 80, width: 40, height: 40, frame: 1},
-    /** 행복 */ EmojiHappy: {x: 40, y: 80, width: 40, height: 40, frame: 1},
-    /** 행복과슬픔 */ EmojiHappySad: {x: 80, y: 80, width: 40, height: 40, frame: 1},
-    /** 찡그림 */ EmojiFrown: {x: 120, y: 80, width: 40, height: 40, frame: 1},
-    /** 어메이즈(놀람?) */ EmojiAmaze: {x: 160, y: 80, width: 40, height: 40, frame: 1},
-    /** 슬픔 */ EmojiSad: {x: 200, y: 80, width: 40, height: 40, frame: 1},
-    /** 화남 */ EmojiAngry: {x: 240, y: 80, width: 40, height: 40, frame: 1},
-    /** 생각중... */ EmojiThinking: {x: 280, y: 80, width: 40, height: 40, frame: 1},
-    /** 말풍선(donggramiTalk 전용) */ speechBubble: {x: 0, y: 120, width: 200, height: 52, frame: 1},
-    /** 말풍선 꼬리 */ speechBubbleTale: {x: 210, y: 120, width: 70, height: 26, frame: 1},
-    /** 환영 대화창 */ welcomeText: {x: 0, y: 180, width: 198, height: 78, frame: 1},
-    /** 마을 대화창 */ welcomeMaeulText: {x: 200, y: 180, width: 198, height: 78, frame: 1},
-
-    // a1 effect
-    /** 물결 부스터 */ booster: {x: 0, y: 300, width: 40, height: 40, frame: 7},
-    /** 뿅망치 */ toyHammer: {x: 0, y: 350, width: 60, height: 60, frame: 10},
-    /** 뿅망치(멈춤이미지) */ toyHammerNoEnimation: {x: 540, y: 350, width: 60, height: 60, frame: 1},
-    /** 뿅망치별... */ toyHammerStar: {x: 0, y: 410, width: 60, height: 60, frame: 8},
-    /** 지진 기모으기 */ earthquakeEnergy: {x: 0, y: 480, width: 40, height: 40, frame: 8},
-
-    // r2-4
-    /** 과일: 빨강 */ fruitRed: {x: 400, y: 100, width: 50, height: 50, frame: 1},
-    /** 과일: 초록 (사인머스켓?) */ fruitGreen: {x: 450, y: 100, width: 50, height: 50, frame: 1},
-    /** 과일: 오렌지 */ fruitOrange: {x: 500, y: 100, width: 50, height: 50, frame: 1},
-    /** 과일: 퍼플 (포도?) */ fruitPurple: {x: 550, y: 100, width: 50, height: 50, frame: 1},
-    /** 주스: 오렌지 */ juiceOrange: {x: 400, y: 150, width: 40, height: 50, frame: 1},
-    /** 주스: 콜라(?) */ juiceCola: {x: 450, y: 150, width: 40, height: 50, frame: 1},
-    /** 주스: 물(?) */ juiceWater: {x: 500, y: 150, width: 25, height: 50, frame: 1},
-    /** 캔들 */ candle: {x: 500, y: 420, width: 64, height: 128, frame: 1},
-    /** 폭죽 */ firecracker: {x: 550, y: 150, width: 50, height: 50, frame: 1},
-    /** 폭죽 이펙트 */ firecrackerEffect: {x: 0, y: 600, width: 50, height: 50, frame: 10},
-    /** 폭죽 이펙트(터지기 전)  */ firecrackerPrevEffect: {x: 0, y: 650, width: 50, height: 50, frame: 8},
-    /** 접시 */ plate: {x: 0, y: 520, width: 50, height: 30, frame: 1},
-    /** 접시 던지기 */ plateThrow: {x: 0, y: 520, width: 50, height: 30, frame: 9},
-    /** 접시 깨지기 */ plateBreak: {x: 0, y: 550, width: 50, height: 20, frame: 10},
-    /** 캔들 + 불 이펙트 */ candleFire: {x: 300, y: 280, width: 30, height: 60, frame: 10},
   }
 
   static round2_3_result = {

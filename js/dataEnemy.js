@@ -883,7 +883,7 @@ class SpaceEnemyGamjigi extends SpaceEnemyData {
     this.setAutoImageData(imageSrc.enemy.spaceEnemy, imageDataInfo.spaceEnemy.gamjigi)
     this.setEnemyByCpStat(20, 12)
     this.setMoveDirection()
-    this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceGamjigi, new CustomEffect(imageSrc.enemyDie.enemyDieSpaceGamjigi, imageDataInfo.enemyDieEffectEx.enemyDieSpaceGamjigi, this.width, this.height, 3))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceGamjigi, new CustomEffect(imageSrc.enemy.spaceEnemy, imageDataInfo.spaceEnemy.enemyDieGamjigi, this.width, this.height, 3))
     this.moveDelay = new DelayData(300)
     this.boostCount = 0
     this.degree = 0
@@ -962,7 +962,7 @@ class SpaceEnemyComet extends SpaceEnemyData {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.spaceEnemy, imageDataInfo.spaceEnemy.comet, 2)
-    this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceComet, new CustomEffect(imageSrc.enemyDie.enemyDieSpaceComet, imageDataInfo.enemyDieEffectEx.enemyDieSapceComet, this.width, this.height, 4))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceComet, new CustomEffect(imageSrc.enemy.spaceEnemy, imageDataInfo.spaceEnemy.enemyDieComet, this.width, this.height, 4))
     this.setEnemyByCpStat(5, 4)
     this.setMoveSpeed(1, Math.random() * 4 + 2)
     this.boostCount = 0
@@ -1003,11 +1003,11 @@ class SpaceEnemyMeteorite extends SpaceEnemyData {
       soundSrc.enemyDie.enemyDieMeteorite5,
     ]
     const dieEffectImageDataList = [
-      imageDataInfo.enemyDieMeteorite.enemyDieMeteorite1,
-      imageDataInfo.enemyDieMeteorite.enemyDieMeteorite2,
-      imageDataInfo.enemyDieMeteorite.enemyDieMeteorite3,
-      imageDataInfo.enemyDieMeteorite.enemyDieMeteoriteWhite,
-      imageDataInfo.enemyDieMeteorite.enemyDieMeteoriteBlack,
+      imageDataInfo.meteoriteEnemy.enemyDieMeteorite1,
+      imageDataInfo.meteoriteEnemy.enemyDieMeteorite2,
+      imageDataInfo.meteoriteEnemy.enemyDieMeteorite3,
+      imageDataInfo.meteoriteEnemy.enemyDieMeteoriteWhite,
+      imageDataInfo.meteoriteEnemy.enemyDieMeteoriteBlack,
     ]
 
     // 운석 번호 설정(운석 번호에 따라 스탯과 이미지가 달라짐)
@@ -1015,7 +1015,7 @@ class SpaceEnemyMeteorite extends SpaceEnemyData {
     
     this.setEnemyStat(hpList[meteoriteNumber], scoreList[meteoriteNumber], attackList[meteoriteNumber])
     this.setAutoImageData(imageSrc.enemy.spaceEnemy, imageDataList[meteoriteNumber])
-    this.setDieEffectOption(dieSoundList[meteoriteNumber], new CustomEffect(imageSrc.enemyDie.enemyDieMeteorite, dieEffectImageDataList[meteoriteNumber], this.width, this.height, 4))
+    this.setDieEffectOption(dieSoundList[meteoriteNumber], new CustomEffect(imageSrc.enemy.meteoriteEnemy, dieEffectImageDataList[meteoriteNumber], this.width, this.height, 4))
     this.setMoveDirection()
 
     this.moveSpeedX = Math.random() * 4 - 2
@@ -1282,9 +1282,9 @@ class MeteoriteEnemyClass1 extends MeteoriteEnemyData {
       soundSrc.enemyDie.enemyDieMeteorite5
     ]
     const dieImageDataList = [
-      imageDataInfo.enemyDieMeteorite.enemyDieMeteorite1,
-      imageDataInfo.enemyDieMeteorite.enemyDieMeteorite2,
-      imageDataInfo.enemyDieMeteorite.enemyDieMeteorite3
+      imageDataInfo.meteoriteEnemy.enemyDieMeteorite1,
+      imageDataInfo.meteoriteEnemy.enemyDieMeteorite2,
+      imageDataInfo.meteoriteEnemy.enemyDieMeteorite3
     ]
     
     let imageNumber = Math.floor(Math.random() * imageDataList.length)
@@ -1294,7 +1294,7 @@ class MeteoriteEnemyClass1 extends MeteoriteEnemyData {
     this.setEnemyByCpStat(4, 5)
     this.setWidthHeight(25, 25)
     this.setAutoImageData(imageSrc.enemy.meteoriteEnemy, imageDataList[imageNumber])
-    this.setDieEffectOption(dieSoundList[dieSoundNumber], new CustomEffect(imageSrc.enemyDie.enemyDieMeteorite, dieImageDataList[dieImageNumber], this.width, this.height, 1))
+    this.setDieEffectOption(dieSoundList[dieSoundNumber], new CustomEffect(imageSrc.enemy.meteoriteEnemy, dieImageDataList[dieImageNumber], this.width, this.height, 1))
     this.setMoveSpeed((Math.random() * 8) - 4, (Math.random() * 8) - 4)
     this.isExitToReset = true
     this.degree = Math.floor(Math.random() * 360)
@@ -1386,7 +1386,7 @@ class MeteoriteEnemyWhiteMeteo extends MeteoriteEnemyData {
     this.setAutoImageData(imageSrc.enemy.meteoriteEnemy, imageDataTable[imageNumber])
     this.setEnemyByCpStat(15, 12)
     this.setMoveSpeed((Math.random() * 2) - 1, (Math.random() * 2) - 1)
-    this.setDieEffectOption(dieSoundTable[soundNumber], new CustomEffect(imageSrc.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteoriteWhite, this.width, this.height, 1))
+    this.setDieEffectOption(dieSoundTable[soundNumber], new CustomEffect(imageSrc.enemy.meteoriteEnemy, imageDataInfo.meteoriteEnemy.enemyDieMeteoriteWhite, this.width, this.height, 1))
     this.maxMoveSpeedX = Math.random() * 3 + 1
     this.maxMoveSpeedY = Math.random() * 3 + 1
     this.baseMoveSpeedX = this.moveSpeedX
@@ -1700,7 +1700,7 @@ class MeteoriteEnemyBlackMeteo extends MeteoriteEnemyWhiteMeteo {
     let imageNumber = Math.floor(Math.random() * MAX_NUM)
     this.setAutoImageData(imageSrc.enemy.meteoriteEnemy, imageDataTable[imageNumber])
     this.setEnemyByCpStat(18, 12)
-    this.dieEffect = new CustomEffect(imageSrc.enemyDie.enemyDieMeteorite, imageDataInfo.enemyDieMeteorite.enemyDieMeteoriteBlack, this.width, this.height, 4)
+    this.dieEffect = new CustomEffect(imageSrc.enemy.meteoriteEnemy, imageDataInfo.meteoriteEnemy.enemyDieMeteoriteBlack, this.width, this.height, 4)
     this.moveDelay.delay = moveDelayTable[this.typeNumber]
   }
 }
@@ -2027,7 +2027,7 @@ class JemulEnemyEnergyBolt extends JemulEnemyData {
     this.bulletSize = 160
     this.isExitToReset = true
 
-    this.bulletEffect = new CustomEffect(imageSrc.enemyBullet.energyBoltAttack, imageDataInfo.enemyBullet.jemulEnergyBoltAttack, 160, 160, 2)
+    this.bulletEffect = new CustomEffect(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.energyBoltAttack, 160, 160, 2)
   }
 
   processMove () {
@@ -2060,16 +2060,9 @@ class JemulEnemyEnergyBolt extends JemulEnemyData {
       }
       
       // 사운드 및 이펙트 추가
-      fieldState.createEffectObject(this.bulletEffect, hitArea.x, hitArea.y)
+      fieldState.createEffectObject(this.bulletEffect.getObject(), hitArea.x, hitArea.y)
       soundSystem.play(soundSrc.enemyAttack.jemulEnergyBoltAttack)
     }
-  }
-}
-
-class JemulEnemyEnergyBoltAttackEffect extends EffectData {
-  constructor () {
-    super()
-    this.autoSetEnimation(imageSrc.enemyBullet.energyBoltAttack, imageDataInfo.enemyBullet.jemulEnergyBoltAttack, 160, 160, 3)
   }
 }
 
@@ -2091,7 +2084,7 @@ class JemulEnemyHellSpike extends JemulEnemyData {
       let moveDirectionX = [FieldData.direction.LEFT, FieldData.direction.LEFT, FieldData.direction.RIGHT, FieldData.direction.RIGHT]
       let moveDirectionY = [FieldData.direction.UP, FieldData.direction.DOWN, FieldData.direction.UP, FieldData.direction.DOWN]
       for (let i = 0; i < 4; i++) {
-        let enemyBullet = new CustomEnemyBullet(imageSrc.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyHellSpike, 10, 3, 3, moveDirectionX[i], moveDirectionY[i])
+        let enemyBullet = new CustomEnemyBullet(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulEnemyHellSpike, 10, 3, 3, moveDirectionX[i], moveDirectionY[i])
         enemyBullet.setAutoRotate()
         fieldState.createEnemyBulletObject(enemyBullet, centerX, centerY)
       }
@@ -2229,7 +2222,7 @@ class JemulEnemyHellShip extends JemulEnemyData {
 
   processAttack () {
     if (this.attackDelay.check()) {
-      let enemyBullet = new CustomEnemyBullet(imageSrc.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyShip, 15, 4, 0, FieldData.direction.LEFT)
+      let enemyBullet = new CustomEnemyBullet(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulEnemyShip, 15, 4, 0, FieldData.direction.LEFT)
       fieldState.createEnemyBulletObject(enemyBullet, this.x, this.y)
     }
   }
@@ -2324,7 +2317,7 @@ class JemulEnemyHellAir extends JemulEnemyData {
       let speedYList = [-1, 0, 0, 1]
       let insertY = [this.y + (this.height / 4 * 0), this.y + (this.height / 4 * 2), this.y + (this.height / 4 * 3), this.y + (this.height / 4 * 4)]
       for (let i = 0; i < 4; i++) {
-        let enemyBullet = new CustomEnemyBullet(imageSrc.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyAir, 6, bulletSpeedX, speedYList[i])
+        let enemyBullet = new CustomEnemyBullet(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulEnemyAir, 6, bulletSpeedX, speedYList[i])
         fieldState.createEnemyBulletObject(enemyBullet, this.x, insertY[i])
       }
     }
@@ -2502,7 +2495,7 @@ class JemulEnemyBoss extends JemulEnemyData {
       }
     }
 
-    let enemyBullet = new CustomEnemyBullet(imageSrc.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyShip, 20, bulletSpeedX, bulletSpeedY, '', '')
+    let enemyBullet = new CustomEnemyBullet(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulEnemyShip, 20, bulletSpeedX, bulletSpeedY, '', '')
     fieldState.createEnemyBulletObject(enemyBullet, this.centerX, this.centerY)
   }
 
@@ -3130,7 +3123,7 @@ class JemulEnemyRedAir extends JemulEnemyData {
         bulletX = this.x
       }
 
-      let enemyBullet = new CustomEnemyBullet(imageSrc.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyAir, 6, bulletSpeedX, 0)
+      let enemyBullet = new CustomEnemyBullet(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulEnemyAir, 6, bulletSpeedX, 0)
       fieldState.createEnemyBulletObject(enemyBullet, bulletX, this.y + (this.height / 4 * 1))
     }
 
@@ -3169,8 +3162,8 @@ class JemulEnemyRedShip extends JemulEnemyData {
 
   processAttack () {
     if (this.attackDelay.check()) {
-      let enemyBullet1 = new CustomEnemyBullet(imageSrc.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyShip, 10, 9, 0, 'left')
-      let enemyBullet2 = new CustomEnemyBullet(imageSrc.enemyBullet.attackList, imageDataInfo.enemyBullet.jemulEnemyShip, 10, 9, 0, 'right')
+      let enemyBullet1 = new CustomEnemyBullet(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulEnemyShip, 10, 9, 0, 'left')
+      let enemyBullet2 = new CustomEnemyBullet(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulEnemyShip, 10, 9, 0, 'right')
       fieldState.createEnemyBulletObject(enemyBullet1, this.x, this.y)
       fieldState.createEnemyBulletObject(enemyBullet2, this.x, this.y)
     }
@@ -3341,14 +3334,14 @@ class DonggramiEnemy extends EnemyData {
    */
   static getEmojiImageData (imogeType) {
     switch (imogeType) {
-      case DonggramiEnemy.EmojiList.SMILE: return imageDataInfo.donggramiEnemyEffect.EmojiSmile
-      case DonggramiEnemy.EmojiList.HAPPY: return imageDataInfo.donggramiEnemyEffect.EmojiHappy
-      case DonggramiEnemy.EmojiList.HAPPYSAD: return imageDataInfo.donggramiEnemyEffect.EmojiHappySad
-      case DonggramiEnemy.EmojiList.AMAZE: return imageDataInfo.donggramiEnemyEffect.EmojiAmaze
-      case DonggramiEnemy.EmojiList.FROWN: return imageDataInfo.donggramiEnemyEffect.EmojiFrown
-      case DonggramiEnemy.EmojiList.THINKING: return imageDataInfo.donggramiEnemyEffect.EmojiThinking
+      case DonggramiEnemy.EmojiList.SMILE: return imageDataInfo.donggramiEnemy.EmojiSmile
+      case DonggramiEnemy.EmojiList.HAPPY: return imageDataInfo.donggramiEnemy.EmojiHappy
+      case DonggramiEnemy.EmojiList.HAPPYSAD: return imageDataInfo.donggramiEnemy.EmojiHappySad
+      case DonggramiEnemy.EmojiList.AMAZE: return imageDataInfo.donggramiEnemy.EmojiAmaze
+      case DonggramiEnemy.EmojiList.FROWN: return imageDataInfo.donggramiEnemy.EmojiFrown
+      case DonggramiEnemy.EmojiList.THINKING: return imageDataInfo.donggramiEnemy.EmojiThinking
       case DonggramiEnemy.EmojiList.NOTHING: return null
-      case DonggramiEnemy.EmojiList.SAD: return imageDataInfo.donggramiEnemyEffect.EmojiSad
+      case DonggramiEnemy.EmojiList.SAD: return imageDataInfo.donggramiEnemy.EmojiSad
       default: return null
     }
   }
@@ -3396,13 +3389,13 @@ class DonggramiEnemy extends EnemyData {
   }
 
   /** 느낌표 이펙트 데이터 */
-  static exclamationMarkEffect = new CustomEffect(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.exclamationMark, 40, 40, 5, 2)
+  static exclamationMarkEffect = new CustomEffect(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.exclamationMark, 40, 40, 5, 2)
 
   /** 느낌표 이펙트 짧게 표시용 */
-  static exclamationMarkEffectShort = new CustomEffect(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.exclamationMark, 40, 40, 3, 1)
+  static exclamationMarkEffectShort = new CustomEffect(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.exclamationMark, 40, 40, 3, 1)
 
   /** 물음표 이펙트 데이터 */
-  static questionMarkEffect = new CustomEffect(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.questionMark, 40, 40, 5, 12)
+  static questionMarkEffect = new CustomEffect(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.questionMark, 40, 40, 5, 12)
 
   /** 대화 리스트 */
   static talkList = [
@@ -3897,7 +3890,7 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
       if (emoji == null) return
 
       graphicSystem.imageDisplay(
-        imageSrc.enemyEffect.donggrami, 
+        imageSrc.enemy.donggramiEnemy, 
         emoji.x, 
         emoji.y, 
         emoji.width, 
@@ -4020,16 +4013,16 @@ class DonggramiEnemyTalk extends DonggramiEnemy {
       outputText.push(this.currentTalk.slice(i * 10, (i + 1) * 10))
     }
     
-    const imageData = imageDataInfo.donggramiEnemyEffect.speechBubble
-    const imageDataTale = imageDataInfo.donggramiEnemyEffect.speechBubbleTale
+    const imageData = imageDataInfo.donggramiEnemy.speechBubble
+    const imageDataTale = imageDataInfo.donggramiEnemy.speechBubbleTale
     const bubbleSize = maxLoop < 2 ? imageData.height : (maxLoop * 20) + 20
 
     // 스피치버블의 출력 위치는, 위쪽에 출력하면서 동시에 오브젝트에 겹치지 않아야 합니다.
     // 그래서 예상 크기만큼을 y축에서 뺍니다.
     const speechBubbleY = this.y - imageDataTale.height - bubbleSize
 
-    game.graphic.imageDisplay(imageSrc.enemyEffect.donggrami, imageDataTale.x, imageDataTale.y, imageDataTale.width, imageDataTale.height, this.x, this.y - imageDataTale.height, imageDataTale.width, imageDataTale.height)
-    game.graphic.imageDisplay(imageSrc.enemyEffect.donggrami, imageData.x, imageData.y, imageData.width, imageData.height, this.x, speechBubbleY, imageData.width, bubbleSize)
+    game.graphic.imageDisplay(imageSrc.enemy.donggramiEnemy, imageDataTale.x, imageDataTale.y, imageDataTale.width, imageDataTale.height, this.x, this.y - imageDataTale.height, imageDataTale.width, imageDataTale.height)
+    game.graphic.imageDisplay(imageSrc.enemy.donggramiEnemy, imageData.x, imageData.y, imageData.width, imageData.height, this.x, speechBubbleY, imageData.width, bubbleSize)
     
     // 텍스트 출력값도 스피치 버블이랑 같은 원리지만, padding값이 추가되었습니다.
     const textY = this.y - imageDataTale.height - bubbleSize + padding
@@ -4154,7 +4147,7 @@ class DonggramiEnemyBossBig1 extends DonggramiEnemy {
     this.BASE_DELAY = 240
     this.ADVANCE_DELAY = 120
     this.moveDelay = new DelayData(this.BASE_DELAY)
-    this.welcomeImageData = imageDataInfo.donggramiEnemyEffect.welcomeText
+    this.welcomeImageData = imageDataInfo.donggramiEnemy.welcomeText
 
     this.welcomeDelay = new DelayData(this.BASE_DELAY)
 
@@ -4212,7 +4205,7 @@ class DonggramiEnemyBossBig1 extends DonggramiEnemy {
 
     // 대화창 이미지 출력
     const imageData = this.welcomeImageData
-    const image = imageSrc.enemyEffect.donggrami
+    const image = imageSrc.enemy.donggramiEnemy
     game.graphic.imageDisplay(image, imageData.x, imageData.y, imageData.width, imageData.height, this.x, this.y - imageData.height, imageData.width, imageData.height)
   }
 }
@@ -4221,7 +4214,7 @@ class DonggramiEnemyBossBig2 extends DonggramiEnemyBossBig1 {
   constructor () {
     super()
     this.setDonggramiColor(DonggramiEnemy.colorGroup.BIG2)
-    this.welcomeImageData = imageDataInfo.donggramiEnemyEffect.welcomeMaeulText
+    this.welcomeImageData = imageDataInfo.donggramiEnemy.welcomeMaeulText
   }
 }
 
@@ -4251,8 +4244,8 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
     this.hammerObject = { x: 0, y: 0, width: 180, height: 180, degree: 0, degreeChange: 15 }
 
     // 이펙트 이름 길이를 줄이기 위해 만든 변수
-    let srcB = imageSrc.enemyEffect.donggrami
-    let imageD = imageDataInfo.donggramiEnemyEffect
+    let srcB = imageSrc.enemy.donggramiEnemy
+    let imageD = imageDataInfo.donggramiEnemy
 
     this.hammerStarEffect = new CustomEffect(srcB, imageD.toyHammerStar, 180, 180, 1)
     this.boostEffect = new CustomEffect(srcB, imageD.booster, this.width, this.height, 1)
@@ -4539,8 +4532,8 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
 
   displayHammer () {
     if (this.stateDelay.count > 0) {
-      let hammer = imageDataInfo.donggramiEnemyEffect.toyHammerNoEnimation
-      graphicSystem.imageDisplay(imageSrc.enemyEffect.donggrami, hammer.x, hammer.y, hammer.width, hammer.height, this.hammerObject.x, this.hammerObject.y, this.hammerObject.width, this.hammerObject.height, 0, this.hammerObject.degree)
+      let hammer = imageDataInfo.donggramiEnemy.toyHammerNoEnimation
+      graphicSystem.imageDisplay(imageSrc.enemy.donggramiEnemy, hammer.x, hammer.y, hammer.width, hammer.height, this.hammerObject.x, this.hammerObject.y, this.hammerObject.width, this.hammerObject.height, 0, this.hammerObject.degree)
     }
   }
 }
@@ -4909,16 +4902,16 @@ class DonggramiEnemyParty extends DonggramiEnemy {
 
   /** DonggramiParty가 생성한 오브젝트를 표시하기 위해 만들어진 변수 (오브젝트 내에 있는 display 함수를 통해 표현)  */
   static iconList = {
-    fruitRed: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitRed),
-    fruitGreen: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitGreen),
-    fruitOrange: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitOrange),
-    fruitPurple: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitPurple),
-    juiceCola: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.juiceCola),
-    juiceOrange: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.juiceOrange),
-    juiceWater: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.juiceWater),
-    partyCandle: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.candle),
-    partyFirecracker: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.firecracker),
-    partyPlate: EnimationData.createEnimation(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.plate),
+    fruitRed: EnimationData.createEnimation(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.fruitRed),
+    fruitGreen: EnimationData.createEnimation(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.fruitGreen),
+    fruitOrange: EnimationData.createEnimation(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.fruitOrange),
+    fruitPurple: EnimationData.createEnimation(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.fruitPurple),
+    juiceCola: EnimationData.createEnimation(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.juiceCola),
+    juiceOrange: EnimationData.createEnimation(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.juiceOrange),
+    juiceWater: EnimationData.createEnimation(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.juiceWater),
+    partyCandle: EnimationData.createEnimation(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.candle),
+    partyFirecracker: EnimationData.createEnimation(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.firecracker),
+    partyPlate: EnimationData.createEnimation(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.plate),
   }
 
   constructor () {
@@ -5009,7 +5002,7 @@ class DonggramiEnemyParty extends DonggramiEnemy {
       case this.subTypeList.PARTY_CANDLE:
         // 일정 시간 단위마다 촛불 생성
         if (this.stateDelay.divCheck(30)) {
-          let candleBullet = new CustomEnemyBullet(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.candleFire, 12, 0, -4)
+          let candleBullet = new CustomEnemyBullet(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.candleFire, 12, 0, -4)
           fieldState.createEnemyBulletObject(candleBullet, this.objX + 32, this.objY)
         }
         break
@@ -5018,7 +5011,7 @@ class DonggramiEnemyParty extends DonggramiEnemy {
 
   static PlateBullet = class extends CustomEnemyBullet {
     constructor (damage = 6, speedX = Math.random() * 2, speedY = 5) {
-      super(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.plateThrow, damage, speedX, speedY)
+      super(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.plateThrow, damage, speedX, speedY)
       this.setWidthHeight(this.width * 2, this.height * 2)
     }
 
@@ -5027,7 +5020,7 @@ class DonggramiEnemyParty extends DonggramiEnemy {
       // 접시가 바닥에 닿으면 깨지는 이펙트가 생성되고, 이 오브젝트(접시)는 삭제됨
       // 플레이어랑 부딪힐경우에는 이 오브젝트가 삭제 예정이므로, 이를 이용해서 접시가 깨지는 이펙트를 출력
       if (this.y + this.height >= graphicSystem.CANVAS_HEIGHT || this.isDeleted) {
-        let customEffect = new CustomEffect(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.plateBreak, this.width, this.height, 2)
+        let customEffect = new CustomEffect(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.plateBreak, this.width, this.height, 2)
         soundSystem.play(soundSrc.donggrami.plate)
         fieldState.createEffectObject(customEffect, this.x, this.y)
         this.isDeleted = true
@@ -5037,7 +5030,7 @@ class DonggramiEnemyParty extends DonggramiEnemy {
 
   static FirecrackerBullet = class extends CustomEnemyBullet {
     constructor (damage = 6, endPositionX = 0, endPositionY = 0) {
-      super(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.firecrackerPrevEffect, damage, 0, 0)
+      super(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.firecrackerPrevEffect, damage, 0, 0)
       this.endPositionX = endPositionX
       this.endPositionY = endPositionY
       this.bombDamage = damage
@@ -5050,7 +5043,7 @@ class DonggramiEnemyParty extends DonggramiEnemy {
       this.moveSpeedY = (this.endPositionY - this.y) / 10
 
       if (this.elapsedFrame === 60) {
-        let partyEffect = new CustomEffect(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.firecrackerEffect, 100, 100, 2)
+        let partyEffect = new CustomEffect(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.firecrackerEffect, 100, 100, 2)
         let partyObject = { x: this.x - 25, y: this.y - 25, width: 100, height: 100}
         let player = fieldState.getPlayerObject()
         if (collision(player, partyObject)) {
@@ -5101,18 +5094,18 @@ class DonggramiEnemyParty extends DonggramiEnemy {
 
     // 떨어트리기 위한 총알 생성
     if (this.stateDelay.count === 1) {
-      const imgSrc = imageSrc.enemyEffect.donggrami
-      let imgD = imageDataInfo.donggramiEnemyEffect.fruitRed
+      const imgSrc = imageSrc.enemy.donggramiEnemy
+      let imgD = imageDataInfo.donggramiEnemy.fruitRed
       switch (this.subType) {
-        case this.subTypeList.FRUIT_GREEN: imgD = imageDataInfo.donggramiEnemyEffect.fruitGreen; break
-        case this.subTypeList.FRUIT_ORANGE: imgD = imageDataInfo.donggramiEnemyEffect.fruitOrange; break
-        case this.subTypeList.FRUIT_PURPLE: imgD = imageDataInfo.donggramiEnemyEffect.fruitPurple; break
-        case this.subTypeList.JUICE_COLA: imgD = imageDataInfo.donggramiEnemyEffect.juiceCola; break
-        case this.subTypeList.JUICE_ORANGE: imgD = imageDataInfo.donggramiEnemyEffect.juiceOrange; break
-        case this.subTypeList.JUICE_WATER: imgD = imageDataInfo.donggramiEnemyEffect.juiceWater; break
-        case this.subTypeList.PARTY_CANDLE: imgD = imageDataInfo.donggramiEnemyEffect.candle; break
-        case this.subTypeList.PARTY_FIRECRACKER: imgD = imageDataInfo.donggramiEnemyEffect.firecracker; break
-        case this.subTypeList.PARTY_PLATE: imgD = imageDataInfo.donggramiEnemyEffect.plate; break
+        case this.subTypeList.FRUIT_GREEN: imgD = imageDataInfo.donggramiEnemy.fruitGreen; break
+        case this.subTypeList.FRUIT_ORANGE: imgD = imageDataInfo.donggramiEnemy.fruitOrange; break
+        case this.subTypeList.FRUIT_PURPLE: imgD = imageDataInfo.donggramiEnemy.fruitPurple; break
+        case this.subTypeList.JUICE_COLA: imgD = imageDataInfo.donggramiEnemy.juiceCola; break
+        case this.subTypeList.JUICE_ORANGE: imgD = imageDataInfo.donggramiEnemy.juiceOrange; break
+        case this.subTypeList.JUICE_WATER: imgD = imageDataInfo.donggramiEnemy.juiceWater; break
+        case this.subTypeList.PARTY_CANDLE: imgD = imageDataInfo.donggramiEnemy.candle; break
+        case this.subTypeList.PARTY_FIRECRACKER: imgD = imageDataInfo.donggramiEnemy.firecracker; break
+        case this.subTypeList.PARTY_PLATE: imgD = imageDataInfo.donggramiEnemy.plate; break
       }
 
       let customBullet = new CustomEnemyBullet(imgSrc, imgD, 5, 0, 5)
@@ -5193,10 +5186,10 @@ class DonggramiEnemyParty extends DonggramiEnemy {
 }
 
 class DonggramiEnemyFruit extends DonggramiEnemyParty {
-  static bulletFruitRed = new CustomEnemyBullet(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitRed, 10, 0, 0)
-  static bulletFruitGreen = new CustomEnemyBullet(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitGreen, 10, 0, 0)
-  static bulletFruitOrange = new CustomEnemyBullet(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitOrange, 10, 0, 0)
-  static bulletFruitPurple = new CustomEnemyBullet(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.fruitPurple, 10, 0, 0)
+  static bulletFruitRed = new CustomEnemyBullet(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.fruitRed, 10, 0, 0)
+  static bulletFruitGreen = new CustomEnemyBullet(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.fruitGreen, 10, 0, 0)
+  static bulletFruitOrange = new CustomEnemyBullet(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.fruitOrange, 10, 0, 0)
+  static bulletFruitPurple = new CustomEnemyBullet(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.fruitPurple, 10, 0, 0)
 
   constructor () {
     super()
@@ -5333,7 +5326,7 @@ class DonggramiEnemyJuice extends DonggramiEnemyParty {
       fieldState.createEnemyBulletObject(colaBullet, this.objX, this.objY)
     } else if (this.subType === this.subTypeList.JUICE_WATER && count === 1) {
       soundSystem.play(soundSrc.donggrami.throw)
-      let juiceBullet = new CustomEnemyBullet(imageSrc.enemyEffect.donggrami, imageDataInfo.donggramiEnemyEffect.juiceWater, 17, Math.random() * 10 - 5, Math.random() * 10 - 5)
+      let juiceBullet = new CustomEnemyBullet(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.juiceWater, 17, Math.random() * 10 - 5, Math.random() * 10 - 5)
       fieldState.createEnemyBulletObject(juiceBullet, this.objX, this.objY)
     }
 
@@ -5573,7 +5566,7 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
     this.attackObjectThunder = {baseX: 0, baseY: 0, x: 0, y: 0, width: 0, height: 0}
     this.attackObject1 = {x: 0, y: 0, width: 1600, height: 60, degree: 0}
     this.attackObject2 = {x: 0, y: 0, width: 1600, height: 60, degree: 90}
-    this.bigThunderEnimation = EnimationData.createEnimation(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.energyThunder, 2, -1)
+    this.bigThunderEnimation = EnimationData.createEnimation(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.energyThunder, 2, -1)
 
     this.attackNumberIndex = 0
     this.attackNumberStack = [0, 1, 2, 3, 4, 5]
@@ -5586,12 +5579,12 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
     }
   }
 
-  static thunderEnimation = EnimationData.createEnimation(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.energyThunder, 4, -1)
-  static energyBullet = new CustomEnemyBullet(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.energyBolt, 8, 1, 0)
+  static thunderEnimation = EnimationData.createEnimation(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.energyThunder, 4, -1)
+  static energyBullet = new CustomEnemyBullet(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.energyBolt, 8, 1, 0)
   static EnergyReflectBullet = class extends CustomEnemyBullet {
     constructor () {
       super()
-      this.setAutoImageData(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.energyReflect)
+      this.setAutoImageData(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.energyReflect)
       this.attack = 4
       this.reflectCount = 0
     }
@@ -5635,7 +5628,7 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
   static ThunderLRBullet = class extends CustomEnemyBullet {
     constructor () {
       super()
-      this.setAutoImageData(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.energyThunder, 4)
+      this.setAutoImageData(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.energyThunder, 4)
       this.STATE_NORMAL = 'normal'
       this.STATE_MOVE = 'move'
       this.state = 'normal'
@@ -5972,7 +5965,7 @@ class IntruderEnemyMetal extends IntruderEnemy {
     /** 잔상 유지 프레임 */ this.AFTERIMAGE_DISPLAY_FRAME = 30
 
     /** 이펙트 출력용 에니메이션 */
-    this.effectLightEnimation = EnimationData.createEnimation(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.lightMetal, 2)
+    this.effectLightEnimation = EnimationData.createEnimation(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.lightMetal, 2)
     this.effectLightEnimationDelay = new DelayData(120)
   }
 
@@ -6065,13 +6058,13 @@ class IntruderEnemyDiacore extends IntruderEnemyMetal {
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderDiacore, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.diamondBlue, this.width, this.height, 2))
 
     // 적 총알
-    this.energyBullet = new CustomEnemyBullet(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.energyBolt, 10, 4, 4)
+    this.energyBullet = new CustomEnemyBullet(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.energyBolt, 10, 4, 4)
 
     // 잔상 이미지 수정
     this.afterimage = EnimationData.createEnimation(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.diacore)
 
     // 빛 이미지 수정
-    this.effectLightEnimation = EnimationData.createEnimation(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.lightDiacore, 2)
+    this.effectLightEnimation = EnimationData.createEnimation(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.lightDiacore, 2)
   }
 
   getCollisionArea () {
@@ -6120,7 +6113,7 @@ class IntruderEnemyRendown extends IntruderEnemy {
 
   static EnergyBulletLeft = class extends CustomEnemyBullet {
     constructor () {
-      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.leverMissileLeft, 0, -2, 5)
+      super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.leverMissileLeft, 0, -2, 5)
     }
 
     processMove () {
@@ -6154,10 +6147,10 @@ class IntruderEnemyRendown extends IntruderEnemy {
 
   static EnergyBombBullet = class extends CustomEnemyBullet {
     constructor () {
-      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.leverMissileBomb, 5, 0, 0)
+      super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.leverMissileBomb, 5, 0, 0)
       this.setWidthHeight(this.width * 2, this.height * 2)
       this.attackDelay = new DelayData(4)
-      this.customEffect = new CustomEffect(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.leverMissileBomb, this.width, this.height, 3)
+      this.customEffect = new CustomEffect(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.leverMissileBomb, this.width, this.height, 3)
       this.baseHeight = this.height
 
       this.totalFrame = 0
@@ -6222,7 +6215,7 @@ class IntruderEnemyLever extends IntruderEnemy {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.leverImage)
     this.setEnemyByCpStat(50, 11, IntruderEnemy.DIV_SCORE)
-    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderLever, new CustomEffect(imageSrc.enemyDie.enemyDieIntruder, imageDataInfo.enemyDieIntruder.enemyDieIntruderLever, this.width, this.height, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderLever, new CustomEffect(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.enemyDieIntruderLever, this.width, this.height, 2))
 
     this.STATE_LEFT = 'left'
     this.STATE_RIGHT = 'right'
@@ -6235,7 +6228,7 @@ class IntruderEnemyLever extends IntruderEnemy {
 
   static LaserBullet = class extends CustomEnemyBullet {
     constructor () {
-      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.leverLaser, 3, 0, -20, '', '')
+      super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.leverLaser, 3, 0, -20, '', '')
       this.setWidthHeight(imageDataInfo.intruderEnemy.leverImage.width, graphicSystem.CANVAS_HEIGHT)
       this.attackDelay = new DelayData(5)
     }
@@ -6333,7 +6326,7 @@ class IntruderEnemyFlying1 extends IntruderEnemy {
 
   static LaserBullet = class extends CustomEnemyBullet {
     constructor () {
-      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.flyingGreenLaser, 6, 0, 0)
+      super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.flyingGreenLaser, 6, 0, 0)
     }
 
     afterInit () {
@@ -6529,14 +6522,14 @@ class IntruderEnemyHanoi extends IntruderEnemy {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.hanoi)
     this.setEnemyByCpStat(200, 22, IntruderEnemy.DIV_SCORE)
-    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderHanoi, new CustomEffect(imageSrc.enemyDie.enemyDieIntruder, imageDataInfo.enemyDieIntruder.enemyDieIntruderHanoi, this.width, this.height, 6))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderHanoi, new CustomEffect(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.enemyDieIntruderHanoi, this.width, this.height, 6))
     this.setRandomMoveSpeed(1, 0)
   }
 
   static HanoiBullet = class extends CustomEnemyBullet {
     constructor () {
-      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.hanoiRing, 12)
-      this.setAutoImageData(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.hanoiRing, 3)
+      super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.hanoiRing, 12)
+      this.setAutoImageData(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.hanoiRing, 3)
       this.baseWidth = this.width
       this.baseHeight = this.height
       this.setRandomMoveSpeed(1, 0, true)
@@ -6593,7 +6586,7 @@ class IntruderEnemyDaseok extends IntruderEnemy {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.daseok)
     this.setEnemyByCpStat(500, 33, IntruderEnemy.DIV_SCORE)
-    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderDaseok, new CustomEffect(imageSrc.enemyDie.enemyDieIntruder, imageDataInfo.enemyDieIntruder.enemyDieIntruderDaseok, this.width, this.height, 3))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderDaseok, new CustomEffect(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.enemyDieIntruderDaseok, this.width, this.height, 3))
     this.setMoveSpeed(0, 0) // 이동하지 않음
 
     this.STATE_YELLOW = 'yellow'
@@ -6607,13 +6600,13 @@ class IntruderEnemyDaseok extends IntruderEnemy {
 
   static LaserYellowBullet = class extends CustomEnemyBullet {
     constructor () {
-      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.leverLaser, 6, 0, -12)
+      super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.leverLaser, 6, 0, -12)
     }
   }
 
   static LaserGreenBullet = class extends CustomEnemyBullet {
     constructor () {
-      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.flyingGreenLaser, 4, 0, 0)
+      super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.flyingGreenLaser, 4, 0, 0)
     }
     
     afterInit () {
@@ -6638,7 +6631,7 @@ class IntruderEnemyDaseok extends IntruderEnemy {
 
   static EnergyBullet = class extends CustomEnemyBullet {
     constructor () {
-      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.energyBolt, 6, Math.random() * 6 - 3, Math.random() * -4)
+      super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.energyBolt, 6, Math.random() * 6 - 3, Math.random() * -4)
     }
   }
 
@@ -6698,7 +6691,7 @@ class IntruderEnemyNextEnemy extends IntruderEnemy {
 
   static LaserBullet = class extends CustomEnemyBullet {
     constructor () {
-      super(imageSrc.enemyEffect.intruder, imageDataInfo.intruderEnemyEffect.flyingGreenLaser, 3, -10, 0)
+      super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.flyingGreenLaser, 3, -10, 0)
     }
   }
 }

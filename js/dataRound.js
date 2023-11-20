@@ -997,14 +997,8 @@ export class RoundPackLoad {
       imageSrc.enemy.meteoriteEnemy,
       imageSrc.enemy.jemulEnemy,
 
-      // enemyBullet
-      imageSrc.enemyBullet.energyBoltAttack,
-      imageSrc.enemyBullet.attackList,
-
+      // common effect
       imageSrc.enemyDie.effectList,
-      imageSrc.enemyDie.enemyDieMeteorite,
-      imageSrc.enemyDie.enemyDieSpaceComet,
-      imageSrc.enemyDie.enemyDieSpaceGamjigi
     ]
   }
 
@@ -1057,8 +1051,6 @@ export class RoundPackLoad {
       imageSrc.enemy.donggramiEnemy,
       imageSrc.enemyDie.effectList,
       imageSrc.enemy.intruderEnemy,
-      imageSrc.enemyEffect.intruder,
-      imageSrc.enemyDie.enemyDieIntruder,
     ]
   }
 
@@ -1775,8 +1767,6 @@ class Round1_1 extends RoundData {
       imageSrc.round.round1_1_space,
       imageSrc.round.round1_2_meteorite,
       imageSrc.enemy.spaceEnemy,
-      imageSrc.enemyDie.enemyDieSpaceComet,
-      imageSrc.enemyDie.enemyDieSpaceGamjigi
     ])
     this.load.addSoundList([
       soundSrc.music.music01_space_void,
@@ -1971,8 +1961,6 @@ class Round1_2 extends RoundData {
       imageSrc.round.round1_2_meteorite,
       imageSrc.round.round1_3_meteoriteDeep,
       imageSrc.enemy.spaceEnemy,
-      imageSrc.enemyDie.enemyDieSpaceComet,
-      imageSrc.enemyDie.enemyDieSpaceGamjigi
     ])
 
     this.load.addSoundList([
@@ -2168,8 +2156,6 @@ class Round1_3 extends RoundData {
       imageSrc.enemy.spaceEnemy,
       imageSrc.enemy.jemulEnemy,
       imageSrc.enemy.meteoriteEnemy,
-      imageSrc.enemyDie.enemyDieSpaceComet,
-      imageSrc.enemyDie.enemyDieSpaceGamjigi
     ])
 
     this.load.addSoundList([
@@ -3250,7 +3236,7 @@ class Round1_test extends RoundData {
     this.bgLegacy.imageSrc = imageSrc.round.round1_1_space
     this.phase.addRoundPhase(this, () => {
       if (this.timeCheckInterval(1, 999, 60) && this.field.getEnemyCount() === 0) {
-        this.field.createEnemy(ID.enemy.towerG1.laserMini2, 600)
+        this.field.createEnemy(ID.enemy.jemulEnemy.energyBolt, 600)
       }
     }, 0, 999)
   }
@@ -7529,6 +7515,7 @@ class Round2_6 extends RoundData {
     this.bgLayer.setBackgroundScroolLoop(false, false)
 
     // 기본 위치 지정
+    this.bgLayer.setBackgroundWidthHeight(7200, 1600)
     this.bgLayer.setBackgroundPosition(0, 800)
   }
 
