@@ -1068,7 +1068,7 @@ shop는 상점이고, 아이템을 구매할 수 있습니다. (그러나 골드
 (기존에는 사각형 단위로 충돌했지만, 이렇게하면 이미지상에는 닿지 않아도 판정 영역은 충돌하는 문제가 있어 수정했습니다.)
 
 
-2023/11/?? ver 0.42.6 - round 3 enemy die effect add, enemy image merge
+2023/11/21 ver 0.42.6 - round 3 enemy die effect, enemy image merge
 1. imageData 관리를 간편하게 하기 위해서, 적과 관련된 것들(enemyAttack, enemyDie, enemyBullet)은 전부 같은 그룹의 단일 이미지로 합쳐집니다.
 - 이에따라, 기존에 사용중이던 일부 적들의 imageData와 imageSrc를 호출하는 코드가 변경됩니다.
 2. round 3-1 적 죽음 이미지, 알고리즘 추가

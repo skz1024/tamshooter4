@@ -5951,7 +5951,7 @@ class IntruderEnemyMetal extends IntruderEnemy {
     super()
     this.setAutoImageData(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.metal)
     this.setEnemyByCpStat(20, 12, IntruderEnemy.DIV_SCORE)
-    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderMetal, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.metalSlash, this.width, this.height, 2))
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderMetal, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.metalSlashGrey, this.width, this.height, 2))
     this.STATE_MOVE = 'move'
     this.STATE_AFTERIMAGE = 'afterimage'
     this.state = this.STATE_MOVE
@@ -6713,7 +6713,7 @@ class TowerEnemyGroup1MoveBlue extends TowerEnemy {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.moveBlue, 4)
     this.setEnemyByCpStat(4, 6)
-    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerMoveBlue, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleBlue)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerMoveBlue, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareDarkCyan)
     this.setMoveDirection()
     this.moveDelay = new DelayData(60)
     /** 이동 부스터가 시작되는 x좌표 */ this.startX = 0
@@ -6797,7 +6797,7 @@ class TowerEnemyGroup1MoveViolet extends TowerEnemyGroup1MoveBlue {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.moveViolet, 4)
     this.setEnemyByCpStat(6, 6)
-    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerMoveViolet, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareLinePurple)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerMoveViolet, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareDarkViolet)
     this.moveDelay.delay = 30
   }
 
@@ -6821,7 +6821,7 @@ class TowerEnemyGroup1MoveDarkViolet extends TowerEnemyGroup1MoveBlue {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.moveDarkViolet, 4)
     this.setEnemyByCpStat(6, 6)
-    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerMoveDarkViolet, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireBlue)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerMoveDarkViolet, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareDarkViolet)
     this.moveDelay.delay = 120
     this.AXIS_X = 'x'
     this.AXIS_Y = 'y'
@@ -6926,6 +6926,7 @@ class TowerEnemyGroup1Sandglass extends TowerEnemy {
     // 모래시계가 모래가 전부 흐른 상태를 유지하기 위해서 모래시계의 이미지는 맨 마지막 프레임만 출력합니다.
     // 그 외의 경우 애니메이션을 출력합니다.
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.sandglassSandDown)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerSandglass, imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDieSandglass, 4)
     this.setEnemyByCpStat(100, 20)
     this.moveDelay = new DelayData(120)
     this.STATE_MOVE = 'move'
@@ -7010,13 +7011,13 @@ class TowerEnemyGroup1Tapo extends TowerEnemy {
         this.isDeleted = true
       }
     }
-  } 
+  }
 
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.tapo)
     this.setEnemyByCpStat(100, 16)
-    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerTapo)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerTapo, imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDieTapo, 6)
     this.tapoEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.tapoEnimation, 2)
     this.attackDelay = new DelayData(120 + Math.floor(Math.random() * 6))
     this.setMoveSpeed(0.5, 0)
@@ -7053,6 +7054,31 @@ class TowerEnemyGroup1Punch extends TowerEnemy {
   static imageDataPunchBall = imageDataInfo.towerEnemyGroup1.punchBall
   static imageDataPunchSpring = imageDataInfo.towerEnemyGroup1.punchSpring
   static imageDataPunchModule = imageDataInfo.towerEnemyGroup1.punchModule
+
+  // 죽음 이펙트는 processMove를 사용할 수 없으므로 대신 sprite로 처리함
+  static EffectEnemyDiePunchBall = class extends FieldData {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDiePunchBall)
+      this.setMoveSpeed(Math.random() * 4 - 1, 0)
+      this.gravity = -10
+    }
+
+    processMove () {
+      super.processMove()
+      this.degree += 4
+      this.gravity++
+
+      this.y += Math.floor(this.gravity / 1)
+      if (this.gravity >= 60) this.isDeleted = true
+    }
+  }
+  static EffectEnemyDiePunchSpring = class extends TowerEnemyGroup1Punch.EffectEnemyDiePunchBall {
+    constructor () { super(); this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDiePunchSpring); }
+  }
+  static EffectEnemyDiePunchModule = class extends TowerEnemyGroup1Punch.EffectEnemyDiePunchBall {
+    constructor () { super(); this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDiePunchModule); }
+  }
 
   constructor () {
     super()
@@ -7138,6 +7164,16 @@ class TowerEnemyGroup1Punch extends TowerEnemy {
     }
   }
 
+  processDieAfterLogic () {
+    super.processDieAfterLogic()
+
+    // 펀치 조각들이 분해되면서 자동으로 날라감
+    const T = TowerEnemyGroup1Punch
+    fieldState.createSpriteObject(new T.EffectEnemyDiePunchBall(), this.x, this.y)
+    fieldState.createSpriteObject(new T.EffectEnemyDiePunchSpring(), this.x + T.imageDataPunchBall.width, this.y)
+    fieldState.createSpriteObject(new T.EffectEnemyDiePunchModule(), this.x + T.imageDataPunchBall.width + T.imageDataPunchSpring.width, this.y)
+  }
+
   display () {
     // 3개의 이미지를 동시 출력해야함
     const targetImage = imageSrc.enemy.towerEnemyGroup1
@@ -7153,6 +7189,23 @@ class TowerEnemyGroup1Punch extends TowerEnemy {
 class TowerEnemyGroup1Daepo extends TowerEnemy {
   static BASE_ATTACK = 12
   static Daepo = new CustomEnemyBullet(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletDaepo, TowerEnemyGroup1Daepo.BASE_ATTACK)
+  static EffectDieDaepoFront = class extends FieldData {
+    // 원리는 TowerEnemyGroup1Punch랑 동일
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDieDaepoFront)
+      this.setRandomMoveSpeedMinMax(8, -8, 12, 8)
+    }
+
+    processMove () {
+      super.processMove()
+      this.degree += 12
+      if (this.elapsedFrame >= 120) this.isDeleted = true
+    }
+  }
+  static EffectDieDaepoBack = class extends TowerEnemyGroup1Daepo.EffectDieDaepoFront {
+    constructor () { super(); this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDieDaepoBack) }
+  }
 
   constructor () {
     super()
@@ -7205,9 +7258,62 @@ class TowerEnemyGroup1Daepo extends TowerEnemy {
       }
     }
   }
+
+  processDieAfterLogic () {
+    super.processDieAfterLogic()
+
+    const T = TowerEnemyGroup1Daepo
+    fieldState.createSpriteObject(new T.EffectDieDaepoFront(), this.x, this.y)
+    fieldState.createSpriteObject(new T.EffectDieDaepoBack(), this.x + this.width - 80, this.y)
+  }
 }
 
-class TowerEnemyGroup1Hellgi extends TowerEnemy {
+/** 헬(날아다니는 전투기 -> 헬기 -> 헬) 시리즈 템플릿 */
+class TowerEnemyGroup1HellTemplet extends TowerEnemy {
+  static DieEffectRed = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedWhite, 40, 40, 1)
+  static DieEffectViolet = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleViolet, 40, 40, 1)
+  static DieEffectBlue = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleBlue, 40, 40, 1)
+  static dieColorList = { red: 'red', violet: 'violet', blue: 'blue' }
+
+  static HelljeonBullet = new CustomEnemyBullet(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletHelljeonRocket, 4)
+
+
+  constructor () {
+    super()
+    this.attackDelay = new DelayData(120)
+    this.moveDelay = new DelayData(60)
+    this.isExitToReset = true
+    /** 특정 위치를 기준으로 이동속도를 계산하는 값 */ this.targetMoveSpeedX = 0
+    /** 특정 위치를 기준으로 이동속도를 계산하는 값 */ this.targetMoveSpeedY = 0
+    this.dieAfterDeleteDelay = new DelayData(60)
+
+    /** 죽었을 때 어떤 색의 폭발 이펙트를 사용할지 결정함 (값은 dieColorList(static class)에 있음) */ 
+    this.dieColor = TowerEnemyGroup1HellTemplet.dieColorList.red
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+    if (this.isDied && this.dieAfterDeleteDelay.divCheck(12)) {
+      const T = TowerEnemyGroup1HellTemplet
+      soundSystem.play(this.dieSound)
+      let targetX = this.x + (Math.random() * this.width)
+      let targetY = this.y + (Math.random() * this.height)
+
+      switch (this.dieColor) {
+        case T.dieColorList.blue: fieldState.createEffectObject(T.DieEffectBlue.getObject(), targetX, targetY); break
+        case T.dieColorList.red: fieldState.createEffectObject(T.DieEffectRed.getObject(), targetX, targetY); break
+        case T.dieColorList.violet: fieldState.createEffectObject(T.DieEffectViolet.getObject(), targetX, targetY); break
+      }
+    }
+
+    if (this.isDied) {
+      this.degree += 4
+      this.y += 4
+    }
+  }
+}
+
+class TowerEnemyGroup1Hellgi extends TowerEnemyGroup1HellTemplet {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.hellgiEnimation, 2)
@@ -7215,11 +7321,6 @@ class TowerEnemyGroup1Hellgi extends TowerEnemy {
     this.flip = 1
     this.setMoveSpeed(1, 0)
     this.setEnemyByCpStat(50, 16)
-    this.attackDelay = new DelayData(120)
-    this.moveDelay = new DelayData(60)
-    this.targetMoveSpeedX = 0
-    this.targetMoveSpeedY = 0
-    this.isExitToReset = true
   }
 
   processAttack () {
@@ -7234,10 +7335,13 @@ class TowerEnemyGroup1Hellgi extends TowerEnemy {
   processMove () {
     super.processMove()
     if (this.moveDelay.check()) {
+      // 지정된 속도 랜덤
       this.targetMoveSpeedX = Math.random() * 1 + 1
       this.targetMoveSpeedY = Math.random() * 4 - 2
     }
 
+    // 지정된 속도로 서서히 다가가도록 현재 이동 속도를 조정
+    // (매 프레임마다 속도가 번갈아 가는것을 막기 위해 특정 범위 안일경우 더이상 속도가 변화하지 않음)
     if (this.moveSpeedX >= this.targetMoveSpeedX + 0.1) {
       this.moveSpeedX -= 0.04
     } else if (this.moveSpeedX <= this.targetMoveSpeedX - 0.1) {
@@ -7250,6 +7354,7 @@ class TowerEnemyGroup1Hellgi extends TowerEnemy {
       this.moveSpeedY += 0.04
     }
 
+    // y축의 속도에 따라 각도 조절 (단 일정 각도를 벗어나지 못함)
     if (this.moveSpeedY <= 0.5 && this.moveSpeedY >= -0.5) {
       this.degree = 0
     } else if (this.moveSpeedY >= 0.5) {
@@ -7263,21 +7368,15 @@ class TowerEnemyGroup1Hellgi extends TowerEnemy {
   }
 }
 
-class TowerEnemyGroup1Helljeon extends TowerEnemy {
-  static Bullet = new CustomEnemyBullet(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletHelljeonRocket, 4)
-
+class TowerEnemyGroup1Helljeon extends TowerEnemyGroup1HellTemplet {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.helljeon)
     this.setEnemyByCpStat(24, 14)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHelljeon)
     this.helljeonEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.helljeonEnimation, 2)
-    this.moveDelay = new DelayData(60)
-    this.attackDelay = new DelayData(60)
-    this.isExitToReset = true
     this.setMoveDirection()
-    this.targetSpeedX = 0
-    this.targetSpeedY = 0
+    this.dieColor = TowerEnemyGroup1HellTemplet.dieColorList.blue
   }
 
   processEnimation () {
@@ -7290,6 +7389,7 @@ class TowerEnemyGroup1Helljeon extends TowerEnemy {
     super.processMove()
 
     if (this.moveDelay.check()) {
+      // 플레이어를 추적하도록 속도 변경
       let player = fieldState.getPlayerObject()
       let speedX = (player.x - this.x) / 75
       let speedY = (player.y - this.y) / 75
@@ -7299,44 +7399,37 @@ class TowerEnemyGroup1Helljeon extends TowerEnemy {
       if (speedY <= 2 && speedY >= 0) speedY = 2
       if (speedY >= -2 && speedY <= 0) speedY = -2
 
-      this.targetSpeedX = speedX
-      this.targetSpeedY = speedY
+      this.targetMoveSpeedX = speedX
+      this.targetMoveSpeedY = speedY
     }
 
-    if (this.moveSpeedX >= this.targetSpeedX + 0.2) this.moveSpeedX -= 0.15
-    if (this.moveSpeedX <= this.targetSpeedX - 0.2) this.moveSpeedX += 0.15
-    if (this.moveSpeedY >= this.targetSpeedY + 0.2) this.moveSpeedY -= 0.15
-    if (this.moveSpeedY <= this.targetSpeedY - 0.2) this.moveSpeedY += 0.15
+    // 속도가 특정 값에 벗어나 있을경우 속도가 지속적으로 변화함
+    if (this.moveSpeedX >= this.targetMoveSpeedX + 0.2) this.moveSpeedX -= 0.15
+    if (this.moveSpeedX <= this.targetMoveSpeedX - 0.2) this.moveSpeedX += 0.15
+    if (this.moveSpeedY >= this.targetMoveSpeedY + 0.2) this.moveSpeedY -= 0.15
+    if (this.moveSpeedY <= this.targetMoveSpeedY - 0.2) this.moveSpeedY += 0.15
 
+    // 회전각도 설정
     const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
     this.degree = atangent * (180 / Math.PI)
   }
 
   processAttack () {
     if (this.attackDelay.check()) {
-      let bullet = TowerEnemyGroup1Helljeon.Bullet.getCreateObject()
-      bullet.degree = this.degree
-      bullet.setMoveSpeed(this.moveSpeedX * 4, this.moveSpeedY * 4)
-      const minSpeed = 6
-      if (Math.abs(bullet.moveSpeedX) < minSpeed && Math.abs(bullet.moveSpeedY) < minSpeed) {
-        // speedX와 speedY의 값을 비교하여 가장 높은 값을 최소 속도에 맞춰지도록 조정합니다.
-        let mul = Math.abs(bullet.moveSpeedX) < Math.abs(bullet.moveSpeedY) ? minSpeed / Math.abs(bullet.moveSpeedY) : minSpeed / Math.abs(bullet.moveSpeedX)
-        bullet.moveSpeedX *= mul
-        bullet.moveSpeedY *= mul
-      }
+      for (let i = 0; i < 2; i++) {
+        let bullet = TowerEnemyGroup1Helljeon.HelljeonBullet.getCreateObject()
+        bullet.degree = this.degree
+        bullet.setMoveSpeed(this.moveSpeedX * 4, this.moveSpeedY * 4)
+        const minSpeed = 6
+        if (Math.abs(bullet.moveSpeedX) < minSpeed && Math.abs(bullet.moveSpeedY) < minSpeed) {
+          // speedX와 speedY의 값을 비교하여 가장 높은 값을 최소 속도에 맞춰지도록 조정합니다.
+          let mul = Math.abs(bullet.moveSpeedX) < Math.abs(bullet.moveSpeedY) ? minSpeed / Math.abs(bullet.moveSpeedY) : minSpeed / Math.abs(bullet.moveSpeedX)
+          bullet.moveSpeedX *= mul
+          bullet.moveSpeedY *= mul
+        }
 
-      let bullet2 = TowerEnemyGroup1Helljeon.Bullet.getCreateObject()
-      bullet2.degree = this.degree
-      bullet2.setMoveSpeed(this.moveSpeedX * 4, this.moveSpeedY * 4)
-      if (Math.abs(bullet2.moveSpeedX) < minSpeed && Math.abs(bullet2.moveSpeedY) < minSpeed) {
-        // speedX와 speedY의 값을 비교하여 가장 높은 값을 최소 속도에 맞춰지도록 조정합니다.
-        let mul = Math.abs(bullet2.moveSpeedX) < Math.abs(bullet2.moveSpeedY) ? minSpeed / Math.abs(bullet2.moveSpeedY) : minSpeed / Math.abs(bullet2.moveSpeedX)
-        bullet2.moveSpeedX *= mul
-        bullet2.moveSpeedY *= mul
+        fieldState.createEnemyBulletObject(bullet, this.x + 25, this.y + (i * 25))
       }
-
-      fieldState.createEnemyBulletObject(bullet, this.x + 25, this.y + 25)
-      fieldState.createEnemyBulletObject(bullet2, this.x + 25, this.y + 75)
       this.helljeonEnimation.reset()
     }
   }
@@ -7350,65 +7443,63 @@ class TowerEnemyGroup1Helljeon extends TowerEnemy {
   }
 }
 
-class TowerEnemyGroup1Hellcho extends TowerEnemy {
+class TowerEnemyGroup1Hellcho extends TowerEnemyGroup1HellTemplet {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.hellcho)
     this.setEnemyByCpStat(22, 12)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHellcho)
-    this.moveDelay = new DelayData(60)
+    this.moveDelay.delay = 60
     this.moveDelay.setCountMax()
     this.setMoveDirection()
-    this.isExitToReset = true
-    this.targetSpeedX = 0
-    this.targetSpeedY = 0
   }
 
   processMove () {
     super.processMove()
     if (this.moveDelay.check()) {
-      this.targetSpeedX = Math.random() * 8 - 4
-      this.targetSpeedY = Math.random() * 8 - 4
+      this.targetMoveSpeedX = Math.random() * 8 - 4
+      this.targetMoveSpeedY = Math.random() * 8 - 4
     }
 
-    if (this.moveSpeedX >= this.targetSpeedX + 0.5) this.moveSpeedX -= 0.45
-    if (this.moveSpeedX <= this.targetSpeedX - 0.5) this.moveSpeedX += 0.45
-    if (this.moveSpeedY >= this.targetSpeedY + 0.5) this.moveSpeedY -= 0.45
-    if (this.moveSpeedY <= this.targetSpeedY - 0.5) this.moveSpeedY += 0.45
+    if (this.moveSpeedX >= this.targetMoveSpeedX + 0.5) this.moveSpeedX -= 0.45
+    if (this.moveSpeedX <= this.targetMoveSpeedX - 0.5) this.moveSpeedX += 0.45
+    if (this.moveSpeedY >= this.targetMoveSpeedY + 0.5) this.moveSpeedY -= 0.45
+    if (this.moveSpeedY <= this.targetMoveSpeedY - 0.5) this.moveSpeedY += 0.45
 
     const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
     this.degree = atangent * (180 / Math.PI)
   }
 }
 
-class TowerEnemyGroup1Hellba extends TowerEnemy {
+class TowerEnemyGroup1Hellba extends TowerEnemyGroup1HellTemplet {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.hellba, 6)
     this.setEnemyByCpStat(36, 16)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHellba)
-    this.energyObject = {x: 0, y: 0, width: 100, height: 100, leftFrame: 0}
-    this.energyObject2 = {x: 0, y: 0, width: 100, height: 100, leftFrame: 0}
-    this.ENERGY_OBJECT_LEFT_FRAME_VALUE = 180
-    this.moveDelay = new DelayData(120)
-    this.attackDelay = new DelayData(300)
-    this.attackDelay.setCountMax()
-    // this.setMoveDirection()
-    this.isExitToReset = true
+    /** 에너지소환체 1 */ this.energyObject = {x: 0, y: 0, width: 100, height: 100, leftFrame: 0}
+    /** 에너지소환체 2 */ this.energyObject2 = {x: 0, y: 0, width: 100, height: 100, leftFrame: 0}
+    /** 에너지 소환체의 남은 프레임 기준값 */ this.ENERGY_OBJECT_LEFT_FRAME_VALUE = 180
+    this.attackDelay.delay = 300
+    this.attackDelay.count = 120
+    this.dieColor = TowerEnemyGroup1HellTemplet.dieColorList.violet
+    this.ENERGY_ATTACK = 6
   }
 
   processAttack () {
     if (this.attackDelay.check()) {
       this.energyObject.leftFrame = this.ENERGY_OBJECT_LEFT_FRAME_VALUE
+      soundSystem.play(soundSrc.enemyAttack.towerHellbaAttack)
     }
 
+    // 에너지오브젝트가 남아있을 때 6프레임마다 충돌 판정
     this.energyObject.leftFrame--
     if (this.energyObject.leftFrame >= 1 && this.energyObject.leftFrame % 6 === 0) {
       let player = fieldState.getPlayerObject()
       if (collision(this.energyObject, player)) {
-        player.addDamage(6)
+        player.addDamage(this.ENERGY_ATTACK)
       } else if (collision(this.energyObject2, player)) {
-        player.addDamage(6)
+        player.addDamage(this.ENERGY_ATTACK)
       }
     }
   }
@@ -7418,9 +7509,6 @@ class TowerEnemyGroup1Hellba extends TowerEnemy {
     if (this.moveDelay.check()) {
       this.setRandomMoveSpeed(4, 2, true)
     }
-
-    // const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
-    // this.degree = atangent * (180 / Math.PI)
 
     this.energyObject.x = this.x - this.energyObject.width
     this.energyObject.y = this.y - 25
@@ -7437,15 +7525,15 @@ class TowerEnemyGroup1Hellba extends TowerEnemy {
   }
 }
 
-class TowerEnemyGroup1Hellgal extends TowerEnemy {
+class TowerEnemyGroup1Hellgal extends TowerEnemyGroup1HellTemplet {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.hellgal)
     this.setEnemyByCpStat(35, 15)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHellgal)
-    this.moveDelay = new DelayData(180)
-    this.attackDelay = new DelayData(90)
-    this.isExitToReset = true
+    this.moveDelay.delay = 180
+    this.attackDelay.delay = 90
+    this.dieColor = TowerEnemyGroup1HellTemplet.dieColorList.violet
   }
 
   processAttack () {
@@ -7468,7 +7556,6 @@ class TowerEnemyGroup1Hellgal extends TowerEnemy {
       this.setRandomMoveSpeedMinMax(2, -3, 3, 3)
     }
   }
-
 }
 
 class TowerEnemyGroup1LaserAlpha extends TowerEnemy {
@@ -7476,7 +7563,7 @@ class TowerEnemyGroup1LaserAlpha extends TowerEnemy {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.laserAlpha)
     this.setEnemyByCpStat(100, 18)
-    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerLaserAlpha)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerLaserAlpha, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareRed)
     this.isPossibleExit = false
     this.setMoveSpeed(0, 1)
     this.attackDelay = new DelayData(120)
@@ -7504,7 +7591,7 @@ class TowerEnemyGroup1LaserMini extends TowerEnemyGroup1LaserAlpha {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.laserMini)
     this.setEnemyByCpStat(22, 12)
-    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerLaserMini)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerLaserMini, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareGrey)
     this.attackDelay.delay = 60
     this.BASE_DELAY = 30
     this.RANDOM_DELAY = 32
@@ -7534,7 +7621,7 @@ class TowerEnemyGroup1I extends TowerEnemy {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.I)
     this.setEnemyByCpStat(200, 8)
-    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerI)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerI, imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDieI, 3)
     this.setRandomMoveSpeed(4, 4, true)
     this.BASE_WIDTH = this.imageData != null ? this.imageData.width : 1
     this.BASE_HEIGHT = this.imageData != null ? this.imageData.height : 1
@@ -7553,25 +7640,28 @@ class TowerEnemyGroup1I extends TowerEnemy {
     if (multiple < MIN_SIZE) multiple = MIN_SIZE
     if (multiple > MAX_SIZE) multiple = MAX_SIZE
     this.setWidthHeight(Math.floor(this.BASE_WIDTH * multiple), Math.floor(this.BASE_HEIGHT * multiple))
+
+    // 크기에 따라서 죽음 이펙트 크기도 조정
+    if (this.dieEffect) {
+      this.dieEffect.setWidthHeight(this.width, this.height)
+    }
   }
 }
 
 class TowerEnemyGroup1X extends TowerEnemy {
   static bullet = class extends CustomEnemyBullet {
     constructor () {
-      super('', null, 16, 0, 0)
-      this.setWidthHeight(100, 100)
+      super(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDieX, 16, 0, 0)
+      const imgD = imageDataInfo.towerEnemyGroup1.enemyDieX
+      this.setWidthHeight(imgD.width * 2, imgD.height * 2)
     }
 
     process () {
       super.process()
+      this.degree += 30
       if (this.elapsedFrame >= 60) {
         this.isDeleted = true
       }
-    }
-
-    display () {
-      graphicSystem.fillRect(this.x, this.y, this.width, this.height, 'blue', 0.7)
     }
   }
 
@@ -7595,7 +7685,7 @@ class TowerEnemyGroup1gasiUp extends TowerEnemy {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.gasiUp)
     this.setEnemyByCpStat(5, 5)
-    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerGasi)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerGasi, imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDieGasiUp)
     this.setMoveSpeed(Math.random() * 2 - 1, -8)
   }
 
@@ -7605,7 +7695,7 @@ class TowerEnemyGroup1gasiUp extends TowerEnemy {
       const enemy = this.getCollisionArea()[0]
 
       if (collision(player, enemy)) {
-        // 플레이어에 닿았다면 해당 가시는 파괴됨
+        // 플레이어에 닿았다면 해당 가시는 hp가 0이되어 파괴됨
         player.addDamage(this.attack)
         this.hp = 0
       }
@@ -7623,11 +7713,6 @@ class TowerEnemyGroup1gasiUp extends TowerEnemy {
 
     super.processMove()
   }
-
-  display () {
-    super.display()
-    graphicSystem.fillText(this.x + ', ' + this.y , 40, 40, 'yellow')
-  }
 }
 
 class TowerEnemyGroup1gasiDown extends TowerEnemyGroup1gasiUp {
@@ -7636,6 +7721,7 @@ class TowerEnemyGroup1gasiDown extends TowerEnemyGroup1gasiUp {
     // 상속받은 개체를 기준으로 이미지와 이동 속도만 다름
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.gasiDown)
     this.setMoveSpeed(Math.random() * 2 - 1, 8)
+    this.setDieEffectTemplet(this.dieSound, this.imageSrc, imageDataInfo.towerEnemyGroup1.enemyDieGasiDown)
   }
 }
 
@@ -7699,23 +7785,22 @@ class TowerEnemyGroup1SquareTemplete extends TowerEnemy {
 
     // 사운드 설정
     switch (subType) {
-      case typeList.DIAMOND: case typeList.DIAMOND_MINI: effectData = [soundDie.enemyDieTowerDiamond, effectDie.metalSlash]; break
-      case typeList.SQUARE: case typeList.SQUARE_MINI: effectData = [soundDie.enemyDieTowerSquare, effectDie.metalSlash]; break
-      case typeList.PENTAGON: case typeList.PENTAGON_MINI: effectData = [soundDie.enemyDieTowerPentagon, effectDie.metalSlash]; break
-      case typeList.HEXAGON: case typeList.HEXAGON_MINI: effectData = [soundDie.enemyDieTowerHexagon, effectDie.metalSlash]; break
-      case typeList.OCTAGON: case typeList.OCTAGON_MINI: effectData = [soundDie.enemyDieTowerOctagon, effectDie.metalSlash]; break
+      case typeList.DIAMOND: case typeList.DIAMOND_MINI: effectData = [soundDie.enemyDieTowerDiamond, effectDie.diamondBlue]; break
+      case typeList.SQUARE: case typeList.SQUARE_MINI: effectData = [soundDie.enemyDieTowerSquare, effectDie.metalSlashGrey]; break
+      case typeList.PENTAGON: case typeList.PENTAGON_MINI: effectData = [soundDie.enemyDieTowerPentagon, effectDie.metalSlashGreen]; break
+      case typeList.HEXAGON: case typeList.HEXAGON_MINI: effectData = [soundDie.enemyDieTowerHexagon, effectDie.metalSlashGreen]; break
+      case typeList.OCTAGON: case typeList.OCTAGON_MINI: effectData = [soundDie.enemyDieTowerOctagon, effectDie.metalSlashGreen]; break
     }
 
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, arrayData[3]) // 이미지 자동 설정
     this.setEnemyByCpStat(arrayData[0], arrayData[1]) // 체력, 공격력 설정
     this.subType = subType // 서브타입 지정
-    
-    // 참고: 죽음 이펙트의 템플릿은 기본 템플릿을 사용합니다. 해당 적 전용 죽음 이펙트는 없습니다.
-    this.setDieEffectTemplet(effectData[0], imageSrc.enemyDie.effectList, effectData[1]) // 죽음 사운드, 이펙트 설정
-    
 
     // 미니타입인 경우 크기 작아짐
     if (arrayData[2]) this.setWidthHeight(Math.floor(this.width / 2), Math.floor(this.height / 2))
+    
+    // 참고: 죽음 이펙트의 템플릿은 기본 템플릿을 사용합니다. 해당 적 전용 죽음 이펙트는 없습니다.
+    this.setDieEffectTemplet(effectData[0], imageSrc.enemyDie.effectList, effectData[1]) // 죽음 사운드, 이펙트 설정
   }
 
   /** 해당 객체가 죽었을 때 새로운 적을 다시 생성합니다. (단 미니타입은 해당하지 않음) */
@@ -7784,7 +7869,6 @@ class TowerEnemyGroup1BossRobot extends TowerEnemy {
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerBossRobot1)
   }
 }
-
 
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)

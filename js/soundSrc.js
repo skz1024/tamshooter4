@@ -154,6 +154,7 @@ export class soundSrc {
     towerAttackDaepo: './sound/enemyTowerAttackDaepo.ogg',
     towerAttackRocket: './sound/enemyTowerAttackRocket.ogg',
     towerPunchAttack: './sound/enemyTowerPunchAttack.ogg',
+    towerHellbaAttack: './sound/enemyTowerHellbaAttack.ogg',
   }
 
   static round = {

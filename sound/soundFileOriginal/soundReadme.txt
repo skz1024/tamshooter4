@@ -8,7 +8,7 @@
 - btm 확장자: bambootracker
 - xm 확장자: milkytracker 또는 openMPT
 - mmpz 확장자: LMMS
-- jfxr 확장자: Jfxr (검색하면 나옴...)
+- jfxr 확장자: Jfxr
 
 
 3. 사운드의 원본과 최종 출력 결과물은 다를 수 있음. (이것저것 편집하기 때문)

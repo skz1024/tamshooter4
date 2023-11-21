@@ -3236,12 +3236,11 @@ class Round1_test extends RoundData {
     this.bgLegacy.imageSrc = imageSrc.round.round1_1_space
     this.phase.addRoundPhase(this, () => {
       if (this.timeCheckInterval(1, 999, 60) && this.field.getEnemyCount() === 0) {
-        this.field.createEnemy(ID.enemy.jemulEnemy.energyBolt, 600)
+        this.field.createEnemy(ID.enemy.towerG1.pentagon, 600)
       }
     }, 0, 999)
   }
 }
-
 
 class Round2_1 extends RoundData {
   constructor () {

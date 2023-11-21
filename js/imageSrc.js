@@ -463,17 +463,18 @@ export class imageDataInfo {
     bulletBossRocket: new ImageDataObject(380, 700, 120, 40, 1),
 
     // enemyDie
+    enemyDieMoveYellowEnergy: new ImageDataObject(530, 1200, 100, 80, 5),
     enemyDieSandglass: new ImageDataObject(0, 800, 100, 150, 10),
     enemyDieTapo: new ImageDataObject(0, 1050, 130, 100, 6),
     enemyDieX: new ImageDataObject(0, 1200, 65, 80, 8),
     enemyDieI: new ImageDataObject(0, 960, 85, 80, 14),
-    enemyDieTapoFront: new ImageDataObject(1000, 850, 80, 40, 1),
-    enemyDieTapoBack: new ImageDataObject(1080, 850, 80, 40, 1),
+    enemyDieDaepoFront: new ImageDataObject(1000, 850, 80, 40, 1),
+    enemyDieDaepoBack: new ImageDataObject(1080, 850, 80, 40, 1),
     enemyDiePunchBall: new ImageDataObject(1000, 800, 50, 50, 1),
     enemyDiePunchSpring: new ImageDataObject(1050, 800, 100, 50, 1),
     enemyDiePunchModule: new ImageDataObject(1150, 800, 50, 50, 1),
-    enemyDieGasiUp: new ImageDataObject(1000, 890, 20, 60, 6),
-    enemyDieGasiDown: new ImageDataObject(1000, 950, 20, 60, 6),
+    enemyDieGasiUp: new ImageDataObject(800, 1050, 20, 60, 6),
+    enemyDieGasiDown: new ImageDataObject(800, 1110, 20, 60, 6),
   }
 
   static fieldSystem = {
@@ -504,9 +505,13 @@ export class imageDataInfo {
     squareLineRed: {x: 0, y: 240, width: 20, height: 20, frame: 10},
     noiseRed: {x: 0, y: 260, width: 20, height: 20, frame: 10},
     squareBlueLine: {x: 0, y: 280, width: 20, height: 20, frame: 10},
-    metalSlash: {x: 0, y: 300, width: 20, height: 20, frame: 10},
+    metalSlashGrey: {x: 0, y: 300, width: 20, height: 20, frame: 10},
     circleBlue: {x: 0, y: 320, width: 20, height: 20, frame: 10},
     circleGreenStroke: {x: 0, y: 340, width: 20, height: 20, frame: 10},
+    squareDarkCyan: new ImageDataObject(0, 360, 20, 20, 10),
+    squareDarkViolet: new ImageDataObject(0, 380, 20, 20, 10),
+    circleViolet: new ImageDataObject(0, 400, 20, 20, 10),
+    metalSlashGreen: new ImageDataObject(0, 420, 20, 20, 10),
   }
 
   static round2_3_result = {
