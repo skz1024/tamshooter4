@@ -1897,11 +1897,13 @@ class Round1_1 extends RoundData {
       if (this.bgLegacy.backgroundSpeedX < 2) this.bgLegacy.backgroundSpeedX += 0.02
     } else if (this.timeCheckInterval(31, 60, 6)) {
       if (this.bgLegacy.backgroundSpeedX < 10) this.bgLegacy.backgroundSpeedX += 0.05
-    } else if (this.timeCheckInterval(61, 136, 6)) {
+    } else if (this.timeCheckInterval(61, 130, 6)) {
       if (this.bgLegacy.backgroundSpeedX < 20) this.bgLegacy.backgroundSpeedX += 0.1
-    } else if (this.timeCheckInterval(136, 150, 6)) {
+    } else if (this.timeCheckInterval(131, 140, 6)) {
       // 감속 구간
-      if (this.bgLegacy.backgroundSpeedX > 1) this.bgLegacy.backgroundSpeedX -= 0.2
+      if (this.bgLegacy.backgroundSpeedX > 1) this.bgLegacy.backgroundSpeedX -= 0.12
+    } else if (this.timeCheckInterval(141, 150, 6)) {
+      if (this.bgLegacy.backgroundSpeedX > 1) this.bgLegacy.backgroundSpeedX -= 0.4
     }
 
     if (this.timeCheckInterval(0, 142, 180)) {

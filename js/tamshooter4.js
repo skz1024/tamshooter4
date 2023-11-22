@@ -1972,16 +1972,19 @@ export class gameSystem {
   }
 
   /**
+   * 세이브 데이터의 규칙이 변경됨 (0.43.0) - 하위호환을 위해 이 값들은 유지됩니다. (다만 이후엔 삭제할 가능성이 높음)
+   * 
    * 저장하거나 불러올 때 localStorage 에서 사용하는 키 이름 (임의로 변경 금지)
    * 각 키 별로, 저장 데이터 형식과 저장 목적에 대해 자세히 설명되어있습니다.
    * 대부분의 저장 형식에서 구분자를 ,(쉼표) 로 사용합니다.
+   * 
+   * @deprecated
    */
   static saveKey = {
     /**
      * 게임에서 저장된 데이터가 있는지 확인
      * 주의: localStoarge를 통해서 받아오는 값은 string입니다. 그래서 'false'값을 저장해도 Boolean('false')를 해서
      * 값을 불러와봐야 어차피 true값이 됩니다.(자바스크립트는 문자열에 값이 있으면 true입니다.)
-     * 이때문에 saveFlag의 값은 'true'로 저장하고, 만약 저장된 데이터가 없으면 null입니다.
      */
     saveFlag: 'saveFlag',
 
@@ -2014,13 +2017,43 @@ export class gameSystem {
     userData: 'userData',
 
     /** 필드 데이터 (필드 상태가 아닐경우 이 데이터는 없음) */
-    fieldData: 'fieldData',
+    fieldData: 'tamshooter4FieldData',
 
     /** 무기의 리스트 */
     weaponList: 'weaponList',
 
     /** 스킬의 리스트 (0 ~ 3번 A슬롯, 4 ~ 7번 B슬롯) */
     skillList: 'skillList'
+  }
+
+  /** 
+   * 이 값 대신 getCurrentSaveKey를 사용해주세요. 왜냐하면 숫자키도 같이 사용해야합니다.
+   * 
+   * 다만 이 키 값은 내부 상수로 사용되야 하므로 이 코드를 삭제하지 마세요.
+   * 
+   * tamshooter4에서 사용하는 lcoalStoarge save key 
+   * @deprecated
+   */
+  static saveKeyTamshooter4Data = 'tamshooter4SaveData'
+
+  /** 
+   * 이 값 대신 getCurrentSaveKey를 사용해주세요. 왜냐하면 숫자키도 같이 사용해야합니다.
+   * 
+   * 다만 이 키 값은 내부 상수로 사용되야 하므로 이 코드를 삭제하지 마세요.
+   * 
+   * tamshooter4에서 사용하는 saveKey에 추가적으로 붙는 번호 (다만 이 게임에서 다중 세이브를 사용할 생각이 없음) 
+   * @deprecated
+   */
+  static saveKetTamshooter4DataNumber = 0
+
+  static saveFlagList = {
+    v0a36: 'v0a36',
+    level1V0a43: 'level1 v0a43',
+  }
+
+  /** tamshooter4에서 사용하는 실제 세이브 키 (참고: 세이브 키 + 세이브 번호의 조합으로 키를 구성하기 때문에 이 함수를 사용해야 합니다.) */
+  static getCurrentSaveKey () {
+    return this.saveKeyTamshooter4Data + this.saveKetTamshooter4DataNumber
   }
 
   /** 저장 지연 시간을 카운트 하는 변수 */ static saveDelayCount = 0
@@ -2041,6 +2074,88 @@ export class gameSystem {
    * @param {boolean} [forceSave=false] 강제 세이브 여부 (딜레이를 무시함) 특정 상황에서만 이 변수의 값을 true로 설정해주세요.
    */
   static processSave (forceSave = false) {
+    // 세이브 데이터를 저장하는 조건이 맞아야만 저장됩니다. 자세한 내용은 함수 내부를 살펴보세요.
+    if (!this.processSaveConditionCheck(forceSave)) return
+
+    // 저장 시간 (참고: getMonth는 0부터 시작하기 때문에 +1을 해야합니다.)
+    const saveDate = new Date()
+    const saveDateString = saveDate.getFullYear() + ',' + (saveDate.getMonth() + 1) + ',' + saveDate.getDate() + ',' + saveDate.getHours() + ',' + saveDate.getMinutes() + ',' + saveDate.getSeconds()
+
+    // 유저의 첫 시작 시간
+    const startDate = this.userSystem.startDate
+    const startDateString = startDate.year + ',' + startDate.month + ',' + startDate.day + ',' + startDate.hour + ',' + startDate.minute + ',' + startDate.second
+
+    // 플레이 타임 저장
+    const playTime = this.userSystem.playTime
+    const playTimeString = playTime.hour + ',' + playTime.minute + ',' + playTime.second
+
+    // 모든 옵션 값들 저장
+    const optionValue = this.optionSystem.optionValue
+
+    // 유저의 데이터
+    const userData = this.userSystem.getSaveData()
+
+    // sramData (조작 방지를 위한 추가 정보)
+    let sramData = [
+      this.saveNumberEncode(userData.lv, userData.exp)
+    ]
+
+    let saveData = {
+      saveFlag: this.saveFlagList.level1V0a43,
+      saveDate: saveDateString,
+      startDate: startDateString,
+      playTime: playTimeString,
+      option: optionValue,
+      userData: userData,
+      sramData: sramData
+    }
+
+    localStorage.setItem(this.getCurrentSaveKey(), JSON.stringify(saveData))
+
+    // 필드 저장 데이터는, 필드 상태에서, 게임이 진행 중일 때에만 저장됩니다. 클리어, 게임오버, 탈출상태가 되면 저장하지 않습니다.
+    if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
+      const fieldSaveData = fieldSystem.getSaveData()
+      localStorage.setItem(this.saveKey.fieldData, JSON.stringify(fieldSaveData))
+    } else {
+      // 필드 상태가 아니면, 필드 저장 데이터는 삭제
+      localStorage.removeItem(this.saveKey.fieldData)
+    }
+  }
+
+  /**
+   * 세이브가 진행되어야 하는지 확인합니다.
+   * @param {boolean} forceSave 
+   * @returns {boolean}
+   */
+  static processSaveConditionCheck (forceSave) {
+    // 데이터 리셋이 되었다면, 게임을 자동 새로고침하므로 저장 함수를 실행하지 않음.
+    if (this.isDataReset) return false
+
+    /** 저장 딜레이 시간 */ const SAVE_DELAY = this.SAVE_DELAY
+
+    // 세이브 지연시간보다 세이브 지연 시간을 카운트 한 값이 낮으면 함수는 실행되지 않습니다.
+    // 즉, 60frame을 채울때까지 저장 기능은 미루어집니다. 따라서 1초에 1번씩 저장합니다.
+    this.saveDelayCount++ // 세이브 딜레이에 카운트 증가
+    // 강제세이브의 경우, 저장딜레이를 무시하고 강제로 저장함
+    if (!forceSave && this.saveDelayCount < SAVE_DELAY) return false
+
+    // 세이브 딜레이 초기화
+    this.saveDelayCount = 0
+
+    return true
+  }
+
+  /**
+   * 이 함수는 더이상 사용되지 않습니다. (하위호환을 위한 참고용으로 남겨두었으며 이 함수를 실행하면 오류가 발생될 수 있습니다.)
+   * 
+   * 저장 기능은, 1초에 한번씩 진행됩니다. 달래아 - 지연(프레임)
+   * 이 게임 내에서는, 지연 시간을 딜레이란 단어로 표기합니다.
+   * 
+   * @deprecated
+   * 
+   * @param {boolean} [forceSave=false] 강제 세이브 여부 (딜레이를 무시함) 특정 상황에서만 이 변수의 값을 true로 설정해주세요.
+   */
+  static processSaveOldV0a36 (forceSave = false) {
     // 데이터 리셋이 되었다면, 게임을 자동 새로고침하므로 저장 함수를 실행하지 않음.
     if (this.isDataReset) return
 
@@ -2077,7 +2192,7 @@ export class gameSystem {
     const optionValue = JSON.stringify(this.optionSystem.optionValue)
     localStorage.setItem(this.saveKey.optionValue, optionValue)
 
-    const userData = this.userSystem.getSaveData()
+    const userData = this.userSystem.getSaveData0a36()
     localStorage.setItem(this.saveKey.userData, userData)
 
     // 필드 저장 데이터는, 필드 상태에서, 게임이 진행 중일 때에만 저장됩니다. 클리어, 게임오버, 탈출상태가 되면 저장하지 않습니다.
@@ -2091,8 +2206,116 @@ export class gameSystem {
   }
 
   /**
-   * 불러오기 기능: 게임을 실행할 때 한번만 실행. 만약, 또 불러오기를 하려면 게임을 재시작해주세요.
+   * 특정 숫자를 임의의 코드로 암호화합니다. (소수점은 암호화 불가능, 강제로 정수로 변환됩니다.)
+   * @param  {...string | number} saveNumber 
+   * @returns {string} JSON문자열
    */
+  static saveNumberEncode (...saveNumber) {
+    /** 인코드 결과 문자열 */ let result = ''
+
+    // 형식 변환
+    /** @type {string[]} */ let saveString = []
+    for (let str of saveNumber) {
+      saveString.push('' + str)
+    }
+
+    // saveString의 배열을 한 문장으로 합침
+    for (let i = 0; i < saveString.length; i++) {
+      let len = saveString[i].length // 문자열의 길이
+      let digit = 1 // 문자열의 길이에 대한 자리수 (1 ~ 9: 1, 10 ~ 99: 2, 100 ~ 999: 3, 1000 ~ 9999: 4, 그 이상은 처리 불가능)
+
+      if (len >= 10 && len <= 99) digit = 2
+      else if (len >= 100 && len <= 999) digit = 3
+      else if (len >= 1000) digit = 4
+
+      // saveString 정보에 따라 해당 정보를 결과 문장에 합침
+      let str = '' + digit + len + saveString[i]
+      result += str
+    }
+
+    // 암호의 키는 8자리 숫자로 만들기 위해 10000000 ~ 99999999 범위를 가짐
+    let getKeyOdd = Math.floor(Math.random() * 89999999) + 10000000
+    let getKeyEven = Math.floor(Math.random() * 89999999) + 10000000
+
+    // 총 2개의 키를 저장하며, 홀수키는 앞에, 짝수키는 뒤에 배치한다.
+    // getKeyOdd가 홀수인경우 getKeyOdd를 사용하고, 아닌경우 getKeyEven을 사용한다.
+    let getKeyTarget = getKeyOdd % 2 === 1 ? getKeyOdd : getKeyEven
+
+    // 각 문자열을 8자리 숫자로 분해
+    // 한번 반복문을 거칠때마다 8의 배수 단위로 문자열을 잘라서 배열에 넣습니다.
+    /** @type {number[]} */ let arrayNumber = []
+    for (let i = 0; i < Math.ceil(result.length / 8); i++) {
+      // 8자리 단위로 입력해야 되기 때문에 만약 빈 공간이 있을경우, '0'을 집어넣습니다.
+      let digit8 = Number(result.slice(i * 8, i * 8 + 8).padEnd(8, '0'))
+      arrayNumber[i] = digit8 ^ getKeyTarget
+    }
+
+    // 암호화된 키를 양쪽에 추가 (나중에 해독에 필요함)
+    arrayNumber.unshift(getKeyOdd)
+    arrayNumber.push(getKeyEven)
+
+    // 최종 결과를 JSON으로 형식화해서 다시 문자열로 리턴함
+    return JSON.stringify(arrayNumber)
+  }
+
+  /**
+   * encode로 변환하였던 문자열을 다시 원래의 숫자 배열로 변환시킵니다.
+   * @param {string} JSONParse JSON으로 인코딩된 문자열 (일반 문자열은 해독 불가능)
+   */
+  static saveNumberDecode (JSONParse) {
+    /** @type {number[]} */ let arrayNumber = []
+    // 첫번째 예외처리: JSON 변환
+    try {
+      arrayNumber = JSON.parse(JSONParse)
+    } catch {
+      console.error('saveSystemError: 잘못된 형식의 JSON 데이터. 이 데이터를 사용할 수 없습니다.')
+      return
+    }
+
+    // 두번째 예외처리: 글자수 확인
+    for (let i = 0; i < arrayNumber.length; i++) {
+      let str = '' + arrayNumber[i]
+      if (str.length !== 8) {
+        console.error('saveSystemError: 이 데이터가 올바른 세이브 데이터가 아닙니다.')
+        return
+      }
+    }
+
+    // 키 찾기
+    let getKeyFirst = arrayNumber[0]
+    let getKeyLast = arrayNumber[arrayNumber.length - 1]
+    let getKeyTarget = getKeyFirst % 2 === 1 ? getKeyFirst : getKeyLast
+
+    /** @type {string} 결과 문자열 */ let result = ''
+    /** @type {number[]} 키값의 암호화 해제한 디코드 배열 */ let decodeArray = []
+
+    // 디코드 진행
+    for (let i = 0; i < arrayNumber.length; i++) {
+      // 첫번째와 마지막 키는 기준 키이므로 이를 디코드 하지 않습니다.
+      if (i === 0 || i === arrayNumber.length - 1) continue
+      decodeArray.push(arrayNumber[i] ^ getKeyTarget)
+    }
+
+    // 디코드 된 배열을 하나로 합침
+    result = decodeArray.join('')
+
+    // 각 디코드 된 숫자들을 인코드 형식에 맞게 디코딩
+    /** @type {number} 문자열의 시작 위치 */ let position = 0
+    /** @type {number[]} 나누어진 문자열을 해석하여 만들어진 원래의 숫자 배열 */ let divArray = []
+    /** 자리수 표현 글자 수 */ const DIGITLEN = 1
+    while (position < result.length) {
+      // 형식에 맞게, digit(글자의 길이 자리수), len(글자의 길이), text(실제 텍스트)
+      let digit = Number(result.slice(position, position + DIGITLEN))
+      let len = Number(result.slice(position + DIGITLEN, position + DIGITLEN + digit))
+      let text = Number(result.slice(position + DIGITLEN + digit, position + DIGITLEN + digit + len))
+      divArray.push(text) // 결과를 새 배열에 추가
+      position += DIGITLEN + digit + len // 다음 문자를 읽을 위치를 변경
+    }
+
+    return divArray
+  }
+
+  /** 불러오기 기능: 게임을 실행할 때 한번만 실행. 만약, 또 불러오기를 하려면 게임을 재시작해주세요. */
   static processLoad () {
     // 이미 불러왔다면 함수는 실행되지 않습니다.
     if (this.initLoad) return
@@ -2100,7 +2323,98 @@ export class gameSystem {
     // 초기 불러오기 완료 설정
     this.initLoad = true
 
-    // saveFlag의 값을 불러오고, 만약 아무것도 없다면 불러오기 함수를 사용하지 않습니다.
+    // 유저의 스킬을 강제로 표시하기 위해 해당 함수를 사용
+    userSystem.setSkillDisplayStatDefaultFunction()
+
+    // 불러오기 작업 진행
+    // 0.36.0 ~ 0.42.6 까지의 세이브 파일은 자동으로 0.43.0으로 변환됩니다.
+    // 단, 이미 0.43.0 이후의 데이터가 존재한다면, 0.36.0 ~ 0.42.6 데이터가 있어도 그 데이터는 유지되고 반영되지 않습니다.
+    let tamshooter4LoadData = localStorage.getItem(this.getCurrentSaveKey())
+    if (tamshooter4LoadData == null) {
+      this.processLoadOldV0a36() // 참고: 이 버전에서조차 불러온 데이터가 없다면 저장된 데이터는 없는것으로 처리합니다.
+      if (localStorage.getItem(this.saveKey.saveFlag) == null) {
+        userSystem.setStartDateReset()
+      }
+      return
+    } else {
+      
+    }
+
+    // 0.43.0 불러오기
+    let loadData
+    try {
+      loadData = JSON.parse(tamshooter4LoadData)
+    } catch {
+      console.error('Load Error: 세이브 데이터가 JSON 형식과 다릅니다.')
+      return
+    }
+
+    // 저장 불러오기?
+    if (loadData.saveFlag) {
+      // 생략
+    }
+
+    if (loadData.playTime) {
+      const playTime = loadData.playTime.split(',')
+      this.userSystem.setPlayTime(playTime[0], playTime[1], playTime[2])
+    }
+
+    if (loadData.startDate) {
+      const startDate = loadData.startDate.split(',')
+      this.userSystem.setStartDate(Number(startDate[0]), startDate[1], startDate[2], startDate[3], startDate[4], startDate[5])
+    }
+
+    if (loadData.option) {
+      this.optionSystem.optionValue = loadData.option
+      this.optionSystem.optionEnable() // 불러온 옵션값을 적용
+    }
+
+    if (loadData.userData) {
+      console.log(loadData.userData)
+      // sram으로 처리
+      let sram1
+      let userLvExp
+      if (loadData.sramData) {
+        sram1 = loadData.sramData[0]
+        userLvExp = this.saveNumberDecode(sram1)
+      }
+
+      if (sram1 == null || userLvExp == null) {
+        console.error('user 데이터에 오류가 발생했으므로 해당 데이터를 로드할 수 없습니다.')
+        // 
+      } else {
+        console.log(this.saveNumberDecode(sram1))
+        loadData.userData.lv = userLvExp[0]
+        loadData.userData.exp = userLvExp[1]
+      }
+
+      console.log(loadData.userData)
+      this.userSystem.setLoadData(loadData.userData)
+    }
+    
+    // 모든 데이터를 불러온 후 필드 데이터가 있으면 필드 데이터를 불러옴
+    try {
+      const fieldSaveData = localStorage.getItem(this.saveKey.fieldData)
+      if (fieldSaveData != null) {
+        // 경고: localStoarge 특성상 string값으로 비교해야 합니다.
+        // 필드 저장 데이터가 있다면, state를 필드 데이터로 이동
+        // 참고로 필드 데이터는 JSON으로 저장되므로, 이걸 JSON.parse 해야합니다.
+        this.stateId = this.STATE_FIELD
+        fieldSystem.setLoadData(JSON.parse(fieldSaveData))
+      }
+    } catch (e) {
+      alert(systemText.gameError.FILED_LOAD_ERROR)
+      localStorage.removeItem(this.saveKey.fieldData)
+      this.stateId = this.STATE_MAIN
+    }
+  }
+
+  /**
+   * 과거 버전을 불러오는 함수 (이 함수는 하위호환을 위해 남겨놓았습니다.)
+   * @deprecated
+   */
+  static processLoadOldV0a36 () {
+    // saveFlag의 값을 불러오고, 만약 아무것도 없다면 이 버전의 데이터를 불러오지 않습니다.
     const saveFlag = localStorage.getItem(this.saveKey.saveFlag)
     if (!saveFlag) {
       // 첫번째로 게임이 실행되었을 때 추가적인 실행 코드 (초기화)
@@ -2131,22 +2445,7 @@ export class gameSystem {
     
     const userData = localStorage.getItem(this.saveKey.userData)
     if (userData != null) {
-      this.userSystem.setLoadData(userData)
-    }
-    
-    try {
-      const fieldSaveData = localStorage.getItem(this.saveKey.fieldData)
-      if (fieldSaveData != null) {
-        // 경고: localStoarge 특성상 string값으로 비교해야 합니다.
-        // 필드 저장 데이터가 있다면, state를 필드 데이터로 이동
-        // 참고로 필드 데이터는 JSON으로 저장되므로, 이걸 JSON.parse 해야합니다.
-        this.stateId = this.STATE_FIELD
-        fieldSystem.setLoadData(JSON.parse(fieldSaveData))
-      }
-    } catch (e) {
-      alert(systemText.gameError.FILED_LOAD_ERROR)
-      localStorage.removeItem(this.saveKey.fieldData)
-      this.stateId = this.STATE_MAIN
+      this.userSystem.setLoadData0a36(userData)
     }
   }
 

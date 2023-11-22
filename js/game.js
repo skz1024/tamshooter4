@@ -158,10 +158,7 @@ export class userSystem {
         this.hour++
       }
     },
-    /**
-     * playTime을 수정하는 함수.
-     */
-    setData: function (hour, minute, second) {
+    setData: function (hour = 0, minute = 0, second = 0) {
       this.second = second
       this.minute = minute
       this.hour = hour
@@ -189,7 +186,7 @@ export class userSystem {
       this.minute = currentDate.getMinutes()
       this.second = currentDate.getSeconds()
     },
-    setData: function (year, month, day, hour, minute, second) {
+    setData: function (year = 2000, month = 1, day = 1, hour = 1, minute = 1, second = 1) {
       this.year = year
       this.month = month
       this.day = day
@@ -218,15 +215,27 @@ export class userSystem {
 
   /**
    * 유저의 startDate를 수정하는 함수
-   * 아무 인수도 없으면 현재 날짜로 설정됩니다.
-   * @param {number} year 해당 년도, 만약 이 값이 없다면 현재 날짜로 startDate를 자동 설정합니다.
+   * @param {number | string} year 해당 년도
+   * @param {number | string} month 월
+   * @param {number | string} day 일
+   * @param {number | string} hour 시
+   * @param {number | string} minute 분
+   * @param {number | string} second 초
    */
   static setStartDate (year, month, day, hour, minute, second) {
-    if (arguments.length === 0) {
-      this.startDate.setCurrentDate()
-    } else {
-      this.startDate.setData(year, month, day, hour, minute, second)
-    }
+    if (typeof year === 'string') year = Number(year)
+    if (typeof month  === 'string') month  = Number(month)
+    if (typeof day === 'string') day = Number(day)
+    if (typeof hour === 'string') hour = Number(hour)
+    if (typeof minute === 'string') minute = Number(minute)
+    if (typeof second === 'string') second = Number(second)
+
+    this.startDate.setData(year, month, day, hour, minute, second)
+  }
+
+  /** 유저의 시작 일을 재설정합니다. */
+  static setStartDateReset () {
+    this.startDate.setCurrentDate()
   }
 
   /**
@@ -461,14 +470,11 @@ export class userSystem {
 
 
     // lv + exp display
-    let expPercent = this.exp / this.expTable[this.lv]
-    if (expPercent > 1) expPercent = 1 // 경험치 바가 바깥을 벗어나지 않도록 합니다.
-
     if (this.levelUpEffectFrame > 0) {
       let targetFrame = this.levelUpEffectFrame % EXP_COLORA.length
       game.graphic.meterRect(LAYERX, LAYERY3, LAYER_WIDTH, LAYER_HEIGHT, [EXP_COLORA[targetFrame], EXP_COLORB[targetFrame]], this.exp, this.getExpMax())
     } else {
-      game.graphic.meterRect(LAYERX, LAYERY3, LAYER_WIDTH * expPercent, LAYER_HEIGHT, [EXP_COLORA[0], EXP_COLORB[0]], this.exp, this.getExpMax())
+      game.graphic.meterRect(LAYERX, LAYERY3, LAYER_WIDTH, LAYER_HEIGHT, [EXP_COLORA[0], EXP_COLORB[0]], this.exp, this.getExpMax())
     }
 
     const lvText = 'Lv.' + this.lv + ' ' + this.exp + '/' + this.expTable[this.lv]
@@ -501,11 +507,20 @@ export class userSystem {
   /**
    * 저장 형식 (버전에 따라 변경될 수 있음.)
    * 
-   * lv,exp,weaponlist x 4,skilllist x 8...
-   * 
    * @retruns 세이브데이터의 문자열
    */
   static getSaveData () {
+    let inputData = {
+      lv: this.lv,
+      exp: this.exp,
+      weapon: this.weaponList,
+      skill: this.skillList
+    }
+
+    return inputData
+  }
+
+  static getSaveData0a36 () {
     let inputData = [
       this.lv, this.exp,
       this.weaponList[0], this.weaponList[1], this.weaponList[2], this.weaponList[3],
@@ -518,10 +533,27 @@ export class userSystem {
   }
 
   /**
-   * 
-   * @param {string} saveData 
+   * 현재 버전에 대한 유저 데이터 로드
+   * @param {any} saveData 
    */
   static setLoadData (saveData) {
+    if (saveData == null) return
+
+    // 해당 속성이 있을때에만 값을 추가합니다. (없으면 추가 안함)
+    if (saveData.lv) this.lv = saveData.lv
+    if (saveData.exp) this.exp = saveData.exp
+    if (saveData.weapon) this.weaponList = saveData.weapon
+    if (saveData.skill) this.skillList = saveData.skill
+
+    // 보여지는 부분 설정을 하기 위해 현재 스킬값을 다시 재설정
+    this.setSkillList(this.getSkillList())
+  }
+
+  /**
+   * 0.36 버전에 대한 유저 데이터 로드
+   * @param {string} saveData 
+   */
+  static setLoadData0a36 (saveData) {
     if (saveData == null) return
 
     let getData = saveData.split(',')
