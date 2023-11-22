@@ -2139,7 +2139,9 @@ export class gameSystem {
       sramData: sramData
     }
 
-    localStorage.setItem(this.getCurrentSaveKey(), JSON.stringify(saveData))
+    let jsonString = JSON.stringify(saveData)
+    localStorage.setItem(this.getCurrentSaveKey(), jsonString)
+    localStorage.setItem(this.getCurrentSaveKeyBackup(), jsonString)
 
     // 필드 저장 데이터는, 필드 상태에서, 게임이 진행 중일 때에만 저장됩니다. 클리어, 게임오버, 탈출상태가 되면 저장하지 않습니다.
     if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
@@ -2304,7 +2306,9 @@ export class gameSystem {
     // 두번째 예외처리: 글자수 확인
     for (let i = 0; i < arrayNumber.length; i++) {
       let str = '' + arrayNumber[i]
-      if (str.length !== 8) {
+      // 8글자 미만은 가능하지만, (왜냐하면 0 ~ 99999999까지의 범위를 사용하기 때문)
+      // 그 개수를 초과한다면 오류가 난 것으로 간주
+      if (str.length > 8) { 
         console.error('saveSystemError: 이 데이터가 올바른 세이브 데이터가 아닙니다.')
         return
       }
@@ -2397,12 +2401,16 @@ export class gameSystem {
       if (sram1 == null || userLvExp == null) {
         console.error(systemText.gameError.USER_SRAM_ERROR)
         this.loadErrorSystem.message = systemText.gameError.USER_SRAM_ERROR
+        return false
       } else {
         loadData.userData.lv = userLvExp[0]
         loadData.userData.exp = userLvExp[1]
       }
 
-      this.userSystem.setLoadData(loadData.userData)
+      let isSuccessUserData = this.userSystem.setLoadData(loadData.userData)
+      if (!isSuccessUserData) {
+        return false
+      }
     }
 
     // 정상적으로 불러온경우 true 리턴
@@ -2443,6 +2451,7 @@ export class gameSystem {
         this.stateId = this.STATE_LOAD_ERROR
         localStorage.removeItem(this.getCurrentSaveKey())
         localStorage.removeItem(this.getCurrentSaveKeyBackup())
+        localStorage.removeItem(this.saveKey.fieldData)
         return
       }
     }
@@ -2511,7 +2520,10 @@ export class gameSystem {
    * 삭제 기능이 동작한 후, 2초 후 자동으로 새로고침 되기 때문에, 저장기능이 일시적으로 정지도비니다.
    */
   static dataReset () {
-    localStorage.clear()
+    // localStorage.clear() // 이제 tamshooter4와 관련한 데이터만 삭제됩니다.
+    // 다른 데이터를 엉뚱하게 삭제할 가능성이 있으므로, localStorage.clear는 사용하지 않습니다.
+    localStorage.removeItem(this.getCurrentSaveKey())
+    localStorage.removeItem(this.getCurrentSaveKeyBackup())
     this.isDataReset = true
   }
 
@@ -2532,6 +2544,8 @@ export class gameSystem {
    * [process 함수 내에서 출력과 관련됨 모든 함수 사용금지]
    */
   static process () {
+    if (this.stateId === this.STATE_LOAD_ERROR) return
+
     this.userSystem.process()
 
     switch (this.stateId) {
@@ -2614,6 +2628,11 @@ export class gameSystem {
   static display () {
     // 화면 지우기
     game.graphic.clearCanvas()
+
+    if (this.stateId === this.STATE_LOAD_ERROR) {
+      this.loadErrorSystem.display()
+      return
+    }
 
     // 화면 출력
     switch (this.stateId) {

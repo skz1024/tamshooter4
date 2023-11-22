@@ -74,7 +74,7 @@ export class systemText {
     SAVE_NUMBER_DECODE_ERROR: 'saveSystemError: 잘못된 형식의 JSON 데이터.',
     SAVE_DIGIT_NOT_CORRECT: 'saveSystemError: 세이브 데이터가 잘못된 형식입니다.',
     USER_SRAM_ERROR: 'user 데이터에 오류가 발생했습니다. 이 데이터를 사용할 수 없습니다.',
-    LOAD_USERLEVEL_ERROR: '잘못된 user의 레벨, 이 데이터는 삭제됩니다.',
+    LOAD_USERLEVEL_ERROR: 'incorrect user level or exp, this data not used.',
     LOAD_PLAYTIME_ERROR: 'play time is NaN, not correct number type',
     LOAD_STARTDATE_ERROR: 'start date is Nan, not correct number type',
   }

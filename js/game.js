@@ -540,16 +540,11 @@ export class userSystem {
 
   /**
    * 현재 버전에 대한 유저 데이터 로드
-   * @param {any} saveData 
+   * @param {any} saveData 저장 성공 여부
+   * @returns {boolean}
    */
   static setLoadData (saveData) {
-    if (saveData == null) return
-
-    // 해당 속성이 있을때에만 값을 추가합니다. (없으면 추가 안함)
-    if (saveData.lv) this.lv = saveData.lv
-    if (saveData.exp) this.exp = saveData.exp
-    if (saveData.weapon) this.weaponList = saveData.weapon
-    if (saveData.skill) this.skillList = saveData.skill
+    if (saveData == null) return false
 
     // 해당 속성이 있을때에만 값을 추가합니다. (없으면 추가 안함)
     if (saveData.lv) this.lv = saveData.lv
@@ -561,21 +556,29 @@ export class userSystem {
     if (typeof this.lv !== 'number') {
       this.lv = Number(this.lv)
       if (isNaN(this.lv)) {
-        alert(systemText.gameError.LOAD_USERLEVEL_ERROR)
         console.error(systemText.gameError.LOAD_USERLEVEL_ERROR)
-        this.lv = 1 // 레벨 강제 초기화 (오류 방지를 위해서)
+        return false // 데이터를 불러오지 않음
       }
     }
 
     // 레벨 범위 체크
     if (this.lv < 0 || this.lv > this.expTable.length) {
-      alert(systemText.gameError.LOAD_USERLEVEL_ERROR)
       console.error(systemText.gameError.LOAD_USERLEVEL_ERROR, this.lv)
-      this.lv = 1 // 레벨 강제 초기화 (오류 방지를 위해서)
+      return false // 데이터를 불러오지 않음
+    }
+
+    if (typeof this.exp !== 'number') {
+      this.exp = Number(this.exp)
+      if (isNaN(this.exp)) {
+        console.error(systemText.gameError.LOAD_USERLEVEL_ERROR)
+        return false // 데이터를 불러오지 않음
+      }
     }
 
     // 보여지는 부분 설정을 하기 위해 현재 스킬값을 다시 재설정
     this.setSkillList(this.getSkillList())
+
+    return true
   }
 
   /**
