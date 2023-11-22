@@ -4,6 +4,7 @@ import { ID } from "./dataId.js"
 import { imageSrc } from "./imageSrc.js"
 import { soundSrc } from "./soundSrc.js"
 import { TamsaEngine } from "./tamsaEngine/tamsaEngine.js"
+import { systemText } from "./text.js"
 
 // 이 파일은 함수 및 변수를 export할 목적으로 만들어졌으며
 // 순환 참조를 구조적으로 불가능하게 하기 위해 만들어졌습니다.
@@ -229,6 +230,11 @@ export class userSystem {
     if (typeof hour === 'string') hour = Number(hour)
     if (typeof minute === 'string') minute = Number(minute)
     if (typeof second === 'string') second = Number(second)
+
+    if (isNaN(second) || isNaN(minute) || isNaN(second)) {
+      console.error(systemText.gameError.LOAD_PLAYTIME_ERROR)
+      return
+    }
 
     this.startDate.setData(year, month, day, hour, minute, second)
   }
@@ -544,6 +550,29 @@ export class userSystem {
     if (saveData.exp) this.exp = saveData.exp
     if (saveData.weapon) this.weaponList = saveData.weapon
     if (saveData.skill) this.skillList = saveData.skill
+
+    // 해당 속성이 있을때에만 값을 추가합니다. (없으면 추가 안함)
+    if (saveData.lv) this.lv = saveData.lv
+    if (saveData.exp) this.exp = saveData.exp
+    if (saveData.weapon) this.weaponList = saveData.weapon
+    if (saveData.skill) this.skillList = saveData.skill
+
+    // 데이터 유효성 체크
+    if (typeof this.lv !== 'number') {
+      this.lv = Number(this.lv)
+      if (isNaN(this.lv)) {
+        alert(systemText.gameError.LOAD_USERLEVEL_ERROR)
+        console.error(systemText.gameError.LOAD_USERLEVEL_ERROR)
+        this.lv = 1 // 레벨 강제 초기화 (오류 방지를 위해서)
+      }
+    }
+
+    // 레벨 범위 체크
+    if (this.lv < 0 || this.lv > this.expTable.length) {
+      alert(systemText.gameError.LOAD_USERLEVEL_ERROR)
+      console.error(systemText.gameError.LOAD_USERLEVEL_ERROR, this.lv)
+      this.lv = 1 // 레벨 강제 초기화 (오류 방지를 위해서)
+    }
 
     // 보여지는 부분 설정을 하기 위해 현재 스킬값을 다시 재설정
     this.setSkillList(this.getSkillList())

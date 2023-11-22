@@ -1918,6 +1918,27 @@ class EtcSystem extends MenuSystem {
   }
 }
 
+class LoadErrorSystem extends MenuSystem {
+  constructor () {
+    super()
+    this.message = ''
+  }
+
+  process () {}
+
+  display () {
+    game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, '#4F4F4F')
+    digitalDisplay('TAMSHOOTER4 SYSTEM ERROR', 0, 0)
+    digitalDisplay('LOAD DATA ERROR', 0, 20)
+    game.graphic.fillText(this.message, 0, 40, '#C2BD90')
+
+    game.graphic.fillText(systemText.gameError.LOAD_ERROR_MESSAGE1, 0, 80, '#B8B8B8')
+    game.graphic.fillText(systemText.gameError.LOAD_ERROR_MESSAGE2, 0, 100, '#B8B8B8')
+    game.graphic.fillText(systemText.gameError.LOAD_ERROR_MESSAGE3, 0, 120, '#B8B8B8')
+    game.graphic.fillText(systemText.gameError.LOAD_ERROR_MESSAGE4, 0, 140, '#B8B8B8')
+  }
+}
+
 /**
  * 게임 시스템 (거의 모든 로직을 처리), 경고: new 키워드로 인스턴스를 생성하지 마세요.
  * 이건 단일 클래스입니다.
@@ -1937,6 +1958,7 @@ export class gameSystem {
   /** 상태: 데이터 설정 */ static STATE_DATA_SETTING = 6
   /** 상태: 기타... */ static STATE_ETC = 7
   /** 상태: 필드(게임 진행중) */ static STATE_FIELD = 12
+  /** 상태: 오류 발생 */ static STATE_LOAD_ERROR = 13
   /** 게임 첫 실행시 로드를 하기 위한 초기화 확인 변수 */ static isLoad = false
   /** 게임에서 저장된 데이터가 있는지 확인하는 localStorage 키 이름 */ static SAVE_FLAG = 'saveFlag'
 
@@ -1952,6 +1974,8 @@ export class gameSystem {
   /** 스킬 선택 시스템 */ static skillSelectSystem = new SkillSelectSystem()
   /** 업그레이드 시스템 */ static upgradeSystem = new UpgradeSystem()
   /** etc... 시스템 */ static etcSystem = new EtcSystem()
+  /** loadError 시스템 */ static loadErrorSystem = new LoadErrorSystem()
+
 
   /** 현재 게임의 옵션 데이터를 가져옵니다. */
   static getGameOption () {
@@ -2054,6 +2078,11 @@ export class gameSystem {
   /** tamshooter4에서 사용하는 실제 세이브 키 (참고: 세이브 키 + 세이브 번호의 조합으로 키를 구성하기 때문에 이 함수를 사용해야 합니다.) */
   static getCurrentSaveKey () {
     return this.saveKeyTamshooter4Data + this.saveKetTamshooter4DataNumber
+  }
+
+  /** tamshooter4에서 사용하는 백업용 세이브 키 (오류가 났을 때 복구하는 용도) */
+  static getCurrentSaveKeyBackup () {
+    return this.saveKeyTamshooter4Data + this.saveKetTamshooter4DataNumber + 'backup'
   }
 
   /** 저장 지연 시간을 카운트 하는 변수 */ static saveDelayCount = 0
@@ -2315,41 +2344,28 @@ export class gameSystem {
     return divArray
   }
 
-  /** 불러오기 기능: 게임을 실행할 때 한번만 실행. 만약, 또 불러오기를 하려면 게임을 재시작해주세요. */
-  static processLoad () {
-    // 이미 불러왔다면 함수는 실행되지 않습니다.
-    if (this.initLoad) return
-
-    // 초기 불러오기 완료 설정
-    this.initLoad = true
-
-    // 유저의 스킬을 강제로 표시하기 위해 해당 함수를 사용
-    userSystem.setSkillDisplayStatDefaultFunction()
-
-    // 불러오기 작업 진행
-    // 0.36.0 ~ 0.42.6 까지의 세이브 파일은 자동으로 0.43.0으로 변환됩니다.
-    // 단, 이미 0.43.0 이후의 데이터가 존재한다면, 0.36.0 ~ 0.42.6 데이터가 있어도 그 데이터는 유지되고 반영되지 않습니다.
-    let tamshooter4LoadData = localStorage.getItem(this.getCurrentSaveKey())
+  /**
+   * 해당 키로 데이터 로드 작업을 진행합니다.
+   * 
+   * @param {string} key 불러올 데이터의 키 값
+   * @returns {boolean} 성공 여부
+   */
+  static processLoadStorageKey (key) {
+    let loadData
+    let tamshooter4LoadData = localStorage.getItem(key)
     if (tamshooter4LoadData == null) {
-      this.processLoadOldV0a36() // 참고: 이 버전에서조차 불러온 데이터가 없다면 저장된 데이터는 없는것으로 처리합니다.
-      if (localStorage.getItem(this.saveKey.saveFlag) == null) {
-        userSystem.setStartDateReset()
-      }
-      return
-    } else {
-      
+      return false
     }
 
-    // 0.43.0 불러오기
-    let loadData
     try {
       loadData = JSON.parse(tamshooter4LoadData)
     } catch {
-      console.error('Load Error: 세이브 데이터가 JSON 형식과 다릅니다.')
-      return
+      this.loadErrorSystem.message = systemText.gameError.LOAD_JSON_ERROR
+      console.error(systemText.gameError.LOAD_JSON_ERROR)
+      return false
     }
 
-    // 저장 불러오기?
+    // 불러오기 작업 진행
     if (loadData.saveFlag) {
       // 생략
     }
@@ -2370,7 +2386,6 @@ export class gameSystem {
     }
 
     if (loadData.userData) {
-      console.log(loadData.userData)
       // sram으로 처리
       let sram1
       let userLvExp
@@ -2380,16 +2395,56 @@ export class gameSystem {
       }
 
       if (sram1 == null || userLvExp == null) {
-        console.error('user 데이터에 오류가 발생했으므로 해당 데이터를 로드할 수 없습니다.')
-        // 
+        console.error(systemText.gameError.USER_SRAM_ERROR)
+        this.loadErrorSystem.message = systemText.gameError.USER_SRAM_ERROR
       } else {
-        console.log(this.saveNumberDecode(sram1))
         loadData.userData.lv = userLvExp[0]
         loadData.userData.exp = userLvExp[1]
       }
 
-      console.log(loadData.userData)
       this.userSystem.setLoadData(loadData.userData)
+    }
+
+    // 정상적으로 불러온경우 true 리턴
+    return true
+  }
+
+  /** 불러오기 기능: 게임을 실행할 때 한번만 실행. 만약, 또 불러오기를 하려면 게임을 재시작해주세요. */
+  static processLoad () {
+    // 이미 불러왔다면 함수는 실행되지 않습니다.
+    if (this.initLoad) return
+
+    // 초기 불러오기 완료 설정
+    this.initLoad = true
+
+    // 유저의 스킬을 강제로 표시하기 위해 해당 함수를 사용
+    userSystem.setSkillDisplayStatDefaultFunction()
+
+    // 불러오기 작업 진행
+    // 0.36.0 ~ 0.42.6 까지의 세이브 파일은 자동으로 0.43.0으로 변환됩니다.
+    // 단, 이미 0.43.0 이후의 데이터가 존재한다면, 0.36.0 ~ 0.42.6 데이터가 있어도 그 데이터는 유지되고 반영되지 않습니다.
+    let tamshooter4LoadData = localStorage.getItem(this.getCurrentSaveKey())
+    let tamshooter4BackupData = localStorage.getItem(this.getCurrentSaveKeyBackup())
+    if (tamshooter4LoadData == null && tamshooter4BackupData == null) {
+      this.processLoadOldV0a36() // 참고: 이 버전에서조차 불러온 데이터가 없다면 저장된 데이터는 없는것으로 처리합니다.
+      if (localStorage.getItem(this.saveKey.saveFlag) == null) {
+        userSystem.setStartDateReset()
+      }
+      return
+    }
+
+    // 데이터를 불러오고 성공했는지 여부를 판단
+    let isSuccess = this.processLoadStorageKey(this.getCurrentSaveKey())
+    if (!isSuccess) {
+      // 만약 실패했다면, 백업데이터를 통해 다시 시도
+      let isBackupSuccess = this.processLoadStorageKey(this.getCurrentSaveKeyBackup())
+      if (!isBackupSuccess) {
+        // 이것도 실패했다면, 오류 발생시키고, 데이터 초기화
+        this.stateId = this.STATE_LOAD_ERROR
+        localStorage.removeItem(this.getCurrentSaveKey())
+        localStorage.removeItem(this.getCurrentSaveKeyBackup())
+        return
+      }
     }
     
     // 모든 데이터를 불러온 후 필드 데이터가 있으면 필드 데이터를 불러옴
