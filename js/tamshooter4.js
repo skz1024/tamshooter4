@@ -2302,14 +2302,10 @@ export class gameSystem {
       console.error('saveSystemError: 잘못된 형식의 JSON 데이터. 이 데이터를 사용할 수 없습니다.')
       return
     }
-
-    // 두번째 예외처리: 글자수 확인
+    
+    // 두번째 예외처리: 숫자 확인
     for (let i = 0; i < arrayNumber.length; i++) {
-      let str = '' + arrayNumber[i]
-      // 8글자 미만은 가능하지만, (왜냐하면 0 ~ 99999999까지의 범위를 사용하기 때문)
-      // 그 개수를 초과한다면 오류가 난 것으로 간주
-      if (str.length > 8) { 
-        console.error('saveSystemError: 이 데이터가 올바른 세이브 데이터가 아닙니다.')
+      if (typeof arrayNumber[i] !== "number") {
         return
       }
     }
