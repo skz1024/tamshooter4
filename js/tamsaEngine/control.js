@@ -557,6 +557,13 @@ export class ControlSystem {
     }
   }
 
+  /** 입력되었던 버튼을 전부 리셋합니다. */
+  resetButtonInput () {
+    for (let i = 0; i < this.isButtonInput.length; i++) {
+      this.isButtonInput[i] = false
+    }
+  }
+
   /** 현재 사용하고 있는 키바인드맵을 가져옵니다. */
   getKeyBindMap () {
     return this.currentKeyBindMap

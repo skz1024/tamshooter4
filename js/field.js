@@ -1400,6 +1400,9 @@ export class fieldSystem {
         this.message = this.messageList.STATE_MAIN 
       }
     }
+
+    // 버튼이 잘못눌리는 상황을 막기 위해 입력된 버튼들을 전부 리셋시킵니다.
+    game.control.resetButtonInput()
   }
 
   /**
@@ -1420,6 +1423,8 @@ export class fieldSystem {
     const buttonDown = game.control.getButtonInput(game.control.buttonIndex.DOWN)
     const buttonUp = game.control.getButtonInput(game.control.buttonIndex.UP)
     const buttonSelect = game.control.getButtonInput(game.control.buttonIndex.START)
+    const buttonA = game.control.getButtonInput(game.control.buttonIndex.A)
+    const buttonB = game.control.getButtonInput(game.control.buttonIndex.B)
     const maxMenuNumber = 3
     game.sound.musicPause() // 일시정지 상태에서는 음악이 재생되지 않음.
     game.sound.setEchoDisable() // 에코 기능 정지
@@ -1433,13 +1438,11 @@ export class fieldSystem {
       game.sound.play(soundSrc.system.systemCursor)
     }
 
-    if (buttonSelect) {
+    let isResume = false // 일시정지 해제 상태 확인
+    if (buttonSelect || buttonA) {
       switch (this.cursor) {
         case 0:
-          this.stateId = this.STATE_NORMAL // pause 상태 해제
-          if (this.round != null) { // round 음악 다시 재생
-            this.round.sound.musicPlay()
-          }
+          isResume = true
           break
         case 1:
           this.message = this.messageList.CHANGE_SOUNDON
@@ -1450,6 +1453,15 @@ export class fieldSystem {
         case 3:
           this.stateId = this.STATE_EXIT // 라운드를 나감
           break
+      }
+    } else if (buttonB) {
+      isResume = true
+    }
+
+    if (isResume) {
+      this.stateId = this.STATE_NORMAL // pause 상태 해제
+      if (this.round != null) { // round 음악 다시 재생
+        this.round.sound.musicPlay()
       }
     }
   }
