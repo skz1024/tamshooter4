@@ -510,7 +510,8 @@ export class SoundSystem {
       this.fade.fadeTime = fadeTime
   
       // 참고: setValueAtTime을 하지 않고 바로 페이드 아웃을 시도하면, 자연스러운 감소가 아닌 급격한 감소로 페이드 아웃됩니다.
-      this.audioNode.musicFadeGain.gain.value = 1
+      // firefox는 setValueAtTime을 하지 않으면 무언가 정상적으로 값을 대입하지 못하는 현상이 있음. firefox 버그로 추정
+      this.audioNode.musicFadeGain.gain.setValueAtTime(1, this.audioContext.currentTime)
       this.audioNode.musicFadeGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + fadeTime)
     }
   }
@@ -570,6 +571,8 @@ export class SoundSystem {
    * 주로, 페이드 인 효과를 정의할 때 사용합니다.
    */
   musicProcess () {
+    console.log(this.audioNode.musicFadeGain.gain.value)
+
     // 페이드 과정 진행
     if (this.fade.isFading) {
       if (this.fade.isFadeOut) {
@@ -584,6 +587,7 @@ export class SoundSystem {
               this.musicPlay(this.fade.nextAudioSrc)
             }
             // 페이드 인 상태로 변경
+            this.audioNode.musicFadeGain.gain.cancelScheduledValues(this.audioContext.currentTime)
             this.audioNode.musicFadeGain.gain.setValueAtTime(0, this.audioContext.currentTime)
             this.audioNode.musicFadeGain.gain.linearRampToValueAtTime(1, this.audioContext.currentTime + this.fade.fadeTime)
             this.fade.isFadeOut = false

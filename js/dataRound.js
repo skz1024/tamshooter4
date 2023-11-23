@@ -2251,18 +2251,18 @@ class Round1_3 extends RoundData {
     if (this.timeCheckInterval(49, 54, 30)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellSpike)
     }
-    if (this.timeCheckInterval(55, 68, 60)) {
+    if (this.timeCheckInterval(55, 67, 60)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellAir)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellShip)
     }
 
+    // 적의 수가 2 초과라면, 시간이 일시정지합니다.
+    this.timePauseWithEnemyCount(68, 2)
+
     // 배경음악 정지
-    if (this.timeCheckFrame(67)) {
+    if (this.timeCheckFrame(69)) {
       this.sound.musicChange('', 1)
     }
-
-    // 적의 수가 2 초과라면, 시간이 일시정지합니다.
-    this.timePauseWithEnemyCount(69, 2)
   }
 
   roundPhase03 () {
@@ -7415,16 +7415,6 @@ class Round2_5 extends RoundData {
 
     if (this.phase.getCurrentPhase() === 4) {
       this.meter.bossHpUserStyle(ID.enemy.intruder.jemuBoss, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 25, ['#7D7D7D', '#7B84A4'])
-
-      let enemyObject = this.field.getEnemyObject()
-      for (let i = 0; i < enemyObject.length; i++) {
-        let enemy = enemyObject[i]
-        if (enemy.id === ID.enemy.intruder.jemuBoss) {
-          graphicSystem.meterRect(0, 0, graphicSystem.CANVAS_WIDTH, 25, ['#7D7D7D', '#7B84A4'], enemy.hp, enemy.hpMax, true, '#B9D7FF', 2)
-          digitalDisplay('BOSS HP: ' + enemy.hp + '/' + enemy.hpMax, 10, 3)
-          break
-        }
-      }
     }
   }
 
@@ -7515,7 +7505,7 @@ class Round2_6 extends RoundData {
     // 스크롤 무한루프 불가능
     this.bgLayer.setBackgroundScroolLoop(false, false)
 
-    // 기본 위치 지정
+    // 기본 위치 지정 (참고: 배경 크기가 특정 값보다 낮다면 위치 지정이 안됩니다.)
     this.bgLayer.setBackgroundWidthHeight(7200, 1600)
     this.bgLayer.setBackgroundPosition(0, 800)
   }

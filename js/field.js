@@ -1560,7 +1560,7 @@ export class fieldSystem {
     }
 
     if (this.round.time.currentTimePausedMessage === '') {
-      gameVar.statLineText1.text = 'enemy count left: ' + fieldState.enemyObject.length
+      gameVar.statLineText1.text = ''
     } else {
       gameVar.statLineText1.text = this.round.time.currentTimePausedMessage
     }
@@ -1754,9 +1754,18 @@ export class fieldSystem {
     let weapon = fieldState.weaponObject.map((data) => {
       return data.getSaveData()
     })
-    let enemy = fieldState.enemyObject.map((data) => {
-      return data.getSaveData()
-    })
+
+    // 죽어있거나 삭제된 적은 저장하지 않습니다.
+    let enemyObject = fieldState.enemyObject
+    let enemy = []
+    for (let i = 0; i < enemyObject.length; i++) {
+      if (enemyObject[i].isDied || enemyObject[i].isDeleted) {
+        continue
+      } else {
+        enemy.push(enemyObject[i].getSaveData())
+      }
+    }
+
     // let sprite = fieldState.spriteObject.map((data) => {
     //   return data.getSaveData()
     // })
@@ -1851,8 +1860,8 @@ export class fieldSystem {
     this.enimationFrame = loadData.field.enimationFrame
     this.exitDelayCount = loadData.field.exitDelayCount
     
-    // 데이터 표시를 위한 1프레임 진행
-    this.processNormal()
+    // 데이터 표시
+    gameVar.statLineText2.setStatLineText(this.getFieldDataString(), this.round.time._currentTime, this.round.stat.finishTime, '#D5F5E3' ,'#33ff8c')
 
     // 게임을 불러오기 했다면, 일시정지 상태가 됩니다.
     this.stateId = this.STATE_LOADING_PAUSE
