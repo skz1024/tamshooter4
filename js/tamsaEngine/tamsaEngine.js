@@ -639,6 +639,7 @@ export class TamsaEngine {
     /** 해당 엔진에서 사용하는 컨트롤 시스템 */
     this.control = new ControlSystem(resourceSrc)
     this.control.addEventMouseTouch(this.graphic.canvas)
+    this.control.setIntervalButtonDown(1000 / gameFps)
 
     /** 해당 엔진에서 사용하는 사운드 시스템 */
     this.sound = new SoundSystem(true, resourceSrc)

@@ -1,3 +1,5 @@
+//@ts-check
+
 /**
  * 모바일을 위한 터치버튼 시스템 (레이아웃과 엘리먼트만 있습니다.)
  * 
@@ -6,6 +8,76 @@
  * 이것은 controlSystem에서 사용하기 위한 클래스이므로, export 하지 않습니다.
  */
 class TouchButton {
+  constructor () {
+    /** 모든 패드 영역을 담고 있는 엘리먼트 */
+    this.elementCenter = document.createElement('div')
+    this.elementCenter.id = 'touchButtonElement'
+
+    /** 터치패드에서 사용하는 첫번째 영역 (L1, L2, R1, R2, start, select 버튼) */
+    this.elementFirst = document.createElement('div')
+    this.elementFirst.style.display = 'flex'
+    this.elementFirst.style.opacity = '50%'
+    this.elementFirst.id = 'elementFirst'
+    this.elementCenter.appendChild(this.elementFirst)
+
+    /** 첫번째 영역의 레이아웃 영역 */
+    this.divAreaFirst = document.createElement('div')
+    this.divAreaFirst.style.position = 'relative'
+    this.elementFirst.appendChild(this.divAreaFirst)
+
+    this.buttonL1 = this.createButton('L1', '20%', '#592c00', '#b4987c', '#e1c8b1', '#2a1500', '#905216')
+    this.buttonL2 = this.createButton('L2', '20%', '#592c00', '#b4987c', '#e1c8b1', '#2a1500', '#905216')
+    this.buttonR1 = this.createButton('R1', '20%', '#592c00', '#b4987c', '#e1c8b1', '#2a1500', '#905216')
+    this.buttonR2 = this.createButton('R2', '20%', '#592c00', '#b4987c', '#e1c8b1', '#2a1500', '#905216')
+    this.buttonStart = this.createButton('START', '0%', '#29006f', '#9e8eb8', '#cabce4', '#0f002a', '#371374')
+    this.buttonSelect = this.createButton('SELECT', '0%', '#29006f', '#9e8eb8', '#cabce4', '#0f002a', '#371374')
+    this.divAreaFirst.appendChild(this.buttonL1)
+    this.divAreaFirst.appendChild(this.buttonL2)
+    this.divAreaFirst.appendChild(this.buttonR1)
+    this.divAreaFirst.appendChild(this.buttonR2)
+    this.divAreaFirst.appendChild(this.buttonStart)
+    this.divAreaFirst.appendChild(this.buttonSelect)
+
+    /** 터치패드에서 사용하는 두번째 영역 (좌, 우, 상, 하 를 조작하는 패드) */
+    this.elementSecond = document.createElement('div')
+    this.elementSecond.style.display = 'flex'
+    this.elementSecond.style.opacity = '80%'
+    this.elementSecond.id = 'elementSecond'
+    this.elementCenter.appendChild(this.elementSecond)
+
+    /** 터치패드에서 사용하는 div의 두번째 영역 */
+    this.divAreaSecond = document.createElement('div')
+    this.divAreaSecond.style.position = 'relative'
+    this.buttonArrow = this.createButton('', '50%', 'black', 'white', 'white', 'white', '#AAAAAA')
+    this.buttonArrow.style.pointerEvents = 'none'
+    this.divAreaSecond.style.backgroundColor = '#323232'
+    this.divAreaSecond.style.borderRadius = '15%'
+    this.elementSecond.appendChild(this.divAreaSecond)
+    this.divAreaSecond.appendChild(this.buttonArrow)
+
+    /** 터치패드에서 사용하는 div의 세번째 영역(레이아웃 디자인을 위해 비어있는 공간을 만듬) */
+    this.divAreaThird = document.createElement('div')
+    this.elementSecond.appendChild(this.divAreaThird)
+
+    /** 터치패드에서 사용하는 div의 네번째 영역 (A, B, X, Y 버튼) */
+    this.divAreaForth = document.createElement('div')
+    this.divAreaForth.style.position = 'relative'
+    this.elementSecond.appendChild(this.divAreaForth)
+
+    this.buttonA = this.createButton('A', '50%', '#00300d', '#6d9e7a', '#8bcb9b', '#012a0c', '#008422')
+    this.buttonB = this.createButton('B', '50%', '#500000', '#a68282', '#e1b1b1', '#340000', '#7c0000')
+    this.buttonX = this.createButton('X', '50%', '#002141', '#7f93a6', '#a4bed8', '#000e1b', '#0c355e')
+    this.buttonY = this.createButton('Y', '50%', '#474300', '#a3a27e', '#e0dda8', '#1b1a00', '#5e5a10')
+    this.divAreaForth.appendChild(this.buttonA)
+    this.divAreaForth.appendChild(this.buttonB)
+    this.divAreaForth.appendChild(this.buttonX)
+    this.divAreaForth.appendChild(this.buttonY)
+
+    // 마지막: 레이아웃 처리(가로/세로모드에 따른...)
+    this.changeLayout()
+  }
+
+
   /** 
    * 터치버튼의 div의 style을 portrait 또는 landscape로 수정합니다.
    * @param {boolean} isPortrait portrait여부(세로모드)
@@ -18,17 +90,16 @@ class TouchButton {
       this.divAreaFirst.style.width = '100vw'
       this.divAreaFirst.style.height = '20vw'
 
-      this.setButtonStyle(this.buttonL1, '15vw', '10vw', {left: '1%'})
-      this.setButtonStyle(this.buttonL2, '15vw', '10vw', {left: '20%'})
-      this.setButtonStyle(this.buttonR1, '15vw', '10vw', {right: '20%'})
-      this.setButtonStyle(this.buttonR2, '15vw', '10vw', {right: '1%'})
-      this.setButtonStyle(this.buttonStart, '10vw', '6vw', {left: '38%', top: '5%'})
-      this.setButtonStyle(this.buttonSelect, '10vw', '6vw', {left: '52%', top: '5%'})
+      this.setButtonStyle(this.buttonL1, '12vw', '10vw', '0%', '1%')
+      this.setButtonStyle(this.buttonL2, '12vw', '10vw', '0%', '15%')
+      this.setButtonStyle(this.buttonR1, '12vw', '10vw', '0%', '73%')
+      this.setButtonStyle(this.buttonR2, '12vw', '10vw', '0%', '87%')
+      this.setButtonStyle(this.buttonStart, '16vw', '7vw', '10%', '32%')
+      this.setButtonStyle(this.buttonSelect, '16vw', '7vw', '10%', '52%')
 
       this.divAreaSecond.style.width = '40vw'
       this.divAreaSecond.style.height = '40vw'
-
-      this.setButtonStyle(this.buttonArrow, '50%', '50%', {left: '25%', top: '25%'})
+      this.setButtonStyle(this.buttonArrow, '40%', '40%', '30%', '30%')
       
       this.divAreaThird.style.width = '20vw'
       this.divAreaThird.style.height = '40vw'
@@ -36,185 +107,99 @@ class TouchButton {
       this.divAreaForth.style.width = '40vw'
       this.divAreaForth.style.height = '40vw'
       this.divAreaForth.style.right = ''
-      this.setButtonStyle(this.buttonA, '16vw', '16vw', {bottom: '0%', left: '30%'})
-      this.setButtonStyle(this.buttonB, '16vw', '16vw', {top: '30%', right: '0%'})
-      this.setButtonStyle(this.buttonX, '16vw', '16vw', {top: '30%', left: '0%'})
-      this.setButtonStyle(this.buttonY, '16vw', '16vw', {top: '0%', left: '30%'})
+      this.setButtonStyle(this.buttonA, '16vw', '16vw', '60%', '30%')
+      this.setButtonStyle(this.buttonB, '16vw', '16vw', '30%', '60%')
+      this.setButtonStyle(this.buttonX, '16vw', '16vw', '30%', '0%')
+      this.setButtonStyle(this.buttonY, '16vw', '16vw', '0%', '30%')
     } else {
       this.elementCenter.style.position = 'absolute'
-      this.elementCenter.style.top = '25%'
+      this.elementCenter.style.top = '40%'
 
       this.divAreaFirst.style.width = '100vw'
       this.divAreaFirst.style.height = '20vh'
 
-      this.setButtonStyle(this.buttonL1, '15vh', '10vh', {left: '1%'})
-      this.setButtonStyle(this.buttonL2, '15vh', '10vh', {left: '12%'})
-      this.setButtonStyle(this.buttonR1, '15vh', '10vh', {right: '12%'})
-      this.setButtonStyle(this.buttonR2, '15vh', '10vh', {right: '1%'})
-      this.setButtonStyle(this.buttonStart, '15vh', '10vh', {left: '1%', top: '-100%'})
-      this.setButtonStyle(this.buttonSelect, '15vh', '10vh', {left: '12%', top: '-100%'})
+      this.setButtonStyle(this.buttonL1, '10%', '50%', '0%', '1%')
+      this.setButtonStyle(this.buttonL2, '10%', '50%', '0%', '13%')
+      this.setButtonStyle(this.buttonR1, '10%', '50%', '0%', '77%')
+      this.setButtonStyle(this.buttonR2, '10%', '50%', '0%', '89%')
+      this.setButtonStyle(this.buttonStart, '16%', '40%', '0%', '34%')
+      this.setButtonStyle(this.buttonSelect, '16%', '40%', '0%', '52%')
 
       this.divAreaSecond.style.width = '20vw'
-      this.divAreaSecond.style.height = '20vw'
+      this.divAreaSecond.style.height = '30vh'
       this.divAreaSecond.style.left = '0%'
+      this.setButtonStyle(this.buttonArrow, '40%', '40%', '30%', '30%')
 
       this.divAreaThird.style.width = '60vw'
       this.divAreaThird.style.height = '60vw'
 
       this.divAreaForth.style.width = '20vw'
-      this.divAreaForth.style.height = '20vw'
+      this.divAreaForth.style.height = '30vh'
       this.divAreaForth.style.right = '2%'
-      this.setButtonStyle(this.buttonA, '16vh', '16vh', {bottom: '0%', left: '30%'})
-      this.setButtonStyle(this.buttonB, '16vh', '16vh', {top: '30%', right: '0%'})
-      this.setButtonStyle(this.buttonX, '16vh', '16vh', {top: '30%', left: '0%'})
-      this.setButtonStyle(this.buttonY, '16vh', '16vh', {top: '0%', left: '30%'})
-
+      this.setButtonStyle(this.buttonA, '12vh', '12vh', '60%', '30%')
+      this.setButtonStyle(this.buttonB, '12vh', '12vh', '30%', '60%')
+      this.setButtonStyle(this.buttonX, '12vh', '12vh', '30%', '0%')
+      this.setButtonStyle(this.buttonY, '12vh', '12vh', '0%', '30%')
     }
   }
 
   /**
-   * 버튼의 스타일을 설정합니다. (가로/세로 전환용)
-   * @param {Element} buttonElement 
-   * @param {string} width 
-   * @param {string} height 
-   * @param {{left: string, right: string, top: string, bottom: string}} coordination 
+   * 버튼의 스타일을 설정합니다. - css값을 사용해야 합니다.  (가로/세로 전환할 때 사용)
+   * @param {HTMLElement} buttonElement 수정할 버튼의 엘리먼트
+   * @param {string} width 엘리먼트의 너비 (vw 단위 사용)
+   * @param {string} height 엘리먼트의 높이 (vw 단위 사용)
+   * @param {string} top 엘리먼트의 top (위에서 얼마나 떨어질지 결정, % 또는 vw 단위 사용)
+   * @param {string} left 엘리먼트의 left (왼쪽으로 얼마나 떨어질지 결정, % 또는 vw 단위 사용)
    */
-  setButtonStyle (buttonElement, width, height, coordination) {
+  setButtonStyle (buttonElement, width, height, top, left) {
     buttonElement.style.width = width
     buttonElement.style.height = height
-
-    if (coordination.left != null) buttonElement.style.left = coordination.left
-    if (coordination.right != null) buttonElement.style.right = coordination.right
-    if (coordination.top != null) buttonElement.style.top = coordination.top
-    if (coordination.bottom != null) buttonElement.style.bottom = coordination.bottom
-  }
-
-  constructor (resourceSrc) {
-    // 스타일 설정은 맨 마지막에 진행
-    // 여기서는, 스타일이 변경될 가능성이 없는 css 속성만 추가
-
-    /** 터치버튼의 이미지 경로 */
-    this.imageSrc = {
-      buttonArrow: resourceSrc + 'buttonArrow.png',
-      buttonArrowBox: resourceSrc + 'buttonArrowBox.png',
-      buttonA: resourceSrc + 'buttonA.png',
-      buttonB: resourceSrc + 'buttonB.png',
-      buttonX: resourceSrc + 'buttonX.png',
-      buttonY: resourceSrc + 'buttonY.png',
-      buttonL1: resourceSrc + 'buttonL1.png',
-      buttonL2: resourceSrc + 'buttonL2.png',
-      buttonR1: resourceSrc + 'buttonR1.png',
-      buttonR2: resourceSrc + 'buttonR2.png',
-      buttonStart: resourceSrc + 'buttonStart.png',
-      buttonSelect: resourceSrc + 'buttonSelect.png',
-    }
-
-    /** 모든 패드 영역을 담고 있는 엘리먼트 */
-    this.elementCenter = document.createElement('div')
-    this.elementCenter.id = 'touchButtonElement'
-
-    /** 터치패드에서 사용하는 첫번째 영역 */
-    this.elementFirst = document.createElement('div')
-    this.elementFirst.style.display = 'flex'
-    this.elementFirst.style.opacity = '50%'
-    this.elementFirst.id = 'elementFirst'
-    this.elementCenter.appendChild(this.elementFirst)
-
-    /** 첫번째 영역의 레이아웃 영역 */
-    this.divAreaFirst = document.createElement('div')
-    this.divAreaFirst.style.position = 'relative'
-    this.elementFirst.appendChild(this.divAreaFirst)
-
-    this.buttonL1 = this.createButton('15vw', '10vw', {left: '1%'}, this.imageSrc.buttonL1)
-    this.buttonL2 = this.createButton('15vw', '10vw', {left: '20%'}, this.imageSrc.buttonL2)
-    this.buttonR1 = this.createButton('15vw', '10vw', {right: '1%'}, this.imageSrc.buttonR1)
-    this.buttonR2 = this.createButton('15vw', '10vw', {right: '20%'}, this.imageSrc.buttonR2)
-    this.buttonStart = this.createButton('10vw', '6vw', {left: '38%', top: '5%'}, this.imageSrc.buttonStart)
-    this.buttonSelect = this.createButton('10vw', '6vw', {left: '52%', top: '5%'}, this.imageSrc.buttonSelect)
-    this.divAreaFirst.appendChild(this.buttonL1)
-    this.divAreaFirst.appendChild(this.buttonL2)
-    this.divAreaFirst.appendChild(this.buttonR1)
-    this.divAreaFirst.appendChild(this.buttonR2)
-    this.divAreaFirst.appendChild(this.buttonStart)
-    this.divAreaFirst.appendChild(this.buttonSelect)
-
-    /** 터치패드에서 사용하는 두번째 영역 */
-    this.elementSecond = document.createElement('div')
-    this.elementSecond.style.display = 'flex'
-    this.elementSecond.style.opacity = '80%'
-    this.elementSecond.id = 'elementSecond'
-    this.elementCenter.appendChild(this.elementSecond)
-
-    /** 터치패드에서 사용하는 div의 두번째 영역 */
-    this.divAreaSecond = document.createElement('div')
-    this.divAreaSecond.style.position = 'relative'
-    this.imageArrow = document.createElement('img')
-    this.imageArrow.style.pointerEvents = 'none'
-    this.imageArrow.src = this.imageSrc.buttonArrowBox
-    this.imageArrow.style.width = '100%'
-    this.imageArrow.style.height = '100%'
-    this.buttonArrow = this.createButton('50%', '50%', {left: '25%', top: '25%'}, this.imageSrc.buttonArrow)
-    this.buttonArrow.style.pointerEvents = 'none'
-    this.divAreaSecond.style.backgroundColor = '#323232'
-    this.elementSecond.appendChild(this.divAreaSecond)
-    this.divAreaSecond.appendChild(this.imageArrow)
-    this.divAreaSecond.appendChild(this.buttonArrow)
-
-    /** 터치패드에서 사용하는 div의 세번째 영역(그러나, 비어있는 공간입니다.) */
-    this.divAreaThird = document.createElement('div')
-    this.elementSecond.appendChild(this.divAreaThird)
-
-    /** 터치패드에서 사용하는 div의 네번째 영역 */
-    this.divAreaForth = document.createElement('div')
-    this.divAreaForth.style.position = 'relative'
-    this.elementSecond.appendChild(this.divAreaForth)
-
-    this.buttonA = this.createButton('16vw', '16vw', {bottom: '0%', left: '30%'}, this.imageSrc.buttonA)
-    this.buttonB = this.createButton('16vw', '16vw', {top: '30%', right: '0%'}, this.imageSrc.buttonB)
-    this.buttonX = this.createButton('16vw', '16vw', {top: '30%', left: '0%'}, this.imageSrc.buttonX)
-    this.buttonY = this.createButton('16vw', '16vw', {top: '0%', left: '30%'}, this.imageSrc.buttonY)
-    this.divAreaForth.appendChild(this.buttonA)
-    this.divAreaForth.appendChild(this.buttonB)
-    this.divAreaForth.appendChild(this.buttonX)
-    this.divAreaForth.appendChild(this.buttonY)
-
-    // 마지막: 레이아웃 처리(가로/세로모드에 따른...)
-    if (matchMedia('(orientation: portrait)').matches) {
-      this.changeLayout(true)
-    } else {
-      this.changeLayout(false)
-    }
+    buttonElement.style.top = top
+    buttonElement.style.left = left
   }
 
   /**
    * 터치패드에서 새 버튼을 만들 때 사용하는 함수
-   * 
-   * 이 함수를 사용하면 내부에 이미지 태그까지 포함된 채로 div 태그를 만들어줍니다.
-   * @param {string} width 너비, 반드시 문자열로 입력해야 합니다. css값을 넣어야 합니다.
-   * @param {string} height 높이, 반드시 문자열로 입력해야 합니다. css값을 넣어야 합니다.
-   * @param {{left: string | null, right: string | null, top: string | null, bottom: string | null}} arrowObject 각 포지션에 따른, 위치값(css 값) 
-   * @param {string} imageSrc 이미지의 경로
+   * @param {string} text 버튼의 텍스트
+   * @param {string} textColor 텍스트의 색
+   * @param {string} bgColor 배경색
+   * @param {string} bgHoverColor 클릭시 변경되는 배경색
+   * @param {string} borderRadius (css속성의) borderRadius
+   * @param {string} [borderColor='black'] 테두리 색
+   * @param {string} [shadowColor='black'] 글자 섀도우 색
    */
-  createButton (width, height, arrowObject, imageSrc) {
+  createButton (text, borderRadius, textColor, bgColor, bgHoverColor, shadowColor = 'black', borderColor = 'black') {
     let element = document.createElement('div')
-    element.style.width = width
-    element.style.height = height
     element.style.position = 'absolute'
-    
-    // 해당 값이 있을 때만 값을 적용
-    if (arrowObject.left != null) element.style.left = arrowObject.left
-    if (arrowObject.right != null) element.style.right = arrowObject.right
-    if (arrowObject.top != null) element.style.top = arrowObject.top
-    if (arrowObject.bottom != null) element.style.bottom = arrowObject.bottom
 
-    let imageElement = document.createElement('img')
-    imageElement.src = imageSrc
-    imageElement.style.width = '100%'
-    imageElement.style.height = '100%'
-    imageElement.style.pointerEvents = 'none'
+    let buttonElement = document.createElement('button')
+    buttonElement.type = 'button'
+    buttonElement.textContent = text
+    buttonElement.style.padding = 'none'
+    buttonElement.style.width = '100%'
+    buttonElement.style.height = '100%'
+    buttonElement.style.fontWeight = 'bold'
+    buttonElement.style.textShadow = '1px 1px 0px ' + shadowColor
+    buttonElement.style.border = '2px solid ' + borderColor
+    buttonElement.style.borderRadius = borderRadius
 
-    element.appendChild(imageElement)
+    if (text.length === 1) {
+      buttonElement.style.fontSize = '2rem'
+    }
 
+    // buttonElement.style.pointerEvents = 'none' // 버튼은 글자처럼 글자 복사 창이 뜨지 않아서 사용할 필요가 없음
+    buttonElement.style.backgroundColor = bgColor
+    buttonElement.style.color = textColor
+
+    // hover event (마우스 클릭은 생각하지 않습니다.)
+    buttonElement.addEventListener('touchstart', () => {
+      buttonElement.style.backgroundColor = bgHoverColor
+    })
+    buttonElement.addEventListener('touchend', () => {
+      buttonElement.style.backgroundColor = bgColor
+    })
+
+    element.appendChild(buttonElement)
     return element
   }
 
@@ -230,25 +215,19 @@ class TouchButton {
       document.body.appendChild(this.elementCenter)
       if (autoResizeEvent) {
         addEventListener('resize', () => {
-          if (matchMedia('(orientation: portrait)').matches) {
-            this.changeLayout(true)
-          } else {
-            this.changeLayout(false)
-          }
+          this.changeLayout()
         })
       }
-
     }
   }
 
-  /** 
-   * 이 컨트롤러의 레이아웃을 포트레이트(또는 랜드스케이프) 모드로 변경합니다.
-   * 
-   * 기본값은 세로이며, isPortrait값이 false일경우 가로입니다.
-   * @param {boolean} isPortrait portrait: true(default), landscape: false
-   */
-  changeLayout (isPortrait = true) {
-    this.setStyleDiv(isPortrait)
+  /** 이 컨트롤러의 레이아웃을 자동으로 변경합니다. */
+  changeLayout () {
+    if (matchMedia('(orientation: portrait)').matches) {
+      this.setStyleDiv(true)
+    } else {
+      this.setStyleDiv(false)
+    }
   }
 }
 
@@ -262,11 +241,7 @@ class TouchButton {
  * 마우스 이벤트와 터치 이벤트는 addEventMouseTouch 함수를 통해 수동으로 추가해주세요.
  */
 export class ControlSystem {
-  /**
-   * 
-   * @param {string} resourceSrc 이 컨트롤 시스템이 사용하는 외부 리소스의 경로
-   */
-  constructor (resourceSrc) {
+  constructor () {
     /** 
      * 컨트롤 시스템에서 사용하는 가상 터치버튼
      * 
@@ -284,23 +259,20 @@ export class ControlSystem {
       this.setButtonKeyUp(e.key)
     })
 
-    this.intervalId = setInterval(() => {
-      this.processButton()
-    }, 20)
-    
-    /** 이 컨트롤 시스템의 기본 파일이 사용하는 외부 리소스의 경로 */
-    this.resourceSrc = resourceSrc
+    /** processButton에 대한 setInterval 함수의 id */ this.intervalId = 0
+    this.setIntervalButtonDown(20)
   }
 
   /**
-   * 특정 엘리먼트(캔버스)에 마우스와 터치 이벤트를 추가합니다.
+   * 캔버스에 마우스와 터치 이벤트를 추가합니다.
    * 
    * (참고: 가상 패드와 이벤트는 별도로 처리됩니다.)
-   * @param {HTMLElement | HTMLCanvasElement} targetElement 캔버스 또는 그외 엘리먼트
+   * @param {HTMLCanvasElement} targetElement 캔버스 또는 그외 엘리먼트
    */
   addEventMouseTouch (targetElement) {
     targetElement.addEventListener('touchstart', (e) => {
       // 마우스의 offsetX, offsetY를 계산하기
+      //@ts-expect-error
       var rect = e.target.getBoundingClientRect();
       var offsetX = e.targetTouches[0].pageX - rect.left;
       var offsetY = e.targetTouches[0].pageY - rect.top;
@@ -318,6 +290,7 @@ export class ControlSystem {
     })
     targetElement.addEventListener('touchmove', (e) => {
       // 마우스의 offsetX, offsetY를 계산하기
+      //@ts-expect-error
       var rect = e.target.getBoundingClientRect();
       var offsetX = e.targetTouches[0].pageX - rect.left;
       var offsetY = e.targetTouches[0].pageY - rect.top;
@@ -335,7 +308,7 @@ export class ControlSystem {
       this.setMouseUp() // 터치에서 모든 손을 떼면 마우스를 뗀 것과 같음
     })
     targetElement.addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return
+      if (e.button !== 0) return // 왼쪽 클릭 이외는 무시
 
       // 캔버스의 확대/축소를 고려하여 마우스의 좌표를 계산합니다.
       const canvasZoomWidth = targetElement.clientWidth / targetElement.width
@@ -379,7 +352,7 @@ export class ControlSystem {
    * 터치버튼을 누르면 해당 버튼이 누른 것 처럼 동작합니다.
    */
   createTouchButton () {
-    this.touchButton = new TouchButton(this.resourceSrc)
+    this.touchButton = new TouchButton()
     this.touchButton.bodyInsert()
     this.addTouchButtonEvent(this.touchButton.buttonA, this.buttonIndex.A)
     this.addTouchButtonEvent(this.touchButton.buttonB, this.buttonIndex.B)
@@ -425,16 +398,24 @@ export class ControlSystem {
    * arrowButton만 해당되며, 다른 버튼은 addTouchButtonEvent 함수를 사용해주세요.
    */
   addTouchArrowButtonEvent () {
+    if (this.touchButton == null) return
+
     // arrow는 다른 함수를 사용해서 동작합니다.
     // 한 개의 버튼을 어떻게 사용하느냐에 따라 입력이 달라지기 때문입니다.
 
     // 각 위치에 따른 퍼센트값: 왼쪽/위, 가운데, 오른쪽/아래
     // css값 이므로 string으로 정의되었습니다.
     const minPercent = '0%'
-    const centerPercent = '25%'
-    const maxPercent = '50%'
+    const centerPercent = '30%'
+    const maxPercent = '60%'
 
+    /**
+     * @param {any} e 
+     * @param {boolean} isInput 
+     */
     let arrowButtonFunction = (e, isInput = true) => {
+      if (this.touchButton == null) return
+
       // offsetX, offsetY를 얻기 위한 과정
       var rect = e.target.getBoundingClientRect()
       var offsetX = e.targetTouches[0].pageX - rect.left
@@ -492,6 +473,8 @@ export class ControlSystem {
 
     // 터치에서 손을 떼었다면 이동버튼은 아무것도 누르지 않은것으로 처리합니다.
     this.touchButton.divAreaSecond.addEventListener('touchend', (e) => {
+      if (this.touchButton == null) return
+
       this.setButtonUp(this.buttonIndex.LEFT)
       this.setButtonUp(this.buttonIndex.RIGHT)
       this.setButtonUp(this.buttonIndex.DOWN)
@@ -548,19 +531,12 @@ export class ControlSystem {
    * 잘못된 버튼을 변경하려 시도한다면 해당 요청은 자동으로 무시됩니다.
    * 
    * 실수 방지를 위해 buttonList의 상수값을 사용해주세요.
-   * @param {number | keyBindMap} buttonIndex 버튼의 인덱스 (buttonList의 상수 값 참고)
-   * @param {Event.key} keyValue 키값, 자바스크립트 이벤트로 받을 때 e.key의 값, keyCode 사용금지
+   * @param {number} buttonIndex 버튼의 인덱스 (buttonList의 상수 값 참고)
+   * @param {string} keyValue 키값, 자바스크립트 이벤트로 받을 때 e.key의 값, keyCode 사용금지
    */
   setKeyBindMap (buttonIndex, keyValue) {
     if (buttonIndex >= 0 && buttonIndex < this.DEFAULT_KEYBINDMAP.length) {
       this.currentKeyBindMap[buttonIndex] = keyValue
-    }
-  }
-
-  /** 입력되었던 버튼을 전부 리셋합니다. */
-  resetButtonInput () {
-    for (let i = 0; i < this.isButtonInput.length; i++) {
-      this.isButtonInput[i] = false
     }
   }
 
@@ -581,11 +557,10 @@ export class ControlSystem {
 
   /**
    * 특정 버튼을 누른 상태인것으로 처리합니다. (해당 버튼을 떼기 전까지 지속)
-   * (참고: buttonDown과 buttonInput를 동시에 처리합니다.)
+   * (참고: buttonDown과 buttonInput는 서로 다릅니다.)
    * 
    * 버튼을 누르고 있는 동안 press 값이 지속적으로 증가합니다. (버튼을 떼면 press 값 초기화)
    * @param {number} buttonIndex 버튼의 index (해당 클래스의 buttonIndex 참고)
-   * @param {boolean} isInputButtonCheck 버튼 input
    */
   setButtonDown (buttonIndex) {
     this.isButtonDown[buttonIndex] = true
@@ -607,12 +582,12 @@ export class ControlSystem {
   /**
    * 터치로 버튼을 눌렀을 때, input를 일정시간마다 입력하도록 조정합니다.
    * 
-   * @deprecated
+   * 이것은 input 입력을 연속으로 할 수 있게 하기 위해 만든 함수입니다.
    * @param {number} buttonIndex 
    */
   setTouchButton (buttonIndex) {
     let pressTime = this.buttonPressTime[buttonIndex]
-    if (pressTime >= 15 && pressTime % 4 === 1) {
+    if (pressTime >= 15 && pressTime % 3 === 1) {
       this.setButtonInput(buttonIndex)
     }
   }
@@ -663,8 +638,6 @@ export class ControlSystem {
     }
   }
 
-  
-
   /**
    * 현재 입력한 키를 기준으로 특정 버튼을 뗀 작업을 처리합니다.
    * @param {string} key 자바스크립트 이벤트 객체의 key값 (event.key 값)
@@ -676,9 +649,31 @@ export class ControlSystem {
     }
   }
 
+  /**
+   * buttonDown을 연속으로 누르는것에 대한 각각의 간격을 설정합니다.
+   * 
+   * 해당 설정은 모든 버튼에 영향을 줍니다. 기본값은 20ms (초당 50회)
+   * 
+   * tamsaEngine에서 사용할경우, 이 값은 게임 프레임 간격에 자동으로 맞춰집니다.
+   * (다만 ms단위를 정수로 설정하기 때문에 60hz를 정확하게 맞출 수는 없습니다.)
+   * @param {number} ms 
+   */
+  setIntervalButtonDown (ms = 20) {
+    if (this.intervalId !== 0) {
+      // 이미 id가 있는경우 기존 interval를 해제합니다.
+      clearInterval(this.intervalId)
+    }
+
+    // 새 interval 생성
+    this.intervalId = setInterval(() => {
+      this.processButton()
+    }, ms)
+  }
+
   /** 
    * 버튼 처리에 관한 프로세스
-   * 초당 입력횟수는 setInterval로 설정되며 약 50회입니다.
+   * 
+   * setIntevalTime을 통해 해당 함수의 실행 간격을 변경할 수 있습니다.
    */
   processButton () {
     for (let i = 0; i < this.buttonPressTime.length; i++) {
