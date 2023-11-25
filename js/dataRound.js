@@ -871,20 +871,36 @@ class BaseSound {
   }
 
   /**
+   * 사운드 엔진 함수의 변경으로 해당 기능은 대체되었습니다.
+   * 
    * 현재 재생중인 음악을 변경합니다.
    * 
    * 만약 다음 재생 음악을 지정하지 않는다면, 음악은 정지될 수 있으므로, 음악을 다시 재생(musicPlay 사용 해야 합니다.
    * 
    * (라운드가 끝나기 전까지 재생중인 음악은 초기화되지 않습니다.)
+   * 
+   * @deprecated
    * @param {string} soundSrc 오디오 파일의 경로, 없을경우 현재 음악을 페이드
    * @param {number} fadeTime 페이드 시간 (초 단위)
    */
-  static musicChange (soundSrc = '', fadeTime = 0) {
+  static musicChangeOLD (soundSrc = '', fadeTime = 0) {
     this.currentMusicSrc = soundSrc
     if (fadeTime === 0) {
       soundSystem.musicPlay(soundSrc)
     } else {
-      soundSystem.musicFadeNextAudio(soundSrc, fadeTime)
+      soundSystem.musicFadeOut(fadeTime)
+      this.fadeDelayCount = Math.floor(fadeTime * 60) // 60프레임 = 1초
+    }
+  }
+
+  /** 페이드 이후 다음 음악으로 교체할 대상 */ static fadeNextMusicSrc = ''
+  /** 페이드 지연 프레임 */ static fadeDelay = 0
+  /** 페이드 지연을 계산하는 카운트값 */ static fadeDelayCount = 0
+  
+  static processFade () {
+    this.fadeDelayCount--
+    if (this.fadeDelayCount === 0 && this.currentMusicSrc !== '') {
+      soundSystem.musicPlay(this.currentMusicSrc, 0, this.fadeDelay / 60) // 60프레임 = 1초
     }
   }
 
@@ -1550,7 +1566,7 @@ export class RoundData {
     this.processBackground()
     this.processDebug()
     this.time.process()
-    this.processFirstMusicPlay()
+    this.processMusic()
     this.processSaveString()
   }
 
@@ -1681,13 +1697,15 @@ export class RoundData {
    * musicPlay는 한정적인 상황에서 호출되므로, 라운드를 시작했을 때 음악이 재생되지 않습니다.  
    * 따라서, 현재 음악을 재생할 수 있도록, 이 함수를 프로세스 합니다.
    */
-  processFirstMusicPlay () {
-    if (this.timeCheckFrame(0, 10)) {
+  processMusic () {
+    if (this.timeCheckFrame(0, 4)) {
       // 게임 시작 즉시 음악을 호출하는 것이 불가능하므로, 약간의 지연을 넣어서 처리했습니다.
-      // 0초 10프레임 시점에서 음악이 재생됩니다.
+      // 0초 4프레임 시점에서 음악이 재생됩니다.
       this.sound.currentMusicSrc = this.sound.musicSrc
       this.sound.musicPlay()
     }
+
+    this.sound.processFade() // 페이드 과정을 진행하고 다음 음악으로 교체하기 위한 작업
   }
 
   /**
@@ -1879,7 +1897,7 @@ class Round1_1 extends RoundData {
 
     // 보스 출현
     if (this.timeCheckFrame(147, 0)) {
-      this.sound.musicChange(soundSrc.music.music06_round1_boss_thema)
+      this.sound.musicChangeOLD(soundSrc.music.music06_round1_boss_thema)
       this.field.createEnemy(ID.enemy.spaceEnemy.boss, 0, 0)
     }
 
@@ -2123,7 +2141,7 @@ class Round1_2 extends RoundData {
 
     this.timePauseWithEnemyCount(178)
     if (this.timeCheckInterval(178) && this.field.enemyNothingCheck()) {
-      this.sound.musicChange('', 1)
+      this.sound.musicChangeOLD('', 1)
     }
   }
 }
@@ -2221,7 +2239,7 @@ class Round1_3 extends RoundData {
     // 보스가 한번만 등장하도록, currentTimeFrame을 사용하여 추가로 시간 조건을 넣었습니다.
     if (this.timeCheckFrame(11, 0)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss, 900)
-      this.sound.musicChange(this.battleMusic, 2)
+      this.sound.musicChangeOLD(this.battleMusic, 2)
     }
 
     // 보스가 죽었다면, 스킵 (이 구간은 건너뜀)
@@ -2236,7 +2254,7 @@ class Round1_3 extends RoundData {
   roundPhase02 () {
     // 음악 변경
     if (this.timeCheckFrame(31, 1)) {
-      this.sound.musicChange(this.sound.musicSrc, 2)
+      this.sound.musicChangeOLD(this.sound.musicSrc, 2)
     }
 
     if (this.timeCheckInterval(31, 36, 20)) {
@@ -2261,7 +2279,7 @@ class Round1_3 extends RoundData {
 
     // 배경음악 정지
     if (this.timeCheckFrame(69)) {
-      this.sound.musicChange('', 1)
+      this.sound.musicChangeOLD('', 1)
     }
   }
 
@@ -2269,7 +2287,7 @@ class Round1_3 extends RoundData {
     // 이 페이즈 이후 부터 해당 음악이 적용됩니다.
     if (this.timeCheckFrame(71, 1)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss, 900)
-      this.sound.musicChange(this.battleMusic, 1)
+      this.sound.musicChangeOLD(this.battleMusic, 1)
       this.sound.musicPlay()
 
       // 라운드 내의 함수로 만들기에는 애매해서 어쩔 수 없이 직접 조정함.
@@ -2574,7 +2592,7 @@ class Round1_4 extends RoundData {
     // 시작하자마자 보스 등장 (0 ~ 10)
     if (this.timeCheckInterval(3) && this.time.currentTimeFrame === 0) {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss)
-      this.sound.musicChange(soundSrc.music.music06_round1_boss_thema)
+      this.sound.musicChangeOLD(soundSrc.music.music06_round1_boss_thema)
     }
 
     // 보스가 일찍 죽으면 해당 페이즈 스킵
@@ -2585,14 +2603,14 @@ class Round1_4 extends RoundData {
     this.timePauseWithEnemyCount(15)
 
     if (this.timeCheckInterval(15) && this.field.enemyNothingCheck()) {
-      this.sound.musicChange('', 1)
+      this.sound.musicChangeOLD('', 1)
     }
   }
 
   roundPhase01 () {
     // 진짜 보스 등장(...)
     if (this.timeCheckFrame(21)) {
-      this.sound.musicChange(this.sound.musicSrc)
+      this.sound.musicChangeOLD(this.sound.musicSrc)
       this.sound.musicPlay()
       this.field.createEnemy(ID.enemy.jemulEnemy.bossEye, graphicSystem.CANVAS_WIDTH_HALF - 100, graphicSystem.CANVAS_HEIGHT_HALF - 100)
     }
@@ -2660,7 +2678,7 @@ class Round1_4 extends RoundData {
     const phase3End = this.phase.phaseTime[3].endTime
 
     if (this.timeCheckFrame(phase3Time, 5)) {
-      this.sound.musicChange(soundSrc.music.music08_round1_4_jemul)
+      this.sound.musicChangeOLD(soundSrc.music.music08_round1_4_jemul)
     }
 
     this.bgLegacy.imageSrc = this.specialImage
@@ -2933,7 +2951,7 @@ class Round1_5 extends RoundData {
   roundPhase07 () {
     // 운석지대
     if (this.timeCheckFrame(181, 11)) {
-      this.sound.musicChange(soundSrc.music.music02_meteorite_zone_field)
+      this.sound.musicChangeOLD(soundSrc.music.music02_meteorite_zone_field)
     }
 
     // 40%
@@ -3081,7 +3099,7 @@ class Round1_6 extends RoundData {
     // 보스 출현: 중복 생성을 방지하기 위해 시간값을 강제로 변경했습니다.
     if (this.timeCheckFrame(27)) {
       this.field.createEnemy(ID.enemy.spaceEnemy.boss)
-      this.sound.musicChange(soundSrc.music.music06_round1_boss_thema)
+      this.sound.musicChangeOLD(soundSrc.music.music06_round1_boss_thema)
       this.time.setCurrentTime(28)
     }
 
@@ -3184,7 +3202,7 @@ class Round1_6 extends RoundData {
 
     // 음악 재생 시간 관계상, 29초 지점부터 음악이 변경됨.
     if (this.timeCheckFrame(30, 4)) {
-      this.sound.musicChange(this.musicTour, 0)
+      this.sound.musicChangeOLD(this.musicTour, 0)
       this.bgLegacy.changeImage(this.spaceImage, 360)
     }
 
@@ -3194,7 +3212,7 @@ class Round1_6 extends RoundData {
     const fadeTime = 1
     const planetMusicPlayTime = 128 - fadeTime
     if (this.timeCheckFrame(planetMusicPlayTime, 0)) {
-      this.sound.musicChange(this.musicPlanet, fadeTime)
+      this.sound.musicChangeOLD(this.musicPlanet, fadeTime)
     }
   }
   processSaveString () {
@@ -3663,7 +3681,7 @@ class Round2_2 extends RoundData {
     }
 
     if (this.timeCheckFrame(167, 12)) {
-      this.sound.musicChange('', 3)
+      this.sound.musicChangeOLD('', 3)
     }
 
     // 적 남아있으면 시간 멈춤
@@ -4397,7 +4415,7 @@ class Round2_3 extends RoundData {
 
     // 준비 시간 (3초 후) 음악 재생 및 레디 표시 (레디 상황에서 초기값 설정)
     if (this.timeCheckFrame(phase1Start + cTime.READY)) {
-      this.sound.musicChange(this.musicList.a1_battle_room)
+      this.sound.musicChangeOLD(this.musicList.a1_battle_room)
       this.sound.musicPlay()
       this.setResult(this.resultList.READY)
       this.areaStat.enemyHp = 100
@@ -4587,7 +4605,7 @@ class Round2_3 extends RoundData {
     const phase1Start = this.phase.phaseTime[1].startTime
     const cTime = this.checkTimeList
     if (this.timeCheckFrame(phase1Start + cTime.READY)) {
-      this.sound.musicChange(this.musicList.b1_jump_room)
+      this.sound.musicChangeOLD(this.musicList.b1_jump_room)
       this.sound.musicPlay()
       this.setResult(this.resultList.READY)
       this.areaStat.time = 45
@@ -4779,7 +4797,7 @@ class Round2_3 extends RoundData {
 
     // 준비 및 시작
     if (this.timeCheckFrame(phase1Start + cTime.READY)) {
-      this.sound.musicChange(this.musicList.c1_bullet_room)
+      this.sound.musicChangeOLD(this.musicList.c1_bullet_room)
       this.sound.musicPlay()
       this.setResult(this.resultList.READY)
       this.areaStat.totalDamage = 0
@@ -4842,7 +4860,7 @@ class Round2_3 extends RoundData {
     const phase2Time = this.phase.phaseTime[2].startTime
     const cTime = this.checkTimeList
     if (this.timeCheckFrame(phase2Time + cTime.READY)) {
-      this.sound.musicChange(this.musicList.a2_break_room)
+      this.sound.musicChangeOLD(this.musicList.a2_break_room)
       this.sound.musicPlay()
       this.setResult(this.resultList.READY)
       this.areaStat.time = 45
@@ -5012,7 +5030,7 @@ class Round2_3 extends RoundData {
       this.areaStat.powerEnemy = 0
       this.areaStat.powerPlayer = 0
       this.areaStat.time = 45
-      this.sound.musicChange(this.musicList.a3_power_room)
+      this.sound.musicChangeOLD(this.musicList.a3_power_room)
       this.sound.musicPlay()
     } else if (this.timeCheckFrame(phase3Start + cTime.START)) {
       this.setResult(this.resultList.START)
@@ -5135,7 +5153,7 @@ class Round2_3 extends RoundData {
 
     // ready start
     if (this.timeCheckFrame(phase2Start + cTime.READY)) {
-      this.sound.musicChange(this.musicList.b2_warp_room)
+      this.sound.musicChangeOLD(this.musicList.b2_warp_room)
       this.sound.musicPlay()
       this.setResult(this.resultList.READY)
       this.areaStat.time = 45
@@ -5365,7 +5383,7 @@ class Round2_3 extends RoundData {
 
     // 준비, 시작
     if (this.timeCheckFrame(phase3Start + cTime.READY)) {
-      this.sound.musicChange(this.musicList.b3_move_room)
+      this.sound.musicChangeOLD(this.musicList.b3_move_room)
       this.sound.musicPlay()
       this.areaStat.time = 45
       this.setResult(this.resultList.READY)
@@ -5420,7 +5438,7 @@ class Round2_3 extends RoundData {
     const cTime = this.checkTimeList
 
     if (this.timeCheckFrame(phase2Start + cTime.READY)) {
-      this.sound.musicChange(this.musicList.c2_square_room)
+      this.sound.musicChangeOLD(this.musicList.c2_square_room)
       this.sound.musicPlay()
       this.setResult(this.resultList.READY)
       this.areaStat.score = 0
@@ -5651,7 +5669,7 @@ class Round2_3 extends RoundData {
     if (this.timeCheckFrame(phase3Start + cTime.READY)) {
       this.areaStat.goal = 0
       this.areaStat.time = 45
-      this.sound.musicChange(this.musicList.c3_trap_room)
+      this.sound.musicChangeOLD(this.musicList.c3_trap_room)
       this.sound.musicPlay()
       this.setResult(this.resultList.READY)
       player.x = 0
@@ -6234,7 +6252,7 @@ class Round2_4 extends RoundData {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
     if (this.timeCheckFrame(pTime + 0)) {
       // 음악 변경 및 재생
-      this.sound.musicChange(soundSrc.music.music12_donggrami_hall_outside)
+      this.sound.musicChangeOLD(soundSrc.music.music12_donggrami_hall_outside)
       this.sound.musicPlay()
     }
 
@@ -6411,7 +6429,7 @@ class Round2_4 extends RoundData {
 
     // 음악 페이드 아웃 및 정지
     if (this.timeCheckFrame(pTime + 37)) {
-      this.sound.musicChange('', 1)
+      this.sound.musicChangeOLD('', 1)
     } else if (this.timeCheckFrame(pTime + 38)) {
       this.sound.musicStop()
     }
@@ -6430,7 +6448,7 @@ class Round2_4 extends RoundData {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
     if (this.timeCheckFrame(pTime + 1)) {
       this.sound.soundPlay(soundSrc.round.r2_4_message1)
-      this.sound.musicChange(soundSrc.music.music13_round2_4_jemu)
+      this.sound.musicChangeOLD(soundSrc.music.music13_round2_4_jemu)
       this.sound.musicPlay()
     } else if (this.timeCheckFrame(pTime + 38)) {
       this.sound.musicStop()
@@ -6457,7 +6475,7 @@ class Round2_4 extends RoundData {
     if (this.timeCheckFrame(pTime + 1)) {
       this.field.createEnemy(ID.enemy.intruder.jemuBoss)
       this.sound.soundPlay(soundSrc.round.r2_4_message1)
-      this.sound.musicChange(soundSrc.music.music13_round2_4_jemu)
+      this.sound.musicChangeOLD(soundSrc.music.music13_round2_4_jemu)
       this.sound.musicPlay()
     } else if (this.timeCheckFrame(pTime + 38)) {
       this.sound.musicStop()
@@ -7181,7 +7199,7 @@ class Round2_5 extends RoundData {
     } else if (this.timeCheckFrame(pTime + 5)) {
       this.bgLegacy.color = Round2_1.getMaeulGradientColor()
     } else if (this.timeCheckFrame(pTime + 6)) {
-      this.sound.musicChange(soundSrc.music.music14_intruder_battle)
+      this.sound.musicChangeOLD(soundSrc.music.music14_intruder_battle)
       this.sound.musicPlay()
     }
 
@@ -7401,7 +7419,7 @@ class Round2_5 extends RoundData {
     }
 
     if (this.timeCheckFrame(pTime + 4)) {
-      this.sound.musicChange('', 3)
+      this.sound.musicChangeOLD('', 3)
     } else if (this.timeCheckFrame(pTime + 7)) {
       this.sound.musicStop()
     }
@@ -7598,10 +7616,10 @@ class Round2_6 extends RoundData {
 
     // music
     if (this.timeCheckFrame(pTime + 0)) {
-      this.sound.musicChange(soundSrc.music.music12_donggrami_hall_outside, 3)
+      this.sound.musicChangeOLD(soundSrc.music.music12_donggrami_hall_outside, 3)
       this.sound.musicPlay()
     } else if (this.timeCheckFrame(pTime + 26)) {
-      this.sound.musicChange('', 3)
+      this.sound.musicChangeOLD('', 3)
     } else if (this.timeCheckFrame(pTime + 29)) {
       this.sound.musicStop()
     }
@@ -7623,7 +7641,7 @@ class Round2_6 extends RoundData {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
 
     if (this.timeCheckFrame(pTime + 0)) {
-      this.sound.musicChange(soundSrc.music.music15_donggrami_ruin, 2)
+      this.sound.musicChangeOLD(soundSrc.music.music15_donggrami_ruin, 2)
       this.sound.musicPlay()
     }
 
@@ -7637,7 +7655,7 @@ class Round2_6 extends RoundData {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
 
     if (this.timeCheckFrame(pTime + 26)) {
-      this.sound.musicChange('', 3)
+      this.sound.musicChangeOLD('', 3)
     } else if (this.timeCheckFrame(pTime + 29)) {
       this.sound.musicStop()
     }

@@ -10,7 +10,7 @@ import { systemText } from "./text.js"
 // 순환 참조를 구조적으로 불가능하게 하기 위해 만들어졌습니다.
 
 /** tamshooter4 게임 변수입니다. */
-export let game = new TamsaEngine('tamshooter4', 800, 600, 'js/tamsaEngine/', 60)
+export let game = new TamsaEngine('tamshooter4', 800, 600, 60)
 
 // body 태그 색 변경 및 자동 크기 조절
 game.graphic.setBodyColor('#181818')

@@ -696,6 +696,12 @@ export class ControlSystem {
     return false
   }
 
+  resetButtonInput () {
+    for (let i = 0; i < this.isButtonInput.length; i++) {
+      this.isButtonInput[i] = false
+    }
+  }
+
 
   /** 마우스 x좌표 */ mouseX = 0
   /** 마우스 y좌표 */ mouseY = 0

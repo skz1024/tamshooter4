@@ -212,7 +212,7 @@ class BiosSystem {
   /** 
    * 엔진의 바이오스 메뉴: 이것이 실행되면 게임 로직은 동작하지 않습니다. 
    * 
-   * 바이오스 입장 방법: select + start버튼을 부팅 2초 이내에 누름
+   * 바이오스 입장 방법: select 연속 6번 (3초 이내에)
    * 
    * 또는 게임이 없는 경우(process와 display를 사용자가 직접 만들어야만 합니다.)
    */
@@ -220,7 +220,6 @@ class BiosSystem {
     if (this.bios == null) return
 
     // 검은색 화면 출력
-    // this.graphicSystem.fillRect(0, 0, this.graphicSystem.CANVAS_WIDTH, this.graphicSystem.CANVAS_HEIGHT, 'darkred')
     this.graphic.fillRect(0, 0, this.graphic.CANVAS_WIDTH, this.graphic.CANVAS_HEIGHT, '#282828')
     
     // 바이오스를 빠져나갈 수 있는 상태가 아니면, 바이오스를 나갔을 때 강제로 0번 메뉴로 이동하도록 변경
@@ -333,103 +332,76 @@ class BiosSystem {
 
   biosSoundTest () {
     if (this.bios == null) return
-    this.sound.createBuffer(this.sound.testFileSrc.soundtest)
-    this.sound.createBuffer(this.sound.testFileSrc.testMusicMp3)
-    this.sound.createBuffer(this.sound.testFileSrc.testMusicOgg)
-    this.sound.createAudio(this.sound.testFileSrc.soundtest)
-    this.sound.createAudio(this.sound.testFileSrc.testMusicMp3)
-    this.sound.createAudio(this.sound.testFileSrc.testMusicOgg)
 
     let echoValue = this.sound.getMusicEchoValue()
     let warning = this.sound.getIsAudioSuspended()
     let warningText = ''
     if (warning) warningText = 'you must be clicked or keyinput resume audio context'
 
-    let supportText = ''
-    if (this.bios.audioFileType === 'mp3') {
-      let cache = this.sound.getCacheBuffer(this.sound.testFileSrc.testMusicMp3)
-      if (cache == null) supportText = ', waring: not supported'
-    } else {
-      let cache = this.sound.getCacheBuffer(this.sound.testFileSrc.testMusicOgg)
-      if (cache == null) supportText = ', waring: not supported'
-    }
+    const musicSrc = '1141sub2[new] - track2 - 2011.12.21.mp3'
+    const soundSrc = 'soundeffect.wav'
+    this.sound.createAudio(musicSrc)
 
     this.bios.soundTest.textEdit(
-      ['SOUND TEST',
-      'WEB AUDIO API MODE: ' + this.sound.getWebAudioMode()],
+      ['SOUND TEST - WEB AUDIO API'],
       ['SOUND PLAY',
       'BUFFER SOUND PLAY',
       'MUSIC PLAY',
-      'BUFFER MUSIC PLAY (NOT AVLIABLE)',
+      'MUSIC PLAY FADE IN',
       'MUSIC STOP',
-      'FILE TYPE(MUSIC):' + this.bios.audioFileType + supportText,
+      'MUSIC STOP FADE OUT',
       'ECHO(MUSIC) VALUE: ' + echoValue.echo.toFixed(1),
       'FEEDBACK(MUSIC) VALUE: ' + echoValue.feedback.toFixed(1),
       'DELAY(MUSIC) VALUE: ' + echoValue.delay.toFixed(1),
-      'FADE TEST',
       'EXIT'],
       ['',
-      'if you don\'t use web audio, ',
-      'echo effect not available.',
       'notice: sound echo, music echo is different',
       '',
       warningText]
     )
 
+    const menuList = {
+      SOUND_PLAY: 0,
+      BUFFER_SOUND_PLAY: 1,
+      MUSIC_PLAY: 2,
+      MUISC_PLAY_FADE_IN: 3,
+      MUSIC_STOP: 4,
+      MUSIC_STOP_FADE_OUT: 5,
+      ECHO_MUISC_VALUE: 6,
+      FEEDBACK_MUISC_VALUE: 7,
+      DELAY_MUSIC_VALUE: 8,
+      EXIT: 9,
+    }
+
     switch (this.bios.soundTest.getSelectMenu()) {
-      case 0: 
-        this.sound.play(this.sound.testFileSrc.soundtest)
-        break
-      case 1:
-        this.sound.playBuffer(this.sound.testFileSrc.soundtest)
-        break
-      case 2:
-        if (this.bios.audioFileType === 'mp3') {
-          this.sound.musicPlay(this.sound.testFileSrc.testMusicMp3)
-        } else {
-          this.sound.musicPlay(this.sound.testFileSrc.testMusicOgg)
-        }
-        break
-      case 3:
-        if (this.bios.audioFileType === 'mp3') {
-          this.sound.musicBuffer(this.sound.testFileSrc.testMusicMp3)
-        } else {
-          this.sound.musicBuffer(this.sound.testFileSrc.testMusicOgg)
-        }
-        break
-      case 4: this.sound.musicStop(); break
-      case 5:
-        if (this.bios.audioFileType === 'mp3') {
-          this.bios.audioFileType = 'ogg'
-        } else {
-          this.bios.audioFileType = 'mp3'
-        }
-        break
-      case 6:
+      case menuList.SOUND_PLAY: this.sound.play(soundSrc); break
+      case menuList.BUFFER_SOUND_PLAY: this.sound.playBuffer(soundSrc); break
+      case menuList.MUSIC_PLAY: this.sound.musicPlay(musicSrc); break
+      case menuList.MUISC_PLAY_FADE_IN: this.sound.musicPlay(musicSrc, 0, 4); break
+      case menuList.MUSIC_STOP: this.sound.musicStop(); break
+      case menuList.MUSIC_STOP_FADE_OUT: this.sound.musicFadeOut(4); break
+      case menuList.ECHO_MUISC_VALUE:
         let currentEcho = echoValue.echo
         let setEcho = currentEcho + 0.1
         if (setEcho > 1) setEcho = 0
         this.sound.setMusicEcho(setEcho, -1, -1)
         break
-      case 7:
+      case menuList.FEEDBACK_MUISC_VALUE:
         let currentFeedBack = echoValue.feedback
         let setFeedBack = currentFeedBack + 0.1
         if (setFeedBack > 1) setFeedBack = 0
         this.sound.setMusicEcho(-1, setFeedBack, -1)
         break
-      case 8:
+      case menuList.DELAY_MUSIC_VALUE:
         let currentDelay = echoValue.delay
         let setDelay = currentDelay + 0.1
-        if (setDelay > 1) setDelay = 0
+        if (setDelay > 1) setDelay = 0.1
         this.sound.setMusicEcho(-1, -1, setDelay)
         break
-      case 9:
-        this.sound.musicFadeNextAudio(null, 2)
-        break
-      case this.bios.soundTest.menuField.length - 1:
+      case menuList.EXIT:
         // soundTest에서 나가기
         this.sound.musicStop()
-        // 참고: 바이오스에서전 이전 설정을 기억하지 못합니다.
+        // 참고: 바이오스에서 이전 설정을 기억하지 못합니다.
         // 따라서 게임 내에서 자동으로 재설정되지 않으면 에코 효과가 사라질 수 있습니다.
         this.sound.setMusicEcho(0, 0, 0)
         this.bios.soundTest.cursor = 0
@@ -615,9 +587,8 @@ export class TamsaEngine {
    * @param {number} gameHeight 게임 높이
    * @param {number} gameFps 초당 게임 프레임 (기본값: 고정 60), 가변방식 사용 불가
    * @param {boolean} isAutoBodyInsertCanvas 캔버스를 body 태그에 자동으로 삽입합니다. (false일경우 사용자가 graphicSystem을 직접 호출해서 캔버스의 출력 지점을 지정해야합니다.)
-   * @param {string} resourceSrc 외부 리소스의 경로 (엔진 폴더가 어디에 있는지를 알려주는 경로) 
    */
-  constructor (gameTitle, gameWidth, gameHeight, resourceSrc = 'tamsaEngine', gameFps = 60, isAutoBodyInsertCanvas = true) {
+  constructor (gameTitle, gameWidth, gameHeight, gameFps = 60, isAutoBodyInsertCanvas = true) {
     /** 브라우저 타이틀에 표시할 게임 타이틀 */ this.gameTitle = gameTitle
     /** 게임의 너비 (캔버스의 너비) */ this.gameWidth = gameWidth
     /** 게임의 높이 (캔버스의 높이) */ this.gameHeight = gameHeight
@@ -634,15 +605,15 @@ export class TamsaEngine {
     // 기본 초기화 작업 (재수행 될 수 없음.)
     // 캔버스 등록 및 브라우저 화면에 표시(이 위치를 수정해야 겠다면, 수동으로 캔버스를 지정해주세요.)
     /** 해당 엔진에서 사용하는 그래픽 시스템 */
-    this.graphic = new GraphicSystem(gameWidth, gameHeight, resourceSrc)
+    this.graphic = new GraphicSystem(gameWidth, gameHeight)
     
     /** 해당 엔진에서 사용하는 컨트롤 시스템 */
-    this.control = new ControlSystem(resourceSrc)
+    this.control = new ControlSystem()
     this.control.addEventMouseTouch(this.graphic.canvas)
     this.control.setIntervalButtonDown(1000 / gameFps)
 
     /** 해당 엔진에서 사용하는 사운드 시스템 */
-    this.sound = new SoundSystem(true, resourceSrc)
+    this.sound = new SoundSystem()
 
     // 배경색 - graphicSystem에서 처리
     // document.body.style.backgroundColor = '#181818'
