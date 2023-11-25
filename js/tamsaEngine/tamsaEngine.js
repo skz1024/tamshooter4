@@ -38,11 +38,6 @@ class BiosMenu {
    * @param {ControlSystem} control 조작기 (키보드 및 조작 기능 인식 용도)
    */
   constructor(graphic, control) {
-    if (!graphic && !control) {
-      console.warn('please decide graphic and control')
-      return
-    }
-
     this.graphic = graphic
     this.control = control
   }
@@ -98,7 +93,6 @@ class BiosMenu {
 
       // 화살표 출력
       if (this.cursor === i) this.textOutput('->', line)
-
       line++
     }
     for (let i = 0; i < this.footerField.length; i++) {
@@ -115,30 +109,18 @@ class BiosMenu {
    * @param {number} yLine 출력할 시작 지점 텍스트의 y축 줄번호
    */
   textOutput (text = '', yLine = 0) {
-    if (this.graphic == null || this.graphic.bitmapFont == null) return
+    const originalFontSize = this.graphic.getCanvasFontSize() // 원본 폰트사이즈
+    const wordWidth = (this.graphic.CANVAS_WIDTH / 30)
+    const wordHeight = Math.floor(wordWidth)
+    this.graphic.setFontSize(wordWidth)
+    this.graphic.fillTextMonospace(text, 0, yLine * wordHeight, '#C0C0C0')
+    this.graphic.setFontSize(originalFontSize) // 출력 이후 다시 폰트크기를 원래대로 되돌림
 
-    const wordWidth = this.graphic.bitmapFont.baseWidth * 2
-    const wordHeight = this.graphic.bitmapFont.baseHeight * 2
-    const marginWidth = 8
-    const marginHeight = 8
-    const lineSpace = 4
+    let xMaxWord = Math.floor(this.graphic.CANVAS_WIDTH / wordWidth) + 20
 
-    let xMaxWord = Math.floor(this.graphic.CANVAS_WIDTH / wordWidth) - 1
-    let y = yLine * (wordHeight + lineSpace)
-
-    let exceedWords = ''
-    let outputWords = text
-    if (text.length >= xMaxWord) {
-      exceedWords = text.slice(xMaxWord)
-      outputWords = text.slice(0, xMaxWord)
-    }
-
-    // 각 x와 y에 4의 값이 추가된건 여백 설정을 위한 것
-    this.graphic.bitmapFontDisplay(outputWords, marginWidth, y + marginHeight, wordWidth, wordHeight)
-    
     // 초과되는 글자가 있으면 강제로 다음줄로 넘김(그러나 글자가 넘치도록 작성하는 것은 권장하지 않습니다.)
-    if (exceedWords.length >= 1) {
-      this.textOutput(exceedWords, yLine + 1)
+    if (text.length >= xMaxWord) {
+      this.textOutput(text.slice(xMaxWord), yLine + 1)
     }
   }
 }
@@ -429,14 +411,13 @@ class BiosSystem {
       'canvas display is auto sized',
       ''],
       ['1. fillRect',
-      '2. MeterRect',
-      '3. Gradient(Linear)',
+      '2. meterRect',
+      '3. gradient(Linear)',
       '4. alpha test',
-      '5. image draw',
-      '6. filp test',
-      '7. rotate test',
-      '8. rect object rotate',
-      '9. exit']
+      '5. filp test',
+      '6. rotate test',
+      '7. rect object rotate',
+      '8. exit']
     )
     let testObj = this.bios.graphicTestObject
     let color = ['darkred', 'darkblue', 'darkgreen', 'darkmagenta', 'darkorange']
@@ -486,28 +467,18 @@ class BiosSystem {
       this.graphic.fillRect(200, 200, this.graphic.canvas.width, this.graphic.canvas.height, 'skyblue')
       this.graphic.setAlpha()
     }
-    let imageDraw = () => {
-      let image = new Image()
-      image.src = 'controlButtonImageBackup.png'
-      switch (currentBios.graphicTestSubNumber % 4) {
-        case 0: this.graphic.imageView(image, 200, 200); break
-        case 1: this.graphic.imageView(image, 200, 200, 400, 200); break
-        case 2: this.graphic.imageDisplay(image, 0, 0, 100, 100, 200, 200, 400, 200); break
-        case 3: this.graphic.imageDisplay(image, 0, 0, 100, 100, 200, 200, 400, 200, 0, 146, 0.7); break
-      }
-    }
     let flipTest = () => {
       let text = 'this text is flip!'
       let flip = (currentBios.graphicTestSubNumber + 1) % 4
       this.graphic.setFlip(flip)
-      this.graphic.bitmapFontDisplay(text, 0, 400, 24, 33)
+      this.graphic.fillTextMonospace(text, 300, 400, 'grey')
       this.graphic.setFlip()
     }
     let rotateTest = () => {
       let text = 'this text is rotate!'
       let rotate = ((currentBios.graphicTestSubNumber + 1) % 12) * 30
       this.graphic.setDegree(rotate)
-      this.graphic.bitmapFontDisplay(text, 0, 400, 24, 33)
+      this.graphic.fillTextMonospace(text, 300, 400, 'grey')
       this.graphic.setDegree()
     }
     let rectRotate = () => {
@@ -538,11 +509,10 @@ class BiosSystem {
       case 2: meterRectTest(); break
       case 3: gradientTest(); break
       case 4: alphaTest(); break
-      case 5: imageDraw(); break
-      case 6: flipTest(); break
-      case 7: rotateTest(); break
-      case 8: rectRotate(); break
-      case 9:
+      case 5: flipTest(); break
+      case 6: rotateTest(); break
+      case 7: rectRotate(); break
+      case 8:
         this.bios.graphicTestNumber = 0
         this.bios.menuNumber = 0
         break
@@ -615,13 +585,8 @@ export class TamsaEngine {
     /** 해당 엔진에서 사용하는 사운드 시스템 */
     this.sound = new SoundSystem()
 
-    // 배경색 - graphicSystem에서 처리
-    // document.body.style.backgroundColor = '#181818'
-
     // canvas를 바로 body 영역에 삽입
-    if (isAutoBodyInsertCanvas) {
-      this.graphic.bodyInsert()
-    }
+    if (isAutoBodyInsertCanvas) this.graphic.bodyInsert()
 
     // 제목 설정
     document.title = gameTitle
@@ -635,7 +600,7 @@ export class TamsaEngine {
     this.animationId = requestAnimationFrame(() => this.animation())
 
     /** 
-     * 엔진이 가동된 시점(시간값이 아닌 정수값입니다.)
+     * 엔진이 가동된 시점
      * 
      * 참고: 단위는 ms이므로 초단위로 계산하려면 1000으로 나눠서 계산해야합니다.
      */
@@ -673,11 +638,39 @@ export class TamsaEngine {
     this.refreshCount = 0
   }
 
-  /** animation함수에서 사용하는 다음 시간 확인 용도  */
-  thenAnimationTime = 0
+  /** animation함수에서 사용하는 다음 시간 확인 용도  */ thenAnimationTime = 0
+  /** animation의 시간 간격을 확인하기 위해 만들어진 변수 */ timestamp = 0
 
-  /** animation의 시간 간격을 확인하기 위해 만들어진 변수 */
-  timestamp = 0
+  /** 바이오스 진입 여부 체크 */
+  biosCheck () {
+    if (this.elaspedFrame < 120) {
+      let buttonStart = this.control.getButtonDown(this.control.buttonIndex.START)
+      let buttonSelect = this.control.getButtonDown(this.control.buttonIndex.SELECT)
+      let buttonDelete = this.control.getButtonInput(this.control.buttonIndex.DEL)
+
+      if (buttonStart && buttonSelect) {
+        this.isBiosMode = true
+        this.control.setButtonUp(this.control.buttonIndex.START)
+      } else if (buttonDelete) {
+        this.isBiosMode = true
+      }
+    }
+  }
+
+  /** 바이오스 상태에 있는 경우 */
+  biosMenu () {
+    if (this.bios === null) {
+      this.bios = new BiosSystem(this.gameTitle, this.currentDevice, this.graphic, this.control, this.sound)
+    } else {
+      this.bios.biosProcess()
+      this.bios.insertFps(this.currentFps, this.refreshFps, this.FPS, this.graphicFps)
+      if (this.bios.bios != null) this.bios.bios.isBiosPossibleExit = this.isBiosPossibleExit
+    }
+
+    if (this.bios.getExitRequest()) {
+      this.isBiosMode = false
+    }
+  }
 
   /** 브라우저에 출력할 에니메이션 함수 (참고: 게임 로직도 여기서 같이 실행됨) */
   animation () {
@@ -703,33 +696,11 @@ export class TamsaEngine {
       // 그 다음시간 = 타임스탬프값에서 (진행시간값의 fps간격의 나머지)을 뺀다.
       this.thenAnimationTime = this.timestamp - (elapsed % fpsInterval)
       this.frameCount++
+      this.elaspedFrame++
 
-      if (this.elaspedFrame < 120) {
-        this.elaspedFrame++
-        let buttonStart = this.control.getButtonDown(this.control.buttonIndex.START)
-        let buttonSelect = this.control.getButtonDown(this.control.buttonIndex.SELECT)
-        let buttonDelete = this.control.getButtonInput(this.control.buttonIndex.DEL)
-
-        if (buttonStart && buttonSelect) {
-          this.isBiosMode = true
-          this.control.setButtonUp(this.control.buttonIndex.START)
-        } else if (buttonDelete) {
-          this.isBiosMode = true
-        }
-      }
-
+      this.biosCheck()
       if (this.isBiosMode) {
-        if (this.bios === null) {
-          this.bios = new BiosSystem(this.gameTitle, this.currentDevice, this.graphic, this.control, this.sound)
-        } else {
-          this.bios.biosProcess()
-          this.bios.insertFps(this.currentFps, this.refreshFps, this.FPS, this.graphicFps)
-          if (this.bios.bios != null) this.bios.bios.isBiosPossibleExit = this.isBiosPossibleExit
-        }
-
-        if (this.bios.getExitRequest()) {
-          this.isBiosMode = false
-        }
+        this.biosMenu()
       } else {
         this.process() // 프로세스는 무조건 정해진 프레임으로만 실행(그래픽과는 별개)
 
@@ -771,7 +742,7 @@ export class TamsaEngine {
     // 아무것도 없음
   }
 
-  /** 엔진에서의 부팅 과정 (파일 로드를 포함합니다.) */
+  /** 엔진에서의 부팅 과정 (파일 로드를 포함합니다.) @deprecated */
   botting () {
     // 아무것도 없음
   }

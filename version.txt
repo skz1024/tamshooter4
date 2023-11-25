@@ -1159,3 +1159,11 @@ shop는 상점이고, 아이템을 구매할 수 있습니다. (그러나 골드
 4. tamsaEngine의 biosMenu에서 soundTest부분이 변경되었습니다.
 5. 참고: 이 버전에서는 tamsaEngein의 bios메뉴가 오류를 일으킵니다.
 (최대한 빨리 수정할 예정)
+
+
+2023/11/25 v0.44.2 - tamsaEngine upadte / monospace font
+1. 탐사엔진의 바이오스 메뉴 변경
+2. graphicSystem의 fillText 부분도 flip이 정상적으로 적용되게 변경
+3. tamsaEngine의 resourceSrc (탐사엔진이 사용하는 리소스)가 전부 삭제되었습니다.
+4. 바이오스 메뉴에서는 courier new 폰트를 사용합니다.
+5. 리소스 파일과 관련한 엔진 버그 수정
