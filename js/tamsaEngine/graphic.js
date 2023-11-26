@@ -171,6 +171,11 @@ export class GraphicSystem {
     return totalCount
   }
 
+  /** 현재까지 cacheImage에 등록된 모든 이미지의 entries를 가져옵니다. */
+  getAllLoadImage () {
+    return this.cacheImage.entries()
+  }
+
   /**
    * 시스템에서 사용하는 에러메세지입니다.
    */

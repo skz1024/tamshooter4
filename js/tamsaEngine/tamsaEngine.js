@@ -136,20 +136,25 @@ class BiosSystem {
    * @param {SoundSystem} sound 
    */
   constructor (gameTitle, currentDevice, graphic, control, sound) {
-    if (graphic == null || control == null || sound == null) {
-      console.error('please insert graphic, control, sound system.')
-      return
-    }
-
     /** @type {GraphicSystem} */ this.graphic = graphic
     /** @type {ControlSystem} */ this.control = control
     /** @type {SoundSystem} */ this.sound = sound
 
+    this.menuList = {
+      MAIN: 0,
+      INPUT: 1,
+      GRAPHIC: 2,
+      SOUND: 3,
+      IMAGE: 4,
+      EXIT: 5,
+    }
+
     this.bios = {
       /** @type {BiosMenu} */ mainMenu: new BiosMenu(this.graphic, this.control),
       /** @type {BiosMenu} */ inputTest: new BiosMenu(this.graphic, this.control),
-      /** @type {BiosMenu} */ soundTest: new BiosMenu(this.graphic, this.control),
       /** @type {BiosMenu} */ graphicTest: new BiosMenu(this.graphic, this.control),
+      /** @type {BiosMenu} */ soundTest: new BiosMenu(this.graphic, this.control),
+      /** @type {BiosMenu} */ imageTest: new BiosMenu(this.graphic, this.control),
       /** 바이오스 메뉴 번호 */ menuNumber: 0,
       /** 테스트용 버퍼 */ testAudioBuffer: null,
       /** 그래픽 테스트 번호 */ graphicTestNumber: 0,
@@ -157,8 +162,17 @@ class BiosSystem {
       /** 그래픽 테스트 오브젝트 */ graphicTestObject: {x: 0, y: 0, width: 0, height: 0},
       /** 바이오스 입장 가능 시간 확인용도 */ elapsedFrame: 0,
       /** 현재 바이오스 모드인지 확인 */ isBiosMode: false,
-      /** 바이오스에서 나갈 수 있는지에 대한 여부 */ isBiosPossibleExit: true,
       /** 오디오 파일 타입 */ audioFileType: 'mp3',
+      /** 이미지 테스트의 현재 이미지 번호 */ imageTestNumber: 0,
+      /** 사운드 테스트의 현재 사운드 번호 */ soundTestNumber: 0,
+      /** 사운드 테스트의 현재 음악 재생 번호 */ soundTestMusicNumber: 0,
+      /** 사운드 테스트의 현재 버퍼 번호 */ soundBufferTestNumber: 0,
+
+      /** 
+       * 바이오스를 닫는것이 가능한 것인지를 확인합니다. 
+       * 게임이 존재할경우 바이오스 메뉴를 나갈 수 있지만, 아닌경우 바이오스 메뉴를 나갈 수 없습니다.
+       */ 
+      isBiosPossibleClose: true,
     }
 
     this.currentDevice = currentDevice
@@ -174,7 +188,12 @@ class BiosSystem {
 
   /** 바이오스에서 나가기 명령에 대한 요청을 받습니다. */
   getExitRequest () {
-    return this.isRequestExit
+    if (this.isRequestExit) {
+      this.isRequestExit = false // 중복 호출 방지
+      return true
+    } else {
+      return false
+    }
   }
 
   /**
@@ -194,18 +213,16 @@ class BiosSystem {
   /** 
    * 엔진의 바이오스 메뉴: 이것이 실행되면 게임 로직은 동작하지 않습니다. 
    * 
-   * 바이오스 입장 방법: select 연속 6번 (3초 이내에)
+   * 바이오스 입장 방법: select 연속 5번 (2초 이내에)
    * 
    * 또는 게임이 없는 경우(process와 display를 사용자가 직접 만들어야만 합니다.)
    */
   biosProcess () {
-    if (this.bios == null) return
-
     // 검은색 화면 출력
     this.graphic.fillRect(0, 0, this.graphic.CANVAS_WIDTH, this.graphic.CANVAS_HEIGHT, '#282828')
     
-    // 바이오스를 빠져나갈 수 있는 상태가 아니면, 바이오스를 나갔을 때 강제로 0번 메뉴로 이동하도록 변경
-    if (this.bios.menuNumber === 4 && !this.bios.isBiosPossibleExit) {
+    // 바이오스를 빠져나갈 수 있는 상태가 아니면 (게임이 존재하지 않을 때), 바이오스를 나갔을 때 강제로 0번 메뉴로 이동하도록 변경
+    if (this.bios.menuNumber === 4 && !this.bios.isBiosPossibleClose) {
       this.bios.menuNumber = 0
     }
 
@@ -215,16 +232,15 @@ class BiosSystem {
       case 2: this.biosSoundTest(); break
       case 3: this.biosGraphicTest(); break
       case 4:
-        if (this.bios.isBiosPossibleExit) {
+        if (this.bios.isBiosPossibleClose) {
           this.isRequestExit = true
+          this.bios.menuNumber = 0
         }
         break
     }
   }
 
   biosProcessMainMenu () {
-    if (this.bios == null) return
-
     this.bios.mainMenu.textEdit(
       ['TAMSAENGINE MENU',
       'created by skz1024 - 2023/04/15',
@@ -235,7 +251,7 @@ class BiosSystem {
       ['1. INPUT TEST (KEYBOARD, BUTTON, MOUSE, TOUCH)',
       '2. SOUND TEST',
       '3. GRAPHIC TEST',
-      this.bios.isBiosPossibleExit ? '4. EXIT' : ''],
+      this.bios.isBiosPossibleClose ? '4. EXIT' : ''],
       ['',
       'FPS: ' + this.currentFps]
     )
@@ -250,7 +266,6 @@ class BiosSystem {
 
   /** 바이오스의 inputTestMenu */
   biosProcessInputTest () {
-    if (this.bios == null) return
     const mouseX = this.control.getMouseX()
     const mouseY = this.control.getMouseY()
     const isMouseDown = this.control.getMouseDown()
@@ -313,72 +328,152 @@ class BiosSystem {
   }
 
   biosSoundTest () {
-    if (this.bios == null) return
-
     let echoValue = this.sound.getMusicEchoValue()
     let warning = this.sound.getIsAudioSuspended()
-    let warningText = ''
-    if (warning) warningText = 'you must be clicked or keyinput resume audio context'
+    let warningText = warning ? 'you must be clicked or keyinput resume audio context' : ''
+    let soundList = Array.from(this.sound.cacheAudio.keys()) // 사운드 리스트의 키를 배열로 변환함
+    let soundTime = '0'
+    let soundDuration = '0'
+    let musicTime = '0'
+    let musicDuration = '0'
+    let soundAvailable = true
+    let musicAvailable = true
+    const MUSIC_PLAY_MIN_SECOND = 4
+    const SOUND_PLAY_MAX_SECOND = 8
 
-    const musicSrc = '1141sub2[new] - track2 - 2011.12.21.mp3'
-    const soundSrc = 'soundeffect.wav'
-    this.sound.createAudio(musicSrc)
+    // 오디오 파일을 가져옵니다.
+    let getFile = this.sound.getCacheAudio(soundList[this.bios.soundTestNumber])
+    if (getFile != null) {
+      soundTime = getFile.currentTime.toFixed(2).padEnd(6, ' ')
+      soundDuration = getFile.duration.toFixed(2).padEnd(6, ' ')
 
+      // 일정 시간 미만이거나 초과라면 음악 또는 효과음을 재생할 수 없도록 제한됩니다.
+      if (Number(soundDuration) < MUSIC_PLAY_MIN_SECOND) musicAvailable = false
+      if (Number(soundDuration) > SOUND_PLAY_MAX_SECOND) soundAvailable = false
+    } else {
+      // 해당 오디오가 없다면 재생 기능을 사용할 수 없도록 처리
+      soundAvailable = false
+      musicAvailable = false
+    }
+
+    // 현재 재생중인 음악 파일을 가져옵니다.
+    let getMusicFile = this.sound.getCacheAudio(soundList[this.bios.soundTestMusicNumber])
+    if (getMusicFile != null) {
+      musicTime = getMusicFile.currentTime.toFixed(2).padEnd(6, ' ')
+      musicDuration = getMusicFile.duration.toFixed(2).padEnd(6, ' ')
+    }
+
+    // 바이오스 메뉴의 텍스트 표시
     this.bios.soundTest.textEdit(
-      ['SOUND TEST - WEB AUDIO API'],
-      ['SOUND PLAY',
-      'BUFFER SOUND PLAY',
-      'MUSIC PLAY',
-      'MUSIC PLAY FADE IN',
+      ['SOUND TEST - WEB AUDIO API',
+       'SOUND TIME: ' + soundTime + ' / ' + soundDuration,
+       'SOUND SRC: ' + soundList[this.bios.soundTestNumber],
+       '',
+       'MUSIC: ' + this.bios.soundTestMusicNumber + ' time: ' + musicTime + '/' + musicDuration,
+       'MUSIC SRC: ' + soundList[this.bios.soundTestMusicNumber],
+       '' ],
+      ['SOUND SELECT: ' + this.bios.soundTestNumber + ' / ' + soundList.length,
+      'SOUND PLAY' + (soundAvailable ? '' : '- NOT AVAILABLE'),
+      'MUSIC PLAY' + (musicAvailable ? '' : '- NOT AVAILABLE'),
+      'MUSIC PLAY FADE IN' + (musicAvailable ?  '' : '- NOT AVAILABLE'),
+      'MUSIC DURATION CHANGE ' + (musicAvailable ? '' : '- NOT AVAILABLE'),
       'MUSIC STOP',
       'MUSIC STOP FADE OUT',
-      'ECHO(MUSIC) VALUE: ' + echoValue.echo.toFixed(1),
-      'FEEDBACK(MUSIC) VALUE: ' + echoValue.feedback.toFixed(1),
-      'DELAY(MUSIC) VALUE: ' + echoValue.delay.toFixed(1),
+      'ECHO(MUSIC) VALUE: ' + echoValue.echo.toFixed(1) + (musicAvailable ? '' : '- NOT AVAILABLE'),
+      'FEEDBACK(MUSIC) VALUE: ' + echoValue.feedback.toFixed(1) + (musicAvailable ? '' : '- NOT AVAILABLE'),
+      'DELAY(MUSIC) VALUE: ' + echoValue.delay.toFixed(1) + (musicAvailable ? '' : '- NOT AVAILABLE'),
       'EXIT'],
-      ['',
-      'notice: sound echo, music echo is different',
-      '',
+      ['FPS: ' + this.currentFps,
+      'L1, R1 to change number',
+      'L2, R2 to change music duration',
       warningText]
     )
 
     const menuList = {
-      SOUND_PLAY: 0,
-      BUFFER_SOUND_PLAY: 1,
+      SOUND_LIST_CHANGE: 0,
+      SOUND_PLAY: 1,
       MUSIC_PLAY: 2,
       MUISC_PLAY_FADE_IN: 3,
-      MUSIC_STOP: 4,
-      MUSIC_STOP_FADE_OUT: 5,
-      ECHO_MUISC_VALUE: 6,
-      FEEDBACK_MUISC_VALUE: 7,
-      DELAY_MUSIC_VALUE: 8,
-      EXIT: 9,
+      MUSIC_DURATION_CHANGE: 4,
+      MUSIC_STOP: 5,
+      MUSIC_STOP_FADE_OUT: 6,
+      ECHO_MUISC_VALUE: 7,
+      FEEDBACK_MUISC_VALUE: 8,
+      DELAY_MUSIC_VALUE: 9,
+      EXIT: 10,
     }
 
+    let buttonLeft = this.control.getButtonInput(this.control.buttonIndex.LEFT)
+    let buttonRight = this.control.getButtonInput(this.control.buttonIndex.RIGHT)
+    let buttonL1 = this.control.getButtonInput(this.control.buttonIndex.L1)
+    let buttonR1 = this.control.getButtonInput(this.control.buttonIndex.R1)
+    let buttonL2 = this.control.getButtonInput(this.control.buttonIndex.L2)
+    let buttonR2 = this.control.getButtonInput(this.control.buttonIndex.R2)
+
+    // 커서가 사운드 변경에 있을 때 테스트할 사운드를 변경할 수 있습니다.
+    if (this.bios.soundTest.cursor === menuList.SOUND_LIST_CHANGE) {
+      if (buttonLeft) this.bios.soundTestNumber--
+      if (buttonRight) this.bios.soundTestNumber++
+    } else if (this.bios.soundTest.cursor === menuList.MUSIC_DURATION_CHANGE && getMusicFile != null) {
+      if (buttonLeft) getMusicFile.currentTime -= 5
+      if (buttonRight) getMusicFile.currentTime += 5
+    }
+
+    // L1, L2, R1, R2 특수기능
+    if (buttonL1) this.bios.soundTestNumber -= 10
+    if (buttonR1) this.bios.soundTestNumber += 10
+    if (buttonL2 && getMusicFile != null) getMusicFile.currentTime -= 5
+    if (buttonR2 && getMusicFile != null) getMusicFile.currentTime += 5
+
+    // 오류 방지를 위한 사운드 번호 조정
+    if (this.bios.soundTestNumber < 0) this.bios.soundTestNumber = soundList.length - 1
+    if (this.bios.soundTestNumber > soundList.length) this.bios.soundTestNumber = 0
+
+    // 메뉴 선택
     switch (this.bios.soundTest.getSelectMenu()) {
-      case menuList.SOUND_PLAY: this.sound.play(soundSrc); break
-      case menuList.BUFFER_SOUND_PLAY: this.sound.playBuffer(soundSrc); break
-      case menuList.MUSIC_PLAY: this.sound.musicPlay(musicSrc); break
-      case menuList.MUISC_PLAY_FADE_IN: this.sound.musicPlay(musicSrc, 0, 4); break
+      case menuList.SOUND_LIST_CHANGE: // soundplay를 한 것으로 처리
+      case menuList.SOUND_PLAY:
+        if (soundAvailable) {
+          this.sound.play(soundList[this.bios.soundTestNumber]) 
+        }
+        break
+      case menuList.MUSIC_PLAY: 
+        if (musicAvailable) {
+          this.sound.musicPlay(soundList[this.bios.soundTestNumber])
+          this.bios.soundTestMusicNumber = this.bios.soundTestNumber
+        }
+        break  
+      case menuList.MUISC_PLAY_FADE_IN: 
+        if (musicAvailable) {
+          this.sound.musicPlay(soundList[this.bios.soundTestNumber], 0, 4)
+          this.bios.soundTestMusicNumber = this.bios.soundTestNumber
+        }
+        break
       case menuList.MUSIC_STOP: this.sound.musicStop(); break
       case menuList.MUSIC_STOP_FADE_OUT: this.sound.musicFadeOut(4); break
       case menuList.ECHO_MUISC_VALUE:
-        let currentEcho = echoValue.echo
-        let setEcho = currentEcho + 0.1
-        if (setEcho > 1) setEcho = 0
-        this.sound.setMusicEcho(setEcho, -1, -1)
+        if (musicAvailable) {
+          let currentEcho = echoValue.echo
+          let setEcho = currentEcho + 0.1
+          if (setEcho > 1) setEcho = 0
+          this.sound.setMusicEcho(setEcho, -1, -1)
+        }
         break
       case menuList.FEEDBACK_MUISC_VALUE:
-        let currentFeedBack = echoValue.feedback
-        let setFeedBack = currentFeedBack + 0.1
-        if (setFeedBack > 1) setFeedBack = 0
-        this.sound.setMusicEcho(-1, setFeedBack, -1)
+        if (musicAvailable) {
+          let currentFeedBack = echoValue.feedback
+          let setFeedBack = currentFeedBack + 0.1
+          if (setFeedBack > 1) setFeedBack = 0
+          this.sound.setMusicEcho(-1, setFeedBack, -1)
+        }
         break
       case menuList.DELAY_MUSIC_VALUE:
-        let currentDelay = echoValue.delay
-        let setDelay = currentDelay + 0.1
-        if (setDelay > 1) setDelay = 0.1
-        this.sound.setMusicEcho(-1, -1, setDelay)
+        if (musicAvailable) {
+          let currentDelay = echoValue.delay
+          let setDelay = currentDelay + 0.1
+          if (setDelay > 1) setDelay = 0.1
+          this.sound.setMusicEcho(-1, -1, setDelay)
+        }
         break
       case menuList.EXIT:
         // soundTest에서 나가기
@@ -400,7 +495,6 @@ class BiosSystem {
   }
 
   biosGraphicTest () {
-    if (this.bios == null) return
     let currentBios = this.bios
     this.bios.graphicTest.textEdit(
       ['GRAPHIC TEST',
@@ -417,7 +511,7 @@ class BiosSystem {
       '5. filp test',
       '6. rotate test',
       '7. rect object rotate',
-      '8. exit']
+      '8. exit'],
     )
     let testObj = this.bios.graphicTestObject
     let color = ['darkred', 'darkblue', 'darkgreen', 'darkmagenta', 'darkorange']
@@ -520,6 +614,11 @@ class BiosSystem {
 
     this.bios.graphicTest.display()
   }
+
+  biosImageTest () {
+    let imageList = this.graphic.getAllLoadImage()
+    let subCount = 0
+  }
 }
 
 /**
@@ -580,7 +679,11 @@ export class TamsaEngine {
     /** 해당 엔진에서 사용하는 컨트롤 시스템 */
     this.control = new ControlSystem()
     this.control.addEventMouseTouch(this.graphic.canvas)
-    this.control.setIntervalButtonDown(1000 / gameFps)
+
+    // tamsaEngine에서 processButton 함수를 수행하므로 
+    // clearInterval을 하지 않으면 processButton이 중복으로 호출될 수 있습니다.
+    this.control.clearIntervalButtonDown() 
+    // this.control.setIntervalButtonDown(20)
 
     /** 해당 엔진에서 사용하는 사운드 시스템 */
     this.sound = new SoundSystem()
@@ -640,20 +743,31 @@ export class TamsaEngine {
 
   /** animation함수에서 사용하는 다음 시간 확인 용도  */ thenAnimationTime = 0
   /** animation의 시간 간격을 확인하기 위해 만들어진 변수 */ timestamp = 0
+  /** biosButton hit count */ biosButtonDownCount = 0
+  /** biosButton wait timeFrame */ biosButtonWaitFrame = 0
 
   /** 바이오스 진입 여부 체크 */
   biosCheck () {
-    if (this.elaspedFrame < 120) {
-      let buttonStart = this.control.getButtonDown(this.control.buttonIndex.START)
-      let buttonSelect = this.control.getButtonDown(this.control.buttonIndex.SELECT)
-      let buttonDelete = this.control.getButtonInput(this.control.buttonIndex.DEL)
+    if (this.isBiosMode) return
 
-      if (buttonStart && buttonSelect) {
-        this.isBiosMode = true
-        this.control.setButtonUp(this.control.buttonIndex.START)
-      } else if (buttonDelete) {
-        this.isBiosMode = true
-      }
+    // 바이오스를 진입하기 위해서 2초 이내에 select 버튼을 총 5번 눌러야 합니다.
+    const WAIT_FRAME = 120
+    const PRESS_COUNT = 5
+    let buttonSelect = this.control.getButtonInput(this.control.buttonIndex.SELECT)
+    if (this.biosButtonWaitFrame === 0 && buttonSelect) {
+      this.biosButtonWaitFrame = WAIT_FRAME
+      this.biosButtonDownCount++
+    } else if (this.biosButtonWaitFrame >= 1) {
+      this.biosButtonWaitFrame--
+      if (buttonSelect) this.biosButtonDownCount++
+    } else {
+      this.biosButtonDownCount = 0 // 일정시간 내로 버튼을 5회 누르지 않았다면 누른 버튼 횟수 초기화
+    }
+
+    if (!this.isBiosMode && this.biosButtonDownCount >= PRESS_COUNT) {
+      this.isBiosMode = true
+      this.biosButtonWaitFrame = 0
+      this.biosButtonDownCount = 0
     }
   }
 
@@ -664,7 +778,7 @@ export class TamsaEngine {
     } else {
       this.bios.biosProcess()
       this.bios.insertFps(this.currentFps, this.refreshFps, this.FPS, this.graphicFps)
-      if (this.bios.bios != null) this.bios.bios.isBiosPossibleExit = this.isBiosPossibleExit
+      if (this.bios.bios != null) this.bios.bios.isBiosPossibleClose = this.isBiosPossibleExit
     }
 
     if (this.bios.getExitRequest()) {
@@ -697,8 +811,10 @@ export class TamsaEngine {
       this.thenAnimationTime = this.timestamp - (elapsed % fpsInterval)
       this.frameCount++
       this.elaspedFrame++
-
+      this.control.processButton() // 키 입력 프로세스
       this.biosCheck()
+
+      // 게임 내부 로직 진행
       if (this.isBiosMode) {
         this.biosMenu()
       } else {

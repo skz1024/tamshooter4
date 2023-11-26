@@ -1167,3 +1167,16 @@ shop는 상점이고, 아이템을 구매할 수 있습니다. (그러나 골드
 3. tamsaEngine의 resourceSrc (탐사엔진이 사용하는 리소스)가 전부 삭제되었습니다.
 4. 바이오스 메뉴에서는 courier new 폰트를 사용합니다.
 5. 리소스 파일과 관련한 엔진 버그 수정
+
+
+2023/11/26 v0.44.3 - tamsaEngine - sound test update
+1. 탐사엔진의 바이오스 메뉴 변경
+2. select 버튼을 연속 5회(3초 이내에) 누를 경우 bios 메뉴로 언제든지 진입이 가능합니다.
+3. start + select 조합으로는 더이상 bios 메뉴에 진입할 수 없습니다.
+4. sound test 변경 (엔진에 등록된 파일들 리스트를 보여주고 실행하는 역할을 합니다.)
+(참고: 필요한 파일을 우선적으로 로드하는 특성 때문에 모든 파일을 로드하지 않을 수 있습니다.)
+5. tamsaEngine에서 cotnrol의 processButton을 호출하도록 변경
+[대신 setInterval에 등록되었던 processButton은 삭제]
+6. sound를 정지하는 기능 추가 (기존에는 한번 효과음을 재생하면 끝까지 재생되었습니다.)
+일반적으로 사용할 일은 없겠지만, 만일을 위해서 만들었습니다.
+7. sound test에서 buffer 기능 삭제

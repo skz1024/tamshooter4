@@ -649,13 +649,25 @@ export class ControlSystem {
     }
   }
 
+  /** 
+   * setInterval에 등록되었던 버튼 down을 확인하는 함수를 제거합니다. 
+   * 
+   * tamsaEngine을 사용할경우 이 함수를 자동으로 호출하지만 사용자가 control.js 파일만 단독으로 사용한다면
+   * 이 함수를 사용하기 전까지 processButton이 일정시간마다 호출됩니다.
+   */
+  clearIntervalButtonDown () {
+    clearInterval(this.intervalId)
+    this.intervalId = 0
+  }
+
   /**
    * buttonDown을 연속으로 누르는것에 대한 각각의 간격을 설정합니다.
    * 
    * 해당 설정은 모든 버튼에 영향을 줍니다. 기본값은 20ms (초당 50회)
    * 
-   * tamsaEngine에서 사용할경우, 이 값은 게임 프레임 간격에 자동으로 맞춰집니다.
-   * (다만 ms단위를 정수로 설정하기 때문에 60hz를 정확하게 맞출 수는 없습니다.)
+   * tamsaEngine에서 사용할경우에는 해당 함수가 실행되지 않습니다.
+   * 
+   * @deprecated
    * @param {number} ms 
    */
   setIntervalButtonDown (ms = 20) {

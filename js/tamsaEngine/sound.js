@@ -185,6 +185,16 @@ export class SoundSystem {
     }
   }
 
+  /** 현재까지 등록된 모든 오디오를 가져옵니다. */
+  getAllCacheAudio () {
+    return this.cacheAudio.entries()
+  }
+
+  /** 현재까지 등록된 모든 오디오 버퍼를 가져옵니다. */
+  getAllCacheBuffer () {
+    return this.cacheBuffer.entries()
+  }
+
   /**
    * 이 시스템에서 사용할 오디오 버퍼를 등록합니다.
    * 
@@ -296,6 +306,7 @@ export class SoundSystem {
     getNode.connect(this.audioNode.firstGain) // 재생을 위한 오디오 연결
 
     // 일시정지되면, 다시 재생시키고, 이미 재생중이라면 처음부터 다시 재생합니다.
+    getAudio.loop = false // 효과음은 반복재생하지 않습니다.
     if (getAudio.paused) {
       // 오류 메세지 막기(예외처리...)
       getAudio.play().catch(() => {})
@@ -331,6 +342,18 @@ export class SoundSystem {
     // 해당 버퍼를 오디오컨텍스트에 연결해야 합니다.
     bufferSource.connect(this.audioNode.firstGain)
     bufferSource.start(this.audioContext.currentTime, start, duration)
+  }
+
+  /** 
+   * 특정 효과음 파일을 강제로 정지합니다.
+   * @param {string} audioSrc 
+   */
+  stop (audioSrc) {
+    let getAudio = this.getCacheAudio(audioSrc)
+    if (getAudio != null) {
+      getAudio.pause()
+      getAudio.currentTime = 0
+    }
   }
 
   /**
