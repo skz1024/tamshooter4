@@ -249,6 +249,7 @@ class BiosSystem {
     this.bios.mainMenu.textEdit(
       ['TAMSAENGINE MENU',
       'created by skz1024 - 2023/04/15',
+      'version 0.44.5 - 2023/11/26',
       'device: ' + this.currentDevice,
       'game name: ' + this.gameTitle,
       '',
