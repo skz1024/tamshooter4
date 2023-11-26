@@ -149,6 +149,8 @@ export class SoundSystem {
    * @returns {HTMLAudioElement | undefined}
    */
   getCacheAudio (audioSrc) {
+    if (audioSrc == null) return
+
     if (this.cacheAudio.has(audioSrc)) {
       return this.cacheAudio.get(audioSrc)
     } else {

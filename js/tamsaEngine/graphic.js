@@ -518,11 +518,11 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    */
   imageView (imageSrc, x, y, width = undefined, height = undefined, ...options) {
     let getImage = typeof imageSrc === 'string' ? this.getCacheImage(imageSrc) : imageSrc
-    if (getImage == null) return
+    if (getImage == null || getImage.width === 0) return
     
     // width, height 채우기 (함수 인수로 넣을 수도 있으나, image가 null일경우 에러가 발생하므로, 이렇게 처리함)
-    if (width == null) width = getImage.width
-    if (height == null) height = getImage.height
+    if (width == null || width === 0) width = getImage.width
+    if (height == null || height === 0) height = getImage.height
 
     if (options.length !== 0) {
       this._imageExpandDisplay(getImage, 0, 0, getImage.width, getImage.height, x, y, width, height, ...options)

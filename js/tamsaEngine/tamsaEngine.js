@@ -164,6 +164,7 @@ class BiosSystem {
       /** 현재 바이오스 모드인지 확인 */ isBiosMode: false,
       /** 오디오 파일 타입 */ audioFileType: 'mp3',
       /** 이미지 테스트의 현재 이미지 번호 */ imageTestNumber: 0,
+      /** 이미지 테스트에서 이미지 이동 여부 */ imageTestMoveImage: false,
       /** 사운드 테스트의 현재 사운드 번호 */ soundTestNumber: 0,
       /** 사운드 테스트의 현재 음악 재생 번호 */ soundTestMusicNumber: 0,
       /** 사운드 테스트의 현재 버퍼 번호 */ soundBufferTestNumber: 0,
@@ -173,6 +174,9 @@ class BiosSystem {
        * 게임이 존재할경우 바이오스 메뉴를 나갈 수 있지만, 아닌경우 바이오스 메뉴를 나갈 수 없습니다.
        */ 
       isBiosPossibleClose: true,
+
+      /** 이미지 테스트에서 사용하는 현재 이미지에 관한 오브젝트 */
+      imageObject: {x: 0, y: 0, widthMultiple: 0, heightMultiple: 0, degree: 0, flip: 0, alpha: 1},
     }
 
     this.currentDevice = currentDevice
@@ -222,16 +226,17 @@ class BiosSystem {
     this.graphic.fillRect(0, 0, this.graphic.CANVAS_WIDTH, this.graphic.CANVAS_HEIGHT, '#282828')
     
     // 바이오스를 빠져나갈 수 있는 상태가 아니면 (게임이 존재하지 않을 때), 바이오스를 나갔을 때 강제로 0번 메뉴로 이동하도록 변경
-    if (this.bios.menuNumber === 4 && !this.bios.isBiosPossibleClose) {
+    if (this.bios.menuNumber === 5 && !this.bios.isBiosPossibleClose) {
       this.bios.menuNumber = 0
     }
 
     switch (this.bios.menuNumber) {
       case 0: this.biosProcessMainMenu(); break
       case 1: this.biosProcessInputTest(); break
-      case 2: this.biosSoundTest(); break
-      case 3: this.biosGraphicTest(); break
-      case 4:
+      case 2: this.biosGraphicTest(); break
+      case 3: this.biosSoundTest(); break
+      case 4: this.biosImageTest(); break
+      case 5:
         if (this.bios.isBiosPossibleClose) {
           this.isRequestExit = true
           this.bios.menuNumber = 0
@@ -249,9 +254,10 @@ class BiosSystem {
       '',
       'menu select'],
       ['1. INPUT TEST (KEYBOARD, BUTTON, MOUSE, TOUCH)',
-      '2. SOUND TEST',
-      '3. GRAPHIC TEST',
-      this.bios.isBiosPossibleClose ? '4. EXIT' : ''],
+      '2. GRAPHIC TEST',
+      '3. SOUND TEST',
+      '4. IMAGE TEST',
+      this.bios.isBiosPossibleClose ? '5. EXIT' : ''],
       ['',
       'FPS: ' + this.currentFps]
     )
@@ -316,14 +322,15 @@ class BiosSystem {
       'R2    -'+ key[index.R2].padEnd(10, ' ') + '-' + buttonR2,
       'START -'+ key[index.START].padEnd(10, ' ') + '-' + buttonStart,
       'SELECT-'+ key[index.SELECT].padEnd(10, ' ') + '-' + buttonSelect,
-      'ESC(CANCLE) KEYBOARD ONLY-' + key[index.ESC].padEnd(6, ' ') + '-' + keyESC,
-      'F2(BIOS)    KEYBOARD ONLY-' + key[index.DEL].padEnd(6, ' ') + '-' + keyF2],
+      'ESC(UNUSED)    KEYBOARD ONLY-' + key[index.ESC].padEnd(6, ' ') + '-' + keyESC,
+      'DELETE(UNUSED) KEYBOARD ONLY-' + key[index.DEL].padEnd(6, ' ') + '-' + keyF2],
     )
 
     this.bios.inputTest.display()
 
     if (this.bios.inputTest.getSelectMenu() === 1) {
       this.bios.menuNumber = 0
+      this.bios.inputTest.cursor = 0
     }
   }
 
@@ -341,8 +348,8 @@ class BiosSystem {
     const MUSIC_PLAY_MIN_SECOND = 4
     const SOUND_PLAY_MAX_SECOND = 8
 
-    // 오디오 파일을 가져옵니다.
-    let getFile = this.sound.getCacheAudio(soundList[this.bios.soundTestNumber])
+    // 오디오 파일을 가져옵니다. (아무것도 없다면 가져오지 않음)
+    let getFile = soundList.length >= 1 ? this.sound.getCacheAudio(soundList[this.bios.soundTestNumber]) : null
     if (getFile != null) {
       soundTime = getFile.currentTime.toFixed(2).padEnd(6, ' ')
       soundDuration = getFile.duration.toFixed(2).padEnd(6, ' ')
@@ -427,7 +434,7 @@ class BiosSystem {
 
     // 오류 방지를 위한 사운드 번호 조정
     if (this.bios.soundTestNumber < 0) this.bios.soundTestNumber = soundList.length - 1
-    if (this.bios.soundTestNumber > soundList.length) this.bios.soundTestNumber = 0
+    if (this.bios.soundTestNumber >= soundList.length) this.bios.soundTestNumber = 0
 
     // 메뉴 선택
     switch (this.bios.soundTest.getSelectMenu()) {
@@ -609,6 +616,7 @@ class BiosSystem {
       case 8:
         this.bios.graphicTestNumber = 0
         this.bios.menuNumber = 0
+        this.bios.graphicTest.cursor = 0
         break
     }
 
@@ -616,8 +624,91 @@ class BiosSystem {
   }
 
   biosImageTest () {
-    let imageList = this.graphic.getAllLoadImage()
-    let subCount = 0
+    let imageList = Array.from(this.graphic.cacheImage.keys())
+    let targetImage = imageList[this.bios.imageTestNumber]
+    let imgO = this.bios.imageObject
+    if (targetImage != null) {
+      this.graphic.imageView(targetImage, imgO.x, imgO.y, undefined, undefined, imgO.flip, imgO.degree, imgO.alpha)
+    }
+    
+    this.bios.imageTest.textEdit([
+      'IMAGE TEST',
+      'image number: ' + this.bios.imageTestNumber + '/' + imageList.length,
+      'x: ' + imgO.x + ', y: ' + imgO.y,
+      'flip: ' + imgO.flip + ', degree: ' + imgO.degree + '/360, alpha: ' + imgO.alpha], 
+      [],
+      ['L1, L2, R1, R2 button to image change',
+      'arrow button to image move',
+      'START / A button to move mode exit',
+      'B button to change alpha',
+      'X button to change degree, Y button to change flip',
+      'SELECT button to position with effect reset',
+     ]
+    )
+    this.bios.imageTest.display()
+
+    let buttonLeft = this.control.getButtonDown(this.control.buttonIndex.LEFT)
+    let buttonRight = this.control.getButtonDown(this.control.buttonIndex.RIGHT)
+    let buttonUp = this.control.getButtonDown(this.control.buttonIndex.UP)
+    let buttonDown = this.control.getButtonDown(this.control.buttonIndex.DOWN)
+    let buttonL1 = this.control.getButtonInput(this.control.buttonIndex.L1)
+    let buttonR1 = this.control.getButtonInput(this.control.buttonIndex.R1)
+    let buttonL2 = this.control.getButtonInput(this.control.buttonIndex.L2)
+    let buttonR2 = this.control.getButtonInput(this.control.buttonIndex.R2)
+    let buttonX = this.control.getButtonInput(this.control.buttonIndex.X)
+    let buttonY = this.control.getButtonInput(this.control.buttonIndex.Y)
+    let buttonB = this.control.getButtonInput(this.control.buttonIndex.B)
+    let buttonStart = this.control.getButtonInput(this.control.buttonIndex.START)
+    let buttonA = this.control.getButtonInput(this.control.buttonIndex.A)
+    let buttonSelect = this.control.getButtonInput(this.control.buttonIndex.SELECT)
+
+    // image change
+    if (buttonL1) this.bios.imageTestNumber--
+    if (buttonL2) this.bios.imageTestNumber -= 10
+    if (buttonR1) this.bios.imageTestNumber++
+    if (buttonR2) this.bios.imageTestNumber += 10
+    if (this.bios.imageTestNumber < 0) {
+      if (imageList.length === 0) this.bios.imageTestNumber = 0
+      else imageList.length - 1
+    }
+    if (this.bios.imageTestNumber >= imageList.length) this.bios.imageTestNumber = 0
+    
+    // image move
+    if (buttonLeft) this.bios.imageObject.x -= 5
+    if (buttonRight) this.bios.imageObject.x += 5
+    if (buttonUp) this.bios.imageObject.y -= 5
+    if (buttonDown) this.bios.imageObject.y += 5
+
+    if (buttonB) { // alpha change
+      this.bios.imageObject.alpha += 0.1
+      if (this.bios.imageObject.alpha > 1) {
+        this.bios.imageObject.alpha = 0
+      }
+    }
+    if (buttonX) { // flip change
+      this.bios.imageObject.flip++
+      if (this.bios.imageObject.flip >= 4) {
+        this.bios.imageObject.flip = 0
+      }
+    }
+    if (buttonY) { // degree change
+      this.bios.imageObject.degree += 30
+      if (this.bios.imageObject.degree >= 360) {
+        this.bios.imageObject.degree = 0
+      }
+    }
+
+    if (buttonSelect) {
+      imgO.x = 0
+      imgO.y = 0
+      imgO.flip = 0
+      imgO.degree = 0
+      imgO.alpha = 1
+    }
+
+    if (buttonA || buttonStart) {
+      this.bios.menuNumber = 0
+    }
   }
 }
 
