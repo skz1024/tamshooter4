@@ -579,7 +579,7 @@ export class imageDataInfo {
     skyblueShot: new ImageDataObject(880, 0, 32, 32, 1),
     greenShot: new ImageDataObject(840, 0, 30, 12, 1),
     blackShot: new ImageDataObject(800, 40, 64, 64, 1),
-    purpleShot: new ImageDataObject(400, 130, 40, 40, 10),
+    purpleShot: new ImageDataObject(0, 360, 40, 40, 20),
     pinkShot: new ImageDataObject(0, 200, 100, 100, 10),
     orangeItem: new ImageDataObject(0, 120, 40, 40, 1),
     skyblueItem: new ImageDataObject(40, 120, 40, 40, 1),

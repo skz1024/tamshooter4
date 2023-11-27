@@ -1426,7 +1426,6 @@ export class fieldSystem {
     const buttonA = game.control.getButtonInput(game.control.buttonIndex.A)
     const buttonB = game.control.getButtonInput(game.control.buttonIndex.B)
     const maxMenuNumber = 3
-    game.sound.musicPause() // 일시정지 상태에서는 음악이 재생되지 않음.
     game.sound.setEchoDisable() // 에코 기능 정지
     // game.sound.setMusicEcho() // 에코 기능 정지 [음악은 정지해야할지 잘 모르겠음]
 
@@ -1461,7 +1460,7 @@ export class fieldSystem {
     if (isResume) {
       this.stateId = this.STATE_NORMAL // pause 상태 해제
       if (this.round != null) { // round 음악 다시 재생
-        this.round.sound.musicPlay()
+        game.sound.musicResume()
       }
     }
   }
@@ -1531,6 +1530,12 @@ export class fieldSystem {
   static processNormal () {
     const buttonPause = game.control.getButtonInput(game.control.buttonIndex.START)
     if (this.round == null) return
+
+    // 음악 시간 로딩 변수값이 존재할 때, 해당 음악을 강제로 재생합니다.
+    // 내부적으로 round에서는 로드 음악 시작 값이 존재하면 해당 부분부터 재생을 시작합니다.
+    if (this.round.sound.loadCurrentMusicTime !== 0) {
+      this.round.sound.musicPlay()
+    }
 
     if (buttonPause) {
       game.sound.play(soundSrc.system.systemPause)

@@ -848,12 +848,12 @@ class BaseSound {
     }
 
     if (this.loadCurrentMusicTime !== 0) {
-      // 저장딘 게임 불러오기 전용 변수
-      soundSystem.musicPlay(this.currentMusicSrc, this.loadCurrentMusicTime)
-      
-      // 현재 음악이 로딩되어있지 않아 현재 음악이 없다면, 로드된 시간 설정을 초기화하지 않습니다.
-      if (soundSystem.currentMusic != null) {
-        this.loadCurrentMusicTime = 0
+      // 현재 캐시에 오디오가 있는지를 먼저 확인
+      if (soundSystem.getCacheAudio(this.currentMusicSrc) != null) {
+        // 저장딘 게임 불러오기 전용 변수
+        soundSystem.musicPlay(this.currentMusicSrc, this.loadCurrentMusicTime)
+
+        this.loadCurrentMusicTime = 0 // 음악 현재 시간 초기화
       }
     } else if (soundSystem.getMusicPaused()) {
       if (start < 0) {
@@ -1311,6 +1311,11 @@ class BasePhase {
     return 0
   }
 
+  /** 현재 페이즈의 시작 시점을 알아옵니다. */
+  getCurrentPhaseStartTime () {
+    return this.phaseTime[this.getCurrentPhase()].startTime
+  }
+
   /** 
    * 라운드 진행에 관한 처리. 라운드 구성에 관해서는 roundPhase 부분을 참고
    * @param {number} currentTime 현재 시간값 (이 값이 있어야 페이즈를 관리할 수 있음!)
@@ -1494,8 +1499,8 @@ export class RoundData {
 
     /** 현재 라운드의 시간 (시간에 대한 처리 객체) @type {BaseTime} */
     this.time = new BaseTime()
-
     /** 라운드의 데이터들을 로드하는 객체 (이미지, 사운드) */
+
     this.load = new BaseLoad()
 
     /** 라운드의 페이즈를 관리하는 도구 */
@@ -7766,19 +7771,543 @@ class Round2_test extends RoundData {
   }
 }
 
-class Round3_test extends RoundData {
+/** 라운드 3에서 사용하는 플레이어 옵션에 대한 클래스 */
+class Round3TempletePlayerOption extends FieldData {
+  static colorList = {
+    orange: 'orange',
+    skyblue: 'skyblue',
+    green: 'green',
+    black: 'black',
+    pink: 'pink',
+    purple: 'purple',
+  }
+
+  /** 
+   * optionObject에서 playerOption에게 충돌 여부를 알려주기 위한 메세지 
+   * 
+   * 이 메세지가 전송되면 플레이어는 해당 색에 관한 옵션을 얻습니다.
+   */
+  static messageCollision = 'messageCollision'
+
   constructor () {
     super()
-    this.stat.setStat(ID.round.round3_test)
-    this.playerOption = new this.PlayerOption()
-    this.playerOption.setColor(this.playerOption.colorList.purple)
-    this.playerOption.setLevel(4)
+    /** 플레이어 위치 기준 옵션의 상대 위치값 X좌표 @type {number} */ this.POSITION_X = 50
+    /** 플레이어 위치 기준 옵션의 상대 위치값 첫번째 옵션의 Y좌표 @type {number} */ this.POSITION_Y = -10
+    /** 옵션의 현재 색 @type {string} */ this.color = ''
+    /** 현재 옵션의 레벨 (게임 도중에 리셋되지 않습니다.), 이 값을 수정하려면 setLevel을 사용해주세요. @type {number} */ this.level = 0
+    /** 옵션의 최대 레벨 @type {number} */ this.LEVEL_MAX = 4
+    /** 현재 레벨에 따른 dps퍼센트값 기준 @type {number[]} */ this.dpsPercentLevel = [40, 50, 60, 80, 100]
+    this.imageSrc = imageSrc.round.round3_optionWeapon
+    /** 옵션을 가지고 있는 여부 @type {boolean} */ this.hasOption = false
+    /** 옵션의 무기 발사에 대한 지연시간 카운터 */ this.delayCount = 0
+    /** 옵션이 가지고 있는 기본적인 공격력 (다운타워의 cp랑 관련되어있음. 다만 값은 수동으로 설정해야함) 
+     * 만약 다운타워의 baseCp(기본전투력)가 수정되었을 때 이 값을 수정하지 않으면 밸런스적으로 문제가 발생할 수 있음. */ 
+    this.BASE_ATTACK = 70000
 
-    this.phase.addRoundPhase(this, () => {
-      if (this.timeCheckInterval(0, 999, 30)) {
-        this.field.createEnemy(ID.enemy.intruder.gami)
+    /** 초당 프레임 횟수: 게임 기본값 60, 이 값을 기준으로 각 무기들의 delay가 결정됩니다. */
+    this.FRAME_PER_SECOND = 60
+
+    /**
+     * @typedef optionInfo 옵션에 대한 정보
+     * @property {number[]} shotPerSecond 초당 발사 횟수
+     * @property {number[]} shotPerCount 한번의 샷 당 동시에 발사하는 횟수
+     */
+    /** 
+     * 옵션에 대한 확장 정보 
+     */ 
+    this.optionInfo = {
+      /** @type {optionInfo} */ orange: {shotPerSecond: [2, 3, 4, 5, 6], shotPerCount: [4, 4, 4, 4, 4]},
+      /** @type {optionInfo} */ green: {shotPerSecond: [5, 6, 10, 12, 15], shotPerCount: [4, 4, 4, 4, 4]},
+      /** @type {optionInfo} */ skyblue: {shotPerSecond: [2, 2, 2, 2, 2], shotPerCount: [2, 2, 2, 3, 3]},
+      /** @type {optionInfo} */ black: {shotPerSecond: [2, 2, 2, 2, 2], shotPerCount: [2, 2, 2, 2, 2]},
+      /** @type {optionInfo} */ pink: {shotPerSecond: [3, 4, 4, 5, 5], shotPerCount: [1, 1, 1, 1, 1]},
+      /** @type {optionInfo} */ purple: {shotPerSecond: [4, 4, 5, 5, 6], shotPerCount: [1, 1, 1, 1, 1]}
+    }
+
+    /** 옵션에서 사용하는 color의 리스트 */
+    this.colorList = Round3TempletePlayerOption.colorList
+
+    // 임시 이미지 설정
+    this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.orange, 3)
+
+    
+    /** 옵션에서 관리하는 무기의 오브젝트 @type {WeaponData[]} */
+    this.weaponObject = []
+
+    const OptionObject = class extends Round3TempletePlayerOption.OptionObject {}
+    /** 옵션에서 관리하는 옵션의 오브젝트 @type {OptionObject[]} */
+    this.optionObject = []
+  }
+
+  /**
+   * 옵션의 현재 색을 설정합니다.
+   * @param {string} color 
+   */
+  setColor (color) {
+    this.color = color
+    switch (color) {
+      case this.colorList.orange: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.orange, 3); break
+      case this.colorList.skyblue: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.skyblue, 3); break
+      case this.colorList.green: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.green, 3); break
+      case this.colorList.black: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.black, 3); break
+      case this.colorList.pink: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.pink, 3); break
+      case this.colorList.purple: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.purple, 3); break
+    }
+  }
+
+  /** 옵션의 정보를 저장하고 있는 문자열 데이터를 얻어옵니다. */
+  getSaveString () {
+    return '' + this.level + ' ' + this.color
+  }
+
+  /**
+   * 옵션의 정보를 저장하고 있는 문자열을 사용하여 재설정하는 함수
+   * 
+   * 저장 형식은 getSaveString 함수 내부 참조
+   * @param {string} str 
+   */
+  setLoadString (str) {
+    let text = str.split(' ')
+    this.level = Number(text[0])
+    this.color = text[1]
+  }
+
+  /** 현재 옵션의 정보를 현재 레벨에 맞추어 가져옵니다. (현재 색에 따라 얻어오는 정보는 달라짐) */
+  getCurrentOptionInfo () {
+    let shotPerCount, shotPerSecond
+    let currentInfo
+    switch (this.color) {
+      case this.colorList.green: currentInfo = this.optionInfo.green; break
+      case this.colorList.orange: currentInfo = this.optionInfo.orange; break
+      case this.colorList.skyblue: currentInfo = this.optionInfo.skyblue; break
+      case this.colorList.black: currentInfo = this.optionInfo.black; break
+      case this.colorList.pink: currentInfo = this.optionInfo.pink; break
+      case this.colorList.purple: currentInfo = this.optionInfo.purple; break
+      default: currentInfo = this.optionInfo.orange; break
+    }
+
+    shotPerCount = currentInfo.shotPerCount[this.level]
+    shotPerSecond = currentInfo.shotPerSecond[this.level]
+
+    return {
+      shotPerCount,
+      shotPerSecond
+    }
+  }
+
+  /** 
+   * 옵션의 레벨을 설정 (참고: 옵션의 최대 레벨을 넘길경우 오류가 발생할 수 있으므로 해당 함수를 사용하여 옵션의 레벨을 변경해주세요.) 
+   * @param {number} level 설정할 레벨
+   * */
+  setLevel (level) {
+    if (level >= 0 && level <= this.LEVEL_MAX) {
+      this.level = level
+    }
+  }
+
+  /** 현재 옵션의 공격력을 색의 정보와 레벨에 맞추어 얻어옵니다. (참고: 옵션의 기본 공격력은 BASE_ATTACK에 정의되어있습니다.) */
+  getAttack () {
+    let count = this.getCurrentOptionInfo().shotPerCount
+    let perSecond = this.getCurrentOptionInfo().shotPerSecond
+    let mul = 1
+    switch (this.color) {
+      case this.colorList.orange: mul = 1; break
+      case this.colorList.green: mul = 1.4; break
+      case this.colorList.skyblue: mul = 0.8; break
+      case this.colorList.black: mul = 0.2; break // 0.2 * 6 = 1.2 (black은 무기 공격횟수가 6입니다.)
+      case this.colorList.pink: mul = 0.45; break // 0.45 * 2 = 0.9 (pink는 2회 스플래시 공격)
+      case this.colorList.purple: mul = 0.2; break // 0.2 * 5 (purple은 총 10회 타격)
+    }
+
+    // 공식: 기본 공격력 / 샷 카운트 수 / 초당 발사 횟수 * dps의 백뷴율 (최종 결과값에 소수점 버림) * 무기의 배율
+    let attack = (this.BASE_ATTACK / count / perSecond) * (this.dpsPercentLevel[this.level] / 100) * mul
+    return Math.floor(attack)
+  }
+
+  attackOrange () {
+    let count = this.getCurrentOptionInfo().shotPerCount
+    for (let i = 0; i < count; i++) {
+      let weapon = new Round3TempletePlayerOption.WeaponOrange()
+      weapon.x = this.x
+      weapon.y = this.y + (i * 10)
+      weapon.attack = this.getAttack()
+      this.weaponObject.push(weapon)
+    }
+  }
+
+  attackGreen () {
+    let count = this.getCurrentOptionInfo().shotPerCount
+    for (let i = 0; i < count; i++) {
+      let weapon = new Round3TempletePlayerOption.WeaponGreen()
+      weapon.x = this.x
+      weapon.y = i === count - 1 ? this.y + 15 : this.y + (i * 15) // 1개의 샷은 backshot(뒤로 발사함) 입니다.
+      weapon.moveSpeedX = i === count - 1 ? -30 : 30 // 1개의 샷은 backshot(뒤로 발사함) 입니다.
+      weapon.moveSpeedY = Math.random() * 6 - 3 // y축 방향 약간 무작위
+      weapon.attack = this.getAttack()
+      this.weaponObject.push(weapon)
+    }
+  }
+
+  attackSkyblue () {
+    let count = this.getCurrentOptionInfo().shotPerCount
+    for (let i = 0; i < count; i++) {
+      let weapon = new Round3TempletePlayerOption.WeaponSkyblue()
+      weapon.x = this.x
+      weapon.y = this.y + (i * 40)
+      weapon.attack = this.getAttack()
+      this.weaponObject.push(weapon)
+    }
+  }
+
+  attackBlack () {
+    let count = this.getCurrentOptionInfo().shotPerCount
+    let level = this.level
+    let speedTable = [6, 9, 12, 15, 18]
+    for (let i = 0; i < count; i++) {
+      let weapon = new Round3TempletePlayerOption.WeaponBalck()
+      weapon.x = this.x
+      weapon.y = this.y
+      weapon.attack = this.getAttack()
+
+      if (i === 0) weapon.setMoveSpeed(10, -speedTable[level]) 
+      if (i === 1) weapon.setMoveSpeed(10, speedTable[level]) // 한쪽 무기는 y축 이동방향이 반대입니다.
+
+      this.weaponObject.push(weapon)
+    }
+  }
+
+  attackPink () {
+    let count = this.getCurrentOptionInfo().shotPerCount
+    for (let i = 0; i < count; i++) {
+      let weapon = new Round3TempletePlayerOption.WeaponPink()
+      weapon.x = this.x
+      weapon.y = this.y
+      weapon.setStartChase() // 적 추적 좌표를 설정하기 위해서 사용
+      weapon.attack = this.getAttack()
+      this.weaponObject.push(weapon)
+    }
+  }
+
+  attackPurple () {
+    let count = this.getCurrentOptionInfo().shotPerCount
+    for (let i = 0; i < count; i++) {
+      let weapon = new Round3TempletePlayerOption.WeaponPurple()
+      weapon.x = this.x
+      weapon.y = this.y
+      weapon.attack = this.getAttack()
+      this.weaponObject.push(weapon)
+    }
+  }
+
+  processAttack () {
+    let delay = this.FRAME_PER_SECOND / this.getCurrentOptionInfo().shotPerSecond
+
+    this.delayCount++
+    if (this.delayCount > delay) {
+      this.delayCount -= delay
+      switch (this.color) {
+        case this.colorList.orange: this.attackOrange(); break
+        case this.colorList.green: this.attackGreen(); break
+        case this.colorList.skyblue: this.attackSkyblue(); break
+        case this.colorList.black: this.attackBlack(); break
+        case this.colorList.pink: this.attackPink(); break
+        case this.colorList.purple: this.attackPurple(); break
       }
-    }, 0, 999)
+    }
+  }
+
+  processWeapon () {
+    for (let i = 0; i < this.weaponObject.length; i++) {
+      this.weaponObject[i].process()
+    }
+
+    // weaponObject delete (버그 방지를 위해 삭제 코드를 처리 코드와 분리함)
+    for (let i = 0; i < this.weaponObject.length; i++) {
+      if (this.weaponObject[i].isDeleted) {
+        this.weaponObject.splice(i, 1)
+      }
+    }
+  }
+
+  processMove () {
+    if (this.hasOption) {
+      let player = BaseField.getPlayerObject()
+      this.x = player.x + this.POSITION_X
+      this.y = player.y + this.POSITION_Y
+    }
+  }
+
+  processOption () {
+    const player = fieldState.getPlayerObject()
+    for (let i = 0; i < this.optionObject.length; i++) {
+      let option = this.optionObject[i]
+      option.process()
+
+      // 유저가 옵션에 충돌한 경우 타입에 따라 옵션 추가하고 해당 객체 삭제
+      if (collision(player, option)) {
+        soundSystem.play(soundSrc.round.r3_playerOption)
+        this.hasOption = true
+        switch (option.color) {
+          case this.colorList.black: this.setColor(this.colorList.black); break
+          case this.colorList.green: this.setColor(this.colorList.green); break
+          case this.colorList.orange: this.setColor(this.colorList.orange); break
+          case this.colorList.purple: this.setColor(this.colorList.purple); break
+          case this.colorList.pink: this.setColor(this.colorList.pink); break
+          case this.colorList.purple: this.setColor(this.colorList.purple); break
+        }
+
+        option.isDeleted = true
+      }
+    }
+
+    for (let i = 0; i < this.optionObject.length; i++) {
+      let option = this.optionObject[i]
+      if (option.isDeleted) this.optionObject.splice(i, 1)
+    }
+  }
+
+  /**
+   * 새로운 옵션 아이템을 생성합니다. (옵션의 색을 지정해주세요.)
+   * @param {string} color 옵션의 색
+   * @param {number} x 생성할 x좌표
+   * @param {number} y 생성할 y좌표
+   */
+  createOptionItem (color, x = graphicSystem.CANVAS_WIDTH, y = graphicSystem.CANVAS_HEIGHT_HALF + (Math.random() * 200) - 100) {
+    let option = new Round3TempletePlayerOption.OptionObject(color)
+    option.setPosition(x, y)
+    this.optionObject.push(option)
+  }
+
+  process () {
+    super.process()
+    this.processOption() // 옵션객체(아이템)은 내가 옵션울 가지고 있지 않아도 해당 로직을 동작해야 합니다.
+
+    if (this.color === '' || !this.hasOption) return
+    // processMove는 super.process에서 처리하므로 따로 명시할 필요가 없습니다.
+    this.processAttack()
+    this.processWeapon()
+  }
+
+  display () {
+    if (this.color !== '') {
+      for (let i = 0; i < this.weaponObject.length; i++) {
+        this.weaponObject[i].display()
+      }
+
+      super.display()
+    }
+
+    for (let i = 0; i < this.optionObject.length; i++) {
+      this.optionObject[i].display()
+    }
+  }
+
+  /** 옵션의 모든 능력치를 리셋합니다. 플레이어는 옵션을 가지지 않은 상태가 됩니다. */
+  reset () {
+    this.color = ''
+    this.hasOption = false
+    this.level = 0
+  }
+
+  static OptionObject = class extends FieldData {
+    /** 
+     * 해당 옵션을 생성합니다. 옵션의 색이 올바르지 않다면 해당 옵션은 삭제됩니다.
+     * @param {string} color 옵션의 색 (자세한건 PlayerOption의 colorList 참조)
+     */
+    constructor (color) {
+      super()
+      this.setMoveSpeed(-1, 0)
+      this.color = color
+
+      const colorList = Round3TempletePlayerOption.colorList
+      const imgSrc = imageSrc.round.round3_optionWeapon
+      const imgD = imageDataInfo.round3_optionWeapon
+      switch (color) {
+        case colorList.orange: this.setAutoImageData(imgSrc, imgD.orangeItem); break
+        case colorList.green: this.setAutoImageData(imgSrc, imgD.greenItem); break
+        case colorList.skyblue: this.setAutoImageData(imgSrc, imgD.skyblueItem); break
+        case colorList.black: this.setAutoImageData(imgSrc, imgD.blackItem); break
+        case colorList.pink: this.setAutoImageData(imgSrc, imgD.pinkItem); break
+        case colorList.purple: this.setAutoImageData(imgSrc, imgD.purpleItem); break
+        default: this.isDeleted = true; break // 정확한 컬러가 지정되지 않으면 해당 옵션을 삭제함
+      }
+    }
+
+    processMove () {
+      super.processMove()
+
+      // y축이 화면 바깥에 나갈 수 없습니다.
+      if (this.y < 0) this.y = 0
+      if (this.y > graphicSystem.CANVAS_HEIGHT) this.y = graphicSystem.CANVAS_HEIGHT
+    }
+  }
+
+  /** 주황색 무기: 적을 추적하는 형태 */
+  static WeaponOrange = class extends WeaponData {
+    constructor () {
+      super()
+      this.isLineChase = true
+      this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.orangeShot)
+    }
+  }
+
+  /** 하늘색 무기: 적에게 닿으면 스플래시 데미지 (자동 추적 기능) */
+  static WeaponSkyblue = class WeaponSkyBlue extends WeaponData {
+    static hitEffect = new CustomEffect(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.skyblueSplash, 120, 120, 1)
+
+    constructor () {
+      super()
+      this.isChaseType = true
+      this.setMultiTarget(10) // 다수 타겟 타격 설정 가능 -> 스플래시 데미지
+      this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.skyblueShot)
+    }
+
+    processAttack () {
+      if (this.enemyHitedCheck()) {
+        BaseField.createEffect(WeaponSkyBlue.hitEffect.getObject(), this.x, this.y)
+        this.processHitObject({x: this.x - 60, y: this.y - 60, width: 120, height: 120})
+        this.isDeleted = true
+      }
+    }
+  }
+
+  /** 초록색 무기: 정해진 방향(앞, 뒤, 혼합)으로만 발사됨 */
+  static WeaponGreen = class extends WeaponData {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.greenShot)
+    }
+  }
+
+  /** 검정색 무기: 적에 닿으면 튕겨지고 적을 관통함 */
+  static WeaponBalck = class extends WeaponData {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.blackShot)
+      this.repeatCount = 6 // 한개의 무기가 최대로 공격하는 횟수: 6
+      /** 벽 튕기기 횟수 (이 숫자가 0이되면 무기는 사라짐) */ this.reflectCount = 10
+      this.setMoveSpeed(5, 5)
+    }
+
+    process () {
+      super.process()
+
+      if (this.enemyHitedCheck()) {
+        this.setMoveSpeed(this.moveSpeedX *= -1, this.moveSpeedY *= -1)
+      }
+
+      // 벽 튕기기: 벽은 화면 기준
+      if (this.x + this.width < 0) {
+        this.moveSpeedX = Math.abs(this.moveSpeedX)
+        this.x = 0 - this.width + 1
+        this.reflectCount--
+      }
+      if (this.y + this.height < 0) {
+        this.moveSpeedY = Math.abs(this.moveSpeedY)
+        this.y = 0 - this.height + 1
+        this.reflectCount--
+      }
+      if (this.x > graphicSystem.CANVAS_WIDTH) {
+        this.moveSpeedX = -Math.abs(this.moveSpeedX)
+        this.x = graphicSystem.CANVAS_WIDTH - 1
+        this.reflectCount--
+      }
+      if (this.y > graphicSystem.CANVAS_HEIGHT) {
+        this.moveSpeedY = -Math.abs(this.moveSpeedY)
+        this.y = graphicSystem.CANVAS_HEIGHT - 1
+        this.reflectCount--
+      }
+
+      if (this.reflectCount <= 0) {
+        this.isDeleted = true
+      }
+    }
+  }
+
+  static WeaponPink = class WeaponPink extends WeaponData {
+    static hitEffect = new CustomEffect(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.pinkShot, undefined, undefined, 3)
+
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.pinkShot)
+      this.repeatCount = 2
+      this.effectDelay = new DelayData(4)
+      this.attackDelay = new DelayData(4)
+      this.setMultiTarget(6)
+      this.setMoveSpeed(10, 0)
+    }
+
+    /** 적 추적 시작을 위한 함수 (참고: 생성자에서는 현재 좌표값이 0이라 현재위치에서 시작하지 않을 수 있음) */
+    setStartChase () {
+      let enemy = fieldState.getRandomEnemyObject()
+      if (enemy != null) {
+        this.setMoveSpeed((enemy.x - this.x) / 50, (enemy.y - this.y) / 50)
+      }
+    }
+
+    processMove () {
+      super.processMove()
+      if (this.effectDelay.check()) {
+        BaseField.createEffect(WeaponPink.hitEffect, this.x, this.y)
+      }
+    }
+
+    processAttack () {
+      if (this.attackDelay.check(false) && this.enemyHitedCheck()) {
+        this.processHitObject()
+        this.repeatCount--
+        this.attackDelay.count = 0
+      }
+    }
+  }
+
+  static WeaponPurple = class WeaponPurple extends WeaponData {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.purpleShot)
+      this.message = 'purple'
+      this.BASE_WIDTH = this.width
+      this.BASE_HEIGHT = this.height
+      this.setMoveSpeed(20, 0)
+      this.repeatCount = 5
+      this.reflectCount = 10
+      this.setMultiTarget(4)
+    }
+
+    processMove () {
+      super.processMove()
+      if (this.x + this.width < 0) {
+        this.x = 0
+        this.moveSpeedX = 20
+        this.reflectCount--
+      } else if (this.x > graphicSystem.CANVAS_WIDTH) {
+        this.x = graphicSystem.CANVAS_WIDTH
+        this.moveSpeedX = -20
+        this.reflectCount--
+      }
+
+      if (this.reflectCount <= 0) {
+        this.isDeleted = true
+      }
+
+      // 높이가 시간이 지나면서 증가, (단 y축 한정)
+      let height = this.BASE_HEIGHT + this.elapsedFrame
+      if (height > this.BASE_HEIGHT * 4) height = this.BASE_HEIGHT * 4
+      this.setWidthHeight(this.BASE_WIDTH, height)
+
+      // y축 위치 재조정 (중앙에 배치되도록)
+      if (this.elapsedFrame < this.BASE_HEIGHT * 3) {
+        this.y -= 0.5
+      }
+    }
+  }
+}
+
+class Round3Templete extends RoundData {
+  constructor () {
+    super()
+    this.playerOption = new Round3TempletePlayerOption()
+    this.playerOption.reset()
   }
 
   process () {
@@ -7790,455 +8319,76 @@ class Round3_test extends RoundData {
     super.display()
     this.playerOption.display()
   }
+}
 
-  PlayerOption = class PlayerOption extends FieldData {
-    /** purple의 선 표시용도(서로의 위치를 기준으로 선을 4개 그립니다.) */ 
-    static purpleLine = {x: 0, y: 0, width: 0, height: 0, x2: 0, y2: 0, width2: 0, height2: 0, isTargetHit: false}
+class Round3_1 extends Round3Templete {
+  constructor () {
+    super()
+    this.stat.setStat(ID.round.round3_1)
+    this.sound.musicSrc = soundSrc.music.music16_down_tower
 
-    constructor () {
-      super()
-      /** 플레이어 위치 기준 옵션의 상대 위치값 X좌표 @type {number} */ this.POSITION_X = 50
-      /** 플레이어 위치 기준 옵션의 상대 위치값 첫번째 옵션의 Y좌표 @type {number} */ this.POSITION_Y = -10
-      /** 옵션의 현재 색 @type {string} */ this.color = ''
-      /** 현재 옵션의 레벨 (게임 도중에 리셋되지 않습니다.), 이 값을 수정하려면 setLevel을 사용해주세요. @type {number} */ this.level = 0
-      /** 옵션의 최대 레벨 @type {number} */ this.LEVEL_MAX = 4
-      /** 현재 레벨에 따른 dps퍼센트값 기준 @type {number[]} */ this.dpsPercentLevel = [40, 50, 60, 80, 100]
-      this.imageSrc = imageSrc.round.round3_optionWeapon
-      /** 옵션을 가지고 있는 여부 @type {boolean} */ this.hasOption = false
-      /** 옵션의 무기 발사에 대한 지연시간 카운터 */ this.delayCount = 0
-      
+    this.bgLayer.addLayerImage(imageSrc.round.round3_1_level1, 1)
+    this.bgLayer.addLayerImage(imageSrc.round.round3_1_level2, 0)
+    this.bgLayer.addLayerImage(imageSrc.round.round3_1_level3, 0)
+    this.bgLayer.addLayerImage(imageSrc.round.round3_1_level4, 0)
+    this.bgLayer.setBackgroundSpeed(0.4, 2)
 
-      /** 옵션이 가지고 있는 기본적인 공격력 (다운타워의 cp랑 관련되어있음. 다만 값은 수동으로 설정해야함) 
-       * 만약 다운타워의 baseCp(기본전투력)가 수정되었을 때 이 값을 수정하지 않으면 밸런스적으로 문제가 발생할 수 있음. */ 
-      this.BASE_ATTACK = 70000
+    this.phase.addRoundPhase(this, this.roundPhase00, 0, 30)
+  }
 
-      /** 초당 프레임 횟수: 게임 기본값 60, 이 값을 기준으로 각 무기들의 delay가 결정됩니다. */
-      this.FRAME_PER_SECOND = 60
-
-      /**
-       * @typedef optionInfo 옵션에 대한 정보
-       * @property {number[]} shotPerSecond 초당 발사 횟수
-       * @property {number[]} shotPerCount 한번의 샷 당 동시에 발사하는 횟수
-       */
-      /** 
-       * 옵션에 대한 확장 정보 
-       */ 
-      this.optionInfo = {
-        /** @type {optionInfo} */ orange: {shotPerSecond: [2, 3, 4, 5, 6], shotPerCount: [4, 4, 4, 4, 4]},
-        /** @type {optionInfo} */ green: {shotPerSecond: [5, 6, 10, 12, 15], shotPerCount: [4, 4, 4, 4, 4]},
-        /** @type {optionInfo} */ skyblue: {shotPerSecond: [2, 2, 2, 2, 2], shotPerCount: [2, 2, 2, 3, 3]},
-        /** @type {optionInfo} */ black: {shotPerSecond: [2, 2, 2, 2, 2], shotPerCount: [2, 2, 2, 2, 2]},
-        /** @type {optionInfo} */ pink: {shotPerSecond: [1, 1, 1, 1, 1], shotPerCount: [2, 2, 2, 2, 2]},
-        /** @type {optionInfo} */ purple: {shotPerSecond: [4, 6, 8, 10, 12], shotPerCount: [1, 1, 1, 1, 1]}
+  roundPhase00 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    
+    if (this.timeCheckInterval(2, 5, 60)) {
+      for (let i = 0; i < 5; i++) {
+        this.field.createEnemy(ID.enemy.towerG1.moveBlue)
       }
-
-      /** 옵션에서 사용하는 color의 리스트 */
-      this.colorList = {
-        orange: 'orange',
-        skyblue: 'skyblue',
-        green: 'green',
-        black: 'black',
-        pink: 'pink',
-        purple: 'purple',
+    } else if (this.timeCheckInterval(7, 9, 60)) {
+      for (let i = 0; i < 5; i++) {
+        this.field.createEnemy(ID.enemy.towerG1.moveViolet)
       }
-
-      // 임시 이미지 설정
-      this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.orange, 3)
-
-      
-      /** 옵션에서 관리하는 무기의 오브젝트 @type {WeaponData[]} */
-      this.weaponObject = []
+    } else if (this.timeCheckInterval(12, 14, 60)) {
+      for (let i = 0; i < 5; i++) {
+        this.field.createEnemy(ID.enemy.towerG1.moveDarkViolet)
+      }
+    } else if (this.timeCheckInterval(16, 25, 60)) {
+      for (let i = 0; i < 2; i++) {
+        this.field.createEnemy(ID.enemy.towerG1.moveBlue)
+        this.field.createEnemy(ID.enemy.towerG1.moveViolet)
+        this.field.createEnemy(ID.enemy.towerG1.moveDarkViolet)
+      }
+    } else if (this.timeCheckInterval(27, 32, 30)) {
+      this.field.createEnemy(ID.enemy.towerG1.moveYellowEnergy)
     }
+  }
+}
 
-    /**
-     * 옵션의 현재 색을 설정합니다.
-     * @param {string} color 
-     */
-    setColor (color) {
-      this.color = color
-      switch (color) {
-        case this.colorList.orange: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.orange, 3); break
-        case this.colorList.skyblue: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.skyblue, 3); break
-        case this.colorList.green: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.green, 3); break
-        case this.colorList.black: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.black, 3); break
-        case this.colorList.pink: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.pink, 3); break
-        case this.colorList.purple: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.purple, 3); break
+class Round3_test extends Round3Templete {
+  constructor () {
+    super()
+    this.stat.setStat(ID.round.round3_test)
+    this.phase.addRoundPhase(this, () => {
+      if (this.timeCheckInterval(0, 999, 60)) {
+        
       }
+
+      if (this.timeCheckFrame(0, 20)) {
+        this.playerOption.createOptionItem(this.playerOption.colorList.orange)
+      }
+    }, 0, 999)
+  }
+
+  process () {
+    super.process()
+    // this.playerOption.process()
+  }
+
+  display () {
+    super.display()
+    if (this.playerOption.optionObject[0]) {
+      graphicSystem.fillText(this.playerOption.optionObject[0].x + ', ' + this.playerOption.optionObject[0].y + ', ' + this.playerOption.optionObject[0].color + ', spd: ' + this.playerOption.optionObject[0].moveSpeedX, 0, 0, 'white')
     }
-
-    /** 옵션의 정보를 저장하고 있는 문자열 데이터를 얻어옵니다. */
-    getSaveString () {
-      return '' + this.level + ' ' + this.color
-    }
-
-    /**
-     * 옵션의 정보를 저장하고 있는 문자열을 사용하여 재설정하는 함수
-     * 
-     * 저장 형식은 getSaveString 함수 내부 참조
-     * @param {string} str 
-     */
-    setLoadString (str) {
-      let text = str.split(' ')
-      this.level = Number(text[0])
-      this.color = text[1]
-    }
-
-    /** 현재 옵션의 정보를 현재 레벨에 맞추어 가져옵니다. (현재 색에 따라 얻어오는 정보는 달라짐) */
-    getCurrentOptionInfo () {
-      let shotPerCount, shotPerSecond
-      let currentInfo
-      switch (this.color) {
-        case this.colorList.green: currentInfo = this.optionInfo.green; break
-        case this.colorList.orange: currentInfo = this.optionInfo.orange; break
-        case this.colorList.skyblue: currentInfo = this.optionInfo.skyblue; break
-        case this.colorList.black: currentInfo = this.optionInfo.black; break
-        case this.colorList.pink: currentInfo = this.optionInfo.pink; break
-        case this.colorList.purple: currentInfo = this.optionInfo.purple; break
-        default: currentInfo = this.optionInfo.orange; break
-      }
-
-      shotPerCount = currentInfo.shotPerCount[this.level]
-      shotPerSecond = currentInfo.shotPerSecond[this.level]
-
-      return {
-        shotPerCount,
-        shotPerSecond
-      }
-    }
-
-    /** 
-     * 옵션의 레벨을 설정 (참고: 옵션의 최대 레벨을 넘길경우 오류가 발생할 수 있으므로 해당 함수를 사용하여 옵션의 레벨을 변경해주세요.) 
-     * @param {number} level 설정할 레벨
-     * */
-    setLevel (level) {
-      if (level >= 0 && level <= this.LEVEL_MAX) {
-        this.level = level
-      }
-    }
-
-    /** 현재 옵션의 공격력을 색의 정보와 레벨에 맞추어 얻어옵니다. (참고: 옵션의 기본 공격력은 BASE_ATTACK에 정의되어있습니다.) */
-    getAttack () {
-      let count = this.getCurrentOptionInfo().shotPerCount
-      let perSecond = this.getCurrentOptionInfo().shotPerSecond
-      let mul = 1
-      if (this.color === this.colorList.green) mul = 1.5
-      if (this.color === this.colorList.skyblue) mul = 0.8
-      if (this.color === this.colorList.black) mul = 0.2 // 0.2 * 6 = 1.2 (black은 무기 공격횟수가 6입니다.)
-      if (this.color === this.colorList.pink) mul = 0.45 // 0.45 * 2 = 0.9 (pink는 2회 스플래시 공격)
-
-      // 공식: 기본 공격력 / 샷 카운트 수 / 초당 발사 횟수 * dps의 백뷴율 (최종 결과값에 소수점 버림) * 무기의 배율
-      let attack = (this.BASE_ATTACK / count / perSecond) * (this.dpsPercentLevel[this.level] / 100) * mul
-      return Math.floor(attack)
-    }
-
-    attackOrange () {
-      let count = this.getCurrentOptionInfo().shotPerCount
-      for (let i = 0; i < count; i++) {
-        let weapon = new PlayerOption.WeaponOrange()
-        weapon.x = this.x
-        weapon.y = this.y + (i * 10)
-        weapon.attack = this.getAttack()
-        this.weaponObject.push(weapon)
-      }
-    }
-
-    attackGreen () {
-      let count = this.getCurrentOptionInfo().shotPerCount
-      for (let i = 0; i < count; i++) {
-        let weapon = new PlayerOption.WeaponGreen()
-        weapon.x = this.x
-        weapon.y = i === count - 1 ? this.y + 15 : this.y + (i * 15) // 1개의 샷은 backshot(뒤로 발사함) 입니다.
-        weapon.moveSpeedX = i === count - 1 ? -30 : 30 // 1개의 샷은 backshot(뒤로 발사함) 입니다.
-        weapon.attack = this.getAttack()
-        this.weaponObject.push(weapon)
-      }
-    }
-
-    attackSkyblue () {
-      let count = this.getCurrentOptionInfo().shotPerCount
-      for (let i = 0; i < count; i++) {
-        let weapon = new PlayerOption.WeaponSkyblue()
-        weapon.x = this.x
-        weapon.y = this.y + (i * 40)
-        weapon.attack = this.getAttack()
-        this.weaponObject.push(weapon)
-      }
-    }
-
-    attackBlack () {
-      let count = this.getCurrentOptionInfo().shotPerCount
-      let level = this.level
-      let speedTable = [6, 9, 12, 15, 18]
-      for (let i = 0; i < count; i++) {
-        let weapon = new PlayerOption.WeaponBalck()
-        weapon.x = this.x
-        weapon.y = this.y
-        weapon.attack = this.getAttack()
-
-        if (i === 0) weapon.setMoveSpeed(10, -speedTable[level]) 
-        if (i === 1) weapon.setMoveSpeed(10, speedTable[level]) // 한쪽 무기는 y축 이동방향이 반대입니다.
-
-        this.weaponObject.push(weapon)
-      }
-    }
-
-    attackPink () {
-      let count = this.getCurrentOptionInfo().shotPerCount
-      for (let i = 0; i < count; i++) {
-        let weapon = new PlayerOption.WeaponPink()
-        weapon.x = this.x
-        weapon.y = this.y
-        weapon.setStartChase() // 적 추적 좌표를 설정하기 위해서 사용
-        weapon.attack = this.getAttack()
-        this.weaponObject.push(weapon)
-      }
-    }
-
-    attackPurple () {
-      let count = this.getCurrentOptionInfo().shotPerCount
-      for (let i = 0; i < count; i++) {
-        let weapon = new PlayerOption.WeaponPurple()
-        weapon.x = this.x
-        weapon.y = this.y
-        weapon.attack = this.getAttack()
-        this.weaponObject.push(weapon)
-      }
-    }
-
-    processAttack () {
-      let delay = this.FRAME_PER_SECOND / this.getCurrentOptionInfo().shotPerSecond
-
-      this.delayCount++
-      if (this.delayCount > delay) {
-        this.delayCount -= delay
-        switch (this.color) {
-          case this.colorList.orange: this.attackOrange(); break
-          case this.colorList.green: this.attackGreen(); break
-          case this.colorList.skyblue: this.attackSkyblue(); break
-          case this.colorList.black: this.attackBlack(); break
-          case this.colorList.pink: this.attackPink(); break
-          case this.colorList.purple: this.attackPurple(); break
-        }
-      }
-    }
-
-    processWeapon () {
-      for (let i = 0; i < this.weaponObject.length; i++) {
-        this.weaponObject[i].process()
-
-        if (this.weaponObject[i].message === 'purple') {
-          let p = PlayerOption.purpleLine
-          p.x2 = this.weaponObject[i].x
-          p.y2 = this.weaponObject[i].y
-          p.width2 = this.weaponObject[i].width
-          p.height2 = this.weaponObject[i].height
-        }
-      }
-
-      if (this.color === this.colorList.purple) {
-        let p = PlayerOption.purpleLine
-        p.x = this.x
-        p.y = this.y
-        p.width = this.width
-        p.height = this.height
-      }
-
-      // weaponObject delete (버그 방지를 위해 삭제 코드를 처리 코드와 분리함)
-      for (let i = 0; i < this.weaponObject.length; i++) {
-        if (this.weaponObject[i].isDeleted) {
-          this.weaponObject.splice(i, 1)
-        }
-      }
-    }
-
-    processMove () {
-      let player = BaseField.getPlayerObject()
-      this.x = player.x + this.POSITION_X
-      this.y = player.y + this.POSITION_Y
-    }
-
-    process () {
-      super.process()
-      if (this.color === '') return
-
-      // processMove는 super.process에서 처리하므로 따로 명시할 필요가 없습니다.
-      this.processAttack()
-      this.processWeapon()
-    }
-
-    display () {
-      if (this.color !== '') {
-        for (let i = 0; i < this.weaponObject.length; i++) {
-          this.weaponObject[i].display()
-        }
-
-        this.displayPurpleLine()
-        super.display()
-      }
-    }
-
-    displayPurpleLine () {
-      if (this.color === this.colorList.purple) {
-        let p = PlayerOption.purpleLine
-        graphicSystem.fillLine(p.x, p.y, p.x2, p.y2, 'purple') // 1번째 선 (대각선 위 왼쪽)
-        graphicSystem.fillLine(p.x + p.width, p.y, p.x2 + p.width2, p.y2, 'purple') // 2번째 선 (대각선 위 오른쪽)
-        graphicSystem.fillLine(p.x, p.y + p.height, p.x2, p.y2 + p.height2, 'purple') // 3번째 선 (대각선 아래 왼쪽)
-        graphicSystem.fillLine(p.x + p.width, p.y + p.height, p.x2 + p.width2, p.y2 + p.height2, 'purple') // 4번째 선 (대각선 아래 오른쪽)
-      }
-    }
-
-    /** 주황색 무기: 적을 추적하는 형태 */
-    static WeaponOrange = class extends WeaponData {
-      constructor () {
-        super()
-        this.isLineChase = true
-        this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.orangeShot)
-      }
-    }
-
-    /** 하늘색 무기: 적에게 닿으면 스플래시 데미지 (자동 추적 기능) */
-    static WeaponSkyblue = class WeaponSkyBlue extends WeaponData {
-      static hitEffect = new CustomEffect(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.skyblueSplash, 120, 120, 1)
-
-      constructor () {
-        super()
-        this.isChaseType = true
-        this.setMultiTarget(10) // 다수 타겟 타격 설정 가능 -> 스플래시 데미지
-        this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.skyblueShot)
-      }
-
-      processAttack () {
-        if (this.enemyHitedCheck()) {
-          BaseField.createEffect(WeaponSkyBlue.hitEffect.getObject(), this.x, this.y)
-          this.processHitObject({x: this.x - 60, y: this.y - 60, width: 120, height: 120})
-          this.isDeleted = true
-        }
-      }
-    }
-
-    /** 초록색 무기: 정해진 방향(앞, 뒤, 혼합)으로만 발사됨 */
-    static WeaponGreen = class extends WeaponData {
-      constructor () {
-        super()
-        this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.greenShot)
-      }
-    }
-
-    /** 검정색 무기: 적에 닿으면 튕겨지고 적을 관통함 */
-    static WeaponBalck = class extends WeaponData {
-      constructor () {
-        super()
-        this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.blackShot)
-        this.repeatCount = 6 // 한개의 무기가 최대로 공격하는 횟수: 6
-        /** 벽 튕기기 횟수 (이 숫자가 0이되면 무기는 사라짐) */ this.reflectCount = 10
-        this.setMoveSpeed(5, 5)
-      }
-
-      process () {
-        super.process()
-
-        if (this.enemyHitedCheck()) {
-          this.setMoveSpeed(this.moveSpeedX *= -1, this.moveSpeedY *= -1)
-        }
-
-        // 벽 튕기기: 벽은 화면 기준
-        if (this.x + this.width < 0) {
-          this.moveSpeedX = Math.abs(this.moveSpeedX)
-          this.x = 0 - this.width + 1
-          this.reflectCount--
-        }
-        if (this.y + this.height < 0) {
-          this.moveSpeedY = Math.abs(this.moveSpeedY)
-          this.y = 0 - this.height + 1
-          this.reflectCount--
-        }
-        if (this.x > graphicSystem.CANVAS_WIDTH) {
-          this.moveSpeedX = -Math.abs(this.moveSpeedX)
-          this.x = graphicSystem.CANVAS_WIDTH - 1
-          this.reflectCount--
-        }
-        if (this.y > graphicSystem.CANVAS_HEIGHT) {
-          this.moveSpeedY = -Math.abs(this.moveSpeedY)
-          this.y = graphicSystem.CANVAS_HEIGHT - 1
-          this.reflectCount--
-        }
-
-        if (this.reflectCount <= 0) {
-          this.isDeleted = true
-        }
-      }
-    }
-
-    static WeaponPink = class WeaponPink extends WeaponData {
-      static hitEffect = new CustomEffect(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.pinkShot, undefined, undefined, 3)
-
-      constructor () {
-        super()
-        this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.pinkShot)
-        this.repeatCount = 2
-        this.effectDelay = new DelayData(5)
-        this.attackDelay = new DelayData(10)
-        this.setMultiTarget(6)
-        this.setMoveSpeed(10, 0)
-      }
-
-      /** 적 추적 시작을 위한 함수 (참고: 생성자에서는 현재 좌표값이 0이라 현재위치에서 시작하지 않을 수 있음) */
-      setStartChase () {
-        let enemy = fieldState.getRandomEnemyObject()
-        if (enemy != null) {
-          this.setMoveSpeed((enemy.x - this.x) / 50, (enemy.y - this.y) / 50)
-        }
-      }
-
-      processMove () {
-        super.processMove()
-        if (this.effectDelay.check()) {
-          BaseField.createEffect(WeaponPink.hitEffect, this.x, this.y)
-        }
-      }
-
-      processAttack () {
-        if (this.attackDelay.check(false) && this.enemyHitedCheck()) {
-          this.processHitObject()
-          this.repeatCount--
-          this.attackDelay.count = 0
-        }
-      }
-    }
-
-    static WeaponPurple = class WeaponPurple extends WeaponData {
-      static hitEffect = new CustomEffect(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.purpleShot)
-
-      constructor () {
-        super()
-        this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.purpleShot)
-        this.message = 'purple'
-      }
-
-      processMove () {
-        // 일정시간 동안 무기가 적을 타겟하지 못하면 삭제함
-        if (this.elapsedFrame >= 9) {
-          this.isDeleted = true
-        }
-
-        let enemy = fieldState.getRandomEnemyObject()
-        if (enemy == null) return
-
-        let hitArea = {x: this.x - 300, y: this.y - 300, width: 600, height: 600}
-        if (collision(hitArea, enemy)) {
-          this.x = enemy.x
-          this.y = enemy.y
-          this.width = enemy.width
-          this.height = enemy.height
-          let effect = BaseField.createEffect(WeaponPurple.hitEffect, this.x, this.y)
-          if (effect != null) {
-            effect.setWidthHeight(enemy.width, enemy.height)
-          }
-        }
-      }
-
-    }
-
+    // this.playerOption.display()
   }
 }
 
@@ -8261,5 +8411,6 @@ dataExportRound.set(ID.round.round2_4, Round2_4)
 dataExportRound.set(ID.round.round2_5, Round2_5)
 dataExportRound.set(ID.round.round2_6, Round2_6)
 dataExportRound.set(ID.round.round2_test, Round2_test)
+dataExportRound.set(ID.round.round3_1, Round3_1)
 dataExportRound.set(ID.round.round3_test, Round3_test)
 

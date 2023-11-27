@@ -380,7 +380,7 @@ class BiosSystem {
        'MUSIC: ' + this.bios.soundTestMusicNumber + ' time: ' + musicTime + '/' + musicDuration,
        'MUSIC SRC: ' + soundList[this.bios.soundTestMusicNumber],
        '' ],
-      ['SOUND SELECT: ' + this.bios.soundTestNumber + ' / ' + soundList.length,
+      ['SOUND SELECT: ' + this.bios.soundTestNumber + ' / ' + (soundList.length - 1),
       'SOUND PLAY' + (soundAvailable ? '' : '- NOT AVAILABLE'),
       'MUSIC PLAY' + (musicAvailable ? '' : '- NOT AVAILABLE'),
       'MUSIC PLAY FADE IN' + (musicAvailable ?  '' : '- NOT AVAILABLE'),
@@ -634,7 +634,7 @@ class BiosSystem {
     
     this.bios.imageTest.textEdit([
       'IMAGE TEST',
-      'image number: ' + this.bios.imageTestNumber + '/' + imageList.length,
+      'image number: ' + this.bios.imageTestNumber + '/' + (imageList.length - 1),
       'x: ' + imgO.x + ', y: ' + imgO.y,
       'flip: ' + imgO.flip + ', degree: ' + imgO.degree + '/360, alpha: ' + imgO.alpha], 
       [],
@@ -670,7 +670,7 @@ class BiosSystem {
     if (buttonR2) this.bios.imageTestNumber += 10
     if (this.bios.imageTestNumber < 0) {
       if (imageList.length === 0) this.bios.imageTestNumber = 0
-      else imageList.length - 1
+      else this.bios.imageTestNumber = imageList.length - 1
     }
     if (this.bios.imageTestNumber >= imageList.length) this.bios.imageTestNumber = 0
     

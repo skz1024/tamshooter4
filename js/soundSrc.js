@@ -193,6 +193,7 @@ export class soundSrc {
     r2_4_message1: './sound/round2_4_message1.ogg',
     r2_5_start: './sound/round2_5_start.ogg',
     r2_5_breakRoom: './sound/round2_5_breakRoom.ogg',
+    r3_playerOption: './sound/round3_playerOption.ogg'
   }
 
   static donggrami = {

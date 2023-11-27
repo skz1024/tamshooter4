@@ -389,6 +389,9 @@ export class SoundSystem {
     PLAYING: 'playing',
     NODATA: 'nodata'
   }
+
+  /** 현재 재생중인 음악의 경로 */
+  currentMusicSrc = ''
   
   /**
    * (해당 오디오 파일을 음악으로 처리함) 음악을 재생합니다. (버퍼는 사용할 수 없음)
@@ -402,6 +405,7 @@ export class SoundSystem {
    */
   musicPlay (audioSrc = '', start = 0, fadeInSecond = 0) {
     if (audioSrc === '') return
+    this.currentMusicSrc = audioSrc // 음악 경로 지정
 
     // 음악 불러오기
     let getMusic = this.getCacheAudio(audioSrc)
@@ -414,7 +418,14 @@ export class SoundSystem {
     // 현재 재생중인 음악과 다른지를 확인
     // 재생중인 음악이 다를경우 새로운 음악으로 교체
     if (this.currentMusic !== getMusic) {
-      this.musicStop() // 기존의 음악을 먼저 정지시킴
+      // 기존 음악 정지 (musicStop을 호출하면 음악 데이터가 사라지기때문에, 일부 코드만 복사함)
+      if (this.currentMusic instanceof HTMLMediaElement) {
+        this.currentMusic.currentTime = 0
+        this.currentMusic.pause()
+      } else if (this.currentMusic instanceof AudioBufferSourceNode) {
+        this.currentMusic.stop()
+      }
+
       this.currentMusic = getMusic
       this.currentMusicNode = getNode
       if (start >= 0 && start <= getMusic.duration) {
@@ -483,6 +494,7 @@ export class SoundSystem {
     }
 
     this.currentMusic = null
+    this.currentMusicSrc = ''
     this.currentMusicState = this.musicStateList.STOP
   }
 
@@ -495,6 +507,21 @@ export class SoundSystem {
       this.currentMusic.stop()
       this.currentMusic = null
       this.currentMusicState = this.musicStateList.PAUSE
+    }
+  }
+
+  musicResume () {
+    if (this.currentMusic instanceof HTMLMediaElement) {
+      // 음악을 특정 지점부터 다시 재생
+      // 이렇게 하는 이유는 audioContext를 연결하기 위해서입니다. (musicPlay에서 연결함)
+      // 음악을 노드에 연결 (정지되면 자동으로 연결 해제됩니다.)
+      let getNode = this.getCacheAudioNode(this.currentMusicSrc)
+      if (getNode != null) getNode.connect(this.audioNode.musicFirstGain)
+      this.currentMusic.play()
+    } else if (this.currentMusic instanceof AudioBufferSourceNode) {
+      //
+    } else if (this.currentMusic == null && this.currentMusicSrc !== '') {
+      this.musicPlay(this.currentMusicSrc)
     }
   }
 
