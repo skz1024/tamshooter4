@@ -25,8 +25,9 @@ export class ImageDataObject {
  */
 export class imageSrc {
   static system = {
-    digitalFontBig: './image/system/digitalFont.png',
+    digitalFont: './image/system/digitalFont.png',
     digitalFontSmall: './image/system/digitalFontSmall.png',
+    digitalFontBig: './image/system/digitalFontBig.png',
     playerImage: './image/system/playerImage.png',
     damageFont: './image/system/damageFont.png',
     skillNumber: './image/system/skillNumber.png',
@@ -142,7 +143,8 @@ export class imageSrc {
     round2_6_ruin1: './image/round/round2_6_ruin1.png',
     round2_6_ruin2: './image/round/round2_6_ruin2.png',
     round2_6_quiteRoad: './image/round/round2_6_quiteRoad.png',
-    round3_optionWeapon: './image/round/round3_optionWeapon.png',
+    round3_playerOption: './image/round/round3_playerOption.png',
+    round3_bossWarning: './image/round/round3_bossWarning.png',
     round3_1_level1: './image/round/round3_1_level1.png',
     round3_1_level2: './image/round/round3_1_level2.png',
     round3_1_level3: './image/round/round3_1_level3.png',
@@ -404,8 +406,8 @@ export class imageDataInfo {
     energyReflect: {x: 0, y: 1430, width: 50, height: 50, frame: 10},
     lightMetal: {x: 0, y: 1480, width: 50, height: 50, frame: 15},
     lightDiacore: {x: 0, y: 1530, width: 50, height: 50, frame: 15},
-    leverMissileBomb: {x: 0, y: 1350, width: 80, height: 80, frame: 10},
-    hanoiRing: {x: 0, y: 1430, width: 100, height: 40, frame: 7},
+    leverMissileBomb: {x: 800, y: 1350, width: 80, height: 80, frame: 10},
+    hanoiRing: {x: 800, y: 1430, width: 100, height: 40, frame: 7},
     leverLaser: {x: 500, y: 1380, width: 30, height: 100, frame: 1},
     flyingGreenLaser: {x: 540, y: 1450, width: 50, height: 10, frame: 1},
     leverMissileLeft: {x: 540, y: 1380, width: 60, height: 60, frame: 1},
@@ -588,6 +590,12 @@ export class imageDataInfo {
     pinkItem: new ImageDataObject(160, 120, 40, 40, 1),
     purpleItem: new ImageDataObject(200, 120, 40, 40, 1),
     skyblueSplash: new ImageDataObject(0, 300, 60, 60, 10)
+  }
+
+  static round3_bossWarning = {
+    warning: new ImageDataObject(0, 0, 660, 120),
+    lightRed: new ImageDataObject(0, 120, 660, 120),
+    red: new ImageDataObject(0, 240, 660, 120),
   }
 
   static weapon = {

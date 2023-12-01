@@ -557,7 +557,12 @@ export class CustomEnemyBullet extends EnemyBulletData {
     this.setMoveSpeed(moveSpeedX, moveSpeedY)
   }
 
-  /** 새 오브젝트 불릿 객체를 생성합니다. 이 객체를 필드 데이터에 넘겨주세요. */
+  /**
+   * 해당 함수는 현재 데이터를 바탕으로 CustomEnemyBullet을 생성하지만
+   * 상속이 되지 않은 채로 불릿이 생성되므로, 불릿 자체의 특수기능같은것이 있다면
+   * 이 함수를 사용하지 말고, 대신 new 를 이용해 객체를 생성해야 합니다.
+   * @deprecated
+  */
   getCreateObject () {
     return new CustomEnemyBullet(this.imageSrc, this.imageData, this.attack, this.moveSpeedX, this.moveSpeedY, this.moveDirectionX, this.moveDirectionY)
   }
@@ -4001,7 +4006,7 @@ class DonggramiEnemyTalk extends DonggramiEnemy {
   displayTalk () {
     if (this.state !== this.STATE_TALK && this.state !== this.STATE_CATCH) return
 
-    const fontSize = game.graphic.FONT_SIZE
+    const fontSize = graphicSystem.getCanvasFontSize()
     const padding = 10
 
     // 텍스트는 한 줄에 10글자까지 출력 가능합니다. 그래서 10글자가 넘는다면, 1줄씩 증가합니다.
@@ -6796,7 +6801,7 @@ class TowerEnemyGroup1MoveViolet extends TowerEnemyGroup1MoveBlue {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.moveViolet, 4)
-    this.setEnemyByCpStat(6, 6)
+    this.setEnemyByCpStat(4, 6)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerMoveViolet, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareDarkViolet)
     this.moveDelay.delay = 30
   }
@@ -6827,6 +6832,7 @@ class TowerEnemyGroup1MoveDarkViolet extends TowerEnemyGroup1MoveBlue {
     this.AXIS_Y = 'y'
     this.axis = this.AXIS_X
     this.isExitToReset = true
+    this.setMoveDirection(FieldData.direction.LEFT, '')
   }
 
   processMoveSpeed () {
@@ -7019,7 +7025,7 @@ class TowerEnemyGroup1Tapo extends TowerEnemy {
     this.setEnemyByCpStat(100, 16)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerTapo, imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDieTapo, 6)
     this.tapoEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.tapoEnimation, 2)
-    this.attackDelay = new DelayData(120 + Math.floor(Math.random() * 6))
+    this.attackDelay = new DelayData(180 + Math.floor(Math.random() * 6))
     this.setMoveSpeed(0.5, 0)
     this.isExitToReset = true
   }
@@ -7216,7 +7222,7 @@ class TowerEnemyGroup1Daepo extends TowerEnemy {
     this.STATE_STOP = 'stop'
     this.state = this.STATE_NORMAL
     this.moveDelay = new DelayData(60 + Math.floor(Math.random() * 12))
-    this.attackDelay = new DelayData(120)
+    this.attackDelay = new DelayData(180)
     this.isPossibleExit = false
     this.degreeSpeed = Math.floor(Math.random() * 4) + 6
     this.setRandomMoveSpeed(5, 3)
@@ -7280,7 +7286,7 @@ class TowerEnemyGroup1HellTemplet extends TowerEnemy {
 
   constructor () {
     super()
-    this.attackDelay = new DelayData(120)
+    this.attackDelay = new DelayData(180)
     this.moveDelay = new DelayData(60)
     this.isExitToReset = true
     /** 특정 위치를 기준으로 이동속도를 계산하는 값 */ this.targetMoveSpeedX = 0
@@ -7391,8 +7397,8 @@ class TowerEnemyGroup1Helljeon extends TowerEnemyGroup1HellTemplet {
     if (this.moveDelay.check()) {
       // 플레이어를 추적하도록 속도 변경
       let player = fieldState.getPlayerObject()
-      let speedX = (player.x - this.x) / 75
-      let speedY = (player.y - this.y) / 75
+      let speedX = (player.x - this.x) / 120
+      let speedY = (player.y - this.y) / 120
 
       if (speedX <= 2 && speedX >= 0) speedX = 2
       if (speedX >= -2 && speedX <= 0) speedX = -2
@@ -7457,8 +7463,8 @@ class TowerEnemyGroup1Hellcho extends TowerEnemyGroup1HellTemplet {
   processMove () {
     super.processMove()
     if (this.moveDelay.check()) {
-      this.targetMoveSpeedX = Math.random() * 8 - 4
-      this.targetMoveSpeedY = Math.random() * 8 - 4
+      this.targetMoveSpeedX = Math.random() * 6 - 3
+      this.targetMoveSpeedY = Math.random() * 6 - 3
     }
 
     if (this.moveSpeedX >= this.targetMoveSpeedX + 0.5) this.moveSpeedX -= 0.45
@@ -7532,15 +7538,14 @@ class TowerEnemyGroup1Hellgal extends TowerEnemyGroup1HellTemplet {
     this.setEnemyByCpStat(35, 15)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHellgal)
     this.moveDelay.delay = 180
-    this.attackDelay.delay = 90
     this.dieColor = TowerEnemyGroup1HellTemplet.dieColorList.violet
   }
 
   processAttack () {
     if (this.attackDelay.check()) {
       let player = fieldState.getPlayerObject()
-      let baseSpeedX = (player.x - this.x) / 64 + (Math.random() * 4) - 2
-      let baseSpeedY = (player.y - this.y) / 64 + (Math.random() * 4) - 2
+      let baseSpeedX = (player.x - this.x) / 96 + (Math.random() * 4) - 2
+      let baseSpeedY = (player.y - this.y) / 96 + (Math.random() * 4) - 2
       for (let i = 0; i < 3; i++) {
         let bullet = TowerEnemy.bulletBlue.getCreateObject()
         bullet.moveSpeedX = baseSpeedX + (Math.random() * 2) - 1
@@ -7566,7 +7571,7 @@ class TowerEnemyGroup1LaserAlpha extends TowerEnemy {
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerLaserAlpha, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareRed)
     this.isPossibleExit = false
     this.setMoveSpeed(0, 1)
-    this.attackDelay = new DelayData(120)
+    this.attackDelay = new DelayData(300)
   }
 
   processAttack () {
@@ -7593,8 +7598,8 @@ class TowerEnemyGroup1LaserMini extends TowerEnemyGroup1LaserAlpha {
     this.setEnemyByCpStat(22, 12)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerLaserMini, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareGrey)
     this.attackDelay.delay = 60
-    this.BASE_DELAY = 30
-    this.RANDOM_DELAY = 32
+    this.BASE_DELAY = 150
+    this.RANDOM_DELAY = 16
   }
 
   processAttack () {
@@ -7611,8 +7616,8 @@ class TowerEnemyGroup1LaserMini2 extends TowerEnemyGroup1LaserMini {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.laserMiniGrey)
     this.setEnemyByCpStat(24, 12)
-    this.BASE_DELAY = 22
-    this.RANDOM_DELAY = 28
+    this.BASE_DELAY = 135
+    this.RANDOM_DELAY = 22
   }
 }
 
@@ -7620,7 +7625,7 @@ class TowerEnemyGroup1I extends TowerEnemy {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.I)
-    this.setEnemyByCpStat(200, 8)
+    this.setEnemyByCpStat(50, 8)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerI, imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDieI, 3)
     this.setRandomMoveSpeed(4, 4, true)
     this.BASE_WIDTH = this.imageData != null ? this.imageData.width : 1
@@ -7751,6 +7756,7 @@ class TowerEnemyGroup1SquareTemplete extends TowerEnemy {
   constructor () {
     super()
     this.moveDelay = new DelayData(120)
+    this.moveDelay.count = 60
   }
 
   /** 
@@ -7807,11 +7813,11 @@ class TowerEnemyGroup1SquareTemplete extends TowerEnemy {
   createNewEnemy () {
     let typeList = TowerEnemyGroup1SquareTemplete.subTypeList
     switch (this.subType) {
-      case typeList.DIAMOND: fieldState.createEnemyObject(ID.enemy.towerG1.diamondMini, this.centerX, this.centerY); break
-      case typeList.SQUARE: fieldState.createEnemyObject(ID.enemy.towerG1.octagonMini, this.centerX, this.centerY); break
-      case typeList.PENTAGON: fieldState.createEnemyObject(ID.enemy.towerG1.squareMini, this.centerX, this.centerY); break
-      case typeList.HEXAGON: fieldState.createEnemyObject(ID.enemy.towerG1.pentagonMini, this.centerX, this.centerY); break
-      case typeList.OCTAGON: fieldState.createEnemyObject(ID.enemy.towerG1.hexagonMini, this.centerX, this.centerY); break
+      case typeList.DIAMOND: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.diamondMini, this.centerX, this.centerY); break
+      case typeList.SQUARE: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.octagonMini, this.centerX, this.centerY); break
+      case typeList.PENTAGON: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.squareMini, this.centerX, this.centerY); break
+      case typeList.HEXAGON: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.pentagonMini, this.centerX, this.centerY); break
+      case typeList.OCTAGON: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.hexagonMini, this.centerX, this.centerY); break
     }
   }
 
@@ -7823,7 +7829,13 @@ class TowerEnemyGroup1SquareTemplete extends TowerEnemy {
   processMove () {
     super.processMove()
     if (this.moveDelay.check()) {
-      this.setMoveSpeed(this.moveSpeedX + Math.random() * 2 - 1, this.moveSpeedY + Math.random() * 2 - 1)
+      this.setMoveSpeed(this.moveSpeedX + Math.random() * 8 - 4, this.moveSpeedY + Math.random() * 8 - 4)
+
+      // 최소 속도 조정
+      if (this.moveSpeedX > 0 && this.moveSpeedX < 3) this.moveSpeedX = 3
+      if (this.moveSpeedX < 0 && this.moveSpeedX > -3) this.moveSpeedX = -3
+      if (this.moveSpeedY > 0 && this.moveSpeedY < 3) this.moveSpeedY = 3
+      if (this.moveSpeedY < 0 && this.moveSpeedY > -3) this.moveSpeedY = -3
     }
   }
 }
@@ -7865,8 +7877,310 @@ class TowerEnemyGroup1BossRobot extends TowerEnemy {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bossRobot)
-    this.setEnemyByCpStat(40, 12)
-    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerBossRobot1)
+    this.setEnemyByCpStat(10000, 12)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerBossRobot1, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedOrange)
+    this.dieAfterDeleteDelay = new DelayData(300)
+
+    this.STATE_ROCKET_CHASE = 'rocketChase'
+    this.STATE_ROCKET_LEFT = 'rocketLeft'
+    this.STATE_ROBOT_MOVE = 'robotMove'
+    this.STATE_ROCKET_LINE = 'rocketLine'
+    this.STATE_BEGIN_HYPER = 'beginHyper'
+    this.STATE_HYPER_MODE = 'hyperMode'
+    this.STATE_WAIT = 'wait'
+    this.state = this.STATE_WAIT
+    this.prevState = this.STATE_WAIT
+    this.stateDelay = new DelayData(120)
+    this.moveDelay = new DelayData(60)
+    this.attackDelay = new DelayData(120)
+    this.isPossibleExit = false
+
+    this.speedValueX = 0
+    this.speedValueY = 0
+
+    /** 하이퍼 모드가 되는 체력의 기준점 (배율형태로 표시 = 0.2 = 20%) */
+    this.HYPER_MODE_HP_MULTIPLE = 0.2
+  }
+
+  processState () {
+    this.processStateRandomPattern() // 1페이즈 (hp 20% 이상)
+    this.processStateHyperPattern() // 2페이즈 (hp 20% 미만)
+  }
+
+  /**
+   * 1페이즈 (hp 20% 이상)
+   * 
+   * 해당 패턴이 수행된 후 2초의 대기시간을 가짐. 패턴은 무작위로 지정되며, 다만 같은 패턴을 2번 연속으로 하지 않습니다.
+   * 
+   * 패턴에 대한 조건 및 내용은 함수 내부 참고
+   */
+  processStateRandomPattern () {
+    // 상태 딜레이를 채울때마다만 상태가 변화합니다. 그 외의 경우 무시
+    if (!this.stateDelay.check()) return
+
+    // hp가 HYPER 모드 발동 기준보다 낮다면 이 함수를 처리하지 않음
+    if (this.hp < this.hpMax * this.HYPER_MODE_HP_MULTIPLE) return
+    if (this.state !== this.STATE_WAIT) { // 대기 상태가 아니면 강제로 대기 상태로 지정
+      this.state = this.STATE_WAIT
+      this.stateDelay.delay = 120 // 딜레이 2초
+      return
+    }
+
+    this.stateDelay.delay = 480 // 각 패턴은 8초(60프레임 x 8)의 진행 시간을 가짐
+    let random = Math.floor(Math.random() * 4)
+    let targetState
+    switch (random) {
+      case 0: targetState = this.STATE_ROCKET_CHASE; break
+      case 1: targetState = this.STATE_ROCKET_LEFT; break
+      case 2: targetState = this.STATE_ROBOT_MOVE; break
+      default: targetState = this.STATE_ROCKET_LINE; break
+    }
+
+    // 이전 상태와 현재 지정된 상태가 같다면 해당 상태로 변경
+    if (targetState !== this.prevState) {
+      this.state = targetState
+      this.prevState = targetState
+    } else {
+      // 만약 이전값과는 다르게 중복된 경우에는, 다른 구조를 사용하여 강제 대입
+      switch (targetState) {
+        case this.STATE_ROCKET_CHASE: this.state = this.STATE_ROCKET_LEFT; break
+        case this.STATE_ROCKET_LEFT: this.state = this.STATE_ROBOT_MOVE; break
+        case this.STATE_ROBOT_MOVE: this.state = this.STATE_ROCKET_LINE; break
+        case this.STATE_ROCKET_LINE: this.state = this.STATE_ROCKET_CHASE; break
+        default: this.state = this.STATE_ROCKET_CHASE; break
+      }
+
+      this.prevState = this.state // 이전 상태 저장
+    }
+  }
+
+  /**
+   * 2페이즈 (hp 20% 미만)
+   * 
+   * 이 패턴은 진입 상태가 존재하며, 진입 이후 하이퍼 모드가 발동됨
+   */
+  processStateHyperPattern () {
+    // 상태 대기시간과 관계없이 해당 패턴이 진행됨
+    // hp가 HYPER 모드 발동 기준보다 높다면(1페이즈에 해당되므로) 무효
+    if (this.hp >= this.hpMax * this.HYPER_MODE_HP_MULTIPLE) return
+    const isHyperBegin = this.state === this.STATE_ROCKET_LEFT
+      || this.state === this.STATE_ROCKET_LINE
+      || this.state === this.STATE_WAIT
+      || this.state === this.STATE_ROBOT_MOVE
+      || this.state === this.STATE_ROCKET_CHASE
+
+    if (isHyperBegin) {
+      this.state = this.STATE_BEGIN_HYPER // 체력이 처음으로 20% 미만일경우 하이퍼 모드로 진입함
+      this.stateDelay.count = 0 // 카운트 리셋
+      this.stateDelay.delay = 180
+    } else if (this.state === this.STATE_BEGIN_HYPER && this.stateDelay.check()) {
+      this.stateDelay.delay = 120
+      this.state = this.STATE_HYPER_MODE // 하이퍼 모드로 변경, 이 이후에는 상태변화 없음
+    }
+  }
+
+  processMove () {
+    super.processMove()
+    if (this.state === this.STATE_ROCKET_CHASE || this.state === this.STATE_ROCKET_LEFT || this.state === this.STATE_ROCKET_LINE) {
+      // x축이 오른쪽 끝에 붙지 않는다면 가능한 오른쪽으로 이동
+      // y축으로는 랜덤한 속도로 이동
+      if (this.moveDelay.check()) {
+        this.setMoveSpeed(0, Math.random() * 3 + 1)
+      }
+      
+      if (this.x + this.width < graphicSystem.CANVAS_WIDTH) {
+        this.x += 16
+      }
+    } else if (this.state === this.STATE_ROBOT_MOVE) {
+      if (this.stateDelay.count <= 60) {
+        this.speedValueX += 0.18
+        this.speedValueY += 0.18
+        if (this.speedValueX > 10) this.speedValueX = 10
+        if (this.speedValueY > 10) this.speedValueY = 10
+      } else if (this.stateDelay.count >= this.stateDelay.delay - 60) {
+        this.speedValueX -= 0.18
+        this.speedValueY -= 0.18
+        if (this.speedValueX < 0) this.speedValueX = 0
+        if (this.speedValueY < 0) this.speedValueY = 0
+      }
+
+      this.setMoveSpeed(this.speedValueX, this.speedValueY)
+    } else if (this.state == this.STATE_HYPER_MODE) {
+      this.moveDelay.delay = 6
+      if (this.moveDelay.check()) {
+        this.setRandomMoveSpeed(8, 8, true)
+      }
+    } else if (this.state === this.STATE_BEGIN_HYPER) {
+      this.setMoveSpeed(0, 0)
+      if (this.centerX > graphicSystem.CANVAS_WIDTH_HALF + 10) {
+        this.x -= 4
+      } else if (this.centerX < graphicSystem.CANVAS_WIDTH_HALF - 10) {
+        this.x += 4
+      }
+
+      if (this.centerY > graphicSystem.CANVAS_HEIGHT_HALF + 10) {
+        this.y -= 4
+      } else if (this.centerY < graphicSystem.CANVAS_HEIGHT_HALF - 10) {
+        this.y += 4
+      }
+    } else if (this.state === this.STATE_WAIT) {
+      this.speedValueX = 0
+      this.speedValueY = 0
+      this.setMoveSpeed(0, 0)
+    }
+  }
+
+  processAttack () {
+    const T = TowerEnemyGroup1BossRobot
+    if (this.state === this.STATE_ROCKET_CHASE) {
+      this.attackDelay.delay = 30
+      if (this.attackDelay.check()) {
+        soundSystem.play(soundSrc.enemyAttack.towerAttackRocket)
+        const bullet = new T.RobotRocketChaseBullet()
+        fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
+      }
+    } else if (this.state === this.STATE_ROCKET_LEFT) {
+      this.attackDelay.delay = 12
+      if (this.attackDelay.check()) {
+        soundSystem.play(soundSrc.enemyAttack.towerAttackRocket)
+        const bullet = new T.RobotRocketBullet()
+        bullet.setMoveSpeed(-6, 0)
+        fieldState.createEnemyBulletObject(bullet, this.centerX, Math.random() * (graphicSystem.CANVAS_HEIGHT - 40))
+      }
+    } else if (this.state === this.STATE_ROBOT_MOVE) {
+      // this.attackDelay.delay = 60
+      // if (this.attackDelay.check()) {
+      //   soundSystem.play(soundSrc.enemyAttack.towerAttackRocket)
+      //   for (let i = 0; i < 4; i++) {
+      //     let subBullet = new T.RobotRocketBullet()
+      //     subBullet.setRandomMoveSpeed(3, 3, true)
+      //     fieldState.createEnemyBulletObject(subBullet, this.centerX, this.centerY)
+      //   }
+      // }
+    } else if (this.state === this.STATE_ROCKET_LINE) {
+      this.attackDelay.delay = 40
+      if (this.attackDelay.check()) {
+        soundSystem.play(soundSrc.enemyAttack.towerAttackRocket)
+        let subBullet1 = new T.RobotRocketBullet()
+        let subBullet2 = new T.RobotRocketBullet()
+        let subBullet3 = new T.RobotRocketBullet()
+        // 한쪽은 x축방향의 속도를 1 올리고 (양수인지 음수인지 판단함)
+        // 다른 한쪽은 y축방향의 속도를 1 올림
+        subBullet1.setMoveSpeed(-4, -2)
+        subBullet2.setMoveSpeed(-4, 0)
+        subBullet3.setMoveSpeed(-4, 2)
+        const targetY = this.y + Math.floor(Math.random() * this.height)
+        fieldState.createEnemyBulletObject(subBullet1, this.centerX, targetY)
+        fieldState.createEnemyBulletObject(subBullet2, this.centerX, targetY)
+        fieldState.createEnemyBulletObject(subBullet3, this.centerX, targetY)
+      }
+    } else if (this.state === this.STATE_HYPER_MODE) {
+      this.attackDelay.delay = 20
+      if (this.attackDelay.check()) {
+        soundSystem.play(soundSrc.enemyAttack.towerAttackRocket)
+        for (let i = 0; i < 2; i++) {
+          let subBullet = new T.RobotRocketBullet()
+          subBullet.setRandomMoveSpeed(6, 6, true)
+          fieldState.createEnemyBulletObject(subBullet, this.centerX, this.centerY)
+        }
+      }
+    }
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+    if (this.isDied) {
+      if (this.dieAfterDeleteDelay.count <= 280 && this.dieAfterDeleteDelay.divCheck(10)) {
+        soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossRobot1)
+        if (this.dieEffect != null) {
+          this.dieEffect.setWidthHeight(40, 40)
+          fieldState.createEffectObject(this.dieEffect.getObject(), this.x + (Math.random() * this.width), this.y + (Math.random() * this.height))
+        }
+      }
+
+      if (this.dieAfterDeleteDelay.count == this.dieAfterDeleteDelay.delay - 1) {
+        soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossRobot2)
+        if (this.dieEffect != null) {
+          this.dieEffect.setWidthHeight(this.width, this.height)
+          fieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
+        }
+      }
+    }
+  }
+
+  display () {
+    super.display()
+    graphicSystem.fillText('state: ' + this.state + ', spd: ' + this.speedValueX + ', ' + this.speedValueY, 0, 40, 'violet')
+  }
+
+  static RobotRocketBullet = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletBossRocket, 0)
+    }
+
+    processMove () {
+      super.processMove()
+      const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
+      this.degree = atangent * (180 / Math.PI)
+
+      let player = fieldState.getPlayerObject()
+      if (this.y < 0 || this.y + this.height > graphicSystem.CANVAS_HEIGHT 
+        || this.x < 0 || this.x + this.width > graphicSystem.CANVAS_WIDTH
+        || collisionClass.collisionOBB(this, player)) {
+        const bullet = new TowerEnemyGroup1BossRobot.RobotRocketBomb()
+        fieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
+        soundSystem.play(soundSrc.enemyAttack.towerAttackRocketBomb)
+        this.isDeleted = true
+      }
+    }
+  }
+
+  static RobotRocketChaseBullet = class extends TowerEnemyGroup1BossRobot.RobotRocketBullet {
+    constructor () {
+      super()
+    }
+
+    processMove () {
+      super.processMove()
+      if (this.elapsedFrame >= 20 && this.elapsedFrame <= 80) {
+        // 플레이어 추적
+        let player = fieldState.getPlayerObject()
+        let speedX = (player.x - this.x) / 100
+        let speedY = (player.y - this.y) / 100
+
+        if (this.moveSpeedX >= speedX + 0.3) this.moveSpeedX -= 0.11
+        if (this.moveSpeedX <= speedX - 0.3) this.moveSpeedX += 0.11
+        if (this.moveSpeedY >= speedY + 0.3) this.moveSpeedY -= 0.11
+        if (this.moveSpeedY <= speedY - 0.3) this.moveSpeedY += 0.11
+      }
+    }
+  }
+
+  static RobotRocketBomb = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.leverMissileBomb, 4)
+      this.setAutoImageData(this.imageSrc, this.imageData, 4)
+      this.attackDelay = new DelayData(10)
+      this.setWidthHeight(this.width * 2, this.height * 2)
+    }
+
+    processCollision () {
+      if (this.attack === 0) return
+      if (!this.attackDelay.check()) return
+
+      let player = fieldState.getPlayerObject()
+      let playerSendXY = { x: player.x, y: player.y, width: player.width, height: player.height}
+      
+      if (collision(playerSendXY, this)) {
+        player.addDamage(this.attack)
+      }
+    }
+
+    processState () {
+      if (this.elapsedFrame >= 4 * imageDataInfo.intruderEnemy.leverMissileBomb.frame) {
+        this.isDeleted = true
+      }
+    }
   }
 }
 
@@ -7984,34 +8298,34 @@ dataExportEnemy.set(ID.enemy.intruder.daseok, IntruderEnemyDaseok)
 dataExportEnemy.set(ID.enemy.intruder.nextEnemy, IntruderEnemyNextEnemy)
 
 // towerEnemyGroup1 / round 3-1 ~ 3-4
-dataExportEnemy.set(ID.enemy.towerG1.moveBlue, TowerEnemyGroup1MoveBlue)
-dataExportEnemy.set(ID.enemy.towerG1.moveViolet, TowerEnemyGroup1MoveViolet)
-dataExportEnemy.set(ID.enemy.towerG1.moveDarkViolet, TowerEnemyGroup1MoveDarkViolet)
-dataExportEnemy.set(ID.enemy.towerG1.moveYellowEnergy, TowerEnemyGroup1MoveYellowEnergy)
-dataExportEnemy.set(ID.enemy.towerG1.sandglass, TowerEnemyGroup1Sandglass)
-dataExportEnemy.set(ID.enemy.towerG1.tapo, TowerEnemyGroup1Tapo)
-dataExportEnemy.set(ID.enemy.towerG1.punch, TowerEnemyGroup1Punch)
-dataExportEnemy.set(ID.enemy.towerG1.daepo, TowerEnemyGroup1Daepo)
-dataExportEnemy.set(ID.enemy.towerG1.hellgi, TowerEnemyGroup1Hellgi)
-dataExportEnemy.set(ID.enemy.towerG1.helljeon, TowerEnemyGroup1Helljeon)
-dataExportEnemy.set(ID.enemy.towerG1.hellcho, TowerEnemyGroup1Hellcho)
-dataExportEnemy.set(ID.enemy.towerG1.hellba, TowerEnemyGroup1Hellba)
-dataExportEnemy.set(ID.enemy.towerG1.hellgal, TowerEnemyGroup1Hellgal)
-dataExportEnemy.set(ID.enemy.towerG1.laserAlpha, TowerEnemyGroup1LaserAlpha)
-dataExportEnemy.set(ID.enemy.towerG1.laserMini, TowerEnemyGroup1LaserMini)
-dataExportEnemy.set(ID.enemy.towerG1.laserMini2, TowerEnemyGroup1LaserMini2)
-dataExportEnemy.set(ID.enemy.towerG1.I, TowerEnemyGroup1I)
-dataExportEnemy.set(ID.enemy.towerG1.X, TowerEnemyGroup1X)
-dataExportEnemy.set(ID.enemy.towerG1.gasiUp, TowerEnemyGroup1gasiUp)
-dataExportEnemy.set(ID.enemy.towerG1.gasiDown, TowerEnemyGroup1gasiDown)
-dataExportEnemy.set(ID.enemy.towerG1.square, TowerEnemyGroup1Square)
-dataExportEnemy.set(ID.enemy.towerG1.squareMini, TowerEnemyGroup1SquareMini)
-dataExportEnemy.set(ID.enemy.towerG1.diamond, TowerEnemyGroup1Diamond)
-dataExportEnemy.set(ID.enemy.towerG1.diamondMini, TowerEnemyGroup1DiamondMini)
-dataExportEnemy.set(ID.enemy.towerG1.pentagon, TowerEnemyGroup1Pentagon)
-dataExportEnemy.set(ID.enemy.towerG1.pentagonMini, TowerEnemyGroup1PentagonMini)
-dataExportEnemy.set(ID.enemy.towerG1.hexagon, TowerEnemyGroup1Hexagon)
-dataExportEnemy.set(ID.enemy.towerG1.hexagonMini, TowerEnemyGroup1HexagonMini)
-dataExportEnemy.set(ID.enemy.towerG1.octagon, TowerEnemyGroup1Octagon)
-dataExportEnemy.set(ID.enemy.towerG1.octagonMini, TowerEnemyGroup1OctagonMini)
-dataExportEnemy.set(ID.enemy.towerG1.bossRobot, TowerEnemyGroup1BossRobot)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.moveBlue, TowerEnemyGroup1MoveBlue)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.moveViolet, TowerEnemyGroup1MoveViolet)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.moveDarkViolet, TowerEnemyGroup1MoveDarkViolet)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.moveYellowEnergy, TowerEnemyGroup1MoveYellowEnergy)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.sandglass, TowerEnemyGroup1Sandglass)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.tapo, TowerEnemyGroup1Tapo)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.punch, TowerEnemyGroup1Punch)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.daepo, TowerEnemyGroup1Daepo)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.hellgi, TowerEnemyGroup1Hellgi)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.helljeon, TowerEnemyGroup1Helljeon)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.hellcho, TowerEnemyGroup1Hellcho)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.hellba, TowerEnemyGroup1Hellba)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.hellgal, TowerEnemyGroup1Hellgal)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.laserAlpha, TowerEnemyGroup1LaserAlpha)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.laserMini, TowerEnemyGroup1LaserMini)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.laserMini2, TowerEnemyGroup1LaserMini2)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.I, TowerEnemyGroup1I)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.X, TowerEnemyGroup1X)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.gasiUp, TowerEnemyGroup1gasiUp)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.gasiDown, TowerEnemyGroup1gasiDown)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.square, TowerEnemyGroup1Square)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.squareMini, TowerEnemyGroup1SquareMini)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.diamond, TowerEnemyGroup1Diamond)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.diamondMini, TowerEnemyGroup1DiamondMini)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.pentagon, TowerEnemyGroup1Pentagon)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.pentagonMini, TowerEnemyGroup1PentagonMini)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.hexagon, TowerEnemyGroup1Hexagon)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.hexagonMini, TowerEnemyGroup1HexagonMini)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.octagon, TowerEnemyGroup1Octagon)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.octagonMini, TowerEnemyGroup1OctagonMini)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.bossRobot, TowerEnemyGroup1BossRobot)

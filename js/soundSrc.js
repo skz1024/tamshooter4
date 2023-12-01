@@ -155,6 +155,7 @@ export class soundSrc {
     towerAttackRocket: './sound/enemyTowerAttackRocket.ogg',
     towerPunchAttack: './sound/enemyTowerPunchAttack.ogg',
     towerHellbaAttack: './sound/enemyTowerHellbaAttack.ogg',
+    towerAttackRocketBomb: './sound/enemyTowerAttackRocketBomb.ogg',
   }
 
   static round = {
@@ -193,7 +194,9 @@ export class soundSrc {
     r2_4_message1: './sound/round2_4_message1.ogg',
     r2_5_start: './sound/round2_5_start.ogg',
     r2_5_breakRoom: './sound/round2_5_breakRoom.ogg',
-    r3_playerOption: './sound/round3_playerOption.ogg'
+    r3_playerOption: './sound/round3_playerOption.ogg',
+    r3_bossWarning: './sound/round3_bossWarning.ogg',
+    r3_bossWarningKeyboard: './sound/round3_bossWarningKeyboard.ogg'
   }
 
   static donggrami = {
@@ -232,7 +235,8 @@ export class soundSrc {
     music13_round2_4_jemu: './music/music13_round2_4_jemu.ogg',
     music14_intruder_battle: './music/music14_intruder_battle.ogg',
     music15_donggrami_ruin: './music/music15_donggrami_ruin.ogg',
-    music16_down_tower: './music/music16_down_tower.ogg'
+    music16_down_tower: './music/music16_down_tower.ogg',
+    music17_down_tower_boss: './music/music17_down_tower_boss.ogg'
   }
 
   

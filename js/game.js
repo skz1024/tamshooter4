@@ -56,8 +56,27 @@ class StatLineText {
 
 /** tamshooter4 게임에서 사용하는 공통 함수 */
 export class gameFunction {
-  /** 숫자를 디지털 이미지의 형태로 출력해주는 함수 */
-  static digitalDisplay = game.graphic.createCustomBitmapDisplay(imageSrc.system.digitalFontSmall, 12, 18)
+  /**
+   * digitalFont로 글자를 출력합니다.
+   * @param {string} inputText 입력할 텍스트
+   * @param {number} x 출력할 x좌표
+   * @param {number} y 출력할 y좌표
+   * @param {number} wordwidth 글자너비
+   * @param {number} wordheight 글자높이
+   */
+  static digitalDisplay = (inputText, x = 0, y = 0, wordwidth = 12, wordheight = 18) => {
+    if (wordwidth <= 18 && wordheight <= 24) {
+      this._digitalDisplaySmall(inputText, x, y, wordwidth, wordheight)
+    } else if (wordwidth <= 30 && wordheight <= 40) {
+      this._digitalDisplayMedium(inputText, x, y, wordwidth, wordheight)
+    } else {
+      this._digitalDisplayBig(inputText, x, y, wordwidth, wordheight)
+    }
+  }
+
+  static _digitalDisplaySmall = game.graphic.createCustomBitmapDisplay(imageSrc.system.digitalFontSmall, 12, 18)
+  static _digitalDisplayMedium = game.graphic.createCustomBitmapDisplay(imageSrc.system.digitalFont, 20, 30)
+  static _digitalDisplayBig = game.graphic.createCustomBitmapDisplay(imageSrc.system.digitalFontBig, 40, 60)
 }
 
 /** tamshooter4 게임에서 사용하는 공통 변수 */

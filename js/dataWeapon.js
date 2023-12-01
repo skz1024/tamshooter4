@@ -210,8 +210,6 @@ export class WeaponData extends FieldData {
     let hitCount = 0 // 적을 총 때린 횟수
 
     if (this.isMultiTarget) {
-      if (!this.enemyHitedCheck(attackArea)) return
-
       // 멀티타겟인 경우, 한번 공격당 무기의 repeatCount 1회 감소
       this.repeatCount--
 

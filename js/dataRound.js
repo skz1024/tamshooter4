@@ -821,8 +821,8 @@ class BgLayer {
 
 /** soundSystem을 간편하게 사용하기 위한 함수 집합 */
 class BaseSound {
-  /** 음악의 오디오 경로 @type {string} */
-  static musicSrc = ''
+  /** 해당 라운드의 기본적인 음악의 오디오 경로 (경고: 이것은 라운드를 시작할때만 적용합니다.) @type {string} */
+  static roundStartMusicSrc = ''
 
   /** 현재 음악의 오디오 경로 @type {string} */
   static currentMusicSrc = ''
@@ -836,11 +836,13 @@ class BaseSound {
   }
 
   /**
-   * 음악을 재생합니다.
+   * currentMusicSrc 경로에 해당하는 음악을 재생합니다.
    * 
-   * 참고: 저장된 게임 불러오기를 했을 때 이 함수를 사용하면, currentTime을 설정해도 무시함.
+   * currentMusicSrc를 변경하고 싶다면 해당 변수값을 조작한 후 다시 musicPlay를 해주세요.
+   * 
+   * 참고: 저장된 게임 불러오기를 했을 때 이 함수를 사용하면 모든 인수를 무시합니다.
    */
-  static musicPlay (start = -1) {
+  static musicPlay () {
     // 음악이 없으면 재생하지 않음
     if (this.currentMusicSrc === '') {
       soundSystem.musicStop()
@@ -856,11 +858,7 @@ class BaseSound {
         this.loadCurrentMusicTime = 0 // 음악 현재 시간 초기화
       }
     } else if (soundSystem.getMusicPaused()) {
-      if (start < 0) {
-        soundSystem.musicPlay(this.currentMusicSrc)
-      } else {
-        soundSystem.musicPlay(this.currentMusicSrc)
-      }
+      soundSystem.musicPlay(this.currentMusicSrc)
     }
   }
 
@@ -868,6 +866,7 @@ class BaseSound {
   static musicStop () {
     soundSystem.musicStop()
     this.currentMusicSrc = ''
+    this.fadeNextMusicSrc = ''
   }
 
   /**
@@ -884,7 +883,7 @@ class BaseSound {
    * @param {number} fadeTime 페이드 시간 (초 단위)
    */
   static musicChangeOLD (soundSrc = '', fadeTime = 0) {
-    this.currentMusicSrc = soundSrc
+    this.fadeNextMusicSrc = soundSrc
     if (fadeTime === 0) {
       soundSystem.musicPlay(soundSrc)
     } else {
@@ -896,11 +895,32 @@ class BaseSound {
   /** 페이드 이후 다음 음악으로 교체할 대상 */ static fadeNextMusicSrc = ''
   /** 페이드 지연 프레임 */ static fadeDelay = 0
   /** 페이드 지연을 계산하는 카운트값 */ static fadeDelayCount = 0
+
+  /** 
+   * 음악을 페이드 아웃 합니다.
+   * @param {number} fadeFrame 페이드를 진행하는 총 프레임 수 (주의: soundSystem의 musicFadeout과 시간 적용 방식이 다릅니다.)
+   */
+  static musicFadeOut (fadeFrame) {
+    soundSystem.musicFadeOut(fadeFrame / game.FPS)
+  }
+
+  /**
+   * 음악을 페이드 인 합니다.
+   * @param {string} audioSrc
+   * @param {number} fadeFrame 
+   */
+  static musicFadeIn (audioSrc, fadeFrame) {
+    if (audioSrc === '') return
+
+    soundSystem.musicPlay(audioSrc, fadeFrame / game.FPS)
+    this.currentMusicSrc = audioSrc
+  }
   
   static processFade () {
     this.fadeDelayCount--
-    if (this.fadeDelayCount === 0 && this.currentMusicSrc !== '') {
-      soundSystem.musicPlay(this.currentMusicSrc, 0, this.fadeDelay / 60) // 60프레임 = 1초
+    if (this.fadeDelayCount === 0 && this.fadeNextMusicSrc !== '') {
+      soundSystem.musicPlay(this.fadeNextMusicSrc, 0, this.fadeDelay / 60) // 60프레임 = 1초
+      this.currentMusicSrc = this.fadeNextMusicSrc
     }
   }
 
@@ -1111,6 +1131,53 @@ export class RoundPackLoad {
       soundSrc.enemyAttack.intruderLeverLaser,
       soundSrc.enemyAttack.intruderRendownMissile,
       soundSrc.enemyAttack.intruderRendownMissileCreate,
+    ]
+  }
+
+  static getRound3ShareImage () {
+    return [
+      imageSrc.round.round3_playerOption,
+      imageSrc.enemy.towerEnemyGroup1,
+    ]
+  }
+
+  static getRound3ShareSound () {
+    return [
+      soundSrc.round.r3_playerOption,
+      soundSrc.round.r3_bossWarning,
+      soundSrc.round.r3_bossWarningKeyboard,
+
+      // enemyDie
+      soundSrc.enemyDie.enemyDieTowerBossRobot1,
+      soundSrc.enemyDie.enemyDieTowerBossRobot2,
+      soundSrc.enemyDie.enemyDieTowerDaepo,
+      soundSrc.enemyDie.enemyDieTowerDiamond,
+      soundSrc.enemyDie.enemyDieTowerGasi,
+      soundSrc.enemyDie.enemyDieTowerHellba,
+      soundSrc.enemyDie.enemyDieTowerHellcho,
+      soundSrc.enemyDie.enemyDieTowerHellgal,
+      soundSrc.enemyDie.enemyDieTowerHellgi,
+      soundSrc.enemyDie.enemyDieTowerHexagon,
+      soundSrc.enemyDie.enemyDieTowerI,
+      soundSrc.enemyDie.enemyDieTowerLaserAlpha,
+      soundSrc.enemyDie.enemyDieTowerLaserMini,
+      soundSrc.enemyDie.enemyDieTowerMoveBlue,
+      soundSrc.enemyDie.enemyDieTowerMoveDarkViolet,
+      soundSrc.enemyDie.enemyDieTowerMoveViolet,
+      soundSrc.enemyDie.enemyDieTowerMoveYellowEnergy,
+      soundSrc.enemyDie.enemyDieTowerOctagon,
+      soundSrc.enemyDie.enemyDieTowerPentagon,
+      soundSrc.enemyDie.enemyDieTowerPunch,
+      soundSrc.enemyDie.enemyDieTowerSandglass,
+      soundSrc.enemyDie.enemyDieTowerSquare,
+      soundSrc.enemyDie.enemyDieTowerTapo,
+      soundSrc.enemyDie.enemyDieTowerX,
+
+      // enemyAttack
+      soundSrc.enemyAttack.towerAttackDaepo,
+      soundSrc.enemyAttack.towerAttackRocket,
+      soundSrc.enemyAttack.towerPunchAttack,
+      soundSrc.enemyAttack.towerHellbaAttack,
     ]
   }
 }
@@ -1373,7 +1440,7 @@ class BaseMeter {
     if (enemy == null) return
 
     graphicSystem.meterRect(x, y, width, height, color, enemy.hp, enemy.hpMax, true, borderColor, borderLength)
-    digitalDisplay('BOSS HP: ' + enemy.hp + '/' + enemy.hpMax, x + 2, y + 2)
+    digitalDisplay('BOSS HP: ' + enemy.hp + '/' + enemy.hpMax, x + 2, y + (height / 2) - 9)
   }
 }
 
@@ -1483,7 +1550,7 @@ export class RoundData {
     /** 사운드 객체들을 간편하게 사용하기 위한 함수 집합 */
     this.sound = BaseSound
     this.sound.musicStop() // 미리 저장된 음악이 출력되는것을 막기 위해 음악을 정지시킴
-    this.sound.musicSrc = '' // 음악의 기본값 설정 (다른 라운드가 이 값을 공유하기 때문에 라운드 시작시마다 갱신해야함)
+    this.sound.roundStartMusicSrc = '' // 음악의 기본값 설정 (다른 라운드가 이 값을 공유하기 때문에 라운드 시작시마다 갱신해야함)
 
     /** 라운드의 상태 (저장용도) @type {string} */ 
     this.state = ''
@@ -1706,7 +1773,7 @@ export class RoundData {
     if (this.timeCheckFrame(0, 4)) {
       // 게임 시작 즉시 음악을 호출하는 것이 불가능하므로, 약간의 지연을 넣어서 처리했습니다.
       // 0초 4프레임 시점에서 음악이 재생됩니다.
-      this.sound.currentMusicSrc = this.sound.musicSrc
+      this.sound.currentMusicSrc = this.sound.roundStartMusicSrc
       this.sound.musicPlay()
     }
 
@@ -1776,7 +1843,7 @@ class Round1_1 extends RoundData {
     super()
     this.stat.setStat(ID.round.round1_1)
     this.bgLegacy.imageSrc = imageSrc.round.round1_1_space
-    this.sound.musicSrc = soundSrc.music.music01_space_void
+    this.sound.roundStartMusicSrc = soundSrc.music.music01_space_void
 
     this.phase.addRoundPhase(this, this.roundPhase00, 1, 10)
     this.phase.addRoundPhase(this, this.roundPhase01, 11, 30)
@@ -1969,7 +2036,7 @@ class Round1_2 extends RoundData {
     super()
     this.stat.setStat(ID.round.round1_2)
     this.bgLegacy.imageSrc = imageSrc.round.round1_2_meteorite
-    this.sound.musicSrc = soundSrc.music.music02_meteorite_zone_field
+    this.sound.roundStartMusicSrc = soundSrc.music.music02_meteorite_zone_field
     this.meteoriteDeepImage = imageSrc.round.round1_3_meteoriteDeep
 
     this.phase.addRoundPhase(this, this.roundPhase00, 0, 15)
@@ -2156,7 +2223,7 @@ class Round1_3 extends RoundData {
     super()
     this.stat.setStat(ID.round.round1_3)
     this.bgLegacy.imageSrc = imageSrc.round.round1_3_meteoriteDeep
-    this.sound.musicSrc = soundSrc.music.music02_meteorite_zone_field
+    this.sound.roundStartMusicSrc = soundSrc.music.music02_meteorite_zone_field
 
     // ---
     this.battleMusic = soundSrc.music.music03_meteorite_zone_battle
@@ -2259,7 +2326,7 @@ class Round1_3 extends RoundData {
   roundPhase02 () {
     // 음악 변경
     if (this.timeCheckFrame(31, 1)) {
-      this.sound.musicChangeOLD(this.sound.musicSrc, 2)
+      this.sound.musicChangeOLD(this.sound.roundStartMusicSrc, 2)
     }
 
     if (this.timeCheckInterval(31, 36, 20)) {
@@ -2492,7 +2559,7 @@ class Round1_4 extends RoundData {
     super()
     this.stat.setStat(ID.round.round1_4)
     this.bgLegacy.imageSrc = imageSrc.round.round1_4_meteoriteDark
-    this.sound.musicSrc = soundSrc.music.music03_meteorite_zone_battle
+    this.sound.roundStartMusicSrc = soundSrc.music.music03_meteorite_zone_battle
     this.waitTimeFrame = 0
     this.backgroundDegree = 0
     this.backgroundFilp = 0
@@ -2615,7 +2682,7 @@ class Round1_4 extends RoundData {
   roundPhase01 () {
     // 진짜 보스 등장(...)
     if (this.timeCheckFrame(21)) {
-      this.sound.musicChangeOLD(this.sound.musicSrc)
+      this.sound.musicChangeOLD(this.sound.roundStartMusicSrc)
       this.sound.musicPlay()
       this.field.createEnemy(ID.enemy.jemulEnemy.bossEye, graphicSystem.CANVAS_WIDTH_HALF - 100, graphicSystem.CANVAS_HEIGHT_HALF - 100)
     }
@@ -2732,7 +2799,7 @@ class Round1_5 extends RoundData {
     this.stat.setStat(ID.round.round1_5)
     this.bgLegacy.imageSrc = imageSrc.round.round1_4_meteoriteDark
     this.redZoneImage = imageSrc.round.round1_5_meteoriteRed
-    this.sound.musicSrc = soundSrc.music.music04_meteorite_zone_red
+    this.sound.roundStartMusicSrc = soundSrc.music.music04_meteorite_zone_red
 
     this.phase.addRoundPhase(this, this.roundPhase00, 1, 30)
     this.phase.addRoundPhase(this, this.roundPhase01, 31, 60)
@@ -2996,7 +3063,7 @@ class Round1_6 extends RoundData {
     this.stat.setStat(ID.round.round1_6)
     this.bgLegacy.imageSrc = imageSrc.round.round1_2_meteorite
     this.spaceImage = imageSrc.round.round1_6_space
-    this.sound.musicSrc = soundSrc.music.music02_meteorite_zone_field
+    this.sound.roundStartMusicSrc = soundSrc.music.music02_meteorite_zone_field
     this.musicTour = soundSrc.music.music05_space_tour
     this.musicPlanet = soundSrc.music.music07_paran_planet_entry
 
@@ -3261,7 +3328,7 @@ class Round1_test extends RoundData {
     this.bgLegacy.imageSrc = imageSrc.round.round1_1_space
     this.phase.addRoundPhase(this, () => {
       if (this.timeCheckInterval(1, 999, 60) && this.field.getEnemyCount() === 0) {
-        this.field.createEnemy(ID.enemy.towerG1.pentagon, 600)
+        this.field.createEnemy(ID.enemy.donggramiEnemy.talk, 600)
       }
     }, 0, 999)
   }
@@ -3271,7 +3338,7 @@ class Round2_1 extends RoundData {
   constructor () {
     super()
     this.stat.setStat(ID.round.round2_1)
-    this.sound.musicSrc = soundSrc.music.music09_paran_planet
+    this.sound.roundStartMusicSrc = soundSrc.music.music09_paran_planet
     this.maeulImage = imageSrc.round.round2_2_maeul_entrance
 
     this.phase.addRoundPhase(this, this.roundPhase01, 0, 30)
@@ -3501,7 +3568,7 @@ class Round2_2 extends RoundData {
   constructor () {
     super()
     this.stat.setStat(ID.round.round2_2)
-    this.sound.musicSrc = soundSrc.music.music10_donggrami_maeul
+    this.sound.roundStartMusicSrc = soundSrc.music.music10_donggrami_maeul
 
     // 시간이 배경에 맞추어서 진행되기 때문에, 배경이 변경되는 것을 기준으로 대략적인 시간 값이 설정되었습니다.
     // 1초에 60frame = 60px씩 이동
@@ -7797,7 +7864,7 @@ class Round3TempletePlayerOption extends FieldData {
     /** 현재 옵션의 레벨 (게임 도중에 리셋되지 않습니다.), 이 값을 수정하려면 setLevel을 사용해주세요. @type {number} */ this.level = 0
     /** 옵션의 최대 레벨 @type {number} */ this.LEVEL_MAX = 4
     /** 현재 레벨에 따른 dps퍼센트값 기준 @type {number[]} */ this.dpsPercentLevel = [40, 50, 60, 80, 100]
-    this.imageSrc = imageSrc.round.round3_optionWeapon
+    this.imageSrc = imageSrc.round.round3_playerOption
     /** 옵션을 가지고 있는 여부 @type {boolean} */ this.hasOption = false
     /** 옵션의 무기 발사에 대한 지연시간 카운터 */ this.delayCount = 0
     /** 옵션이 가지고 있는 기본적인 공격력 (다운타워의 cp랑 관련되어있음. 다만 값은 수동으로 설정해야함) 
@@ -7816,7 +7883,7 @@ class Round3TempletePlayerOption extends FieldData {
      * 옵션에 대한 확장 정보 
      */ 
     this.optionInfo = {
-      /** @type {optionInfo} */ orange: {shotPerSecond: [2, 3, 4, 5, 6], shotPerCount: [4, 4, 4, 4, 4]},
+      /** @type {optionInfo} */ orange: {shotPerSecond: [4, 6, 8, 10, 12], shotPerCount: [2, 2, 2, 2, 2]},
       /** @type {optionInfo} */ green: {shotPerSecond: [5, 6, 10, 12, 15], shotPerCount: [4, 4, 4, 4, 4]},
       /** @type {optionInfo} */ skyblue: {shotPerSecond: [2, 2, 2, 2, 2], shotPerCount: [2, 2, 2, 3, 3]},
       /** @type {optionInfo} */ black: {shotPerSecond: [2, 2, 2, 2, 2], shotPerCount: [2, 2, 2, 2, 2]},
@@ -7857,7 +7924,13 @@ class Round3TempletePlayerOption extends FieldData {
 
   /** 옵션의 정보를 저장하고 있는 문자열 데이터를 얻어옵니다. */
   getSaveString () {
-    return '' + this.level + ' ' + this.color
+    let hasOption = this.hasOption ? 'T' : '' // 옵션이 있을경우 문자열로 값을 추가하고 없을경우 무시
+    let str = '' + this.level + '|' + this.color + '|' + hasOption
+    for (let i = 0; i < this.optionObject.length; i++) {
+      str += '|' + this.optionObject[i].color + ' ' + this.optionObject[i].x + ' ' + this.optionObject[i].y
+    }
+
+    return str
   }
 
   /**
@@ -7867,9 +7940,19 @@ class Round3TempletePlayerOption extends FieldData {
    * @param {string} str 
    */
   setLoadString (str) {
-    let text = str.split(' ')
+    let text = str.split('|')
     this.level = Number(text[0])
     this.color = text[1]
+    this.hasOption = text[2] !== '' // 해당 텍스트에 값이 있으면 true, 아니면 false
+    for (let i = 3; i < text.length; i++) {
+      let split = text[i].split(' ')
+      let option = new Round3TempletePlayerOption.OptionObject(split[0])
+      option.x = Number(split[1])
+      option.y = Number(split[2])
+      this.optionObject.push(option)
+    }
+    
+    this.processMove() // 옵션 위치가 플레이어 근처로 이동하도록 조정
   }
 
   /** 현재 옵션의 정보를 현재 레벨에 맞추어 가져옵니다. (현재 색에 따라 얻어오는 정보는 달라짐) */
@@ -8030,11 +8113,10 @@ class Round3TempletePlayerOption extends FieldData {
   }
 
   processMove () {
-    if (this.hasOption) {
-      let player = BaseField.getPlayerObject()
-      this.x = player.x + this.POSITION_X
-      this.y = player.y + this.POSITION_Y
-    }
+    // 옵션을 획득할 때 순간적으로 0, 0좌표에 처리되는 경우가 있어, 옵션을 획득하지 않아도, 위치를 강제로 조정합니다.
+    let player = BaseField.getPlayerObject()
+    this.x = player.x + this.POSITION_X
+    this.y = player.y + this.POSITION_Y
   }
 
   processOption () {
@@ -8051,7 +8133,7 @@ class Round3TempletePlayerOption extends FieldData {
           case this.colorList.black: this.setColor(this.colorList.black); break
           case this.colorList.green: this.setColor(this.colorList.green); break
           case this.colorList.orange: this.setColor(this.colorList.orange); break
-          case this.colorList.purple: this.setColor(this.colorList.purple); break
+          case this.colorList.skyblue: this.setColor(this.colorList.skyblue); break
           case this.colorList.pink: this.setColor(this.colorList.pink); break
           case this.colorList.purple: this.setColor(this.colorList.purple); break
         }
@@ -8116,11 +8198,11 @@ class Round3TempletePlayerOption extends FieldData {
      */
     constructor (color) {
       super()
-      this.setMoveSpeed(-1, 0)
+      this.setMoveSpeed(-2, 0)
       this.color = color
-
+      
       const colorList = Round3TempletePlayerOption.colorList
-      const imgSrc = imageSrc.round.round3_optionWeapon
+      const imgSrc = imageSrc.round.round3_playerOption
       const imgD = imageDataInfo.round3_optionWeapon
       switch (color) {
         case colorList.orange: this.setAutoImageData(imgSrc, imgD.orangeItem); break
@@ -8131,6 +8213,9 @@ class Round3TempletePlayerOption extends FieldData {
         case colorList.purple: this.setAutoImageData(imgSrc, imgD.purpleItem); break
         default: this.isDeleted = true; break // 정확한 컬러가 지정되지 않으면 해당 옵션을 삭제함
       }
+
+      // 이미지 설정을 한 다음에(width, height 자동 설정) 크기를 늘려야 정상 적용 됩니다.
+      this.setWidthHeight(this.width * 2, this.height * 2)
     }
 
     processMove () {
@@ -8147,19 +8232,19 @@ class Round3TempletePlayerOption extends FieldData {
     constructor () {
       super()
       this.isLineChase = true
-      this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.orangeShot)
+      this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.orangeShot)
     }
   }
 
   /** 하늘색 무기: 적에게 닿으면 스플래시 데미지 (자동 추적 기능) */
   static WeaponSkyblue = class WeaponSkyBlue extends WeaponData {
-    static hitEffect = new CustomEffect(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.skyblueSplash, 120, 120, 1)
+    static hitEffect = new CustomEffect(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.skyblueSplash, 120, 120, 1)
 
     constructor () {
       super()
       this.isChaseType = true
       this.setMultiTarget(10) // 다수 타겟 타격 설정 가능 -> 스플래시 데미지
-      this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.skyblueShot)
+      this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.skyblueShot)
     }
 
     processAttack () {
@@ -8175,7 +8260,7 @@ class Round3TempletePlayerOption extends FieldData {
   static WeaponGreen = class extends WeaponData {
     constructor () {
       super()
-      this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.greenShot)
+      this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.greenShot)
     }
   }
 
@@ -8183,7 +8268,7 @@ class Round3TempletePlayerOption extends FieldData {
   static WeaponBalck = class extends WeaponData {
     constructor () {
       super()
-      this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.blackShot)
+      this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.blackShot)
       this.repeatCount = 6 // 한개의 무기가 최대로 공격하는 횟수: 6
       /** 벽 튕기기 횟수 (이 숫자가 0이되면 무기는 사라짐) */ this.reflectCount = 10
       this.setMoveSpeed(5, 5)
@@ -8225,11 +8310,11 @@ class Round3TempletePlayerOption extends FieldData {
   }
 
   static WeaponPink = class WeaponPink extends WeaponData {
-    static hitEffect = new CustomEffect(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.pinkShot, undefined, undefined, 3)
+    static hitEffect = new CustomEffect(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.pinkShot, undefined, undefined, 3)
 
     constructor () {
       super()
-      this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.pinkShot)
+      this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.pinkShot)
       this.repeatCount = 2
       this.effectDelay = new DelayData(4)
       this.attackDelay = new DelayData(4)
@@ -8264,7 +8349,7 @@ class Round3TempletePlayerOption extends FieldData {
   static WeaponPurple = class WeaponPurple extends WeaponData {
     constructor () {
       super()
-      this.setAutoImageData(imageSrc.round.round3_optionWeapon, imageDataInfo.round3_optionWeapon.purpleShot)
+      this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.purpleShot)
       this.message = 'purple'
       this.BASE_WIDTH = this.width
       this.BASE_HEIGHT = this.height
@@ -8272,6 +8357,15 @@ class Round3TempletePlayerOption extends FieldData {
       this.repeatCount = 5
       this.reflectCount = 10
       this.setMultiTarget(4)
+    }
+
+    processHitObject () {
+      // 참고: 멀티타켓을 설정하면 일정 시간간격으로 강제 공격하게 됩니다.
+      // 적을 히트했을때에만 공격하고 싶다면 다른 알고리즘을 사용해야 하나 아직 weapon에 해당 관련 정보가 없어서 구현이 불가능합니다.
+      // 그래서 해당 옵션은 임시로 구현되었습니다.
+      if (this.enemyHitedCheck()) {
+        super.processHitObject()
+      }
     }
 
     processMove () {
@@ -8303,21 +8397,295 @@ class Round3TempletePlayerOption extends FieldData {
   }
 }
 
+class Round3TempleteBossWarning extends FieldData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.round.round3_bossWarning, imageDataInfo.round3_bossWarning.warning)
+    this.partObject1 = {x: 0, y: 0, width: 10, height: 120}
+    this.partObject2 = {x: 0, y: 0, width: 10, height: 120}
+
+    this.MAX_WIDTH = imageDataInfo.round3_bossWarning.warning.width
+    this._isCreateWarning = false
+    this.displayCount = 0
+    this.x = (graphicSystem.CANVAS_WIDTH - this.MAX_WIDTH) / 2
+    this.y = 100
+    this.setMoveSpeed(0, 0)
+    this.MOVEMONT_SIZE = 5
+    this.alpha = 0
+    this.alphaModeUp = true
+
+    this.baseText = 'STRONG ENEMY DETECTED'
+    this.baseTextViewLength = 0
+    this.baseTextDelay = new DelayData(6)
+    this.addText = 'unknown'
+  }
+
+  createWarning (addText = 'unknown') {
+    this._isCreateWarning = true
+    this.partObject1.width = 10
+    this.partObject2.width = 10
+    this.partObject1.x = 0 // 왼쪽에서부터 시작
+    this.partObject2.x = 0 + this.MAX_WIDTH - this.partObject1.width// 오른쪽에서부터 시작 (MOVEMONT_SIZE값을 추가로 빼지 않으면 좌우가 겹쳐집니다.)
+    this.partObject1.y = 0
+    this.partObject2.y = 0
+    this.displayCount = 0
+    this.addText = addText
+  }
+
+  getSaveString () {
+    return '' + this._isCreateWarning + '|' + this.baseText + '|' + this.baseTextViewLength + '|' + this.addText + '|' + this.displayCount
+  }
+
+  setLoadString (text = '') {
+    let str = text.split('|')
+    this._isCreateWarning = str[0] === 'true' ? true : false
+    this.baseText = str[1]
+    this.baseTextViewLength = Number(str[2])
+    this.addText = str[3]
+    this.displayCount = Number(str[4])
+  }
+
+  process () {
+    if (this._isCreateWarning) {
+      if (this.baseTextDelay.check() && this.baseTextViewLength < this.baseText.length) {
+        this.baseTextViewLength++
+        soundSystem.play(soundSrc.round.r3_bossWarningKeyboard)
+      }
+
+      if (this.alphaModeUp) this.alpha += 0.034
+      else this.alpha -= 0.034
+
+      if (this.alpha > 1) {
+        this.alpha = 1
+        this.alphaModeUp = false
+      } else if (this.alpha < 0) {
+        this.alpha = 0
+        this.alphaModeUp = true
+      }
+
+      if (this.partObject1.width < this.MAX_WIDTH) {
+        this.partObject1.width += this.MOVEMONT_SIZE
+      } else {
+        this.partObject1.width = this.MAX_WIDTH
+      }
+
+      // 2번째구간은 오른쪽에서 시작해 왼쪽으로 이동해야 하므로, 이렇게 처리함
+      if (this.partObject2.x > this.partObject1.x) {
+        this.partObject2.width += this.MOVEMONT_SIZE
+        this.partObject2.x -= this.MOVEMONT_SIZE
+      } else {
+        this.partObject2.x = 0
+        this.partObject2.width = this.MAX_WIDTH
+      }
+
+      this.displayCount++
+      if (this.displayCount >= 300) {
+        this._isCreateWarning = false
+      }
+
+      if (this.displayCount % 60 === 1) {
+        soundSystem.play(soundSrc.round.r3_bossWarning)
+      }
+    }
+  }
+
+  display () {
+    let imgO1 = this.partObject1
+    let imgO2 = this.partObject2
+    let imgLR = imageDataInfo.round3_bossWarning.lightRed
+    let imgR = imageDataInfo.round3_bossWarning.red
+    let out2 = this.x + this.MAX_WIDTH - imgO2.width
+
+    if (this._isCreateWarning) {
+      graphicSystem.imageDisplay(this.imageSrc, imgLR.x, imgLR.y, imgLR.width, imgLR.height, this.x, this.y, this.width, this.height)
+      graphicSystem.setAlpha(this.alpha)
+      graphicSystem.imageDisplay(this.imageSrc, imgR.x, imgR.y, imgR.width, imgR.height, this.x, this.y, this.width, this.height)
+      graphicSystem.setAlpha(1)
+
+      graphicSystem.imageDisplay(this.imageSrc, imgO1.x, imgO1.y, imgO1.width, imgO1.height, this.x, this.y, imgO1.width, imgO1.height)
+      graphicSystem.imageDisplay(this.imageSrc, imgO2.x, imgO2.y, imgO2.width, imgO2.height, out2, this.y, imgO2.width, imgO2.height)
+
+      digitalDisplay(this.baseText.slice(0, this.baseTextViewLength), this.x + (this.width / 2) - (this.baseText.length * 14), this.y + 150, 28, 42)
+      digitalDisplay(this.addText, this.x + (this.width / 2) - (this.addText.length * 22), this.y + 240, 44, 66)
+    }
+  }
+}
+
+class Round3TempleteBossSprite extends FieldData {
+  constructor () {
+    super()
+    this.TYPE_ROBOT = 'robot'
+    this.TYPE_DASU = 'dasu'
+    this.state = ''
+  }
+
+  createSpriteBossRobot () {
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bossRobot)
+    this.setWidthHeight(this.width / 2, this.height / 2)
+    this.elapsedFrame = 0
+    this.subType = this.TYPE_ROBOT
+    this.x = 900
+    this.setMoveSpeed(-10, 0)
+    this.state = 'start'
+    this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
+    this.degree = 270
+  }
+
+  getSaveString () {
+    if (this.subType === '') {
+      return ''
+    } else {
+      return JSON.stringify(this)
+    }
+  }
+
+  setLoadString (text = '') {
+    if (text === '') return
+
+    let str = JSON.parse(text)
+    if (str.state != null) this.state = str.state
+    if (str.degree != null) this.degree = Number(str.degree)
+    if (str.subType != null) this.subType = str.subType
+    if (str.moveSpeedX != null) this.moveSpeedX = Number(str.moveSpeedX)
+    if (str.moveSpeedY != null) this.moveSpeedY = Number(str.moveSpeedY)
+    if (str.x != null) this.x = Number(str.x)
+    if (str.y != null) this.y = Number(str.y)
+    if (str.elapsedFrame != null) this.elapsedFrame = Number(str.elapsedFrame)
+  }
+
+  processMove () {
+    if (this.subType === '') return
+
+    super.processMove()
+
+    // 보스 로봇 이동
+    if (this.state === 'start' && this.x + this.width < -300) {
+      this.setMoveSpeed(10, 0)
+      this.state = 'right'
+      this.degree = 90
+    } else if (this.state === 'right' && this.x > 900) {
+      this.setMoveSpeed(-10, 0)
+      this.state = 'createwait'
+      this.degree = 0
+      this.setWidthHeight(this.width * 2, this.height * 2)
+      this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
+    } else if (this.state === 'createwait') {
+      if (this.x < 500) {
+        this.x = 500
+        this.setMoveSpeed(0, 0)
+        // createEnemy
+      } else {
+        if (this.elapsedFrame >= 300) {
+          fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.bossRobot, this.x, this.y)
+          this.subType = ''
+        }
+      }
+    }
+
+    if (this.state === 'start' || this.state === 'right') {
+      if (this.x >= 100 && this.x <= graphicSystem.CANVAS_WIDTH - 100 && this.elapsedFrame % 6 === 0) {
+        let bullet1 = new Round3TempleteBossSprite.RobotRocketBullet()
+        let bullet2 = new Round3TempleteBossSprite.RobotRocketBullet()
+        let bullet3 = new Round3TempleteBossSprite.RobotRocketBullet()
+        let bullet4 = new Round3TempleteBossSprite.RobotRocketBullet()
+        bullet1.setMoveSpeed(-1, 6)
+        bullet2.setMoveSpeed(-1, -6)
+        bullet3.setMoveSpeed(1, 6)
+        bullet4.setMoveSpeed(1, -6)
+        fieldState.createEnemyBulletObject(bullet1, this.x, this.y)
+        fieldState.createEnemyBulletObject(bullet2, this.x, this.y)
+        fieldState.createEnemyBulletObject(bullet3, this.x, this.centerY)
+        fieldState.createEnemyBulletObject(bullet4, this.x, this.centerY)
+      }
+    }
+
+    
+  }
+
+  display () {
+    if (this.subType === this.TYPE_ROBOT || this.subType === this.TYPE_DASU) {
+      super.display()
+      graphicSystem.fillText('Elp: ' + this.elapsedFrame + ', ' + 'x: ' + this.x + ', y: ' + this.y + ',spdXY: ' + this.moveSpeedX + ':' + this.moveSpeedY, 0, 0, 'blue')
+    }
+  }
+
+
+  static RobotRocketBullet = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletBossRocket, 0)
+    }
+
+    processMove () {
+      super.processMove()
+      const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
+      this.degree = atangent * (180 / Math.PI)
+
+      let player = fieldState.getPlayerObject()
+      if (this.y < 0 || this.y + this.height > graphicSystem.CANVAS_HEIGHT || collisionClass.collisionOBB(this, player)) {
+        fieldState.createEnemyBulletObject(Round3TempleteBossSprite.RobotRocketBomb, this.centerX, this.centerY - imageDataInfo.intruderEnemy.leverMissileBomb.height)
+        soundSystem.play(soundSrc.enemyAttack.towerAttackRocketBomb)
+        this.isDeleted = true
+      }
+    }
+  }
+
+  static RobotRocketBomb = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.leverMissileBomb, 6)
+      this.setAutoImageData(this.imageSrc, this.imageData, 4)
+      this.attackDelay = new DelayData(12)
+      this.setWidthHeight(this.width * 2, this.height * 2)
+    }
+
+    processState () {
+      if (this.elapsedFrame >= 4 * imageDataInfo.intruderEnemy.leverMissileBomb.frame) {
+        this.isDeleted = true
+      }
+    }
+  }
+}
+
 class Round3Templete extends RoundData {
   constructor () {
     super()
     this.playerOption = new Round3TempletePlayerOption()
     this.playerOption.reset()
+    this.bossWarning = new Round3TempleteBossWarning()
+    this.bossSprite = new Round3TempleteBossSprite()
+
+    this.load.addImageList(RoundPackLoad.getRound3ShareImage())
+    this.load.addSoundList(RoundPackLoad.getRound3ShareSound())
+  }
+
+  processSaveString () {
+    let saveData = {
+      option: this.playerOption.getSaveString(),
+      bossWarning: this.bossWarning.getSaveString(),
+      bossSprite: this.bossSprite.getSaveString(),
+    }
+
+    this.saveString = JSON.stringify(saveData)
+  }
+
+  loadDataSaveString () {
+    let saveData = JSON.parse(this.saveString)
+    this.playerOption.setLoadString(saveData.option)
+    this.bossWarning.setLoadString(saveData.bossWarning)
+    this.bossSprite.setLoadString(saveData.bossSprite)
   }
 
   process () {
     super.process()
     this.playerOption.process()
+    this.bossWarning.process()
+    this.bossSprite.process()
   }
 
   display () {
     super.display()
     this.playerOption.display()
+    this.bossWarning.display()
+    this.bossSprite.display()
   }
 }
 
@@ -8325,7 +8693,7 @@ class Round3_1 extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_1)
-    this.sound.musicSrc = soundSrc.music.music16_down_tower
+    this.sound.roundStartMusicSrc = soundSrc.music.music16_down_tower
 
     this.bgLayer.addLayerImage(imageSrc.round.round3_1_level1, 1)
     this.bgLayer.addLayerImage(imageSrc.round.round3_1_level2, 0)
@@ -8334,32 +8702,371 @@ class Round3_1 extends Round3Templete {
     this.bgLayer.setBackgroundSpeed(0.4, 2)
 
     this.phase.addRoundPhase(this, this.roundPhase00, 0, 30)
+    this.phase.addRoundPhase(this, this.roundPhase01, 31, 60)
+    this.phase.addRoundPhase(this, this.roundPhase02, 61, 90)
+    this.phase.addRoundPhase(this, this.roundPhase03, 91, 120)
+    this.phase.addRoundPhase(this, this.roundPhase04, 121, 150)
+    this.phase.addRoundPhase(this, this.roundPhase05, 151, 180)
+    this.phase.addRoundPhase(this, this.roundPhase06, 181, 210)
+    this.phase.addRoundPhase(this, this.roundPhase07, 211, 220)
+    this.phase.addRoundPhase(this, this.roundPhase08, 221, 240)
+  }
+
+  processBackground () {
+    super.processBackground()
+
+    // 60초 단위로 배경 레이어의 투명도를 조절해서 배경 전환 효과가 있는것처럼 보여주기
+    if (this.timeCheckFrame(60)) {
+      this.bgLayer.setLayerAlphaFade(1, 1, 300)
+
+      // 배경 페이드 아웃이 페이드 인 보다 더 느린 이유는 화면 전환을 시도할 때
+      // 배경색으로 인하여 배경이 더 어둡게 출력될 수 있기 때문에, 일부러 페이드 아웃 시간을 늦춘것입니다.
+      this.bgLayer.setLayerAlphaFade(0, 0, 600) 
+    } else if (this.timeCheckFrame(120)) {
+      this.bgLayer.setLayerAlphaFade(2, 1, 300)
+      this.bgLayer.setLayerAlphaFade(1, 0, 600)
+    } else if (this.timeCheckFrame(180)) {
+      this.bgLayer.setLayerAlphaFade(3, 1, 300)
+      this.bgLayer.setLayerAlphaFade(2, 0, 600)
+    }
   }
 
   roundPhase00 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    
-    if (this.timeCheckInterval(2, 5, 60)) {
-      for (let i = 0; i < 5; i++) {
-        this.field.createEnemy(ID.enemy.towerG1.moveBlue)
-      }
-    } else if (this.timeCheckInterval(7, 9, 60)) {
-      for (let i = 0; i < 5; i++) {
-        this.field.createEnemy(ID.enemy.towerG1.moveViolet)
-      }
-    } else if (this.timeCheckInterval(12, 14, 60)) {
-      for (let i = 0; i < 5; i++) {
-        this.field.createEnemy(ID.enemy.towerG1.moveDarkViolet)
-      }
-    } else if (this.timeCheckInterval(16, 25, 60)) {
-      for (let i = 0; i < 2; i++) {
-        this.field.createEnemy(ID.enemy.towerG1.moveBlue)
-        this.field.createEnemy(ID.enemy.towerG1.moveViolet)
-        this.field.createEnemy(ID.enemy.towerG1.moveDarkViolet)
-      }
-    } else if (this.timeCheckInterval(27, 32, 30)) {
-      this.field.createEnemy(ID.enemy.towerG1.moveYellowEnergy)
+
+    // 옵션 생성
+    // 옵션을 획득하는것을 유도? 하기 위해 초반엔 안내가 표시되며 (추후 추가 예정)
+    // 초반에는 적이 나오지 않습니다.
+
+    if (this.timeCheckFrame(pTime + 0, 30)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
     }
+    
+    // 적 생성 (dps: 32% ~ 48%, 56%, 80%)
+    if (this.timeCheckInterval(pTime + 6, pTime + 8, 60)) {
+      for (let i = 0; i < 16; i++) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveBlue)
+      }
+    } else if (this.timeCheckInterval(pTime + 10, pTime + 12, 60)) {
+      for (let i = 0; i < 16; i++) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveViolet)
+      }
+    } else if (this.timeCheckInterval(pTime + 14, pTime + 16, 60)) {
+      for (let i = 0; i < 12; i++) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveDarkViolet)
+      }
+    } else if (this.timeCheckInterval(pTime + 18, pTime + 22, 60)) {
+      for (let i = 0; i < 3; i++) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveBlue)
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveViolet)
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveDarkViolet)
+      }
+    } else if (this.timeCheckInterval(pTime + 24, pTime + 30, 30)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveYellowEnergy)
+    }
+  }
+
+  roundPhase01 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 15)) {
+      this.playerOption.setLevel(1) // 옵션 레벨 증가 (페이즈 단위로 자동으로 상승)
+      this.playerOption.createOptionItem(this.playerOption.colorList.green) // 화면상에 옵션 추가
+    }
+
+    // 특수한 적들 등장 (dps: 100% ~ 110%)
+    if (this.timeCheckInterval(pTime + 1, pTime + 6, 60)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.sandglass)
+    } else if (this.timeCheckInterval(pTime + 7, pTime + 12, 60)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.tapo, undefined, 450)
+    } else if (this.timeCheckInterval(pTime + 14, pTime + 19, 60)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.punch, undefined, 200)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.punch, undefined, 500)
+    }
+
+    // 전투기 차례로 동시에 등장 (dps: 100 ~ 120+%)
+    if (this.timeCheckFrame(pTime + 20)) {
+      for (let i = 0; i < 4; i++) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgi, undefined, (100 * i) + 100)
+      }
+    } else if (this.timeCheckFrame(pTime + 22)) {
+      for (let i = 0; i < 10; i++) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.helljeon, undefined, (100 * i) + 100)
+      }
+    } else if (this.timeCheckFrame(pTime + 24)) {
+      for (let i = 0; i < 10; i++) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellcho, undefined, (100 * i) + 100)
+      }
+    } else if (this.timeCheckFrame(pTime + 26)) {
+      for (let i = 0; i < 8; i++) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellba, undefined, (100 * i) + 100)
+      }
+    } else if (this.timeCheckFrame(pTime + 28)) {
+      for (let i = 0; i < 8; i++) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgal, undefined, (100 * i) + 100)
+      }
+    }
+  }
+
+  roundPhase02 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 15)) {
+      this.playerOption.setLevel(2) // 옵션 레벨 증가 (페이즈 단위로 자동으로 상승)
+      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue) // 화면상에 옵션 추가
+    }
+
+    // dps 140% ~ 160%
+    if (this.timeCheckInterval(pTime + 0, pTime + 20, 120)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgi)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgal)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellcho)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellba)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.helljeon)
+    }
+
+    // 중간 중간 추가 적들 등장
+    if (this.timeCheckInterval(pTime + 4, pTime + 8, 180)) {
+      for (let i = 0; i < 9; i++) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.helljeon)
+      }
+    } else if (this.timeCheckInterval(pTime + 12, pTime + 16, 180)) {
+      for (let i = 0; i < 12; i++) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellcho)
+      }
+    }
+
+    // 이후 헬갈, 헬바만 등장하고, 여기서 레이저가 섞이는 구도
+    if (this.timeCheckInterval(pTime + 21, pTime + 30, 60)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgal)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellba)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.laserMini)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.laserMini2)
+    }
+  }
+
+  roundPhase03 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 15)) {
+      this.playerOption.setLevel(3) // 옵션 레벨 증가 (페이즈 단위로 자동으로 상승)
+      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue) // 화면상에 옵션 추가
+    }
+
+    // dps: 140% ~ 160%
+    if (this.timeCheckInterval(pTime + 0, pTime + 16, 60)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.laserAlpha)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.laserMini)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.laserMini2)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.laserMini)
+    } else if (this.timeCheckInterval(pTime + 17, pTime + 27, 10)) {
+      // 갑작스런 대포의 등장
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.daepo)
+    }
+  }
+
+  roundPhase04 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    if (this.timeCheckFrame(pTime + 1)) {
+      this.playerOption.setLevel(4) // 옵션 레벨 증가 (아마도 여기서 최대레벨)
+    } else if (this.timeCheckFrame(pTime + 2) || this.timeCheckFrame(pTime + 12) || this.timeCheckFrame(pTime + 24)) {
+      // (하늘색)옵션을 못먹은 사람들을 위해 조금 더 자주 나옴
+      this.playerOption.createOptionItem(this.playerOption.colorList.green) // 화면상에 옵션 추가
+    }
+
+    // dps 200%+
+    if (this.timeCheckInterval(pTime + 0, pTime + 2, 20)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.square)
+    } else if (this.timeCheckInterval(pTime + 3, pTime + 5, 20)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.pentagon)
+    } else if (this.timeCheckInterval(pTime + 6, pTime + 9, 20)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.hexagon)
+    } else if (this.timeCheckInterval(pTime + 10, pTime + 12, 20)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.octagon)
+    } else if (this.timeCheckInterval(pTime + 13, pTime + 21, 30)) {
+      let random = Math.floor(Math.random() * 4)
+      switch (random) {
+        case 0: this.field.createEnemy(ID.enemy.towerEnemyGroup1.square); break
+        case 1: this.field.createEnemy(ID.enemy.towerEnemyGroup1.pentagon); break
+        case 2: this.field.createEnemy(ID.enemy.towerEnemyGroup1.hexagon); break
+        default: this.field.createEnemy(ID.enemy.towerEnemyGroup1.octagon); break
+      }
+    } else if (this.timeCheckInterval(pTime + 22, pTime + 28, 70)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.diamond, undefined, 100)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.diamond, undefined, 300)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.diamond, undefined, 500)
+    }
+  }
+
+  roundPhase05 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    if (this.timeCheckFrame(pTime + 1)) {
+      // 마지막 하늘색 옵션
+      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue)
+    }
+    
+    // 종합 선물 세트 + 거기에 섞여나오는 신규 적들
+    // dps 200%+
+
+    // 적을 분류하는 랜덤 값
+    let random = Math.floor(Math.random() * 100)
+
+    // 1차 패턴 (헬기 or 전투기) 40%, 2차 패턴 (헬갈 or 헬바) 40%(정확한 값은 아니지만 40%에 가까움)
+    if (this.timeCheckInterval(pTime + 0, pTime + 12, 60)) {
+      if (random <= 25) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.helljeon)
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellcho)
+      } else {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgi)
+      }
+    } else if (this.timeCheckInterval(pTime + 13, pTime + 20, 60)) {
+      if (random <= 44) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellba)
+      } else {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgal)
+      }
+    }
+
+    // 1차 패턴 (이동 적 패턴) 40%, 2차 패턴 (이동 옐로우) 40%
+    if (this.timeCheckInterval(pTime + 0, pTime + 12, 8)) {
+      if (random <= 33) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveBlue)
+      } else if (random <= 66) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveViolet)
+      } else {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveDarkViolet)
+      }
+    } else if (this.timeCheckInterval(pTime + 13, pTime + 20, 60)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveYellowEnergy)
+    }
+
+    // 1차 패턴 (레이저 패턴) 40%, 2차 패턴 (레이저 알파) 50%
+    if (this.timeCheckInterval(pTime + 0, pTime + 12, 60)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.laserMini)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.laserMini2)
+    } else if (this.timeCheckInterval(pTime + 13, pTime + 20, 120)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.laserAlpha)
+    }
+
+    // 도형들...
+    if (this.timeCheckInterval(pTime + 0, pTime + 12, 120)) {
+      let random = Math.floor(Math.random() * 4)
+      switch (random) {
+        case 0: this.field.createEnemy(ID.enemy.towerEnemyGroup1.square); break
+        case 1: this.field.createEnemy(ID.enemy.towerEnemyGroup1.pentagon); break
+        case 2: this.field.createEnemy(ID.enemy.towerEnemyGroup1.hexagon); break
+        default: this.field.createEnemy(ID.enemy.towerEnemyGroup1.octagon); break
+      }
+    } else if (this.timeCheckInterval(pTime + 13, pTime + 20, 120)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.diamond)
+    }
+
+    // 3차 패턴 (신규 적들의 등장)
+    if (this.timeCheckInterval(pTime + 22, pTime + 25, 12)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.X)
+    } else if (this.timeCheckInterval(pTime + 26, pTime + 29, 15)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.I)
+    }
+  } 
+
+  roundPhase06 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 18)) {
+      // 다양한 색 옵션들의 등장
+      this.playerOption.createOptionItem(this.playerOption.colorList.green, undefined, 60)
+      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue, undefined, 280)
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 420)
+    }
+
+    // X와 I의 반란
+    if (this.timeCheckInterval(pTime + 1, pTime + 14, 15)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.X)
+    } else if (this.timeCheckInterval(pTime + 15, pTime + 22, 15)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.I)
+    }
+
+    // 대포 + 모래시계
+    if (this.timeCheckInterval(pTime + 12, pTime + 16, 120)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.sandglass)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.daepo)
+    }
+
+    // 수많은 대포들
+    if (this.timeCheckInterval(pTime + 23, pTime + 28, 20)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.daepo)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.punch)
+    }
+
+    // 가시 등장
+    if (this.timeCheckInterval(pTime + 27, pTime + 30, 8)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.gasiUp, Math.random() * graphicSystem.CANVAS_WIDTH, 0)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.gasiDown, Math.random() * graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT)
+    }
+  }
+
+  roundPhase07 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 7)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
+    }
+
+    // 보스전 직전
+    // 가시와 이동적만 등장 (다른적 없음)
+    if (this.timeCheckInterval(pTime + 0, pTime + 8, 8)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.gasiUp, Math.random() * graphicSystem.CANVAS_WIDTH, 0)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.gasiDown, Math.random() * graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT)
+    }
+
+    if (this.timeCheckInterval(pTime + 6, pTime + 8, 15)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveBlue)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveViolet)
+    }
+
+    // 타임 스탑 미정
+    this.timePauseWithEnemyCount(pTime + 9)
+  }
+  roundPhase08 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    if (this.timeCheckFrame(pTime + 0)) {
+      this.sound.musicFadeOut(120)
+    } else if (this.timeCheckFrame(pTime + 3)) {
+      this.bossWarning.createWarning('BOSS ROBOT')
+    } else if (this.timeCheckFrame(pTime + 9)) {
+      this.bossSprite.createSpriteBossRobot()
+      this.sound.currentMusicSrc = soundSrc.music.music17_down_tower_boss
+      this.sound.musicPlay()
+    }
+
+    this.timePauseWithEnemyCount(pTime + 16)
+    if (this.timeCheckInterval(pTime + 16)) {
+      let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup1.bossRobot)
+      if (enemy != null && enemy.isDied) {
+        fieldState.allEnemyBulletDelete()
+        this.sound.musicStop()
+      }
+    }
+  }
+
+  display () {
+    super.display()
+
+    // 보스 체력 표시
+    if (this.phase.getCurrentPhase() === 8) {
+      let bossEnemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup1.bossRobot)
+      if (bossEnemy) {
+        if (bossEnemy.hp > bossEnemy.hpMax * 0.2) {
+          this.meter.bossHpUserStyle(ID.enemy.towerEnemyGroup1.bossRobot, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 30, ['#209BFA', '#9FD5FF'], ['#003157'], 2)
+        } else {
+          this.meter.bossHpUserStyle(ID.enemy.towerEnemyGroup1.bossRobot, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 30, ['#FF7171'], ['#5C0808'], 2)
+        }
+      }
+    }
+  }
+
+  processDebug () {
+    // if (this.timeCheckFrame(0, 15)) {
+    //   this.time.setCurrentTime(220)
+    //   this.playerOption.setLevel(4)
+    //   this.playerOption.setColor(this.playerOption.colorList.orange)
+    //   this.playerOption.hasOption = true
+    // }
   }
 }
 
@@ -8367,14 +9074,51 @@ class Round3_test extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_test)
+    this.bgLayer.setColor('white')
+    // this.sound.roundStartMusicSrc = soundSrc.music.music16_down_tower
     this.phase.addRoundPhase(this, () => {
       if (this.timeCheckInterval(0, 999, 60)) {
         
       }
 
-      if (this.timeCheckFrame(0, 20)) {
-        this.playerOption.createOptionItem(this.playerOption.colorList.orange)
+      if (this.timeCheckFrame(1)) {
+        // this.sound.musicFadeOut(60)
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.bossRobot)
       }
+
+      // if (this.timeCheckFrame(2)) {
+      //   this.bossWarning.createWarning('BOSS ROBOT')
+      // } else if (this.timeCheckFrame(9)) {
+      //   this.bossSprite.createSpriteBossRobot()
+      //   this.sound.currentMusicSrc = soundSrc.music.music17_down_tower_boss
+      //   this.sound.musicPlay()
+      // }
+
+      // this.timePauseWithEnemyCount(17)
+      // if (this.timeCheckInterval(17)) {
+      //   let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup1.bossRobot)
+      //   if (enemy != null && enemy.isDied) {
+      //     this.sound.musicStop()
+      //   }
+      // }
+
+      if (this.timeCheckFrame(1)) {
+        // this.bossWarning.createWarning('BOSS ROBOT')
+        // this.bossSprite.createSpriteBossRobot()
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup1.bossRobot)
+      }
+
+      // if (this.timeCheckFrame(1)) {
+      //   this.sound.musicStop()
+      //   this.sound.currentMusicSrc = soundSrc.music.music16_down_tower
+      //   this.sound.musicPlay()
+      // } else if (this.timeCheckFrame(7)) {
+      //   this.sound.musicFadeOut(180)
+      // } else if (this.timeCheckFrame(10)) {
+      //   this.bossWarning.createWarning()
+      // } else if (this.timeCheckFrame(18)) {
+      //   this.sound.musicFadeIn(soundSrc.music.muisc17_down_tower_boss, 180)
+      // }
     }, 0, 999)
   }
 
@@ -8388,6 +9132,8 @@ class Round3_test extends Round3Templete {
     if (this.playerOption.optionObject[0]) {
       graphicSystem.fillText(this.playerOption.optionObject[0].x + ', ' + this.playerOption.optionObject[0].y + ', ' + this.playerOption.optionObject[0].color + ', spd: ' + this.playerOption.optionObject[0].moveSpeedX, 0, 0, 'white')
     }
+
+    this.meter.bossHpDefaultStyle(ID.enemy.towerEnemyGroup1.bossRobot)
     // this.playerOption.display()
   }
 }

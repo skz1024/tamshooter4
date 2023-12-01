@@ -206,7 +206,7 @@ export class ID {
       daseok: 20232,
       nextEnemy: 20233,
     },
-    towerG1: {
+    towerEnemyGroup1: {
       moveBlue: 20240,
       moveViolet: 20242,
       moveDarkViolet: 20243,

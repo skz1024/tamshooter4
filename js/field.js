@@ -868,6 +868,12 @@ export class fieldState {
     }
   }
 
+  static allEnemyBulletDelete () {
+    for (let i = 0; i < this.enemyBulletObject.length; i++) {
+      this.enemyBulletObject[i].isDeleted = true
+    }
+  }
+
   /**
    * 랜덤한 적 객체를 얻습니다. 다만, 이 객체가 삭제 예정이라면 함수의 리턴값은 null이 됩니다.
    * @returns {EnemyData | null} 적 오브젝트, 없으면 null
@@ -1089,13 +1095,16 @@ export class fieldState {
     }
   }
 
+
   static processWeaponObject () {
     for (let i = 0; i < this.weaponObject.length; i++) {
       const currentObject = this.weaponObject[i]
       currentObject.process()
     }
-    
-    for (let i = 0; i < this.weaponObject.length; i++) {
+
+    // 조건에 따른 무기 삭제
+    // splice는 배열을 변경하기 때문에 버그 없는 삭제를 위하여 배열을 역순으로 조사합니다.
+    for (let i = this.weaponObject.length - 1; i >= 0; i--) {
       const currentObject = this.weaponObject[i]
       if (currentObject.isDeleted) {
         this.weaponObject.splice(i, 1)
@@ -1109,9 +1118,9 @@ export class fieldState {
       currentObject.process()
     }
     
-    // 버그 없는 삭제를 위해 제거 과정은 따로 진행되었습니다.
-    // 해당 잠재적 설계 결함은, 무기, 적에게만 적용됩니다.
-    for (let i = 0; i < this.enemyObject.length; i++) {
+    // 조건에 따른 적 삭제
+    // splice는 배열을 변경하기 때문에 버그 없는 삭제를 위하여 배열을 역순으로 조사합니다.
+    for (let i = this.enemyObject.length - 1; i >= 0; i--) {
       const currentObject = this.enemyObject[i]
       if (currentObject.isDeleted) {
         this.enemyObject.splice(i, 1)
@@ -1120,8 +1129,11 @@ export class fieldState {
   }
 
   static processDamageObject () {
+    // 옵션에서 데미지 보여주기를 false로 하면 데미지 프로세스/출력은 처리하지 않음
     if (!fieldSystem.option.showDamage) return
 
+    // 데미지 오브젝트는 삭제되지 않고 스택에 남아있습니다.
+    // 새로 할당되면 기존 오브젝트를 변형하여 재사용합니다.
     for (let i = 0; i < this.damageObject.length; i++) {
       const currentDamage = this.damageObject[i]
       currentDamage.process()
@@ -1132,7 +1144,12 @@ export class fieldState {
     for (let i = 0; i < this.effectObject.length; i++) {
       const currentEffect = this.effectObject[i]
       currentEffect.process()
+    }
 
+    // 조건에 따른 이펙트 삭제 (이펙트 관련 버그때문에 splice 관련 코드 방식이 전부 변경됨)
+    // splice는 배열을 변경하기 때문에 버그 없는 삭제를 위하여 배열을 역순으로 조사합니다.
+    for (let i = this.effectObject.length - 1; i >= 0; i--) {
+      const currentEffect = this.effectObject[i]
       if (currentEffect.isDeleted) {
         this.effectObject.splice(i, 1)
       }
@@ -1143,7 +1160,11 @@ export class fieldState {
     for (let i = 0; i < this.enemyBulletObject.length; i++) {
       const currentEnemyBullet = this.enemyBulletObject[i]
       currentEnemyBullet.process()
+    }
 
+    // 조건에 따른 enemyBullet 삭제 (설명은 다른 객체들과 동일)
+    for (let i = this.enemyBulletObject.length - 1; i >= 0; i--) {
+      const currentEnemyBullet = this.enemyBulletObject[i]
       if (currentEnemyBullet.isDeleted) {
         this.enemyBulletObject.splice(i, 1)
       }
@@ -1154,7 +1175,11 @@ export class fieldState {
     for (let i = 0; i < this.spriteObject.length; i++) {
       const currentSprite = this.spriteObject[i]
       currentSprite.process()
+    }
 
+    // 조건에 따른 sprite 삭제 (설명은 다른 객체들과 동일)
+    for (let i = this.spriteObject.length - 1; i >= 0; i++) {
+      const currentSprite = this.spriteObject[i]
       if (currentSprite.isDeleted) {
         this.spriteObject.splice(i, 1)
       }

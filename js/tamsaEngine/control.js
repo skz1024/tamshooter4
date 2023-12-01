@@ -708,6 +708,7 @@ export class ControlSystem {
     return false
   }
 
+  /** 버튼의 input 입력상태를 리셋시킴 */
   resetButtonInput () {
     for (let i = 0; i < this.isButtonInput.length; i++) {
       this.isButtonInput[i] = false
