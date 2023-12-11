@@ -103,7 +103,7 @@ export class soundSrc {
     enemyDieIntruderMomi: './sound/enemyDieIntruderMomi.ogg',
     enemyDieIntruderRendown: './sound/enemyDieIntruderRendown.ogg',
 
-    // tower (3-1)
+    // tower group 1 (3-1)
     enemyDieTowerBossRobot1: './sound/enemyDieTowerBossRobot1.ogg',
     enemyDieTowerBossRobot2: './sound/enemyDieTowerBossRobot2.ogg',
     enemyDieTowerDaepo: './sound/enemyDieTowerDaepo.ogg',
@@ -129,6 +129,22 @@ export class soundSrc {
     enemyDieTowerSquare: './sound/enemyDieTowerSquare.ogg',
     enemyDieTowerTapo: './sound/enemyDieTowerTapo.ogg',
     enemyDieTowerX: './sound/enemyDieTowerX.ogg',
+
+    // tower group 2 (3-2)
+    enemyDieTowerBar1: './sound/enemyDieTowerBar1.ogg',
+    enemyDieTowerBar2: './sound/enemyDieTowerBar2.ogg',
+    enemyDieTowerBar3: './sound/enemyDieTowerBar3.ogg',
+    enemyDieTowerBossBar: './sound/enemyDieTowerBossBar.ogg',
+    enemyDieTowerHellla: './sound/enemyDieTowerHellla.ogg',
+    enemyDieTowerHellna: './sound/enemyDieTowerHellna.ogg',
+    enemyDieTowerHellpa: './sound/enemyDieTowerHellpa.ogg',
+    enemyDieTowerHellpo: './sound/enemyDieTowerHellpo.ogg',
+    enemyDieTowerJagijang: './sound/enemyDieTowerJagijang.ogg',
+    enemyDieTowerLightning: './sound/enemyDieTowerLightning.ogg',
+    enemyDieTowerMagnet: './sound/enemyDieTowerMagnet.ogg',
+    enemyDieTowerPentaLight: './sound/enemyDieTowerPentaLight.ogg',
+    enemyDieTowerPentaShadow: './sound/enemyDieTowerPentaShadow.ogg',
+
   }
 
   static enemyAttack = {
@@ -156,6 +172,9 @@ export class soundSrc {
     towerPunchAttack: './sound/enemyTowerPunchAttack.ogg',
     towerHellbaAttack: './sound/enemyTowerHellbaAttack.ogg',
     towerAttackRocketBomb: './sound/enemyTowerAttackRocketBomb.ogg',
+    enemyTowerLightningATtack: './sound/enemyTowerLightningAttack.ogg',
+    enemyTowerBossBarAttack: './sound/enemyTowerBossBarAttack.ogg',
+    enemyTowerJagijangAttack: './sound/enemyTowerJagijangAttack.ogg',
   }
 
   static round = {
@@ -238,6 +257,4 @@ export class soundSrc {
     music16_down_tower: './music/music16_down_tower.ogg',
     music17_down_tower_boss: './music/music17_down_tower_boss.ogg'
   }
-
-  
 }

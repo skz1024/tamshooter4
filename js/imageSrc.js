@@ -479,6 +479,49 @@ export class imageDataInfo {
     enemyDieGasiDown: new ImageDataObject(800, 1110, 20, 60, 6),
   }
 
+  static towerEnemyGroup2 = {
+    bar1: new ImageDataObject(0, 0, 140, 20, 5),
+    bar2: new ImageDataObject(0, 20, 140, 20, 5),
+    bar3: new ImageDataObject(0, 40, 140, 20, 5),
+    bar4: new ImageDataObject(0, 60, 140, 20, 5),
+    bar5: new ImageDataObject(0, 80, 140, 20, 5),
+    jagijang: new ImageDataObject(0, 130, 140, 140, 6),
+    lightning: new ImageDataObject(0, 330, 90, 100, 5),
+    magnet: new ImageDataObject(600, 430, 150, 100, 1),
+    hellla: new ImageDataObject(0, 530, 200, 90, 5),
+    hellpo: new ImageDataObject(0, 620, 160, 70, 4),
+    hellpa: new ImageDataObject(0, 690, 140, 120, 5),
+    hellna: new ImageDataObject(710, 690, 120, 80, 1),
+    pentaShadow: new ImageDataObject(0, 810, 120, 110, 1),
+    pentaLight: new ImageDataObject(120, 810, 120, 110, 1),
+    hexaShadow: new ImageDataObject(240, 810, 130, 110, 1),
+    hexaLight: new ImageDataObject(370, 810, 130, 110, 1),
+    octaShadow: new ImageDataObject(500, 810, 150, 140, 1),
+    octaLight: new ImageDataObject(650, 810, 150, 140, 1),
+    bossBar: new ImageDataObject(0, 960, 200, 40, 5),
+
+    // bullet
+    bulletJagijang: new ImageDataObject(850, 130, 50, 50, 1),
+    bulletYellow: new ImageDataObject(910, 130, 20, 20, 1),
+    bulletHellpo: new ImageDataObject(940, 130, 50, 50, 1),
+    
+    // attack
+    lightningAttack: new ImageDataObject(0, 430, 100, 100, 6),
+    hellpaAttack: new ImageDataObject(850, 200, 100, 50, 1),
+
+    // effect
+    jagijangLightning: new ImageDataObject(0, 270, 120, 60, 6),
+    magnetMagneticBlue: new ImageDataObject(850, 240, 20, 25, 5),
+    magnetMagneticRed: new ImageDataObject(850, 265, 20, 25, 5),
+
+    // enemyDie
+    enemyDieBar: new ImageDataObject(700, 0, 140, 20, 1),
+    enemyDieJagijang: new ImageDataObject(850, 0, 100, 100, 1),
+    enemyDieLightning: new ImageDataObject(450, 330, 90, 100, 8),
+    enemyDieMagnet: new ImageDataObject(750, 430, 150, 100, 1),
+    enemyDieBossBar: new ImageDataObject(1000, 960, 200, 40, 1),
+  }
+
   static fieldSystem = {
     roundClear: { x: 0, y: 0, width: 400, height: 60 },
     gameOver: { x: 0, y: 60, width: 320, height: 60 },
@@ -514,6 +557,7 @@ export class imageDataInfo {
     squareDarkViolet: new ImageDataObject(0, 380, 20, 20, 10),
     circleViolet: new ImageDataObject(0, 400, 20, 20, 10),
     metalSlashGreen: new ImageDataObject(0, 420, 20, 20, 10),
+    metalSlashMagenta: new ImageDataObject(0, 440, 20, 20, 10),
   }
 
   static round2_3_result = {
