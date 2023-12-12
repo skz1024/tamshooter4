@@ -33,11 +33,15 @@ export class EnemyData extends FieldData {
 
     /**
      * 충돌 지연시간
-     * (참고: 적이 플레이어에 닿았다면 60프레임 이후 다시 플레이어를 타격할 수 있습니다.)
+     * (참고: 기본적으로는 적이 플레이어에 닿았다면 60프레임 이후 다시 플레이어를 타격할 수 있습니다.)
+     * 
+     * 그러나 이 값이 적마다 다를 수 있습니다.
+     * 
+     * 참고로, 이 딜레이를 채우기 전까지 적은 플레이어랑 충돌하지 않습니다. 그래서 적이 등장하자마자 공격당하는것은 불가능합니다.
      * @type {DelayData}
      */
     this.collisionDelay = new DelayData(60)
-    this.collisionDelay.count = this.collisionDelay.delay / 2 // 생성하자마자 즉시 공격하게끔 만듬 그러나 약간의 지연시간은 존재
+    this.collisionDelay.count = 0 // 생성되자마자 충돌을 막기 위해서 지연시간 카운트를 0부터 계산합니다.
 
     /**
      * 적이 화면 바깥 일정 영역을 넘어간다면, 제거 대기시간이 추가되고,
@@ -346,6 +350,8 @@ export class EnemyData extends FieldData {
   /**
    * 플레이어와의 충돌 함수
    * 참고: 적이 플레이어랑 부딪힌다면 1초 후에 다시 공격할 수 있습니다.
+   * 
+   * 이 함수의 상속을 권장하진 않습니다. (충돌 규칙이 변화할 가능성이 없기 때문)
    */
   processPlayerCollision () {
     if (this.collisionDelay.check(false)) {
@@ -358,11 +364,19 @@ export class EnemyData extends FieldData {
          || this.degree !== 0 && collisionClass.collisionOBB(enemy[i], player) ) {
           player.addDamage(this.attack)
           this.collisionDelay.count = 0 // 플레이어랑 충돌하면 충돌 딜레이카운트를 0으로 만듬
+          this.processPlayerCollisionSuccessAfter() // 충돌 성공 이후 로직 처리
           return
         }
       }
     }
   }
+
+  /** 
+   * 플레이어와의 충돌이 성공한 이후에 로직 진행 
+   * 
+   * 만약 충돌했을 때 효과음을 출력하거나 다른걸 해야한다면, 이 함수를 이용하여 추가적인 작업을 할 수 있습니다.
+   */
+  processPlayerCollisionSuccessAfter () {}
 
   /**
    * 적이 죽었는지를 확인하는 함수. 적이 죽는 조건은 dieCheck 함수로 확인해주세요.
@@ -6705,10 +6719,12 @@ class TowerEnemy extends EnemyData {
   constructor () {
     super()
     this.baseCp = 70000
+    this.isExitToReset = true
   }
 
   static bulletRed = new CustomEnemyBullet(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletRed, 10)
   static bulletBlue = new CustomEnemyBullet(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletBlue, 10)
+  static bulletYellow = new CustomEnemyBullet(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.bulletYellow, 10)
   static bulletLaser = new CustomEnemyBullet(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletRedLaser, 10, -4, 0)
   static bulletLaserMini = new CustomEnemyBullet(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletOrangeLaser, 5, -6, 0)
 }
@@ -7275,7 +7291,7 @@ class TowerEnemyGroup1Daepo extends TowerEnemy {
 }
 
 /** 헬(날아다니는 전투기 -> 헬기 -> 헬) 시리즈 템플릿 */
-class TowerEnemyGroup1HellTemplet extends TowerEnemy {
+class TowerEnemyHellTemplet extends TowerEnemy {
   static DieEffectRed = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedWhite, 40, 40, 1)
   static DieEffectViolet = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleViolet, 40, 40, 1)
   static DieEffectBlue = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleBlue, 40, 40, 1)
@@ -7283,25 +7299,99 @@ class TowerEnemyGroup1HellTemplet extends TowerEnemy {
 
   static HelljeonBullet = new CustomEnemyBullet(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletHelljeonRocket, 4)
 
-
   constructor () {
     super()
     this.attackDelay = new DelayData(180)
-    this.moveDelay = new DelayData(60)
+    this.moveDelay = new DelayData(180)
+    this.moveDelay.setCountMax()
     this.isExitToReset = true
-    /** 특정 위치를 기준으로 이동속도를 계산하는 값 */ this.targetMoveSpeedX = 0
-    /** 특정 위치를 기준으로 이동속도를 계산하는 값 */ this.targetMoveSpeedY = 0
     this.dieAfterDeleteDelay = new DelayData(60)
 
     /** 죽었을 때 어떤 색의 폭발 이펙트를 사용할지 결정함 (값은 dieColorList(static class)에 있음) */ 
-    this.dieColor = TowerEnemyGroup1HellTemplet.dieColorList.red
+    this.dieColor = TowerEnemyHellTemplet.dieColorList.red
+    this.dieColorList = TowerEnemyHellTemplet.dieColorList
+
+    /** 목표 지정된 속도과 관련된 값의 집합 */
+    this.targetSpeed = {
+      /** 이동속도의 특정 목표 값의 내부 처리 변수 (이 값을 변경하지 마세요) */ _x: 0,
+      /** 이동속도의 특정 목표 값의 내부 처리 변수 (이 값을 변경하지 마세요) */ _y: 0,
+      /** 이동속도의 기준 값 */ xBase: 2,
+      /** 이동속도의 기준 값 */ yBase: 2,
+      /** 이동속도 변화 가중치 */ xChange: 0.02,
+      /** 이동속도 변화 가중치 */ yChange: 0.02,
+      /** 최대 제한 속도 */ xMax: 5,
+      /** 최대 제한 속도 */ yMax: 5,
+    }
+
+    /** 회전 각도 허용? */ this.isAngleChange = true
+    this.setMoveDirection()
   }
 
+  /** 헬시리즈 개체의 각도를 변경합니다. */
+  processChangeAngle () {
+    if (!this.isAngleChange) return // 회전각도가 허용되지 않으면 각도는 재설정 되지 않습니다.
+
+    // 회전각도 설정
+    const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
+    this.degree = atangent * (180 / Math.PI)
+  }
+
+  /** 헬시리즈 개체의 속도를 변경합니다. */
+  processSpeedChange () {
+    // 속도 x축 지속적인 변경
+    if (this.moveSpeedX + this.targetSpeed.xChange < this.targetSpeed._x) {
+      this.moveSpeedX += this.targetSpeed.xChange
+    } else if (this.moveSpeedX - this.targetSpeed.xChange > this.targetSpeed._x) {
+      this.moveSpeedX -= this.targetSpeed.xChange
+    }
+
+    // 속도 x축 최대 제한 설정
+    if (this.moveSpeedX > 0 && this.moveSpeedX > this.targetSpeed.xMax) {
+      this.moveSpeedX = this.targetSpeed.xMax
+    } else if (this.moveSpeedX < 0 && this.moveSpeedX < -this.targetSpeed.xMax) {
+      this.moveSpeedX = -this.targetSpeed.xMax
+    }
+
+    // 속도 y축 지속적인 변경
+    if (this.moveSpeedY + this.targetSpeed.yChange < this.targetSpeed._y) {
+      this.moveSpeedY += this.targetSpeed.yChange
+    } else if (this.moveSpeedY - this.targetSpeed.yChange > this.targetSpeed._y) {
+      this.moveSpeedY -= this.targetSpeed.yChange
+    }
+
+    // 속도 y축 최대 제한 설정
+    if (this.moveSpeedY > 0 && this.moveSpeedY > this.targetSpeed.yMax) {
+      this.moveSpeedY = this.targetSpeed.yMax
+    } else if (this.moveSpeedY < 0 && this.moveSpeedY < -this.targetSpeed.yMax) {
+      this.moveSpeedY = -this.targetSpeed.yMax
+    }
+  }
+
+  processRandomSpeed () {
+    this.targetSpeed._x = (Math.random() * this.targetSpeed.xBase * 2) - this.targetSpeed.xBase - 0.2
+    this.targetSpeed._y = (Math.random() * this.targetSpeed.yBase * 2) - this.targetSpeed.yBase
+  }
+
+  processMove () {
+    if (this.isDied) return // 죽은경우, 이동 로직을 전부 사용하지 않음
+
+    super.processMove()
+    if (this.moveDelay.check()) {
+      this.processRandomSpeed()
+    }
+
+    this.processChangeAngle()
+    this.processSpeedChange()
+  }
+
+  /** 헬시리즈 개체는 회전하면서 추락하고, 지속적인 폭발 이펙트가 발생하는 구조로 죽습니다. */
   processDieAfter () {
     super.processDieAfter()
-    if (this.isDied && this.dieAfterDeleteDelay.divCheck(12)) {
-      const T = TowerEnemyGroup1HellTemplet
+
+    // 폭발 이펙트, 사운드 생성
+    if (this.isDied && this.dieAfterDeleteDelay.divCheck(10)) {
       soundSystem.play(this.dieSound)
+      const T = TowerEnemyHellTemplet
       let targetX = this.x + (Math.random() * this.width)
       let targetY = this.y + (Math.random() * this.height)
 
@@ -7312,21 +7402,27 @@ class TowerEnemyGroup1HellTemplet extends TowerEnemy {
       }
     }
 
+    // 죽은 경우 회전하면서 추락
     if (this.isDied) {
-      this.degree += 4
+      this.degree += 2
       this.y += 4
     }
   }
 }
 
-class TowerEnemyGroup1Hellgi extends TowerEnemyGroup1HellTemplet {
+class TowerEnemyGroup1Hellgi extends TowerEnemyHellTemplet {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.hellgiEnimation, 2)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHellgi)
-    this.flip = 1
     this.setMoveSpeed(1, 0)
-    this.setEnemyByCpStat(50, 16)
+    this.setEnemyByCpStat(50, 12)
+
+    // 좌우 반전 (헬기는 이동방향이 없기 때문에 오른쪽을 바라보는 방향으로 기본 설정되어 왼쪽을 바라보는 형태로 하려면 flip해야함)
+    this.flip = 1 
+
+    this.targetSpeed.xBase = 1
+    this.targetSpeed.yBase = 2
   }
 
   processAttack () {
@@ -7338,28 +7434,8 @@ class TowerEnemyGroup1Hellgi extends TowerEnemyGroup1HellTemplet {
     }
   }
 
-  processMove () {
-    super.processMove()
-    if (this.moveDelay.check()) {
-      // 지정된 속도 랜덤
-      this.targetMoveSpeedX = Math.random() * 1 + 1
-      this.targetMoveSpeedY = Math.random() * 4 - 2
-    }
-
-    // 지정된 속도로 서서히 다가가도록 현재 이동 속도를 조정
-    // (매 프레임마다 속도가 번갈아 가는것을 막기 위해 특정 범위 안일경우 더이상 속도가 변화하지 않음)
-    if (this.moveSpeedX >= this.targetMoveSpeedX + 0.1) {
-      this.moveSpeedX -= 0.04
-    } else if (this.moveSpeedX <= this.targetMoveSpeedX - 0.1) {
-      this.moveSpeedX += 0.04
-    }
-
-    if (this.moveSpeedY >= this.targetMoveSpeedY + 0.1) {
-      this.moveSpeedY -= 0.04
-    } else if (this.moveSpeedY <= this.targetMoveSpeedY - 0.1) {
-      this.moveSpeedY += 0.04
-    }
-
+  processChangeAngle () {
+    // 각도 계산이 헬시리즈랑 다르게 진행되므로, super.processChangeAngle을 사용하지 않습니다.
     // y축의 속도에 따라 각도 조절 (단 일정 각도를 벗어나지 못함)
     if (this.moveSpeedY <= 0.5 && this.moveSpeedY >= -0.5) {
       this.degree = 0
@@ -7370,11 +7446,10 @@ class TowerEnemyGroup1Hellgi extends TowerEnemyGroup1HellTemplet {
       this.degree = (this.moveSpeedY + 0.5) * -6
       if (this.degree > 180 && this.degree < 330) this.degree = 330
     }
-    
   }
 }
 
-class TowerEnemyGroup1Helljeon extends TowerEnemyGroup1HellTemplet {
+class TowerEnemyGroup1Helljeon extends TowerEnemyHellTemplet {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.helljeon)
@@ -7382,7 +7457,11 @@ class TowerEnemyGroup1Helljeon extends TowerEnemyGroup1HellTemplet {
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHelljeon)
     this.helljeonEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.helljeonEnimation, 2)
     this.setMoveDirection()
-    this.dieColor = TowerEnemyGroup1HellTemplet.dieColorList.blue
+    this.dieColor = TowerEnemyHellTemplet.dieColorList.blue
+    this.targetSpeed.xChange = 0.14
+    this.targetSpeed.yChange = 0.14
+    this.targetSpeed.xBase = 2
+    this.targetSpeed.yBase = 2
   }
 
   processEnimation () {
@@ -7394,30 +7473,14 @@ class TowerEnemyGroup1Helljeon extends TowerEnemyGroup1HellTemplet {
   processMove () {
     super.processMove()
 
-    if (this.moveDelay.check()) {
+    // 위에서(super.process()) check함수를 사용했기 때문에, 여기서도 check를 하면
+    // 카운트 관련 문제가 발생할 수 있습니다. 그래서 다른 형태로 조건을 처리합니다.
+    if (this.moveDelay.count === 0) {
       // 플레이어를 추적하도록 속도 변경
       let player = fieldState.getPlayerObject()
-      let speedX = (player.x - this.x) / 120
-      let speedY = (player.y - this.y) / 120
-
-      if (speedX <= 2 && speedX >= 0) speedX = 2
-      if (speedX >= -2 && speedX <= 0) speedX = -2
-      if (speedY <= 2 && speedY >= 0) speedY = 2
-      if (speedY >= -2 && speedY <= 0) speedY = -2
-
-      this.targetMoveSpeedX = speedX
-      this.targetMoveSpeedY = speedY
+      this.targetSpeed._x = (player.centerX - this.centerX) / 150
+      this.targetSpeed._y = (player.centerY - this.centerY) / 150
     }
-
-    // 속도가 특정 값에 벗어나 있을경우 속도가 지속적으로 변화함
-    if (this.moveSpeedX >= this.targetMoveSpeedX + 0.2) this.moveSpeedX -= 0.15
-    if (this.moveSpeedX <= this.targetMoveSpeedX - 0.2) this.moveSpeedX += 0.15
-    if (this.moveSpeedY >= this.targetMoveSpeedY + 0.2) this.moveSpeedY -= 0.15
-    if (this.moveSpeedY <= this.targetMoveSpeedY - 0.2) this.moveSpeedY += 0.15
-
-    // 회전각도 설정
-    const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
-    this.degree = atangent * (180 / Math.PI)
   }
 
   processAttack () {
@@ -7449,7 +7512,7 @@ class TowerEnemyGroup1Helljeon extends TowerEnemyGroup1HellTemplet {
   }
 }
 
-class TowerEnemyGroup1Hellcho extends TowerEnemyGroup1HellTemplet {
+class TowerEnemyGroup1Hellcho extends TowerEnemyHellTemplet {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.hellcho)
@@ -7458,26 +7521,27 @@ class TowerEnemyGroup1Hellcho extends TowerEnemyGroup1HellTemplet {
     this.moveDelay.delay = 60
     this.moveDelay.setCountMax()
     this.setMoveDirection()
+    this.targetSpeed.xBase = 3
+    this.targetSpeed.yBase = 3
+    this.targetSpeed.xChange = 0.22
+    this.targetSpeed.yChange = 0.22
   }
 
   processMove () {
     super.processMove()
-    if (this.moveDelay.check()) {
-      this.targetMoveSpeedX = Math.random() * 6 - 3
-      this.targetMoveSpeedY = Math.random() * 6 - 3
+
+    // 위에서(super.process()) check함수를 사용했기 때문에, 여기서도 check를 하면
+    // 카운트 관련 문제가 발생할 수 있습니다. 그래서 다른 형태로 조건을 처리합니다.
+    if (this.moveDelay.count === 0) {
+      // 플레이어를 추적하도록 속도 변경
+      let player = fieldState.getPlayerObject()
+      this.targetSpeed._x = (player.centerX - this.centerX) / 90
+      this.targetSpeed._y = (player.centerY - this.centerY) / 90
     }
-
-    if (this.moveSpeedX >= this.targetMoveSpeedX + 0.5) this.moveSpeedX -= 0.45
-    if (this.moveSpeedX <= this.targetMoveSpeedX - 0.5) this.moveSpeedX += 0.45
-    if (this.moveSpeedY >= this.targetMoveSpeedY + 0.5) this.moveSpeedY -= 0.45
-    if (this.moveSpeedY <= this.targetMoveSpeedY - 0.5) this.moveSpeedY += 0.45
-
-    const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
-    this.degree = atangent * (180 / Math.PI)
   }
 }
 
-class TowerEnemyGroup1Hellba extends TowerEnemyGroup1HellTemplet {
+class TowerEnemyGroup1Hellba extends TowerEnemyHellTemplet {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.hellba, 6)
@@ -7485,11 +7549,15 @@ class TowerEnemyGroup1Hellba extends TowerEnemyGroup1HellTemplet {
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHellba)
     /** 에너지소환체 1 */ this.energyObject = {x: 0, y: 0, width: 100, height: 100, leftFrame: 0}
     /** 에너지소환체 2 */ this.energyObject2 = {x: 0, y: 0, width: 100, height: 100, leftFrame: 0}
-    /** 에너지 소환체의 남은 프레임 기준값 */ this.ENERGY_OBJECT_LEFT_FRAME_VALUE = 180
+    /** 에너지 소환체의 남은 프레임 기준값 */ this.ENERGY_OBJECT_LEFT_FRAME_VALUE = 120
     this.attackDelay.delay = 300
     this.attackDelay.count = 120
-    this.dieColor = TowerEnemyGroup1HellTemplet.dieColorList.violet
-    this.ENERGY_ATTACK = 6
+    this.dieColor = TowerEnemyHellTemplet.dieColorList.violet
+    this.ENERGY_ATTACK = 4
+    this.isAngleChange = false
+
+    this.targetSpeed.xBase = 2
+    this.targetSpeed.yBase = 2
   }
 
   processAttack () {
@@ -7512,10 +7580,8 @@ class TowerEnemyGroup1Hellba extends TowerEnemyGroup1HellTemplet {
 
   processMove () {
     super.processMove()
-    if (this.moveDelay.check()) {
-      this.setRandomMoveSpeed(4, 2, true)
-    }
 
+    // 에너지 오브젝트 위치 설정
     this.energyObject.x = this.x - this.energyObject.width
     this.energyObject.y = this.y - 25
     this.energyObject2.x = this.x + this.width
@@ -7524,41 +7590,37 @@ class TowerEnemyGroup1Hellba extends TowerEnemyGroup1HellTemplet {
 
   display () {
     super.display()
-    if (this.energyObject.leftFrame >= 1) {
+    if (!this.isDied && this.energyObject.leftFrame >= 1) {
       this.imageObjectDisplay(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletPurpleEnergy, this.energyObject.x, this.energyObject.y, this.energyObject.width, this.energyObject.height)
       this.imageObjectDisplay(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletPurpleEnergy, this.energyObject2.x, this.energyObject2.y, this.energyObject2.width, this.energyObject2.height)
     }
   }
 }
 
-class TowerEnemyGroup1Hellgal extends TowerEnemyGroup1HellTemplet {
+class TowerEnemyGroup1Hellgal extends TowerEnemyHellTemplet {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.hellgal)
     this.setEnemyByCpStat(35, 15)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHellgal)
     this.moveDelay.delay = 180
-    this.dieColor = TowerEnemyGroup1HellTemplet.dieColorList.violet
+    this.dieColor = TowerEnemyHellTemplet.dieColorList.violet
+    this.targetSpeed.xBase = 2
+    this.targetSpeed.yBase = 4
+    this.targetSpeed.xChange = 0.07
+    this.targetSpeed.yChange = 0.07
   }
 
   processAttack () {
     if (this.attackDelay.check()) {
       let player = fieldState.getPlayerObject()
-      let baseSpeedX = (player.x - this.x) / 96 + (Math.random() * 4) - 2
-      let baseSpeedY = (player.y - this.y) / 96 + (Math.random() * 4) - 2
+      let chaseSpeed = this.getMoveSpeedChaseLineValue(player.x, player.y, this.centerX, this.centerY, 96, 4)
       for (let i = 0; i < 3; i++) {
         let bullet = TowerEnemy.bulletBlue.getCreateObject()
-        bullet.moveSpeedX = baseSpeedX + (Math.random() * 2) - 1
-        bullet.moveSpeedY = baseSpeedY + (Math.random() * 2) - 1
-        fieldState.createEnemyBulletObject(bullet, this.x, this.y)
+        bullet.moveSpeedX = chaseSpeed.speedX + (Math.random() * 2) - 1
+        bullet.moveSpeedY = chaseSpeed.speedY + (Math.random() * 2) - 1
+        fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
       }
-    }
-  }
-
-  processMove () {
-    super.processMove()
-    if (this.moveDelay.check()) {
-      this.setRandomMoveSpeedMinMax(2, -3, 3, 3)
     }
   }
 }
@@ -7739,7 +7801,7 @@ class TowerEnemyGroup1gasiDown extends TowerEnemyGroup1gasiUp {
  * 
  * 미니 체력 -> 4각형, 8각형: hp 64%, 5각형, 6각형: hp: 60%, 다이아: 75%
  */
-class TowerEnemyGroup1SquareTemplete extends TowerEnemy {
+class TowerEnemyPentaTemplete extends TowerEnemy {
   static subTypeList = {
     SQUARE: 'square',
     SQUARE_MINI: 'squareMini',
@@ -7750,11 +7812,18 @@ class TowerEnemyGroup1SquareTemplete extends TowerEnemy {
     HEXAGON: 'hexagon',
     HEXAGON_MINI: 'hexagonMini',
     OCTAGON: 'octagon',
-    OCTAGON_MINI: 'octagonMini'
+    OCTAGON_MINI: 'octagonMini',
+    PENTA_SHADOW: 'pentaShadow',
+    PENTA_LIGHT: 'pentaLight',
+    HEXA_SHADOW: 'hexaShadow',
+    HEXA_LIGHT: 'hexaLight',
+    OCTA_SHADOW: 'octaShadow',
+    OCTA_LIGHT: 'octaLight',
   }
 
   constructor () {
     super()
+    this.subTypeList = TowerEnemyPentaShadowTemplete.subTypeList
     this.moveDelay = new DelayData(120)
     this.moveDelay.count = 60
   }
@@ -7764,7 +7833,7 @@ class TowerEnemyGroup1SquareTemplete extends TowerEnemy {
    * @param {string} subType TowerEnemyGroup1SquareTemplete 에 있는 subTypeList중 하나
    */
   setAutoFigure (subType) {
-    let typeList = TowerEnemyGroup1SquareTemplete.subTypeList
+    let typeList = TowerEnemyPentaTemplete.subTypeList
 
     /** @type {[number, number, boolean, ImageDataObject]} cpBaseHp, attack, miniOption, imageData,  */ 
     let arrayData = [0, 0, false, imageDataInfo.towerEnemyGroup1.square]
@@ -7811,7 +7880,7 @@ class TowerEnemyGroup1SquareTemplete extends TowerEnemy {
 
   /** 해당 객체가 죽었을 때 새로운 적을 다시 생성합니다. (단 미니타입은 해당하지 않음) */
   createNewEnemy () {
-    let typeList = TowerEnemyGroup1SquareTemplete.subTypeList
+    let typeList = TowerEnemyPentaTemplete.subTypeList
     switch (this.subType) {
       case typeList.DIAMOND: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.diamondMini, this.centerX, this.centerY); break
       case typeList.SQUARE: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.octagonMini, this.centerX, this.centerY); break
@@ -7829,47 +7898,47 @@ class TowerEnemyGroup1SquareTemplete extends TowerEnemy {
   processMove () {
     super.processMove()
     if (this.moveDelay.check()) {
-      this.setMoveSpeed(this.moveSpeedX + Math.random() * 8 - 4, this.moveSpeedY + Math.random() * 8 - 4)
+      this.setMoveSpeed(this.moveSpeedX + Math.random() * 4 - 2, this.moveSpeedY + Math.random() * 4 - 2)
 
       // 최소 속도 조정
-      if (this.moveSpeedX > 0 && this.moveSpeedX < 3) this.moveSpeedX = 3
-      if (this.moveSpeedX < 0 && this.moveSpeedX > -3) this.moveSpeedX = -3
-      if (this.moveSpeedY > 0 && this.moveSpeedY < 3) this.moveSpeedY = 3
-      if (this.moveSpeedY < 0 && this.moveSpeedY > -3) this.moveSpeedY = -3
+      if (this.moveSpeedX > 0 && this.moveSpeedX < 1) this.moveSpeedX = 1
+      if (this.moveSpeedX < 0 && this.moveSpeedX > -1) this.moveSpeedX = -1
+      if (this.moveSpeedY > 0 && this.moveSpeedY < 1) this.moveSpeedY = 1
+      if (this.moveSpeedY < 0 && this.moveSpeedY > -1) this.moveSpeedY = -1
     }
   }
 }
 
 // 도형 계열
-class TowerEnemyGroup1Square extends TowerEnemyGroup1SquareTemplete {
-  constructor () { super(); this.setAutoFigure(TowerEnemyGroup1SquareTemplete.subTypeList.SQUARE) }
+class TowerEnemyGroup1Square extends TowerEnemyPentaTemplete {
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.SQUARE) }
 }
-class TowerEnemyGroup1SquareMini extends TowerEnemyGroup1SquareTemplete {
-  constructor () { super(); this.setAutoFigure(TowerEnemyGroup1SquareTemplete.subTypeList.SQUARE_MINI) }
+class TowerEnemyGroup1SquareMini extends TowerEnemyPentaTemplete {
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.SQUARE_MINI) }
 }
-class TowerEnemyGroup1Pentagon extends TowerEnemyGroup1SquareTemplete {
-  constructor () { super(); this.setAutoFigure(TowerEnemyGroup1SquareTemplete.subTypeList.PENTAGON) }
+class TowerEnemyGroup1Pentagon extends TowerEnemyPentaTemplete {
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.PENTAGON) }
 }
-class TowerEnemyGroup1PentagonMini extends TowerEnemyGroup1SquareTemplete {
-  constructor () { super(); this.setAutoFigure(TowerEnemyGroup1SquareTemplete.subTypeList.PENTAGON_MINI) }
+class TowerEnemyGroup1PentagonMini extends TowerEnemyPentaTemplete {
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.PENTAGON_MINI) }
 }
-class TowerEnemyGroup1Hexagon extends TowerEnemyGroup1SquareTemplete {
-  constructor () { super(); this.setAutoFigure(TowerEnemyGroup1SquareTemplete.subTypeList.HEXAGON) }
+class TowerEnemyGroup1Hexagon extends TowerEnemyPentaTemplete {
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.HEXAGON) }
 }
-class TowerEnemyGroup1HexagonMini extends TowerEnemyGroup1SquareTemplete {
-  constructor () { super(); this.setAutoFigure(TowerEnemyGroup1SquareTemplete.subTypeList.HEXAGON_MINI) }
+class TowerEnemyGroup1HexagonMini extends TowerEnemyPentaTemplete {
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.HEXAGON_MINI) }
 }
-class TowerEnemyGroup1Octagon extends TowerEnemyGroup1SquareTemplete {
-  constructor () { super(); this.setAutoFigure(TowerEnemyGroup1SquareTemplete.subTypeList.OCTAGON) }
+class TowerEnemyGroup1Octagon extends TowerEnemyPentaTemplete {
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.OCTAGON) }
 }
-class TowerEnemyGroup1OctagonMini extends TowerEnemyGroup1SquareTemplete {
-  constructor () { super(); this.setAutoFigure(TowerEnemyGroup1SquareTemplete.subTypeList.OCTAGON_MINI) }
+class TowerEnemyGroup1OctagonMini extends TowerEnemyPentaTemplete {
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.OCTAGON_MINI) }
 }
-class TowerEnemyGroup1Diamond extends TowerEnemyGroup1SquareTemplete {
-  constructor () { super(); this.setAutoFigure(TowerEnemyGroup1SquareTemplete.subTypeList.DIAMOND) }
+class TowerEnemyGroup1Diamond extends TowerEnemyPentaTemplete {
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.DIAMOND) }
 }
-class TowerEnemyGroup1DiamondMini extends TowerEnemyGroup1SquareTemplete {
-  constructor () { super(); this.setAutoFigure(TowerEnemyGroup1SquareTemplete.subTypeList.DIAMOND_MINI) }
+class TowerEnemyGroup1DiamondMini extends TowerEnemyPentaTemplete {
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.DIAMOND_MINI) }
 }
 
 
@@ -8184,6 +8253,705 @@ class TowerEnemyGroup1BossRobot extends TowerEnemy {
   }
 }
 
+class TowerEnemyBarTemplete extends TowerEnemy {
+  static dieSoundList = [
+    soundSrc.enemyDie.enemyDieTowerBar1,
+    soundSrc.enemyDie.enemyDieTowerBar2,
+    soundSrc.enemyDie.enemyDieTowerBar3,
+  ]
+  static collisionSoundList = [
+    soundSrc.enemyAttack.towerBarAttack1,
+    soundSrc.enemyAttack.towerBarAttack2,
+    soundSrc.enemyAttack.towerBarAttack3,
+  ]
+
+  constructor () {
+    super()
+    this.imageSrc = imageSrc.enemy.towerEnemyGroup2 // 이미지 경로 직접 지정
+    this.setEnemyByCpStat(20, 8)
+    this.isExitToReset = true
+    this.collisionDelay.delay = 30 // 초당 2회 타격 (12프레임마다 반복)
+    this.collisionDelay.count = -30 // 30프레임 이후부터 플레이어랑 충돌할 수 있음
+    this.moveDelay = new DelayData(60)
+    this.moveDelay.setCountMax()
+    this.color = ''
+    this.colorList = {
+      CYAN: 'cyan',
+      LIME: 'lime',
+      ORANGE: 'ornage',
+      VIOLET: 'violet',
+      YELLOW: 'yellow',
+      GREY: 'grey'
+    }
+
+    this.setColor() // 자동 색 설정
+    this.collisionSoundSrc = ''
+
+    // 랜덤한 죽음 사운드 결정
+    const dieSoundList = TowerEnemyBarTemplete.dieSoundList
+    const dieSoundNumber = Math.floor(Math.random() * dieSoundList.length)
+    this.setDieEffectTemplet(dieSoundList[dieSoundNumber], imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.enemyDieBar, 30)
+
+    const collisionSoundList = TowerEnemyBarTemplete.collisionSoundList
+    const collisionSoundNumber = Math.floor(Math.random() * collisionSoundList.length)
+    this.collisionSoundSrc = collisionSoundList[collisionSoundNumber]
+  }
+
+  processPlayerCollisionSuccessAfter () {
+    // 충돌 사운드 재생
+    soundSystem.play(this.collisionSoundSrc)
+  }
+
+  /**
+   * 해당 bar의 색을 지정합니다.
+   * 
+   * 잘못된 색이 지정되면 기본값으로 설정하고, 값이 비어있다면 랜덤한 색이 결정됩니다.
+   * @param {string} color 
+   */
+  setColor (color = '') {
+    this.color = color
+    if (color === '') {
+      let random = Math.floor(Math.random() * 6)
+      switch (random) {
+        case 0: this.color = this.colorList.CYAN; break
+        case 1: this.color = this.colorList.GREY; break
+        case 2: this.color = this.colorList.LIME; break
+        case 3: this.color = this.colorList.ORANGE; break
+        case 4: this.color = this.colorList.VIOLET; break
+        default: this.color = this.colorList.YELLOW; break
+      }
+    }
+
+    let imgD = imageDataInfo.towerEnemyGroup2
+    switch (this.color) {
+      case this.colorList.CYAN: this.setAutoImageData(this.imageSrc, imgD.barCyan); break
+      case this.colorList.GREY: this.setAutoImageData(this.imageSrc, imgD.barGrey); break
+      case this.colorList.LIME: this.setAutoImageData(this.imageSrc, imgD.barLime); break
+      case this.colorList.ORANGE: this.setAutoImageData(this.imageSrc, imgD.barOrange); break
+      case this.colorList.VIOLET: this.setAutoImageData(this.imageSrc, imgD.barViolet); break
+      case this.colorList.YELLOW: this.setAutoImageData(this.imageSrc, imgD.barYellow); break
+      default: this.setAutoImageData(this.imageSrc, imgD.barYellow, 2); break // 기본값
+    }
+  }
+
+  processMove () {
+    super.processMove()
+    if (!this.moveDelay.check()) return
+
+    let random = Math.random() * 100
+    if (random < 90) {
+      if (Math.abs(this.moveSpeedY) > 3) this.moveSpeedY = -1 // 급발진 다시 복구하기
+
+      // 이동속도 변경 (+- 0.2정도 랜덤하게)
+      let speedChangeX = Math.random() * 0.4 - 0.2
+      let speedChangeY = Math.random() * 0.4 - 0.2
+      this.setMoveSpeed(this.moveSpeedX + speedChangeX, this.moveSpeedY + speedChangeY)
+    } else {
+      this.setMoveSpeed(this.moveSpeedX, -5) // ?! 갑자기 자기 혼자 급발진?
+      this.moveDelay.count = this.moveDelay.delay - 60 // 1초동안... (급발진...)
+    }
+
+    // 최소 속도 제한 (최대 속도는 제한이 없음... 확률상 무한속도는 어려움)
+    if (this.moveSpeedY > -1) {
+      this.moveSpeedY = -1
+    }
+  }
+}
+
+class TowerEnemyGroup2BarYellow extends TowerEnemyBarTemplete {
+  constructor () { super(); this.setColor(this.colorList.YELLOW) }
+}
+class TowerEnemyGroup2BarLime extends TowerEnemyBarTemplete {
+  constructor () { super(); this.setColor(this.colorList.LIME) }
+}
+class TowerEnemyGroup2BarViolet extends TowerEnemyBarTemplete {
+  constructor () { super(); this.setColor(this.colorList.VIOLET) }
+}
+class TowerEnemyGroup2BarOrnage extends TowerEnemyBarTemplete {
+  constructor () { super(); this.setColor(this.colorList.ORANGE) }
+}
+class TowerEnemyGroup2BarCyan extends TowerEnemyBarTemplete {
+  constructor () { super(); this.setColor(this.colorList.CYAN) }
+}
+class TowerEnemyGroup2BarGrey extends TowerEnemyBarTemplete {
+  constructor () { super(); this.setColor(this.colorList.Grey) }
+}
+
+class TowerEnemyGroup2Jagijang extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.jagijang, 4)
+    this.setEnemyByCpStat(40, 10)
+    this.dieAfterDeleteDelay = new DelayData(60)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerJagijang)
+    this.setMoveSpeed(1, 0)
+
+    this.bullet = new CustomEnemyBullet(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.bulletJagijang, 10)
+    this.attackDelay = new DelayData(120)
+    this.moveDelay = new DelayData(30)
+    this.isExitToReset = true
+
+    this.lightningEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.jagijangLightning, 3, -1)
+  }
+
+  processEnimation () {
+    super.processEnimation()
+    this.lightningEnimation.process()
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      soundSystem.play(soundSrc.enemyAttack.towerJagijangAttack)
+      let bullet = this.bullet.getCreateObject()
+      let player = fieldState.getPlayerObject()
+      bullet.x = this.centerX - 25
+      bullet.y = this.centerY - 25
+      bullet.setMoveSpeedChaseLine(player.x, player.y, 120, 2)
+      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+    }
+  }
+
+  processMove () {
+    super.processMove()
+    if (this.moveDelay.check()) {
+      // 이동속도 변경 (+- 0.2정도 랜덤하게)
+      let speedChangeX = Math.random() * 0.8 - 0.4
+      let speedChangeY = Math.random() * 0.8 - 0.4
+      this.setMoveSpeed(this.moveSpeedX + speedChangeX, this.moveSpeedY + speedChangeY)
+    }
+  }
+
+  display () {
+    if (this.isDied) {
+      let alpha = 1 / this.dieAfterDeleteDelay.delay * (this.dieAfterDeleteDelay.delay - this.dieAfterDeleteDelay.count)
+      this.imageObjectDisplay(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.enemyDieJagijang, this.x + 20, this.y + 20, undefined, undefined, 0, 0, alpha)
+    } else  {
+      super.display()
+      this.lightningEnimation.display(this.x + 15, this.centerY - 30)
+    }
+  }
+}
+
+class TowerEnemyGroup2Lightning extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.lightning)
+    this.setEnemyByCpStat(50, 2)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerLightning, imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.enemyDieLightning, 4)
+    this.moveDelay = new DelayData(300)
+    this.moveDelay.setCountMax()
+    this.attackDelay = new DelayData(60)
+    this.finishX = 0
+    this.finishY = 0
+    this.finishMoveSpeedX = 0
+    this.finishMoveSpeedY = 0
+
+    this.STATE_NORMAL = ''
+    this.STATE_LIGHTNING_WAIT = 'lightningWait'
+    this.STATE_LIGHTNING = 'lightning'
+    this.STATE_MAGNET = 'magnet'
+    this.state = this.STATE_NORMAL
+
+    this.lightObject = {x: this.x - 20, y: this.y - 20, width: 180, height: 180}
+    this.lightEffect = new CustomEffect(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.lightningAttack, this.lightObject.width, this.lightObject.height, 2)
+    this.lightningEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.lightningEnimation, 3, -1)
+  }
+
+  processEnimation () {
+    super.processEnimation()
+    if (this.state === this.STATE_LIGHTNING_WAIT) {
+      this.lightningEnimation.process()
+    }
+  }
+
+  processAttack () {
+    if (this.state === this.STATE_NORMAL) return
+
+    this.lightObject.x = this.x - 50
+    this.lightObject.y = this.y - 50
+    if (this.attackDelay.check()) {
+      if (this.state === this.STATE_LIGHTNING_WAIT) {
+        this.state = this.STATE_LIGHTNING
+      } else if (this.state === this.STATE_LIGHTNING) {
+        this.state = this.STATE_NORMAL
+      }
+    }
+
+    if (this.state === this.STATE_LIGHTNING && this.attackDelay.divCheck(6)) {
+      let player = fieldState.getPlayerObject()
+      if (collision(player, this.lightObject)) {
+        player.addDamage(4)
+      }
+    }
+
+    if (this.state === this.STATE_LIGHTNING && this.attackDelay.divCheck(10)) {
+      fieldState.createEffectObject(this.lightEffect.getObject(), this.lightObject.x, this.lightObject.y)
+      soundSystem.play(soundSrc.enemyAttack.towerLightningAttack)
+    }
+  }
+
+  processMove () {
+    super.processMove()
+    const DIV_COUNT = 60
+    if (this.moveDelay.check()) {
+      // 일정시간 간격으로 플레이어가 있는 위치로 이동
+      let player = fieldState.getPlayerObject()
+      this.finishX = player.centerX
+      this.finishY = player.centerY
+      this.finishMoveSpeedX = (this.x - player.centerX) / DIV_COUNT
+      this.finishMoveSpeedY = (this.y - player.centerY) / DIV_COUNT
+      this.setMoveSpeed(this.finishMoveSpeedX, this.finishMoveSpeedY)
+      this.state = this.STATE_NORMAL
+    }
+
+    if (this.moveDelay.count === DIV_COUNT) {
+      this.state = this.STATE_LIGHTNING_WAIT
+      this.setMoveSpeed(0, 0) // 강제 정지
+    }
+  }
+
+  display () {
+    super.display()
+    if (this.state === this.STATE_LIGHTNING_WAIT) {
+      this.lightningEnimation.display(this.x, this.y)
+    }
+  }
+}
+
+class TowerEnemyGroup2Magnet extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.magnet)
+    this.setEnemyByCpStat(50, 10)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerMagnet, imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.enemyDieMagnet, 30)
+    this.moveDelay = new DelayData(120)
+    this.effectDelay = new DelayData(12)
+    this.attackDelay = new DelayData(60)
+    this.setMoveSpeed(1, 0)
+
+    this.STATE_MAGNET = 'magnet'
+    this.magnetEffectBlue = new CustomEffect(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.magnetMagneticBlue, undefined, undefined, 2)
+    this.magnetEffectRed = new CustomEffect(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.magnetMagneticRed, undefined, undefined, 2)
+  }
+
+  processMove () {
+    super.processMove()
+
+    // 타겟오브젝트가 널일때만 이 작업을 실행합니다.
+    if (this.targetObject == null && this.moveDelay.check()) {
+      let target = fieldState.getRandomEnemyObject()
+
+      // 타겟이 널이 아니고, 아이디가 다르고(같은 자석은 안됨), 생성id가 다르면(자기 자신 제외), 타겟된 적이 마그넷 상태가 아니면
+      if (target != null && target.id !== this.id && target.createId !== this.createId && target.state !== this.STATE_MAGNET) {
+        // 해당 적을 타겟적으로 지정
+        this.targetObject = target
+      }
+    }
+    
+    if (this.targetObject != null) {
+      if (this.attackDelay.check(false)) {
+        this.setMoveSpeed(1, 0)
+        this.targetObject.x = this.x - this.targetObject.width
+        this.targetObject.y = this.y
+      } else {
+        this.setMoveSpeed(0, 0)
+        this.targetObject.x += (this.x - this.targetObject.x - this.targetObject.width) / 10
+        this.targetObject.y += (this.y - this.targetObject.y) / 10
+      }
+
+      if (this.attackDelay.divCheck(10)) {
+        fieldState.createEffectObject(this.magnetEffectBlue, this.x - 20, this.y)
+        fieldState.createEffectObject(this.magnetEffectRed, this.x - 20, this.y + 75)
+      }
+
+      // 타겟 오브젝트가 삭제 대기 상태라면 이 오브젝트를 삭제함
+      if (this.targetObject.isDeleted) {
+        this.targetObject = null
+      }
+    }
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+    if ((this.isDied || this.isDeleted) && this.targetObject != null) {
+      // 자석이 죽을경우, 적 상태를 초기화 하고, 타겟 오브젝트는 삭제
+      // 삭제 대기 상태에서도 타겟 오브젝트를 삭제함
+      this.targetObject.state = ''
+      this.targetObject = null
+    }
+  }
+}
+
+class TowerEnemyGroup2Hellla extends TowerEnemyHellTemplet {
+  constructor () {
+    super()
+    this.setEnemyByCpStat(40, 12)
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.hellla, 2)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHellla)
+    this.setMoveDirection()
+    this.attackDelay.delay = 180
+
+    this.lightObject = {x: this.x - 20, y: this.y - 20, width: 140, height: 140, speedX: 0, speedY: 0, elapsedFrame: 0}
+    this.lightEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.lightningAttack, 2, -1)
+    this.lightEnimation.setOutputSize(this.lightObject.width, this.lightObject.height)
+
+    this.targetSpeed.xBase = 1
+    this.targetSpeed.yBase = 2
+    this.targetSpeed.xChange = 0.06
+    this.targetSpeed.yChange = 0.06
+  }
+
+  processEnimation () {
+    super.processEnimation()
+    this.lightEnimation.process()
+  }
+
+  processChangeAngle () {
+    // y축의 속도에 따라 각도 조절 (단 일정 각도를 벗어나지 못함) - hellgi랑 같음
+    if (this.moveSpeedY <= 0.5 && this.moveSpeedY >= -0.5) {
+      this.degree = 0
+    } else if (this.moveSpeedY >= 0.5) {
+      this.degree = (this.moveSpeedY - 0.5) * -6
+      if (this.degree > 30 && this.degree < 180) this.degree = 30
+    } else if (this.moveSpeedY <= -0.5) {
+      this.degree = (this.moveSpeedY + 0.5) * -6
+      if (this.degree > 180 && this.degree < 330) this.degree = 330
+    }
+  }
+
+  processAttack () {
+    if (this.lightObject.elapsedFrame >= 1) {
+      this.lightObject.elapsedFrame--
+      this.lightObject.x += this.lightObject.speedX
+      this.lightObject.y += this.lightObject.speedY
+
+      if (this.lightObject.elapsedFrame % 6 === 0) {
+        let player = fieldState.getPlayerObject()
+        if (collision(player, this.lightObject)) {
+          player.addDamage(4)
+        }
+      }
+
+      if (this.lightObject.elapsedFrame % 12 === 0) {
+        soundSystem.play(soundSrc.enemyAttack.towerLightningAttack)
+      }
+    }
+
+    // 공격 주기가 되면 공격 개체가 사용되도록 변경
+    if (this.attackDelay.check()) {
+      let player = fieldState.getPlayerObject()
+      this.lightObject.elapsedFrame = 60
+      this.lightObject.x = this.x - 20
+      this.lightObject.y = this.y - 20
+      this.lightObject.speedX = (player.x - this.x) / 90
+      this.lightObject.speedY = (player.y - this.y) / 90
+    }
+  }
+
+  display () {
+    super.display()
+    if (!this.isDied && this.lightObject.elapsedFrame >= 1) {
+      this.lightEnimation.display(this.lightObject.x, this.lightObject.y)
+    }
+  }
+}
+class TowerEnemyGroup2Hellpo extends TowerEnemyHellTemplet {
+  constructor () {
+    super()
+    this.dieColor = TowerEnemyHellTemplet.dieColorList.blue
+    this.setEnemyByCpStat(23, 12)
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.hellpo, 2)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHellpo)
+    this.setMoveDirection()
+    this.attackDelay.delay = 120
+    this.daepoBullet = new CustomEnemyBullet(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.bulletHellpo)
+    this.targetSpeed.xBase = 2
+    this.targetSpeed.yBase = 2
+    this.targetSpeed.xChange = 0.2
+    this.targetSpeed.yChange = 0.2
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      soundSystem.play(soundSrc.enemyAttack.towerAttackDaepo)
+      let bullet = this.daepoBullet.getCreateObject()
+      bullet.moveSpeedX = Math.cos((Math.PI / 180) * this.degree) * 6
+      bullet.moveSpeedY = Math.sin((Math.PI / 180) * this.degree) * 6
+      fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
+    }
+  }
+
+  processChangeAngle () {
+    super.processChangeAngle()
+
+    // 정해진 각도범위만 사용할 수 있음 (왼쪽방향이 0도, 시계방향으로 회전, 45도 부터 135도사이에 있으면 강제로 각도 조절)
+    if (this.degree > 270 && this.degree < 315) this.degree = 315
+    if (this.degree > 45 && this.degree <= 90) this.degree = 45
+    if (this.degree > 90 && this.degree < 135) this.degree = 135
+    if (this.degree > 225 && this.degree <= 270) this.degree = 225
+
+    // 참고: 상하반전이 되어버려서 날개가 위가 아닌 아래에 갈 수도 있지만, 그걸 해결하긴 어려움
+    // 이유는 대포가 각도를 기준으로 발사하는데 그것까지 고려해서 코드를 짜기 어렵다.
+  }
+}
+class TowerEnemyGroup2Hellpa extends TowerEnemyHellTemplet {
+  constructor () {
+    super()
+    this.setEnemyByCpStat(33, 12)
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.hellpa, 2)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHellpa)
+    this.setMoveDirection()
+    this.dieColor = TowerEnemyHellTemplet.dieColorList.blue
+    this.isAngleChange = false
+
+    this.attackWaitEffect = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.hellpaAttackWait, 3, -1)
+
+    this.flip = 1
+    this.attackDelay.delay = 180
+    this.attackDelay.count = 0
+    this.paAttackObject = {x: 0, y: 0, width: 1, height: 120}
+
+    this.targetSpeed.xBase = 1
+    this.targetSpeed.yBase = 1
+    this.targetSpeed.xChange = 0.4
+    this.targetSpeed.yChange = 0.4
+
+
+    this.STATE_NORMAL = ''
+    this.STATE_ATTACK_WAIT = 'attackWait'
+    this.STATE_ATTACK = 'attack'
+    this.state = ''
+  }
+
+  processMove () {
+    if (this.state === this.STATE_NORMAL) {
+      super.processMove()
+    }
+  }
+
+  processEnimation () {
+    super.processEnimation()
+    this.attackWaitEffect.process()
+
+    // 각도와 반전이 이펙트에도 영향을 받게 변경
+    this.attackWaitEffect.flip = this.flip
+    this.attackWaitEffect.degree = this.degree
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      if (this.state === this.STATE_NORMAL) {
+        this.state = this.STATE_ATTACK_WAIT
+        this.attackDelay.count = this.attackDelay.delay - 120 // 다른 딜레이와 다르게 2초동안만 대기함
+
+        // 공격 대기 상태로 변환한 후 방향 설정
+        if (this.moveSpeedX > 0) {
+          this.moveDirectionX = FieldData.direction.RIGHT
+          this.paAttackObject.x = this.x + this.width
+          this.flip = 0
+        } else {
+          this.moveDirectionX = FieldData.direction.LEFT
+          this.paAttackObject.x = this.x
+          this.flip = 1
+        }
+        this.setMoveSpeed(0, 0)
+      } else if (this.state === this.STATE_ATTACK_WAIT) {
+        this.state = this.STATE_ATTACK
+        this.attackDelay.count = this.attackDelay.delay / 2 // 지연시간의 절반만큼만 공격 상태가 됨
+        this.paAttackObject.elapsedFrame = 120
+        this.paAttackObject.width = 10
+        this.paAttackObject.y = this.y
+        soundSystem.play(soundSrc.enemyAttack.towerHellpaAttack)
+      } else if (this.state === this.STATE_ATTACK) {
+        this.state = this.STATE_NORMAL
+      }
+    }
+
+    if (this.state === this.STATE_ATTACK) {
+      this.setMoveSpeed(0, 0)
+      if (this.moveDirectionX === FieldData.direction.RIGHT) {
+        this.paAttackObject.width += 6
+      } else if (this.moveDirectionX === FieldData.direction.LEFT) {
+        this.paAttackObject.x -= 6
+        this.paAttackObject.width += 6
+      }
+
+      if (this.attackDelay.divCheck(6)) {
+        let player = fieldState.getPlayerObject()
+        if (collision(player, this.paAttackObject)) {
+          player.addDamage(6)
+        }
+      }
+    }
+  }
+
+  display () {
+    if (this.state === this.STATE_ATTACK_WAIT) {
+      this.attackWaitEffect.display(this.x, this.y)      
+    } else {
+      super.display()
+    }
+
+    if (!this.isDied && this.state === this.STATE_ATTACK) {
+      this.imageObjectDisplay(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.hellpaAttack, this.paAttackObject.x, this.paAttackObject.y, this.paAttackObject.width, this.paAttackObject.height)
+    }
+
+    graphicSystem.fillText(this.state, 0, 0, 'blue')
+  }
+}
+class TowerEnemyGroup2Hellna extends TowerEnemyHellTemplet {
+  constructor () {
+    super()
+    this.dieColor = TowerEnemyHellTemplet.dieColorList.violet
+    this.setEnemyByCpStat(31, 12)
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.hellna)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHellna)
+    this.setMoveDirection()
+    this.targetSpeed.xBase = 3
+    this.targetSpeed.yBase = 3
+    this.targetSpeed.xChange = 0.02
+    this.targetSpeed.yChange = 0.02
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let bullet = TowerEnemy.bulletYellow.getCreateObject()
+      bullet.moveSpeedX = Math.cos((Math.PI / 180) * this.degree) * 10
+      bullet.moveSpeedY = Math.sin((Math.PI / 180) * this.degree) * 10
+      fieldState.createEnemyBulletObject(bullet, this.x, this.centerY)
+    }
+  }
+
+  processChangeAngle () {
+    super.processChangeAngle()
+
+    // 45도 단위로 각도 조정 (나눗셈 계산 방식)
+    let count = Math.floor((this.degree + 15) / 30)
+    this.degree = count * 30
+  }
+}
+
+class TowerEnemyPentaShadowTemplete extends TowerEnemyPentaTemplete {
+  /** 
+   * 도형 자동 설정 장치 (체력 및 이미지 데이터 자동 설정) - 이것은 pentaShadow타입 전용입니다.
+   * @param {string} subType TowerEnemyPentaTemplete 에 있는 subTypeList중 하나 (단 (penta, octa...)이름 뒤에 shadow, light가 있어야 함)
+   */
+  setAutoFigure (subType) {
+    /** @type {[number, number, boolean, ImageDataObject]} cpBaseHp, attack, isRight imageData, */ 
+    let arrayData = [0, 0, false, imageDataInfo.towerEnemyGroup1.square]
+
+    // 데이터 설정
+    switch (subType) {
+      case this.subTypeList.PENTA_SHADOW: arrayData = [25, 12, false, imageDataInfo.towerEnemyGroup2.pentaShadow]; break
+      case this.subTypeList.PENTA_LIGHT: arrayData = [35, 16, true, imageDataInfo.towerEnemyGroup2.pentaLight]; break
+      case this.subTypeList.HEXA_SHADOW: arrayData = [26, 13, false, imageDataInfo.towerEnemyGroup2.hexaShadow]; break
+      case this.subTypeList.HEXA_LIGHT: arrayData = [36, 17, true, imageDataInfo.towerEnemyGroup2.hexaLight]; break
+      case this.subTypeList.OCTA_SHADOW: arrayData = [28, 14, false, imageDataInfo.towerEnemyGroup2.octaShadow]; break
+      case this.subTypeList.OCTA_LIGHT: arrayData = [38, 18, true, imageDataInfo.towerEnemyGroup2.octaLight]; break
+    }
+
+    let targetDieSound = arrayData[2] ? soundSrc.enemyDie.enemyDieTowerPentaLight : soundSrc.enemyDie.enemyDieTowerPentaShadow
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup2, arrayData[3]) // 이미지 자동 설정
+    this.setDieEffectTemplet(targetDieSound, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.metalSlashMagenta)
+    this.setEnemyByCpStat(arrayData[0], arrayData[1]) // 체력, 공격력 설정
+    this.subType = subType // 서브타입 지정
+  }
+
+  /** 해당 객체가 죽었을 때 새로운 적을 다시 생성합니다. (단 라이트타입은 해당하지 않음) */
+  createNewEnemy () {
+    switch (this.subType) {
+      case this.subTypeList.PENTA_SHADOW: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.pentaLight, this.x, this.y); break
+      case this.subTypeList.HEXA_SHADOW: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.hexaLight, this.x, this.y); break
+      case this.subTypeList.OCTA_SHADOW: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.octaLight, this.x, this.y); break
+    }
+  }
+}
+
+class TowerEnemyGroup2PentaShadow extends TowerEnemyPentaShadowTemplete {
+  constructor () { super(); this.setAutoFigure(this.subTypeList.PENTA_SHADOW) }
+}
+class TowerEnemyGroup2PentaLight extends TowerEnemyPentaShadowTemplete {
+  constructor () { super(); this.setAutoFigure(this.subTypeList.PENTA_LIGHT) }
+}
+class TowerEnemyGroup2HexaShadow extends TowerEnemyPentaShadowTemplete {
+  constructor () { super(); this.setAutoFigure(this.subTypeList.HEXA_SHADOW) }
+}
+class TowerEnemyGroup2HexaLight extends TowerEnemyPentaShadowTemplete {
+  constructor () { super(); this.setAutoFigure(this.subTypeList.HEXA_LIGHT) }
+}
+class TowerEnemyGroup2OctaShadow extends TowerEnemyPentaShadowTemplete {
+  constructor () { super(); this.setAutoFigure(this.subTypeList.OCTA_LIGHT) }
+}
+class TowerEnemyGroup2OctaLight extends TowerEnemyPentaShadowTemplete {
+  constructor () { super(); this.setAutoFigure(this.subTypeList.OCTA_SHADOW) }
+}
+
+class TowerEnemyGroup2BossBar extends TowerEnemy {
+  constructor () {
+    super()
+    /** 최대 top 위치 px */ this.MAX_TOP = 100
+    this.setEnemyByCpStat(11000, 10)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerBossBar, imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.enemyDieBossBar, 180)
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.bossBar, 2)
+    this.setWidthHeight(800, 160)
+    this.attackDelay = new DelayData(30)
+    this.collisionDelay.delay = 30
+    this.isPossibleExit = false
+    this.dieAfterDeleteDelay = new DelayData(180)
+
+    this.customBullet = new CustomEnemyBullet(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.hellpaAttack, 10, 0, 2)
+    this.customDieEffect = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.diamondBlue, 40, 40, 2)
+
+    if (this.dieEffect) {
+      this.dieEffect.setWidthHeight(this.width, this.height)
+    }
+  }
+
+  processPlayerCollisionSuccessAfter () {
+    soundSystem.play(soundSrc.enemyAttack.towerBossBarCollision)
+  }
+
+  afterInit () {
+    this.x = graphicSystem.CANVAS_WIDTH - (this.width / 2)
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+    if (!this.isDied) return
+
+    if (this.dieAfterDeleteDelay.count % 5 === 0) {
+      soundSystem.play(this.dieSound)
+      fieldState.createEffectObject(this.customDieEffect.getObject(), this.x + (Math.random() * (this.width - 40)), this.y + (Math.random() * (this.height - 40)))
+    }
+
+    if (this.dieAfterDeleteDelay.count == this.dieAfterDeleteDelay.delay - 1) {
+      soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossRobot2)
+      let effect = this.customDieEffect.getObject()
+      effect.setWidthHeight(this.width, this.height)
+      fieldState.createEffectObject(effect, this.x, this.y)
+    }
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let bullet = this.customBullet.getCreateObject()
+      bullet.setWidthHeight(1200, 30)
+      fieldState.createEnemyBulletObject(bullet, this.x, this.centerY)
+    }
+  }
+
+  processMove () {
+    super.processMove()
+
+    // 이게 끝... (느린 속도로 올라오는게 전부) 
+    if (this.y >= this.MAX_TOP) {
+      this.setMoveSpeed(0, -0.2)
+    } else {
+      this.setMoveSpeed(0, 0)
+    }
+  }
+}
+
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
  */
@@ -8297,7 +9065,7 @@ dataExportEnemy.set(ID.enemy.intruder.hanoi, IntruderEnemyHanoi)
 dataExportEnemy.set(ID.enemy.intruder.daseok, IntruderEnemyDaseok)
 dataExportEnemy.set(ID.enemy.intruder.nextEnemy, IntruderEnemyNextEnemy)
 
-// towerEnemyGroup1 / round 3-1 ~ 3-4
+// towerEnemyGroup1 / round 3-1 ~ 3-9
 dataExportEnemy.set(ID.enemy.towerEnemyGroup1.moveBlue, TowerEnemyGroup1MoveBlue)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup1.moveViolet, TowerEnemyGroup1MoveViolet)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup1.moveDarkViolet, TowerEnemyGroup1MoveDarkViolet)
@@ -8329,3 +9097,26 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup1.hexagonMini, TowerEnemyGroup1Hexag
 dataExportEnemy.set(ID.enemy.towerEnemyGroup1.octagon, TowerEnemyGroup1Octagon)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup1.octagonMini, TowerEnemyGroup1OctagonMini)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup1.bossRobot, TowerEnemyGroup1BossRobot)
+
+// towerEnemyGroup2 / round 3-2 ~ 3-9
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.barRandom, TowerEnemyBarTemplete)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.barCyan, TowerEnemyGroup2BarCyan)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.barOrange, TowerEnemyGroup2BarOrnage)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.barGrey, TowerEnemyGroup2BarGrey)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.barLime, TowerEnemyGroup2BarLime)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.barYellow, TowerEnemyGroup2BarYellow)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.barViolet, TowerEnemyGroup2BarViolet)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.jagijang, TowerEnemyGroup2Jagijang)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.lightning, TowerEnemyGroup2Lightning)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.magnet, TowerEnemyGroup2Magnet)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.hellla, TowerEnemyGroup2Hellla)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.hellpa, TowerEnemyGroup2Hellpa)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.hellpo, TowerEnemyGroup2Hellpo)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.hellna, TowerEnemyGroup2Hellna)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.pentaLight, TowerEnemyGroup2PentaLight)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.pentaShadow, TowerEnemyGroup2PentaShadow)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.octaShadow, TowerEnemyGroup2OctaShadow)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.octaLight, TowerEnemyGroup2OctaLight)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.hexaShadow, TowerEnemyGroup2HexaShadow)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.hexaLight, TowerEnemyGroup2HexaLight)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.bossBar, TowerEnemyGroup2BossBar)

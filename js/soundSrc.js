@@ -172,9 +172,14 @@ export class soundSrc {
     towerPunchAttack: './sound/enemyTowerPunchAttack.ogg',
     towerHellbaAttack: './sound/enemyTowerHellbaAttack.ogg',
     towerAttackRocketBomb: './sound/enemyTowerAttackRocketBomb.ogg',
-    enemyTowerLightningATtack: './sound/enemyTowerLightningAttack.ogg',
-    enemyTowerBossBarAttack: './sound/enemyTowerBossBarAttack.ogg',
-    enemyTowerJagijangAttack: './sound/enemyTowerJagijangAttack.ogg',
+    towerLightningAttack: './sound/enemyTowerLightningAttack.ogg',
+    towerBossBarAttack: './sound/enemyTowerBossBarAttack.ogg',
+    towerJagijangAttack: './sound/enemyTowerJagijangAttack.ogg',
+    towerHellpaAttack: './sound/enemyTowerHellpaAttack.ogg',
+    towerBarAttack1: './sound/enemyTowerBarAttack1.ogg',
+    towerBarAttack2: './sound/enemyTowerBarAttack2.ogg',
+    towerBarAttack3: './sound/enemyTowerBarAttack3.ogg',
+    towerBossBarCollision: './sound/enemyTowerBossBarCollision.ogg',
   }
 
   static round = {

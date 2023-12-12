@@ -252,7 +252,9 @@ export class DelayData {
   }
 
   /** 
-   * count값을 delay값으로 변경합니다. 이 함수는 카운트가 채워지는 과정을 생략하기 위해 사용합니다. (딜레이 없이 즉시 실행용도)
+   * (딜레이 없이 즉시 실행용도)
+   * 
+   * count값을 delay값으로 변경합니다. 이 함수는 카운트가 채워지는 과정을 생략하기 위해 사용합니다. 
    */
   setCountMax () {
     this.count = this.delay
@@ -732,6 +734,71 @@ export class FieldData {
     this.moveSpeedY = moveSpeedY
     this._speedX = moveSpeedX
     this._speedY = moveSpeedY
+  }
+
+  /**
+   * 특정 값을 추적하는 형태로 이동 속도 지정 
+   * 
+   * (참고: 현재 위치를 기준으로 속도를 재설정, direction에 영향을 받음)
+   * 
+   * 속도는 다음과 같은 원리로 계산합니다. -> (this.x - targetX) / divValue
+   * @param {number} targetX 목표지점 x
+   * @param {number} targetY 목표지점 y
+   * @param {number} divValue 목표와 현재와 거리 차이를 나누는 값 (이 값이 클수록 속도가 느려집니다.), 0일경우 강제로 1로 설정됨
+   * @param {number} minSpeed 최소속도
+   */
+  setMoveSpeedChaseLine (targetX = 0, targetY = 0, divValue = 1, minSpeed = 2) {
+    // 0 나눗셈 금지 및, 숫자형이 아닌경우 강제로 값 초기화
+    if (typeof divValue !== 'number' && divValue === 0) divValue = 1
+
+    let speedX = (targetX - this.x) / divValue
+    let speedY = (targetY - this.y) / divValue
+    if (Math.abs(speedX) < minSpeed && Math.abs(speedY) < minSpeed) {
+      // speedX와 speedY의 값을 비교하여 가장 높은 값을 최소 속도에 맞춰지도록 조정합니다.
+      let mul = Math.abs(speedX) < Math.abs(speedY) ? minSpeed / Math.abs(speedY) : minSpeed / Math.abs(speedX)
+      speedX *= mul
+      speedY *= mul
+    }
+
+    // 이동 방향에 따라서 속도를 재설정 하도록 변경 
+    // (참고: 이동방향은 없을 수도 있기 때문에 다음과 같은 조건을 사용했습니다.)
+    // 이동방향이 공백인 경우는 right, down인 것처럼 처리합니다. 그래서 left와 up이 아닐때 +값을 적용하도록 했습니다.
+    this.moveSpeedX = this.moveDirectionX !== FieldData.direction.LEFT ? speedX : -speedX
+    this.moveSpeedY = this.moveDirectionY !== FieldData.direction.UP ? speedY : -speedY
+  }
+
+  /**
+   * 특정 값을 추적하는 형태의 이동 속도 값이 무엇인지를 얻어옵니다.
+   * 
+   * baseX, baseY 부터 targetX, targetY를 기준으로 값을 계산해 결과를 리턴합니다.
+   * 
+   * 경고: direction을 고려하지 않으므로, 여기에서 리턴된 값을 사용할 때는 주의하세요.
+   * @param {number} targetX 목표지점 x
+   * @param {number} targetY 목표지점 y
+   * @param {number} baseX 기준지점 x
+   * @param {number} baseY 기준지점 y
+   * @param {number} divValue 목표와 현재와 거리 차이를 나누는 값 (이 값이 클수록 속도가 느려집니다.), 0일경우 강제로 1로 설정됨
+   * @param {number} [minSpeed = 2]
+   * 
+   * @returns {{speedX: number, speedY: number}} 최종 정의된 속도값: 단 방향이 없으므로, 현재 대상이 방향이 정의되어있는지 확인해야합니다.
+   */
+  getMoveSpeedChaseLineValue (targetX, targetY, baseX, baseY, divValue = 1, minSpeed = 2) {
+    // 0 나눗셈 금지 및, 숫자형이 아닌경우 강제로 값 초기화
+    if (typeof divValue !== 'number' && divValue === 0) divValue = 1
+
+    let speedX = (targetX - baseX) / divValue
+    let speedY = (targetY - baseY) / divValue
+    if (Math.abs(speedX) < minSpeed && Math.abs(speedY) < minSpeed) {
+      // speedX와 speedY의 값을 비교하여 가장 높은 값을 최소 속도에 맞춰지도록 조정합니다.
+      let mul = Math.abs(speedX) < Math.abs(speedY) ? minSpeed / Math.abs(speedY) : minSpeed / Math.abs(speedX)
+      speedX *= mul
+      speedY *= mul
+    }
+
+    return {
+      speedX,
+      speedY
+    }
   }
 
   /**

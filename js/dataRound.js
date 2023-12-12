@@ -1141,13 +1141,18 @@ export class RoundPackLoad {
     ]
   }
 
-  static getRound3ShareSound () {
+  /** 다운타워 특성상 불러오는 데이터가 많을 수 있음 */
+  static getRound3Part1ShareSound () {
     return [
       soundSrc.round.r3_playerOption,
       soundSrc.round.r3_bossWarning,
       soundSrc.round.r3_bossWarningKeyboard,
 
       // enemyDie
+      soundSrc.enemyDie.enemyDieTowerBar1,
+      soundSrc.enemyDie.enemyDieTowerBar2,
+      soundSrc.enemyDie.enemyDieTowerBar3,
+      soundSrc.enemyDie.enemyDieTowerBossBar,
       soundSrc.enemyDie.enemyDieTowerBossRobot1,
       soundSrc.enemyDie.enemyDieTowerBossRobot2,
       soundSrc.enemyDie.enemyDieTowerDaepo,
@@ -1157,27 +1162,41 @@ export class RoundPackLoad {
       soundSrc.enemyDie.enemyDieTowerHellcho,
       soundSrc.enemyDie.enemyDieTowerHellgal,
       soundSrc.enemyDie.enemyDieTowerHellgi,
+      soundSrc.enemyDie.enemyDieTowerHellla,
+      soundSrc.enemyDie.enemyDieTowerHellna,
+      soundSrc.enemyDie.enemyDieTowerHellpa,
+      soundSrc.enemyDie.enemyDieTowerHellpo,
       soundSrc.enemyDie.enemyDieTowerHexagon,
+      soundSrc.enemyDie.enemyDieTowerJagijang,
       soundSrc.enemyDie.enemyDieTowerI,
       soundSrc.enemyDie.enemyDieTowerLaserAlpha,
       soundSrc.enemyDie.enemyDieTowerLaserMini,
+      soundSrc.enemyDie.enemyDieTowerLightning,
       soundSrc.enemyDie.enemyDieTowerMoveBlue,
       soundSrc.enemyDie.enemyDieTowerMoveDarkViolet,
       soundSrc.enemyDie.enemyDieTowerMoveViolet,
       soundSrc.enemyDie.enemyDieTowerMoveYellowEnergy,
+      soundSrc.enemyDie.enemyDieTowerMagnet,
       soundSrc.enemyDie.enemyDieTowerOctagon,
       soundSrc.enemyDie.enemyDieTowerPentagon,
+      soundSrc.enemyDie.enemyDieTowerPentaLight,
+      soundSrc.enemyDie.enemyDieTowerPentaShadow,
       soundSrc.enemyDie.enemyDieTowerPunch,
       soundSrc.enemyDie.enemyDieTowerSandglass,
       soundSrc.enemyDie.enemyDieTowerSquare,
       soundSrc.enemyDie.enemyDieTowerTapo,
       soundSrc.enemyDie.enemyDieTowerX,
 
+
       // enemyAttack
       soundSrc.enemyAttack.towerAttackDaepo,
       soundSrc.enemyAttack.towerAttackRocket,
+      soundSrc.enemyAttack.towerAttackRocketBomb,
       soundSrc.enemyAttack.towerPunchAttack,
       soundSrc.enemyAttack.towerHellbaAttack,
+      soundSrc.enemyAttack.towerBossBarAttack,
+      soundSrc.enemyAttack.towerJagijangAttack,
+      soundSrc.enemyAttack.towerLightningAttack,
     ]
   }
 }
@@ -3328,7 +3347,8 @@ class Round1_test extends RoundData {
     this.bgLegacy.imageSrc = imageSrc.round.round1_1_space
     this.phase.addRoundPhase(this, () => {
       if (this.timeCheckInterval(1, 999, 60) && this.field.getEnemyCount() === 0) {
-        this.field.createEnemy(ID.enemy.donggramiEnemy.talk, 600)
+        this.field.createEnemy(ID.enemy.towerEnemyGroup2.barRandom, 600, 200)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup2.lightning, 600)
       }
     }, 0, 999)
   }
@@ -8654,7 +8674,7 @@ class Round3Templete extends RoundData {
     this.bossSprite = new Round3TempleteBossSprite()
 
     this.load.addImageList(RoundPackLoad.getRound3ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound3ShareSound())
+    this.load.addSoundList(RoundPackLoad.getRound3Part1ShareSound())
   }
 
   processSaveString () {

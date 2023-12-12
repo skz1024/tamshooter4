@@ -274,8 +274,11 @@ class PlayerObject extends FieldData {
    * 플레이어가 데미지를 받으면 사운드를 출력합니다.
    * @param {number} shieldDamage 쉴드 데미지
    * @param {number} hpDamage 체력 데미지
+   * @param {boolean} isDefaultSound 기본 사운드 사용? 값이 false면 데미지 받아도 소리가 안남
    */
-  damageSoundPlay (shieldDamage = 0, hpDamage = 0) {
+  damageSoundPlay (shieldDamage = 0, hpDamage = 0, isDefaultSound = true) {
+    if (!isDefaultSound) return
+
     const LOW_DAMAGE = 2
     const MIDDLE_DAMAGE = 15
     const HIGH_DAMAGE = 30

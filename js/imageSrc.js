@@ -79,7 +79,8 @@ export class imageSrc {
     jemulEnemy: './image/enemy/jemulEnemy.png',
     donggramiEnemy: './image/enemy/donggramiEnemy.png',
     intruderEnemy: './image/enemy/intruderEnemy.png',
-    towerEnemyGroup1: './image/enemy/towerEnemyGroup1.png'
+    towerEnemyGroup1: './image/enemy/towerEnemyGroup1.png',
+    towerEnemyGroup2: './image/enemy/towerEnemyGroup2.png'
   }
 
   static enemyDie = {
@@ -480,18 +481,21 @@ export class imageDataInfo {
   }
 
   static towerEnemyGroup2 = {
-    bar1: new ImageDataObject(0, 0, 140, 20, 5),
-    bar2: new ImageDataObject(0, 20, 140, 20, 5),
-    bar3: new ImageDataObject(0, 40, 140, 20, 5),
-    bar4: new ImageDataObject(0, 60, 140, 20, 5),
-    bar5: new ImageDataObject(0, 80, 140, 20, 5),
+    barYellow: new ImageDataObject(0, 0, 140, 20, 5),
+    barLime: new ImageDataObject(0, 20, 140, 20, 5),
+    barViolet: new ImageDataObject(0, 40, 140, 20, 5),
+    barOrange: new ImageDataObject(0, 60, 140, 20, 5),
+    barCyan: new ImageDataObject(0, 80, 140, 20, 5),
+    barGrey: new ImageDataObject(0, 100, 140, 20, 5),
     jagijang: new ImageDataObject(0, 130, 140, 140, 6),
-    lightning: new ImageDataObject(0, 330, 90, 100, 5),
+    lightning: new ImageDataObject(0, 330, 90, 100, 1),
+    lightningEnimation: new ImageDataObject(0, 330, 90, 100, 5),
     magnet: new ImageDataObject(600, 430, 150, 100, 1),
-    hellla: new ImageDataObject(0, 530, 200, 90, 5),
+    hellla: new ImageDataObject(0, 531, 200, 88, 5),
     hellpo: new ImageDataObject(0, 620, 160, 70, 4),
     hellpa: new ImageDataObject(0, 690, 140, 120, 5),
-    hellna: new ImageDataObject(710, 690, 120, 80, 1),
+    hellpaAttackWait: new ImageDataObject(700, 690, 140, 120, 3),
+    hellna: new ImageDataObject(1001, 530, 120, 80, 1),
     pentaShadow: new ImageDataObject(0, 810, 120, 110, 1),
     pentaLight: new ImageDataObject(120, 810, 120, 110, 1),
     hexaShadow: new ImageDataObject(240, 810, 130, 110, 1),
@@ -507,7 +511,7 @@ export class imageDataInfo {
     
     // attack
     lightningAttack: new ImageDataObject(0, 430, 100, 100, 6),
-    hellpaAttack: new ImageDataObject(850, 200, 100, 50, 1),
+    hellpaAttack: new ImageDataObject(850, 200, 100, 30, 1),
 
     // effect
     jagijangLightning: new ImageDataObject(0, 270, 120, 60, 6),
