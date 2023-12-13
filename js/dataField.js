@@ -808,11 +808,16 @@ export class FieldData {
    * 이 함수는 기본적으로 필드 객체의 모든 로직을 담고 있습니다.
    */
   process () {
-    this.afterInitProcess()
+    this.afterInitProcess() // 자동 초기화 프로세스 (내부적으로 1회만 적용됨)
+    this.processMove() // 이동 처리
 
-    this.processMove()
-    this.processEnimation()
-    this.processState()
+    // 중심 좌표 설정 (processMove에서 처리하지 않는 이유는 함수가 상속되어 변형되면서 
+    // 간혹 일부가 super.processMove를 호출하지 않아 centerX, centerY값을 계산하지 못하기 때문)
+    this.centerX = this.x + Math.floor(this.width / 2)
+    this.centerY = this.y + Math.floor(this.height / 2)
+
+    this.processEnimation() // 에니메이션 처리
+    this.processState() // 상태 또는 기타 등등 처리
 
     // 캔버스의 영역을 크게 벗어나면 해당 객체는 자동으로 삭제요청을 합니다.
     // isDeleted 가 true라면, fieldState에서 해당 객체를 삭제합니다.
@@ -870,9 +875,6 @@ export class FieldData {
     // 이동 속도에 따른 좌표값 변경
     this.x += this._speedX
     this.y += this._speedY
-
-    this.centerX = this.x + Math.floor(this.width / 2)
-    this.centerY = this.y + Math.floor(this.height / 2)
   }
 
   /**

@@ -204,7 +204,7 @@ export class ID {
       momi: 20230,
       hanoi: 20231,
       daseok: 20232,
-      nextEnemy: 20233,
+      towerLaserMini: 20233,
     },
     towerEnemyGroup1: {
       moveBlue: 20240,
@@ -314,6 +314,7 @@ export class ID {
     round3_6: 70036,
     round3_7: 70037,
     round3_8: 70038,
+    round3_9: 70039,
     round3_A1: 70041,
     round3_A2: 70042,
     round3_A3: 70043,

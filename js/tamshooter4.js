@@ -776,7 +776,7 @@ class RoundSelectSystem extends MenuSystem {
     this.roundIdTable = {
       r1: [r.round1_1, r.round1_2, r.round1_3, r.round1_4, r.round1_5, r.round1_6, unused, unused, r.round1_test, unused],
       r2: [r.round2_1, r.round2_2, r.round2_3, r.round2_4, r.round2_5, r.round2_6, unused, unused, r.round2_test, unused],
-      r3: [r.round3_1, unused, unused, unused, unused, unused, unused, unused, r.round3_test, unused],
+      r3: [r.round3_1, r.round3_2, r.round3_3, r.round3_4, r.round3_5, r.round3_6, r.round3_7, r.round3_8, r.round3_9, r.round3_test],
     }
 
     this.roundWorldIconNumber = [1, 10]

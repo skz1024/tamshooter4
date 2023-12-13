@@ -1216,7 +1216,16 @@ shop는 상점이고, 아이템을 구매할 수 있습니다. (그러나 골드
 기존 무기에 버그가 발생해서 원래대로 되돌렸습니다.)
 
 
-2023/12/?? ver 0.45.1 - round 3-2 add
-1. round 3-1밸런스는 3-4까지 완성한 후 다시 변경할 예정
+2023/12/13 v0.45.1 - round 3-2 add, balance patch
+무려 2주만의 업데이트...
+1. round 3-1 밸런스 수정
 2. round 3-2가 추가되었습니다.
 3. 새로운 적 이미지, 사운드 추가 (2023/12/11)
+4. round 3-1의 배경에서 비어있던 부분을 원래대로 복구했습니다. 
+5. 배경 깨짐을 방지하기 위해 정수배율로 배경 이동속도 변경
+6. fieldData에 setMoveSpeedLineChase와 같은 함수들 추가 (반복적인 코드가 많아 함수로 합침)
+7. round 3의 playerOption 밸런스 수정, purple 변경, kakhi 추가
+8. playerOption의 파워 아이템이 색을 몰라도 구분할 수 있도록 이미지 추가
+9. baseDivScore 개념 추가 
+(intruderEnemy까지만 해도 단독이였지만, towerEnemy의 추가로 일괄적인 적 그룹에 대한 점수 조정이 필요)
+10. intruderEnemy의 nextEnemy 가 다운타워에 나오는 적으로 변경됩니다.

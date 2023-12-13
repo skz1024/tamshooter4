@@ -139,8 +139,6 @@ export class imageSrc {
     round2_5_floorB1Break: './image/round/round2_5_floorB1Break.png',
     round2_5_floorB1Light: './image/round/round2_5_floorB1Light.png',
     round2_6_downtowerEntrance: './image/round/round2_6_downtowerEntrance.png',
-    round2_6_original1: './image/round/round2_6_original1.png',
-    round2_6_original2: './image/round/round2_6_original2.png',
     round2_6_ruin1: './image/round/round2_6_ruin1.png',
     round2_6_ruin2: './image/round/round2_6_ruin2.png',
     round2_6_quiteRoad: './image/round/round2_6_quiteRoad.png',
@@ -399,7 +397,7 @@ export class imageDataInfo {
     momi: {x: 0, y: 710, width: 120, height: 60, frame: 12},
     momiDie: {x: 1440, y: 710, width: 120, height: 60, frame: 1},
     flyingRocket: {x: 0, y: 780, width: 150, height: 60, frame: 10},
-    nextEnemy: {x: 1700, y: 200, width: 80, height: 40, frame: 1},
+    towerLaserMini: {x: 1700, y: 200, width: 80, height: 40, frame: 1},
 
     // effect
     energyThunder: {x: 0, y: 1350, width: 100, height: 30, frame: 8},
@@ -413,6 +411,7 @@ export class imageDataInfo {
     flyingGreenLaser: {x: 540, y: 1450, width: 50, height: 10, frame: 1},
     leverMissileLeft: {x: 540, y: 1380, width: 60, height: 60, frame: 1},
     leverMissileRight: {x: 600, y: 1380, width: 60, height: 60, frame: 1},
+    towerlaserMiniAttack: new ImageDataObject(1700, 241, 60, 20, 1),
 
     // enemyDie
     enemyDieIntruderDaseok: {x: 0, y: 850, width: 160, height: 240, frame: 10},
@@ -619,25 +618,28 @@ export class imageDataInfo {
   }
 
   static round3_optionWeapon = {
-    orange: {x: 0, y: 0, width: 40, height: 40, frame: 10},
+    orange: new ImageDataObject(0, 0, 40, 40, 10),
     skyblue: new ImageDataObject(400, 0, 40, 40, 10),
     green: new ImageDataObject(0, 40, 40, 40, 10),
     black: new ImageDataObject(400, 40, 40, 40, 10),
     pink: new ImageDataObject(0, 80, 40, 40, 10),
     purple: new ImageDataObject(400, 80, 40, 40, 10),
+    khaki: new ImageDataObject(400, 120, 40, 40, 10),
     orangeShot: new ImageDataObject(805, 0, 30, 12, 1),
     skyblueShot: new ImageDataObject(880, 0, 32, 32, 1),
     greenShot: new ImageDataObject(840, 0, 30, 12, 1),
     blackShot: new ImageDataObject(800, 40, 64, 64, 1),
-    purpleShot: new ImageDataObject(0, 360, 40, 40, 20),
-    pinkShot: new ImageDataObject(0, 200, 100, 100, 10),
+    purpleShot: new ImageDataObject(880, 40, 8, 40, 10),
+    pinkShot: new ImageDataObject(0, 170, 80, 80, 10),
+    khakiShot: new ImageDataObject(920, 0, 30, 30, 1),
     orangeItem: new ImageDataObject(0, 120, 40, 40, 1),
     skyblueItem: new ImageDataObject(40, 120, 40, 40, 1),
     greenItem: new ImageDataObject(80, 120, 40, 40, 1),
     blackItem: new ImageDataObject(120, 120, 40, 40, 1),
     pinkItem: new ImageDataObject(160, 120, 40, 40, 1),
     purpleItem: new ImageDataObject(200, 120, 40, 40, 1),
-    skyblueSplash: new ImageDataObject(0, 300, 60, 60, 10)
+    khakiItem: new ImageDataObject(240, 120, 40, 40, 1),
+    skyblueSplash: new ImageDataObject(0, 260, 60, 60, 10),
   }
 
   static round3_bossWarning = {
