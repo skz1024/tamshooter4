@@ -1229,3 +1229,13 @@ shop는 상점이고, 아이템을 구매할 수 있습니다. (그러나 골드
 9. baseDivScore 개념 추가 
 (intruderEnemy까지만 해도 단독이였지만, towerEnemy의 추가로 일괄적인 적 그룹에 대한 점수 조정이 필요)
 10. intruderEnemy의 nextEnemy 가 다운타워에 나오는 적으로 변경됩니다.
+
+
+2023/12/14 v0.45.2 - bug fix, enemy collision update
+1. 필드가 끝나고 메인화면에 메뉴가 눌리는 오류 수정
+2. 사각형 형태의 적들이 아닌 적들 중 일부는 충돌 범위가 수정됩니다.
+3. //@ts-check 를 사용했을 때 오류가 발생하는 코드들 제거
+4-1. imageData는 기본값이 지정됩니다.
+4-2. FieldData의 setAutoImageData는 imageData와 image null확인을 하지 않습니다.
+5. 페이드 인, 아웃과 관련한 버그 일부 수정
+6. 라운드 시작시 무조건 음악의 0초부터 재생되도록 변경

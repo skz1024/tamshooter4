@@ -1,6 +1,6 @@
 //@ts-check
 
-import { ImageDataObject } from "./imageSrc.js"
+import { ImageDataObject, imageDataInfo } from "./imageSrc.js"
 import { game } from "./game.js"
 
 let graphicSystem = game.graphic
@@ -506,6 +506,7 @@ export class FieldData {
     
     /** 이동 방향에 따른 이동 속도 x좌표 (소수점 허용) */ this.moveSpeedX = 0
     /** 이동 방향에 따른 이동 속도 y좌표 (소수점 허용) */ this.moveSpeedY = 0
+    /** 내부 이동속도 z좌표값 (이동 방향은 없습니다.) */ this.moveSpeedZ = 0
     /** 이동 가능 여부 (이 값이 true 일경우만 이동이 가능) */ this.isMoveEnable = true
     /** 회전한 각도 (일부 객체에서만 사용) */ this.degree = 0
     /** 뒤집기 0: 없음, 1: 수직, 2: 수평, 3: 수직 + 수평, 나머지 무시(0으로 처리) */ this.flip = 0
@@ -585,7 +586,9 @@ export class FieldData {
     /**
      * 만약 해당 오브젝트가 다른 오브젝트를 참고할 일이 있다면, 이 오브젝트에 다른 오브젝트의 정보를 저장합니다.
      * 만약 그 다른 오브젝트의 isDelete 값이 true 라면 이 값을 수동으로 null로 지정해주세요.
-     * @type {FieldData | null}
+     * 
+     * 기본적으로 FieldData가 기준이지만, 이를 상속받은 모든 객체를 사용할 수도 있으므로, any 형식으로 지정됩니다.
+     * @type {FieldData | any | null}
      */
     this.targetObject = null
 
@@ -620,9 +623,9 @@ export class FieldData {
 
     /**
      * 이미지 데이터, 이 값은 특수한 경우에 주로 사용[여러개의 오브젝트가 그려져있는 이미지를 자를 때 주로 사용]
-     * @type {ImageDataObject | null} ImageData의 변수값
+     * @type {ImageDataObject} ImageData의 변수값
      */
-    this.imageData = null
+    this.imageData = imageDataInfo.default.unused
   }
 
   /**
@@ -1007,16 +1010,15 @@ export class FieldData {
    * 
    * 옵션을 통해 출력 사이즈를 조정할 수 있으며, 또는  setWidthHeight 함수를 사용해서 에니메이션의 크기를 변경할 수 있습니다.
    * @param {string} imageSrc
-   * @param {ImageDataObject | null} imageData
+   * @param {ImageDataObject} imageData
    * @param {number} enimationDelay 에니메이션 딜레이(프레임 단위)
+   * @par
    */
-  setAutoImageData (imageSrc, imageData, enimationDelay = 1, {width = null, height = null} = {}) {
+  setAutoImageData (imageSrc, imageData, enimationDelay = 1, width = imageData.width, height = imageData.height) {
     this.imageSrc = imageSrc
     this.imageData = imageData
-    if (this.imageSrc == null || this.imageData == null) return
-
-    this.width = width == null ? this.imageData.width : width
-    this.height = height == null ? this.imageData.height : height
+    this.width = width
+    this.height = height
     
     if (this.imageData.frame >= 2) {
       this.enimation = null // 기존 애니메이션 버리고 재할당

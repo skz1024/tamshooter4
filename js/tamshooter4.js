@@ -2068,7 +2068,7 @@ export class gameSystem {
    * tamshooter4에서 사용하는 saveKey에 추가적으로 붙는 번호 (다만 이 게임에서 다중 세이브를 사용할 생각이 없음) 
    * @deprecated
    */
-  static saveKetTamshooter4DataNumber = 0
+  static saveKeyTamshooter4DataNumber = 0
 
   static saveFlagList = {
     v0a36: 'v0a36',
@@ -2077,12 +2077,12 @@ export class gameSystem {
 
   /** tamshooter4에서 사용하는 실제 세이브 키 (참고: 세이브 키 + 세이브 번호의 조합으로 키를 구성하기 때문에 이 함수를 사용해야 합니다.) */
   static getCurrentSaveKey () {
-    return this.saveKeyTamshooter4Data + this.saveKetTamshooter4DataNumber
+    return this.saveKeyTamshooter4Data + this.saveKeyTamshooter4DataNumber
   }
 
   /** tamshooter4에서 사용하는 백업용 세이브 키 (오류가 났을 때 복구하는 용도) */
   static getCurrentSaveKeyBackup () {
-    return this.saveKeyTamshooter4Data + this.saveKetTamshooter4DataNumber + 'backup'
+    return this.saveKeyTamshooter4Data + this.saveKeyTamshooter4DataNumber + 'backup'
   }
 
   /** 저장 지연 시간을 카운트 하는 변수 */ static saveDelayCount = 0
@@ -2367,7 +2367,8 @@ export class gameSystem {
 
     // 불러오기 작업 진행
     if (loadData.saveFlag) {
-      // 생략
+      // 현재(v0.44) 에서는 처리해야 할 내용은 없습니다.
+      // 다만 이후 버전에서 처리해야 할 내용이 있을 수 있으므로, 이 코드는 공백으로 남겨둡니다.
     }
 
     if (loadData.playTime) {
@@ -2579,6 +2580,7 @@ export class gameSystem {
         break
       case messageList.STATE_MAIN:
         this.stateId = this.STATE_MAIN
+        this.mainSystem.selected = false // 간혹 필드를 나갔을 때 메뉴가 눌리는 상황이 있기 때문에 이를 막기 위함
         break
       case messageList.STATE_FIELD:
         this.stateId = this.STATE_FIELD

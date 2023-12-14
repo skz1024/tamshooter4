@@ -12,6 +12,16 @@ let graphicSystem = game.graphic
 let soundSystem = game.sound
 
 export class EnemyData extends FieldData {
+  /**
+   * 적의 충돌 영역 (이 값이 없다면 내부적으로 기본값으로 처리합니다.)
+   * @typedef CollisionAreaData
+   * @property {number} x x좌표
+   * @property {number} y y좌표
+   * @property {number} width 너비
+   * @property {number} height 높이
+   * @property {number} degree 각도 (0 ~ 360)
+   */
+
   constructor () {
     super()
     /**
@@ -20,7 +30,6 @@ export class EnemyData extends FieldData {
      */
     this.score = 100
     this.isAfterInited = false
-    this.attack = 0
 
     this.moveDirectionX = 'left'
 
@@ -54,8 +63,6 @@ export class EnemyData extends FieldData {
 
     /** 적이 화면 바깥으로 나갈 수 있는지의 여부 */ this.isPossibleExit = true
     /** 적이 나간다면 위치가 리셋되는지의 여부 */ this.isExitToReset = false
-
-    /** 이미지 */ this.imageSrc = null
 
     /** 
      * 적이 죽으면 나오는 사운드. (isDied가 true이면 dieCheck 함수에서 발동) 
@@ -92,23 +99,65 @@ export class EnemyData extends FieldData {
   }
 
   /**
-   * 충돌 영역 얻기.
+   * 적의 충돌 영역을 얻습니다. (충돌 영역은 여러개일 수도 있습니다.)
    * 
-   * 무기와 다르게 적의 충돌 영역은 여러개입니다. 물론 하나일 수도 있습니다.
+   * 만약 상속받아야 하는 경우, getCollisionAreaCalcurationObject 함수를 사용해서 충돌 영역을 계산해주세요.
+   * 임의로 설정하는 경우, 확대/축소 했을 때 충돌영역이 잘못된 계산을 할 수 있습니다.
    * 
-   * 충돌 영역은 배열로 리턴되므로 참고해주세요. 충돌 영역은 이 함수를 재정의해서 설정해주세요.
-   * 
-   * 다만, 이 방식은 회전한 사각형을 판정할 순 없기 때문에, 회전한 사각형까지 판정하려면 다른 함수를 사용해야 합니다.
-   * 그러나, 이것은 일부 적에 한정되는 상황이므로, 해당하는 일부 적의 알고리즘을 살펴봐주세요.
-   * @returns {{x: number, y: number, width: number, height: number}[]} 객체의 영역
+   * @returns {CollisionAreaData[]}
    */
   getCollisionArea () {
     return [{
       x: this.x,
       y: this.y,
       width: this.width,
-      height: this.height
+      height: this.height,
+      degree: this.degree
     }]
+
+    // 이 함수는 아래 코드랑 동일
+    // return [this.getCollisionAreaCalcurationObject()]
+  }
+
+  /**
+   * 충돌 영역 추가 계산 함수 (확대/축소에 대한 대응을 하기 위해 만들어졌습니다.)
+   * 
+   * 이미지 데이터를 기준으로 크기를 계산합니다. 절대로 imageDataClipWidth 같은 부분에 this.width, this.height값을 적용하지 마세요.
+   * 이 경우, 잘못된 데이터 출력이 될 수 있습니다.
+   * 
+   * @param {number} [plusX=0] 이미지를 기준으로 벗어난 x좌표 (원본 크기 기준, 확대 축소를 무시하고 값을 입력해야 합니다. 기본값 0)
+   * @param {number} [plusY=0] 이미지를 기준으로 벗어난 y좌표 (원본 크기 기준, 확대 축소를 무시하고 값을 입력해야 합니다. 기본값 0)
+   * @param {number} [imageDataClipWidth] 이미지 데이터에 있는 크기 중 일부에 대한 너비
+   * @param {number} [imageDataClipHeight] 이미지 데이터에 있는 크기 중 일부에 대한 높이
+   * 
+   * @returns {CollisionAreaData}
+   */
+  getCollisionAreaCalcurationObject (plusX = 0, plusY = 0, imageDataClipWidth = this.imageData.width, imageDataClipHeight = this.imageData.height) {
+    let mulX = this.width / this.imageData.width
+    let mulY = this.height / this.imageData.height
+    let plusXFinal = mulX === 0 ? plusX : Math.floor(plusX * mulX)
+    let plusYFinal = mulY === 0 ? plusY : Math.floor(plusY * mulY)
+    let currentX = this.x + plusXFinal
+    let currentY = this.y + plusYFinal
+    let currentWidth = mulX === 0 ? imageDataClipWidth : Math.floor(imageDataClipWidth * mulX)
+    let currentHeight = mulY === 0 ? imageDataClipHeight : Math.floor(imageDataClipHeight * mulY)
+
+    if (this.flip === 1) {
+      currentX = this.x + this.width - plusXFinal - currentWidth
+    } else if (this.flip === 2) {
+      currentY = this.y + this.height - plusYFinal - currentHeight
+    } else if (this.flip === 3) {
+      currentX = this.x + this.width - plusXFinal - currentWidth
+      currentY = this.y + this.height - plusYFinal - currentHeight
+    }
+
+    return {
+      x: currentX,
+      y: currentY,
+      width: currentWidth,
+      height: currentHeight,
+      degree: this.degree
+    }
   }
 
   /**
@@ -117,7 +166,7 @@ export class EnemyData extends FieldData {
    * 이 함수는, 가급적이라면, 적의 스탯을 수동으로 지정해야 할 때만 사용해주세요.
    * setEnemyByCpStat함수 사용을 권장합니다.
    * @param {number} hp 체력
-   * @param {number} score 점수 (기본적으로 체력 100당 1점으로 생각합니다.)
+   * @param {number} score 점수 (기본적으로 체력 100당 1점입니다.)
    * @param {number} attack 공격력
    */
   setEnemyStat (hp = 1, score = 0, attack = 0) {
@@ -363,20 +412,22 @@ export class EnemyData extends FieldData {
    * 이 함수의 상속을 권장하진 않습니다. (충돌 규칙이 변화할 가능성이 없기 때문)
    */
   processPlayerCollision () {
+    if (this.attack === 0) return // 공격력이 0인경우 충돌검사를 할 필요가 없음
+
     if (this.collisionDelay.check(false)) {
       const player = fieldState.getPlayerObject()
-      const enemy = this.getCollisionArea() // 적은 따로 충돌 영역을 얻습니다.
+      const enemyArea = this.getCollisionArea() // 적은 따로 충돌 영역을 얻습니다.
 
-      for (let i = 0; i < enemy.length; i++) {
-        // 각도가 0인경우, 일반 충돌 공식을 사용하고, 아닌경우 각도를 고려한 충돌 검사를 사용합니다.
-        if ( (this.degree === 0 && collision(enemy[i], player))
-         || this.degree !== 0 && collisionClass.collisionOBB(enemy[i], player) ) {
+      for (let i = 0; i < enemyArea.length; i++) {
+        if (this.degree === 0 && collision(enemyArea[i], player)
+         || this.degree !== 0 && collisionClass.collisionOBB(enemyArea[i], player)) {
           player.addDamage(this.attack)
           this.collisionDelay.count = 0 // 플레이어랑 충돌하면 충돌 딜레이카운트를 0으로 만듬
           this.processPlayerCollisionSuccessAfter() // 충돌 성공 이후 로직 처리
-          return
+          break // 루프 종료 (여러 충돌객체중 하나만 충돌해야함, 중복 데미지 없음)
         }
       }
+
     }
   }
 
@@ -570,9 +621,9 @@ export class EnemyBulletData extends FieldData {
  */
 export class CustomEnemyBullet extends EnemyBulletData {
   /**
-   * @param {ImageDataObject | null} imageData 
+   * @param {ImageDataObject} imageData 
    */
-  constructor (imageSrc = '', imageData = null, attack = 0, moveSpeedX = 0, moveSpeedY = 0, moveDirectionX = '', moveDirectionY = '') {
+  constructor (imageSrc = '', imageData = imageDataInfo.default.unused, attack = 0, moveSpeedX = 0, moveSpeedY = 0, moveDirectionX = '', moveDirectionY = '') {
     super()
     this.setAutoImageData(imageSrc, imageData)
     this.attack = attack
@@ -880,6 +931,8 @@ class SpaceEnemySusong extends SpaceEnemyData {
 
   display () {
     if (this.state === 'move' || this.boostCount >= 0) {
+      if (this.enimation == null) return
+
       if (this.moveDirectionX === 'right') {
         this.enimation.flip = 1
         this.enimation.display(this.x, this.y)
@@ -899,8 +952,10 @@ class SpaceEnemySusong extends SpaceEnemyData {
   processDie () {
     if (this.dieCheck()) {
       this.processDieDefault()
-      fieldState.createEffectObject(this.dieEffect, this.x + 40, this.y)
-      fieldState.createEffectObject(this.dieEffect, this.x + 80, this.y)
+      if (this.dieEffect) {
+        fieldState.createEffectObject(this.dieEffect, this.x + 40, this.y)
+        fieldState.createEffectObject(this.dieEffect, this.x + 80, this.y)
+      }
     }
   }
 }
@@ -917,8 +972,6 @@ class SpaceEnemyGamjigi extends SpaceEnemyData {
     this.degree = 0
     this.state = 'chase'
   }
-
-  static gamjigiRotate
 
   processMove () {
     // 이동 지연시간마다 추적할지 말지를 설정
@@ -970,17 +1023,19 @@ class SpaceEnemyGamjigi extends SpaceEnemyData {
   processDie () {
     if (this.dieCheck()) {
       // 죽음 이펙트를 생성 후, 이 값을 가져와, 각도 값을 변경합니다.
-      let changeEffect = fieldState.createEffectObject(this.dieEffect, this.x, this.y)
-      changeEffect.enimation.degree = this.degree
+      if (this.dieEffect != null) {
+        let changeEffect = fieldState.createEffectObject(this.dieEffect, this.x, this.y)
+        if (changeEffect && changeEffect.enimation) changeEffect.enimation.degree = this.degree
+        this.dieEffect = null
+      }
 
       // 죽음 이펙트 중복 출력을 막기 위해, 현재 죽음 이펙트를 삭제하고, 임시 변수에 이동시킵니다.
-      this.dieEffect = null
       this.processDieDefault()
     }
   }
 
   display () {
-    if (this.imageSrc) {
+    if (this.imageSrc && this.imageData) {
       graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height, 0, this.degree)
     }
   }
@@ -1237,6 +1292,8 @@ class SpaceEnemyBoss extends SpaceEnemyData {
     super.processDieAfter()
     if (this.isDied && this.dieAfterDeleteDelay.divCheck(10)) {
       soundSystem.play(this.dieSound)
+
+      if (this.dieEffect == null) return
       fieldState.createEffectObject(this.dieEffect, this.x + Math.random() * 40 - 80, this.y + Math.random() * 40 - 80)
     }
   }
@@ -1347,8 +1404,10 @@ class MeteoriteEnemyClass1 extends MeteoriteEnemyData {
    * 메테오의 크기가 다를 때 죽음 이펙트도 해당 크기에 맞추기 위해서, dieEffect의 크기를 변경합니다.
    */
   setDieEffectMeteo () {
-    this.dieEffect.width = this.width
-    this.dieEffect.height = this.height
+    if (this.dieEffect) {
+      this.dieEffect.width = this.width
+      this.dieEffect.height = this.height
+    }
   }
 }
 
@@ -1865,7 +1924,7 @@ class MeteoriteEnemyBombBig extends MeteoriteEnemyBomb {
     this.height = 160
 
     // 크기 수정에 따른 에니메이션 크기 수정
-    this.enimation.setOutputSize(this.width, this.height)
+    if (this.enimation) this.enimation.setOutputSize(this.width, this.height)
   }
 }
 
@@ -2018,7 +2077,7 @@ class JemulEnemyRotateRocket extends JemulEnemyData {
 
     // 판정 문제 때문에 에니메이션 각도와 실제 각도를 동시에 변경
     this.degree = atangent * (180 / Math.PI)
-    this.enimation.degree = this.degree 
+    if (this.enimation) this.enimation.degree = this.degree 
 
     this.moveSpeedX = distanceX / 250
     this.moveSpeedY = distanceY / 250
@@ -2103,6 +2162,10 @@ class JemulEnemyHellSpike extends JemulEnemyData {
     this.setRandomMoveSpeed(3, 3)
     this.attackDelay = new DelayData(120)
     this.isExitToReset = true
+  }
+
+  getCollisionArea () {
+    return [this.getCollisionAreaCalcurationObject(0, 40, undefined, 20)]
   }
 
   processAttack () {
@@ -2201,6 +2264,25 @@ class JemulEnemyHellShip extends JemulEnemyData {
     this.maxMoveSpeedY = 1
   }
 
+  getCollisionArea () {
+    if (this.state === 'front') {
+      return [
+        this.getCollisionAreaCalcurationObject(0, 17, 110, 28),
+        this.getCollisionAreaCalcurationObject(71, 0, 39, 17)
+      ]
+    } else if (this.state === 'up') {
+      return [
+        this.getCollisionAreaCalcurationObject(0, 6, 110, 28),
+      ]
+    } else {
+      return [
+        this.getCollisionAreaCalcurationObject(0, 33, 53, 12),
+        this.getCollisionAreaCalcurationObject(17, 19, 93, 18),
+        this.getCollisionAreaCalcurationObject(79, 0, 25, 18),
+      ]
+    }
+  }
+
   processMove () {
     if (this.moveDelay.check()) {
       this.moveSpeedX = Math.random() * 4
@@ -2224,11 +2306,11 @@ class JemulEnemyHellShip extends JemulEnemyData {
     }
 
     if (this.moveDirectionX === 'right') {
-      this.enimation.flip = 1
+      if (this.enimation) this.enimation.flip = 1
       this.enimationUp.flip = 1
       this.enimationDown.flip = 1
     } else {
-      this.enimation.flip = 0
+      if (this.enimation) this.enimation.flip = 0
       this.enimationUp.flip = 0
       this.enimationDown.flip = 0
     }
@@ -2257,7 +2339,7 @@ class JemulEnemyHellShip extends JemulEnemyData {
 
   processEnimation () {
     if (this.enimation != null || this.enimationUp != null || this.enimationDown != null) {
-      this.enimation.process()
+      if (this.enimation) this.enimation.process()
       this.enimationUp.process()
       this.enimationDown.process()
     }
@@ -2266,7 +2348,7 @@ class JemulEnemyHellShip extends JemulEnemyData {
   display () {
     // 이동 상태에 따라 출력 이미지 변경
     if (this.moveSpeedY === 0) {
-      this.enimation.display(this.x, this.y)
+      if (this.enimation) this.enimation.display(this.x, this.y)
     } else if (this.moveDirectionY === 'up' && this.moveSpeedY > 0) {
       this.enimationUp.display(this.x, this.y)
     } else if (this.moveDirectionY === 'down' && this.moveSpeedY > 0) {
@@ -2293,6 +2375,29 @@ class JemulEnemyHellAir extends JemulEnemyData {
     this.attackDelay = new DelayData(150)
   }
 
+  getCollisionArea () {
+    if (this.state === 'front') {
+      return [
+        this.getCollisionAreaCalcurationObject(0, 40, undefined, 20),
+        this.getCollisionAreaCalcurationObject(40, 0, 32, 100)
+      ]
+    } else if (this.state === 'up') {
+      return [
+        this.getCollisionAreaCalcurationObject(0, 15, 66, 31),
+        this.getCollisionAreaCalcurationObject(34, 46, 18, 48),
+        this.getCollisionAreaCalcurationObject(42, 0, 43, 80),
+        this.getCollisionAreaCalcurationObject(78, 35, 37, 47),
+      ]
+    } else {
+      return [
+        this.getCollisionAreaCalcurationObject(34, 0, 17, 50),
+        this.getCollisionAreaCalcurationObject(0, 46, 57, 40),
+        this.getCollisionAreaCalcurationObject(41, 61, 41, 33),
+        this.getCollisionAreaCalcurationObject(78, 13, 47, 36),
+      ]
+    }
+  }
+
   processMove () {
     if (this.moveDelay.check()) {
       this.setRandomMoveSpeed(4, 4)
@@ -2304,11 +2409,11 @@ class JemulEnemyHellAir extends JemulEnemyData {
     }
 
     if (this.moveDirectionX === 'right') {
-      this.enimation.flip = 1
+      if (this.enimation) this.enimation.flip = 1
       this.enimationUp.flip = 1
       this.enimationDown.flip = 1
     } else {
-      this.enimation.flip = 0
+      if (this.enimation) this.enimation.flip = 0
       this.enimationUp.flip = 0
       this.enimationDown.flip = 0
     }
@@ -2327,7 +2432,7 @@ class JemulEnemyHellAir extends JemulEnemyData {
   }
 
   processEnimation () {
-    this.enimation.process()
+    if (this.enimation) this.enimation.process()
     this.enimationUp.process()
     this.enimationDown.process()
   }
@@ -2354,7 +2459,7 @@ class JemulEnemyHellAir extends JemulEnemyData {
   display () {
     // 이동 상태에 따라 출력 이미지 변경
     if (this.state === 'front') {
-      this.enimation.display(this.x, this.y)
+      if (this.enimation) this.enimation.display(this.x, this.y)
     } else if (this.state === 'up') {
       this.enimationUp.display(this.x, this.y)
     } else if (this.state === 'down') {
@@ -2406,9 +2511,9 @@ class JemulEnemyBoss extends JemulEnemyData {
 
   getCollisionArea () {
     return [
-      {x: this.x, y: this.y + 30, width: 60, height: 240},
-      {x: this.x + 60, y: this.y, width: 240, height: 300},
-      {x: this.x + 300, y: this.y + 30, width: 60, height: 240},
+      this.getCollisionAreaCalcurationObject(0, 10, undefined, 80),
+      this.getCollisionAreaCalcurationObject(20, 5, 80, 90),
+      this.getCollisionAreaCalcurationObject(34, 0, 47, 100),
     ]
   }
 
@@ -2636,7 +2741,7 @@ class JemulEnemyBossEye extends JemulEnemyData {
     // 추가 세부 설정 // 에니메이션은 기본 3프레임이고, 특수한경우 7프레임입니다.
     this.ENIMATION_NORMAL_FRAME = 5
     this.ENIMATION_MAX_FRAME = imageDataInfo.jemulEnemy.jemulBossEye.frame
-    this.enimation.frameCount = this.ENIMATION_NORMAL_FRAME
+    if (this.enimation) this.enimation.frameCount = this.ENIMATION_NORMAL_FRAME
 
     // 레이저 오브젝트 [여러개가 쓰일 수 있음.]
     this.laserObject = []
@@ -2714,10 +2819,12 @@ class JemulEnemyBossEye extends JemulEnemyData {
 
   processEnimation () {
     if (this.state === this.STATE_STOP) {
-      // 에니메이션을 마지막프레임으로 고정
-      this.enimation.frameCount = 7
-      this.enimation.elapsedFrame = this.ENIMATION_MAX_FRAME - 1
-      this.enimation.finished = true
+      if (this.enimation != null) {
+        // 에니메이션을 마지막프레임으로 고정
+        this.enimation.frameCount = 7
+        this.enimation.elapsedFrame = this.ENIMATION_MAX_FRAME - 1
+        this.enimation.finished = true
+      }
     } else {
       super.processEnimation()
     }
@@ -3096,7 +3203,6 @@ class JemulEnemyBossEye extends JemulEnemyData {
 class JemulEnemyRedMeteorite extends JemulEnemyData {
   constructor () {
     super()
-    this.typeNumber = this.TYPE_NORMAL
     this.setEnemyByCpStat(50, 8, 100)
     this.setAutoImageData(this.imageSrc, imageDataInfo.jemulEnemy.redMeteorite)
     this.setMoveSpeed((Math.random() * 4) - 1, (Math.random() * 4) - 1)
@@ -3137,7 +3243,7 @@ class JemulEnemyRedAir extends JemulEnemyData {
     }
 
     // 에니메이션 플립 설정
-    this.enimation.flip = this.moveDirectionX === 'right' ? 1 : 0
+    if (this.enimation) this.enimation.flip = this.moveDirectionX === 'right' ? 1 : 0
 
     super.processMove()
   }
@@ -3158,6 +3264,15 @@ class JemulEnemyRedAir extends JemulEnemyData {
     // attackDelay.check를 안하기 때문에 카운터를 수동으로 증가시켜야 합니다.
     this.attackDelay.check()
   }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 31, undefined, 20),
+      this.getCollisionAreaCalcurationObject(40, 0, 20, 91),
+      this.getCollisionAreaCalcurationObject(58, 0, 23, 22),
+      this.getCollisionAreaCalcurationObject(86, 18, 26, 36),
+    ]
+  }
 }
 
 class JemulEnemyRedShip extends JemulEnemyData {
@@ -3172,6 +3287,14 @@ class JemulEnemyRedShip extends JemulEnemyData {
     this.isExitToReset = true
   }
 
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 22, 110, 22),
+      this.getCollisionAreaCalcurationObject(43, 14, 67, 8),
+      this.getCollisionAreaCalcurationObject(78, 2, 30, 13),
+    ]
+  }
+
   processMove () {
     if (this.moveDelay.check()) {
       this.setRandomMoveSpeed(2, 2)
@@ -3183,7 +3306,7 @@ class JemulEnemyRedShip extends JemulEnemyData {
     }
 
     // 에니메이션 플립 설정
-    this.enimation.flip = this.moveDirectionX === 'right' ? 1 : 0
+    if (this.enimation) this.enimation.flip = this.moveDirectionX === 'right' ? 1 : 0
 
     super.processMove()
   }
@@ -3842,17 +3965,15 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
         // 생성 id가 다를경우 다른 객체입니다.
         enemyObject = enemyObject.filter((value) => value.createId !== this.createId)
   
-        // 플레이어에게도 던질 수 있도록 목록에 추가
-        enemyObject.push(fieldState.getPlayerObject())
-        
-        // 어떤 적에게 던질 것에 대한 무작위 인덱스 지정
-        let randomIndex = Math.floor(Math.random() * enemyObject.length)
+        // 어떤 적에게 던질 것에 대한 무작위 인덱스 지정 
+        // 인덱스 범위에 1을 추가하는것은 플레이어도 대상에 포함되기 때문, 맨 마지막보다 1이 높으면 그것은 플레이어가 대상임
+        let randomIndex = Math.floor(Math.random() * (enemyObject.length + 1))
 
         // 메모리 누수 방지를 위한, targetObject null 처리 후 다시 객체를 대입
         if (this.targetObject != null) this.targetObject = null
 
         // 타겟 오브젝트 지정
-        this.targetObject = enemyObject[randomIndex]
+        this.targetObject = randomIndex < enemyObject.length ? enemyObject[randomIndex] : fieldState.getPlayerObject()
   
         // 상태 변경 및, 이모지를 던짐
         this.state = this.STATE_THROW
@@ -4188,11 +4309,11 @@ class DonggramiEnemyBossBig1 extends DonggramiEnemy {
     // 구체다 보니, 사각형으로 충돌판정 만들기가 어려움
     // 실제 사이즈도 192x192라 계산도 힘들어 어림짐작한 사이즈로 결정
     return [
-      {x: this.x + 50, y: this.y + 0, width: 100, height: 25 },
-      {x: this.x + 50, y: this.y + 192 - 25, width: 100, height: 25},
-      {x: this.x, y: this.y + 25, width: 25, height: 100},
-      {x: this.x + 192 - 25, y: this.y + 25, width: 25, height: 100},
-      {x: this.x + 25, y: this.y + 25, width: 140, height: 145}
+      this.getCollisionAreaCalcurationObject(50, 0, 100, 25),
+      this.getCollisionAreaCalcurationObject(50, 192 - 25, 100, 25),
+      this.getCollisionAreaCalcurationObject(0, 25, 25, 100),
+      this.getCollisionAreaCalcurationObject(192 - 25, 25, 25, 100),
+      this.getCollisionAreaCalcurationObject(25, 25, 140, 145),
     ]
   }
 
@@ -5335,7 +5456,7 @@ class DonggramiEnemyJuice extends DonggramiEnemyParty {
   processStateThrow () {
     let count = this.stateDelay.count
     if (this.subType === this.subTypeList.JUICE_ORANGE && count === 1) {
-      let orangeBullet = new CustomEnemyBullet('', null, 5, 0, 9)
+      let orangeBullet = new CustomEnemyBullet('', undefined, 5, 0, 9)
       orangeBullet.width = 50
       orangeBullet.height = 150
       orangeBullet.display = () => {
@@ -5344,7 +5465,7 @@ class DonggramiEnemyJuice extends DonggramiEnemyParty {
       fieldState.createEnemyBulletObject(orangeBullet, this.objX, this.objY)
       soundSystem.play(soundSrc.donggrami.juiceThrow)
     } else if (this.subType === this.subTypeList.JUICE_COLA && (count % 2 === 0 && count <= 60)) {
-      let colaBullet = new CustomEnemyBullet('', null, 1)
+      let colaBullet = new CustomEnemyBullet('', undefined, 1)
       colaBullet.setMoveSpeed(Math.random() * 10 - 5, Math.random() * -6 - 6)
       colaBullet.display = function () {
         graphicSystem.fillEllipse(this.x, this.y, 10, 10, 0, '#995a32')
@@ -5386,6 +5507,13 @@ class DonggramiEnemyTree extends DonggramiEnemy {
     this.leafCount = 5
     this.moveDelay = new DelayData(180)
     this.isPossibleExit = false
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 0, undefined, 65),
+      this.getCollisionAreaCalcurationObject(23, 45, 13, 75),
+    ]
   }
 
   processDieAfter () {
@@ -5914,6 +6042,7 @@ class IntruderEnemySquare extends IntruderEnemy {
       y: this.y + 10,
       width: this.width - 20,
       height: this.height - 20,
+      degree: this.degree
     }]
   }
 
@@ -6096,8 +6225,8 @@ class IntruderEnemyDiacore extends IntruderEnemyMetal {
 
   getCollisionArea () {
     return [
-      {x: this.x, y: this.y + 35, width: this.width, height: 30},
-      {x: this.x + 35, y: this.y, width: 30, height: this.height}
+      this.getCollisionAreaCalcurationObject(0, 35, undefined, 30),
+      this.getCollisionAreaCalcurationObject(35, 0, 30, undefined)
     ]
   }
 
@@ -6121,6 +6250,14 @@ class IntruderEnemyRendown extends IntruderEnemy {
     this.setEnemyByCpStat(100)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderRendown, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.pulseDiamondBlue, this.width, this.height, 3))
     this.dieAfterDeleteDelay = new DelayData(60)
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 0, 20, 120),
+      this.getCollisionAreaCalcurationObject(120, 0, 20, 120),
+      this.getCollisionAreaCalcurationObject(20, 20, 100, 80),
+    ]
   }
 
   processDieAfter () {
@@ -6253,6 +6390,13 @@ class IntruderEnemyLever extends IntruderEnemy {
     this.enimationRight = EnimationData.createEnimation(this.imageSrc, imageDataInfo.intruderEnemy.leverRight)
   }
 
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(35, 10, 0, undefined),
+      this.getCollisionAreaCalcurationObject(0, 69, undefined, 10),
+    ]
+  }
+
   static LaserBullet = class extends CustomEnemyBullet {
     constructor () {
       super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.leverLaser, 3, 0, -20, '', '')
@@ -6335,6 +6479,13 @@ class IntruderEnemyFlying1 extends IntruderEnemy {
     this.attackDelay = new DelayData(120)
   }
 
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(12, 0, 76, undefined),
+      this.getCollisionAreaCalcurationObject(0, 20, undefined, 19),
+    ]
+  }
+
   processMove () {
     if (this.moveDelay.check()) {
       this.setRandomMoveSpeed(7, 1)
@@ -6383,6 +6534,13 @@ class IntruderEnemyFlying2 extends IntruderEnemy {
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.flying2)
     this.setEnemyByCpStat(80, 6)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderFlying2, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleGreenStroke, this.width, this.height, 2))
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(14, 0, 70, undefined),
+      this.getCollisionAreaCalcurationObject(0, 27, undefined, 33),
+    ]
   }
 
   processMove () {
@@ -6515,6 +6673,10 @@ class IntruderEnemyMomi extends IntruderEnemy {
     this.isExitToReset = true
   }
 
+  getCollisionArea () {
+    return [this.getCollisionAreaCalcurationObject(0, 12, 117, 36)]
+  }
+
   processDieAfter () {
     super.processDieAfter()
     if (this.isDied) {
@@ -6589,6 +6751,15 @@ class IntruderEnemyHanoi extends IntruderEnemy {
     }
   }
 
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(91, 0, 19, 15),
+      this.getCollisionAreaCalcurationObject(61, 15, 80, 37),
+      this.getCollisionAreaCalcurationObject(41, 54, 120, 116),
+      this.getCollisionAreaCalcurationObject(0, 120, 200, 50),
+    ]
+  }
+
   processAttack () {
     if (this.attackDelay.check()) {
       let bullet = new IntruderEnemyHanoi.HanoiBullet()
@@ -6660,6 +6831,15 @@ class IntruderEnemyDaseok extends IntruderEnemy {
     constructor () {
       super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.energyBolt, 6, Math.random() * 6 - 3, Math.random() * -4)
     }
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(64, 0, 32, 60),
+      this.getCollisionAreaCalcurationObject(45, 56, 70, 64),
+      this.getCollisionAreaCalcurationObject(30, 116, 100, 84),
+      this.getCollisionAreaCalcurationObject(0, 200, undefined, 40),
+    ]
   }
 
   processAttack () {
@@ -7052,6 +7232,15 @@ class TowerEnemyGroup1Tapo extends TowerEnemy {
     this.isExitToReset = true
   }
 
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 0, 71, 27),
+      this.getCollisionAreaCalcurationObject(0, 70, undefined, 30),
+      this.getCollisionAreaCalcurationObject(25, 27, 66, 20),
+      this.getCollisionAreaCalcurationObject(41, 47, 89, 23),
+    ]
+  }
+
   processEnimation () {
     super.processEnimation()
     this.tapoEnimation.process()
@@ -7434,6 +7623,14 @@ class TowerEnemyGroup1Hellgi extends TowerEnemyHellTemplet {
     this.targetSpeed.yBase = 2
   }
 
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 21, 170, 24),
+      this.getCollisionAreaCalcurationObject(60, 3, 100, 7),
+      this.getCollisionAreaCalcurationObject(63, 19, 107, 51),
+    ]
+  }
+
   processAttack () {
     if (this.attackDelay.check()) {
       let bullet = TowerEnemy.bulletBlue.getCreateObject()
@@ -7471,6 +7668,16 @@ class TowerEnemyGroup1Helljeon extends TowerEnemyHellTemplet {
     this.targetSpeed.yChange = 0.14
     this.targetSpeed.xBase = 2
     this.targetSpeed.yBase = 2
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 21, 120, 28),
+      this.getCollisionAreaCalcurationObject(9, 0, 26, 7),
+      this.getCollisionAreaCalcurationObject(29, 6, 73, 13),
+      this.getCollisionAreaCalcurationObject(9, 63, 30, 7),
+      this.getCollisionAreaCalcurationObject(29, 51, 73, 13),
+    ]
   }
 
   processEnimation () {
@@ -7534,6 +7741,16 @@ class TowerEnemyGroup1Hellcho extends TowerEnemyHellTemplet {
     this.targetSpeed.yBase = 3
     this.targetSpeed.xChange = 0.22
     this.targetSpeed.yChange = 0.22
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 0, 24, 13),
+      this.getCollisionAreaCalcurationObject(0, 46, 24, 14),
+      this.getCollisionAreaCalcurationObject(11, 5, 48, 50),
+      this.getCollisionAreaCalcurationObject(60, 20, 60, 20),
+      this.getCollisionAreaCalcurationObject(70, 5, 30, 50),
+    ]
   }
 
   processMove () {
@@ -7699,9 +7916,17 @@ class TowerEnemyGroup1I extends TowerEnemy {
     this.setEnemyByCpStat(40, 8)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerI, imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDieI, 3)
     this.setRandomMoveSpeed(4, 4, true)
-    this.BASE_WIDTH = this.imageData != null ? this.imageData.width : 1
-    this.BASE_HEIGHT = this.imageData != null ? this.imageData.height : 1
+    this.BASE_WIDTH = this.imageData.width
+    this.BASE_HEIGHT = this.imageData.height
     this.isExitToReset = true
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 0, 85, 15),
+      this.getCollisionAreaCalcurationObject(0, 65, 85, 15),
+      this.getCollisionAreaCalcurationObject(35, 9, 15, 62),
+    ]
   }
 
   processState () {
@@ -7739,6 +7964,16 @@ class TowerEnemyGroup1X extends TowerEnemy {
         this.isDeleted = true
       }
     }
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 0, 65, 9),
+      this.getCollisionAreaCalcurationObject(10, 8, 43, 23),
+      this.getCollisionAreaCalcurationObject(17, 31, 33, 16),
+      this.getCollisionAreaCalcurationObject(8, 47, 41, 21),
+      this.getCollisionAreaCalcurationObject(0, 68, 65, 10),
+    ]
   }
 
   constructor () {
@@ -7927,24 +8162,44 @@ class TowerEnemyGroup1SquareMini extends TowerEnemyPentaTemplete {
 }
 class TowerEnemyGroup1Pentagon extends TowerEnemyPentaTemplete {
   constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.PENTAGON) }
+  getCollisionArea () { 
+    return [this.getCollisionAreaCalcurationObject(17, 25, 67, 75),
+      this.getCollisionAreaCalcurationObject(0, 30, 100, 28),
+      this.getCollisionAreaCalcurationObject(41, 0, 18, 25),
+      this.getCollisionAreaCalcurationObject(20, 18, 58, 17)]
+  }
 }
-class TowerEnemyGroup1PentagonMini extends TowerEnemyPentaTemplete {
+class TowerEnemyGroup1PentagonMini extends TowerEnemyGroup1Pentagon {
   constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.PENTAGON_MINI) }
 }
 class TowerEnemyGroup1Hexagon extends TowerEnemyPentaTemplete {
   constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.HEXAGON) }
+  getCollisionArea () {
+    return [this.getCollisionAreaCalcurationObject(30, 0, 50, 100),
+      this.getCollisionAreaCalcurationObject(0, 38, 110, 22),
+      this.getCollisionAreaCalcurationObject(18, 19, 74, 65),]
+  }
 }
-class TowerEnemyGroup1HexagonMini extends TowerEnemyPentaTemplete {
+class TowerEnemyGroup1HexagonMini extends TowerEnemyGroup1Hexagon {
   constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.HEXAGON_MINI) }
 }
 class TowerEnemyGroup1Octagon extends TowerEnemyPentaTemplete {
   constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.OCTAGON) }
+  getCollisionArea () {
+    return [   this.getCollisionAreaCalcurationObject(39, 0, 52, 130),
+      this.getCollisionAreaCalcurationObject(0, 39, 130, 52),
+      this.getCollisionAreaCalcurationObject(19, 18, 92, 93)]
+  }
 }
-class TowerEnemyGroup1OctagonMini extends TowerEnemyPentaTemplete {
+class TowerEnemyGroup1OctagonMini extends TowerEnemyGroup1Octagon {
   constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.OCTAGON_MINI) }
 }
 class TowerEnemyGroup1Diamond extends TowerEnemyPentaTemplete {
   constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.DIAMOND) }
+  getCollisionArea () {
+    return [ this.getCollisionAreaCalcurationObject(0, 35, undefined, 30),
+      this.getCollisionAreaCalcurationObject(35, 0, 30, undefined)]
+  }
 }
 class TowerEnemyGroup1DiamondMini extends TowerEnemyPentaTemplete {
   constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.DIAMOND_MINI) }
@@ -7978,6 +8233,13 @@ class TowerEnemyGroup1BossRobot extends TowerEnemy {
 
     /** 하이퍼 모드가 되는 체력의 기준점 (배율형태로 표시 = 0.2 = 20%) */
     this.HYPER_MODE_HP_MULTIPLE = 0.2
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(50, 0, 150, undefined),
+      this.getCollisionAreaCalcurationObject(0, 50, undefined, 190)
+    ]
   }
 
   processState () {
@@ -8403,6 +8665,14 @@ class TowerEnemyGroup2Jagijang extends TowerEnemy {
     this.lightningEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.jagijangLightning, 3, -1)
   }
 
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(6, 0, 8, 140),
+      this.getCollisionAreaCalcurationObject(126, 0, 8, 140),
+      this.getCollisionAreaCalcurationObject(30, 30, 80, 80)
+    ]
+  }
+
   processEnimation () {
     super.processEnimation()
     this.lightningEnimation.process()
@@ -8464,6 +8734,16 @@ class TowerEnemyGroup2Lightning extends TowerEnemy {
     this.lightObject = {x: this.x - 20, y: this.y - 20, width: 180, height: 180}
     this.lightEffect = new CustomEffect(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.lightningAttack, this.lightObject.width, this.lightObject.height, 2)
     this.lightningEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.lightningEnimation, 3, -1)
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(27, 0, 24, 60),
+      this.getCollisionAreaCalcurationObject(0, 32, 90, 28),
+      this.getCollisionAreaCalcurationObject(26, 53, 50, 14),
+      this.getCollisionAreaCalcurationObject(28, 67, 31, 12),
+      this.getCollisionAreaCalcurationObject(0, 73, 32, 27)
+    ]
   }
 
   processEnimation () {
@@ -8543,6 +8823,15 @@ class TowerEnemyGroup2Magnet extends TowerEnemy {
     this.magnetEffectRed = new CustomEffect(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.magnetMagneticRed, undefined, undefined, 2)
   }
 
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 0, 115, 25),
+      this.getCollisionAreaCalcurationObject(0, 75, 115, 25),
+      this.getCollisionAreaCalcurationObject(115, 5, 15, 92),
+      this.getCollisionAreaCalcurationObject(130, 20, 20, 60),
+    ]
+  }
+
   processMove () {
     super.processMove()
 
@@ -8610,6 +8899,18 @@ class TowerEnemyGroup2Hellla extends TowerEnemyHellTemplet {
     this.targetSpeed.yChange = 0.06
   }
 
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(63, 2, 119, 7), // 날개
+      this.getCollisionAreaCalcurationObject(62, 16, 79, 71), // 몸체1
+      this.getCollisionAreaCalcurationObject(132, 38, 55, 49), // 몸체유리1
+      this.getCollisionAreaCalcurationObject(141, 23, 38, 11), // 몸체유리2
+      this.getCollisionAreaCalcurationObject(2, 20, 60, 12), // 꼬리1
+      this.getCollisionAreaCalcurationObject(2, 59, 60, 12), // 꼬리2
+      this.getCollisionAreaCalcurationObject(23, 28, 39, 35), // 꼬리에너지
+    ]
+  }
+
   processEnimation () {
     super.processEnimation()
     this.lightEnimation.process()
@@ -8640,14 +8941,11 @@ class TowerEnemyGroup2Hellla extends TowerEnemyHellTemplet {
           player.addDamage(4)
         }
       }
-
-      if (this.lightObject.elapsedFrame % 60 === 0) {
-        soundSystem.play(soundSrc.enemyAttack.towerLightningAttack)
-      }
     }
 
     // 공격 주기가 되면 공격 개체가 사용되도록 변경
     if (this.attackDelay.check()) {
+      soundSystem.play(soundSrc.enemyAttack.towerLightningAttack)
       let player = fieldState.getPlayerObject()
       this.lightObject.elapsedFrame = 60
       this.lightObject.x = this.x - 20
@@ -8678,6 +8976,14 @@ class TowerEnemyGroup2Hellpo extends TowerEnemyHellTemplet {
     this.targetSpeed.yBase = 2
     this.targetSpeed.xChange = 0.2
     this.targetSpeed.yChange = 0.2
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 19, 160, 40),
+      this.getCollisionAreaCalcurationObject(61, 4, 80, 5),
+      this.getCollisionAreaCalcurationObject(51, 59, 109, 11),
+    ]
   }
 
   processAttack () {
@@ -8730,6 +9036,13 @@ class TowerEnemyGroup2Hellpa extends TowerEnemyHellTemplet {
     this.STATE_ATTACK_WAIT = 'attackWait'
     this.STATE_ATTACK = 'attack'
     this.state = ''
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(20, 0, 100, undefined),
+      this.getCollisionAreaCalcurationObject(0, 20, undefined, 80)
+    ]
   }
 
   processMove () {
@@ -8878,20 +9191,35 @@ class TowerEnemyPentaShadowTemplete extends TowerEnemyPentaTemplete {
 
 class TowerEnemyGroup2PentaShadow extends TowerEnemyPentaShadowTemplete {
   constructor () { super(); this.setAutoFigure(this.subTypeList.PENTA_SHADOW) }
+  getCollisionArea () {
+    return [ this.getCollisionAreaCalcurationObject(0, 36, 119, 21),
+      this.getCollisionAreaCalcurationObject(19, 17, 87, 88),
+      this.getCollisionAreaCalcurationObject(34, 2, 49, 15)]
+  }
 }
-class TowerEnemyGroup2PentaLight extends TowerEnemyPentaShadowTemplete {
+class TowerEnemyGroup2PentaLight extends TowerEnemyGroup2PentaShadow {
   constructor () { super(); this.setAutoFigure(this.subTypeList.PENTA_LIGHT) }
 }
 class TowerEnemyGroup2HexaShadow extends TowerEnemyPentaShadowTemplete {
   constructor () { super(); this.setAutoFigure(this.subTypeList.HEXA_SHADOW) }
+  getCollisionArea () {
+    return [ this.getCollisionAreaCalcurationObject(29, 2, 71, 105),
+      this.getCollisionAreaCalcurationObject(18, 14, 97, 74),
+      this.getCollisionAreaCalcurationObject(0, 42, 129, 24)]
+  }
 }
-class TowerEnemyGroup2HexaLight extends TowerEnemyPentaShadowTemplete {
+class TowerEnemyGroup2HexaLight extends TowerEnemyGroup2HexaShadow {
   constructor () { super(); this.setAutoFigure(this.subTypeList.HEXA_LIGHT) }
 }
 class TowerEnemyGroup2OctaShadow extends TowerEnemyPentaShadowTemplete {
   constructor () { super(); this.setAutoFigure(this.subTypeList.OCTA_LIGHT) }
+  getCollisionArea () {
+    return [ this.getCollisionAreaCalcurationObject(0, 39, 148, 60),
+      this.getCollisionAreaCalcurationObject(28, 0, 86, 39),
+      this.getCollisionAreaCalcurationObject(28, 99, 97, 36)]
+  }
 }
-class TowerEnemyGroup2OctaLight extends TowerEnemyPentaShadowTemplete {
+class TowerEnemyGroup2OctaLight extends TowerEnemyGroup2OctaShadow {
   constructor () { super(); this.setAutoFigure(this.subTypeList.OCTA_SHADOW) }
 }
 
@@ -8913,6 +9241,16 @@ class TowerEnemyGroup2BossBar extends TowerEnemy {
     if (this.dieEffect) {
       this.dieEffect.setWidthHeight(this.width, this.height)
     }
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(2, 8, 36, 24), // left ball1
+      this.getCollisionAreaCalcurationObject(6, 2, 28, 36), // left ball2
+      this.getCollisionAreaCalcurationObject(162, 8, 36, 24), // right ball1
+      this.getCollisionAreaCalcurationObject(166, 2, 28, 36), // right ball2
+      this.getCollisionAreaCalcurationObject(40, 15, 120, 11) // line
+    ]
   }
 
   processPlayerCollisionSuccessAfter () {

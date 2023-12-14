@@ -173,6 +173,11 @@ export class imageSrc {
  * imageData가 가지고 있는 정보입니다. imageDataInfo로 한것은 imageData로 하면 이름 충돌이 발생하기 때문입니다.
  */
 export class imageDataInfo {
+  /** 기본값 객체 (null 확인 방지용도) */
+  static default = {
+    unused: new ImageDataObject(0, 0, 1, 1, 1),
+  }
+
   static spaceEnemy = {
     rocketBlue: { x: 0, y: 0, width: 60, height: 24, frame: 5 },
     rocketRed: { x: 0, y: 25, width: 60, height: 24, frame: 5 },

@@ -862,6 +862,14 @@ class BaseSound {
     }
   }
 
+  /**
+   * 음악을 특정 지점에서 시작하게 합니다. (라운드 시작할때 음악이 중간에서 시작되는 버그를 막는 용도로도 사용할 수 있음)
+   * @param {number} startTime 음악의 시작 시간
+   */
+  static musicPlayStartTime (startTime = 0) {
+    soundSystem.musicPlay(this.currentMusicSrc, startTime)
+  }
+
   /** 음악을 정지합니다. (재개 되기 전까지 재생 불가능) */
   static musicStop () {
     soundSystem.musicStop()
@@ -886,6 +894,7 @@ class BaseSound {
     this.fadeNextMusicSrc = soundSrc
     if (fadeTime === 0) {
       soundSystem.musicPlay(soundSrc)
+      this.currentMusicSrc = soundSrc // 음악 현재 재생중인것을 변경
     } else {
       soundSystem.musicFadeOut(fadeTime)
       this.fadeDelayCount = Math.floor(fadeTime * 60) // 60프레임 = 1초
@@ -918,8 +927,11 @@ class BaseSound {
   
   static processFade () {
     this.fadeDelayCount--
-    if (this.fadeDelayCount === 0 && this.fadeNextMusicSrc !== '') {
-      soundSystem.musicPlay(this.fadeNextMusicSrc, 0, this.fadeDelay / 60) // 60프레임 = 1초
+    if (this.fadeDelayCount === 0) {
+      if (this.fadeNextMusicSrc !== '') {
+        soundSystem.musicPlay(this.fadeNextMusicSrc, 0, this.fadeDelay / 60) // 60프레임 = 1초
+      }
+
       this.currentMusicSrc = this.fadeNextMusicSrc
     }
   }
@@ -1791,11 +1803,11 @@ export class RoundData {
    * 따라서, 현재 음악을 재생할 수 있도록, 이 함수를 프로세스 합니다.
    */
   processMusic () {
-    if (this.timeCheckFrame(0, 4)) {
+    if (this.timeCheckFrame(0, 2)) {
       // 게임 시작 즉시 음악을 호출하는 것이 불가능하므로, 약간의 지연을 넣어서 처리했습니다.
       // 0초 4프레임 시점에서 음악이 재생됩니다.
       this.sound.currentMusicSrc = this.sound.roundStartMusicSrc
-      this.sound.musicPlay()
+      this.sound.musicPlayStartTime()
     }
 
     this.sound.processFade() // 페이드 과정을 진행하고 다음 음악으로 교체하기 위한 작업
@@ -2368,11 +2380,17 @@ class Round1_3 extends RoundData {
     }
 
     // 적의 수가 2 초과라면, 시간이 일시정지합니다.
-    this.timePauseWithEnemyCount(68, 2)
+    this.timePauseWithEnemyCount(69, 2)
 
     // 배경음악 정지
-    if (this.timeCheckFrame(69)) {
+    if (this.timeCheckFrame(68)) {
       this.sound.musicChangeOLD('', 1)
+    }
+  }
+
+  processDebug () {
+    if (this.timeCheckFrame(0, 5)) {
+      this.time.setCurrentTime(64)
     }
   }
 
@@ -2380,12 +2398,9 @@ class Round1_3 extends RoundData {
     // 이 페이즈 이후 부터 해당 음악이 적용됩니다.
     if (this.timeCheckFrame(71, 1)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss, 900)
-      this.sound.musicChangeOLD(this.battleMusic, 1)
-      this.sound.musicPlay()
-
-      // 라운드 내의 함수로 만들기에는 애매해서 어쩔 수 없이 직접 조정함.
-      // 음악을 처음부터 재생하는것이 아닌 중간부터 재생함.
-      soundSystem.setCurrentMusicCurrentTime(19.194)
+      this.sound.currentMusicSrc = this.battleMusic
+      // 음악을 처음부터 재생하는것이 아닌 중간부터 재생
+      this.sound.musicPlayStartTime(19.194)
     }
 
     // 보스가 죽었다면, 해당 구간 스킵 처리
@@ -9391,18 +9406,18 @@ class Round3_test extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_test)
-    this.playerOption.setColor(this.playerOption.colorList.orange)
-    this.playerOption.setLevel(9)
+    // this.playerOption.setColor(this.playerOption.colorList.orange)
+    // this.playerOption.setLevel()
     this.bgLayer.setColor('white')
     // this.sound.roundStartMusicSrc = soundSrc.music.music16_down_tower
     this.phase.addRoundPhase(this, () => {
-      if (this.timeCheckInterval(0, 999, 20)) {
-        // this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellpo)
+      if (this.timeCheckInterval(0, 999, 20) && this.field.getEnemyCount() === 0) {
+        this.field.createEnemy(ID.enemy.towerEnemyGroup2.lightning)
       }
 
       if (this.timeCheckFrame(1)) {
         // this.sound.musicFadeOut(60)
-        this.field.createEnemy(ID.enemy.towerEnemyGroup1.bossRobot, 1)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup2.bossBar, 1)
       }
 
       // if (this.timeCheckFrame(2)) {
@@ -9450,6 +9465,21 @@ class Round3_test extends Round3Templete {
     super.display()
     if (this.playerOption.optionObject[0]) {
       graphicSystem.fillText(this.playerOption.optionObject[0].x + ', ' + this.playerOption.optionObject[0].y + ', ' + this.playerOption.optionObject[0].color + ', spd: ' + this.playerOption.optionObject[0].moveSpeedX, 0, 0, 'white')
+    }
+
+    // 충돌 테스트
+    if (this.field.getEnemyObject()[0] != null) {
+      let enemy = this.field.getEnemyObject()[0]
+      // enemy.isPossibleExit = false
+      let col = enemy.getCollisionArea()
+      for (let i = 0; i < col.length; i++) {
+        let color = 'red'
+        if (i === 0) color = 'blue'
+        if (i === 1) color = 'green'
+
+        graphicSystem.fillRect(col[i].x, col[i].y, col[i].width, col[i].height, color)
+        graphicSystem.fillText(col[i].x + ', ' + col[i].y + ', ' + col[i].width + ', ' + col[i].height, 0, i * 20, 'gold')
+      }
     }
 
     this.meter.bossHpDefaultStyle()
