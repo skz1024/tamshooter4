@@ -1211,6 +1211,7 @@ export class RoundPackLoad {
       soundSrc.enemyAttack.towerBarAttack1,
       soundSrc.enemyAttack.towerBarAttack2,
       soundSrc.enemyAttack.towerBarAttack3,
+      soundSrc.enemyAttack.towerBossBarAttack,
     ]
   }
 }
@@ -2385,12 +2386,6 @@ class Round1_3 extends RoundData {
     // 배경음악 정지
     if (this.timeCheckFrame(68)) {
       this.sound.musicChangeOLD('', 1)
-    }
-  }
-
-  processDebug () {
-    if (this.timeCheckFrame(0, 5)) {
-      this.time.setCurrentTime(64)
     }
   }
 
@@ -8602,10 +8597,11 @@ class Round3TempleteBossSprite extends FieldData {
   }
 
   display () {
-    if (this.subType === this.TYPE_ROBOT || this.subType === this.TYPE_DASU) {
-      super.display()
-      graphicSystem.fillText('Elp: ' + this.elapsedFrame + ', ' + 'x: ' + this.x + ', y: ' + this.y + ',spdXY: ' + this.moveSpeedX + ':' + this.moveSpeedY, 0, 0, 'blue')
-    }
+    // 다른 적도 하나 더 테스트 해야 해서 디버그코드는 임시로 남겨둠
+    // if (this.subType === this.TYPE_ROBOT || this.subType === this.TYPE_DASU) {
+      // super.display()
+      // graphicSystem.fillText('Elp: ' + this.elapsedFrame + ', ' + 'x: ' + this.x + ', y: ' + this.y + ',spdXY: ' + this.moveSpeedX + ':' + this.moveSpeedY, 0, 0, 'blue')
+    // }
   }
 
 
@@ -9096,8 +9092,8 @@ class Round3_2 extends Round3Templete {
     this.phase.addRoundPhase(this, this.roundPhase04, 121, 150)
     this.phase.addRoundPhase(this, this.roundPhase05, 151, 180)
     this.phase.addRoundPhase(this, this.roundPhase06, 181, 210)
-    this.phase.addRoundPhase(this, this.roundPhase07, 211, 232)
-    this.phase.addRoundPhase(this, this.roundPhase08, 233, 240)
+    this.phase.addRoundPhase(this, this.roundPhase07, 211, 231)
+    this.phase.addRoundPhase(this, this.roundPhase08, 232, 240)
   }
 
   processBackground () {
@@ -9218,11 +9214,11 @@ class Round3_2 extends Round3Templete {
     // 신규 헬기 시리즈 적들 등장 dps: 120% ~ 160%
     if (this.timeCheckInterval(pTime + 0, pTime + 6, 20)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellla)
-    } else if (this.timeCheckInterval(pTime + 8, pTime + 14, 10)) {
+    } else if (this.timeCheckInterval(pTime + 8, pTime + 14, 12)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellpo)
-    } else if (this.timeCheckInterval(pTime + 16, pTime + 20, 10)) {
+    } else if (this.timeCheckInterval(pTime + 16, pTime + 20, 12)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellpa)
-    } else if (this.timeCheckInterval(pTime + 21, pTime + 29, 30)) {
+    } else if (this.timeCheckInterval(pTime + 21, pTime + 28, 30)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellba)
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellcho)
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellna)
@@ -9241,11 +9237,11 @@ class Round3_2 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 2, pTime + 16, 12)) {
       let random = Math.floor(Math.random() * 5)
       switch (random) {
-        case 0: this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellba)
-        case 1: this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgal)
-        case 2: this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellcho)
-        case 3: this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellna)
-        case 4: this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellpo)
+        case 0: this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellba); break
+        case 1: this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgal); break
+        case 2: this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellcho); break
+        case 3: this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellna); break
+        case 4: this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellpo); break
       }
     }
 

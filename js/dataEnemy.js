@@ -7634,7 +7634,7 @@ class TowerEnemyGroup1Hellgi extends TowerEnemyHellTemplet {
   processAttack () {
     if (this.attackDelay.check()) {
       let bullet = TowerEnemy.bulletBlue.getCreateObject()
-      bullet.moveSpeedX = -6
+      bullet.moveSpeedX = this.moveSpeedX < 0 ? -6 : 6
       bullet.moveSpeedY = this.moveSpeedY
       fieldState.createEnemyBulletObject(bullet, this.x, this.y)
     }
@@ -7652,6 +7652,10 @@ class TowerEnemyGroup1Hellgi extends TowerEnemyHellTemplet {
       this.degree = (this.moveSpeedY + 0.5) * -6
       if (this.degree > 180 && this.degree < 330) this.degree = 330
     }
+
+    // 이동 속도에 따라서, 좌우 반전 결정 (왼쪽이 마이너스입니다. 그래서 왼쪽방향일때만 반전 적용)
+    if (this.moveSpeedX < 0) this.flip = 1
+    else this.flip = 0
   }
 }
 
@@ -8448,11 +8452,6 @@ class TowerEnemyGroup1BossRobot extends TowerEnemy {
     }
   }
 
-  display () {
-    super.display()
-    graphicSystem.fillText('state: ' + this.state + ', spd: ' + this.speedValueX + ', ' + this.speedValueY, 0, 40, 'violet')
-  }
-
   static RobotRocketBullet = class extends CustomEnemyBullet {
     constructor () {
       super(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletBossRocket, 0)
@@ -8658,7 +8657,7 @@ class TowerEnemyGroup2Jagijang extends TowerEnemy {
     this.setMoveSpeed(1, 0)
 
     this.bullet = new CustomEnemyBullet(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.bulletJagijang, 10)
-    this.attackDelay = new DelayData(120)
+    this.attackDelay = new DelayData(180)
     this.moveDelay = new DelayData(30)
     this.isExitToReset = true
 
@@ -8717,7 +8716,7 @@ class TowerEnemyGroup2Lightning extends TowerEnemy {
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.lightning)
     this.setEnemyByCpStat(40, 2)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerLightning, imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.enemyDieLightning, 4)
-    this.moveDelay = new DelayData(300)
+    this.moveDelay = new DelayData(240)
     this.moveDelay.setCountMax()
     this.attackDelay = new DelayData(60)
     this.finishX = 0
@@ -8761,6 +8760,7 @@ class TowerEnemyGroup2Lightning extends TowerEnemy {
     if (this.attackDelay.check()) {
       if (this.state === this.STATE_LIGHTNING_WAIT) {
         this.state = this.STATE_LIGHTNING
+        soundSystem.play(soundSrc.enemyAttack.towerLightningAttack)
       } else if (this.state === this.STATE_LIGHTNING) {
         this.state = this.STATE_NORMAL
       }
@@ -8773,29 +8773,28 @@ class TowerEnemyGroup2Lightning extends TowerEnemy {
       }
     }
 
-    if (this.state === this.STATE_LIGHTNING && this.attackDelay.divCheck(10)) {
+    if (this.state === this.STATE_LIGHTNING && this.attackDelay.divCheck(12)) {
       fieldState.createEffectObject(this.lightEffect.getObject(), this.lightObject.x, this.lightObject.y)
-      soundSystem.play(soundSrc.enemyAttack.towerLightningAttack)
     }
   }
 
   processMove () {
     super.processMove()
-    const DIV_COUNT = 60
-    if (this.moveDelay.check()) {
+    if (this.state !== this.STATE_NORMAL) return
+
+    if (this.moveDelay.count === 1) {
       // 일정시간 간격으로 플레이어가 있는 위치로 이동
       let player = fieldState.getPlayerObject()
       this.finishX = player.centerX
       this.finishY = player.centerY
-      this.finishMoveSpeedX = (this.x - player.centerX) / DIV_COUNT
-      this.finishMoveSpeedY = (this.y - player.centerY) / DIV_COUNT
+      this.finishMoveSpeedX = (this.centerX - player.centerX) / this.moveDelay.delay
+      this.finishMoveSpeedY = (this.centerY - player.centerY) / this.moveDelay.delay
       this.setMoveSpeed(this.finishMoveSpeedX, this.finishMoveSpeedY)
-      this.state = this.STATE_NORMAL
     }
 
-    if (this.moveDelay.count === DIV_COUNT) {
+    if (this.moveDelay.check()) {
       this.state = this.STATE_LIGHTNING_WAIT
-      this.setMoveSpeed(0, 0) // 강제 정지
+      this.setMoveSpeed(0, 0)
     }
   }
 
@@ -8813,10 +8812,10 @@ class TowerEnemyGroup2Magnet extends TowerEnemy {
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.magnet)
     this.setEnemyByCpStat(50, 10)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerMagnet, imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.enemyDieMagnet, 30)
-    this.moveDelay = new DelayData(120)
+    this.moveDelay = new DelayData(60)
     this.effectDelay = new DelayData(12)
     this.attackDelay = new DelayData(60)
-    this.setMoveSpeed(1, 0)
+    this.setMoveSpeed(2, 0)
 
     this.STATE_MAGNET = 'magnet'
     this.magnetEffectBlue = new CustomEffect(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.magnetMagneticBlue, undefined, undefined, 2)
@@ -8927,6 +8926,10 @@ class TowerEnemyGroup2Hellla extends TowerEnemyHellTemplet {
       this.degree = (this.moveSpeedY + 0.5) * -6
       if (this.degree > 180 && this.degree < 330) this.degree = 330
     }
+
+    // 이동 속도에 따라서, 좌우 반전 결정 (왼쪽이 마이너스입니다. 그래서 왼쪽방향일때만 반전 적용)
+    if (this.moveSpeedX < 0) this.flip = 1
+    else this.flip = 0
   }
 
   processAttack () {
@@ -9117,8 +9120,6 @@ class TowerEnemyGroup2Hellpa extends TowerEnemyHellTemplet {
     if (!this.isDied && this.state === this.STATE_ATTACK) {
       this.imageObjectDisplay(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.hellpaAttack, this.paAttackObject.x, this.paAttackObject.y, this.paAttackObject.width, this.paAttackObject.height)
     }
-
-    graphicSystem.fillText(this.state, 0, 0, 'blue')
   }
 }
 class TowerEnemyGroup2Hellna extends TowerEnemyHellTemplet {

@@ -146,7 +146,7 @@ export class WeaponData extends FieldData {
    * (플레이어의 공격력에 영향을 받기 때문에, 따로 설정해 주어야 합니다.)
    * @param {number} attack 무기 공격력 (플레이어의 공격력이 아닙니다!)
    */
-  afterInitDefault (attack) {
+  setAttack (attack) {
     this.attack = attack
   }
 
@@ -332,7 +332,7 @@ export class WeaponData extends FieldData {
    * hitObject가 두 종류로 나뉘어진건, OBB충돌범위에 몇가지 정보가 더 필요하기 때문입니다.
    * @param {{x: number, y: number, width: number, height: number, degree: number}} attackArea 공격 범위
    */
-  processHitObjectOBBCollision (attackArea = null) {
+  processHitObjectOBBCollision (attackArea) {
     const enemyObject = fieldState.getEnemyObject() // 적 오브젝트
     let hitCount = 0 // 적을 총 때린 횟수
     if (attackArea == null) return
@@ -1039,6 +1039,7 @@ class ParapoShockwave extends Parapo {
     this.parapoEffect = null
     let direction = option.length >= 1 ? option[0] : 'left'
     switch (direction) {
+      default:
       case ParapoShockwave.direction.LEFT:
         this.parapoEffect = new CustomEffect(imageSrc.weaponEffect.parapo, imageDataInfo.weaponEffect.parapoLeft, 100, 100, 1)
         break
@@ -1102,7 +1103,7 @@ class Sidewave extends WeaponData {
     this.moveSpeedY = Number(optionResult[1])
 
     if (optionResult[0] === Sidewave.direction.LEFT) {
-      this.enimation.flip = 1 // 좌우 반전 (왼쪽으로 무기가 이동하므로)
+      if (this.enimation) this.enimation.flip = 1 // 좌우 반전 (왼쪽으로 무기가 이동하므로)
       this.moveDirectionX = Sidewave.direction.LEFT
     }
   }
@@ -1552,7 +1553,7 @@ class SkillSidewave extends Sidewave {
     this.subType = 'sidewave'
     this.id = ID.weapon.skillSidewave
     this.moveSpeedX = 22
-    this.moveSpeedY = option[0]
+    this.moveSpeedY = Number(option[0])
   }
 }
 
@@ -2179,7 +2180,9 @@ class SkillHanjumeok extends WeaponData {
       let returnEffect = fieldState.createEffectObject(this.hitEffect, effectX, effectY)
 
       // 에니메이션 각도 수정 (객체의 각도를 수정하는것은 의미가 없음.)
-      returnEffect.enimation.degree = Math.random() * 360
+      if (returnEffect != null && returnEffect.enimation != null) {
+        returnEffect.enimation.degree = Math.random() * 360
+      }
     }
 
     // 사운드 출력 (여러 객체가 충돌하여도 1번만 출력해야 합니다.)

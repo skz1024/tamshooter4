@@ -2543,7 +2543,9 @@ export class gameSystem {
   static process () {
     if (this.stateId === this.STATE_LOAD_ERROR) return
 
+    
     this.userSystem.process()
+    if (this.stateId === this.STATE_MAIN) this.userSystem.showUserStat()
 
     switch (this.stateId) {
       case this.STATE_MAIN: this.mainSystem.process(); break
@@ -2581,6 +2583,7 @@ export class gameSystem {
       case messageList.STATE_MAIN:
         this.stateId = this.STATE_MAIN
         this.mainSystem.selected = false // 간혹 필드를 나갔을 때 메뉴가 눌리는 상황이 있기 때문에 이를 막기 위함
+        game.control.resetButtonInput() // 버튼이 잘못눌리는 상황을 막기 위해 입력된 버튼들을 전부 리셋시킵니다.
         break
       case messageList.STATE_FIELD:
         this.stateId = this.STATE_FIELD

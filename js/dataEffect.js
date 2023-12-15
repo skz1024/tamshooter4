@@ -1,3 +1,5 @@
+//@ts-check
+
 import { DelayData, FieldData, EnimationData } from "./dataField.js"
 import { ImageDataObject } from "./imageSrc.js"
 
@@ -25,7 +27,7 @@ import { ImageDataObject } from "./imageSrc.js"
      * 다음 에니메이션 프레임으로 넘어가기 위한 지연시간 객체(프레임), 기본값 0
      * 지연시간이 0일경우 null
      */
-    this.frameDelay = null
+    this.frameDelay = 0
 
     /**
      * 이미지 파일 내에 있는 각 애니메이션 프레임의 길이

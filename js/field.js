@@ -911,7 +911,7 @@ export class fieldState {
     inputData.createId = this.getNextCreateId()
     inputData.id = typeId
     inputData.setPosition(x, y)
-    inputData.afterInitDefault(attack)
+    inputData.setAttack(attack) // 무기 공격력 설정
     this.weaponObject.push(inputData)
     return inputData
   }
@@ -1181,7 +1181,7 @@ export class fieldState {
     }
 
     // 조건에 따른 sprite 삭제 (설명은 다른 객체들과 동일)
-    for (let i = this.spriteObject.length - 1; i >= 0; i++) {
+    for (let i = this.spriteObject.length - 1; i >= 0; i--) {
       const currentSprite = this.spriteObject[i]
       if (currentSprite.isDeleted) {
         this.spriteObject.splice(i, 1)
@@ -1428,9 +1428,6 @@ export class fieldSystem {
         this.message = this.messageList.STATE_MAIN 
       }
     }
-
-    // 버튼이 잘못눌리는 상황을 막기 위해 입력된 버튼들을 전부 리셋시킵니다.
-    game.control.resetButtonInput()
   }
 
   /**
