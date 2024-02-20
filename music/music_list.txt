@@ -10,6 +10,8 @@
 vsti dll 로드 후, gui 보이기 버튼을 누르면, import/export 버튼이 있습니다.
 import 버튼을 누르고 미리 만들어진 preset 파일을 로드하면, 악기를 로드할 수 있습니다.
 
+일부 음악은 드럼 샘플을 사용할 수도 있음. 해당하는 드럼 샘플은 projectFile/drumsample 폴더를 확인
+
 
 
 music list
@@ -23,7 +25,7 @@ music list
 7. music07_planet_entry (round 1-6)
 8. music08_round1_4_jemul (round 1-4)
 
-// round 2 (아직 모든 음악이 완성되지 않았습니다.)
+// round 2
 9. music09_paran_planet (round 2-1), (optionbattle music)
 10. music10_donggrami_maeul (round 2-2), (optionbattle music)
 11A1. music11A1_big_room (round 2-3)
@@ -35,7 +37,12 @@ music list
 11C1. music11C1_bullte_room (round 2-3)
 11C2. music11C2_square_room (round 2-3)
 11C3. music11C3_trap_room (round 2-3)
-(이 이후는 미정)
+12. music12_donggrami_hall_outside (round 2-4) // 원래는 이 음악은 inside, outside 버전이 따로 만들어졌어야 하지만, 음악을 만드는 도중 두개의 구간이 합쳐지게 되었고, 이로인해 inside 음악은 제작을 취소하고 outside만 남았습니다.
+13. music13_round2_4_jemu (round 2-4) // 2-4 의 특정 구간에서 재생되는 음악
+14. music14_intruder_battle (round 2-5)
+15. music15_donggrami_ruin (round 2-6) // 이 음악은 audacity의 faulstretch를 사용한 후 음악의 speed(속도 및 피치)를 80%로 변경한 후 처음 구간을 삭제하여 만든 음악입니다.
 
-임시 내용 추가
-music15 -> audacity -> faulstretch -> speed 80% -> some part delete and skip(first node)
+// round 3
+16. music16_down_tower (round 3-1 ~ 3-4) // 다운타워의 메인 음악
+17. music17_down_tower_boss (round 3-1 ~ 3-3) // 다운타워의 보스전 음악
+

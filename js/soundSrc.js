@@ -145,6 +145,19 @@ export class soundSrc {
     enemyDieTowerPentaLight: './sound/enemyDieTowerPentaLight.ogg',
     enemyDieTowerPentaShadow: './sound/enemyDieTowerPentaShadow.ogg',
 
+    // tower group 3 (3-3)
+    enemyDieTowerBossDasu: './sound/enemyDieTowerBossDasu.ogg',
+    enemyDieTowerClockAnalog: './sound/enemyDieTowerClockAnalog.ogg',
+    enemyDieTowerClockDigital: './sound/enemyDieTowerClockDigital.ogg',
+    enemyDieTowerClockJong: './sound/enemyDieTowerClockJong.ogg',
+    enemyDieTowerCore: './sound/enemyDieTowerCore.ogg',
+    enemyDieTowerEnergy1: './sound/enemyDieTowerEnergy1.ogg',
+    enemyDieTowerEnergy2: './sound/enemyDieTowerEnergy2.ogg',
+    enemyDieTowerFakeHell: './sound/enemyDieTowerFakeHell.ogg',
+    enemyDieTowerFakeShip: './sound/enemyDieTowerFakeShip.ogg',
+    enemyDieTowerShipBig: './sound/enemyDieTowerShipBig.ogg',
+    enemyDieTowerShipSmall: './sound/enemyDieTowerShipSmall.ogg',
+    enemyDieTowerStar: './sound/enemyDieTowerStar.ogg'
   }
 
   static enemyAttack = {
@@ -180,6 +193,15 @@ export class soundSrc {
     towerBarAttack2: './sound/enemyTowerBarAttack2.ogg',
     towerBarAttack3: './sound/enemyTowerBarAttack3.ogg',
     towerBossBarCollision: './sound/enemyTowerBossBarCollision.ogg',
+    towerBossDasuCoreArrangeMent: './sound/enemyTowerBossDasuCoreArrangeMent.ogg',
+    towerBossDasuCoreAttack: './sound/enemyTowerBossDasuCoreAttack.ogg',
+    towerBossDasuCoreReflect: './sound/enemyTowerBossDasuCoreReflect.ogg',
+    towerBossDasuCoreSummon: './sound/enemyTowerBossDasuCoreSummon.ogg',
+    towerClockAttack: './sound/enemyTowerClockAttack.ogg',
+    towerCoreSummonBrown: './sound/enemyTowerCoreSummonBrown.ogg',
+    towerCoreSummonRainbow: './sound/enemyTowerCoreSummonRainbow.ogg',
+    towerFakeBarAttack: './sound/enemyTowerFakeBarAttack.ogg',
+    towerShipEquipCore: './sound/enemyTowerShipEquipCore.ogg',
   }
 
   static round = {

@@ -530,6 +530,56 @@ export class imageDataInfo {
     enemyDieBossBar: new ImageDataObject(1000, 960, 200, 40, 1),
   }
 
+  static towerEnemyGroup3 = {
+    core8: new ImageDataObject(0, 0, 60, 60, 1),
+    corePotion: new ImageDataObject(60, 0, 60, 60, 1),
+    coreMetal: new ImageDataObject(120, 0, 60, 60, 1),
+    coreShot: new ImageDataObject(180, 0, 60, 60, 1),
+    coreRainbow: new ImageDataObject(240, 0, 60, 60, 1),
+    coreBrown: new ImageDataObject(300, 0, 60, 60, 1),
+    star: new ImageDataObject(400, 0, 80, 80, 1),
+    shipSmall: new ImageDataObject(0, 100, 240, 120, 5),
+    shipBig: new ImageDataObject(0, 220, 240, 240, 5),
+    fakeMove: new ImageDataObject(900, 0, 80, 60, 4),
+    fakeBar: new ImageDataObject(900, 70, 140, 20, 5),
+    fakeHell: new ImageDataObject(1240, 0, 160, 60, 1),
+    fakeCore: new ImageDataObject(1400, 0, 60, 60, 1),
+    fakeShip: new ImageDataObject(1200, 100, 120, 120, 5),
+    bossDasu: new ImageDataObject(1800, 200, 150, 200, 1),
+    bossDasuCore: new ImageDataObject(2000, 200, 100, 100, 1),
+    clockAnalog: new ImageDataObject(0, 500, 160, 160, 1),
+    clockDigital: new ImageDataObject(0, 660, 180, 120, 1),
+    clockJong: new ImageDataObject(0, 780, 200, 400, 1),
+    energyBlue: new ImageDataObject(0, 1200, 200, 200, 12),
+    energyOrange: new ImageDataObject(0, 1400, 200, 200, 12),
+    energyA1: new ImageDataObject(1800, 0, 160, 160, 1),
+    energyA2: new ImageDataObject(1960, 0, 160, 160, 1),
+    energyA3: new ImageDataObject(2120, 0, 160, 160, 1),
+
+    // clock red
+    clockAnalogRed: new ImageDataObject(1600, 500, 160, 160, 1),
+    clockAnalogHand: new ImageDataObject(1760, 500, 160, 160, 1),
+    clockDigitalRed: new ImageDataObject(1800, 660, 180, 120, 1),
+
+    // digital clock number
+    number0: new ImageDataObject(2080, 660, 30, 60, 1),
+    number1: new ImageDataObject(2110, 660, 30, 60, 1),
+    number2: new ImageDataObject(2140, 660, 30, 60, 1),
+    number3: new ImageDataObject(2170, 660, 30, 60, 1),
+    number4: new ImageDataObject(2200, 660, 30, 60, 1),
+    number5: new ImageDataObject(2230, 660, 30, 60, 1),
+    number6: new ImageDataObject(2260, 660, 30, 60, 1),
+    number7: new ImageDataObject(2290, 660, 30, 60, 1),
+    number8: new ImageDataObject(2320, 660, 30, 60, 1),
+    number9: new ImageDataObject(2350, 660, 30, 60, 1),
+
+    // enemyDie
+    enemyDieStar: new ImageDataObject(400, 0, 80, 80, 6),
+    enemyDieClockAnalog: new ImageDataObject(0, 500, 160, 160, 10),
+    enemyDieClockDigital: new ImageDataObject(0, 660, 180, 120, 10),
+    enemyDieClockJong: new ImageDataObject(0, 780, 200, 400, 10)
+  }
+
   static fieldSystem = {
     roundClear: { x: 0, y: 0, width: 400, height: 60 },
     gameOver: { x: 0, y: 60, width: 320, height: 60 },
