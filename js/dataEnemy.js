@@ -635,6 +635,8 @@ export class CustomEnemyBullet extends EnemyBulletData {
    * 해당 함수는 현재 데이터를 바탕으로 CustomEnemyBullet을 생성하지만
    * 상속이 되지 않은 채로 불릿이 생성되므로, 불릿 자체의 특수기능같은것이 있다면
    * 이 함수를 사용하지 말고, 대신 new 를 이용해 객체를 생성해야 합니다.
+   * 
+   * 그러나 아직 일부 적들은 이 함수를 사용하기 때문에 완전한 deprecated는 아닙니다.
    * @deprecated
   */
   getCreateObject () {
@@ -8276,7 +8278,7 @@ class TowerEnemyGroup1BossRobot extends TowerEnemy {
     switch (random) {
       case 0: targetState = this.STATE_ROCKET_CHASE; break
       case 1: targetState = this.STATE_ROCKET_LEFT; break
-      case 2: targetState = this.STATE_ROBOT_MOVE; break
+      case 2: targetState = this.STATE_ROCKET_CHASE; break
       default: targetState = this.STATE_ROCKET_LINE; break
     }
 
@@ -8288,7 +8290,7 @@ class TowerEnemyGroup1BossRobot extends TowerEnemy {
       // 만약 이전값과는 다르게 중복된 경우에는, 다른 구조를 사용하여 강제 대입
       switch (targetState) {
         case this.STATE_ROCKET_CHASE: this.state = this.STATE_ROCKET_LEFT; break
-        case this.STATE_ROCKET_LEFT: this.state = this.STATE_ROBOT_MOVE; break
+        case this.STATE_ROCKET_LEFT: this.state = this.STATE_ROCKET_CHASE; break
         case this.STATE_ROBOT_MOVE: this.state = this.STATE_ROCKET_LINE; break
         case this.STATE_ROCKET_LINE: this.state = this.STATE_ROCKET_CHASE; break
         default: this.state = this.STATE_ROCKET_CHASE; break
@@ -9227,8 +9229,8 @@ class TowerEnemyGroup2OctaLight extends TowerEnemyGroup2OctaShadow {
 class TowerEnemyGroup2BossBar extends TowerEnemy {
   constructor () {
     super()
-    /** 최대 top 위치 px */ this.MAX_TOP = 100
-    this.setEnemyByCpStat(10000, 10)
+    /** 최대 top 위치 px */ this.MAX_TOP = 0
+    this.setEnemyByCpStat(4000, 10)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerBossBar, imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.enemyDieBossBar, 180)
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.bossBar, 2)
     this.setWidthHeight(800, 160)
@@ -9256,6 +9258,8 @@ class TowerEnemyGroup2BossBar extends TowerEnemy {
 
   processPlayerCollisionSuccessAfter () {
     soundSystem.play(soundSrc.enemyAttack.towerBossBarCollision)
+    let player = fieldState.getPlayerObject()
+    player.setAutoMove(Math.random() * graphicSystem.CANVAS_WIDTH, 0, 15)
   }
 
   processDieAfter () {
@@ -9294,13 +9298,1100 @@ class TowerEnemyGroup2BossBar extends TowerEnemy {
   }
 }
 
+class TowerEnemyCoreTemplete extends TowerEnemy {
+  constructor () {
+    super()
+    this.setEnemyByCpStat(50, 10)
+    this.setRandomMoveSpeed(2, 2)
+    this.setCore('') // 임의의 코어값 설정 (세부 클래스에서 이 함수를 사용해서 어느 코어를 만들것인지를 결정해야함)
+
+    /** static 클래스명 일일히 지정하기 귀찮아서 this로도 접근 가능하게 만들었음. */
+    this.coreType = TowerEnemyCoreTemplete.coreType
+
+    this.attackDelay = new DelayData(360)
+
+    // 코어의 죽음 사운드와 이펙트는 동일
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerCore, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.metalSlashGrey)
+  }
+
+  static coreType = {
+    core8: 'towerCoreCore8',
+    potion: 'towerCorePotion',
+    metal: 'towerCoreMetal',
+    shot: 'towerCoreShot',
+    rainbow: 'towerCoreRainbow',
+    brown: 'towerCoreBrown',
+    fake: 'towerCoreFake'
+  }
+
+  /**
+   * 코어의 타입 설정 (자세한것은 TowerEnemyCoreTemplete 클래스 참고)
+   * @param {string} coreType 
+   */
+  setCore (coreType) {
+    // 긴 코드를 강제로 축약하였으므로 참고 (형식은 기존 적들과 완전히 같음)
+    let T = TowerEnemyCoreTemplete.coreType
+    let I = imageSrc.enemy.towerEnemyGroup3
+    let D = imageDataInfo.towerEnemyGroup3
+    switch (coreType) {
+      case T.core8: this.setAutoImageData(I, D.core8); break
+      case T.potion: this.setAutoImageData(I, D.corePotion); break
+      case T.metal: this.setAutoImageData(I, D.coreMetal); break
+      case T.shot: this.setAutoImageData(I, D.coreShot); break
+      case T.rainbow: this.setAutoImageData(I, D.coreRainbow); break
+      case T.brown: this.setAutoImageData(I, D.coreBrown); break
+      case T.fake: this.setAutoImageData(I, D.fakeCore); break
+      default: this.setAutoImageData(I, D.core8); break // 잘못된 값이 있다면 강제로 기본값 처리
+    }
+
+    this.subType = coreType // 서브타입 변경 (이것을 이용하여 코어 타입 구분)
+  }
+}
+
+class TowerEnemyGroup3Core8 extends TowerEnemyCoreTemplete {
+  constructor () {
+    super()
+    this.setCore(this.coreType.core8)
+    this.attackDelay.delay = 360 // 6초 딜레이
+  }
+
+  processAttack () {
+    // 총알은 기존에 있는 총알을 사용함 (코어는 노란색 총알 발사함)
+    if (this.attackDelay.check()) {
+      // 각 총알은 시계방향의 형태로 발사됨
+      const speedTableX = [0, 4, 4, 4, 0, -4, -4, -4]
+      const speedTableY = [-4, -2, 0, 2, 4, 2, 0, -2]
+      for (let i = 0; i < 8; i++) {
+        let bullet = TowerEnemy.bulletYellow.getCreateObject()
+        bullet.setMoveSpeed(speedTableX[i], speedTableY[i])
+        fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
+      }
+    }
+  }
+}
+
+class TowerEnemyGroup3CorePotion extends TowerEnemyCoreTemplete {
+  constructor () {
+    super()
+    this.setCore(this.coreType.potion)
+    // (주의: 아직 저장기능이 완전한 데이터를 저장하진 못하기 때문에, 저장후 불러오기를 하면 포션이 무한회복을 할 수도 있습니다.)
+    this.life = 1 // 라이프 개수 (이 값이 0이되면 회복 불가능)
+  }
+
+  processState () {
+    // 최대 체력의 50%보다 현재 체력이 낮아지면, 50%의 체력을 즉시 추가하고, 라이프를 1 감소
+    if (this.life >= 1 && this.hp <= this.hpMax * 0.5) {
+      this.hp += Math.floor(this.hpMax * 0.5)
+      this.life--
+    }
+  }
+
+  display () {
+    if (this.life >= 1) {
+      // 라이프가 1이상이면 기본값 출력
+      super.display()
+    } else {
+      // 포션이 사용된 이미지를 출력함
+      this.imageObjectDisplay(this.imageSrc, imageDataInfo.towerEnemyGroup3.corePotionUsing, this.x, this.y)
+    }
+  }
+}
+
+class TowerEnemyGroup3CoreMetal extends TowerEnemyCoreTemplete {
+  constructor () {
+    super()
+    this.setCore(this.coreType.metal)
+
+    this.hpMax += this.hp // 자신의 hp만큼을 최대 체력에 추가
+    this.hp += this.hp // 자신의 hp만큼을 현재 체력의 추가
+    // 결론: 체력 2배...
+  }
+}
+
+class TowerEnemyGroup3CoreShot extends TowerEnemyCoreTemplete {
+  constructor () {
+    super()
+    this.setCore(this.coreType.shot)
+    this.attackDelay.delay = 240 // 4초 간격
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let bullet = TowerEnemy.bulletYellow.getCreateObject()
+      bullet.setRandomMoveSpeedMinMax(-3, -3, 3, 3)
+      fieldState.createEnemyBulletObject(bullet, this.x, this.y)
+    }
+  }
+}
+
+class TowerEnemyGroup3CoreRainbow extends TowerEnemyCoreTemplete {
+  constructor () {
+    super()
+    this.setCore(this.coreType.rainbow)
+    this.attackDelay.delay = 180
+    this.summonCount = 1
+  }
+
+  processAttack () {
+    if (this.summonCount >= 1 && this.attackDelay.check()) {
+      this.summonCount--
+      soundSystem.play(soundSrc.enemyAttack.towerCoreSummonRainbow)
+      fieldState.createEnemyObject(ID.enemy.towerEnemyGroup3.coreRainbowSummon, this.x, this.y)
+    }
+  }
+}
+
+class TowerEnemyGroup3CoreRainbowSummon extends TowerEnemy {
+  constructor () {
+    super()
+    this.setMoveSpeed(0, 0) // 이동하지 않음
+    this.setEnemyByCpStat(50, 0) // 체력만 있고 공격력 없음, 데미지 방해용도
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.coreRainbowSummon)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieSpaceSmall)
+  }
+
+  processMove () {
+    super.processMove()
+    if (this.elapsedFrame >= 600) {
+      this.isDeleted = true
+    }
+  }
+}
+
+class TowerEnemyGroup3CoreBrown extends TowerEnemyCoreTemplete {
+  constructor () {
+    super()
+    this.shield = 0
+    this.summonCount = 1
+    this.setCore(this.coreType.brown)
+  }
+
+  processState () {
+    // 소환 카운트가 있다면, 쉴드를 소환함(쉴드는 자기 최대 체력의 50%)
+    if (this.summonCount >= 1 && this.hp <= this.hpMax * 0.5) {
+      this.summonCount--
+      this.shield += Math.floor(this.hpMax * 0.5)
+      soundSystem.play(soundSrc.enemyAttack.towerCoreSummonBrown)
+    }
+
+    // 참고: 아직 쉴드는 구현되어있지 않아서, 체력이 무조건 감소함으로, 쉴드가 감소되도록 체력을 조정
+    if (this.shield >= 1 && this.hp <= this.hpMax * 0.5) {
+      let shieldMinus = (this.hpMax * 0.5) - this.hp
+      this.hp = Math.floor(this.hpMax * 0.5) // hp 재조정
+
+      // 쉴드 감소
+      if (this.shield >= shieldMinus) {
+        this.shield -= shieldMinus
+      } else {
+        let hpDamage = shieldMinus - this.shield
+        this.shield = 0
+        this.hp -= hpDamage
+      }
+    }
+  }
+
+  display () {
+    super.display()
+    if (this.shield >= 1) {
+      this.imageObjectDisplay(this.imageSrc, imageDataInfo.towerEnemyGroup3.coreBrownShield, this.x - 20, this.y - 20)
+    }
+  }
+}
+
+class TowerEnemyGroup3ShipSmall extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.shipSmall, 6)
+    this.setEnemyByCpStat(500, 14)
+    this.setMoveSpeed(0.4, 0)
+    this.setDieEffectOption(soundSrc.enemyDie.enemyDieTowerShipSmall, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.smallCircleUp, this.width / 2, this.width / 2, 2, 2))
+   
+    this.coreDelay = new DelayData(300)
+    this.attackDelay = new DelayData(10000)
+
+    /** 포션 사용 횟수 */ this.potionUsingCount = 0
+    /** 포션 회복 상수값 */ this.potionRecoveryValue = Math.floor(this.hpMax * 0.2)
+    /** 쉴드 사용 횟수 */ this.shieldUsingCount = 0
+    /** 쉴드 값 */ this.shield = 0
+
+    /** 코어 최대 장착 횟수 */ this.coreEquipMaxCount = 2
+    /** 현재 상태에 코어 개수를 지정 (저장용도, 추후엔 교체될 가능성이 높음) */ this.state = '0'
+
+    /** 현재까지 장착된 코어에 대한 정보 (저장되지 않으므로 수정 필요) */ this.coreEquipList = []
+    /** 코어 타입에 관한 정보 */ this.coreType = TowerEnemyCoreTemplete.coreType
+  }
+
+  /** 무작위의 코어를 장착합니다. */
+  equipCore () {
+    if (this.coreEquipList.length >= this.coreEquipMaxCount) return
+
+    let enemyList = fieldState.getEnemyObject()
+    let coreList = []
+    let subTypeList = [this.coreType.shot, this.coreType.brown, this.coreType.core8, this.coreType.metal, this.coreType.potion, this.coreType.rainbow]
+    for (let i = 0; i < enemyList.length; i++) {
+      // 적이 가지고 있는 서브타입이 서브타입 리스트에 포함되면 해당 하는 적은 코어로 간주됨
+      if (subTypeList.includes(enemyList[i].subType)) {
+        coreList.push(enemyList[i])
+      }
+    }
+
+    if (coreList.length <= 0) return // 코어가 없으면 장착하지 않음
+    let random = Math.floor(Math.random() * coreList.length) // 무작위 코어 지정
+    let targetCoreEnemy = coreList[random]
+    if (targetCoreEnemy.isDeleted || targetCoreEnemy.isDied) return // 타겟된 코어가 죽거나 삭제 예정이면 무시 (역시 장착하지 않음)
+
+    // 코어 장착
+    this.coreEquipList.push(targetCoreEnemy.subType)
+    soundSystem.play(soundSrc.enemyAttack.towerShipEquipCore)
+    
+    // 코어가 가진 체력과 최대체력과 점수를 흡수함
+    this.hp += targetCoreEnemy.hp
+    this.hpMax += targetCoreEnemy.hpMax
+    this.score += targetCoreEnemy.score
+
+    // 타겟 코어는 삭제됨
+    targetCoreEnemy.isDeleted = true
+
+    // 만약 장착된 코어가 메탈이라면, 그 즉시 최대 체력과 현재 체력이 증가됨
+    if (targetCoreEnemy.subType === this.coreType.metal) {
+      let value = Math.floor(this.hpMax * 0.2)
+      this.hp += value
+      this.hpMax += value
+    }
+  }
+
+  processState () {
+    this.processCorePotion()
+    this.processCoreBrown()
+    this.processCoreRainbow()
+
+    if (this.coreDelay.check()) {
+      this.equipCore()
+    }
+  }
+
+  getCoreCount () {
+    let count = { fake: 0, brown: 0, shot: 0, metal: 0, rainbow: 0, potion: 0, core8: 0 }
+    for (let i = 0; i < this.coreEquipList.length; i++) {
+      switch (this.coreEquipList[i]) {
+        case this.coreType.brown: count.brown++; break
+        case this.coreType.potion: count.potion++; break
+        case this.coreType.shot: count.shot++; break
+        case this.coreType.rainbow: count.rainbow++; break
+        case this.coreType.metal: count.metal++; break
+        case this.coreType.core8: count.core8++; break
+        case this.coreType.fake: count.fake++; break
+      }
+    }
+
+    return count
+  }
+
+  processCorePotion () {
+    let corePotionCount = this.getCoreCount().potion
+    if (corePotionCount > 2) corePotionCount = 2 // 포션 개수 2개 제한
+
+    // 체력의 50% 미만이면, 포션 효과로 체력을 현재 체력의 20%회복(이 값은 초기값 상수로 강제로 지정되어있음)함
+    if (this.potionUsingCount < corePotionCount && this.hp <= this.hpMax * 0.5) {
+      this.potionUsingCount++
+      this.hp += this.potionRecoveryValue
+    }
+  }
+
+  processCoreBrown () {
+    let coreBrownCount = this.getCoreCount().brown
+    if (coreBrownCount > 2) coreBrownCount = 2 // 쉴드 개수 2개 제한
+
+    if (this.shieldUsingCount < coreBrownCount && this.hp <= this.hpMax * 0.5) {
+      this.shieldUsingCount++
+      this.shield += this.potionRecoveryValue
+      soundSystem.play(soundSrc.enemyAttack.towerCoreSummonBrown)
+    }
+
+    // 쉴드 데미지 계산
+    if (this.shield >= 1 && this.hp <= this.hpMax * 0.5) {
+      let shieldMinus = (this.hpMax * 0.5) - this.hp
+      this.hp = Math.floor(this.hpMax * 0.5) // hp 재조정
+
+      // 쉴드 감소
+      if (this.shield >= shieldMinus) {
+        this.shield -= shieldMinus
+      } else {
+        let hpDamage = shieldMinus - this.shield
+        this.shield = 0
+        this.hp -= hpDamage
+      }
+    }
+  }
+
+  processCoreRainbow () {
+    // 이동속도 조정 (만약 무지개 코어가 있다면)
+    let coreRainbowCount = this.getCoreCount().rainbow
+
+    if (coreRainbowCount === 1) {
+      this.setMoveSpeed(3, 0)
+    } else if (coreRainbowCount >= 2) {
+      this.setMoveSpeed(6, 0)
+    } else {
+      this.setMoveSpeed(0.4, 0)
+    }
+  }
+
+  processAttack () {
+    // 공격 가능한 코어의 개수를 살펴봄 (공격 코어는 최대 2개까지 효과를 볼 수 있음)
+    let core8Count = this.getCoreCount().core8
+    let coreShotCount = this.getCoreCount().shot
+    this.attackDelay.check() // 공격 딜레이 강제 카운트 실행
+
+    // core8의 공격방식
+    if ((core8Count === 1 && this.attackDelay.divCheck(360)) 
+     || (core8Count >= 2 && this.attackDelay.divCheck(240)) ) {
+      // 각 총알은 시계방향의 형태로 발사됨
+      const speedTableX = [0, 4, 4, 4, 0, -4, -4, -4]
+      const speedTableY = [-4, -3, 0, 3, 4, 3, 0, -3]
+      for (let i = 0; i < 8; i++) {
+        let bullet = TowerEnemy.bulletYellow.getCreateObject()
+        bullet.setMoveSpeed(speedTableX[i], speedTableY[i])
+        fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
+      }
+    }
+
+    // coreShot의 공격방식
+    if ((coreShotCount === 1 && this.attackDelay.divCheck(240))
+     || (coreShotCount >=  2 && this.attackDelay.divCheck(180))) {
+      let bulletA = TowerEnemy.bulletRed.getCreateObject()
+      let bulletB = TowerEnemy.bulletBlue.getCreateObject()
+      bulletA.setRandomMoveSpeedMinMax(-3, -3, 3, 3)
+
+      let player = fieldState.getPlayerObject()
+      bulletB.x = this.centerX // 플레이어 추적을 위한 bulletB의 좌표값 지정
+      bulletB.y = this.centerY // 플레이어 추적을 위한 bulletB의 좌표값 지정
+      bulletB.setMoveSpeedChaseLine(player.x, player.y, 60, 2)
+
+      fieldState.createEnemyBulletObject(bulletA, this.centerX, this.centerY)
+      fieldState.createEnemyBulletObject(bulletB, this.centerX, this.centerY)
+    }
+  }
+
+  processDie () {
+    if (this.dieCheck()) {
+      this.processDieDefault()
+      if (this.dieEffect) {
+        fieldState.createEffectObject(this.dieEffect, this.x + 40, this.y)
+        fieldState.createEffectObject(this.dieEffect, this.x + 80, this.y)
+      }
+    }
+  }
+
+  display () {
+    super.display()
+    this.displayCore()
+    this.displayBrownShield()
+  }
+
+  /** 코어의 출력 위치값을 가져옴 (함선마다 코어 출력 위치는 다를 수 있기 때문) */
+  getCoreDisplayPosition () {
+    return {
+      coreX: [40, 140],
+      coreY: [30, 30]
+    }
+  }
+
+  displayBrownShield () {
+    if (this.shield >= 1) {
+      this.imageObjectDisplay(this.imageSrc, imageDataInfo.towerEnemyGroup3.coreBrownShield, this.x - 20, this.y - 20, this.width + 40, this.height + 40)
+    }
+  }
+
+  displayCore () {
+    let coreX = this.getCoreDisplayPosition().coreX
+    let coreY = this.getCoreDisplayPosition().coreY
+    let imgD = imageDataInfo.towerEnemyGroup3
+    let potionPositionCount = this.potionUsingCount
+    for (let i = 0; i < this.coreEquipList.length; i++) {
+      switch (this.coreEquipList[i]) {
+        case this.coreType.brown: this.imageObjectDisplay(this.imageSrc, imgD.coreBrown, this.x + coreX[i], this.y + coreY[i]); break
+        case this.coreType.core8: this.imageObjectDisplay(this.imageSrc, imgD.core8, this.x + coreX[i], this.y + coreY[i]); break
+        case this.coreType.fake: this.imageObjectDisplay(this.imageSrc, imgD.fakeCore, this.x + coreX[i], this.y + coreY[i]); break
+        case this.coreType.metal: this.imageObjectDisplay(this.imageSrc, imgD.coreMetal, this.x + coreX[i], this.y + coreY[i]); break
+        case this.coreType.rainbow: this.imageObjectDisplay(this.imageSrc, imgD.coreRainbow, this.x + coreX[i], this.y + coreY[i]); break
+        case this.coreType.shot: this.imageObjectDisplay(this.imageSrc, imgD.coreShot, this.x + coreX[i], this.y + coreY[i]); break
+        case this.coreType.potion:
+          // 포션은 소모 상태를 보여줘야함.
+          if (potionPositionCount >= 1) {
+            this.imageObjectDisplay(this.imageSrc, imgD.corePotionUsing, this.x + coreX[i], this.y + coreY[i]);
+            potionPositionCount--
+          } else {
+            this.imageObjectDisplay(this.imageSrc, imgD.corePotion, this.x + coreX[i], this.y + coreY[i]);
+          }
+          break
+      }
+    }
+  }
+}
+
+class TowerEnemyGroup3ShipBig extends TowerEnemyGroup3ShipSmall {
+  constructor () {
+    super()
+    this.setAutoImageData(this.imageSrc, imageDataInfo.towerEnemyGroup3.shipBig, 6)
+    this.setEnemyByCpStat(800, 14)
+    this.coreEquipMaxCount = 4 // 최대 코어 4개 장착
+    this.dieSound = soundSrc.enemyDie.enemyDieTowerShipBig
+    this.coreDelay.delay = 240 // 4초 간격 코어 흡수
+  }
+
+  getCoreDisplayPosition () {
+    return {
+      coreX: [40, 140, 40, 140],
+      coreY: [40, 40, 140, 140],
+    }
+  }
+}
+
+class TowerEnemyGroup3FakeMove extends TowerEnemyGroup1MoveViolet {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.fakeMove, 3)
+    this.moveStopFrame = Math.floor(Math.random() * 300) + 300
+  }
+
+  processMove () {
+    // 일정 시간 동안만 이동하고 갑자기 이동이 멈춤
+    if (this.elapsedFrame <= this.moveStopFrame) {
+      super.processMove()
+    }
+  }
+}
+
+class TowerEnemyGroup3FakeBar extends TowerEnemyBarTemplete {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.fakeBar, 5)
+    this.collisionSoundSrc = soundSrc.enemyAttack.towerFakeBarAttack
+  }
+}
+
+class TowerEnemyGroup3FakeHell extends TowerEnemyHellTemplet {
+  constructor () {
+    super()
+    this.targetSpeed.xChange = 0.2
+    this.targetSpeed.yChange = 0.2
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.fakeHell)
+    this.setEnemyByCpStat(30, 16)
+    this.moveDelay.delay = 30
+    this.dieSound = soundSrc.enemyDie.enemyDieTowerFakeHell
+  }
+}
+
+class TowerEnemyGroup3FakeCore extends TowerEnemyCoreTemplete {
+  constructor () {
+    super()
+    this.setCore(this.coreType.fake)
+  }
+}
+
+class TowerEnemyGroup3FakeShip extends TowerEnemyGroup3ShipSmall {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.fakeShip, 3)
+    this.setEnemyByCpStat(200, 14)
+    this.dieSound = soundSrc.enemyDie.enemyDieTowerFakeShip
+  }
+
+  /** 이 함선은 아무것도 장착할 수 없습니다. */
+  equipCore () {
+
+  }
+}
+
+class TowerEnemyGroup3Star extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.star)
+    this.setEnemyByCpStat(12, 12)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerStar, imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.enemyDieStar, 3)
+    this.setRandomMoveSpeed(4, 4, true)
+    this.degree = Math.random() * 360
+    this.randomDegreeSpeed = Math.floor(Math.random() * 3) + 1
+  }
+
+  processMove () {
+    super.processMove()
+    this.degree += this.randomDegreeSpeed
+  }
+}
+
+class TowerEnemyGroup3BossDasu extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.bossDasu)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerBossDasu, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedOrange)
+    this.setEnemyByCpStat(10000, 20)
+    this.setMoveSpeed(0, 0)
+    this.setMoveDirection()
+    this.isPossibleExit = false
+    this.dieAfterDeleteDelay = new DelayData(240)
+    this.coreCollisionDelay = new DelayData(30)
+
+    // 위치 기준점
+    let startX = graphicSystem.CANVAS_WIDTH - this.width
+    let startY = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
+
+    /** 다수 시스템이 사용하는 코어들 */ this.core = []
+    let xTable = [-100, -100, -200, -200, -300, -300]
+    let yTable = [-75, 150, -75, 150, -75, 150]
+    let X_ARRANGE_MENT = graphicSystem.CANVAS_WIDTH - 100 // 100은 코어의 너비
+    let yArrangement = [0, 100, 200, 300, 400, 500]
+    for (let i = 0; i < 6; i++) {
+      this.core.push(new TowerEnemyGroup3BossDasu.DasuCore(startX + xTable[i], startY + yTable[i]))
+      this.core[i].arrangementX = X_ARRANGE_MENT
+      this.core[i].arrangementY = yArrangement[i]
+    }
+
+    /** 각 코어들의 기본 위치 */
+    this.coreBasePotition = [
+      {x: -100, y: -75}, {x: -100, y: 150}, {x: -200, y: -75}, {x: -200, y: 150}, {x: -300, y: -75}, {x: -300, y: 150}
+    ]
+
+    this.STATE_CORE_REFLECT = 'coreReflect'
+    this.STATE_CORE_PUNCH = 'corePunch'
+    this.STATE_CORE_ARRAGEMENT = 'coreArrageMent'
+    this.STATE_CORE_NORMAL = 'coreNormal'
+    this.STATE_HYPER_WAIT = 'hyperWait'
+    this.STATE_HYPER_MODE = 'hyperMode'
+    this.STATE_DIE = 'die'
+    this.state = this.STATE_CORE_NORMAL
+    this.stateDelay = new DelayData(480)
+    this.moveDelay = new DelayData(60)
+    this.hyperDelay = new DelayData(120)
+
+    /** 하이퍼 모드가 되는 체력의 기준점 (배율형태로 표시 = 0.2 = 20%) */
+    this.HYPER_MODE_HP_MULTIPLE = 0.2
+  }
+  
+  afterInit () {
+    this.x = graphicSystem.CANVAS_WIDTH - this.width
+    this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
+  }
+
+  processMove () {
+    super.processMove()
+
+    let player = fieldState.getPlayerObject()
+    for (let i = 0; i < this.core.length; i++) {
+      this.core[i].dasuX = this.centerX - (this.core[i].width / 2)
+      this.core[i].dasuY = this.centerY - (this.core[i].width / 2)
+      this.core[i].baseX = this.x + this.coreBasePotition[i].x
+      this.core[i].baseY = this.y + this.coreBasePotition[i].y 
+      this.core[i].playerX = player.x
+      this.core[i].playerY = player.y
+    }
+
+    if (this.state === this.STATE_HYPER_MODE) {
+      if (this.moveDelay.check()) {
+        this.setRandomMoveSpeed(8, 8, true)
+      }
+    } else {
+      // 위치 고정
+      // if (this.x + this.width <= ) {
+      //   this.x = graphicSystem.CANVAS_WIDTH - this.width
+      //   this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
+      // }
+
+      if (this.moveDelay.check()) {
+        this.setRandomMoveSpeed(0.4, 0.4, true)
+      }
+
+      if (this.x + this.width <= graphicSystem.CANVAS_WIDTH - 100) {
+        this.moveSpeedX = Math.abs(this.moveSpeedX)
+      }
+
+      if (this.centerY <= graphicSystem.CANVAS_HEIGHT_HALF - 100) {
+        this.moveSpeedY = Math.abs(this.moveSpeedY)
+      } else if (this.centerY >= graphicSystem.CANVAS_HEIGHT_HALF + 100) {
+        this.moveSpeedY = -Math.abs(this.moveSpeedY)
+      }
+    }
+
+    if (this.state === this.STATE_CORE_NORMAL) this.processMoveCoreNormal()
+    if (this.state === this.STATE_CORE_REFLECT) this.processMoveCoreReflect()
+    if (this.state === this.STATE_CORE_PUNCH) this.processMoveCorePunch()
+    if (this.state === this.STATE_CORE_ARRAGEMENT) this.processMoveCoreArragement()
+    if (this.state === this.STATE_HYPER_MODE) this.processMoveCoreHyper()
+    // else if (this.state === this.STATE_CORE_ARRAGEMENT) this.processAttackArrageMent()
+    // else if (this.state === this.STATE_CORE_PUNCH) this.processAttackPunch()
+    // else if (this.state === this.STATE_CORE_REFLECT) this.processAttackReflect()
+  }
+
+  processMoveCoreNormal () {
+    // 각 코어는 기준점에서 +-10 정도의 범위로 무작위 속도로 이동함
+    for (let i = 0; i < this.core.length; i++) {
+      if (this.stateDelay.count === 1) {
+        // 1회성 상태 변경
+        this.core[i].state = this.core[i].STATE_NORMAL
+      }
+      this.core[i].processMove()
+    }
+  }
+
+  processMoveCoreReflect () {
+    // 각 코어는 땅에 떨어진 직후, 벽에 부딪힐 때마다 무작위의 방향으로 이동함
+    for (let i = 0; i < this.core.length; i++) {
+      if (this.stateDelay.count === 1) {
+        // 1회성 상태 변경
+        this.core[i].state = this.core[i].STATE_REFLECT
+      }
+      this.core[i].processMove()
+    }
+  }
+
+  processMoveCorePunch () {
+    for (let i = 0; i < this.core.length; i++) {
+      if (this.stateDelay.count === 1) {
+        // 1회성 상태 변경
+        this.core[i].state = this.core[i].STATE_PUNCH
+      }
+      this.core[i].processMove()
+    }
+  }
+
+  processMoveCoreArragement () {
+    for (let i = 0; i < this.core.length; i++) {
+      if (this.stateDelay.count === 1) {
+        // 1회성 상태 변경
+        this.core[i].state = this.core[i].STATE_ARRANGEMENT
+      }
+      this.core[i].processMove()
+    }
+  }
+
+  processMoveCoreHyper () {
+    for (let i = 0; i < this.core.length; i++) {
+      if (this.stateDelay.count === 1) {
+        // 1회성 상태 변경
+        this.core[i].state = this.core[i].STATE_HYPER
+      }
+      this.core[i].processMove()
+    }
+  }
+
+  processMoveCoreDie () {
+    for (let i = 0; i < this.core.length; i++) {
+      this.core[i].setMoveSpeed(0, 0)
+    }
+  }
+
+  processState () {
+    // 체력값이 하이퍼 모드 이하라면, 무조건 하이퍼모드만 실행되며 다른 패턴이 없음
+    if (this.hp <= this.hpMax * this.HYPER_MODE_HP_MULTIPLE) {
+      if (this.state !== this.STATE_HYPER_WAIT && this.state !== this.STATE_HYPER_MODE) {
+        this.state = this.STATE_HYPER_WAIT
+      }
+    }
+
+    if (this.state === this.STATE_HYPER_WAIT) {
+      // 하이퍼 대기 상태에서는, 상태가 더 빨리 변경됨
+      if (this.stateDelay.count <= this.stateDelay.delay - 120) {
+        this.stateDelay.count = this.stateDelay.delay - 119
+      }
+    }
+
+    if (this.stateDelay.check()) {
+      this.processStateChange()
+    }
+  }
+
+  processStateChange () {
+    // 하이퍼상태인경우, 하이퍼상태로 고정되고 다른 상태로 변경되지 않음.
+    if (this.state === this.STATE_HYPER_WAIT) {
+      this.state = this.STATE_HYPER_MODE
+      return
+    } else if (this.state === this.STATE_HYPER_MODE) {
+      return
+    }
+
+    let random = Math.floor(Math.random() * 100)
+    let targetState = ''
+
+    // 각 상태가 될 확률은 동일 (그러나 중복문제 때문에 normal이 체감상 더 높을 수 있음.)
+    if (random <= 25) {
+      targetState = this.STATE_CORE_NORMAL
+    } else if (random <= 50) {
+      targetState = this.STATE_CORE_REFLECT
+    } else if (random <= 75) {
+      targetState = this.STATE_CORE_PUNCH
+    } else if (random <= 100) {
+      targetState = this.STATE_CORE_ARRAGEMENT
+    }
+
+    // 같은 패턴을 연속해서 사용 불가, 이 경우 타겟 상태를 임의로 변경함
+    if (targetState === this.state) {
+      switch (this.state) {
+        case this.STATE_CORE_NORMAL: targetState = this.STATE_CORE_REFLECT; break
+        case this.STATE_CORE_ARRAGEMENT: targetState = this.STATE_CORE_NORMAL; break
+        case this.STATE_CORE_REFLECT: targetState = this.STATE_CORE_NORMAL; break
+        case this.STATE_CORE_PUNCH: targetState = this.STATE_CORE_NORMAL; break
+      }
+    }
+
+    // 상태 변경
+    this.state = targetState
+  }
+
+  processAttack () {
+    if (this.state === this.STATE_CORE_NORMAL) this.processAttackNormal()
+    else if (this.state === this.STATE_CORE_ARRAGEMENT) this.processAttackArrageMent()
+    else if (this.state === this.STATE_CORE_PUNCH) this.processAttackPunch()
+    else if (this.state === this.STATE_CORE_REFLECT) this.processAttackReflect()
+    else if (this.state === this.STATE_HYPER_MODE) this.processAttackHyper()
+
+    this.processAttackCore()
+  }
+
+  processAttackCore () {
+    // 패턴 변경 억까 방지를 위하여 패턴 변경 즉시는 공격하지 못함
+    if (this.stateDelay.count < 120) return
+
+    // 코어 충돌 딜레이값이 특정 값 미만이면 코어랑 플레이어랑 충돌하지 않음
+    if (!this.coreCollisionDelay.check(false)) return
+
+    let player = fieldState.getPlayerObject()
+    for (let i = 0; i < this.core.length; i++) {
+      let currentCore = this.core[i]
+      if (collision(currentCore, player)) {
+        player.addDamage(currentCore.attack)
+        this.coreCollisionDelay.check() // 코어 충돌 카운터 리셋
+        break // 여러 코어에 닿아도 1번만 데미지를 받음
+      }
+    }
+  }
+
+  processAttackNormal () {
+    // 상태 지연시간이 2초보다 낮거나, 패턴종료 1초보다 높으면 패턴 실행하지 않음(일종의 대기시간)
+    if (this.stateDelay.count < 120 || this.stateDelay.count > this.stateDelay.delay - 60) return
+
+    if (this.stateDelay.divCheck(60)) {
+      for (let i = 0; i < this.core.length; i++) {
+        let bullet = TowerEnemy.bulletRed.getCreateObject()
+        bullet.setRandomMoveSpeed(6, 6, true)
+
+        fieldState.createEnemyBulletObject(bullet, this.core[i].x, this.core[i].y)
+      }
+    }
+  }
+
+  processAttackReflect () {
+    // 추가적인 공격 없음
+  }
+
+  processAttackPunch () {
+
+  }
+
+  processAttackHyper () {
+    if (this.stateDelay.divCheck(120)) {
+      soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreAttack)
+      for (let i = 0; i < this.core.length; i++) {
+        let bullet1 = TowerEnemy.bulletRed.getCreateObject()
+        let bullet2 = TowerEnemy.bulletBlue.getCreateObject()
+        let bullet3 = TowerEnemy.bulletYellow.getCreateObject()
+        bullet1.setRandomMoveSpeed(4, 4, true)
+        bullet2.setRandomMoveSpeed(4, 4, true)
+        bullet3.setRandomMoveSpeed(4, 4, true)
+
+        fieldState.createEnemyBulletObject(bullet1, this.core[i].x, this.core[i].y)
+        fieldState.createEnemyBulletObject(bullet2, this.core[i].x, this.core[i].y)
+        fieldState.createEnemyBulletObject(bullet3, this.core[i].x, this.core[i].y)
+      }
+    }
+  }
+
+  processAttackArrageMent () {
+    // 상태 지연시간이 2초보다 낮거나, 패턴종료 1초보다 높으면 패턴 실행하지 않음(일종의 대기시간)
+    if (this.stateDelay.count < 120 || this.stateDelay.count > this.stateDelay.delay - 60) return
+
+    if (this.stateDelay.divCheck(90)) {
+      soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreArrangeMent)
+      for (let i = 0; i < this.core.length; i++) {
+        let bullet1 = TowerEnemy.bulletRed.getCreateObject()
+        let bullet2 = TowerEnemy.bulletBlue.getCreateObject()
+        let bullet3 = TowerEnemy.bulletYellow.getCreateObject()
+        bullet1.setMoveSpeed(-7, 0)
+        bullet2.setMoveSpeed(-8, 0)
+        bullet3.setMoveSpeed(-7, 0)
+
+        fieldState.createEnemyBulletObject(bullet1, this.core[i].x, this.core[i].y - 20)
+        fieldState.createEnemyBulletObject(bullet2, this.core[i].x, this.core[i].y)
+        fieldState.createEnemyBulletObject(bullet3, this.core[i].x, this.core[i].y + 20)
+      }
+    }
+  }
+
+  display () {
+    super.display()
+    for (let i = 0; i < this.core.length; i++) {
+      this.core[i].display()
+    }
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+    if (this.isDied) {
+      if (this.dieAfterDeleteDelay.count <= this.dieAfterDeleteDelay.delay - 30 && this.dieAfterDeleteDelay.divCheck(6)) {
+        soundSystem.play(this.dieSound)
+        if (this.dieEffect != null) {
+          this.dieEffect.setWidthHeight(40, 40)
+          fieldState.createEffectObject(this.dieEffect.getObject(), this.x + (Math.random() * this.width), this.y + (Math.random() * this.height))
+        }
+      }
+
+      if (this.dieAfterDeleteDelay.divCheck(30)) {
+        if (this.dieEffect != null && this.core.length >= 1 && this.core[0] != null) {
+          soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossRobot2)
+          this.dieEffect.setWidthHeight(this.core[0].width, this.core[0].height)
+          fieldState.createEffectObject(this.dieEffect.getObject(), this.core[0].x, this.core[0].y)
+          this.core.shift()
+        }
+      }
+
+      if (this.dieAfterDeleteDelay.count == this.dieAfterDeleteDelay.delay - 1) {
+        soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossRobot2)
+        if (this.dieEffect != null) {
+          this.dieEffect.setWidthHeight(this.width, this.height)
+          fieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
+        }
+      }
+    }
+  }
+
+  static DasuCore = class extends FieldData {
+    /**
+     * 다수 보스의 전용 코어를 생성
+     * @param {number} baseX 기준점이 되는 x좌표
+     * @param {number} baseY 기준점이 되는 y좌표
+     */
+    constructor (baseX = 0, baseY = 0) {
+      super()
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.bossDasuCore)
+      this.attack = 9
+      this.baseX = baseX
+      this.baseY = baseY
+      this.dasuX = 0
+      this.dasuY = 0
+      this.playerX = 0
+      this.playerY = 0
+      this.arrangementX = 0
+      this.arrangementY = 0
+      this.x = baseX
+      this.y = baseY
+      this.state = ''
+      this.STATE_NORMAL = 'normal'
+      this.STATE_NORMALRUNNING = 'normalRunning'
+      this.STATE_REFLECT = 'reflect'
+      this.STATE_REFLECTRUNNING = 'reflectRunning'
+      this.STATE_PUNCH = 'punch'
+      this.STATE_PUNCHRUNNING = 'punchRunning'
+      this.STATE_ARRANGEMENT = 'arrangement'
+      this.STATE_ARRANGEMENTRUNNING = 'arrangementRunning'
+      this.STATE_HYPER = 'hyper'
+      this.STATE_HYPERRUNNING = 'hyperRunning'
+      this.STATE_DIE = 'die'
+      this.moveDelay = new DelayData(60)
+      this.punchDelay = new DelayData(40)
+
+      /** 코어가 이동하는값의 최대 속도 제한값 */
+      this.moveMaxSpeed = 4
+    }
+
+    /**
+     * 현재 코어의 상태를 변경 (상태값은 코어가 가지고 있는 상수 이름 참고)
+     * @param {string} state 
+     */
+    changeState (state) {
+      this.state = state
+    }
+
+    processMove () {
+      super.processMove()
+      if (this.state === this.STATE_NORMAL) this.processMoveNormal()
+      else if (this.state === this.STATE_NORMALRUNNING) this.processMoveNormalRunning()
+      else if (this.state === this.STATE_REFLECT) this.processMoveReflect()
+      else if (this.state === this.STATE_REFLECTRUNNING) this.processMoveReflectRunning()
+      else if (this.state === this.STATE_PUNCH) this.processMovePunch()
+      else if (this.state === this.STATE_PUNCHRUNNING) this.processMovePunchRunning()
+      else if (this.state === this.STATE_ARRANGEMENT) this.processMoveArrangeMent()
+      else if (this.state === this.STATE_ARRANGEMENTRUNNING) this.processMoveArrangeMentRunning()
+      else if (this.state === this.STATE_HYPER) this.processMoveHyper()
+      else if (this.state === this.STATE_HYPERRUNNING) this.processMoveHyperRunning()
+    }
+
+    processMoveNormal () {
+      let xComplete = false
+      let yComplete = false
+      this.setMoveSpeed(0, 0)
+
+      if (this.x < this.baseX - 10) {
+        this.x += 10
+      } else if (this.x > this.baseX + 10) {
+        this.x -= 10
+      } else {
+        xComplete = true
+      }
+
+      if (this.y < this.baseY - 10) {
+        this.y += 10
+      } else if (this.y > this.baseY + 10) {
+        this.y -= 10
+      } else {
+        yComplete = true
+      }
+
+      if (xComplete && yComplete) {
+        this.state = this.STATE_NORMALRUNNING
+        this.x = this.baseX
+        this.y = this.baseY
+      }
+    }
+
+    processMoveNormalRunning () {
+      this.moveMaxSpeed = 0.2
+      if (this.moveDelay.check()) {
+        this.setRandomMoveSpeed(this.moveMaxSpeed, this.moveMaxSpeed, true)
+      }
+
+      if (this.x < this.baseX - 10) {
+        this.x = this.baseX - 10
+        this.moveSpeedX = Math.abs(this.moveSpeedX)
+      } else if (this.x > this.baseX + 10) {
+        this.x = this.baseX + 10
+        this.moveSpeedX = -Math.abs(this.moveSpeedX)
+      }
+
+      if (this.y < this.baseY - 10) {
+        this.y = this.baseY - 10
+        this.moveSpeedY = Math.abs(this.moveSpeedY)
+      } else if (this.y > this.baseY + 10) {
+        this.y = this.baseY + 10
+        this.moveSpeedY = -Math.abs(this.moveSpeedY)
+      }
+    }
+
+    processMoveReflectRunning () {
+      this.moveMaxSpeed -= 0.016
+      if (this.moveMaxSpeed <= 0) {
+        this.setMoveSpeed(0, 0)
+      }
+
+      if (this.x < 0) {
+        this.x = 0
+        this.moveSpeedX = Math.random() * this.moveMaxSpeed
+        this.moveSpeedY = Math.random() * this.moveMaxSpeed * 2 - this.moveMaxSpeed
+        soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreReflect)
+      } else if (this.x + this.width > graphicSystem.CANVAS_WIDTH) {
+        this.x = graphicSystem.CANVAS_WIDTH - this.width
+        this.moveSpeedX = Math.random() * -this.moveMaxSpeed
+        this.moveSpeedY = Math.random() * this.moveMaxSpeed * 2 - this.moveMaxSpeed
+        soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreReflect)
+      }
+      
+      if (this.y < 0) {
+        this.y = 0
+        this.moveSpeedX = Math.random() * this.moveMaxSpeed * 2 - this.moveMaxSpeed
+        this.moveSpeedY = Math.random() * this.moveMaxSpeed
+        soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreReflect)
+      } else if (this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
+        this.y = graphicSystem.CANVAS_HEIGHT - this.height
+        this.moveSpeedX = Math.random() * this.moveMaxSpeed * 2 - this.moveMaxSpeed
+        this.moveSpeedY = Math.random() * -this.moveMaxSpeed
+        soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreReflect)
+      }
+    }
+
+    processMoveReflect () {
+      this.moveMaxSpeed = 8
+      this.setMoveSpeed(this.moveMaxSpeed, 0)
+      this.state = this.STATE_REFLECTRUNNING
+    }
+
+    processMovePunch () {
+      if (this.punchDelay.count === 1) {
+        this.setMoveSpeedChaseLine(this.dasuX, this.dasuY, 30, 24)
+      }
+
+      if (this.x >= this.dasuX) {
+        this.setMoveSpeed(0, 0)
+      }
+
+      if (this.punchDelay.check()) {
+        this.state = this.STATE_PUNCHRUNNING
+        this.setMoveSpeedChaseLine(this.playerX, this.playerY + Math.random() * 160 - 80, 40, 16)
+        soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreAttack)
+      }
+    }
+
+    processMovePunchRunning () {
+      if (this.punchDelay.check()) {
+        this.state = this.STATE_PUNCH
+      }
+    }
+
+    processMoveArrangeMent () {
+      this.setMoveSpeedChaseLine(this.arrangementX, this.arrangementY, 60, 12)
+      if (this.x + this.width >= this.arrangementX) {
+        this.x = this.arrangementX - this.width
+        this.state = this.STATE_ARRANGEMENTRUNNING
+        soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreArrangeMent)
+      }
+    }
+
+    processMoveArrangeMentRunning () {
+      // 없음
+      this.x = this.arrangementX
+      this.y = this.arrangementY
+    }
+
+    processMoveHyper () {
+      this.setRandomMoveSpeed(4, 4, true)
+      if (this.moveDelay.check()) {
+        this.state = this.STATE_HYPERRUNNING
+      }
+    }
+
+    processMoveHyperRunning () {
+      if (this.x < 0) {
+        this.x = 0
+        this.moveSpeedX = Math.random() * this.moveMaxSpeed
+        this.moveSpeedY = Math.random() * this.moveMaxSpeed * 2 - this.moveMaxSpeed
+        soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreReflect)
+      } else if (this.x + this.width > graphicSystem.CANVAS_WIDTH) {
+        this.x = graphicSystem.CANVAS_WIDTH - this.width
+        this.moveSpeedX = Math.random() * -this.moveMaxSpeed
+        this.moveSpeedY = Math.random() * this.moveMaxSpeed * 2 - this.moveMaxSpeed
+        soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreReflect)
+      }
+      
+      if (this.y < 0) {
+        this.y = 0
+        this.moveSpeedX = Math.random() * this.moveMaxSpeed * 2 - this.moveMaxSpeed
+        this.moveSpeedY = Math.random() * this.moveMaxSpeed
+        soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreReflect)
+      } else if (this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
+        this.y = graphicSystem.CANVAS_HEIGHT - this.height
+        this.moveSpeedX = Math.random() * this.moveMaxSpeed * 2 - this.moveMaxSpeed
+        this.moveSpeedY = Math.random() * -this.moveMaxSpeed
+        soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreReflect)
+      }
+    }
+  }
+}
+
+
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
  */
 class TestEnemy extends DonggramiEnemyA2Brick {
   constructor () {
     super()
-    this.setEnemyStat(1000000, 10, 0)
   }
 }
 
@@ -9462,3 +10553,21 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup2.octaLight, TowerEnemyGroup2OctaLig
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.hexaShadow, TowerEnemyGroup2HexaShadow)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.hexaLight, TowerEnemyGroup2HexaLight)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.bossBar, TowerEnemyGroup2BossBar)
+
+// towerEnemyGroup3 / round 3-3 ~ 3-9
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.core8, TowerEnemyGroup3Core8)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.coreBrown, TowerEnemyGroup3CoreBrown)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.coreMetal, TowerEnemyGroup3CoreMetal)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.corePotion, TowerEnemyGroup3CorePotion)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.coreRainbow, TowerEnemyGroup3CoreRainbow)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.coreRainbowSummon, TowerEnemyGroup3CoreRainbowSummon)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.coreShot, TowerEnemyGroup3CoreShot)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.shipSmall, TowerEnemyGroup3ShipSmall)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.shipBig, TowerEnemyGroup3ShipBig)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.fakeBar, TowerEnemyGroup3FakeBar)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.fakeCore, TowerEnemyGroup3FakeCore)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.fakeHell, TowerEnemyGroup3FakeHell)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.fakeMove, TowerEnemyGroup3FakeMove)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.fakeShip, TowerEnemyGroup3FakeShip)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.star, TowerEnemyGroup3Star)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.bossDasu, TowerEnemyGroup3BossDasu)

@@ -1164,10 +1164,18 @@ export class RoundPackLoad {
       soundSrc.enemyDie.enemyDieTowerBar2,
       soundSrc.enemyDie.enemyDieTowerBar3,
       soundSrc.enemyDie.enemyDieTowerBossBar,
+      soundSrc.enemyDie.enemyDieTowerBossDasu,
       soundSrc.enemyDie.enemyDieTowerBossRobot1,
       soundSrc.enemyDie.enemyDieTowerBossRobot2,
+      soundSrc.enemyDie.enemyDieTowerClockAnalog,
+      soundSrc.enemyDie.enemyDieTowerClockDigital,
+      soundSrc.enemyDie.enemyDieTowerClockJong,
       soundSrc.enemyDie.enemyDieTowerDaepo,
       soundSrc.enemyDie.enemyDieTowerDiamond,
+      soundSrc.enemyDie.enemyDieTowerEnergy1,
+      soundSrc.enemyDie.enemyDieTowerEnergy2,
+      soundSrc.enemyDie.enemyDieTowerFakeHell,
+      soundSrc.enemyDie.enemyDieTowerFakeShip,
       soundSrc.enemyDie.enemyDieTowerGasi,
       soundSrc.enemyDie.enemyDieTowerHellba,
       soundSrc.enemyDie.enemyDieTowerHellcho,
@@ -1194,10 +1202,13 @@ export class RoundPackLoad {
       soundSrc.enemyDie.enemyDieTowerPentaShadow,
       soundSrc.enemyDie.enemyDieTowerPunch,
       soundSrc.enemyDie.enemyDieTowerSandglass,
+      soundSrc.enemyDie.enemyDieTowerShipBig,
+      soundSrc.enemyDie.enemyDieTowerShipSmall,
       soundSrc.enemyDie.enemyDieTowerSquare,
+      soundSrc.enemyDie.enemyDieTowerStar,
       soundSrc.enemyDie.enemyDieTowerTapo,
       soundSrc.enemyDie.enemyDieTowerX,
-
+      
 
       // enemyAttack
       soundSrc.enemyAttack.towerAttackDaepo,
@@ -1212,6 +1223,15 @@ export class RoundPackLoad {
       soundSrc.enemyAttack.towerBarAttack2,
       soundSrc.enemyAttack.towerBarAttack3,
       soundSrc.enemyAttack.towerBossBarAttack,
+      soundSrc.enemyAttack.towerBossDasuCoreArrangeMent,
+      soundSrc.enemyAttack.towerBossDasuCoreAttack,
+      soundSrc.enemyAttack.towerBossDasuCoreReflect,
+      soundSrc.enemyAttack.towerBossDasuCoreSummon,
+      soundSrc.enemyAttack.towerClockAttack,
+      soundSrc.enemyAttack.towerCoreSummonBrown,
+      soundSrc.enemyAttack.towerCoreSummonRainbow,
+      soundSrc.enemyAttack.towerShipEquipCore,
+      soundSrc.enemyAttack.towerFakeBarAttack,
     ]
   }
 }
@@ -3359,8 +3379,18 @@ class Round1_test extends RoundData {
     this.bgLegacy.imageSrc = imageSrc.round.round1_1_space
     this.phase.addRoundPhase(this, () => {
       if (this.timeCheckInterval(1, 999, 60) && this.field.getEnemyCount() === 0) {
-        this.field.createEnemy(ID.enemy.towerEnemyGroup1.bossRobot, 600, 200)
-        // this.field.createEnemy(ID.enemy.towerEnemyGroup2.lightning, 600)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup1.bossRobot, 600, 200)
+        this.field.createEnemy(ID.enemy.towerEnemyGroup3.star, 600, 200)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeBar, 600, 200)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeCore, 600, 200)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeHell, 600, 200)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeMove, 600, 200)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeShip, 600, 200)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.coreMetal, 600)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.coreBrown, 600)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeCore, 600)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.corePotion, 600)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.core8, 600)
       }
     }, 0, 999)
   }
@@ -8511,6 +8541,7 @@ class Round3TempleteBossSprite extends FieldData {
     this.TYPE_ROBOT = 'robot'
     this.TYPE_DASU = 'dasu'
     this.state = ''
+    this.dasuCore = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}]
   }
 
   createSpriteBossRobot () {
@@ -8523,6 +8554,14 @@ class Round3TempleteBossSprite extends FieldData {
     this.state = 'start'
     this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
     this.degree = 270
+  }
+
+  createSpriteBossDasu () {
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.bossDasu)
+    this.elapsedFrame = 0
+    this.subType = this.TYPE_DASU
+    this.x = graphicSystem.CANVAS_WIDTH - this.width
+    this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
   }
 
   getSaveString () {
@@ -8548,10 +8587,16 @@ class Round3TempleteBossSprite extends FieldData {
   }
 
   processMove () {
-    if (this.subType === '') return
+    if (this.subType === this.TYPE_ROBOT) {
+      this.processMoveBossRobot()
+      super.processMove()
+    } else if (this.subType === this.TYPE_DASU) {
+      this.processMoveDasu()
+      super.processMove()
+    }
+  }
 
-    super.processMove()
-
+  processMoveBossRobot () {
     // 보스 로봇 이동
     if (this.state === 'start' && this.x + this.width < -300) {
       this.setMoveSpeed(10, 0)
@@ -8592,16 +8637,54 @@ class Round3TempleteBossSprite extends FieldData {
         fieldState.createEnemyBulletObject(bullet4, this.x, this.centerY)
       }
     }
+  }
 
-    
+  processMoveDasu () {
+    // 다수 코어 등장
+    if (this.elapsedFrame % 60 === 0) {
+      let xTable = [-100, -100, -200, -200, -300, -300]
+      let yTable = [-75, 150, -75, 150, -75, 150]
+      let number = Math.floor(this.elapsedFrame / 60)
+      this.dasuCore[number].x = this.x + xTable[number]
+      this.dasuCore[number].y = this.y + yTable[number]
+      soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreSummon)
+      for (let i = 0; i < 24; i++) {
+        let bullet = new Round3TempleteBossSprite.TowerBullet()
+        fieldState.createEnemyBulletObject(bullet, this.dasuCore[number].x, this.dasuCore[number].y)
+      }
+    }
+
+    if (this.elapsedFrame >= 300) {
+      this.subType = ''
+      fieldState.createEnemyObject(ID.enemy.towerEnemyGroup3.bossDasu, this.x, this.y)
+    }
   }
 
   display () {
     // 다른 적도 하나 더 테스트 해야 해서 디버그코드는 임시로 남겨둠
-    // if (this.subType === this.TYPE_ROBOT || this.subType === this.TYPE_DASU) {
-      // super.display()
+    if (this.subType === this.TYPE_ROBOT) {
+      super.display()
       // graphicSystem.fillText('Elp: ' + this.elapsedFrame + ', ' + 'x: ' + this.x + ', y: ' + this.y + ',spdXY: ' + this.moveSpeedX + ':' + this.moveSpeedY, 0, 0, 'blue')
-    // }
+    } else if (this.subType === this.TYPE_DASU) {
+      super.display()
+      for (let i = 0; i < this.dasuCore.length; i++) {
+        if (this.dasuCore[i].x !== 0 && this.dasuCore[i].y !== 0) {
+          this.imageObjectDisplay(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.bossDasuCore, this.dasuCore[i].x, this.dasuCore[i].y)
+        }
+      }
+    }
+  }
+
+  static TowerBullet = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletRed, 6)
+      this.setRandomMoveSpeed(6, 6, true)
+      if (this.moveSpeedX <= 2 && this.moveSpeedX >= 0) this.moveSpeedX = 2
+      if (this.moveSpeedX >= -2 && this.moveSpeedX <= 0) this.moveSpeedX = -2
+
+      if (this.moveSpeedY <= 2 && this.moveSpeedY >= 0) this.moveSpeedY = 2
+      if (this.moveSpeedY >= -2 && this.moveSpeedY <= 0) this.moveSpeedY = -2
+    }
   }
 
 
@@ -9402,35 +9485,44 @@ class Round3_test extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_test)
-    // this.playerOption.setColor(this.playerOption.colorList.orange)
-    // this.playerOption.setLevel()
+    this.playerOption.setColor(this.playerOption.colorList.orange)
+    this.playerOption.setLevel(3)
     this.bgLayer.setColor('white')
     // this.sound.roundStartMusicSrc = soundSrc.music.music16_down_tower
     this.phase.addRoundPhase(this, () => {
-      if (this.timeCheckInterval(0, 999, 20) && this.field.getEnemyCount() === 0) {
-        this.field.createEnemy(ID.enemy.towerEnemyGroup2.lightning)
-      }
+      // if (this.timeCheckInterval(0, 999, 20) && this.field.getEnemyCount() === 0) {
+      //   this.field.createEnemy(ID.enemy.towerEnemyGroup2.lightning)
+      // }
 
       if (this.timeCheckFrame(1)) {
         // this.sound.musicFadeOut(60)
         // this.field.createEnemy(ID.enemy.towerEnemyGroup2.bossBar, 1)
+
+        // this.bossSprite.createSpriteBossDasu()
+        // fieldState.createEnemyObject(ID.enemy.towerEnemyGroup3.bossDasu)
+        // this.sound.currentMusicSrc = soundSrc.music.music17_down_tower_boss
+        // this.sound.musicPlay()
       }
 
-      // if (this.timeCheckFrame(2)) {
-      //   this.bossWarning.createWarning('BOSS ROBOT')
-      // } else if (this.timeCheckFrame(9)) {
-      //   this.bossSprite.createSpriteBossRobot()
-      //   this.sound.currentMusicSrc = soundSrc.music.music17_down_tower_boss
-      //   this.sound.musicPlay()
-      // }
+      if (this.timeCheckFrame(2)) {
+        this.bossWarning.createWarning('DASU CORE SYSTEM')
+      } else if (this.timeCheckFrame(9)) {
+        this.bossSprite.createSpriteBossDasu()
+        this.sound.currentMusicSrc = soundSrc.music.music17_down_tower_boss
+        this.sound.musicPlay()
+      }
 
-      // this.timePauseWithEnemyCount(17)
-      // if (this.timeCheckInterval(17)) {
-      //   let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup1.bossRobot)
-      //   if (enemy != null && enemy.isDied) {
-      //     this.sound.musicStop()
-      //   }
-      // }
+      this.timePauseWithEnemyCount(17)
+      if (this.timeCheckInterval(17)) {
+        let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup1.bossRobot)
+        if (enemy != null && enemy.isDied) {
+          this.sound.musicStop()
+        }
+      }
+
+      if (this.timeCheckInterval(18)) {
+        this.sound.musicStop()
+      }
 
       if (this.timeCheckFrame(1)) {
         // this.bossWarning.createWarning('BOSS ROBOT')
@@ -9459,24 +9551,33 @@ class Round3_test extends Round3Templete {
 
   display () {
     super.display()
-    if (this.playerOption.optionObject[0]) {
-      graphicSystem.fillText(this.playerOption.optionObject[0].x + ', ' + this.playerOption.optionObject[0].y + ', ' + this.playerOption.optionObject[0].color + ', spd: ' + this.playerOption.optionObject[0].moveSpeedX, 0, 0, 'white')
+
+    // if (this.playerOption.optionObject[0]) {
+    //   graphicSystem.fillText(this.playerOption.optionObject[0].x + ', ' + this.playerOption.optionObject[0].y + ', ' + this.playerOption.optionObject[0].color + ', spd: ' + this.playerOption.optionObject[0].moveSpeedX, 0, 0, 'white')
+    // }
+
+    // 보스 다수(이름이 DASU) 테스트
+    if (this.field.getEnemyObject()[0] != null) {
+      let enemy = this.field.getEnemyObject()[0]
+      if (enemy.stateDelay != null) {
+        graphicSystem.fillText(enemy.state + ', ' + enemy.stateDelay.count + '/' + enemy.stateDelay.delay, 0, 60, 'black')
+      }
     }
 
     // 충돌 테스트
-    if (this.field.getEnemyObject()[0] != null) {
-      let enemy = this.field.getEnemyObject()[0]
-      // enemy.isPossibleExit = false
-      let col = enemy.getCollisionArea()
-      for (let i = 0; i < col.length; i++) {
-        let color = 'red'
-        if (i === 0) color = 'blue'
-        if (i === 1) color = 'green'
+    // if (this.field.getEnemyObject()[0] != null) {
+    //   let enemy = this.field.getEnemyObject()[0]
+    //   // enemy.isPossibleExit = false
+    //   let col = enemy.getCollisionArea()
+    //   for (let i = 0; i < col.length; i++) {
+    //     let color = 'red'
+    //     if (i === 0) color = 'blue'
+    //     if (i === 1) color = 'green'
 
-        graphicSystem.fillRect(col[i].x, col[i].y, col[i].width, col[i].height, color)
-        graphicSystem.fillText(col[i].x + ', ' + col[i].y + ', ' + col[i].width + ', ' + col[i].height, 0, i * 20, 'gold')
-      }
-    }
+    //     graphicSystem.fillRect(col[i].x, col[i].y, col[i].width, col[i].height, color)
+    //     graphicSystem.fillText(col[i].x + ', ' + col[i].y + ', ' + col[i].width + ', ' + col[i].height, 0, i * 20, 'gold')
+    //   }
+    // }
 
     this.meter.bossHpDefaultStyle()
     // this.playerOption.display()

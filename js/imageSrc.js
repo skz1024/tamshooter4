@@ -80,7 +80,8 @@ export class imageSrc {
     donggramiEnemy: './image/enemy/donggramiEnemy.png',
     intruderEnemy: './image/enemy/intruderEnemy.png',
     towerEnemyGroup1: './image/enemy/towerEnemyGroup1.png',
-    towerEnemyGroup2: './image/enemy/towerEnemyGroup2.png'
+    towerEnemyGroup2: './image/enemy/towerEnemyGroup2.png',
+    towerEnemyGroup3: './image/enemy/towerEnemyGroup3.png',
   }
 
   static enemyDie = {
@@ -462,6 +463,7 @@ export class imageDataInfo {
     bulletTapo: new ImageDataObject(0, 700, 90, 30, 1),
     bulletRed: new ImageDataObject(0, 750, 20, 20, 1),
     bulletBlue: new ImageDataObject(30, 750, 20, 20, 1),
+    bulletYellow: new ImageDataObject(60, 750, 20, 20, 1),
     bulletHelljeonRocket: new ImageDataObject(100, 700, 70, 10, 1),
     bulletRedLaser: new ImageDataObject(100, 730, 100, 20, 1),
     bulletOrangeLaser: new ImageDataObject(100, 760, 60, 20, 1),
@@ -533,10 +535,13 @@ export class imageDataInfo {
   static towerEnemyGroup3 = {
     core8: new ImageDataObject(0, 0, 60, 60, 1),
     corePotion: new ImageDataObject(60, 0, 60, 60, 1),
+    corePotionUsing: new ImageDataObject(1460, 0, 60, 60, 1),
     coreMetal: new ImageDataObject(120, 0, 60, 60, 1),
     coreShot: new ImageDataObject(180, 0, 60, 60, 1),
     coreRainbow: new ImageDataObject(240, 0, 60, 60, 1),
     coreBrown: new ImageDataObject(300, 0, 60, 60, 1),
+    coreRainbowSummon: new ImageDataObject(1600, 0, 200, 100, 1),
+    coreBrownShield: new ImageDataObject(1800, 0, 100, 100, 1),
     star: new ImageDataObject(400, 0, 80, 80, 1),
     shipSmall: new ImageDataObject(0, 100, 240, 120, 5),
     shipBig: new ImageDataObject(0, 220, 240, 240, 5),
@@ -545,16 +550,16 @@ export class imageDataInfo {
     fakeHell: new ImageDataObject(1240, 0, 160, 60, 1),
     fakeCore: new ImageDataObject(1400, 0, 60, 60, 1),
     fakeShip: new ImageDataObject(1200, 100, 120, 120, 5),
-    bossDasu: new ImageDataObject(1800, 200, 150, 200, 1),
-    bossDasuCore: new ImageDataObject(2000, 200, 100, 100, 1),
+    bossDasu: new ImageDataObject(1200, 220, 150, 200, 1),
+    bossDasuCore: new ImageDataObject(1350, 220, 100, 100, 1),
     clockAnalog: new ImageDataObject(0, 500, 160, 160, 1),
     clockDigital: new ImageDataObject(0, 660, 180, 120, 1),
     clockJong: new ImageDataObject(0, 780, 200, 400, 1),
-    energyBlue: new ImageDataObject(0, 1200, 200, 200, 12),
-    energyOrange: new ImageDataObject(0, 1400, 200, 200, 12),
-    energyA1: new ImageDataObject(1800, 0, 160, 160, 1),
-    energyA2: new ImageDataObject(1960, 0, 160, 160, 1),
-    energyA3: new ImageDataObject(2120, 0, 160, 160, 1),
+    energyBlue: new ImageDataObject(0, 1200, 200, 200, 10),
+    energyOrange: new ImageDataObject(0, 1400, 200, 200, 10),
+    energyA1: new ImageDataObject(1450, 220, 160, 160, 1),
+    energyA2: new ImageDataObject(1610, 220, 160, 160, 1),
+    energyA3: new ImageDataObject(1760, 220, 160, 160, 1),
 
     // clock red
     clockAnalogRed: new ImageDataObject(1600, 500, 160, 160, 1),
@@ -562,16 +567,16 @@ export class imageDataInfo {
     clockDigitalRed: new ImageDataObject(1800, 660, 180, 120, 1),
 
     // digital clock number
-    number0: new ImageDataObject(2080, 660, 30, 60, 1),
-    number1: new ImageDataObject(2110, 660, 30, 60, 1),
-    number2: new ImageDataObject(2140, 660, 30, 60, 1),
-    number3: new ImageDataObject(2170, 660, 30, 60, 1),
-    number4: new ImageDataObject(2200, 660, 30, 60, 1),
-    number5: new ImageDataObject(2230, 660, 30, 60, 1),
-    number6: new ImageDataObject(2260, 660, 30, 60, 1),
-    number7: new ImageDataObject(2290, 660, 30, 60, 1),
-    number8: new ImageDataObject(2320, 660, 30, 60, 1),
-    number9: new ImageDataObject(2350, 660, 30, 60, 1),
+    number0: new ImageDataObject(1600, 400, 30, 60, 1),
+    number1: new ImageDataObject(1630, 400, 30, 60, 1),
+    number2: new ImageDataObject(1660, 400, 30, 60, 1),
+    number3: new ImageDataObject(1690, 400, 30, 60, 1),
+    number4: new ImageDataObject(1720, 400, 30, 60, 1),
+    number5: new ImageDataObject(1750, 400, 30, 60, 1),
+    number6: new ImageDataObject(1780, 400, 30, 60, 1),
+    number7: new ImageDataObject(1810, 400, 30, 60, 1),
+    number8: new ImageDataObject(1840, 400, 30, 60, 1),
+    number9: new ImageDataObject(1870, 400, 30, 60, 1),
 
     // enemyDie
     enemyDieStar: new ImageDataObject(400, 0, 80, 80, 6),

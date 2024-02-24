@@ -2542,7 +2542,7 @@ export class gameSystem {
    */
   static process () {
     if (this.stateId === this.STATE_LOAD_ERROR) return
-
+    this.mainSystem.selected = false // 간혹 필드를 나갔을 때 메뉴가 눌리는 상황이 있기 때문에 이를 막기 위함
     
     this.userSystem.process()
     if (this.stateId === this.STATE_MAIN) this.userSystem.showUserStat()
