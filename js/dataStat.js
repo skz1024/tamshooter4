@@ -263,11 +263,11 @@ dataExportStatRound.set(ID.round.round2_5, new StatRound('2-5', '지하실의 �
 dataExportStatRound.set(ID.round.round2_6, new StatRound('2-6', '조용한 도로', 15, 60000, 150, 48000, ''))
 dataExportStatRound.set(ID.round.round2_test, new StatRound('TEST2', 'TEST2', 0, 0, 600, 0))
 // round 3
-dataExportStatRound.set(ID.round.round3_1, new StatRound('3-1', '다운 타워 1', 20, 70000, 240, 41400, ''))
-dataExportStatRound.set(ID.round.round3_2, new StatRound('3-2', '다운 타워 2', 20, 70000, 240, 41800, ''))
-dataExportStatRound.set(ID.round.round3_3, new StatRound('3-3', '다운 타워 3', 20, 70000, 240, 42200, ''))
-dataExportStatRound.set(ID.round.round3_4, new StatRound('3-4', '다운 타워 보이드', 22, 70000, 300, 45400, ''))
-dataExportStatRound.set(ID.round.round3_5, new StatRound('3-5', '이름 미정', 25, 70000, 300, 32000, ''))
+dataExportStatRound.set(ID.round.round3_1, new StatRound('3-1', '다운 타워 1', 20, 70000, 200, 71400, ''))
+dataExportStatRound.set(ID.round.round3_2, new StatRound('3-2', '다운 타워 2', 20, 70000, 220, 71800, ''))
+dataExportStatRound.set(ID.round.round3_3, new StatRound('3-3', '다운 타워 3', 20, 70000, 200, 72200, ''))
+dataExportStatRound.set(ID.round.round3_4, new StatRound('3-4', '다운 타워 보이드', 22, 70000, 240, 45400, ''))
+dataExportStatRound.set(ID.round.round3_5, new StatRound('3-5', '이름 미정', 25, 70000, 420, 32000, ''))
 dataExportStatRound.set(ID.round.round3_test, new StatRound('TEST3', 'round 3 test mode', 20, 0, 999, 0, 'round3을 제작하는 과정에서 만들어진 테스트 라운드'))
 
 // 미정...

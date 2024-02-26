@@ -7230,7 +7230,7 @@ class TowerEnemyGroup1Tapo extends TowerEnemy {
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerTapo, imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDieTapo, 6)
     this.tapoEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.tapoEnimation, 2)
     this.attackDelay = new DelayData(180 + Math.floor(Math.random() * 6))
-    this.setMoveSpeed(0.5, 0)
+    this.setMoveSpeed(1, 0)
     this.isExitToReset = true
   }
 
@@ -7521,7 +7521,8 @@ class TowerEnemyHellTemplet extends TowerEnemy {
     }
 
     /** 회전 각도 허용? */ this.isAngleChange = true
-    this.setMoveDirection()
+
+    this.setMoveDirection() // 이동방향 삭제
   }
 
   /** 헬시리즈 개체의 각도를 변경합니다. */
@@ -7566,6 +7567,12 @@ class TowerEnemyHellTemplet extends TowerEnemy {
 
   processRandomSpeed () {
     this.targetSpeed._x = (Math.random() * this.targetSpeed.xBase * 2) - this.targetSpeed.xBase - 0.2
+    if (this.x > graphicSystem.CANVAS_WIDTH - 100) { // 너무 오른쪽에 있으면, 왼쪽으로 이동하도록 유도
+      this.targetSpeed._x = -Math.abs(this.targetSpeed._x)
+    } else if (this.x < 100) { // 너무 왼쪽에 있으면, 오른쪽에 이동하도록 유도
+      this.targetSpeed._x = Math.abs(this.targetSpeed._x)
+    }
+
     this.targetSpeed._y = (Math.random() * this.targetSpeed.yBase * 2) - this.targetSpeed.yBase
   }
 
@@ -8006,6 +8013,11 @@ class TowerEnemyGroup1gasiUp extends TowerEnemy {
     this.setMoveSpeed(Math.random() * 2 - 1, -8)
   }
 
+  afterInit () {
+    this.x = Math.random() * graphicSystem.CANVAS_WIDTH
+    this.y = graphicSystem.CANVAS_HEIGHT + this.height + 20
+  }
+
   processPlayerCollision () {
     if (this.collisionDelay.check(false)) {
       const player = fieldState.getPlayerObject()
@@ -8039,6 +8051,11 @@ class TowerEnemyGroup1gasiDown extends TowerEnemyGroup1gasiUp {
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.gasiDown)
     this.setMoveSpeed(Math.random() * 2 - 1, 8)
     this.setDieEffectTemplet(this.dieSound, this.imageSrc, imageDataInfo.towerEnemyGroup1.enemyDieGasiDown)
+  }
+
+  afterInit () {
+    super.afterInit()
+    this.y = 0 - 20
   }
 }
 
@@ -8075,7 +8092,7 @@ class TowerEnemyPentaTemplete extends TowerEnemy {
     super()
     this.subTypeList = TowerEnemyPentaShadowTemplete.subTypeList
     this.moveDelay = new DelayData(120)
-    this.moveDelay.count = 60
+    this.moveDelay.setCountMax()
   }
 
   /** 
@@ -8567,6 +8584,12 @@ class TowerEnemyBarTemplete extends TowerEnemy {
     const collisionSoundList = TowerEnemyBarTemplete.collisionSoundList
     const collisionSoundNumber = Math.floor(Math.random() * collisionSoundList.length)
     this.collisionSoundSrc = collisionSoundList[collisionSoundNumber]
+  }
+
+  afterInit () {
+    // 밑에서 등장할 수 있도록 좌표 조정
+    this.x = Math.random() * (graphicSystem.CANVAS_WIDTH - this.width)
+    this.y = graphicSystem.CANVAS_HEIGHT
   }
 
   processPlayerCollisionSuccessAfter () {
@@ -9301,7 +9324,7 @@ class TowerEnemyGroup2BossBar extends TowerEnemy {
 class TowerEnemyCoreTemplete extends TowerEnemy {
   constructor () {
     super()
-    this.setEnemyByCpStat(50, 10)
+    this.setEnemyByCpStat(40, 10)
     this.setRandomMoveSpeed(2, 2)
     this.setCore('') // 임의의 코어값 설정 (세부 클래스에서 이 함수를 사용해서 어느 코어를 만들것인지를 결정해야함)
 
@@ -9502,8 +9525,8 @@ class TowerEnemyGroup3ShipSmall extends TowerEnemy {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.shipSmall, 6)
-    this.setEnemyByCpStat(500, 14)
-    this.setMoveSpeed(0.4, 0)
+    this.setEnemyByCpStat(400, 14)
+    this.setMoveSpeed(1.2, 0)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieTowerShipSmall, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.smallCircleUp, this.width / 2, this.width / 2, 2, 2))
    
     this.coreDelay = new DelayData(300)
@@ -9527,7 +9550,7 @@ class TowerEnemyGroup3ShipSmall extends TowerEnemy {
 
     let enemyList = fieldState.getEnemyObject()
     let coreList = []
-    let subTypeList = [this.coreType.shot, this.coreType.brown, this.coreType.core8, this.coreType.metal, this.coreType.potion, this.coreType.rainbow]
+    let subTypeList = [this.coreType.shot, this.coreType.brown, this.coreType.core8, this.coreType.metal, this.coreType.potion, this.coreType.rainbow, this.coreType.fake]
     for (let i = 0; i < enemyList.length; i++) {
       // 적이 가지고 있는 서브타입이 서브타입 리스트에 포함되면 해당 하는 적은 코어로 간주됨
       if (subTypeList.includes(enemyList[i].subType)) {
@@ -9673,6 +9696,14 @@ class TowerEnemyGroup3ShipSmall extends TowerEnemy {
     }
   }
 
+  processMove () {
+    super.processMove()
+    
+    // y축 위치 강제 조정 (화면 안에 들어오도록)
+    if (this.y < 0) this.y = 0
+    else if (this.y + this.height > graphicSystem.CANVAS_HEIGHT) this.y = graphicSystem.CANVAS_HEIGHT - this.height
+  }
+
   processDie () {
     if (this.dieCheck()) {
       this.processDieDefault()
@@ -9734,7 +9765,7 @@ class TowerEnemyGroup3ShipBig extends TowerEnemyGroup3ShipSmall {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.towerEnemyGroup3.shipBig, 6)
-    this.setEnemyByCpStat(800, 14)
+    this.setEnemyByCpStat(400, 14)
     this.coreEquipMaxCount = 4 // 최대 코어 4개 장착
     this.dieSound = soundSrc.enemyDie.enemyDieTowerShipBig
     this.coreDelay.delay = 240 // 4초 간격 코어 흡수
@@ -9794,7 +9825,7 @@ class TowerEnemyGroup3FakeShip extends TowerEnemyGroup3ShipSmall {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.fakeShip, 3)
-    this.setEnemyByCpStat(200, 14)
+    this.setEnemyByCpStat(400, 14)
     this.dieSound = soundSrc.enemyDie.enemyDieTowerFakeShip
   }
 
