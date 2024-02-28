@@ -198,6 +198,7 @@ export class soundSrc {
     towerBossDasuCoreReflect: './sound/enemyTowerBossDasuCoreReflect.ogg',
     towerBossDasuCoreSummon: './sound/enemyTowerBossDasuCoreSummon.ogg',
     towerClockAttack: './sound/enemyTowerClockAttack.ogg',
+    towerClockVibration: './sound/enemyTowerClockVibration.ogg',
     towerCoreSummonBrown: './sound/enemyTowerCoreSummonBrown.ogg',
     towerCoreSummonRainbow: './sound/enemyTowerCoreSummonRainbow.ogg',
     towerFakeBarAttack: './sound/enemyTowerFakeBarAttack.ogg',
@@ -282,6 +283,7 @@ export class soundSrc {
     music14_intruder_battle: './music/music14_intruder_battle.ogg',
     music15_donggrami_ruin: './music/music15_donggrami_ruin.ogg',
     music16_down_tower: './music/music16_down_tower.ogg',
-    music17_down_tower_boss: './music/music17_down_tower_boss.ogg'
+    music17_down_tower_boss: './music/music17_down_tower_boss.ogg',
+    music18_down_tower_void: './music/music18_down_tower_void.ogg',
   }
 }

@@ -9452,31 +9452,13 @@ class TowerEnemyGroup3CoreRainbow extends TowerEnemyCoreTemplete {
     super()
     this.setCore(this.coreType.rainbow)
     this.attackDelay.delay = 180
-    this.summonCount = 1
+    this.isSpeedBoost = false
   }
 
   processAttack () {
-    if (this.summonCount >= 1 && this.attackDelay.check()) {
-      this.summonCount--
+    if (this.attackDelay.check() && !this.isSpeedBoost) {
       soundSystem.play(soundSrc.enemyAttack.towerCoreSummonRainbow)
-      fieldState.createEnemyObject(ID.enemy.towerEnemyGroup3.coreRainbowSummon, this.x, this.y)
-    }
-  }
-}
-
-class TowerEnemyGroup3CoreRainbowSummon extends TowerEnemy {
-  constructor () {
-    super()
-    this.setMoveSpeed(0, 0) // 이동하지 않음
-    this.setEnemyByCpStat(50, 0) // 체력만 있고 공격력 없음, 데미지 방해용도
-    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.coreRainbowSummon)
-    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieSpaceSmall)
-  }
-
-  processMove () {
-    super.processMove()
-    if (this.elapsedFrame >= 600) {
-      this.isDeleted = true
+      this.setMoveSpeed(this.moveSpeedX * 4, this.moveSpeedY * 4) // 이동 속도 증가
     }
   }
 }
@@ -9812,6 +9794,16 @@ class TowerEnemyGroup3FakeHell extends TowerEnemyHellTemplet {
     this.moveDelay.delay = 30
     this.dieSound = soundSrc.enemyDie.enemyDieTowerFakeHell
   }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 12, 14, 6),
+      this.getCollisionAreaCalcurationObject(13, 20, 17, 11),
+      this.getCollisionAreaCalcurationObject(38, 20, 119, 40),
+      this.getCollisionAreaCalcurationObject(67, 10, 78, 9),
+      this.getCollisionAreaCalcurationObject(70, 1, 59, 4),
+    ]
+  }
 }
 
 class TowerEnemyGroup3FakeCore extends TowerEnemyCoreTemplete {
@@ -9829,6 +9821,13 @@ class TowerEnemyGroup3FakeShip extends TowerEnemyGroup3ShipSmall {
     this.dieSound = soundSrc.enemyDie.enemyDieTowerFakeShip
   }
 
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 37, 240, 46),
+      this.getCollisionAreaCalcurationObject(15, 0, 212, 120),
+    ]
+  }
+
   /** 이 함선은 아무것도 장착할 수 없습니다. */
   equipCore () {
 
@@ -9844,6 +9843,16 @@ class TowerEnemyGroup3Star extends TowerEnemy {
     this.setRandomMoveSpeed(4, 4, true)
     this.degree = Math.random() * 360
     this.randomDegreeSpeed = Math.floor(Math.random() * 3) + 1
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(1, 27, 76, 13),
+      this.getCollisionAreaCalcurationObject(33, 2, 14, 25),
+      this.getCollisionAreaCalcurationObject(17, 40, 44, 21),
+      this.getCollisionAreaCalcurationObject(15, 60, 17, 11),
+      this.getCollisionAreaCalcurationObject(43, 59, 17, 11),
+    ]
   }
 
   processMove () {
@@ -9903,6 +9912,17 @@ class TowerEnemyGroup3BossDasu extends TowerEnemy {
   afterInit () {
     this.x = graphicSystem.CANVAS_WIDTH - this.width
     this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 10, 20, 30),
+      this.getCollisionAreaCalcurationObject(0, 160, 20, 30),
+      this.getCollisionAreaCalcurationObject(20, 0, 65, 200),
+      this.getCollisionAreaCalcurationObject(85, 10, 31, 180),
+      this.getCollisionAreaCalcurationObject(116, 28, 19, 144),
+      this.getCollisionAreaCalcurationObject(135, 45, 15, 109),
+    ]
   }
 
   processMove () {
@@ -10376,7 +10396,6 @@ class TowerEnemyGroup3BossDasu extends TowerEnemy {
     }
 
     processMoveArrangeMentRunning () {
-      // 없음
       this.x = this.arrangementX
       this.y = this.arrangementY
     }
@@ -10413,6 +10432,308 @@ class TowerEnemyGroup3BossDasu extends TowerEnemy {
         soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreReflect)
       }
     }
+  }
+}
+
+class TowerEnemyGroup3ClockAnalog extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.clockAnalog)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerClockAnalog, imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.enemyDieClockAnalog, 2)
+    this.setEnemyByCpStat(400, 10) // 시계는 공격력 없음
+
+    /** 시계바늘 오브젝트 */ this.analogHand = new TowerEnemyGroup3ClockAnalog.AnalogHand()
+    /** 시계 표시 방식 설정: 아날로그, 디지털, 종(종은 위치좌표값이 달라서 따로 구분함) */
+    this.subTypeList = {
+      analog: 'analog',
+      digital: 'digital',
+      jong: 'jong'
+    }
+
+    /** 아날로그 시계가 스킬을 사용하는 시점 */ this.ANALOG_SKILL_TIME = 44
+    /** 디지털 시계가 스킬을 사용하는 시점 */ this.DIGITAL_SKILL_TIME = 55
+    /** 종 시계가 스킬을 사용하는 시점 */ this.JONG_SKILL_TIME = 66
+    /** 아날로그 시계 기준으로 스킬이 사용되는 바늘의 상수 값 */ this.ANALOG_HAND_SKILL_TICK = 11
+    /** 아날로그 시계 기준으로 시계가 빨간색이 되는 바늘의 상수 값 */ this.ANALOG_HAND_RED_TICK = 8
+    /** 아날로그 시계 기준으로 시계가 흔들리기 시작하는 바늘의 상수 값 */ this.ANALOG_HAND_VIBRATION_TICK = 9
+
+    /** 일반 상태 (상태값이 따로 지정되어있는건, 아무것도 아닌 상태를 막기 위함) */ this.STATE_NORMAL = 'clock'
+    /** 시계가 빨간색이 된 상태 */ this.STATE_RED = 'red'
+    /** 시계가 진동하는 상태 */ this.STATE_VIBRATION = 'vibration'
+    /** 스킬을 사용하는 상태 */ this.STATE_SKILL = 'skill'
+    /** 스킬을 사용하고 정지한 상태 */ this.STATE_STOP = 'stop'
+    this.state = 'clock'
+
+
+    this.subType = this.subTypeList.analog
+    this.vibrationBaseX = 0
+    this.vibrationBaseY = 0
+
+    /** 스킬 공격력: 무려 120데미지! */ this.SKILL_ANALOG_ATTACK = 120
+    this.SKILL_DIGITAL_ATTACK = 150
+    this.SKILL_JONG_ATTACK = 180
+
+    /** 플래시 시간 (시계가 공격하면 화면 전체가 영향을 받음) */ this.flashFrame = 0
+    
+    /** 현재 시간값 */ this.currentTime = 0
+    /** 1틱에 해당하는 시간 */ this.tickTime = this.ANALOG_SKILL_TIME / this.ANALOG_HAND_SKILL_TICK
+  }
+
+  getCollisionArea () {
+    super.getCollisionArea()
+    return [
+      this.getCollisionAreaCalcurationObject(48, 0, 64, 160),
+      this.getCollisionAreaCalcurationObject(0, 51, 160, 55),
+      this.getCollisionAreaCalcurationObject(35, 12, 90, 136),
+      this.getCollisionAreaCalcurationObject(16, 21, 128, 118),
+    ]
+  }
+
+  processState () {
+    super.processState()
+    this.processClock()
+    this.processStateChange()
+  }
+
+  processClock () {
+    if (this.subType === this.subTypeList.analog || this.subType === this.subTypeList.jong) {
+      this.processAnalogClock()
+    } else if (this.subType === this.subTypeList.digital) {
+      this.processDigitalClock()
+    }
+  }
+
+  processAnalogClock () {
+    // 시계 진행 각도 설정 (시계바늘이 12에 위치할 때가 360도입니다.)
+    let currentSecond = Math.floor(this.elapsedFrame / 60)
+    let currentFrame = (this.elapsedFrame % 60)
+    this.currentTime = currentSecond + (currentFrame / 60) // 총합 시간
+    this.analogHand.degree = (this.currentTime / this.tickTime) * 30 // 각도 계산 1틱당 30도씩 이동
+
+    // 각도 제한 (330도, 이것은 시계바늘이 11이상을 넘어가지 못하게 하기 위함)
+    if (this.analogHand.degree > 330) {
+      this.analogHand.degree = 330
+    }
+  }
+
+  processDigitalClock () {
+    this.currentTime = Math.floor(this.elapsedFrame / 60)
+
+    // 시간 값 제한
+    if (this.currentTime > this.DIGITAL_SKILL_TIME) this.currentTime = this.DIGITAL_SKILL_TIME
+  }
+
+  processStateChange () {
+    let radTime = this.tickTime * this.ANALOG_HAND_RED_TICK
+    let vibrationTime = this.tickTime * this.ANALOG_HAND_VIBRATION_TICK
+    let skillTime = this.tickTime * this.ANALOG_HAND_SKILL_TICK
+
+    if (this.currentTime >= radTime && this.currentTime < vibrationTime && this.state === this.STATE_NORMAL) {
+      this.state = this.STATE_RED
+      this.setMoveSpeed(0, 0) // 이동 정지
+      this.vibrationBaseX = this.x // 진동 기준점 좌표 설정
+      this.vibrationBaseY = this.y
+    } else if (this.currentTime >= vibrationTime && this.currentTime < skillTime && this.state === this.STATE_RED) {
+      this.state = this.STATE_VIBRATION
+    } else if (this.currentTime >= skillTime && this.state === this.STATE_VIBRATION) {
+      // 스킬 상태는 진동 상태일때만 변경됩니다.
+      this.state = this.STATE_SKILL
+    }
+  }
+
+  processMove () {
+    super.processMove()
+    if (this.state === this.STATE_VIBRATION) {
+      this.x = this.vibrationBaseX + Math.random() * 20 - 10
+      this.y = this.vibrationBaseY + Math.random() * 20 - 10
+
+      if (this.elapsedFrame % 45 === 0) {
+        soundSystem.play(soundSrc.enemyAttack.towerClockVibration)
+      }
+    }
+
+    // 아날로그 핸드의 시계 위치를 정해진 곳에 위치하게 함.
+    if (this.subType === this.subTypeList.analog) {
+      this.analogHand.x = this.x
+      this.analogHand.y = this.y
+    } else if (this.subType === this.subTypeList.jong) {
+      this.analogHand.x = this.x + 20
+      this.analogHand.y = this.y + 40
+    }
+  }
+
+  processAttack () {
+    if (this.state === this.STATE_SKILL) {
+      soundSystem.play(soundSrc.enemyAttack.towerClockAttack)
+      let player = fieldState.getPlayerObject()
+      player.addDamage(this.SKILL_ANALOG_ATTACK) // 플레이어는 회피 불가능 무조건 데미지를 받아야 함
+      this.flashFrame = 45
+      this.state = this.STATE_STOP // 공격후 상태 변경
+    }
+
+    // 플래시 프레임 감소
+    if (this.flashFrame >= 1) this.flashFrame--
+  }
+
+  display () {
+    if (this.state === this.STATE_RED || this.state === this.STATE_VIBRATION) {
+      if (this.subType === this.subTypeList.analog) {
+        this.imageObjectDisplay(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.clockAnalogRed, this.x, this.y)
+      } else if (this.subType === this.subTypeList.digital) {
+        this.imageObjectDisplay(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.clockDigitalRed, this.x, this.y)
+      } else if (this.subType === this.subTypeList.jong) {
+        super.display() // 종에 빨간색 시계를 덮어씌우는 구조라, 원본을 출력해야 함
+        this.imageObjectDisplay(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.clockAnalogRed, this.x + 20, this.y + 40)
+      }
+    } else {
+      super.display()
+    }
+    
+    if (this.subType === this.subTypeList.analog || this.subType === this.subTypeList.jong) {
+      this.analogHand.display() // 아날로그 바늘 표시
+    } else if (this.subType === this.subTypeList.digital) {
+      this.displayDigital() // 디지털 시계 표시
+    }
+
+    // 화면 전체 영역의 플래시 표시
+    if (this.flashFrame >= 1) {
+      let flashColor = '#F9E79F' // 노란색 비슷
+      if (this.subType === this.subTypeList.digital) flashColor = '#A3E4D7' // 연두색 비슷
+      else if (this.subType === this.subTypeList.jong) flashColor = '#F1948A' // 빨간색 비슷
+
+      graphicSystem.fillRect(0, 0, 999, 999, flashColor, this.flashFrame * 0.01)
+    }
+  }
+
+  displayDigital () {
+    // 이 디지털은 00:00 ~ 00:59까지만 표현됩니다. (10의 자리가 0일때는 0도 표시해야 합니다.)
+    let outputText = '00 ' + (this.currentTime <= 9 ? '0' + this.currentTime : this.currentTime)
+    let imgSrc = imageSrc.enemy.towerEnemyGroup3
+    let imgD = imageDataInfo.towerEnemyGroup3
+    for (let i = 0; i < outputText.length; i++) {
+      let currentWord = outputText.charAt(i)
+      switch (currentWord) {
+        case '0': this.imageObjectDisplay(imgSrc, imgD.number0, this.x + 10 + (i * 32), this.y + 30); break
+        case '1': this.imageObjectDisplay(imgSrc, imgD.number1, this.x + 10 + (i * 32), this.y + 30); break
+        case '2': this.imageObjectDisplay(imgSrc, imgD.number2, this.x + 10 + (i * 32), this.y + 30); break
+        case '3': this.imageObjectDisplay(imgSrc, imgD.number3, this.x + 10 + (i * 32), this.y + 30); break
+        case '4': this.imageObjectDisplay(imgSrc, imgD.number4, this.x + 10 + (i * 32), this.y + 30); break
+        case '5': this.imageObjectDisplay(imgSrc, imgD.number5, this.x + 10 + (i * 32), this.y + 30); break
+        case '6': this.imageObjectDisplay(imgSrc, imgD.number6, this.x + 10 + (i * 32), this.y + 30); break
+        case '7': this.imageObjectDisplay(imgSrc, imgD.number7, this.x + 10 + (i * 32), this.y + 30); break
+        case '8': this.imageObjectDisplay(imgSrc, imgD.number8, this.x + 10 + (i * 32), this.y + 30); break
+        case '9': this.imageObjectDisplay(imgSrc, imgD.number9, this.x + 10 + (i * 32), this.y + 30); break
+      }
+    }
+  }
+
+  static AnalogHand = class extends FieldData {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.clockAnalogHand)
+    }
+  }
+}
+
+class TowerEnemyGroup3ClockDigital extends TowerEnemyGroup3ClockAnalog {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.clockDigital)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerClockDigital, imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.enemyDieClockDigital, 2)
+    this.subType = this.subTypeList.digital
+    this.tickTime = this.DIGITAL_SKILL_TIME / this.ANALOG_HAND_SKILL_TICK
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject()
+    ]
+  }
+}
+
+class TowerEnemyGroup3ClockJong extends TowerEnemyGroup3ClockAnalog {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.clockJong)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerClockJong, imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.enemyDieClockJong, 3)
+    this.setEnemyByCpStat(800, 15)
+    this.subType = this.subTypeList.jong
+    this.tickTime = this.JONG_SKILL_TIME / this.ANALOG_HAND_SKILL_TICK
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 85, 200, 135),
+      this.getCollisionAreaCalcurationObject(75, 0, 50, 85),
+      this.getCollisionAreaCalcurationObject(2, 51, 196, 34),
+      this.getCollisionAreaCalcurationObject(22, 24, 154, 27),
+      this.getCollisionAreaCalcurationObject(51, 10, 100, 14),
+    ]
+  }
+}
+
+class TowerEnemyGroup3EnergyBlue extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.energyBlue, 2)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerEnergy1)
+    this.setEnemyByCpStat(500, 12)
+    this.setRandomMoveSpeedMinMax(0.6, 0.6, 1.2, 1.2)
+    this.dieAfterDeleteDelay = new DelayData(60)
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(50, 16, 100, 168),
+      this.getCollisionAreaCalcurationObject(16, 47, 168, 110),
+    ]
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+    if (this.isDied) {
+      this.dieAfterDeleteDelay.check(false)
+      let changeSize = (this.imageData.width / this.dieAfterDeleteDelay.delay) * 2
+      this.setWidthHeight(this.width - changeSize, this.height - changeSize)
+      this.x += changeSize / 2
+      this.y += changeSize / 2
+
+      if (this.width < 1) this.width = 1
+      if (this.height < 1) this.height = 1
+    }
+  }
+}
+
+class TowerEnemyGroup3EnergyOrange extends TowerEnemyGroup3EnergyBlue {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.energyOrange, 2)
+    this.setEnemyByCpStat(600, 12)
+    this.setRandomMoveSpeedMinMax(0.6, 0.6, 1.2, 1.2)
+  }
+}
+
+class TowerEnemyGroup3EnergyA extends TowerEnemyGroup3EnergyBlue {
+  constructor () {
+    super()
+    let randomColorNumber = Math.floor(Math.random() * 2)
+    let imageDataList = [
+      imageDataInfo.towerEnemyGroup3.energyA1,
+      imageDataInfo.towerEnemyGroup3.energyA2,
+      imageDataInfo.towerEnemyGroup3.energyA3,
+    ]
+
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataList[randomColorNumber], 2)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerEnergy2)
+    this.setEnemyByCpStat(100, 12)
+    this.setRandomMoveSpeedMinMax(1.2, 1.2, 1.9, 1.9)
+    this.dieAfterDeleteDelay = new DelayData(30)
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(46, 41, 69, 75)
+    ]
   }
 }
 
@@ -10591,7 +10912,6 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup3.coreBrown, TowerEnemyGroup3CoreBro
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.coreMetal, TowerEnemyGroup3CoreMetal)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.corePotion, TowerEnemyGroup3CorePotion)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.coreRainbow, TowerEnemyGroup3CoreRainbow)
-dataExportEnemy.set(ID.enemy.towerEnemyGroup3.coreRainbowSummon, TowerEnemyGroup3CoreRainbowSummon)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.coreShot, TowerEnemyGroup3CoreShot)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.shipSmall, TowerEnemyGroup3ShipSmall)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.shipBig, TowerEnemyGroup3ShipBig)
@@ -10602,3 +10922,9 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup3.fakeMove, TowerEnemyGroup3FakeMove
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.fakeShip, TowerEnemyGroup3FakeShip)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.star, TowerEnemyGroup3Star)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.bossDasu, TowerEnemyGroup3BossDasu)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.clockAnalog, TowerEnemyGroup3ClockAnalog)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.clockDigital, TowerEnemyGroup3ClockDigital)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.clockJong, TowerEnemyGroup3ClockJong)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.energyA, TowerEnemyGroup3EnergyA)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.energyBlue, TowerEnemyGroup3EnergyBlue)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup3.energyOrange, TowerEnemyGroup3EnergyOrange)

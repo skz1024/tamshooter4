@@ -285,7 +285,6 @@ export class ID {
       energyBlue: 20318,
       energyOrange: 20319,
       energyA: 20320,
-      coreRainbowSummon: 20321,
     }
   }
 

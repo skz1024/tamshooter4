@@ -921,7 +921,7 @@ class BaseSound {
   static musicFadeIn (audioSrc, fadeFrame) {
     if (audioSrc === '') return
 
-    soundSystem.musicPlay(audioSrc, fadeFrame / game.FPS)
+    soundSystem.musicPlay(audioSrc, 0, fadeFrame / game.FPS)
     this.currentMusicSrc = audioSrc
   }
   
@@ -3380,7 +3380,7 @@ class Round1_test extends RoundData {
     this.phase.addRoundPhase(this, () => {
       if (this.timeCheckInterval(1, 999, 60) && this.field.getEnemyCount() === 0) {
         // this.field.createEnemy(ID.enemy.towerEnemyGroup1.bossRobot, 600, 200)
-        this.field.createEnemy(ID.enemy.towerEnemyGroup3.star, 600, 200)
+        this.field.createEnemy(ID.enemy.towerEnemyGroup3.energyA, 600, 200)
         // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeBar, 600, 200)
         // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeCore, 600, 200)
         // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeHell, 600, 200)
@@ -9387,6 +9387,7 @@ class Round3_3 extends Round3Templete {
     this.bgLayer.addLayerImage(imageSrc.round.round3_3_level3, 0)
     this.bgLayer.addLayerImage(imageSrc.round.round3_3_level4, 0)
     this.bgLayer.addLayerImage(imageSrc.round.round3_3_level5, 0)
+    this.bgLayer.addLayerImage(imageSrc.round.round3_3_level6, 0)
     this.bgLayer.setBackgroundSpeed(1, 2)
 
     this.phase.addRoundPhase(this, this.roundPhase00, 0, 30)
@@ -9420,10 +9421,10 @@ class Round3_3 extends Round3Templete {
       this.bgLayer.setLayerAlphaFade(4, 1, 300)
     } else if (this.timeCheckFrame(170)) { // 3-3 170초 구간 (통로 구간의 완전한 표시)
       this.bgLayer.setLayerAlphaFade(3, 0, 300) // 이전 배경은 완전히 사라짐
-      this.bgLayer.setLayerAlphaFade(0, 0.2, 300) // 새 배경이 약하게 보임
+      this.bgLayer.setLayerAlphaFade(5, 0.2, 300) // 새 배경이 약하게 보임
     } else if (this.timeCheckFrame(180)) { // 3-3 180초 구간 (통로 구간이 사라지고, 아까 나왔던 첫번째 배경이 표시됨)
       this.bgLayer.setLayerAlphaFade(4, 0, 180) // 통로 구간은 빠르게 페이드아웃
-      this.bgLayer.setLayerAlphaFade(0, 1, 300) // 첫번째 배경으로 되돌아감
+      this.bgLayer.setLayerAlphaFade(5, 1, 300) // 새 배경으로 전환
     }
   }
 
@@ -9624,6 +9625,97 @@ class Round3_3 extends Round3Templete {
   }
 }
 
+class Round3_4 extends Round3Templete {
+  constructor () {
+    super()
+    this.stat.setStat(ID.round.round3_4)
+
+    // 참고: 초반엔 다운타워 음악이 재생되지만, 15초후 다른음악으로 변경됨
+    this.sound.roundStartMusicSrc = soundSrc.music.music16_down_tower
+
+    this.bgLayer.addLayerImage(imageSrc.round.round3_4_level1, 1)
+    // this.bgLayer.addLayerImage(imageSrc.round.round3_3_level2, 0)
+    // this.bgLayer.addLayerImage(imageSrc.round.round3_3_level3, 0)
+    // this.bgLayer.addLayerImage(imageSrc.round.round3_3_level4, 0)
+    // this.bgLayer.addLayerImage(imageSrc.round.round3_3_level5, 0)
+    this.bgLayer.setBackgroundSpeed(1, 2)
+
+    this.phase.addRoundPhase(this, this.roundPhase00, 0, 30)
+    this.phase.addRoundPhase(this, this.roundPhase01, 31, 60)
+    this.phase.addRoundPhase(this, this.roundPhase02, 61, 90)
+    this.phase.addRoundPhase(this, this.roundPhase03, 91, 120)
+    this.phase.addRoundPhase(this, this.roundPhase04, 121, 150)
+    this.phase.addRoundPhase(this, this.roundPhase05, 151, 180)
+    this.phase.addRoundPhase(this, this.roundPhase06, 181, 210)
+    this.phase.addRoundPhase(this, this.roundPhase07, 211, 240)
+  }
+
+  processBackground () {
+    super.processBackground()
+    return // 배경 미정
+
+    // 특정 시간이 되었을 때 배경 레이어의 투명도를 조절해서 배경 전환 효과가 있는것처럼 보여주기
+    // 3-3은 다른 방식으로 배경이 변경됨
+    if (this.timeCheckFrame(40)) { // 3-3 40초 구간 (기존 배경의 페이드, 통로 구간의 등장)
+      this.bgLayer.setLayerAlphaFade(0, 0.2, 600)
+      this.bgLayer.setLayerAlphaFade(1, 1, 300)
+    } else if (this.timeCheckFrame(50)) { // 3-3 50초 구간 (통로 구간의 완전환 표시)
+      this.bgLayer.setLayerAlphaFade(0, 0, 300) // 이전 배경은 완전히 사라짐
+      this.bgLayer.setLayerAlphaFade(2, 0.2, 300) // 새 배경이 약하게 보임
+    } else if (this.timeCheckFrame(60)) { // 3-3 60초 구간 (통로 구간이 사라지고, 배경이 표시됨)
+      this.bgLayer.setLayerAlphaFade(1, 0, 180)  // 통로 구간은 빠르게 페이드아웃
+      this.bgLayer.setLayerAlphaFade(2, 1, 300) // 새 배경은 완전한 페이드 인
+    } else if (this.timeCheckFrame(110)) { // 3-3 110초 구간 (새로운 배경 전환)
+      this.bgLayer.setLayerAlphaFade(2, 0, 600)
+      this.bgLayer.setLayerAlphaFade(3, 1, 300)
+    } else if (this.timeCheckFrame(160)) { // 3-3 160초 구간 (통로 구간의 등장)
+      this.bgLayer.setLayerAlphaFade(3, 0.2, 600)
+      this.bgLayer.setLayerAlphaFade(4, 1, 300)
+    } else if (this.timeCheckFrame(170)) { // 3-3 170초 구간 (통로 구간의 완전한 표시)
+      this.bgLayer.setLayerAlphaFade(3, 0, 300) // 이전 배경은 완전히 사라짐
+      this.bgLayer.setLayerAlphaFade(0, 0.2, 300) // 새 배경이 약하게 보임
+    } else if (this.timeCheckFrame(180)) { // 3-3 180초 구간 (통로 구간이 사라지고, 아까 나왔던 첫번째 배경이 표시됨)
+      this.bgLayer.setLayerAlphaFade(4, 0, 180) // 통로 구간은 빠르게 페이드아웃
+      this.bgLayer.setLayerAlphaFade(0, 1, 300) // 첫번째 배경으로 되돌아감
+    }
+  }
+
+  roundPhase00 () {
+    // 0 ~ 15초 구간: 기존 적들중 일부가 다시 나옴
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.black, undefined, 200)
+    }
+
+    // 초반 적들
+    if (this.timeCheckInterval(pTime + 5, pTime + 10, 12)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveViolet)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeMove)
+    } else if (this.timeCheckInterval(pTime + 11, pTime + 15, 60)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup3.coreShot)
+      this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeCore)
+    }
+
+    // 배경 변경
+    // 음악 변경
+    if (this.timeCheckFrame(pTime + 15)) {
+      this.sound.musicFadeOut(180)
+    } else if (this.timeCheckFrame(pTime + 19)) {
+      this.sound.musicStop()
+    } else if (this.timeCheckFrame(pTime + 20)) {
+      this.sound.musicFadeIn(soundSrc.music.music18_down_tower_void, 300)
+    }
+  }
+
+  roundPhase01 () {}
+  roundPhase02 () {}
+  roundPhase03 () {}
+  roundPhase04 () {}
+  roundPhase05 () {}
+  roundPhase06 () {}
+  roundPhase07 () {}
+}
+
 class Round3_test extends Round3Templete {
   constructor () {
     super()
@@ -9641,33 +9733,38 @@ class Round3_test extends Round3Templete {
     this.bgLayer.addLayerImage(imageSrc.round.round3_3_level5, 0)
 
     this.phase.addRoundPhase(this, () => {
+
+      if (this.timeCheckFrame(2)) {
+        this.sound.musicFadeIn(soundSrc.music.music18_down_tower_void, 300)
+      }
+
       // if (this.timeCheckInterval(0, 999, 20) && this.field.getEnemyCount() === 0) {
       //   this.field.createEnemy(ID.enemy.towerEnemyGroup2.lightning)
       // }
 
       // 배경 변경 테스트
-      if (this.timeCheckFrame(5)) { // 3-3 40초 구간 (기존 배경의 페이드, 통로 구간의 등장)
-        this.bgLayer.setLayerAlphaFade(0, 0.2, 600)
-        this.bgLayer.setLayerAlphaFade(1, 1, 300)
-      } else if (this.timeCheckFrame(15)) { // 3-3 50초 구간 (통로 구간의 완전환 표시)
-        this.bgLayer.setLayerAlphaFade(0, 0, 300) // 이전 배경은 완전히 사라짐
-        this.bgLayer.setLayerAlphaFade(2, 0.2, 300) // 새 배경이 약하게 보임
-      } else if (this.timeCheckFrame(25)) { // 3-3 60초 구간 (통로 구간이 사라지고, 배경이 표시됨)
-        this.bgLayer.setLayerAlphaFade(1, 0, 180)  // 통로 구간은 빠르게 페이드아웃
-        this.bgLayer.setLayerAlphaFade(2, 1, 300) // 새 배경은 완전한 페이드 인
-      } else if (this.timeCheckFrame(35)) { // 3-3 110초 구간 (새로운 배경 전환)
-        this.bgLayer.setLayerAlphaFade(2, 0, 600)
-        this.bgLayer.setLayerAlphaFade(3, 1, 300)
-      } else if (this.timeCheckFrame(45)) { // 3-3 160초 구간 (통로 구간의 등장)
-        this.bgLayer.setLayerAlphaFade(3, 0.2, 600)
-        this.bgLayer.setLayerAlphaFade(4, 1, 300)
-      } else if (this.timeCheckFrame(55)) { // 3-3 170초 구간 (통로 구간의 완전한 표시)
-        this.bgLayer.setLayerAlphaFade(3, 0, 300) // 이전 배경은 완전히 사라짐
-        this.bgLayer.setLayerAlphaFade(0, 0.2, 300) // 새 배경이 약하게 보임
-      } else if (this.timeCheckFrame(65)) { // 3-3 180초 구간 (통로 구간이 사라지고, 아까 나왔던 첫번째 배경이 표시됨)
-        this.bgLayer.setLayerAlphaFade(4, 0, 180) // 통로 구간은 빠르게 페이드아웃
-        this.bgLayer.setLayerAlphaFade(0, 1, 300) // 첫번째 배경으로 되돌아감
-      }
+      // if (this.timeCheckFrame(5)) { // 3-3 40초 구간 (기존 배경의 페이드, 통로 구간의 등장)
+      //   this.bgLayer.setLayerAlphaFade(0, 0.2, 600)
+      //   this.bgLayer.setLayerAlphaFade(1, 1, 300)
+      // } else if (this.timeCheckFrame(15)) { // 3-3 50초 구간 (통로 구간의 완전환 표시)
+      //   this.bgLayer.setLayerAlphaFade(0, 0, 300) // 이전 배경은 완전히 사라짐
+      //   this.bgLayer.setLayerAlphaFade(2, 0.2, 300) // 새 배경이 약하게 보임
+      // } else if (this.timeCheckFrame(25)) { // 3-3 60초 구간 (통로 구간이 사라지고, 배경이 표시됨)
+      //   this.bgLayer.setLayerAlphaFade(1, 0, 180)  // 통로 구간은 빠르게 페이드아웃
+      //   this.bgLayer.setLayerAlphaFade(2, 1, 300) // 새 배경은 완전한 페이드 인
+      // } else if (this.timeCheckFrame(35)) { // 3-3 110초 구간 (새로운 배경 전환)
+      //   this.bgLayer.setLayerAlphaFade(2, 0, 600)
+      //   this.bgLayer.setLayerAlphaFade(3, 1, 300)
+      // } else if (this.timeCheckFrame(45)) { // 3-3 160초 구간 (통로 구간의 등장)
+      //   this.bgLayer.setLayerAlphaFade(3, 0.2, 600)
+      //   this.bgLayer.setLayerAlphaFade(4, 1, 300)
+      // } else if (this.timeCheckFrame(55)) { // 3-3 170초 구간 (통로 구간의 완전한 표시)
+      //   this.bgLayer.setLayerAlphaFade(3, 0, 300) // 이전 배경은 완전히 사라짐
+      //   this.bgLayer.setLayerAlphaFade(0, 0.2, 300) // 새 배경이 약하게 보임
+      // } else if (this.timeCheckFrame(65)) { // 3-3 180초 구간 (통로 구간이 사라지고, 아까 나왔던 첫번째 배경이 표시됨)
+      //   this.bgLayer.setLayerAlphaFade(4, 0, 180) // 통로 구간은 빠르게 페이드아웃
+      //   this.bgLayer.setLayerAlphaFade(0, 1, 300) // 첫번째 배경으로 되돌아감
+      // }
 
 
       if (this.timeCheckFrame(1)) {
@@ -9783,4 +9880,5 @@ dataExportRound.set(ID.round.round3_1, Round3_1)
 dataExportRound.set(ID.round.round3_2, Round3_2)
 dataExportRound.set(ID.round.round3_test, Round3_test)
 dataExportRound.set(ID.round.round3_3, Round3_3)
+dataExportRound.set(ID.round.round3_4, Round3_4)
 

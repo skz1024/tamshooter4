@@ -1023,6 +1023,8 @@ export class FieldData {
     if (this.imageData.frame >= 2) {
       this.enimation = null // 기존 애니메이션 버리고 재할당
       this.enimation = new EnimationData(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.imageData.frame, enimationDelay, -1)
+    } else if (this.enimation != null && this.imageData.frame <= 1) {
+      this.enimation = null
     }
   }
 
