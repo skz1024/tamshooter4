@@ -779,12 +779,12 @@ class RoundSelectSystem extends MenuSystem {
       r3: [r.round3_1, r.round3_2, r.round3_3, r.round3_4, r.round3_5, r.round3_6, r.round3_7, r.round3_8, r.round3_9, r.round3_test],
     }
 
-    this.roundWorldIconNumber = [1, 10]
+    this.roundWorldIconNumber = [1, 10, 20]
 
     this.roundIconTable = {
       r1: [2, 3, 4, 5, 6, 7, -1, -1, 8, -1],
-      r2: [11, 12, -1, -1, -1, -1, -1, -1, -1, -1],
-      r3: [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+      r2: [11, 12, 13, 14, 15, 16, -1, -1, 8, -1],
+      r3: [21, 22, 23, 24, 35, 36, -1, -1, -1, 8],
     }
 
     const layerX = 10

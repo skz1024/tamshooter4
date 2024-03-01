@@ -164,8 +164,8 @@ export class imageSrc {
     round3_4_level3: './image/round/round3_4_level3.png',
     round3_4_level4: './image/round/round3_4_level4.png',
     round3_4_level5: './image/round/round3_4_level5.png',
-    round3_4_level6: './image/round/round3_5_level6.png',
-    round3_4_level7: './image/round/round3_5_level7.png',
+    round3_4_level6: './image/round/round3_4_level6.png',
+    round3_4_level7: './image/round/round3_4_level7.png',
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
