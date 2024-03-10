@@ -394,7 +394,7 @@ export class EnemyData extends FieldData {
   }
 
   /**
-   * 이 함수의 내용은 비어있습니다. 따라서 super.processAttack을 호출할 필요가 없습니다.
+   * 이 함수의 내용은 비어있습니다. super.processAttack의 호출은 필수가 아니지만, 관습적으로 호출해도 상관없습니다.
    * 
    * 만약 적이 공격해야 할 일이 있다면 이 함수를 작성해주세요.
    * 다만 대부분의 적들은 공격을 하지 않고 충돌만 합니다. 
@@ -8229,10 +8229,10 @@ class TowerEnemyGroup1DiamondMini extends TowerEnemyPentaTemplete {
 }
 
 
-class TowerEnemyGroup1BossRobot extends TowerEnemy {
+class TowerEnemyGroup1CrazyRobot extends TowerEnemy {
   constructor () {
     super()
-    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bossRobot)
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.crazyRobot)
     this.setEnemyByCpStat(10000, 12)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerBossRobot1, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedOrange)
     this.dieAfterDeleteDelay = new DelayData(180)
@@ -8394,7 +8394,7 @@ class TowerEnemyGroup1BossRobot extends TowerEnemy {
   }
 
   processAttack () {
-    const T = TowerEnemyGroup1BossRobot
+    const T = TowerEnemyGroup1CrazyRobot
     if (this.state === this.STATE_ROCKET_CHASE) {
       this.attackDelay.delay = 30
       if (this.attackDelay.check()) {
@@ -8485,7 +8485,7 @@ class TowerEnemyGroup1BossRobot extends TowerEnemy {
       if (this.y < 0 || this.y + this.height > graphicSystem.CANVAS_HEIGHT 
         || this.x < 0 || this.x + this.width > graphicSystem.CANVAS_WIDTH + 20
         || collisionClass.collisionOBB(this, player)) {
-        const bullet = new TowerEnemyGroup1BossRobot.RobotRocketBomb()
+        const bullet = new TowerEnemyGroup1CrazyRobot.RobotRocketBomb()
         fieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
         soundSystem.play(soundSrc.enemyAttack.towerAttackRocketBomb)
         this.isDeleted = true
@@ -8493,7 +8493,7 @@ class TowerEnemyGroup1BossRobot extends TowerEnemy {
     }
   }
 
-  static RobotRocketChaseBullet = class extends TowerEnemyGroup1BossRobot.RobotRocketBullet {
+  static RobotRocketChaseBullet = class extends TowerEnemyGroup1CrazyRobot.RobotRocketBullet {
     constructor () {
       super()
     }
@@ -9249,7 +9249,7 @@ class TowerEnemyGroup2OctaLight extends TowerEnemyGroup2OctaShadow {
   constructor () { super(); this.setAutoFigure(this.subTypeList.OCTA_SHADOW) }
 }
 
-class TowerEnemyGroup2BossBar extends TowerEnemy {
+class TowerEnemyGroup2BigBar extends TowerEnemy {
   constructor () {
     super()
     /** 최대 top 위치 px */ this.MAX_TOP = 0
@@ -9314,7 +9314,11 @@ class TowerEnemyGroup2BossBar extends TowerEnemy {
     // 이게 끝... (느린 속도로 올라오는게 전부) 
     if (this.y >= this.MAX_TOP) {
       super.processMove()
-      this.setMoveSpeed(0, -0.2)
+
+      // 체력이 적으면 이동속도가 3배 빨라짐 (그래도 느리지만...)
+      if (this.hp >= this.hpMax * 0.2) this.setMoveSpeed(0, -0.2)
+      else this.setMoveSpeed(0, -0.6)
+
     } else {
       this.setMoveSpeed(0, 0)
     }
@@ -10750,6 +10754,1172 @@ class TowerEnemyGroup3EnergyA extends TowerEnemyGroup3EnergyBlue {
   }
 }
 
+class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
+  constructor () {
+    super()
+    this.setEnemyByCpStat(15000, 10)
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.nokgasi1, 4)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerNokgasi, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedOrange)
+    this.setMoveSpeed(0, 0) // 이동속도 없음 (처음엔 위치 고정)
+
+    /** 녹가시2 이미지데이터 
+     *  이것은 녹가시1 + 녹가시2 이미지를 동시 표현하기 위해 참조하는 데이터임 */ 
+    this.nokgasi2ImageData = imageDataInfo.towerEnemyGroup4.nokgasi2
+    this.nokgasi2Enimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.nokgasi2, 4, -1)
+    this.collisionDelay.delay = 20 // 초당 3회 공격
+    
+    /** 가시 발사체에 대한 클래스 */ this.GasiShotClass = TowerEnemyGroup4Nokgasi1.Gasishot
+    /** 가시 발사체에 대한 색 리스트 */ this.gasiColorList = TowerEnemyGroup4Nokgasi1.Gasishot.colorList
+    /** 가시 발사체에 대한 파란색 클래스 (다른 가시와 다름) */ this.GasiShotBlueClass = TowerEnemyGroup4Nokgasi1.GasiShotBlue
+    /** 자기 클래스에 대한 static 접근 */ this.myStatic = TowerEnemyGroup4Nokgasi1
+    /** 가시에 관한 정보에 대한 상수 객체 */ this.gasi = this.myStatic.gasi
+
+    this.moveDelay = new DelayData(300)
+    this.attackDelay = new DelayData(300)
+
+    /** 가시 패턴 배열 */ this.gasiPatternTable = []
+    /** 가시 패턴의 번호값 */ this.currentGasiPatternTableNumber = 0
+    /** 가시 퍼플 6 공격 방향 설정용 */ this.gasiPurple6ArrowCount = 0
+    this.createRandomGasiPattern() // 가시 패턴 생성
+
+    /** 가시 효과음 재생 리스트 */ this.gasiSoundWaitList = []
+    /** 가시 효과음 재생에 대한 지연값 */ this.gasiSoundWaitDelay = []
+
+    this.dieAfterDeleteDelay = new DelayData(120)
+  }
+
+  /**
+   * 가시 사운드를 생성, 이 사운드는 일정 딜레이 후 재생됨
+   * @param {string} soundSrc 사운드의 경로
+   * @param {number} waitDelay 지연 대기 시간
+   */
+  createGasiSound (soundSrc, waitDelay) {
+    this.gasiSoundWaitList.push(soundSrc)
+    this.gasiSoundWaitDelay.push(waitDelay)
+  }
+
+  /** 랜덤한 가시 패턴 생성 */
+  createRandomGasiPattern () {
+    this.gasiPatternTable.length = 0 // 기존 배열 삭제
+    let numberTable = [1, 2, 3, 4, 5, 6, 7, 8, 9] // 기존 숫자의 대한 배열
+
+    // 루프를 돌아서 중복되지 않는 배열을 계속 생성
+    for (let i = 0; i < 10; i++) {
+      let tempArray = [1, 2, 3, 4, 5, 6, 7, 8, 9] // 임시 배열
+      for (let j = 0; j < numberTable.length; j++) {
+        let random = Math.floor(Math.random() * tempArray.length)
+        let numberArray = tempArray.splice(random, 1) // 임시 배열에서 원소 제거 (제거된 값은 배열로 리턴됨)
+        let number = numberArray[0] // 배열에 있는 원소를 숫자로 변경
+        this.gasiPatternTable.push(number) // 해당 숫자를 가시 패턴 테이블에 추가
+      }
+    }
+  }
+
+  processState () {
+    super.processState()
+    this.processGasiSound()
+  }
+
+  processAttack () {
+    super.processAttack()
+
+    // 등장한지 5초 이내에는 공격하지 않음
+    if (this.elapsedFrame <= 300) return
+    
+    // 일정 공격주기마다 패턴 변경
+    // 각 공격마다 내부 딜레이는 다를 수 있습니다. (자세한 것은 내부 함수들 참조)
+    if (this.attackDelay.check()) {
+      this.currentGasiPatternTableNumber++
+    }
+
+    // hp가 20% 이하이면 하이퍼모드
+    if (this.hp <= this.hpMax * 0.2) {
+      this.processAttackTypeHyper()
+      return
+    }
+
+    // 일반 모드 상태에서의 공격
+    let currentGasiPatternNumber = this.gasiPatternTable[this.currentGasiPatternTableNumber % this.gasiPatternTable.length]
+    switch (currentGasiPatternNumber) {
+      case 1: this.processAttackTypeOrange1(); break
+      case 2: this.processAttackTypeOrange2(); break
+      case 3: this.processAttackTypeGreen3(); break
+      case 4: this.processAttackTypeGreen4(); break
+      case 5: this.processAttackTypePurple5(); break
+      case 6: this.processAttackTypePurple6(); break
+      case 7: this.processAttackTypeBlue7(); break
+      case 8: this.processAttackTypePink8(); break
+      case 9: this.processAttackTypeGrey9(); break
+    }
+  }
+
+  processGasiSound () {
+    for (let i = 0; i < this.gasiSoundWaitList.length; i++) {
+      if (this.gasiSoundWaitDelay[i] === 0) {
+        soundSystem.play(this.gasiSoundWaitList[i]) // 사운드 재생
+        this.gasiSoundWaitDelay[i] = -999 // 지연시간 마이너스로 변경
+      } else if (this.gasiSoundWaitDelay[i] >= 1) {
+        this.gasiSoundWaitDelay[i]--
+      }
+    }
+
+    // 배열 내부에서 사용되지 않는 데이터를 제거하기 위한 작업 
+    // (배열을 제거하는데 splice를 사용하고 이렇게되면 배열 중간이 잘리므로, 역순으로 처리함)
+    if (this.gasiSoundWaitDelay.length === 0) return
+    for (let i = this.gasiSoundWaitDelay.length; i >= 0; i--) {
+      if (this.gasiSoundWaitDelay[i] <= -1) {
+        this.gasiSoundWaitDelay.splice(i, 1)
+        this.gasiSoundWaitList.splice(i, 1)
+      }
+    }
+  }
+
+  /** 
+   * 패턴: 오렌지 1
+   * 
+   * 가시가 특정 영역을 제외하고, 모든 범위에 퍼진 후 발사됩니다.
+   */
+  processAttackTypeOrange1 () {
+    if (!this.attackDelay.divCheck(60)) return
+
+    // 총알이 이동하지 않는 y좌표 테이블 (해당 y좌표에서 총알이 발사되지 않음) 
+    let notMoveBulletYLineTable = []
+
+    // 총알은 20px 단위로 발사됨. 라인 번호는 800x600px 기준 최대 10번까지 있음.
+    // 0 ~ 5, 6 ~ 10 각각의 범위마다 1씩 비어있는 공간을 결정함
+    for (let i = 0; i < 2; i++) {
+      let random = (i * 5) + Math.floor(Math.random() * 5)
+      notMoveBulletYLineTable.push(random)
+    }
+
+    // 라인 최대 카운트 = 발사 횟수
+    const BULLET_Y_LINE = this.gasi.GASI_LINE_HEIGHT
+    const BULLET_SHOT = 3
+    const LINE_MAX_COUNT = graphicSystem.CANVAS_HEIGHT / (BULLET_Y_LINE * BULLET_SHOT)
+    for (let i = 0; i < LINE_MAX_COUNT; i++) {
+      // 이동할 수 없는 YLine 테이블을 조회하여, i값이 이 배열 안에 없을경우에 총알 생성
+      if (!notMoveBulletYLineTable.includes(i)) {
+        for (let j = 0; j < BULLET_SHOT; j++) { // 총알 3발 발사
+          let bullet = new this.GasiShotClass()
+          bullet.setColor(this.gasiColorList.orange)
+          bullet.setMoveSpeed(this.gasi.speedList.MID, 0)
+          bullet.setPosition(graphicSystem.CANVAS_WIDTH - bullet.width, this.centerY)
+          bullet.setAutoMovePosition(graphicSystem.CANVAS_WIDTH - bullet.width, ((BULLET_Y_LINE * BULLET_SHOT) * i) + (BULLET_Y_LINE * j), 60)
+          bullet.setNextMoveDelay(this.gasi.delayList.LOW)
+          bullet.attack = this.gasi.ATTACK
+          fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+        }
+      }
+    }
+
+    soundSystem.play(this.gasi.soundList.orange_purple)
+  }
+
+  /**
+   * 패턴 오렌지 2
+   * 
+   * 가시가 특정 영역에 소환된 후, 일정한 속도로 대각선(y축 속도가 있음) 이동. 
+   * 이동 방향은 랜덤
+   */
+  processAttackTypeOrange2 () {
+    if (!this.attackDelay.divCheck(60)) return
+
+    const centerHeight = (graphicSystem.CANVAS_HEIGHT / 2)
+    const bulletHeight = this.gasi.GASI_LINE_HEIGHT * 2
+    const bulletCount = centerHeight / bulletHeight
+    let startY = Math.random() * centerHeight
+    let targetSpeedY = Math.random() < 0.5 ? -2 : 2
+
+    for (let i = 0; i < bulletCount; i++) {
+      let bullet = new this.GasiShotClass()
+      bullet.setColor(this.gasiColorList.orange)
+      bullet.setPosition(graphicSystem.CANVAS_WIDTH - bullet.width, startY + (i * bulletHeight))
+      bullet.setMoveSpeed(this.gasi.speedList.MID, targetSpeedY)
+      bullet.setNextMoveDelay(this.gasi.delayList.LOW)
+      bullet.attack = this.gasi.ATTACK
+      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+    }
+
+    soundSystem.play(this.gasi.soundList.orange_purple)
+  }
+
+  /**
+   * 패턴 그린 3
+   * 
+   * 무작위 위치에 총알을 생성하고, 엄청난 속도로 연사함
+   */
+  processAttackTypeGreen3 () {
+    if (!this.attackDelay.divCheck(75)) return
+
+    const LINE_HEIGHT = this.gasi.GASI_LINE_HEIGHT
+    let randomY = Math.random() * graphicSystem.CANVAS_HEIGHT - LINE_HEIGHT
+
+    for (let i = 0; i < 40; i++) {
+      let bullet = new this.GasiShotClass()
+      bullet.setColor(this.gasiColorList.green)
+
+      let targetX = graphicSystem.CANVAS_WIDTH - bullet.width - (Math.random() * LINE_HEIGHT)
+      let targetY = randomY + (Math.random() * (LINE_HEIGHT * 2)) - LINE_HEIGHT
+      bullet.setPosition(targetX, targetY)
+      bullet.setMoveSpeed(this.gasi.speedList.TURBO, 0)
+      bullet.setNextMoveDelay(this.gasi.delayList.NORMAL + (i * 1))
+      bullet.attack = this.gasi.ATTACK_WEAK
+      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+
+      // 가시 발사 사운드 재생 (사운드 너무 많이 출력을 막기위해 1/4 만큼 출력함)
+      if (i % 4 === 0) {
+        this.createGasiSound(this.gasi.soundList.green_grey, this.gasi.delayList.NORMAL + (i * 1))
+      }
+    }
+  }
+
+  /** 
+   * 그린 4 패턴
+   * 
+   * 무작위 영역에 가시를 소환하고 연사합니다. (3과는 약간 다름)
+   */
+  processAttackTypeGreen4 () {
+    if (!this.attackDelay.divCheck(75)) return
+
+    const LINE_HEIGHT = this.gasi.GASI_LINE_HEIGHT
+    const divNumber = 6
+    let randomY = Math.random() * (graphicSystem.CANVAS_HEIGHT - (LINE_HEIGHT * 6))
+    
+    for (let i = 0; i < 30; i++) {
+      let delayNumber = Math.floor(i / divNumber)
+      let currentY = randomY + ((i % divNumber) * LINE_HEIGHT)
+      let bullet = new this.GasiShotClass()
+      bullet.setColor(this.gasiColorList.green)
+      bullet.setPosition(graphicSystem.CANVAS_WIDTH - bullet.width, currentY)
+      bullet.setNextMoveDelay(30 + (delayNumber * 6))
+      bullet.setMoveSpeed(-24, 0)
+      bullet.attack = this.gasi.ATTACK_WEAK
+      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+
+      // 가시 발사 사운드 재생 (사운드 너무 많이 출력을 막기위해 1/4 만큼 출력함)
+      if (i % 6 === 0) {
+        this.createGasiSound(this.gasi.soundList.green_grey, 30 + (delayNumber * 6))
+      }
+    }
+
+    soundSystem.play(this.gasi.soundList.green_grey)
+  }
+
+  /**
+   * 퍼플 5 패턴
+   * 
+   * 특정 영역에 가시를 소환하고 그 가시는 일정시간 후 플레이어가 있는 방향으로 이동됩니다.
+   */
+  processAttackTypePurple5 () {
+    if (!this.attackDelay.divCheck(100)) return
+
+    const LINE_HEIGHT = this.gasi.GASI_LINE_HEIGHT
+    const RANGE = LINE_HEIGHT * 3
+    let startY1 = RANGE + Math.random() * RANGE
+    let startY2 = graphicSystem.CANVAS_HEIGHT - (RANGE * 2) + Math.random() * RANGE
+    let player = fieldState.getPlayerObject()
+
+    for (let i = 0; i < 20; i++) {
+      let currentY = i % 2 === 0 ? startY1 : startY2 // 홀짝에 따라 위치 구분
+      let bullet = new this.GasiShotClass()
+      bullet.setColor(this.gasiColorList.purple)
+      bullet.setPosition(graphicSystem.CANVAS_WIDTH - bullet.width - (4 * i), currentY)
+      bullet.setMoveSpeedChaseLine(player.x, player.y, 60, 6)
+      bullet.setNextMoveDelay(this.gasi.delayList.NORMAL + (Math.floor(i / 2) * 2))
+      bullet.attack = this.gasi.ATTACK_WEAK
+      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+    }
+
+    soundSystem.play(this.gasi.soundList.orange_purple)
+    this.createGasiSound(this.gasi.soundList.green_grey, this.gasi.delayList.NORMAL)
+  }
+
+  /**
+   * 퍼플 6 패턴
+   * 
+   * 가시가 전 영역에 걸쳐서 생성되고, 
+   * 그 가시는 위에서 아래로 또는 아래서 위로 순서대로 플레이어를 추적합니다.
+   */
+  processAttackTypePurple6 () {
+    if (!this.attackDelay.divCheck(100)) return
+
+    let player = fieldState.getPlayerObject()
+    const canvasHeight = graphicSystem.CANVAS_HEIGHT
+    const bulletHeight = (this.gasi.GASI_LINE_HEIGHT * 2)
+    const bulletCount = canvasHeight / bulletHeight
+
+    this.gasiPurple6ArrowCount++
+    for (let i = 0; i < bulletCount; i++) {
+      let bullet = new this.GasiShotClass()
+      let currentY = this.gasiPurple6ArrowCount % 2 == 0 ? i * bulletHeight : canvasHeight - (i * bulletHeight)
+      bullet.setColor(this.gasiColorList.purple)
+      bullet.setPosition(graphicSystem.CANVAS_WIDTH - bullet.width, currentY)
+      bullet.setMoveSpeedChaseLine(player.x, player.y, 60, 6)
+      bullet.setNextMoveDelay(this.gasi.delayList.NORMAL + (i * 2))
+      bullet.attack = this.gasi.ATTACK_WEAK
+      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+    }
+    
+    soundSystem.play(this.gasi.soundList.orange_purple)
+    this.createGasiSound(this.gasi.soundList.green_grey, this.gasi.delayList.NORMAL)
+  }
+
+  /**
+   * 블루 7 패턴
+   * 
+   * 가시는 왼쪽으로 이동하면서 위, 아래로 이동하는 가시를 추가 생성
+   * 
+   * 다른 가시와 패턴이 완전히 다른 구조라서, 이 가시는 다른 가시 클래스로 생성해야 합니다.
+   */
+  processAttackTypeBlue7 () {
+    if (!this.attackDelay.divCheck(100)) return
+
+    // 테스트 5 패턴 - 파란색 (가로세로)
+    const LINE = this.gasi.GASI_LINE_HEIGHT * 6
+    
+    for (let i = 0; i < 2; i++) {
+      let startY1 = graphicSystem.CANVAS_HEIGHT_HALF - LINE + (Math.random() * (LINE * 2))
+      let currentY = startY1
+      let bullet = new this.GasiShotBlueClass()
+      bullet.setColor(this.gasiColorList.blue)
+      bullet.setPosition(graphicSystem.CANVAS_WIDTH - bullet.width, currentY)
+      bullet.setMoveSpeed(this.gasi.speedList.LOW, 0)
+      bullet.setNextMoveDelay(this.gasi.delayList.LOW)
+      bullet.attack = this.gasi.ATTACK
+      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+    }
+
+    soundSystem.play(this.gasi.soundList.blue)
+  }
+
+  /**
+   * 핑크 8 패턴
+   * 
+   * 왼쪽으로 이동하던 가시가 왼쪽(화면 맨 끝)에 부딪히면 오른쪽으로 이동합니다.
+   */
+  processAttackTypePink8 () {
+    if (!this.attackDelay.divCheck(60)) return
+
+    for (let i = 0; i < 3; i++) {
+      let bullet = new this.myStatic.GasiShotPink()
+      bullet.setColor(this.gasiColorList.pink)
+      bullet.setPosition(graphicSystem.CANVAS_WIDTH - bullet.width, Math.random() * (graphicSystem.CANVAS_HEIGHT - bullet.height))
+      bullet.setMoveSpeed(-6, 0)
+      bullet.setNextMoveDelay(30)
+      bullet.attack = this.gasi.ATTACK
+      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+    }
+
+    soundSystem.play(this.gasi.soundList.pink)
+  }
+
+  /** 
+   * 그레이 9 패턴 
+   * 
+   * 무작위 방향, 무작위 속도
+   */
+  processAttackTypeGrey9 () {
+    if (!this.attackDelay.divCheck(60)) return
+
+    for (let i = 0; i < 6; i++) {
+      let bullet = new this.myStatic.Gasishot()
+      bullet.setColor(this.gasiColorList.grey)
+      bullet.setMoveSpeed(Math.random() * -4 - 6, Math.random() * 4 - 2)
+      bullet.setPosition(graphicSystem.CANVAS_WIDTH - bullet.width, Math.random() * (graphicSystem.CANVAS_HEIGHT - bullet.height))
+      bullet.setNextMoveDelay(12)
+      bullet.attack = this.gasi.ATTACK
+      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+    }
+
+    soundSystem.play(this.gasi.soundList.green_grey)
+  }
+
+  /**
+   * 하이퍼 패턴 (무작위로 난사함)
+   */
+  processAttackTypeHyper () {
+    if (!this.attackDelay.divCheck(10)) return
+
+    let randomColor = Math.floor(Math.random() * 5)
+    let targetColor = ''
+    switch (randomColor) {
+      case 0: targetColor = this.gasiColorList.orange; break
+      case 1: targetColor = this.gasiColorList.blue; break
+      case 2: targetColor = this.gasiColorList.pink; break
+      case 3: targetColor = this.gasiColorList.purple; break
+      case 4: targetColor = this.gasiColorList.green; break
+      case 5: targetColor = this.gasiColorList.grey; break
+    }
+
+    for (let i = 0; i < 1; i++) {
+      let bullet = new this.myStatic.Gasishot()
+      bullet.setColor(targetColor)
+      bullet.setMoveSpeed(Math.random() * -6 - 6, Math.random() * 6 - 3)
+      bullet.setPosition(graphicSystem.CANVAS_WIDTH - bullet.width, Math.random() * (graphicSystem.CANVAS_HEIGHT - bullet.height))
+      bullet.setNextMoveDelay(12)
+      bullet.attack = this.gasi.ATTACK
+      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+    }
+
+    soundSystem.play(this.gasi.soundList.green_grey)
+  
+  }
+
+  processMove () {
+    super.processMove()
+    if (this.moveSpeedY === 0 && this.moveDelay.check()) {
+      this.setMoveSpeed(0, 0.2)
+    }
+
+    // 이 오브젝트는 자체적으로 녹가시1의 정보만 가지고 있습니다.
+    // 그래서 보스 본체가 완전하게 보여지려면, 녹가시2부분의 크기도 같이 고려해야 합니다.
+    if (this.x + this.width + (this.nokgasi2ImageData.width) > graphicSystem.CANVAS_WIDTH) {
+      this.x-- // 화면 안에 오도록 변경함
+
+      // 화면 안에 들어온경우, 이제 보스는 화면 바깥으로 나갈 수 없음.
+      if (this.x + this.width + (this.nokgasi2ImageData.width) <= graphicSystem.CANVAS_WIDTH) {
+        this.isPossibleExit = false
+      }
+
+      // x축이 화면 안으로 들어오는동안 y축도 보정됨
+      if (this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
+        this.y -= 10
+      } else if (this.y < 0) {
+        this.y += 10
+      }
+    }
+  }
+
+  processEnimation () {
+    super.processEnimation()
+    this.nokgasi2Enimation.process()
+  }
+
+  getCollisionArea () {
+    // 가시 1 부분의 길이
+    let gasi1Width = this.imageData.width
+
+    // 가시 2는 가시 1과 크기가 달라 중앙 정렬을 위해서 따로 계산해야함
+    let gasi2HeightBaseY = -(this.nokgasi2ImageData.height - this.imageData.height) / 2
+    return [
+      // nokgasi1
+      this.getCollisionAreaCalcurationObject(0, 10, 90, 10),
+      this.getCollisionAreaCalcurationObject(30, 10, 70, 10),
+      this.getCollisionAreaCalcurationObject(50, 20, 50, 260),
+      this.getCollisionAreaCalcurationObject(30, 280, 70, 10),
+      this.getCollisionAreaCalcurationObject(10, 290, 90, 10),
+
+      // nokgasi2
+      this.getCollisionAreaCalcurationObject(gasi1Width + 0, gasi2HeightBaseY + 50, 100, 260),
+      this.getCollisionAreaCalcurationObject(gasi1Width + 5, gasi2HeightBaseY + 20, 90, 30),
+      this.getCollisionAreaCalcurationObject(gasi1Width + 5, gasi2HeightBaseY + 350, 90, 30),
+    ]
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+
+    if (this.isDied && this.dieAfterDeleteDelay.divCheck(12) && this.dieEffect != null) {
+      fieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
+      soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossRobot2)
+    }
+
+    if (this.isDeleted) {
+      fieldState.createEnemyObject(ID.enemy.towerEnemyGroup4.nokgasi2, this.x + this.width, this.y)
+    }
+  }
+
+  display () {
+    super.display()
+
+    // 2번째 이미지 출력
+    this.nokgasi2Enimation.display(this.x + this.imageData.width, this.y - 50)
+  }
+
+  static gasi = class {
+    /** 가시의 속도 리스트 (방향이 왼쪽으로 발사되므로, 마이너스 값입니다.) */ 
+    static speedList = {
+      TURBO: -24,
+      HIGH: -12,
+      MID: -6,
+      LOW: -4,
+    }
+
+    /** 가시가 발사되기까지의 대기시간 */
+    static delayList = {
+      NORMAL: 60,
+      LOW: 30,
+    }
+
+    /** 가시의 공격력 */ static ATTACK = 5
+    /** 가시의 공격력 (약화버전) */ static ATTACK_WEAK = 2
+    /** 가시가 표현되는 각 라인의 대한 길이 (참고: 가시의 height와는 다릅니다.) */ static GASI_LINE_HEIGHT = 20
+
+    static soundList = {
+      orange_purple: soundSrc.enemyAttack.towerNokgasiAttackOrangePurple,
+      green_grey: soundSrc.enemyAttack.towerNokgasiAttackGreenGrey,
+      pink: soundSrc.enemyAttack.towerNokgasiAttackPink,
+      blue: soundSrc.enemyAttack.towerNokgasiAttackBlue,
+    }
+  }
+
+  static Gasishot = class extends CustomEnemyBullet {
+    constructor () {
+      super()
+      
+      // 총알을 강제 이동시키기 위한 좌표 객체 값
+      this.autoMove = {
+        x: 0,
+        y: 0,
+        delay: 0,
+        delayCount: 0,
+        speedX: 0,
+        speedY: 0,
+      }
+
+      /** 다음 이동 딜레이 지연값. 이 값이 양수이면은 해당 시간동안 움직이지 않습니다.
+       * 만약 autoMove상태라면 이 지연값은 감소하지 않습니다.
+      */
+      this.nextMoveDelayCount = 0
+    }
+
+    processMove () {
+      if (this.autoMove.delay !== 0) {
+        // 해당 좌표값을 강제 이동시키기 위하여, 자동 이동되도록 처리함
+        // 이동 범위에 도착했는지는 검사하지 않습니다. (어차피 반드시 해당 좌표에 도착하므로)
+        this.x += this.autoMove.speedX
+        this.y += this.autoMove.speedY
+        this.autoMove.delayCount++
+
+        // autoMove 딜레이 삭제해서 정상 모드로 되돌림
+        if (this.autoMove.delayCount >= this.autoMove.delay) {
+          this.autoMove.delay = 0
+        }
+      } else if (this.nextMoveDelayCount <= 0) {
+        // 다음 이동 지연 카운트가 0이하이면 정상적으로 해당 객체는 이동함
+        super.processMove()
+      } else {
+        // 다음 이동 지연 카운트 감소용
+        this.nextMoveDelayCount--
+      }
+    }
+  
+    static colorList = {
+      blue: 'blue',
+      green: 'green',
+      orange: 'orange',
+      purple: 'purple',
+      grey: 'grey',
+      default: '',
+      pink: 'pink'
+    }
+
+    colorList = TowerEnemyGroup4Nokgasi1.Gasishot.colorList
+
+    /**
+     * 타입 생성: 해당 행위를 하지 않으면 해당 무기는 자동 삭제됨.
+     */
+    setColor (colorType = '') {
+      this.state = colorType
+      let currentImageSrc = imageSrc.enemy.towerEnemyGroup4
+      switch (colorType) {
+        case this.colorList.blue: this.setAutoImageData(currentImageSrc, imageDataInfo.towerEnemyGroup4.nokgasiShotBlue); break
+        case this.colorList.green: this.setAutoImageData(currentImageSrc, imageDataInfo.towerEnemyGroup4.nokgasiShotGreen); break
+        case this.colorList.grey: this.setAutoImageData(currentImageSrc, imageDataInfo.towerEnemyGroup4.nokgasiShotGrey); break
+        case this.colorList.orange: this.setAutoImageData(currentImageSrc, imageDataInfo.towerEnemyGroup4.nokgasiShotOrange); break
+        case this.colorList.purple: this.setAutoImageData(currentImageSrc, imageDataInfo.towerEnemyGroup4.nokgasiShotPurple); break
+        case this.colorList.pink: this.setAutoImageData(currentImageSrc, imageDataInfo.towerEnemyGroup4.nokgasiShotPink); break
+        default: this.setAutoImageData(currentImageSrc, imageDataInfo.towerEnemyGroup4.nokgasiShotGreen); break
+      }
+    }
+
+    /**
+     * 총알이 강제로 위치해야 되는 방향
+     * @param {number} targetX 목표지점 x좌표
+     * @param {number} targetY 목표지점 y좌표
+     * @param {number} finishMoveDelay 도착지점까지 이동하는데 걸리는 딜레이값
+     */
+    setAutoMovePosition (targetX, targetY, finishMoveDelay) {
+      this.autoMove.x = targetX
+      this.autoMove.y = targetY
+      this.autoMove.delay = finishMoveDelay
+      this.autoMove.delayCount = 0
+      this.autoMove.speedX = (targetX - this.x) / finishMoveDelay
+      this.autoMove.speedY = (targetY - this.y) / finishMoveDelay
+    }
+
+    /**
+     * 총알의 자동 이동을 막기 위한 딜레이값 지정 함수
+     * @param {number} delay 
+     */
+    setNextMoveDelay (delay) {
+      this.nextMoveDelayCount = delay
+    }
+  }
+
+  static GasiShotBlue = class extends TowerEnemyGroup4Nokgasi1.Gasishot {
+    constructor () {
+      super()
+      this.subType = this.subTypeList.gasishotMain
+      this.stateDelay = new DelayData(60)
+    }
+
+    processState () {
+      super.processState()
+      if (this.subType !== this.subTypeList.gasishotMain) return
+
+      if (this.stateDelay.check()) {
+        // 새로운 총알을 또 생성 (다만 타입이 좀 다름)
+        for (let i = 0; i < 2; i++) {
+          let speedY = i % 2 === 0 ? 4 : -4
+          let bullet = new TowerEnemyGroup4Nokgasi1.GasiShotBlue()
+          bullet.setColor(this.colorList.blue)
+          bullet.setMoveSpeed(0, speedY)
+          bullet.setPosition(this.x, this.y)
+          bullet.attack = this.attack
+          bullet.subType = this.subTypeList.gasishotSub // 가시의 타입을 다른것으로 변경 (중복 생성 방지)
+          fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+        }
+      }
+    }
+    
+    static subTypeList = {
+      gasishotMain: 'gasishotMain',
+      gasishotSub: 'gasishotSub'
+    }
+
+    subTypeList = TowerEnemyGroup4Nokgasi1.GasiShotBlue.subTypeList
+  }
+
+  static GasiShotPink = class extends TowerEnemyGroup4Nokgasi1.Gasishot {
+    constructor () {
+      super()
+      this.state = 'left'
+    }
+
+    processMove () {
+      super.processMove()
+      if (this.x <= 0) {
+        this.setMoveSpeed(Math.abs(this.moveSpeedX), this.moveSpeedY + Math.random() * 0.4 - 0.2)
+        this.x = 1
+        this.state = 'right'
+      }
+    }
+  }
+}
+
+/** 이 클래스는 nokgasi1과 유사하지만, 서로 다른기능을 사용하기 때문에 상속하지 않았습니다. */
+class TowerEnemyGroup4Nokgasi2 extends TowerEnemy {
+  constructor () {
+    super()
+    this.setEnemyByCpStat(18000, 2)
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.nokgasi2, 4)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerNokgasi, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedWhite)
+    this.setMoveSpeed(0, 0) // 이동속도 없음 (위치 고정)
+    this.myStatic = TowerEnemyGroup4Nokgasi2
+    this.GasiShot = this.myStatic.GasiGasi
+    this.gasi = this.myStatic.gasi
+    this.attackDelay = new DelayData(300)
+    this.moveDelay = new DelayData(60)
+    this.collisionDelay.delay = 6
+    /** 하이퍼 모드 전용 속도 가속 값 */ this.speedAcc = 0
+    this.dieAfterDeleteDelay = new DelayData(300)
+    this.isPossibleExit = false
+
+    this.customEffect = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleBlue, 40, 40, 2)
+
+    /** 가시 패턴 배열 */ this.gasiPatternTable = []
+    /** 가시 패턴의 번호값 */ this.currentGasiPatternTableNumber = 0
+    this.createRandomGasiPattern()
+
+    /** 가시 효과음 재생 리스트 */ this.gasiSoundWaitList = []
+    /** 가시 효과음 재생에 대한 지연값 */ this.gasiSoundWaitDelay = []
+  }
+
+  /**
+   * 가시 사운드를 생성, 이 사운드는 일정 딜레이 후 재생됨
+   * @param {string} soundSrc 사운드의 경로
+   * @param {number} waitDelay 지연 대기 시간
+   */
+  createGasiSound (soundSrc, waitDelay) {
+    this.gasiSoundWaitList.push(soundSrc)
+    this.gasiSoundWaitDelay.push(waitDelay)
+  }
+
+  /** 랜덤한 가시 패턴 생성 */
+  createRandomGasiPattern () {
+    this.gasiPatternTable.length = 0 // 기존 배열 삭제
+    let numberTable = [1, 2, 3, 4, 5] // 기존 숫자의 대한 배열
+
+    // 루프를 돌아서 중복되지 않는 배열을 계속 생성
+    for (let i = 0; i < 10; i++) {
+      let tempArray = [1, 2, 3, 4, 5] // 임시 배열
+      for (let j = 0; j < numberTable.length; j++) {
+        let random = Math.floor(Math.random() * tempArray.length)
+        let numberArray = tempArray.splice(random, 1) // 임시 배열에서 원소 제거 (제거된 값은 배열로 리턴됨)
+        let number = numberArray[0] // 배열에 있는 원소를 숫자로 변경
+        this.gasiPatternTable.push(number) // 해당 숫자를 가시 패턴 테이블에 추가
+      }
+    }
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(0, 50, 100, 260),
+      this.getCollisionAreaCalcurationObject(5, 20, 90, 30),
+      this.getCollisionAreaCalcurationObject(5, 350, 90, 30),
+    ]
+  }
+
+  processState () {
+    super.processState()
+    this.processGasiSound()
+  }
+
+  processGasiSound () {
+    for (let i = 0; i < this.gasiSoundWaitList.length; i++) {
+      if (this.gasiSoundWaitDelay[i] === 0) {
+        soundSystem.play(this.gasiSoundWaitList[i]) // 사운드 재생
+        this.gasiSoundWaitDelay[i] = -999 // 지연시간 마이너스로 변경
+      } else if (this.gasiSoundWaitDelay[i] >= 1) {
+        this.gasiSoundWaitDelay[i]--
+      }
+    }
+
+    // 배열 내부에서 사용되지 않는 데이터를 제거하기 위한 작업 
+    // (배열을 제거하는데 splice를 사용하고 이렇게되면 배열 중간이 잘리므로, 역순으로 처리함)
+    if (this.gasiSoundWaitDelay.length === 0) return
+    for (let i = this.gasiSoundWaitDelay.length; i >= 0; i--) {
+      if (this.gasiSoundWaitDelay[i] <= -1) {
+        this.gasiSoundWaitDelay.splice(i, 1)
+        this.gasiSoundWaitList.splice(i, 1)
+      }
+    }
+  }
+
+  processAttack () {
+    super.processAttack()
+    if (this.attackDelay.check()) {
+      this.currentGasiPatternTableNumber++
+    } 
+
+    if (this.hp <= this.hpMax * 0.2) {
+      this.processAttackHyper()
+    } else {
+      let currentGasiPatternNumber = this.gasiPatternTable[this.currentGasiPatternTableNumber % this.gasiPatternTable.length]
+      switch (currentGasiPatternNumber) {
+        case 1: this.processAttackBottom1(); break
+        case 2: this.processAttackThrow2(); break
+        case 3: this.processAttackSpear3(); break
+        case 4: this.processAttackSting4(); break
+        case 5: this.processAttackPattern5(); break
+      }
+    }
+  }
+
+  /** 
+   * 바텀 1 패턴
+   * 
+   * 가시가 밑에서 생성된 후 정해진 위치로 이동 후 일정시간이 지나면 위로 위동
+   */
+  processAttackBottom1 () {
+    if (!this.attackDelay.divCheck(60)) return
+
+    for (let i = 0; i < 6; i++) {
+      let bullet = new this.GasiShot()
+      bullet.setColorDirection(this.gasi.colorList.BLUE, this.gasi.directionList.UP)
+      bullet.setPosition(graphicSystem.CANVAS_WIDTH - bullet.width, graphicSystem.CANVAS_HEIGHT - bullet.height)
+      bullet.setPatternType(this.gasi.patternList.BOTTOM)
+      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+    }
+
+    soundSystem.play(soundSrc.enemyAttack.towerNokgasiGasiBottom)
+    this.createGasiSound(soundSrc.enemyAttack.towerNokgasiGasiShot, 120)
+  }
+
+  /**
+   * 뜨로우(던지기) 2 패턴
+   * 
+   * 아래 가속도가 있는 가시를 위로 던짐, 가시는 서서히 아래로 가속하면서 내려감
+   */
+  processAttackThrow2 () {
+    if (!this.attackDelay.divCheck(12)) return
+
+    for (let i = 0; i < 1; i++) {
+      let bullet = new this.GasiShot()
+      bullet.setColorDirection(this.gasi.colorList.GREEN, this.gasi.directionList.UP)
+      bullet.setPosition(this.centerX, this.y + this.width)
+      bullet.setPatternType(this.gasi.patternList.THROW)
+      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+    }
+
+    soundSystem.play(soundSrc.enemyAttack.towerNokgasiGasiThrow)
+  }
+
+  /**
+   * 스피어(창) 패턴 3
+   * 
+   * 위, 아래로 가시를 소환하고 그 가시는 여러번 화면 가운데를 공격
+   */
+  processAttackSpear3 () {
+    if (!this.attackDelay.divCheck(150)) return
+
+    const targetXLine = graphicSystem.CANVAS_HEIGHT / 4
+
+    for (let i = 0; i < 4; i++) {
+      // 멘 위와 맨 아래를 형태에 맞춰 동시 생성 및 기준 좌표 설정
+      let targetX = (targetXLine * i) + (Math.random() * targetXLine)
+
+      let bullet1 = new this.GasiShot()
+      bullet1.setColorDirection(this.gasi.colorList.PINK, this.gasi.directionList.DOWN)
+      bullet1.setPosition(targetX, 0 - (bullet1.height / 2))
+      bullet1.setPatternType(this.gasi.patternList.SPEAR)
+      fieldState.createEnemyBulletObject(bullet1, bullet1.x, bullet1.y)
+
+      let bullet2 = new this.GasiShot()
+      bullet2.setColorDirection(this.gasi.colorList.PINK, this.gasi.directionList.UP)
+      bullet2.setPosition(targetX, graphicSystem.CANVAS_HEIGHT - (bullet2.height / 2))
+      bullet2.setPatternType(this.gasi.patternList.SPEAR)
+      fieldState.createEnemyBulletObject(bullet2, bullet2.x, bullet2.y)
+    }
+
+    soundSystem.play(soundSrc.enemyAttack.towerNokgasiGasiSpear)
+    this.createGasiSound(soundSrc.enemyAttack.towerNokgasiGasiShot, 60)
+    this.createGasiSound(soundSrc.enemyAttack.towerNokgasiGasiShot, 88)
+    this.createGasiSound(soundSrc.enemyAttack.towerNokgasiGasiShot, 116)
+    this.createGasiSound(soundSrc.enemyAttack.towerNokgasiGasiShot, 144)
+  }
+
+  /**
+   * 스팅(찌르기) 패턴 4
+   * 
+   * 화면 오른쪽에 가시가 소환되고 잠시 후 화면 왼쪽으로 이동함
+   */
+  processAttackSting4 () {
+    if (!this.attackDelay.divCheck(100)) return
+
+    let targetY = Math.random() * (graphicSystem.CANVAS_HEIGHT - 100)
+    for (let i = 0; i < 2; i++) {
+      let bullet = new this.GasiShot()
+      bullet.setColorDirection(this.gasi.colorList.TEAL, this.gasi.directionList.LEFT)
+      bullet.setPosition(graphicSystem.CANVAS_WIDTH - 200, targetY + (i * 40))
+      bullet.setPatternType(this.gasi.patternList.STING)
+      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+    }
+
+    soundSystem.play(soundSrc.enemyAttack.towerNokgasiGasiShot)
+    this.createGasiSound(soundSrc.enemyAttack.towerNokgasiGasiSting, 60)
+  }
+
+  /** 
+   * 패턴 5 (이름 없음)
+   * 
+   * 위로 올라가는 가시와 아래로 내려가는 가시를 소환
+   */
+  processAttackPattern5 () {
+    if (!this.attackDelay.divCheck(100)) return
+
+    for (let i = 0; i < 4; i++) {
+      let bullet = new this.GasiShot()
+      let targetY = i % 2 === 0 ? 0 : graphicSystem.CANVAS_HEIGHT
+      let speedY = i % 2 === 0 ? 4 : -4
+      bullet.setColorDirection(this.gasi.colorList.YELLOW, this.gasi.directionList.LEFT)
+      bullet.setPosition((200 * i), targetY)
+      bullet.setMoveSpeed(0, speedY)
+      bullet.setPatternType(this.gasi.patternList.PATTERN5)
+      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+    }
+
+    soundSystem.play(soundSrc.enemyAttack.towerNokgasiGasiPattern5)
+  }
+
+  /**
+   * 하이퍼 모드
+   * 
+   * 스스로 미친듯이 회전하면서 점점 이동속도가 빨라짐
+   */
+  processAttackHyper () {
+    this.speedAcc += 0.02
+    if (this.speedAcc > 24) {
+      this.speedAcc = 24
+    }
+    this.degree += this.speedAcc * 4
+
+    if (this.moveDelay.check()) {
+      let speedX = this.moveSpeedX >= 0 ? 1 + this.speedAcc : -1 - this.speedAcc
+      let speedY = this.moveSpeedY >= 0 ? 1 + this.speedAcc : -1 - this.speedAcc
+      this.setMoveSpeed(speedX, speedY)
+      soundSystem.play(soundSrc.enemyAttack.towerNokgasiGasiHyper)
+    }
+  }
+
+  processMove () {
+    super.processMove()
+    if (this.moveSpeedY === 0 && this.moveDelay.check()) {
+      this.setMoveSpeed(0, 0.2)
+    }
+
+    // 녹가시 1이 녹가시 2를 생성하는 구조상, 녹가시2는 화면 안에 무조건 생성되기 때문에
+    // 이 코드는 중요하진 않지만 일단은 추가했습니다.
+    if (this.x + this.width > graphicSystem.CANVAS_WIDTH) {
+      this.x-- // 화면 안에 오도록 변경함
+
+      // 화면 안에 들어온경우, 이제 보스는 화면 바깥으로 나갈 수 없음.
+      if (this.x + this.width <= graphicSystem.CANVAS_WIDTH) {
+        this.isPossibleExit = false
+      }
+
+      // x축이 화면 안으로 들어오는동안 y축도 보정됨
+      if (this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
+        this.y -= 10
+      } else if (this.y < 0) {
+        this.y += 10
+      }
+    }
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+    if (!this.isDied) return
+
+    this.degree = 0 // 죽었을 때 각도는 0으로 고정됨
+    if (this.dieAfterDeleteDelay.count % 6 === 0 && this.dieEffect != null) {
+      soundSystem.play(this.dieSound)
+      fieldState.createEffectObject(this.customEffect.getObject(), this.x + (Math.random() * (this.width - 40)), this.y + (Math.random() * (this.height - 40)))
+    }
+
+    if (this.dieAfterDeleteDelay.count == this.dieAfterDeleteDelay.delay - 1 && this.dieEffect != null) {
+      soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossRobot2)
+      let effect = this.dieEffect.getObject()
+      effect.setWidthHeight(this.width, this.height)
+      fieldState.createEffectObject(effect, this.x, this.y)
+    }
+  }
+
+  static GasiGasi = class extends CustomEnemyBullet {
+    constructor () {
+      super()
+      this.collisionDelay = new DelayData(6)
+      this.attack = 2
+      this.direction = ''
+      this.color = ''
+      this.spearCount = 6
+
+      this.endPosition = {
+        x: 0,
+        speedX: 0,
+        y: 0,
+        speedY: 0,
+        delay: 0,
+        delayCount: 0,
+      }
+
+      /** 다음 동작까지의 딜레이카운터 (패턴마다 이 변수의 사용방법이 다를 수 있음) */ this.delayCount = 120
+      this.gasi = TowerEnemyGroup4Nokgasi2.gasi
+    }
+ 
+    processCollision () {
+      if (this.attack === 0) return
+      // 플레이어랑 닿았을 때 연속 충돌을 하기 위한 함수
+  
+      let player = fieldState.getPlayerObject()
+      let playerSendXY = { x: player.x, y: player.y, width: player.width, height: player.height}
+      
+      if (this.collisionDelay.check(false) && collision(playerSendXY, this)) {
+        player.addDamage(this.attack)
+        this.collisionDelay.count = 0 // 충돌 지연 카운터 리셋
+      }
+    }
+
+    processMove () {
+      super.processMove()
+      this.delayCount-- // 딜레이 카운트는 실시간으로 감소
+
+      switch (this.subType) {
+        case this.gasi.patternList.BOTTOM: this.processMoveBottom(); break
+        case this.gasi.patternList.THROW: this.setMoveSpeed(this.moveSpeedX, this.moveSpeedY + 0.2); break
+        case this.gasi.patternList.SPEAR: this.processMoveSpear(); break
+        case this.gasi.patternList.STING: this.processMoveSting(); break
+        case this.gasi.patternList.PATTERN5: break // 이 패턴은 추가적으로 해야할 작업이 없음
+      }
+    }
+
+    processMoveBottom () {
+      // 맨 밑에서 정해진 x좌표까지 강제로 이동됨
+      if (this.endPosition.delayCount >= 1) {
+        this.setMoveSpeed(this.endPosition.speedX, 0)
+        this.endPosition.delayCount--
+        return
+      }
+      
+      // 그 다음, delayCount가 0이 될 때까지 대기
+      if (this.delayCount >= 1) {
+        this.setMoveSpeed(0, 0)
+      } else {
+        // delaycount가 0 이하가 되면은 위로 이동
+        this.setMoveSpeed(0, -10)
+      }
+    }
+
+    processMoveSpear () {
+      // delayCount가 1 이상이면 대기
+      if (this.delayCount >= 1) {
+        this.setMoveSpeed(0, 0)
+        return
+      } else if (this.delayCount === 0) {
+        // 이동 방향에 따라 속도 조정
+        if (this.direction === this.gasi.directionList.UP) {
+          this.setMoveSpeed(0, -40)
+        } else {
+          this.setMoveSpeed(0, 40)
+        }
+        return
+      }
+
+      // 창이 아래로 나왔다가 위로 왔다갔다를 반복합니다. (일정시간동안)
+      if (this.direction === this.gasi.directionList.UP) {
+        if (this.y + this.height <= graphicSystem.CANVAS_HEIGHT_HALF) {
+          this.setMoveSpeed(0, 40)
+          this.spearCount--
+        } else if (this.y + this.height >= graphicSystem.CANVAS_HEIGHT + (this.height / 2)) {
+          this.setMoveSpeed(0, -40)
+        }
+      } else if (this.direction === this.gasi.directionList.DOWN) {
+        if (this.y >= graphicSystem.CANVAS_HEIGHT_HALF) {
+          this.setMoveSpeed(0, -40)
+          this.spearCount--
+        } else if (this.y + this.height <= this.height / 2) {
+          this.setMoveSpeed(0, 40)
+        }
+      }
+
+      // 일정 횟수 이상 공격하거나 일정 시간이 지나면 자동 삭제
+      if (this.elapsedFrame >= 300 || this.spearCount <= 0) {
+        this.isDeleted = true
+      }
+    }
+
+    processMoveSting () {
+      if (this.delayCount > 0) return
+      
+      // 창을 왼쪽 끝까지 이동시킴 (왼쪽 끝을 넘어가면 강제로 위치 조정)
+      if (this.x > 0) {
+        this.setMoveSpeed(-40, 0)
+      } else {
+        this.x = 0
+      }
+
+      // 창 찌르기는 일정시간 후 자동 삭제
+      if (this.delayCount <= -60) {
+        this.isDeleted = true
+      }
+    }
+
+
+    /**
+     * 가시의 방향과 색을 설정합니다. (패턴과는 별개입니다.)
+     * @param {string} color 
+     * @param {string} direction 
+     */
+    setColorDirection (color = '', direction) {
+      const directionList = TowerEnemyGroup4Nokgasi2.gasi.directionList
+      const colorList = TowerEnemyGroup4Nokgasi2.gasi.colorList
+      const imgDataList = imageDataInfo.towerEnemyGroup4
+      const targetImageSrc = imageSrc.enemy.towerEnemyGroup4
+      this.direction = direction
+
+      if (direction === directionList.LEFT) {
+        switch (color) {
+          case colorList.BLUE: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiBlueLeft); break
+          case colorList.GREEN: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiGreenLeft); break
+          case colorList.PINK: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiPinkLeft); break
+          case colorList.TEAL: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiTealLeft); break
+          case colorList.YELLOW: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiYellowLeft); break
+        }
+      } else if (direction === directionList.UP) {
+        switch (color) {
+          case colorList.BLUE: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiBlueUp); break
+          case colorList.GREEN: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiGreenUp); break
+          case colorList.PINK: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiPinkUp); break
+          case colorList.TEAL: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiTealUp); break
+          case colorList.YELLOW: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiYellowUp); break
+        }
+      } else if (direction === directionList.DOWN) {
+        switch (color) {
+          case colorList.BLUE: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiBlueDown); break
+          case colorList.GREEN: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiGreenDown); break
+          case colorList.PINK: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiPinkDown); break
+          case colorList.TEAL: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiTealDown); break
+          case colorList.YELLOW: this.setAutoImageData(targetImageSrc, imgDataList.nokgasiGasiYellowDown); break
+        }
+      }
+    }
+
+    /**
+     * 가시가 공격할 형태의 패턴을 결정함 (참고: 내부적으로는 subType으로 가시의 패턴을 판단합니다.)
+     * 
+     * 참고: setColorDirection을 사용하고 setPosition으로 좌표를 설정 후 이 함수를 사용해주세요.
+     * 
+     * @param {string} subType 
+     */
+    setPatternType (subType) {
+      this.subType = subType
+      const patternTypeList = this.gasi.patternList
+      const bottomDivCount = 60
+
+      switch (subType) {
+        case patternTypeList.BOTTOM:
+          // 가시가 현재 있는 위치를 기준으로 정해진 X축 좌표까지 이동함
+          this.endPosition.x = Math.random() * graphicSystem.CANVAS_WIDTH
+          this.endPosition.y = graphicSystem.CANVAS_HEIGHT - this.height
+          this.endPosition.speedX = (this.endPosition.x - this.x) / bottomDivCount
+          this.endPosition.delay = bottomDivCount
+          this.endPosition.delayCount = bottomDivCount
+          this.delayCount = bottomDivCount * 2
+          break
+        case patternTypeList.THROW:
+          this.setMoveSpeed(Math.random() * -8 - 2, Math.random() * -4 - 8)
+          break
+        case patternTypeList.SPEAR:
+          this.setWidthHeight(40, this.height)
+          this.delayCount = 60
+          break
+        case patternTypeList.STING:
+          this.endPosition.x = 0
+          this.delayCount = 60
+          this.setMoveSpeed(0, 0)
+          this.setWidthHeight(graphicSystem.CANVAS_WIDTH, 40)
+          break
+        case patternTypeList.PATTERN5:
+          // 아무것도 없음
+          break
+      }
+    }
+  }
+
+  static gasi = {
+    colorList: {
+      TEAL: 'teal',
+      GREEN: 'green',
+      BLUE: 'blue',
+      YELLOW: 'yellow',
+      PINK: 'pink',
+    },
+    directionList: {
+      LEFT: 'left',
+      UP: 'up',
+      DOWN: 'down'
+    },
+    patternList: {
+      BOTTOM: 'bottom',
+      THROW: 'throw',
+      SPEAR: 'spear',
+      STING: 'sting',
+      PATTERN5: 'pattern5'
+    }
+  }
+}
+
 
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
@@ -10894,7 +12064,7 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup1.hexagon, TowerEnemyGroup1Hexagon)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup1.hexagonMini, TowerEnemyGroup1HexagonMini)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup1.octagon, TowerEnemyGroup1Octagon)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup1.octagonMini, TowerEnemyGroup1OctagonMini)
-dataExportEnemy.set(ID.enemy.towerEnemyGroup1.bossRobot, TowerEnemyGroup1BossRobot)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup1.crazyRobot, TowerEnemyGroup1CrazyRobot)
 
 // towerEnemyGroup2 / round 3-2 ~ 3-9
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.barRandom, TowerEnemyBarTemplete)
@@ -10917,7 +12087,7 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup2.octaShadow, TowerEnemyGroup2OctaSh
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.octaLight, TowerEnemyGroup2OctaLight)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.hexaShadow, TowerEnemyGroup2HexaShadow)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.hexaLight, TowerEnemyGroup2HexaLight)
-dataExportEnemy.set(ID.enemy.towerEnemyGroup2.bossBar, TowerEnemyGroup2BossBar)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.bigBar, TowerEnemyGroup2BigBar)
 
 // towerEnemyGroup3 / round 3-3 ~ 3-9
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.core8, TowerEnemyGroup3Core8)
@@ -10941,3 +12111,7 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup3.clockJong, TowerEnemyGroup3ClockJo
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.energyA, TowerEnemyGroup3EnergyA)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.energyBlue, TowerEnemyGroup3EnergyBlue)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.energyOrange, TowerEnemyGroup3EnergyOrange)
+
+// towerEnemyGroup4 / round 3-5
+dataExportEnemy.set(ID.enemy.towerEnemyGroup4.nokgasi1, TowerEnemyGroup4Nokgasi1)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup4.nokgasi2, TowerEnemyGroup4Nokgasi2)

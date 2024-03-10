@@ -748,7 +748,7 @@ export class FieldData {
    * @param {number} targetX 목표지점 x
    * @param {number} targetY 목표지점 y
    * @param {number} divValue 목표와 현재와 거리 차이를 나누는 값 (이 값이 클수록 속도가 느려집니다.), 0일경우 강제로 1로 설정됨
-   * @param {number} minSpeed 최소속도
+   * @param {number} minSpeed 최소속도 (마이너스는 권장하지 않음)
    */
   setMoveSpeedChaseLine (targetX = 0, targetY = 0, divValue = 1, minSpeed = 2) {
     // 0 나눗셈 금지 및, 숫자형이 아닌경우 강제로 값 초기화

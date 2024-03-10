@@ -82,6 +82,7 @@ export class imageSrc {
     towerEnemyGroup1: './image/enemy/towerEnemyGroup1.png',
     towerEnemyGroup2: './image/enemy/towerEnemyGroup2.png',
     towerEnemyGroup3: './image/enemy/towerEnemyGroup3.png',
+    towerEnemyGroup4: './image/enemy/towerEnemyGroup4.png',
   }
 
   static enemyDie = {
@@ -460,7 +461,7 @@ export class imageDataInfo {
     pentagon: new ImageDataObject(610, 670, 100, 100, 1),
     hexagon: new ImageDataObject(720, 670, 110, 100, 1),
     octagon: new ImageDataObject(840, 670, 130, 130, 1),
-    bossRobot: new ImageDataObject(900, 0, 250, 300, 1),
+    crazyRobot: new ImageDataObject(900, 0, 250, 300, 1),
 
     // bullet
     bulletTapo: new ImageDataObject(0, 700, 90, 30, 1),
@@ -586,6 +587,38 @@ export class imageDataInfo {
     enemyDieClockAnalog: new ImageDataObject(0, 500, 160, 160, 10),
     enemyDieClockDigital: new ImageDataObject(0, 660, 180, 120, 10),
     enemyDieClockJong: new ImageDataObject(0, 780, 200, 400, 10)
+  }
+
+  static towerEnemyGroup4 = {
+    nokgasi1: new ImageDataObject(0, 0, 100, 300, 8),
+    nokgasi2: new ImageDataObject(0, 300, 100, 400, 8),
+    anti: new ImageDataObject(0, 710, 140, 60, 6),
+    antishield: new ImageDataObject(0, 800, 160, 100, 6),
+
+    // nokgasi1 attack
+    nokgasiShotGreen: new ImageDataObject(900, 0, 80, 12),
+    nokgasiShotOrange: new ImageDataObject(900, 12, 80, 12),
+    nokgasiShotPurple: new ImageDataObject(900, 24, 80, 12),
+    nokgasiShotBlue: new ImageDataObject(900, 36, 80, 12),
+    nokgasiShotGrey: new ImageDataObject(900, 48, 80, 12),
+    nokgasiShotPink: new ImageDataObject(900, 60, 80, 12),
+
+    // nokgasi2 attack
+    nokgasiGasiTealUp: new ImageDataObject(1000, 0, 20, 200), 
+    nokgasiGasiGreenUp: new ImageDataObject(1020, 0, 20, 200), 
+    nokgasiGasiBlueUp: new ImageDataObject(1040, 0, 20, 200), 
+    nokgasiGasiYellowUp: new ImageDataObject(1060, 0, 20, 200), 
+    nokgasiGasiPinkUp: new ImageDataObject(1080, 0, 20, 200), 
+    nokgasiGasiTealDown: new ImageDataObject(1000, 200, 20, 200), 
+    nokgasiGasiGreenDown: new ImageDataObject(1020, 200, 20, 200), 
+    nokgasiGasiBlueDown: new ImageDataObject(1040, 200, 20, 200), 
+    nokgasiGasiYellowDown: new ImageDataObject(1060, 200, 20, 200), 
+    nokgasiGasiPinkDown: new ImageDataObject(1080, 200, 20, 200), 
+    nokgasiGasiTealLeft: new ImageDataObject(1100, 0, 200, 20), 
+    nokgasiGasiGreenLeft: new ImageDataObject(1100, 20, 200, 20), 
+    nokgasiGasiBlueLeft: new ImageDataObject(1100, 40, 200, 20), 
+    nokgasiGasiYellowLeft: new ImageDataObject(1100, 60, 200, 20), 
+    nokgasiGasiPinkLeft: new ImageDataObject(1100, 80, 200, 20),
   }
 
   static fieldSystem = {

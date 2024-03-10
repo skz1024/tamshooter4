@@ -145,7 +145,7 @@ export class soundSrc {
     enemyDieTowerPentaLight: './sound/enemyDieTowerPentaLight.ogg',
     enemyDieTowerPentaShadow: './sound/enemyDieTowerPentaShadow.ogg',
 
-    // tower group 3 (3-3)
+    // tower group 3 (3-3 ~ 3-4)
     enemyDieTowerBossDasu: './sound/enemyDieTowerBossDasu.ogg',
     enemyDieTowerClockAnalog: './sound/enemyDieTowerClockAnalog.ogg',
     enemyDieTowerClockDigital: './sound/enemyDieTowerClockDigital.ogg',
@@ -157,7 +157,10 @@ export class soundSrc {
     enemyDieTowerFakeShip: './sound/enemyDieTowerFakeShip.ogg',
     enemyDieTowerShipBig: './sound/enemyDieTowerShipBig.ogg',
     enemyDieTowerShipSmall: './sound/enemyDieTowerShipSmall.ogg',
-    enemyDieTowerStar: './sound/enemyDieTowerStar.ogg'
+    enemyDieTowerStar: './sound/enemyDieTowerStar.ogg',
+
+    // tower group 4 (3-5)
+    enemyDieTowerNokgasi: './sound/enemyDieTowerNokgasi.ogg'
   }
 
   static enemyAttack = {
@@ -203,6 +206,17 @@ export class soundSrc {
     towerCoreSummonRainbow: './sound/enemyTowerCoreSummonRainbow.ogg',
     towerFakeBarAttack: './sound/enemyTowerFakeBarAttack.ogg',
     towerShipEquipCore: './sound/enemyTowerShipEquipCore.ogg',
+    towerNokgasiAttackOrangePurple: './sound/enemyTowerNokgasiAttackOrangePurple.ogg',
+    towerNokgasiAttackGreenGrey: './sound/enemyTowerNokgasiAttackGreenGrey.ogg',
+    towerNokgasiAttackPink: './sound/enemyTowerNokgasiAttackPink.ogg',
+    towerNokgasiAttackBlue: './sound/enemyTowerNokgasiAttackBlue.ogg',
+    towerNokgasiGasiBottom: './sound/enemyTowerNokgasiGasiBottom.ogg',
+    towerNokgasiGasiSting: './sound/enemyTowerNokgasiGasiSting.ogg',
+    towerNokgasiGasiSpear: './sound/enemyTowerNokgasiGasiSpear.ogg',
+    towerNokgasiGasiThrow: './sound/enemyTowerNokgasiGasiThrow.ogg',
+    towerNokgasiGasiHyper: './sound/enemyTowerNokgasiGasiHyper.ogg',
+    towerNokgasiGasiShot: './sound/enemyTowerNokgasiGasiShot.ogg',
+    towerNokgasiGasiPattern5: './sound/enemyTowerNokgasiGasiPattern5.ogg',
   }
 
   static round = {
@@ -285,5 +299,6 @@ export class soundSrc {
     music16_down_tower: './music/music16_down_tower.ogg',
     music17_down_tower_boss: './music/music17_down_tower_boss.ogg',
     music18_down_tower_void: './music/music18_down_tower_void.ogg',
+    music19_round3_5_boss1: './music/music19_round3_5_boss1.ogg'
   }
 }

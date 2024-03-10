@@ -279,7 +279,7 @@ class PlayerObject extends FieldData {
   damageSoundPlay (shieldDamage = 0, hpDamage = 0, isDefaultSound = true) {
     if (!isDefaultSound) return
 
-    const LOW_DAMAGE = 2
+    const LOW_DAMAGE = 1
     const MIDDLE_DAMAGE = 15
     const HIGH_DAMAGE = 30
     const HP_LOW_DAMAGE = 1
@@ -336,18 +336,18 @@ class PlayerObject extends FieldData {
       shieldDamage = damage
       this.shield -= damage
     } else if (this.shield < damage) {
-      if (this.shield >= 0) {
+      if (this.shield > 0) {
         shieldDamage = this.shield
-        hpDamage = damage - shieldDamage
+        hpDamage = Math.floor(damage - shieldDamage)
         this.shield = 0
-        this.hp -= Math.floor(hpDamage / 2)
+        this.hp -= hpDamage
       } else {
-        hpDamage = damage
+        hpDamage = Math.floor(damage / 2)
 
         // 만약 쉴드가 없는 상태에서 데미지를 받았다면 최소 1체력이 감소합니다.
         // 이것은 1데미지로는 체력이 감소하지 않기 때문에 보정치를 넣은것입니다.
-        if (hpDamage < 0) hpDamage = 2
-        this.hp -= Math.floor(hpDamage / 2)
+        if (hpDamage <= 0) hpDamage = 1
+        this.hp -= hpDamage
       }
     }
 

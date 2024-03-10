@@ -233,7 +233,7 @@ export class ID {
       pentagon: 20264,
       hexagon: 20265,
       octagon: 20266,
-      bossRobot: 20267,
+      crazyRobot: 20267,
       squareMini: 20270,
       diamondMini: 20271,
       pentagonMini: 20272,
@@ -261,7 +261,7 @@ export class ID {
       hexaLight: 20294,
       octaShadow: 20295,
       octaLight: 20296,
-      bossBar: 20297,
+      bigBar: 20297,
     },
     towerEnemyGroup3: {
       core8: 20300,
@@ -285,6 +285,10 @@ export class ID {
       energyBlue: 20318,
       energyOrange: 20319,
       energyA: 20320,
+    },
+    towerEnemyGroup4: {
+      nokgasi1: 20321,
+      nokgasi2: 20322,
     }
   }
 
