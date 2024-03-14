@@ -257,7 +257,9 @@ export class soundSrc {
     r2_5_breakRoom: './sound/round2_5_breakRoom.ogg',
     r3_playerOption: './sound/round3_playerOption.ogg',
     r3_bossWarning: './sound/round3_bossWarning.ogg',
-    r3_bossWarningKeyboard: './sound/round3_bossWarningKeyboard.ogg'
+    r3_bossWarningKeyboard: './sound/round3_bossWarningKeyboard.ogg',
+    r3_5_phase2Start: './sound/round3_5_phase2Start.ogg',
+    r3_5_message1: './sound/round3_5_message1.ogg',
   }
 
   static donggrami = {

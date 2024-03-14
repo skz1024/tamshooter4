@@ -8590,6 +8590,7 @@ class Round3TempleteBossSprite extends FieldData {
     super()
     this.TYPE_ROBOT = 'robot'
     this.TYPE_DASU = 'dasu'
+    this.TYPE_ANTI_PHASE2 = 'antiPhase2'
     this.state = ''
     this.dasuCore = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}]
   }
@@ -8612,6 +8613,15 @@ class Round3TempleteBossSprite extends FieldData {
     this.subType = this.TYPE_DASU
     this.x = graphicSystem.CANVAS_WIDTH - this.width
     this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
+  }
+
+  createSpriteAntiPhase2 () {
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 3)
+    this.elapsedFrame = 0
+    this.subType = this.TYPE_ANTI_PHASE2
+    this.x = graphicSystem.CANVAS_WIDTH_HALF - (imageDataInfo.towerEnemyGroup4.anti.width / 2)
+    this.y = graphicSystem.CANVAS_HEIGHT_HALF - (imageDataInfo.towerEnemyGroup4.anti.height / 2)
+    this.setMoveSpeed(0, 0)
   }
 
   getSaveString () {
@@ -8643,6 +8653,9 @@ class Round3TempleteBossSprite extends FieldData {
     } else if (this.subType === this.TYPE_DASU) {
       this.processMoveDasu()
       super.processMove()
+    } else if (this.subType === this.TYPE_ANTI_PHASE2) {
+      this.processMoveAntiPhase2()
+      // 이 객체는 확대축소로 인해서 좌표를 강제조정하지만 이동하는것은 아님
     }
   }
 
@@ -8710,6 +8723,25 @@ class Round3TempleteBossSprite extends FieldData {
     }
   }
 
+  processMoveAntiPhase2 () {
+    if (this.elapsedFrame >= 360 && this.elapsedFrame <= 540) {
+      if (this.enimation) {
+        this.enimation.alpha -= 0.005
+        if (this.enimation.alpha < 0) this.enimation.alpha = 0
+      }
+
+      this.x -= 7
+      this.y -= 3
+      this.setWidthHeight(this.width + 14, this.height + 6)
+    } else if (this.elapsedFrame >= 541) {
+      if (this.enimation) {
+        // 알파값을 원래대로 복구하고 해당 스프라이트 제거
+        this.enimation.alpha = 1
+        this.subType = ''
+      }
+    }
+  }
+
   display () {
     // 다른 적도 하나 더 테스트 해야 해서 디버그코드는 임시로 남겨둠
     if (this.subType === this.TYPE_ROBOT) {
@@ -8722,6 +8754,8 @@ class Round3TempleteBossSprite extends FieldData {
           this.imageObjectDisplay(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.bossDasuCore, this.dasuCore[i].x, this.dasuCore[i].y)
         }
       }
+    } else if (this.subType !== '') {
+      super.display()
     }
   }
 
@@ -10025,11 +10059,19 @@ class Round3_5 extends Round3Templete {
 
     // 배경 (지금은 이 레이어만 쓰임)
     this.bgLayer.addLayerImage(imageSrc.round.round3_4_level7, 1)
+    this.bgLayer.addLayerImage(imageSrc.round.round3_5_level11, 0)
+    this.bgLayer.addLayerImage(imageSrc.round.round3_5_level12, 0)
+    this.bgLayer.addLayerImage(imageSrc.round.round3_5_level13, 0)
     this.bgLayer.setBackgroundSpeed(2, 1)
 
     this.phase.addRoundPhase(this, this.roundPhase00, 0, 90)
     this.phase.addRoundPhase(this, this.roundPhase01, 91, 180)
     this.phase.addRoundPhase(this, this.roundPhase02, 181, 240)
+
+    this.load.addSoundList([
+      soundSrc.round.r3_5_message1,
+      soundSrc.round.r3_5_phase2Start,
+    ])
   }
 
   roundPhase00 () {
@@ -10066,31 +10108,53 @@ class Round3_5 extends Round3Templete {
   roundPhase01 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
 
-    if (this.timeCheckInterval(pTime + 11, pTime + 89)) {
+    // 페이즈 1-1은 적이 적을 생성하는 구조라 해당 ID와 관련된 적이 있는지만 확인하지만,
+    // 페이즈 1-2은 전체적으로 적이 남아있는지를 판단합니다. (무슨차이냐면, 적이 남아있을 때 시간 진행을 막기 위함)
+    // 그러나 페이즈 1-1에서 밑과 같은 처리를 하면 영원히 시간이 멈추고 잘못된 현상이 벌어지게됨
+    this.timePauseWithEnemyCount(pTime + 88)
+    if (this.timeCheckInterval(pTime + 11, pTime + 88)) {
       let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.nokgasi2)
       if (enemy != null) {
         if (enemy.isDied) {
+          this.time.setCurrentTime(pTime + 88)
           fieldState.allEnemyBulletDelete()
-          this.time.setCurrentTime(pTime + 90)
-          this.time.setCurrentTimePause(false)
           this.sound.musicStop()
-        } else {
-          this.timePauseWithEnemyCount(pTime + 88) // 해당 시간이 다 될 때 까지 보스가 남아있으면 시간이 멈춥니다.
         }
-      } else {
-        this.time.setCurrentTimePause(false)  // 정해진 적이 없다면 시간 멈춤을 해제합니다.
       }
     }
   }
 
   roundPhase02 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 1)) {
+    if (this.timeCheckFrame(pTime + 0)) {
       this.bgLayer.setBackgroundSpeed(0, 0) // 배경 이동 멈춤
-    } else if (this.timeCheckFrame(pTime + 9)) {
+    } else if (this.timeCheckFrame(pTime + 4)) {
       this.bossWarning.createWarning(this.bossTextList.bossAnti)
-    } else if (this.timeCheckFrame(pTime + 15)) {
-      
+    } else if (this.timeCheckFrame(pTime + 10)) {
+      this.bossSprite.createSpriteAntiPhase2()
+      this.sound.play(soundSrc.round.r3_5_message1)
+    } else if (this.timeCheckFrame(pTime + 16)) {
+      this.bgLayer.setLayerAlphaFade(0, 0, 90)
+      this.sound.play(soundSrc.round.r3_5_phase2Start)
+    } else if (this.timeCheckFrame(pTime + 18)) {
+      this.bgLayer.setBackgroundPosition(0, 0)
+      this.bgLayer.setBackgroundSpeed(0, 0)
+    }
+
+    if (this.timeCheckFrame(pTime + 20)) {
+      this.bgLayer.setLayerAlphaFade(1, 1, 120)
+    } else if (this.timeCheckFrame(pTime + 25)) {
+      this.bgLayer.setLayerAlphaFade(1, 0, 120)
+      this.bgLayer.setLayerAlphaFade(2, 1, 120)
+    } else if (this.timeCheckFrame(pTime + 30)) {
+      this.bgLayer.setLayerAlphaFade(2, 0, 120)
+      this.bgLayer.setLayerAlphaFade(3, 1, 120)
+    }
+  }
+
+  processDebug () {
+    if (this.timeCheckFrame(1)) {
+      this.time.setCurrentTime(180)
     }
   }
 
