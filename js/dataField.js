@@ -259,6 +259,15 @@ export class DelayData {
   setCountMax () {
     this.count = this.delay
   }
+
+  /** 
+   * 카운트를 리셋합니다. (카운트를 0으로 변경)
+   * 
+   * 이 함수는 명확한 의미 전달을 위해 만들어졌습니다. (count = 0 코드와 동일하지만, 함수 이름으로 의미를 전달할 수 있음)
+   */
+  countReset () {
+    this.count = 0
+  }
 }
 
 /**
@@ -464,8 +473,20 @@ export class FieldData {
      */
     this.objectType = 'field'
 
-    /** 타입 세부 구분용도 */ this.mainType = ''
-    /** 타입 세부 구분용도 (메인타입으로만 구분이 어려울 경우 추가적으로 사용) */ this.subType = ''
+    /** 
+     * 타입 대표 구분용도 (이것은 해당 요소의 대표타입: 예를들어, DonggramiEnemy과 같은것을 의미) 
+     * 
+     * 이 정보는 같은 그룹으로 분류된 객체들의 특징을 구분하기 위해 만들어졌으나, 게임에서 자주 사용되지는 않습니다.
+     */ 
+    this.mainType = ''
+
+    /** 
+     * 타입 세부 구분용도 (해당 객체가 어떤 형태의 내부 타입을 사용하는 지 추갈)
+     * 
+     * 이 정보는 같은 객체로 분류된 객체들의 특징을 구분하기 위해 만들어진 변수입니다.
+     */
+    this.subType = ''
+
     /** 타입 세부 구분용 Id (Id는 number 입니다.) */ this.id = 0
     /** 생성 ID, 일부 객체에서 중복 확인용도로 사용 */ this.createId = 0
     
@@ -490,7 +511,31 @@ export class FieldData {
     /** 오브젝트의 가로 길이 */ this.width = 0
     /** 오브젝트의 세로 길이 */ this.height = 0
     /** 오브젝트의 현재 상태 (문자열) */ this.state = ''
-    /** 오브젝트가 가진 일종의 메세지 변수 (외부(fieldData가 아닌 round나 다른곳)에서 활용할 용도로 주로 사용) */ this.message = ''
+    
+    /** 
+     * 오브젝트가 가진 일종의 메세지 변수 (외부(fieldData가 아닌 round나 다른곳)에서 활용할 용도로 주로 사용)\
+     * 
+     * 이 변수는 다른 요소에서 해당 객체에게 정보를 전달하기 위한 목적을 가지고 있습니다.
+     */ 
+    this.message = ''
+
+    /** 
+     * 해당 오브젝트가 저장 후 불러오기를 할 때 필요한 정보가 있다면 해당하는 문자열을 추가로 저장할 수 있습니다.
+     * 
+     * 다만 더 복잡한 방식을 사용하고 싶다면, saveList를 사용해주세요.
+     */
+    this.saveString = ''
+
+    /**
+     * 해당 오브젝트가 저장 후 불러오기를 할 때 필요한 정보가 있다면
+     * 해당하는 모든 변수들을 여기에 저장해두세요.
+     * 
+     * 이 변수는 저장할 때 최종적으로 JSON으로 변경되어 저장됩니다.
+     * 그러나, 함수를 사용하면 해당 함수의 정보는 사라지고 오류가 발생하므로, 변수만 저장해야 합니다. (객체는 상관없으나 함수가 있으면 안됨)
+     * 
+     * @type {object}
+     */
+    this.saveList = {}
 
     /** 
      * 프레임당 x좌표 이동 속도 (소수점 허용), moveSpeedX로 대체됨 
@@ -507,7 +552,8 @@ export class FieldData {
     /** 이동 방향에 따른 이동 속도 x좌표 (소수점 허용) */ this.moveSpeedX = 0
     /** 이동 방향에 따른 이동 속도 y좌표 (소수점 허용) */ this.moveSpeedY = 0
     /** 내부 이동속도 z좌표값 (이동 방향은 없습니다.) */ this.moveSpeedZ = 0
-    /** 이동 가능 여부 (이 값이 true 일경우만 이동이 가능) */ this.isMoveEnable = true
+    /** 이동 가능 여부 (이 값이 true 일 경우만 이동이 가능) */ this.isMoveEnable = true
+    /** 공격 가능 여부 (이 값이 true 일 경우만 공격이 가능) */ this.isAttackEnable = true
     /** 회전한 각도 (일부 객체에서만 사용) */ this.degree = 0
     /** 뒤집기 0: 없음, 1: 수직, 2: 수평, 3: 수직 + 수평, 나머지 무시(0으로 처리) */ this.flip = 0
 
@@ -536,18 +582,12 @@ export class FieldData {
     this.moveDirectionY = FieldData.direction.DOWN
 
     /** 공격력 */ this.attack = 0
-    /** 
-     * 방어력 (현재는 안쓰임)
-     * @deprecated
-     * */ 
-    this.defense = 0
+    /** 방어력 */ this.defense = 0
     /** 체력 */ this.hp = 0
     /** 체력 최대치 */ this.hpMax = this.hp
 
     /**
      * 지연시간 객체(지연시간이 없으면 null)
-     * 
-     * 이 변수는 일반적으로 사용되지 않습니다.
      * @type {DelayData | null}
      */
     this.delay = null
@@ -556,8 +596,6 @@ export class FieldData {
      * 이동 형태를 결정하는데 사용하는 지연시간.
      * 
      * 보통은, 이동할 때 사용하는것보다는, 이동 형태를 바꿀 때 주로 사용합니다.
-     * 
-     * 일반적으로는 잘 사용하지 않습니다. (이동 용도로는 거의 안씀...)
      * @type {DelayData | null}
      */
     this.moveDelay = null
@@ -566,7 +604,6 @@ export class FieldData {
      * 상태 변경을 위한 딜레이 요소
      * 
      * 여러 객체에서 moveDelay를 상태 변경 용도로 활용하는 경우가 많아서 이 값을 추가함.
-     * 
      * @type {DelayData | null}
      */
     this.stateDelay = null
@@ -579,7 +616,7 @@ export class FieldData {
      */
     this.attackDelay = null
 
-    /** (적을 죽였을 때 얻는)점수 */ this.score = 0
+    /** 점수 (대표 객체마다 용도가 다를 수 있음.) */ this.score = 0
 
     /** 해당 오브젝트가 생성된 후 진행된 시간(단위: 프레임) */ this.elapsedFrame = 0
 
@@ -596,6 +633,8 @@ export class FieldData {
      * 만약, 이 값이 true라면, 해당 객체는 로직 처리가 끝난 후 필드에서 삭제됩니다.
      * 데이터를 관리하는 곳에서, 필드 객체에 직접 개입 할 수 없기 때문에, 간접적으로 변수를 사용해
      * 필드에서의 삭제 여부를 판단합니다.
+     * 
+     * 참고: 삭제 로직은 field에서 처리하고 이 객체 내에서는 객체를 스스로 삭제할 수는 없습니다.
      */
     this.isDeleted = false
 
@@ -606,8 +645,6 @@ export class FieldData {
     this.isDied = false
 
     // 에니메이션 용도
-    /** 현재까지 진행된 에니메이션의 총 프레임 */ this.enimationFrame = 0
-
     /**
      * 에니메이션 객체: 이 객체는 EnimationData를 생성하여 이용합니다.
      * @type {EnimationData | null}
@@ -822,6 +859,12 @@ export class FieldData {
     this.processEnimation() // 에니메이션 처리
     this.processState() // 상태 또는 기타 등등 처리
 
+    // 참고: processAttack은 다른 클래스에서 super.processAttack이 호출되지 않는 관계로, 
+    // processAttack 내부에서 조건을 확인할 수 없습니다.
+    if (this.isAttackEnable) { 
+      this.processAttack() // 공격 처리 (만약 있다면)
+    }
+
     // 캔버스의 영역을 크게 벗어나면 해당 객체는 자동으로 삭제요청을 합니다.
     // isDeleted 가 true라면, fieldState에서 해당 객체를 삭제합니다.
     if (this.outAreaCheck()) {
@@ -839,6 +882,20 @@ export class FieldData {
     this.enimation.process()
     this.enimation.degree = this.degree
     this.enimation.flip = this.flip
+  }
+
+  /** 
+   * 필드에서 다른 객체를 사용할 때 사용하는 공격 함수
+   * 
+   * 이 함수는 기본적으로 아무것도 하지 않습니다. 
+   * 단지 공격 로직을 이 함수 내에 작성하도록 유도하기 위해 만들어진 함수입니다.
+   * 
+   * 스프라이트는 공격 함수가 내장되어있지 않아 다른 이름의 함수로 처리해야 하는 문제가 있었기 때문에
+   * 
+   * 아무 역할도 하지 않는 함수가 사용되도록 하였습니다.
+   */
+  processAttack () {
+
   }
 
   /** 
@@ -1051,10 +1108,18 @@ export class FieldData {
   }
 
   /**
-   * 필드 데이터를 저장하기 위해 얻어올 필드 객체
-   * 객체 데이터로 얻어옵니다. (나중에 JSON으로 변경해 저장해야 함)
+   * 필드 데이터를 저장하기 위해 만들어진 필드 객체입니다. 이 객체는 JSON으로 변환된 후 리턴됩니다.
+   * 
+   * 이 함수를 상속받은 경우, super로 이 함수를 호출한 뒤에, 객체 정보를 합쳐서 다시 리턴해야 합니다.
+   * 
+   * 이 함수는 대표클래스 (FieldData, EnemyData와 같은) 에서만 사용 가능하며, 
+   * 만약 이걸 상속받은 하위 클래스에서 클래스 개별적으로 저장하고 싶은 정보가 있다면, 다른 방식을 사용해야 합니다.
+   * 
+   * 해당 함수는 상속해서 수정하면 안됩니다.
    */
-  getSaveData () {
+  fieldBaseSaveData () {
+    this.saveProcess() // 저장 로직 추가 실행
+
     return {
       // id 및 타입값
       id: this.id,
@@ -1081,7 +1146,6 @@ export class FieldData {
       defense: this.defense,
       hp: this.hp,
       hpMax: this.hpMax,
-      score: this.score,
 
       // 상태 값
       state: this.state,
@@ -1090,9 +1154,14 @@ export class FieldData {
       delay: this.delay,
       moveDelay: this.moveDelay,
       attackDelay: this.attackDelay,
+      stateDelay: this.stateDelay,
 
       // 시스템 값
-      elapsedFrame: this.elapsedFrame
+      elapsedFrame: this.elapsedFrame,
+
+      // 추가 확장 저장 값
+      saveString: this.saveString,
+      saveList: this.saveList,
     }
   }
 
@@ -1100,25 +1169,54 @@ export class FieldData {
    * 불러온 필드 객체를 만들기 위한 함수
    * 
    * 불러오기를 사용했을 때 이 함수로 객체들의 스탯을 저장합니다.
-   * @param {Object} saveData 세이브 된 데이터 (경고: 필드 객체가 아님)
+   * 
+   * 해당 함수는 상속해서 수정하면 안됩니다.
+   * @param {Object} saveData 세이브 된 데이터 (필드 객체가 아님)
    */
-  setLoadData (saveData) {
-    // 로드는 구성상 코드가 단순할 수밖에 없음.
+  fieldBaseLoadData (saveData) {
+    // 세이브 데이터에 있는 모든 키 목록을 루프하여 변수값을 지정합니다.
     for (let key in saveData) {
       if (typeof saveData[key] === 'object') {
+        // 오브젝트의 값이 없을경우, 해당 값을 처리하지 않고 루프를 건너뜀
         if (saveData[key] == null) continue
-        
-        // 지연시간은 클래스로 생성되기 때문에, 값을 수동으로 입력해야 합니다.
-        if (saveData[key].hasOwnProperty('delay')) {
+
+        if (saveData[key] === 'saveList') {
+          // saveList의 변수는 일반적인 변수처럼 데이터를 불러옵니다.
+          // 상세한 작업은 loadProcess에서 추가적으로 진행해야 합니다.
+          this[key] = saveData[key]
+        } else if (saveData[key].hasOwnProperty('delay') && saveData[key].hasOwnProperty('count')) {
+          // delay와 관련한 클래스인지 확인하기 위해 해당 오브젝트에 delay, count 변수가 있는지 확인합니다.
+          // delay 객체를 사용하려면 해당 객체를 명시적으로 생성해야 하므로, 이 코드로 판단할 수 있습니다.
           // 널 체크 (없을경우 무시)
           if (this[key].setDelay != null) {
             this[key].setDelay(saveData[key])
           }
         }
+
       } else {
+        // 각 키가 일반적인 변수이면, 해당 값을 그대로 대입합니다.
         this[key] = saveData[key]
       }
     }
+
+    // 추가적인 로드 작업 진행 (saveString, saveList 변수와 관련된 값은.)
+    this.loadProcess()
+  }
+
+  /** 
+   * 불러오기를 했을 때 만약 saveString, saveList에 관한 정보를 사용해야 한다면, 이 함수 내에서 처리해주세요.
+   * 
+   * 이 함수는 불러오기 할 때 자동으로 호출됩니다.
+   */
+  loadProcess () {
+    
+  }
+
+  /** 
+   * 필드 상태에서 저장할 때마다 saveString, saveList에 관한 정보를 한번에 처리하고 싶다면 이 함수를 사용해주세요. 
+   */
+  saveProcess () {
+
   }
 }
 

@@ -260,6 +260,9 @@ export class soundSrc {
     r3_bossWarningKeyboard: './sound/round3_bossWarningKeyboard.ogg',
     r3_5_phase2Start: './sound/round3_5_phase2Start.ogg',
     r3_5_message1: './sound/round3_5_message1.ogg',
+    r3_5_blackSpaceCatch: './sound/round3_5_blackSpaceCatch.ogg',
+    r3_5_blackSpaceFind: './sound/round3_5_blackSpaceFind.ogg',
+    r3_5_blackSpaceTornado: './sound/round3_5_blackSpaceTornado.ogg',
   }
 
   static donggrami = {
@@ -301,6 +304,9 @@ export class soundSrc {
     music16_down_tower: './music/music16_down_tower.ogg',
     music17_down_tower_boss: './music/music17_down_tower_boss.ogg',
     music18_down_tower_void: './music/music18_down_tower_void.ogg',
-    music19_round3_5_boss1: './music/music19_round3_5_boss1.ogg'
+    music19_round3_5_phase1: './music/music19_round3_5_phase1.ogg',
+    music20_round3_5_blackSpace: './music/music20_round3_5_blackSpace.ogg',
+    music21_round3_5_antijemulNormal: './music/music21_round3_5_antijemulNormal.ogg',
+    music22_round3_5_antijemulHyper: './music/music22_round3_5_antijemulHyper.ogg',
   }
 }

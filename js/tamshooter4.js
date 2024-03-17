@@ -2145,7 +2145,7 @@ export class gameSystem {
 
     // 필드 저장 데이터는, 필드 상태에서, 게임이 진행 중일 때에만 저장됩니다. 클리어, 게임오버, 탈출상태가 되면 저장하지 않습니다.
     if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
-      const fieldSaveData = fieldSystem.getSaveData()
+      const fieldSaveData = fieldSystem.fieldSystemSaveData()
       localStorage.setItem(this.saveKey.fieldData, JSON.stringify(fieldSaveData))
     } else {
       // 필드 상태가 아니면, 필드 저장 데이터는 삭제
@@ -2228,7 +2228,7 @@ export class gameSystem {
 
     // 필드 저장 데이터는, 필드 상태에서, 게임이 진행 중일 때에만 저장됩니다. 클리어, 게임오버, 탈출상태가 되면 저장하지 않습니다.
     if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
-      const fieldSaveData = fieldSystem.getSaveData()
+      const fieldSaveData = fieldSystem.fieldSystemSaveData()
       localStorage.setItem(this.saveKey.fieldData, JSON.stringify(fieldSaveData))
     } else {
       // 필드 상태가 아니면, 필드 저장 데이터는 삭제
@@ -2461,7 +2461,7 @@ export class gameSystem {
         // 필드 저장 데이터가 있다면, state를 필드 데이터로 이동
         // 참고로 필드 데이터는 JSON으로 저장되므로, 이걸 JSON.parse 해야합니다.
         this.stateId = this.STATE_FIELD
-        fieldSystem.setLoadData(JSON.parse(fieldSaveData))
+        fieldSystem.fieldSystemLoadData(JSON.parse(fieldSaveData))
       }
     } catch (e) {
       alert(systemText.gameError.FILED_LOAD_ERROR)

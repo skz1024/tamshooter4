@@ -637,7 +637,7 @@ class PlayerObject extends FieldData {
    * player 데이터, 이 저장 데이터는 fieldData와 공식이 다릅니다.
    */
   //@ts-expect-error
-  getSaveData () {
+  fieldBaseSaveData () {
     return {
       // 좌표 값
       x: this.x,
@@ -705,7 +705,7 @@ class PlayerObject extends FieldData {
    * 무기와 스킬도 같이 초기화되면서 불러와집니다.
    * @param {Object} saveData 
    */
-  setLoadData (saveData) {
+  fieldBaseLoadData (saveData) {
     for (let key in saveData) {
       if (typeof saveData[key] === 'object') {
         if (key === 'weapon') {
@@ -1780,10 +1780,19 @@ export class fieldSystem {
   /**
    * 저장할 데이터를 얻습니다.
    */
-  static getSaveData () {
-    let weapon = fieldState.weaponObject.map((data) => {
-      return data.getSaveData()
-    })
+  static fieldSystemSaveData () {
+    // let weapon = fieldState.weaponObject.map((data) => {
+    //   return data.fieldBaseSaveData()
+    // })
+    // 무기는 저장 용량을 줄이기 위하여 스킬만 저장하도록 변경됩니다.
+    // 일반 무기는 불러왔을 때 모두 삭제됩니다.
+    let weaponObject = fieldState.weaponObject
+    let weapon = []
+    for (let i = 0; i < weaponObject.length; i++) {
+      if (weaponObject[i].mainType === 'skill' || weaponObject[i].mainType === 'skillsub') {
+        weapon.push(weaponObject[i].fieldBaseSaveData())
+      }
+    }
 
     // 죽어있거나 삭제된 적은 저장하지 않습니다.
     let enemyObject = fieldState.enemyObject
@@ -1792,14 +1801,15 @@ export class fieldSystem {
       if (enemyObject[i].isDied || enemyObject[i].isDeleted) {
         continue
       } else {
-        enemy.push(enemyObject[i].getSaveData())
+        enemy.push(enemyObject[i].fieldBaseSaveData())
       }
     }
 
-    // let sprite = fieldState.spriteObject.map((data) => {
-    //   return data.getSaveData()
-    // })
-    let player = fieldState.playerObject.getSaveData()
+    let sprite = fieldState.spriteObject.map((data) => {
+      return data.fieldBaseSaveData()
+    })
+    
+    let player = fieldState.playerObject.fieldBaseSaveData()
     let round = this.getRoundSaveData()
     let field = {
       stateId: this.stateId,
@@ -1815,6 +1825,7 @@ export class fieldSystem {
       player,
       round,
       field,
+      sprite,
     }
   }
 
@@ -1823,7 +1834,7 @@ export class fieldSystem {
    */
   static getRoundSaveData () {
     if (this.round != null) {
-      return this.round.getSaveData()
+      return this.round.baseRoundSaveData()
     } else {
       return null
     }
@@ -1833,35 +1844,33 @@ export class fieldSystem {
    * 필드 상태를 불러옵니다. (반드시 JSON데이터를 parse해서 입력해야 합니다. string을 그냥 입력할 수 없습니다.)
    * @param {any} loadData parse된 JSON 데이터 (localStoarge에서 얻어온 값을 그대로 이 함수에 사용하지 마세요.)
    */
-  static setLoadData (loadData) {
+  static fieldSystemLoadData (loadData) {
     if (typeof loadData === 'string') {
       throw new Error('save data field is string, this data need using JSON.parse.')
     }
 
     // JSON으로 얻은 오브젝트는 함수가 없기 때문에, 클래스로 데이터를 생성한 후에
     // 세이브 데이터를 이용해 for in을 사용하여 각 객체들의 속성값을 넣어줍니다.
+    // 이 때문에 완벽한 복원은 불가능하며 (모든 데이터를 저장하지 않기 때문)
+    // 다만, 게임 자체는 원할하게 플레이 될 수 있도록 필요하다면 사용자가 추가적인 처리를 해야 합니다.
 
     for (let current of loadData.weapon) {
       let newData = fieldState.createWeaponObject(current.id, current.x, current.y, current.attack)
       if (newData != null) {
-        newData.setLoadData(current)
+        newData.fieldBaseLoadData(current)
       }
     }
 
     for (let current of loadData.enemy) {
       let newData = fieldState.createEnemyObject(current.id, current.x, current.y)
       if (newData != null) {
-        newData.setLoadData(current)
+        newData.fieldBaseLoadData(current)
       }
     }
 
-    // for (let current of loadData.sprite) {
-    //   let newData = fieldState.createSpriteObject(FieldData, current.x, current.y)
-    //   if (newData != null) {
-    //     newData.setLoadData(current)
-    //   }
-    // }
-
+    // enemyBullet은 구조상으로 완벽하게 복원할 수 없습니다.
+    // 적 내부에 데이터가 있는 구조이기 때문에 외부에서 이 값을 해석할 수 있는 방법이 없습니다.
+    // 따라서, enemyBullet이 복원되더라도 원래의 기능을 잃고 기본적인 총알의 기능만 수행하게 됩니다.
     // for (let current of loadData.enemyBullet) {
     //   let newData = fieldState.createEnemyBulletObject(current.id, current.x, current.y, current.attack)
     //   for (let key in newData) {
@@ -1872,7 +1881,7 @@ export class fieldSystem {
     // 플레이어는 배열이 아닌 단일 객체
     // 플레이어 객체는 fieldState에서 이미 생성되어 있으므로, 새로 생성할 필요는 없습니다.
     fieldState.playerObject.init() // 플레이어 데이터 초기화
-    fieldState.playerObject.setLoadData(loadData.player) // 저장된 데이터 입력
+    fieldState.playerObject.fieldBaseLoadData(loadData.player) // 저장된 데이터 입력
 
     // 라운드는 단일 객체, 다만 라운드 데이터 입력 전에 라운드 객체를 생성해야 합니다.
     this.round = this.createRound(loadData.round.id)
@@ -1880,7 +1889,10 @@ export class fieldSystem {
       throw new Error('round id error. game load fail')
     }
 
-    this.round.setLoadData(loadData.round) // 저장된 데이터 불러오기
+    this.round.baseRoundLoadData(loadData.round) // 저장된 데이터 불러오기
+    this.round.setLoadSpriteData(loadData.sprite) // 스프라이트 데이터 입력
+    this.round.loadProcessSprite() // 스프라이트 데이터 불러오기 (스프라이트 데이터를 입력해야만 정상 동작함)
+    this.round.resetLoadSpriteData() // 스프라이트 데이터 리셋
     this.roundImageSoundLoad() // 라운드 이미지 사운드 로드
     
     // 필드 불러오기

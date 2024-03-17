@@ -243,13 +243,14 @@ export class EnemyData extends FieldData {
     // 적이 죽지 않았을 때 적과 관련된 행동 처리
     if (!this.isDied) {
       this.isMoveEnable = true
+      this.isAttackEnable = true
       this.processPossibleExit()
       this.processExitToReset()
       this.processPlayerCollision()
-      this.processAttack()
     } else {
-      // 적이 죽었다면 이동할 수 없습니다.
+      // 적이 죽었다면 이동할 수 없습니다. 공격할 수도 없습니다.
       this.isMoveEnable = false
+      this.isAttackEnable = false
     }
 
     // 적 죽었는지 체크
@@ -527,8 +528,8 @@ export class EnemyData extends FieldData {
     }
   }
 
-  getSaveData () {
-    let saveData = super.getSaveData()
+  fieldBaseSaveData () {
+    let saveData = super.fieldBaseSaveData()
     let addData = {
       dieAfterDeleteDelay: this.dieAfterDeleteDelay,
       collisionDelay: this.collisionDelay,
@@ -10757,7 +10758,7 @@ class TowerEnemyGroup3EnergyA extends TowerEnemyGroup3EnergyBlue {
 class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
   constructor () {
     super()
-    this.setEnemyByCpStat(15000, 10)
+    this.setEnemyByCpStat(10000, 10)
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.nokgasi1, 4)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerNokgasi, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedOrange)
     this.setMoveSpeed(0, 0) // 이동속도 없음 (처음엔 위치 고정)
@@ -11412,7 +11413,7 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
 class TowerEnemyGroup4Nokgasi2 extends TowerEnemy {
   constructor () {
     super()
-    this.setEnemyByCpStat(18000, 2)
+    this.setEnemyByCpStat(14000, 2)
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.nokgasi2, 4)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerNokgasi, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedWhite)
     this.setMoveSpeed(0, 0) // 이동속도 없음 (위치 고정)
@@ -11920,6 +11921,28 @@ class TowerEnemyGroup4Nokgasi2 extends TowerEnemy {
   }
 }
 
+class TowerEnemyGroup4BlackSpaceAnti extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 2)
+    this.setEnemyByCpStat(2000, 0)
+    this.setMoveSpeed(0, 0)
+    this.setDieEffectTemplet(soundSrc.round.r3_5_blackSpaceCatch)
+    this.dieAfterDeleteDelay = new DelayData(60)
+    this.isPossibleExit = false
+  }
+
+  display () {
+    if (this.dieAfterDeleteDelay.count === 0) {
+      super.display()
+    } else if (this.dieAfterDeleteDelay.count <= this.dieAfterDeleteDelay.delay) {
+      let alpha = (1 / this.dieAfterDeleteDelay.delay) * (this.dieAfterDeleteDelay.delay - this.dieAfterDeleteDelay.count)
+      if (this.enimation) this.enimation.alpha = alpha
+      super.display()
+    }
+  }
+}
+
 
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
@@ -11927,6 +11950,17 @@ class TowerEnemyGroup4Nokgasi2 extends TowerEnemy {
 class TestEnemy extends DonggramiEnemyA2Brick {
   constructor () {
     super()
+    this.attackDelay = new DelayData(600)
+    this.moveDelay = new DelayData(600)
+    this.setEnemyStat(999999999, 0)
+  }
+
+  processMove () {
+    this.moveDelay.check()
+  }
+
+  processAttack () {
+    this.attackDelay.check()
   }
 }
 
@@ -12115,3 +12149,4 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup3.energyOrange, TowerEnemyGroup3Ener
 // towerEnemyGroup4 / round 3-5
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.nokgasi1, TowerEnemyGroup4Nokgasi1)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.nokgasi2, TowerEnemyGroup4Nokgasi2)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup4.blackSpaceAnti, TowerEnemyGroup4BlackSpaceAnti)

@@ -7,7 +7,7 @@ import { stringText } from "./text.js"
 import { imageDataInfo, imageSrc } from "./imageSrc.js"
 import { fieldState, fieldSystem } from "./field.js"
 import { soundSrc } from "./soundSrc.js"
-import { game, gameFunction } from "./game.js"
+import { game, gameFunction, gameVar } from "./game.js"
 import { StatRound, dataExportStatRound } from "./dataStat.js"
 import { CustomEnemyBullet, EnemyData, dataExportEnemy } from "./dataEnemy.js"
 import { WeaponData } from "./dataWeapon.js"
@@ -1022,10 +1022,25 @@ class BaseField {
    * 
    * 또는 CustomEditEffect 클래스 또는 생성된 인스턴스
    * @returns {EffectData | null | undefined} 리턴된 이펙트를 이용해서 일시적으로 객체를 조작할 수 있음.
+   * 
+   * 이 함수는 id 기반으로 이펙트를 생성하고 있어, 현재상황과는 맞지 않습니다.
+   * 라운드 내에서 이펙트를 생성하고 처리하는 로직과 이 로직은 일치하지 않으므로, 이 함수는 다른 기능으로 교체될 예정입니다.
+   * 
+   * @deprecated
    */
   static createEffect (typeId, x = 0, y = 0, repeatCount = 0, beforeDelay = 0,) {
     let effect = fieldState.createEffectObject(typeId, x, y, repeatCount, beforeDelay)
     return effect
+  }
+
+  /**
+   * 스프라이트를 생성합니다.
+   * @param {FieldData | any} targetSprite 생성할 스프라이트의 객체
+   * @param {number} x 좌표
+   * @param {number} y 좌표
+   */
+  static createSprite (targetSprite, x = targetSprite.x, y = targetSprite.y) {
+    fieldState.createSpriteObject(targetSprite, x, y)
   }
 }
 
@@ -1448,6 +1463,10 @@ class BasePhase {
     return this.phaseTime[this.getCurrentPhase()].startTime
   }
 
+  getCurrentPhaseEndTime () {
+    return this.phaseTime[this.getCurrentPhase()].endTime
+  }
+
   /** 
    * 라운드 진행에 관한 처리. 라운드 구성에 관해서는 roundPhase 부분을 참고
    * @param {number} currentTime 현재 시간값 (이 값이 있어야 페이즈를 관리할 수 있음!)
@@ -1642,6 +1661,9 @@ export class RoundData {
     /** 라운드의 상태 (저장용도) @type {string} */ 
     this.state = ''
 
+    /** 저장 용도로 사용하는 객체 (어떤 형태인지는 알 수 없음, 저장될 때 JSON으로 변환해야 하기 때문에 함수는 사용 불가능) @type {object} */
+    this.saveList = {}
+
     /** 저장 용도로 사용하는 문자열 (어떤 형태로 저장되는지는 알 수 없지만, 반드시 문자열로 저장해야) @type {string} */
     this.saveString = ''
 
@@ -1680,6 +1702,18 @@ export class RoundData {
      * @deprecated 
      */ 
     this.phaseAllEndTime = 0
+
+    /** 
+     * 로드된 스프라이트의 대한 데이터  
+     * 
+     * loadProcessSprite에서 스프라이터를 불러올 때 사용합니다. 
+     * fieldSystem에서 불러오기 작업을 할 때 해당 변수에 스프라이트 데이터를 넣습니다.
+     * 
+     * 그럼 이 값을 참고하여 스프라이트 로드 작업을 라운드에서 추가로 진행하면 됩니다.
+     * 모든 로드 작업이 끝난 이후 이 정보는 자동으로 삭제됩니다.
+     * @type {any} 
+     */
+    this.loadSpriteData = {}
   }
 
   /**
@@ -1802,7 +1836,7 @@ export class RoundData {
     }
   }
 
-  getSaveData () {
+  baseRoundSaveData () {
     let isBgLayerUsing = this.bgLayer.getIsUsing()
 
     return {
@@ -1832,7 +1866,8 @@ export class RoundData {
       currentMusicSrc: this.sound.currentMusicSrc,
 
       // 특수한 경우
-      saveString: this.saveString
+      saveString: this.saveString,
+      saveList: this.saveList
     }
   }
 
@@ -1870,11 +1905,9 @@ export class RoundData {
   /**
    * 불러온 데이터를 이용해 라운드 값을 설정합니다.
    * 
-   * 경고: 이 함수를 상속받았다면, 반드시 saveData의 매개변수를 받아야 정상적으로 저장된걸 불러올 수 있습니다.
-   * 
    * @param {*} saveData 이 데이터의 정보는 getSaveData 가 return 하는 오브젝트를 참고해주세요.
    */
-  setLoadData (saveData) {
+  baseRoundLoadData (saveData) {
     // id 및 상태
     this.stat.id = saveData.id
     this.state = this.state
@@ -1910,18 +1943,65 @@ export class RoundData {
 
     // 세이브 스트링
     this.saveString = saveData.saveString
-    this.loadDataSaveString()
+    this.loadProcess()
+
+    this.saveList = saveData.saveList
   }
 
   /** 
-   * 불러온 saveString 값을 이용해 추가적인 설정을 합니다.
+   * 불러온 saveString, saveList 값을 이용해 추가적인 설정을 합니다.
    * 이 함수의 내부 구현은 라운드마다 다를 수 있음.
    * 기본적으로 아무것도 수행하지 않습니다.
    * 
-   * 주의: setLoadData 함수에서 이 함수를 호출하므로, 다른곳에서 이 함수를 호출하지 마세요.
+   * 게임을 불러오는 과정에서 자동으로 이 함수를 호출하므로, 다른 process함수에서 이 함수를 호출하지 마세요.
    */
-  loadDataSaveString () {
+  loadProcess () {
 
+  }
+
+  /** 
+   * 라운드 내부에서 스프라이트를 사용할 경우, 이 함수를 통해 스프라이트 데이터를 재생성해야 합니다.
+   * 
+   * 스프라이트는 라운드에서만 생성하고 사용할 수 있습니다. 다른 객체들(적, 플레이어, 무기, 총알)은 스프라이트 처리에 접근할 수 없습니다.
+   * 
+   * 코드의 기본 템플릿은, 이 함수 내부에 있는 주석을 살펴보세요.
+   * 
+   * 이 함수는 fieldSystem에서 불러올 때 호출되며 사용자가 직접 호출하면 안됩니다.
+   */
+  loadProcessSprite () {
+    // 이것은 이 함수의 기본적인 코드의 구성을 설명하기 위해 만들어졌습니다.
+    // 내부적으로는 아무 동작도 하지 않으며, 사용자가 직접 구현해야 합니다.
+
+    // 스프라이트 데이터는 외부에서 loadSpriteData에 값을 집어넣어주므로, 해당 변수값을 그대로 가져오면 됩니다.
+    // let loadSpriteData = this.loadSpriteData
+    // for (let current of loadSpriteData) {
+      // 기본적으로 스프라이트도 FieldData를 상속받으므로, 구조는 FieldData와 동일합니다.
+      // 그러나 어떤 걸 생성하는지는 mainType, subType등으로 구분해야 합니다.
+      // id는 사용하지 않습니다. (라운드 내부에서 사용되는 데이터라 id를 사용하진 않습니다.)
+
+      // 따라서 if 조건문으로 스프라이트 타입을 확인한 뒤에,
+      // 해당 타입에 맞는 스프라이트를 생성하고, fieldBaseLoadData 함수를 실행시켜주세요.
+      // 그러면 해당 스프라이트는 거의 대부분 복구할 수 있습니다.
+      // if (current.mainType === '???') {
+      //   let newData = fieldState.createSpriteObject(FieldData, current.x, current.y)
+      //   if (newData != null) {
+      //     newData.fieldBaseLoadData(current)
+      //   }
+      // }
+    // }
+  }
+
+  /** 
+   * 외부에서 불러온 스프라이트 데이터를 설정합니다.
+   * @param {any} spriteData
+   */
+  setLoadSpriteData (spriteData) {
+    this.loadSpriteData = spriteData
+  }
+
+  /** 현재 적용되어있던 스프라이트 데이터를 삭제함 (잘못 사용되는 경우를 막기 위해서) */
+  resetLoadSpriteData () {
+    this.loadSpriteData = null
   }
 }
 
@@ -2620,7 +2700,7 @@ class Round1_3 extends RoundData {
     super.process()
   }
 
-  loadDataSaveString () {
+  loadProcess () {
 
     // 꼼수긴 하지만 어쩔 수 없음
     // if (this.phase.getCurrentPhase() >= 4 && this.sound.currentMusicSrc != this.battleMusic) {
@@ -3404,7 +3484,7 @@ class Round1_6 extends RoundData {
     }
   }
 
-  loadDataSaveString () {
+  loadProcess () {
     let str = this.saveString.split(',')
     this.planet.x = Number(str[0])
     this.planet.size = Number(str[1])
@@ -3426,7 +3506,7 @@ class Round1_test extends RoundData {
     this.phase.addRoundPhase(this, () => {
       if (this.timeCheckInterval(1, 999, 60)) {
         if (this.field.getEnemyCount() === 0) {
-          this.field.createEnemy(ID.enemy.towerEnemyGroup4.nokgasi2)
+          this.field.createEnemy(ID.enemy.test)
         }
 
         // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeBar, 600, 200)
@@ -4359,7 +4439,7 @@ class Round2_3 extends RoundData {
       + '|' + this.currentGradientColor[1]
   }
 
-  loadDataSaveString () {
+  loadProcess () {
     let str = this.saveString.split('|')
     this.courseName = str[0]
     this.isCourseSelectMode = str[1] === 'true' ? true : false
@@ -6339,7 +6419,7 @@ class Round2_4 extends RoundData {
       + ',' + this.spriteElevator.y
   }
 
-  loadDataSaveString () {
+  loadProcess () {
     let str = this.saveString.split(',')
     this.spriteElevator.state = str[0]
     this.spriteElevator.stateDelay.count = Number(str[1])
@@ -7302,7 +7382,7 @@ class Round2_5 extends RoundData {
     this.saveString = JSON.stringify(arrayDonggrami) + '|' + JSON.stringify(arrayIntruder)
   }
 
-  loadDataSaveString () {
+  loadProcess () {
     let str = this.saveString.split('|')
     /** @type {Array} */ let arrayDonggrami = JSON.parse(str[0])
     /** @type {Array} */ let arrayIntruder = JSON.parse(str[1])
@@ -7734,7 +7814,7 @@ class Round2_6 extends RoundData {
       + ',' + this.spriteElevator.y
   }
 
-  loadDataSaveString () {
+  loadProcess () {
     let str = this.saveString.split(',')
     this.spriteElevator.state = str[0]
     this.spriteElevator.stateDelay.count = Number(str[1])
@@ -8872,7 +8952,7 @@ class Round3Templete extends RoundData {
     this.saveString = JSON.stringify(saveData)
   }
 
-  loadDataSaveString () {
+  loadProcess () {
     let saveData = JSON.parse(this.saveString)
     this.playerOption.setLoadString(saveData.option)
     this.bossWarning.setLoadString(saveData.bossWarning)
@@ -10057,47 +10137,67 @@ class Round3_5 extends Round3Templete {
 
     this.sound.currentMusicSrc = '' // 음악 없음 (보스가 나오고 음악이 직접 재생됨)
 
-    // 배경 (지금은 이 레이어만 쓰임)
+    // 배경
     this.bgLayer.addLayerImage(imageSrc.round.round3_4_level7, 1)
     this.bgLayer.addLayerImage(imageSrc.round.round3_5_level11, 0)
     this.bgLayer.addLayerImage(imageSrc.round.round3_5_level12, 0)
     this.bgLayer.addLayerImage(imageSrc.round.round3_5_level13, 0)
     this.bgLayer.setBackgroundSpeed(2, 1)
 
-    this.phase.addRoundPhase(this, this.roundPhase00, 0, 90)
-    this.phase.addRoundPhase(this, this.roundPhase01, 91, 180)
-    this.phase.addRoundPhase(this, this.roundPhase02, 181, 240)
+    this.phase.addRoundPhase(this, this.roundPhase01_1, 0, 80)
+    this.phase.addRoundPhase(this, this.roundPhase01_2, 81, 150)
+    this.phase.addRoundPhase(this, this.roundPhase02_0, 151, 170)
+    this.phase.addRoundPhase(this, this.roundPhase02_1, 171, 250)
+    this.phase.addRoundPhase(this, this.roundPhase02_2, 251, 300)
+
+    this.areaPhase2 = {
+      /** 페이즈 2를 얼마나 통과했는지에 대한 수치 */ spaceNumber: 0,
+      /** 페이즈 2 이동 점수 */ moveScore: 0,
+      /** 페이즈 2 플레이어 이동좌표 저장값 */ playerX: -1,
+      /** 페이즈 2 플레이어 이동좌표 저장값 */ playerY: -1,
+      /** 페이즈 2를 클리어하기 위한 이동좌표 기준값 */ SCORE_SPACE1: 3000,
+      /** 페이즈 2를 클리어하기 위한 이동좌표 기준값 */ SCORE_SPACE2: 3500,
+      /** 페이즈 2를 클리어하기 위한 이동좌표 기준값 */ SCORE_SPACE3: 4000,
+      /** 페이즈 2를 클리어하기 위한 이동좌표 기준값 */ SCORE_SPACE4: 4500,
+      /** 페이즈 2 각 공간에 대한 진행프레임 */ elapsedFrame: 0,
+      /** 페이즈 2 현재 공간에 보스가 생성되었는지 확인 */ isCreateBoss: false,
+    }
 
     this.load.addSoundList([
       soundSrc.round.r3_5_message1,
       soundSrc.round.r3_5_phase2Start,
+      soundSrc.round.r3_5_blackSpaceCatch,
+      soundSrc.round.r3_5_blackSpaceFind,
+      soundSrc.round.r3_5_blackSpaceTornado,
     ])
   }
 
-  roundPhase00 () {
+  roundPhase01_1 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
+    const pEnd = this.phase.getCurrentPhaseEndTime()
     
-    if (this.timeCheckFrame(3)) {
+    if (this.timeCheckFrame(pTime + 3)) {
       this.bossWarning.createWarning(this.bossTextList.bossNokgasi)
       this.sound.musicStop()
-    } else if (this.timeCheckFrame(10)) {
+    } else if (this.timeCheckFrame(pTime + 10)) {
       // 10초에 배경 전환 및 배경 음악 재생 시작
-      this.sound.musicFadeIn(soundSrc.music.music19_round3_5_boss1, 120)
-    } else if (this.timeCheckFrame(11)) {
+      this.sound.musicFadeIn(soundSrc.music.music19_round3_5_phase1, 120)
+    } else if (this.timeCheckFrame(pTime + 11)) {
+      // 보스 등장
       this.field.createEnemy(ID.enemy.towerEnemyGroup4.nokgasi1)
     }
 
     // 보스 진행
-    if (this.timeCheckInterval(pTime + 11, pTime + 89)) {
+    if (this.timeCheckInterval(pTime + 11, pEnd - 2)) {
       let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.nokgasi1)
       if (enemy != null) {
         if (enemy.isDied) {
           // 적이 죽은 경우, 화면 안의 모든 총알을 삭제하고 시간을 다음 페이즈로 이동시킵니다.
           fieldState.allEnemyBulletDelete()
-          this.time.setCurrentTime(pTime + 90)
+          this.time.setCurrentTime(pEnd - 1)
           this.time.setCurrentTimePause(false)
         } else {
-          this.timePauseWithEnemyCount(pTime + 88) // 해당 시간이 다 될 때 까지 보스가 남아있으면 시간이 멈춥니다.
+          this.timePauseWithEnemyCount(pEnd - 3) // 해당 시간이 다 될 때 까지 보스가 남아있으면 시간이 멈춥니다.
         }
       } else {
         this.time.setCurrentTimePause(false) // 정해진 적이 없다면 시간 멈춤을 해제합니다.
@@ -10105,18 +10205,19 @@ class Round3_5 extends Round3Templete {
     }
   }
 
-  roundPhase01 () {
+  roundPhase01_2 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
+    const pEnd = this.phase.getCurrentPhaseEndTime()
 
     // 페이즈 1-1은 적이 적을 생성하는 구조라 해당 ID와 관련된 적이 있는지만 확인하지만,
     // 페이즈 1-2은 전체적으로 적이 남아있는지를 판단합니다. (무슨차이냐면, 적이 남아있을 때 시간 진행을 막기 위함)
     // 그러나 페이즈 1-1에서 밑과 같은 처리를 하면 영원히 시간이 멈추고 잘못된 현상이 벌어지게됨
-    this.timePauseWithEnemyCount(pTime + 88)
-    if (this.timeCheckInterval(pTime + 11, pTime + 88)) {
+    this.timePauseWithEnemyCount(pEnd - 4)
+    if (this.timeCheckInterval(pTime + 10, pEnd - 4)) {
       let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.nokgasi2)
       if (enemy != null) {
         if (enemy.isDied) {
-          this.time.setCurrentTime(pTime + 88)
+          this.time.setCurrentTime(pEnd - 3)
           fieldState.allEnemyBulletDelete()
           this.sound.musicStop()
         }
@@ -10124,8 +10225,9 @@ class Round3_5 extends Round3Templete {
     }
   }
 
-  roundPhase02 () {
+  roundPhase02_0 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
+
     if (this.timeCheckFrame(pTime + 0)) {
       this.bgLayer.setBackgroundSpeed(0, 0) // 배경 이동 멈춤
     } else if (this.timeCheckFrame(pTime + 4)) {
@@ -10140,31 +10242,263 @@ class Round3_5 extends Round3Templete {
       this.bgLayer.setBackgroundPosition(0, 0)
       this.bgLayer.setBackgroundSpeed(0, 0)
     }
+  }
 
-    if (this.timeCheckFrame(pTime + 20)) {
+  roundPhase02AreaInit () {
+    this.areaPhase2.spaceNumber = 1
+    this.areaPhase2.elapsedFrame = 0
+    this.areaPhase2.moveScore = 0
+    this.areaPhase2.isCreateBoss = false
+  }
+
+  roundPhase02AreaNext () {
+    this.areaPhase2.spaceNumber++
+    this.areaPhase2.elapsedFrame = 0
+    this.areaPhase2.moveScore = 0
+    this.areaPhase2.isCreateBoss = false
+  }
+
+  roundPhase02_1 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    
+    if (this.timeCheckFrame(pTime + 0)) {
+      this.roundPhase02AreaInit()
+    } else if (this.timeCheckFrame(pTime + 5)) {
+      this.sound.musicFadeIn(soundSrc.music.music20_round3_5_blackSpace, 300)
+    }
+
+    this.roundPhase02BackgroundProcess()
+    this.roundPhase02BossLogic()
+    this.roundPhase02BlackSpace()
+    this.roundPhase02MoveScore()
+    this.roundPhase02TimeStop()
+  }
+
+  roundPhase02BackgroundProcess () {
+    if (this.time.currentTime % 10 === 0) {
       this.bgLayer.setLayerAlphaFade(1, 1, 120)
-    } else if (this.timeCheckFrame(pTime + 25)) {
-      this.bgLayer.setLayerAlphaFade(1, 0, 120)
+    } else if (this.time.currentTime % 10 === 2) {
       this.bgLayer.setLayerAlphaFade(2, 1, 120)
-    } else if (this.timeCheckFrame(pTime + 30)) {
-      this.bgLayer.setLayerAlphaFade(2, 0, 120)
+    } else if (this.time.currentTime % 10 === 4) {
       this.bgLayer.setLayerAlphaFade(3, 1, 120)
+      this.bgLayer.setLayerAlphaFade(1, 0, 60)
+    } else if (this.time.currentTime % 10 === 6) {
+      this.bgLayer.setLayerAlphaFade(2, 0, 60)
+    } else if (this.time.currentTime % 10 === 8) {
+      this.bgLayer.setLayerAlphaFade(3, 0, 60)
+    }
+
+    if (this.areaPhase2.spaceNumber === 1) {
+      this.bgLayer.setLayerSpeed(1, 0.2, 0)
+      this.bgLayer.setLayerSpeed(2, 0.1, 0)
+      this.bgLayer.setLayerSpeed(3, 0.4, 0)
+    } else if (this.areaPhase2.spaceNumber === 2) {
+      this.bgLayer.setLayerSpeed(1, 1.8, 0)
+      this.bgLayer.setLayerSpeed(2, 1.6, 0)
+      this.bgLayer.setLayerSpeed(3, 1.9, 0)
+    } else if (this.areaPhase2.spaceNumber === 3) {
+      this.bgLayer.setLayerSpeed(1, 2.5, 0)
+      this.bgLayer.setLayerSpeed(2, 2.7, 0)
+      this.bgLayer.setLayerSpeed(3, 2.3, 0)
+    } else if (this.areaPhase2.spaceNumber === 4) {
+      this.bgLayer.setLayerSpeed(1, 3.2, 0)
+      this.bgLayer.setLayerSpeed(2, 3.6, 0)
+      this.bgLayer.setLayerSpeed(3, 3.4, 0)
+    }
+  }
+
+  roundPhase02BlackSpace () {
+    // 토네이도 생성 (일시정지 상황에서도 토네이도는 생성되어야 합니다.)
+    let tornadoDelayTable = [60, 60, 50, 40, 30]
+    
+    if (this.time.totalFrame % tornadoDelayTable[this.areaPhase2.spaceNumber] === 0) {
+      this.createBlackSpaceTornado()
+    }
+  }
+
+  roundPhase02BossLogic () {
+    let scoreTable = [
+      0,
+      this.areaPhase2.SCORE_SPACE1,
+      this.areaPhase2.SCORE_SPACE2,
+      this.areaPhase2.SCORE_SPACE3,
+      this.areaPhase2.SCORE_SPACE4,
+    ]
+    let targetBossId = ID.enemy.towerEnemyGroup4.blackSpaceAnti
+    
+    if (this.areaPhase2.isCreateBoss) {
+      // (보스가 있다면) 보스가 죽은경우를 확인하고, 보스가 죽은경우 다음 구간으로 이동
+      let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.blackSpaceAnti)
+      if (enemy != null && enemy.isDied) {
+        this.areaPhase2.spaceNumber++
+        this.areaPhase2.elapsedFrame = 0
+        this.areaPhase2.moveScore = 0
+        this.areaPhase2.isCreateBoss = false
+      }
+      return // if문이 끝났으므로 다른작업을 할 필요가 없음
+    }
+
+    // 보스가 없는경우, 조건을 조사하여 보스를 생성합니다.
+    for (let i = 0; i < scoreTable.length; i++) {
+      if (this.areaPhase2.spaceNumber === i && this.areaPhase2.moveScore >= (scoreTable[i])) {
+        let targetX = 200 + Math.random() * graphicSystem.CANVAS_WIDTH_HALF
+        let targetY = 100 + Math.random() * graphicSystem.CANVAS_HEIGHT_HALF
+        this.areaPhase2.isCreateBoss = true
+        this.sound.play(soundSrc.round.r3_5_blackSpaceFind)
+        this.field.createEnemy(targetBossId, targetX, targetY)
+      }
+    }
+  }
+
+  roundPhase02MoveScore () {
+    let player = fieldState.getPlayerObject()
+    this.areaPhase2.elapsedFrame++
+
+    // 플레이어 좌표값 차이에 대한 점수 계산
+    if (this.areaPhase2.playerX === -1 && this.areaPhase2.playerY === -1) {
+      this.areaPhase2.playerX = player.x
+      this.areaPhase2.playerY = player.y
+    } else {
+      // 이동 차이 값 만큼을 점수로 환산합니다. (점수는 플러스이기 때문에 Math.abs를 통해 계산)
+      let diffScoreX = Math.abs(this.areaPhase2.playerX - player.x)
+      let diffScoreY = Math.abs(this.areaPhase2.playerY - player.y)
+      this.areaPhase2.moveScore += diffScoreX + diffScoreY
+
+      // 위치 갱신
+      this.areaPhase2.playerX = player.x
+      this.areaPhase2.playerY = player.y
+    }
+
+    // 시간 진행에 따른 점수 계산
+    if (this.areaPhase2.elapsedFrame >= 300 && this.areaPhase2.elapsedFrame <= 600) {
+      this.areaPhase2.moveScore += 2
+    } else if (this.areaPhase2.elapsedFrame >= 600 && this.areaPhase2.elapsedFrame <= 900) {
+      this.areaPhase2.moveScore += 4
+    } else if (this.areaPhase2.elapsedFrame >= 900) {
+      this.areaPhase2.moveScore += 10
+    }
+  }
+
+  roundPhase02TimeStop () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+
+    // 시간 정지 테이블
+    let stopTimeTable = [0, pTime + 16, pTime + 36, pTime + 56, pTime + 78]
+
+    // 각 구간에 따라 시간이 정지되도록 함
+    for (let i = 0; i < stopTimeTable.length; i++) {
+      if (this.timeCheckInterval(stopTimeTable[i]) && this.areaPhase2.spaceNumber <= i) {
+        this.time.setCurrentTimePause(true, 'find boss')
+      } else {
+        this.time.setCurrentTimePause(false)
+      }
+    }
+  }
+
+  roundPhase02_2 () {
+
+  }
+
+  roundPhase02_3 () {}
+  roundPhase05 () {}
+  roundPhase06 () {}
+  roundPhase07 () {}
+  roundPhase08 () {}
+
+  createBlackSpaceTornado () {
+    let tornado = new Round3_5.BlackSpaceTornado()
+    let targetX = graphicSystem.CANVAS_WIDTH + tornado.width
+    let targetY = Math.random() * (graphicSystem.CANVAS_HEIGHT - tornado.height)
+    fieldState.createSpriteObject(tornado, targetX, targetY)
+  }
+
+  processSaveString () {
+    this.saveString = JSON.stringify(this.areaPhase2)
+  }
+
+  loadProcess () {
+    let target = JSON.parse(this.saveString)
+    this.areaPhase2 = target
+  }
+
+  loadProcessSprite () {
+    for (let current of this.loadSpriteData) {
+      if (current.mainType === 'tornado') {
+        let target = new Round3_5.BlackSpaceTornado()
+        target.fieldBaseLoadData(current)
+        this.field.createSprite(target, target.x, target.y)
+      }
     }
   }
 
   processDebug () {
     if (this.timeCheckFrame(1)) {
-      this.time.setCurrentTime(180)
+      // this.time.setCurrentTime(190)
     }
   }
 
   display () {
     super.display()
 
+    if (this.phase.getCurrentPhase() === 2) {
+      graphicSystem.fillText(this.areaPhase2.spaceNumber + ', ' + this.areaPhase2.moveScore + ', ' + this.areaPhase2.elapsedFrame, 0, 0, 'yellow')
+    }
+
+    let enemy = this.field.getEnemyObject()[0]
+    if (enemy) {
+      graphicSystem.fillText(enemy.elapsedFrame + '', 0, 80, 'blue')
+
+    }
+
     // 보스 체력 표시
     switch (this.phase.getCurrentPhase()) {
       case 0: this.bossHpMeter(ID.enemy.towerEnemyGroup4.nokgasi1, 'PHASE 1-1 NOKGASI HP: '); break
       case 1: this.bossHpMeter(ID.enemy.towerEnemyGroup4.nokgasi2, 'PHASE 1-2 NOKGASI HP: '); break
+    }
+  }
+
+  static BlackSpaceTornado = class extends FieldData {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.blackSpaceTornado, 5)
+      this.setMoveSpeed(-1, 0)
+      this.moveDelay = new DelayData(60)
+      this.targetSpeed = 0
+      this.collisionDelay = new DelayData(12)
+      this.attack = 4
+      this.mainType = 'tornado'
+    }
+
+    processMove () {
+      super.processMove()
+
+      if (this.moveDelay.check()) {
+        this.targetSpeed = Math.random() * 4 + 4
+        this.accSpeed = 0
+      }
+
+      let currentSpeed = Math.abs(this.moveSpeedX)
+      if (currentSpeed > this.targetSpeed + 0.1) {
+        currentSpeed -= 0.1
+      } else if (currentSpeed < this.targetSpeed - 0.1) {
+        currentSpeed += 0.1
+      }
+
+      this.setMoveSpeed(-currentSpeed, 0)
+    }
+
+    processState () {
+      super.processState()
+      let player = fieldState.getPlayerObject()
+
+      if (this.collisionDelay.check(false) && collision(player, this)) {
+        player.addDamage(this.attack)
+        this.collisionDelay.count = 0
+      }
+
+      if (this.outAreaCheck(200)) {
+        this.isDeleted = true
+      }
     }
   }
 }

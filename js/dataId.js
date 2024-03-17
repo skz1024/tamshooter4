@@ -289,6 +289,7 @@ export class ID {
     towerEnemyGroup4: {
       nokgasi1: 20321,
       nokgasi2: 20322,
+      blackSpaceAnti: 20323,
     }
   }
 

@@ -114,7 +114,6 @@ export class WeaponData extends FieldData {
   process () {
     super.process()
     this.processChase()
-    this.processAttack()
     this.processDeleteCheck()
     this.processLineChase()
   }
@@ -522,8 +521,8 @@ export class WeaponData extends FieldData {
    * 
    * 필드 객체보다 더 많은 데이터를 저장합니다.
    */
-  getSaveData () {
-    let saveData = super.getSaveData()
+  fieldBaseSaveData () {
+    let saveData = super.fieldBaseSaveData()
     let addData = {
       // 추적 여부
       chaseMissCount: this.chaseMissCount,

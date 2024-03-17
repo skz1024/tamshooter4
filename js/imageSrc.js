@@ -622,6 +622,9 @@ export class imageDataInfo {
     nokgasiGasiBlueLeft: new ImageDataObject(1100, 40, 200, 20), 
     nokgasiGasiYellowLeft: new ImageDataObject(1100, 60, 200, 20), 
     nokgasiGasiPinkLeft: new ImageDataObject(1100, 80, 200, 20),
+
+    // blackSpace
+    blackSpaceTornado: new ImageDataObject(900, 400, 60, 90, 10),
   }
 
   static fieldSystem = {
