@@ -222,7 +222,6 @@ export class ID {
       hellgal: 20253,
       laserAlpha: 20254,
       laserMini: 20255,
-      laserMini: 20256,
       laserMini2: 20257,
       X: 20258,
       I: 20259,
@@ -290,6 +289,14 @@ export class ID {
       nokgasi1: 20321,
       nokgasi2: 20322,
       blackSpaceAnti: 20323,
+      blackSpaceRed: 20324,
+      blackSpaceGreen: 20325,
+      blackSpaceTornado: 20326,
+      blackSpaceArea: 20327,
+      antijemulP3_1: 20328,
+      antijemulP3_2: 20329,
+      antijemulP4_1: 20330,
+      antijemulP4_2: 20331,
     }
   }
 

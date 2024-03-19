@@ -895,6 +895,7 @@ export class fieldState {
   }
 
   /**
+   * 무기 객체를 생성합니다. (플레이어가 사용하는 무기, 스킬이 해당 객체로 생성됨)
    * @param {number} typeId 타입의 id
    * @param {number} x
    * @param {number} y
@@ -916,6 +917,14 @@ export class fieldState {
     return inputData
   }
 
+  /**
+   * 적 객체를 생성합니다.
+   * @param {number} typeId 타입의 id
+   * @param {number} x x좌표
+   * @param {number} y y좌표
+   * @param  {...any} option 추가옵션 (현재는 사용되지 않음.)
+   * @returns 
+   */
   static createEnemyObject (typeId, x = 0, y = 0, ...option) {
     const GetClass = tamshooter4Data.getEnemy(typeId)
     if (GetClass == null) return
@@ -1032,19 +1041,32 @@ export class fieldState {
     this.damageObject[this.damageObjectNumber].createId = this.getNextCreateId()
   }
 
-  static createEnemyBulletObject (typeData, x = 0, y = 0, ...option) {
+  /**
+   * 적 총알을 생성합니다.
+   * @param {EnemyBulletData | FieldData | any} targetClass 
+   * @param {number | undefined} x x좌표
+   * @param {number | undefined} y y좌표
+   * @returns 
+   */
+  static createEnemyBulletObject (targetClass, x = undefined, y = undefined) {
     // 함수(클래스)가 들어온경우, 클래스의 인스턴스를 생성함.
-    if (typeof typeData === 'function') {
-      typeData = new typeData()
-    } else if (typeof typeData === 'object') {
-      // 오브젝트 타입은 변수를 그대로 씀
+    if (typeof targetClass === 'function') {
+      targetClass = new targetClass()
+    } else if (targetClass instanceof FieldData || typeof targetClass === 'object') {
+      // 오브젝트 타입은 변수를 그대로 사용, 그리고 좌표값을 지정하지 않았다면, 자동으로 객체가 가진 좌표값을 사용합니다.
+      if (x == null) x = targetClass.x
+      if (y == null) y = targetClass.y
     } else {
       // 그 외 타입은 무시
       return
     }
 
+    // 만약 x, y값이 존재하지 않는다면, 0으로 초기화됩니다.
+    if (x == null) x = 0
+    if (y == null) y = 0
+
     /** @type {EnemyBulletData} */
-    const inputData = typeData
+    const inputData = targetClass
     inputData.createId = this.getNextCreateId()
     inputData.setPosition(x, y)
     this.enemyBulletObject.push(inputData)
@@ -1055,15 +1077,19 @@ export class fieldState {
   /**
    * 스프라이트 오브젝트를 생성합니다. (다만, 스프라이트는 FieldData와 동일한)
    * @param {FieldData | any} targetClass FieldData를 상속받아 만든 클래스
-   * @param {number} x x좌표
-   * @param {number} y y좌표
+   * @param {number | undefined} x x좌표
+   * @param {number | undefined} y y좌표
    */
-  static createSpriteObject (targetClass, x = 0, y = 0)  {
+  static createSpriteObject (targetClass, x = undefined, y = undefined)  {
     // 함수(클래스)가 들어온경우, 클래스의 인스턴스를 생성함.
     if (typeof targetClass === 'function') {
       targetClass = new targetClass()
-    } else if (typeof targetClass === 'object') {
+      if (x == null) x = 0
+      if (y == null) y = 0
+    } else if (targetClass instanceof FieldData) {
       // 오브젝트 타입은 변수를 그대로 씀
+      if (x == null) x = targetClass.x
+      if (y == null) y = targetClass.y
     } else {
       // 그 외 타입은 무시
       return
@@ -1590,7 +1616,8 @@ export class fieldSystem {
     }
 
     if (this.round.time.currentTimePausedMessage === '') {
-      gameVar.statLineText1.text = ''
+      // 라운드 일시정지 메세지가 없다면, 시간이 정지되었다는것을 알려주기 위해 남은 적의 수를 표시합니다.
+      gameVar.statLineText1.text = 'enemy: ' + this.round.field.getEnemyCount()
     } else {
       gameVar.statLineText1.text = this.round.time.currentTimePausedMessage
     }

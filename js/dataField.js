@@ -268,6 +268,19 @@ export class DelayData {
   countReset () {
     this.count = 0
   }
+
+  /** 딜레이 값을 설정합니다. (딜레이는 프레임 단위입니다.) */
+  setDelay (delay = 60) {
+    this.delay = delay
+  }
+
+  /**
+   * 카운트 값을 설정합니다. (카운트는 프레임 단위입니다.)
+   * @param {number} count 
+   */
+  setCount (count) {
+
+  }
 }
 
 /**
@@ -556,6 +569,7 @@ export class FieldData {
     /** 공격 가능 여부 (이 값이 true 일 경우만 공격이 가능) */ this.isAttackEnable = true
     /** 회전한 각도 (일부 객체에서만 사용) */ this.degree = 0
     /** 뒤집기 0: 없음, 1: 수직, 2: 수평, 3: 수직 + 수평, 나머지 무시(0으로 처리) */ this.flip = 0
+    /** 알파값 (참고: 이 값이 1인경우, 알파처리는 무시됨, 이 값이 0인경우 출력하지 않음) */ this.alpha = 1
 
     /**
      * 방향 설정을 위해서, 반드시 FieldData.direction 객체가 가지고 있는 상수 값을 사용해주세요.
@@ -959,21 +973,24 @@ export class FieldData {
    * @param {number} [y=this.y] 출력할 y좌표, 매개변수가 없으면 현재 오브젝트의 y좌표
    */
   defaultDisplay (x = this.x, y = this.y) {
+    if (this.alpha === 0) return // 알파값이 0인경우는 출력하지 않습니다.
+    if (this.imageSrc === '') return
     if (this.enimation) {
       this.enimation.display(x, y)
-    } else if (this.imageSrc) {
-      if (this.imageData) {
-        if (this.degree !== 0 || this.flip !== 0) {
-          graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, x, y, this.width, this.height, this.flip, this.degree)
-        } else {
-          graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, x, y, this.width, this.height)
-        }
+      return
+    }
+
+    if (this.imageData) {
+      if (this.degree !== 0 || this.flip !== 0 || this.alpha !== 1) {
+        graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, x, y, this.width, this.height, this.flip, this.degree, this.alpha)
       } else {
-        if (this.degree !== 0 || this.flip !== 0) {
-          graphicSystem.imageDisplay(this.imageSrc, 0, 0, this.width, this.height, x, y, this.width, this.height, this.flip, this.degree)
-        } else {
-          graphicSystem.imageView(this.imageSrc, x, y)
-        }
+        graphicSystem.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, x, y, this.width, this.height)
+      }
+    } else {
+      if (this.degree !== 0 || this.flip !== 0 || this.alpha !== 1) {
+        graphicSystem.imageDisplay(this.imageSrc, 0, 0, this.width, this.height, x, y, this.width, this.height, this.flip, this.degree, this.alpha)
+      } else {
+        graphicSystem.imageView(this.imageSrc, x, y)
       }
     }
   }
@@ -1189,7 +1206,9 @@ export class FieldData {
           // delay 객체를 사용하려면 해당 객체를 명시적으로 생성해야 하므로, 이 코드로 판단할 수 있습니다.
           // 널 체크 (없을경우 무시)
           if (this[key].setDelay != null) {
-            this[key].setDelay(saveData[key])
+            // setDelay가 있다면, 오브젝트에 있는 delay, count값을 추가합니다.
+            this[key].setDelay(saveData[key].delay)
+            this[key].setCount(saveData[key].count)
           }
         }
 

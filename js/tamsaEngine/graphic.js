@@ -221,6 +221,10 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
   setAlpha (value = 1) {
     if (value >= 0 && value <= 1) {
       this.context.globalAlpha = value
+    } else if (value <= 0) {
+      this.context.globalAlpha = 0
+    } else if (value >= 1) {
+      this.context.globalAlpha = 1
     }
   }
 

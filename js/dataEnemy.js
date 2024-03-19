@@ -489,8 +489,8 @@ export class EnemyData extends FieldData {
   /**
    * 적이 죽은 후에, 어떻게 할 것인지를 결정하는 함수.
    * 기본적으로는 적이 죽은 후 딜레이를 확인해서, 딜레이 시간동안은 적이 남아있습니다.  
-   * 경고: 이 함수를 재작성한다면, isDied로 죽었는지 확인 한후 isDeleted를 사용해서 해당 객체를 삭제해야 합니다.
-   * 안그러면 적이 죽어도 죽지 않은 상태가 되고, 해당 함수가 무한 발동될 수 있습니다.
+   * 경고: 이 함수를 재작성하면, isDied로 죽었는지 확인해야합니다.
+   * 그리고, super.processDieAfter를 사용하지 않는다면 해당 적 객체가 영원히 삭제되지 못할 수 있습니다.
    */
   processDieAfter () {
     if (this.isDied) {
@@ -546,6 +546,18 @@ export class EnemyBulletData extends FieldData {
   constructor () {
     super()
     this.isNotMoveOption = false
+    /** 
+     * 총알 타격 반복 횟수, 이 값이 0이되면 해당 총알은 삭제
+     * 무한대로 타격을 원한다면 임의의 높은 숫자값을 넣어주세요.
+     */ 
+    this.repeatCount = 1
+
+    // 충돌 딜레이
+    this.collisionDelay = new DelayData(60)
+    this.collisionDelay.setCountMax()
+
+    /** 최대 가동하는 프레임 수 (이 프레임을 초과하면 해당 객체는 자동으로 삭제됩니다.) */
+    this.maxRunningFrame = 600
   }
 
   process () {
@@ -556,19 +568,32 @@ export class EnemyBulletData extends FieldData {
       this.isDeleted = true
     }
 
-    if (this.elapsedFrame >= 600) {
+    if (this.elapsedFrame >= this.maxRunningFrame) {
       this.isDeleted = true
     }
   }
 
+  /** 이 함수의 내용은 EnemyData랑 거의 동일함 */
   processCollision () {
     if (this.attack === 0) return
 
-    let player = fieldState.getPlayerObject()
-    let playerSendXY = { x: player.x, y: player.y, width: player.width, height: player.height}
-    
-    if (collision(playerSendXY, this)) {
-      player.addDamage(this.attack)
+    if (this.collisionDelay.check(false)) {
+      const player = fieldState.getPlayerObject()
+      const enemyArea = this.getCollisionArea()
+
+      for (let i = 0; i < enemyArea.length; i++) {
+        if (this.degree === 0 && collision(enemyArea[i], player)
+         || this.degree !== 0 && collisionClass.collisionOBB(enemyArea[i], player)) {
+          this.repeatCount--
+          player.addDamage(this.attack)
+          this.collisionDelay.countReset()
+          break // 루프 종료 (여러 충돌객체중 하나만 충돌해야함, 중복 데미지 없음)
+        }
+      }
+
+    }
+
+    if (this.repeatCount <= 0) {
       this.isDeleted = true
     }
   }
@@ -609,6 +634,72 @@ export class EnemyBulletData extends FieldData {
     let distanceY = nextY - this.y
     const atangent = Math.atan2(distanceY, distanceX)
     this.degree = atangent * (180 / Math.PI)
+  }
+
+  /**
+   * 이 함수는 EnemyData에서 복사됨
+   * 
+   * 적의 충돌 영역을 얻습니다. (충돌 영역은 여러개일 수도 있습니다.)
+   * 
+   * 만약 상속받아야 하는 경우, getCollisionAreaCalcurationObject 함수를 사용해서 충돌 영역을 계산해주세요.
+   * 임의로 설정하는 경우, 확대/축소 했을 때 충돌영역이 잘못된 계산을 할 수 있습니다.
+   * 
+   * @returns {CollisionAreaData[]}
+   */
+  getCollisionArea () {
+    return [{
+      x: this.x,
+      y: this.y,
+      width: this.width,
+      height: this.height,
+      degree: this.degree
+    }]
+
+    // 이 함수는 아래 코드랑 동일
+    // return [this.getCollisionAreaCalcurationObject()]
+  }
+
+  /**
+   * 이 함수는 EnemyData에서 복사됨
+   * 
+   * 충돌 영역 추가 계산 함수 (확대/축소에 대한 대응을 하기 위해 만들어졌습니다.)
+   * 
+   * 이미지 데이터를 기준으로 크기를 계산합니다. 절대로 imageDataClipWidth 같은 부분에 this.width, this.height값을 적용하지 마세요.
+   * 이 경우, 잘못된 데이터 출력이 될 수 있습니다.
+   * 
+   * @param {number} [plusX=0] 이미지를 기준으로 벗어난 x좌표 (원본 크기 기준, 확대 축소를 무시하고 값을 입력해야 합니다. 기본값 0)
+   * @param {number} [plusY=0] 이미지를 기준으로 벗어난 y좌표 (원본 크기 기준, 확대 축소를 무시하고 값을 입력해야 합니다. 기본값 0)
+   * @param {number} [imageDataClipWidth] 이미지 데이터에 있는 크기 중 일부에 대한 너비
+   * @param {number} [imageDataClipHeight] 이미지 데이터에 있는 크기 중 일부에 대한 높이
+   * 
+   * @returns {CollisionAreaData}
+   */
+  getCollisionAreaCalcurationObject (plusX = 0, plusY = 0, imageDataClipWidth = this.imageData.width, imageDataClipHeight = this.imageData.height) {
+    let mulX = this.width / this.imageData.width
+    let mulY = this.height / this.imageData.height
+    let plusXFinal = mulX === 0 ? plusX : Math.floor(plusX * mulX)
+    let plusYFinal = mulY === 0 ? plusY : Math.floor(plusY * mulY)
+    let currentX = this.x + plusXFinal
+    let currentY = this.y + plusYFinal
+    let currentWidth = mulX === 0 ? imageDataClipWidth : Math.floor(imageDataClipWidth * mulX)
+    let currentHeight = mulY === 0 ? imageDataClipHeight : Math.floor(imageDataClipHeight * mulY)
+
+    if (this.flip === 1) {
+      currentX = this.x + this.width - plusXFinal - currentWidth
+    } else if (this.flip === 2) {
+      currentY = this.y + this.height - plusYFinal - currentHeight
+    } else if (this.flip === 3) {
+      currentX = this.x + this.width - plusXFinal - currentWidth
+      currentY = this.y + this.height - plusYFinal - currentHeight
+    }
+
+    return {
+      x: currentX,
+      y: currentY,
+      width: currentWidth,
+      height: currentHeight,
+      degree: this.degree
+    }
   }
 }
 
@@ -8463,7 +8554,7 @@ class TowerEnemyGroup1CrazyRobot extends TowerEnemy {
       }
 
       if (this.dieAfterDeleteDelay.count == this.dieAfterDeleteDelay.delay - 1) {
-        soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossRobot2)
+        soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
         if (this.dieEffect != null) {
           this.dieEffect.setWidthHeight(this.width, this.height)
           fieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
@@ -9296,7 +9387,7 @@ class TowerEnemyGroup2BigBar extends TowerEnemy {
     }
 
     if (this.dieAfterDeleteDelay.count == this.dieAfterDeleteDelay.delay - 1) {
-      soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossRobot2)
+      soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
       let effect = this.customDieEffect.getObject()
       effect.setWidthHeight(this.width, this.height)
       fieldState.createEffectObject(effect, this.x, this.y)
@@ -10198,7 +10289,7 @@ class TowerEnemyGroup3BossDasu extends TowerEnemy {
 
       if (this.dieAfterDeleteDelay.divCheck(30)) {
         if (this.dieEffect != null && this.core.length >= 1 && this.core[0] != null) {
-          soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossRobot2)
+          soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
           this.dieEffect.setWidthHeight(this.core[0].width, this.core[0].height)
           fieldState.createEffectObject(this.dieEffect.getObject(), this.core[0].x, this.core[0].y)
           this.core.shift()
@@ -10206,7 +10297,7 @@ class TowerEnemyGroup3BossDasu extends TowerEnemy {
       }
 
       if (this.dieAfterDeleteDelay.count == this.dieAfterDeleteDelay.delay - 1) {
-        soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossRobot2)
+        soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
         if (this.dieEffect != null) {
           this.dieEffect.setWidthHeight(this.width, this.height)
           fieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
@@ -11222,11 +11313,12 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
 
     if (this.isDied && this.dieAfterDeleteDelay.divCheck(12) && this.dieEffect != null) {
       fieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
-      soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossRobot2)
+      soundSystem.play(this.dieSound)
     }
-
+    
     if (this.isDeleted) {
       fieldState.createEnemyObject(ID.enemy.towerEnemyGroup4.nokgasi2, this.x + this.width, this.y)
+      soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
     }
   }
 
@@ -11690,7 +11782,7 @@ class TowerEnemyGroup4Nokgasi2 extends TowerEnemy {
     }
 
     if (this.dieAfterDeleteDelay.count == this.dieAfterDeleteDelay.delay - 1 && this.dieEffect != null) {
-      soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossRobot2)
+      soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
       let effect = this.dieEffect.getObject()
       effect.setWidthHeight(this.width, this.height)
       fieldState.createEffectObject(effect, this.x, this.y)
@@ -11933,14 +12025,100 @@ class TowerEnemyGroup4BlackSpaceAnti extends TowerEnemy {
   }
 
   display () {
+    // 죽었을 때 투명하게 사라지도록 처리
     if (this.dieAfterDeleteDelay.count === 0) {
       super.display()
     } else if (this.dieAfterDeleteDelay.count <= this.dieAfterDeleteDelay.delay) {
       let alpha = (1 / this.dieAfterDeleteDelay.delay) * (this.dieAfterDeleteDelay.delay - this.dieAfterDeleteDelay.count)
       if (this.enimation) this.enimation.alpha = alpha
+      else this.alpha = alpha
       super.display()
     }
   }
+}
+
+class TowerEnemyGroup4BlackSpaceRed extends TowerEnemyGroup4BlackSpaceAnti {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.blackSpaceBulletRed)
+    this.setWidthHeight(this.width, this.height)
+    this.setEnemyByCpStat(2800, 15)
+    this.setMoveSpeed(0, 0)
+  }
+}
+
+class TowerEnemyGroup4BlackSpaceGreen extends TowerEnemyGroup4BlackSpaceAnti {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.blackSpaceBulletGreenUp)
+    this.setWidthHeight(this.width, this.height)
+    this.setEnemyByCpStat(2800, 15)
+    this.setMoveSpeed(0, 0)
+  }
+
+  processMove () {
+    super.processMove()
+    this.degree++
+  }
+}
+
+class TowerEnemyGroup4BlackSpaceTornado extends TowerEnemyGroup4BlackSpaceAnti {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.blackSpaceTornado)
+    this.setWidthHeight(this.width * 4, this.height * 4)
+    this.setEnemyByCpStat(4800, 4)
+    this.setMoveSpeed(0, 0)
+    this.collisionDelay.delay = 10
+  }
+
+  afterInit () {
+    this.x = graphicSystem.CANVAS_WIDTH_HALF - (this.width / 2)
+    this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
+  }
+
+  processPlayerCollisionSuccessAfter () {
+    soundSystem.play(soundSrc.round.r3_5_blackSpaceTornado)
+  }
+}
+
+class TowerEnemyGroup4BlackSpaceArea extends TowerEnemyGroup4BlackSpaceAnti {
+  constructor () {
+    super()
+    this.setWidthHeight(100, 100)
+    this.setEnemyByCpStat(6000, 0)
+    this.setDieEffectTemplet()
+    this.dieAfterDeleteDelay.delay = 300
+    this.setDieEffectTemplet(soundSrc.round.r3_5_blackSpaceAreaDie, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedWhite)
+
+    this.dieCommonEffect = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedOrange, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT, 2, 2)
+  }
+
+  afterInit () {
+    this.x = this.centerX
+    this.y = this.centerY
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+    
+    if (this.isDied && this.dieAfterDeleteDelay.divCheck(6) && this.dieAfterDeleteDelay.count <= 287) {
+      soundSystem.play(soundSrc.round.r3_5_blackSpaceAreaDie)
+      if (this.dieEffect != null) {
+        this.dieEffect.setWidthHeight(40, 40)
+        fieldState.createEffectObject(this.dieEffect.getObject(), Math.random() * graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
+      }
+    }
+
+    if (this.isDeleted) {
+      soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
+      let effect = this.dieCommonEffect.getObject()
+      fieldState.createEffectObject(effect, 0, 0)
+    }
+  }
+
+  // 출력 없음
+  display () {}
 }
 
 
@@ -12150,3 +12328,7 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup3.energyOrange, TowerEnemyGroup3Ener
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.nokgasi1, TowerEnemyGroup4Nokgasi1)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.nokgasi2, TowerEnemyGroup4Nokgasi2)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.blackSpaceAnti, TowerEnemyGroup4BlackSpaceAnti)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup4.blackSpaceArea, TowerEnemyGroup4BlackSpaceArea)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup4.blackSpaceGreen, TowerEnemyGroup4BlackSpaceGreen)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup4.blackSpaceRed, TowerEnemyGroup4BlackSpaceRed)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup4.blackSpaceTornado, TowerEnemyGroup4BlackSpaceTornado)

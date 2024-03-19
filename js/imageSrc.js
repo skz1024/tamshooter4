@@ -167,9 +167,11 @@ export class imageSrc {
     round3_4_level5: './image/round/round3_4_level5.png',
     round3_4_level6: './image/round/round3_4_level6.png',
     round3_4_level7: './image/round/round3_4_level7.png',
-    round3_5_level11: './image/round/round3_5_level11.png',
-    round3_5_level12: './image/round/round3_5_level12.png',
-    round3_5_level13: './image/round/round3_5_level13.png',
+    round3_5_blackSpace1: './image/round/round3_5_blackSpace1.png',
+    round3_5_blackSpace2: './image/round/round3_5_blackSpace2.png',
+    round3_5_blackSpaceRed: './image/round/round3_5_blackSpaceRed.png',
+    round3_5_blackSpaceGreen: './image/round/round3_5_blackSpaceGreen.png',
+    round3_5_blackSpaceTornado: './image/round/round3_5_blackSpaceTornado.png',
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -596,7 +598,8 @@ export class imageDataInfo {
     nokgasi1: new ImageDataObject(0, 0, 100, 300, 8),
     nokgasi2: new ImageDataObject(0, 300, 100, 400, 8),
     anti: new ImageDataObject(0, 710, 140, 60, 6),
-    antishield: new ImageDataObject(0, 800, 160, 100, 6),
+    antishieldOutside: new ImageDataObject(0, 800, 160, 100, 6),
+    antishieldInside: new ImageDataObject(0, 900, 140, 80, 5),
 
     // nokgasi1 attack
     nokgasiShotGreen: new ImageDataObject(900, 0, 80, 12),
@@ -625,6 +628,15 @@ export class imageDataInfo {
 
     // blackSpace
     blackSpaceTornado: new ImageDataObject(900, 400, 60, 90, 10),
+    blackSpaceBulletRed: new ImageDataObject(900, 500, 100, 100),
+    blackSpaceBulletYellow: new ImageDataObject(1001, 500, 100, 100),
+    blackSpaceBulletGreenUp: new ImageDataObject(1102, 500, 100, 100),
+    blackSpaceBulletGreenDown: new ImageDataObject(1203, 500, 100, 100),
+    blackSpaceBoxRed: new ImageDataObject(900, 601, 100, 100),
+    blackSpaceBoxYellow: new ImageDataObject(1001, 601, 100, 100),
+    blackSpaceBoxGreen: new ImageDataObject(1102, 601, 100, 100),
+    blackSpaceBoxTornado: new ImageDataObject(1203, 601, 100, 100),
+    blackSpaceBoxBlack: new ImageDataObject(1304, 601, 100, 100),
   }
 
   static fieldSystem = {

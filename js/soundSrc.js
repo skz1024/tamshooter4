@@ -105,7 +105,7 @@ export class soundSrc {
 
     // tower group 1 (3-1)
     enemyDieTowerBossRobot1: './sound/enemyDieTowerBossRobot1.ogg',
-    enemyDieTowerBossRobot2: './sound/enemyDieTowerBossRobot2.ogg',
+    enemyDieTowerBossCommon: './sound/enemyDieTowerBossCommon.ogg',
     enemyDieTowerDaepo: './sound/enemyDieTowerDaepo.ogg',
     enemyDieTowerMoveBlue: './sound/enemyDieTowerMoveBlue.ogg',
     enemyDieTowerMoveViolet: './sound/enemyDieTowerMoveViolet.ogg',
@@ -260,9 +260,15 @@ export class soundSrc {
     r3_bossWarningKeyboard: './sound/round3_bossWarningKeyboard.ogg',
     r3_5_phase2Start: './sound/round3_5_phase2Start.ogg',
     r3_5_message1: './sound/round3_5_message1.ogg',
+    r3_5_blackSpaceAreaDie: './sound/round3_5_blackSpaceAreaDie.ogg',
     r3_5_blackSpaceCatch: './sound/round3_5_blackSpaceCatch.ogg',
     r3_5_blackSpaceFind: './sound/round3_5_blackSpaceFind.ogg',
     r3_5_blackSpaceTornado: './sound/round3_5_blackSpaceTornado.ogg',
+    r3_5_blackSpaceRed: './sound/round3_5_blackSpaceRed.ogg',
+    r3_5_blackSpaceYellowPre: './sound/round3_5_blackSpaceYellowPre.ogg',
+    r3_5_blackSpaceYellow: './sound/round3_5_blackSpaceYellow.ogg',
+    r3_5_blackSpaceGreen: './sound/round3_5_blackSpaceGreen.ogg',
+    r3_5_blackSpaceWarp: './sound/round3_5_blackSpaceWarp.ogg',
   }
 
   static donggrami = {

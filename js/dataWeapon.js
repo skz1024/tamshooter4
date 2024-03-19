@@ -501,14 +501,17 @@ export class WeaponData extends FieldData {
     let targetEnemy = fieldState.getRandomEnemyObject()
     if (targetEnemy != null) {
       this.setMoveDirection() // 이동 방향 삭제
-      for (let divideSpeed = 30; divideSpeed > 2; divideSpeed--) {
-        this.moveSpeedX = (targetEnemy.centerX - this.centerX) / divideSpeed
-        this.moveSpeedY = (targetEnemy.centerY - this.centerY) / divideSpeed
-
-        if (Math.abs(this.moveSpeedX) >= minSpeed && Math.abs(this.moveSpeedY) >= minSpeed) {
-          break
-        }
+      
+      let speedX = (targetEnemy.centerX - this.centerX) / 30
+      let speedY = (targetEnemy.centerY - this.centerY) / 30
+      if (Math.abs(speedX) < minSpeed && Math.abs(speedY) < minSpeed) {
+        // speedX와 speedY의 값을 비교하여 가장 높은 값을 최소 속도에 맞춰지도록 조정합니다.
+        let mul = Math.abs(speedX) < Math.abs(speedY) ? minSpeed / Math.abs(speedY) : minSpeed / Math.abs(speedX)
+        speedX *= mul
+        speedY *= mul
       }
+
+      this.setMoveSpeed(speedX, speedY)
     } else {
       this.setMoveDirection('right')
       this.moveSpeedX = 20
