@@ -972,10 +972,12 @@ export class fieldState {
    * 
    * number는 더이상 사용하지 않습니다.
    *  
+   * @param {number | undefined} x
+   * @param {number | undefined} y
    * @param {any[]} option
    * @returns {EffectData | null | undefined} 리턴된 이펙트를 이용해서 일시적으로 객체를 조작할 수 있음.
    */
-  static createEffectObject (typeId, x = 0, y = 0, repeatCount = 0, beforeDelay = 0, ...option) {
+  static createEffectObject (typeId, x = undefined, y = undefined, repeatCount = 0, beforeDelay = 0, ...option) {
     if (typeof typeId === 'number') {
       const GetClass = tamshooter4Data.getEffect(typeId)
       if (GetClass == null) return
@@ -985,6 +987,8 @@ export class fieldState {
       const inputData = new GetClass(option)
       inputData.createId = this.getNextCreateId()
       inputData.id = typeId
+      if (x == null) x = 0
+      if (y == null) y = 0
       inputData.setPosition(x, y)
       // inputData.setOption(width, height)
       this.effectObject.push(inputData)
@@ -1007,9 +1011,15 @@ export class fieldState {
       } else if (typeId instanceof CustomEditEffect) {
         /** @type {EffectData} */
         customEffectObject = typeId // 새로 생성된 인스턴스
+        if (x == null) x = typeId.x
+        if (y == null) y = typeId.y
       } else {
         customEffectObject = null
       }
+
+      // 좌표 기본값 설정 (이미 만들어진 객체는 typeId에 있는 객체의 값을 그대로 사용)
+      if (x == null) x = 0
+      if (y == null) y = 0
 
       // 커스텀 이펙트가 없으면 아무것도 하지 않습니다.
       if (customEffectObject == null) return null

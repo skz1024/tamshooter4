@@ -772,14 +772,27 @@ export class FieldData {
 
   /** 
    * 랜덤하게 적 속도를 설정하지만, 최대 최소를 결정할 수 있습니다.
+   * 
    * @param {number} [minX=1] x좌표의 최소 이동속도
    * @param {number} [minY=1] y좌표의 최소 이동속도
    * @param {number} [maxX=2] x좌표의 최대 이동속도
    * @param {number} [maxY=2] y좌표의 최대 이동속도
+   * @param {boolean} [isMinusInclued=false] 마이너스 포함, 이 경우, 최소 ~ 최대가 양수로 설정되어도 50% 확률로 마이너스 속도가 됩니다. (x, y 따로 계산)
    */
-  setRandomMoveSpeedMinMax (minX = 1, minY = 1, maxX = 2, maxY = 2) {
-    this.moveSpeedX = Math.random() * (maxX - minX) + minX
-    this.moveSpeedY = Math.random() * (maxY - minY) + minY
+  setRandomMoveSpeedMinMax (minX = 1, minY = 1, maxX = 2, maxY = 2, isMinusInclued = false) {
+    if (isMinusInclued) {
+      // 부호 결정용 랜덤 마이너스 처리
+      // 50% 확률로 양수 또는 음수 결정
+      let randomMinusX = Math.random() * 100 < 50 ? 1 : -1
+      let randomMinusY = Math.random() * 100 < 50 ? 1 : -1
+      
+      // 그 후, 곱셉을 이용하여 음수와 양수를 결정시킴 (마이너스를 곱하면 음수)
+      this.moveSpeedX = Math.random() * ((maxX - minX) + minX) * randomMinusX
+      this.moveSpeedY = Math.random() * ((maxY - minY) + minY) * randomMinusY
+    } else {
+      this.moveSpeedX = Math.random() * (maxX - minX) + minX
+      this.moveSpeedY = Math.random() * (maxY - minY) + minY
+    }
   }
 
   /** 개체 이동속도 결정 */
@@ -976,6 +989,10 @@ export class FieldData {
     if (this.alpha === 0) return // 알파값이 0인경우는 출력하지 않습니다.
     if (this.imageSrc === '') return
     if (this.enimation) {
+      // 알파값, 각도, 플립을 에니메이션에도 적용
+      this.enimation.alpha = this.alpha
+      this.enimation.degree = this.degree
+      this.enimation.flip = this.flip
       this.enimation.display(x, y)
       return
     }
@@ -1156,7 +1173,7 @@ export class FieldData {
       flip: this.flip,
       degree: this.degree,
       width: this.width,
-      hegith: this.height,
+      height: this.height,
 
       // 스탯 값
       attack: this.attack,
@@ -1197,8 +1214,8 @@ export class FieldData {
         // 오브젝트의 값이 없을경우, 해당 값을 처리하지 않고 루프를 건너뜀
         if (saveData[key] == null) continue
 
-        if (saveData[key] === 'saveList') {
-          // saveList의 변수는 일반적인 변수처럼 데이터를 불러옵니다.
+        if (key === 'saveList') {
+          // 만약 key가 saveList의 변수는 saveList 자체가 오브젝트이므로 일반적인 변수처럼 데이터를 불러옵니다.
           // 상세한 작업은 loadProcess에서 추가적으로 진행해야 합니다.
           this[key] = saveData[key]
         } else if (saveData[key].hasOwnProperty('delay') && saveData[key].hasOwnProperty('count')) {

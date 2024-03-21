@@ -889,6 +889,7 @@ class BaseSound {
 
   /**
    * 사운드 엔진 함수의 변경으로 해당 기능은 대체되었습니다.
+   * (대신 musicFadeIn 함수를 사용해주세요.)
    * 
    * 현재 재생중인 음악을 변경합니다.
    * 
@@ -1184,6 +1185,9 @@ export class RoundPackLoad {
     return [
       imageSrc.round.round3_playerOption,
       imageSrc.enemy.towerEnemyGroup1,
+      imageSrc.enemy.towerEnemyGroup2,
+      imageSrc.enemy.towerEnemyGroup3,
+      imageSrc.enemy.towerEnemyGroup4,
     ]
   }
 
@@ -1278,6 +1282,14 @@ export class RoundPackLoad {
       soundSrc.enemyAttack.towerNokgasiAttackGreenGrey,
       soundSrc.enemyAttack.towerNokgasiAttackOrangePurple,
       soundSrc.enemyAttack.towerNokgasiAttackPink,
+      soundSrc.enemyAttack.towerAntijemulBackshot,
+      soundSrc.enemyAttack.towerAntijemulGravityBall,
+      soundSrc.enemyAttack.towerAntijemulGravityBallEffect,
+      soundSrc.enemyAttack.towerAntijemulGravityBallFall,
+      soundSrc.enemyAttack.towerAntijemulRing,
+      soundSrc.enemyAttack.towerAntijemulRingBomb,
+      soundSrc.enemyAttack.towerAntijemulRingBombEffect,
+      soundSrc.enemyAttack.towerAntijemulRingRolling,
     ]
   }
 }
@@ -1961,17 +1973,18 @@ export class RoundData {
     this.sound.loadCurrentMusicTime = saveData.loadCurrentMusicTime
     this.sound.currentMusicSrc = saveData.currentMusicSrc
 
-    // 세이브 스트링
+    // 세이브 스트링, 세이브 리스트
     this.saveString = saveData.saveString
-    this.loadProcess()
-
     this.saveList = saveData.saveList
+    this.loadProcess() // 반드시 세이브스트링과 세이브리스트를 불러온 후에 이 함수를 호출할 것
   }
 
   /** 
    * 불러온 saveString, saveList 값을 이용해 추가적인 설정을 합니다.
    * 이 함수의 내부 구현은 라운드마다 다를 수 있음.
-   * 기본적으로 아무것도 수행하지 않습니다.
+   * 
+   * 참고로 상속 구조라면, 만일을 위해 super.loadProcess도 같이 호출하세요. 간혹 상위에 있는 클래스가
+   * saveString, saveList를 통해 일부 내용을 참조할 수 있습니다.
    * 
    * 게임을 불러오는 과정에서 자동으로 이 함수를 호출하므로, 다른 process함수에서 이 함수를 호출하지 마세요.
    */
@@ -8720,6 +8733,8 @@ class Round3TempleteBossSprite extends FieldData {
     this.TYPE_ROBOT = 'robot'
     this.TYPE_DASU = 'dasu'
     this.TYPE_ANTI_PHASE2 = 'antiPhase2'
+    this.TYPE_ANTI_PHASE3 = 'antiPhase3'
+    this.TYPE_ANTI_PHASE4 = 'antiPhase4'
     this.state = ''
     this.dasuCore = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}]
   }
@@ -8753,6 +8768,13 @@ class Round3TempleteBossSprite extends FieldData {
     this.setMoveSpeed(0, 0)
   }
 
+  createSpriteAntiPhase3 () {
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 3)
+    this.elapsedFrame = 0
+    this.subType = this.TYPE_ANTI_PHASE3
+    this.setMoveSpeed(0, 0)
+  }
+
   getSaveString () {
     if (this.subType === '') {
       return ''
@@ -8773,6 +8795,17 @@ class Round3TempleteBossSprite extends FieldData {
     if (str.x != null) this.x = Number(str.x)
     if (str.y != null) this.y = Number(str.y)
     if (str.elapsedFrame != null) this.elapsedFrame = Number(str.elapsedFrame)
+    if (str.width != null) this.width = Number(str.width)
+    if (str.height != null) this.height = Number(str.height)
+
+    // image 재등록 (로드가 완료된 이후, 타입은 무엇인지 알지만, 이미지가 무엇인지 몰라 출력되지 않습니다.)
+    if (this.subType === this.TYPE_ROBOT) {
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.crazyRobot, 0)
+    } else if (this.subType === this.TYPE_DASU) {
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.bossDasu, 0)
+    } else if (this.subType === this.TYPE_ANTI_PHASE2 || this.subType === this.TYPE_ANTI_PHASE3) {
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 3)
+    }
   }
 
   processMove () {
@@ -8785,6 +8818,8 @@ class Round3TempleteBossSprite extends FieldData {
     } else if (this.subType === this.TYPE_ANTI_PHASE2) {
       this.processMoveAntiPhase2()
       // 이 객체는 확대축소로 인해서 좌표를 강제조정하지만 이동하는것은 아님
+    } else if (this.subType === this.TYPE_ANTI_PHASE3) {
+      this.processMoveAntiPhase3()
     }
   }
 
@@ -8859,15 +8894,57 @@ class Round3TempleteBossSprite extends FieldData {
         if (this.enimation.alpha < 0) this.enimation.alpha = 0
       }
 
-      this.x -= 7
-      this.y -= 3
-      this.setWidthHeight(this.width + 14, this.height + 6)
+      this.x -= 7 // 보스 너비 1/20
+      this.y -= 3 // 보스 높이 1/20
+      this.setWidthHeight(this.width + 14, this.height + 6) // 그리고 아까 깍은값의 2배 (그래야 자연스럽게 중앙에 배치되므로)
     } else if (this.elapsedFrame >= 541) {
       if (this.enimation) {
         // 알파값을 원래대로 복구하고 해당 스프라이트 제거
         this.enimation.alpha = 1
         this.subType = ''
       }
+    }
+  }
+
+  processMoveAntiPhase3 () {
+    // 크기 강제 조정 (세이브 로드가 크기를 인식하지 못해서 프로세스에 때려박음)
+    if (this.elapsedFrame === 0) {
+      this.setWidthHeight(2800, 1200)
+    } else if (this.elapsedFrame <= 180) {
+      // (2800 - 280) / 14 = 180frame
+      let currentFrame = this.elapsedFrame
+      this.setWidthHeight(2800 - (14 * currentFrame), 1200 - (6 * currentFrame))
+    } else {
+      this.setWidthHeight(this.imageData.width * 2, this.imageData.height * 2)
+    }
+
+    this.x = graphicSystem.CANVAS_WIDTH_HALF - (this.width / 2)
+    this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
+
+    if (this.elapsedFrame >= 360 && this.elapsedFrame <= 600) {
+      if (this.elapsedFrame % 15 === 0) {
+        soundSystem.play(soundSrc.enemyAttack.towerAntijemulRing)
+        for (let i = 0; i < 4; i++) {
+          let bullet = new Round3TempleteBossSprite.AntiPhase3Ring()
+          bullet.x = this.centerX - (bullet.width / 2)
+          bullet.y = this.centerY - (bullet.height / 2)
+          fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+        }
+      }
+    } else if (this.elapsedFrame >= 660 && this.elapsedFrame <= 960) {
+      if (this.elapsedFrame % 20 === 0) {
+        soundSystem.play(soundSrc.enemyAttack.towerAntijemulRingBomb)
+        for (let i = 0; i < 4; i++) {
+          let bullet = new Round3TempleteBossSprite.AntiPhase3RingBomb()
+          bullet.x = this.centerX - (bullet.width / 2)
+          bullet.y = this.centerY - (bullet.height / 2)
+          fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+        }
+      }
+    } else if (this.elapsedFrame >= 1080) {
+      // 적 생성 후, 스프라이트 처리 종료
+      fieldState.createEnemyObject(ID.enemy.towerEnemyGroup4.antijemulP3_1, this.x, this.y)
+      this.subType = ''
     }
   }
 
@@ -8899,7 +8976,6 @@ class Round3TempleteBossSprite extends FieldData {
       if (this.moveSpeedY >= -2 && this.moveSpeedY <= 0) this.moveSpeedY = -2
     }
   }
-
 
   static RobotRocketBullet = class extends CustomEnemyBullet {
     constructor () {
@@ -8949,6 +9025,99 @@ class Round3TempleteBossSprite extends FieldData {
       }
     }
   }
+
+  static AntiPhase3Ring = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiRing, 8)
+      this.setRandomMoveSpeed(6, 6, true)
+      this.maxRunningFrame = 300
+    }
+  }
+
+  static AntiPhase3RingBomb = class extends CustomEnemyBullet {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiRingBombRing, 3)
+      this.attack = 5
+      this.setRandomMoveSpeed(3, 3, true)
+      this.waveEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiRingBombWave, 3, -1)
+    }
+
+    processEnimation () {
+      super.processEnimation()
+      this.waveEnimation.process()
+    }
+
+    processState () {
+      if (this.elapsedFrame >= 120) {
+        this.isDeleted = true
+      }
+    }
+
+    processCollision () {
+      super.processCollision()
+
+      // 무기가 삭제되었다면, 플레이어랑 충돌된 것이므로, 바로 폭발이 생성되도록 처리
+      if (this.isDeleted) {
+        let bullet = new Round3TempleteBossSprite.AntiPhase3RingBombEffect()
+        fieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
+        soundSystem.play(soundSrc.enemyAttack.towerAntijemulRingBombEffect)
+      }
+    }
+
+    processMove () {
+      super.processMove()
+
+      // 벽 튕기기
+      if (this.x < 0) {
+        this.x = 0
+        this.moveSpeedX = Math.abs(this.moveSpeedX)
+      } else if (this.x + this.width > graphicSystem.CANVAS_WIDTH) {
+        this.x = graphicSystem.CANVAS_WIDTH - this.width
+        this.moveSpeedX = -Math.abs(this.moveSpeedX)
+      }
+      
+      if (this.y < 0) {
+        this.y = 0
+        this.moveSpeedY = Math.abs(this.moveSpeedY)
+      } else if (this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
+        this.y = graphicSystem.CANVAS_HEIGHT - this.height
+        this.moveSpeedY = -Math.abs(this.moveSpeedY)
+      }
+    }
+
+    display () {
+      super.display()
+      this.waveEnimation.display(this.x - 10, this.y - 10)
+    }
+  }
+
+  static AntiPhase3RingBombEffect = class extends CustomEnemyBullet {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiRingBombEffect, 4)
+      this.attack = 2
+      this.collisionDelay.delay = 10
+      this.repeatCount = 60
+      this.setMoveSpeed(0, 0)
+    }
+
+    processState () {
+      super.processState()
+      if (this.elapsedFrame >= 48) {
+        this.isDeleted = true
+      }
+
+      // 투명도 시간에 따라서 변경
+      if (this.elapsedFrame >= 24) {
+        this.alpha = (48 - this.elapsedFrame) / 24
+      }
+    }
+
+    display () {
+      super.display()
+    }
+  }
 }
 
 class Round3Templete extends RoundData {
@@ -8988,6 +9157,20 @@ class Round3Templete extends RoundData {
       this.meter.bossHpUserStyle(enemyId, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 30, text, ['#209BFA', '#9FD5FF'], ['#003157'], 2)
     } else {
       this.meter.bossHpUserStyle(enemyId, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 30, text, ['#FF7171'], ['#5C0808'], 2)
+    }
+  }
+
+  /** 라운드 3 전용 보스 체력 출력 (이 방식은 3줄 방식, 초록 100%이하, 오렌지 50%이하, 레드 20%이하) */
+  bossHpMeterVer2 (enemyId = 0, text = '') {
+    let enemy = enemyId === 0 ? BaseField.getEnemyObject()[0] : BaseField.getEnemyObjectById(enemyId)
+    if (enemy == null) return
+
+    if (enemy.hp > enemy.hpMax * 0.5) {
+      this.meter.bossHpUserStyle(enemyId, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 30, text, ['#7fcda8', '#91b66c'], ['#afafaf'], 2)
+    } else if (enemy.hp > enemy.hpMax * 0.2) {
+      this.meter.bossHpUserStyle(enemyId, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 30, text, ['#ffcc60', '#ffad2e'], ['#afafaf'], 2)
+    } else {
+      this.meter.bossHpUserStyle(enemyId, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 30, text, ['#FF7171'], ['#afafaf'], 2)
     }
   }
 
@@ -10210,7 +10393,7 @@ class Round3_5 extends Round3Templete {
     this.phase.addRoundPhase(this, this.roundPhase02_1, 171, 250)
     this.phase.addRoundPhase(this, this.roundPhase02_2, 251, 350)
     this.phase.addRoundPhase(this, this.roundPhase02_3, 351, 380)
-    this.phase.addRoundPhase(this, this.roundPhase03, 381, 420)
+    this.phase.addRoundPhase(this, this.roundPhase03, 381, 470)
 
     this.areaPhase2 = {
       /** 
@@ -10254,6 +10437,8 @@ class Round3_5 extends Round3Templete {
 
     this.load.addSoundList([
       soundSrc.round.r3_5_message1,
+      soundSrc.round.r3_5_message2,
+      soundSrc.round.r3_5_message3,
       soundSrc.round.r3_5_phase2Start,
       soundSrc.round.r3_5_blackSpaceAreaDie,
       soundSrc.round.r3_5_blackSpaceGreen,
@@ -10264,6 +10449,12 @@ class Round3_5 extends Round3Templete {
       soundSrc.round.r3_5_blackSpaceWarp,
       soundSrc.round.r3_5_blackSpaceYellow,
       soundSrc.round.r3_5_blackSpaceYellowPre,
+      soundSrc.enemyAttack.towerAntijemulGravityBall,
+      soundSrc.enemyAttack.towerAntijemulGravityBallEffect,
+      soundSrc.enemyAttack.towerAntijemulRing,
+      soundSrc.enemyAttack.towerAntijemulRingBomb,
+      soundSrc.enemyAttack.towerAntijemulRingBombEffect,
+      soundSrc.enemyAttack.towerAntijemulRingRolling,
     ])
   }
 
@@ -10540,6 +10731,11 @@ class Round3_5 extends Round3Templete {
         this.time.setCurrentTimePause(false)
       }
     }
+
+    // 만약 해당 구간을 빨리 클리어한다면, 시간을 건너뛰도록 함
+    if (this.areaPhase2.spaceNumber >= 5) {
+      this.time.setCurrentTime(pTime + 79)
+    }
   }
 
   roundPhase02_2 () {
@@ -10631,7 +10827,7 @@ class Round3_5 extends Round3Templete {
     const pTime = this.phase.getCurrentPhaseStartTime()
 
     // 시간 정지 테이블
-    let stopTimeTable = [pTime + 24, pTime + 49, pTime + 74, pTime + 99]
+    let stopTimeTable = [pTime + 24, pTime + 49, pTime + 74, pTime + 97]
     let loopStopTimeTable = [pTime + 3, pTime + 28, pTime + 53, pTime + 78]
     let clearCount = 0
 
@@ -10652,6 +10848,11 @@ class Round3_5 extends Round3Templete {
       } else {
         this.time.setCurrentTimePause(false)
       }
+    }
+
+    if (this.timeCheckInterval(pTime + 0, pTime + 98) && clearCount >= 4) {
+      this.time.setCurrentTimePause(false)
+      this.time.setCurrentTime(pTime + 99)
     }
   }
 
@@ -10888,9 +11089,9 @@ class Round3_5 extends Round3Templete {
 
   roundPhase02_3BlackRoom () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (!this.timeCheckInterval(pTime + 5, pTime + 30)) return
+    if (!this.timeCheckInterval(pTime + 5, pTime + 29)) return
 
-    this.timePauseWithEnemyCount(pTime + 30) // 특정 시간이 되면 적이 완전히 사라질 때까지 멈춥니다. 
+    this.timePauseWithEnemyCount(pTime + 29) // 특정 시간이 되면 적이 완전히 사라질 때까지 멈춥니다. 
     this.areaPhase2.elapsedFrame++
     if (this.areaPhase2.elapsedFrame === 120) {
       // 보스 생성
@@ -10910,18 +11111,35 @@ class Round3_5 extends Round3Templete {
     }
 
     if (enemy.isDied && this.timeCheckInterval(pTime + 15, pTime + 27)) {
-      this.time.setCurrentTime(pTime + 30)
+      this.time.setCurrentTime(pTime + 29)
     }
   }
 
   roundPhase03 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0)) {
-      this.bgLayer.setLayerAlpha(this.layerList.DOWNTOWER, 1)
+      this.bgLayer.setLayerAlphaFade(this.layerList.DOWNTOWER, 1, 60)
       this.bgLayer.setLayerAlphaFade(this.layerList.BLACKSPACE1, 0, 60)
       this.bgLayer.setLayerAlphaFade(this.layerList.BLACKSPACE2, 0, 60)
+      this.sound.musicStop()
+      this.bgLayer.setBackgroundSpeed(0, 0)
+    } else if (this.timeCheckFrame(pTime + 2)) {
+      // 메세지 2 발생, 스프라이트 생성
+      soundSystem.play(soundSrc.round.r3_5_message2)
+      this.bossSprite.createSpriteAntiPhase3()
+    } else if (this.timeCheckFrame(pTime + 20)) {
+      // 보스전 시작 및 사운드 재생
+      this.sound.currentMusicSrc = soundSrc.music.music21_round3_5_antijemulNormal
+      this.sound.musicPlay()
+    }
+
+    if (this.timeCheckInterval(pTime + 24, pTime + 87)) {
+      if (this.field.getEnemyCount() === 0) {
+        // next phase
+      }
     }
   }
+
   roundPhase04 () {}
   roundPhase05 () {}
   roundPhase06 () {}
@@ -10934,12 +11152,13 @@ class Round3_5 extends Round3Templete {
   }
 
   processSaveString () {
-    this.saveString = JSON.stringify(this.areaPhase2)
+    super.processSaveString()
+    this.saveList.areaPhase2 = JSON.stringify(this.areaPhase2)
   }
 
   loadProcess () {
-    let target = JSON.parse(this.saveString)
-    this.areaPhase2 = target
+    super.loadProcess()
+    this.areaPhase2 = JSON.parse(this.saveList.areaPhase2)
   }
 
   loadProcessSprite () {
@@ -10961,8 +11180,9 @@ class Round3_5 extends Round3Templete {
 
   processDebug () {
     if (this.timeCheckFrame(1)) {
-      // this.time.setCurrentTime(350)
+      this.time.setCurrentTime(380)
       // this.bgLayer.setLayerAlpha(0, 0)
+      // this.time.setCurrentTime(250)
     }
   }
 
@@ -10973,20 +11193,38 @@ class Round3_5 extends Round3Templete {
     switch (this.phase.getCurrentPhase()) {
       case 0: this.bossHpMeter(ID.enemy.towerEnemyGroup4.nokgasi1, 'PHASE 1-1 NOKGASI HP: '); break
       case 1: this.bossHpMeter(ID.enemy.towerEnemyGroup4.nokgasi2, 'PHASE 1-2 NOKGASI HP: '); break
-      case 3: this.bossHpMeter(ID.enemy.towerEnemyGroup4.blackSpaceAnti, 'PHASE 2-1 ANTIJEMUL HP: '); break
-      case 5: this.bossHpMeter(ID.enemy.towerEnemyGroup4.blackSpaceArea, 'PHASE 2-3 BLACKSPACE AREA HP: '); break
+      case 3: this.bossHpMeterBlackSpace(ID.enemy.towerEnemyGroup4.blackSpaceAnti, 'PHASE 2-1 ANTIJEMUL HP: '); break
       case 4: 
-        this.bossHpMeter(ID.enemy.towerEnemyGroup4.blackSpaceAnti, 'PHASE 2-2 ANTIJEMUL HP: ')
-        this.bossHpMeter(ID.enemy.towerEnemyGroup4.blackSpaceRed, 'PHASE 2-2 BLACKSPACE RED HP: ')
-        this.bossHpMeter(ID.enemy.towerEnemyGroup4.blackSpaceGreen, 'PHASE 2-2 BLACKSPACE GREEN HP: ')
-        this.bossHpMeter(ID.enemy.towerEnemyGroup4.blackSpaceTornado, 'PHASE 2-2 BLACKSPACE TORNADO HP: ')
+        this.bossHpMeterBlackSpace(ID.enemy.towerEnemyGroup4.blackSpaceAnti, 'PHASE 2-2 ANTIJEMUL HP: ')
+        this.bossHpMeterBlackSpace(ID.enemy.towerEnemyGroup4.blackSpaceRed, 'PHASE 2-2 BLACKSPACE RED HP: ')
+        this.bossHpMeterBlackSpace(ID.enemy.towerEnemyGroup4.blackSpaceGreen, 'PHASE 2-2 BLACKSPACE GREEN HP: ')
+        this.bossHpMeterBlackSpace(ID.enemy.towerEnemyGroup4.blackSpaceTornado, 'PHASE 2-2 BLACKSPACE TORNADO HP: ')
         break
+      case 5: this.bossHpMeter(ID.enemy.towerEnemyGroup4.blackSpaceArea, 'PHASE 2-3 BLACKSPACE AREA HP: '); break
+      case 6: this.bossHpMeterVer2(ID.enemy.towerEnemyGroup4.antijemulP3_1, 'PHASE 3-1 ANTIJEMUL HP: '); break
+      case 7: this.bossHpMeterVer2(ID.enemy.towerEnemyGroup4.antijemulP3_2, 'PHASE 3-2 ANTIJEMUL HP: '); break
     }
 
     if (this.phase.getCurrentPhase() === 4) {
       this.displayRoundPhase02_2()
     } else if (this.phase.getCurrentPhase() === 5) {
       this.displayRoundPhase02_3()
+    }
+  }
+
+  /** 블랙스페이스 전용 체력바 */
+  bossHpMeterBlackSpace (enemyId = 0, text = '') {
+    let enemy = enemyId === 0 ? BaseField.getEnemyObject()[0] : BaseField.getEnemyObjectById(enemyId)
+    if (enemy == null) return
+
+    if (enemyId === ID.enemy.towerEnemyGroup4.blackSpaceAnti) {
+      this.meter.bossHpUserStyle(enemyId, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 30, text, ['#a1a183', '#d2d2a9'], ['#f5f5f5'], 2)
+    } else if (enemyId === ID.enemy.towerEnemyGroup4.blackSpaceRed) {
+      this.meter.bossHpUserStyle(enemyId, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 30, text, ['#ffc7c7', '#906262'], ['#e8e8e8'], 2)
+    } else if (enemyId === ID.enemy.towerEnemyGroup4.blackSpaceGreen) {
+      this.meter.bossHpUserStyle(enemyId, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 30, text, ['#b1d7a9', '#b0cd96'], ['#e8e8e8'], 2)
+    } else if (enemyId === ID.enemy.towerEnemyGroup4.blackSpaceTornado) {
+      this.meter.bossHpUserStyle(enemyId, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 30, text, ['#9b9c90', '#c9c9c9'], ['#e8e8e8'], 2)
     }
   }
 

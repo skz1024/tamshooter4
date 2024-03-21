@@ -629,14 +629,24 @@ export class imageDataInfo {
     // blackSpace
     blackSpaceTornado: new ImageDataObject(900, 400, 60, 90, 10),
     blackSpaceBulletRed: new ImageDataObject(900, 500, 100, 100),
-    blackSpaceBulletYellow: new ImageDataObject(1001, 500, 100, 100),
-    blackSpaceBulletGreenUp: new ImageDataObject(1102, 500, 100, 100),
-    blackSpaceBulletGreenDown: new ImageDataObject(1203, 500, 100, 100),
-    blackSpaceBoxRed: new ImageDataObject(900, 601, 100, 100),
-    blackSpaceBoxYellow: new ImageDataObject(1001, 601, 100, 100),
-    blackSpaceBoxGreen: new ImageDataObject(1102, 601, 100, 100),
-    blackSpaceBoxTornado: new ImageDataObject(1203, 601, 100, 100),
-    blackSpaceBoxBlack: new ImageDataObject(1304, 601, 100, 100),
+    blackSpaceBulletYellow: new ImageDataObject(1000, 500, 100, 100),
+    blackSpaceBulletGreenUp: new ImageDataObject(1101, 499, 100, 100),
+    blackSpaceBulletGreenDown: new ImageDataObject(1201, 499, 100, 100),
+    blackSpaceBoxRed: new ImageDataObject(900, 600, 100, 100),
+    blackSpaceBoxYellow: new ImageDataObject(1000, 600, 100, 100),
+    blackSpaceBoxGreen: new ImageDataObject(1100, 600, 100, 100),
+    blackSpaceBoxTornado: new ImageDataObject(1200, 600, 100, 100),
+    blackSpaceBoxBlack: new ImageDataObject(1300, 600, 100, 100),
+
+    // antijemul
+    antiRingBombWave: new ImageDataObject(850, 701, 60, 60, 12),
+    antiRingBombRing: new ImageDataObject(1000, 762, 40, 40, 12),
+    antiRing: new ImageDataObject(1480, 762, 40, 40, 1),
+    antiRingOrange: new ImageDataObject(1520, 762, 40, 40, 1),
+    antiRingBombEffect: new ImageDataObject(0, 1000, 120, 120, 10),
+    antiGravityBall: new ImageDataObject(1401, 600, 100, 100),
+    antiGravityBallShadow: new ImageDataObject(1401, 499, 100, 100),
+    antiBackshot: new ImageDataObject(1100, 100, 30, 20),
   }
 
   static fieldSystem = {

@@ -625,6 +625,7 @@ export class EnemyBulletData extends FieldData {
     }
   }
 
+  /** 이동속도를 기준으로 자동으로 회전각도를 조정합니다. */
   setAutoRotate () {
     let speedX = this.moveDirectionX == 'right' ? this.moveSpeedX : -this.moveSpeedX
     let speedY = this.moveDirectionY == 'down' ? this.moveSpeedY : -this.moveSpeedY
@@ -1222,7 +1223,7 @@ class SpaceEnemyBoss extends SpaceEnemyData {
     this.setAutoImageData(imageSrc.enemy.spaceEnemy, imageDataInfo.spaceEnemy.bossSqaure, 6)
     // 보스의 크기는 300x300, 이미지 자동설정 후에 크기를 설정하는 이유는, autoImageData함수가 크기를 자동으로 지정해두기 때문
     this.setWidthHeight(300, 300)
-    this.setEnemyByCpStat(3000, 40, 200)
+    this.setEnemyByCpStat(3000, 15)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieSpaceCar, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.car1, this.width, this.height, 1, 2))
 
     this.MOVE_STOP_FRAME = 90
@@ -2154,7 +2155,7 @@ class JemulEnemyRotateRocket extends JemulEnemyData {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.rotateRocket, 5)
-    this.setEnemyByCpStat(10, 20)
+    this.setEnemyByCpStat(10, 14)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulRocket, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedOrange, this.width, this.width, 2))
 
     // 이 로켓은 플레이어가 있는 위치에 발사되기 때문에, 이동 방향을 삭제하고 순수 속도값을 설정
@@ -2584,7 +2585,7 @@ class JemulEnemyBoss extends JemulEnemyData {
 
     this.setAutoImageData(this.imageSrc, imageDataInfo.jemulEnemy.jemulBoss, 5)
     this.setWidthHeight(360, 300) // 크기 3배
-    this.setEnemyByCpStat(2000, 50, 200)
+    this.setEnemyByCpStat(2000, 15)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulBoss, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.car1, this.width, this.height, 4))
     this.attackDelay = new DelayData(this.ATTACK_DELAY)
     this.isPossibleExit = false
@@ -3318,7 +3319,7 @@ class JemulEnemyRedAir extends JemulEnemyData {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.jemulEnemy.redAir)
-    this.setEnemyByCpStat(40, 23)
+    this.setEnemyByCpStat(40, 18)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulRedAir, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireRed, this.width, this.height, 2))
     this.setRandomMoveSpeed(2, 2)
     this.moveDelay = new DelayData(300)
@@ -3373,7 +3374,7 @@ class JemulEnemyRedShip extends JemulEnemyData {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.jemulEnemy.redShip)
-    this.setEnemyByCpStat(41, 24)
+    this.setEnemyByCpStat(41, 19)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulRedAir, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.fireRed, this.width, this.height, 2))
     this.setRandomMoveSpeed(2, 2)
     this.moveDelay = new DelayData(240)
@@ -12121,6 +12122,736 @@ class TowerEnemyGroup4BlackSpaceArea extends TowerEnemyGroup4BlackSpaceAnti {
   display () {}
 }
 
+class TowerEnemyGroup4AntijemulP3_1 extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 3)
+    this.setWidthHeight(this.width * 2, this.height * 2)
+    this.setEnemyByCpStat(18000, 0)
+    this.setDieEffectTemplet(soundSrc.round.r3_5_blackSpaceCatch, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.metalSlashGrey, 2)
+    this.dieAfterDeleteDelay = new DelayData(60)
+    this.isPossibleExit = false
+
+    this.shieldInsideEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antishieldInside, 5, -1)
+    this.shieldOutsideEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antishieldOutside, 6, -1)
+    this.shieldInsideEnimation.setOutputSize(this.shieldInsideEnimation.frameWidth * 2, this.shieldInsideEnimation.frameHeight * 2)
+    this.shieldOutsideEnimation.setOutputSize(this.shieldOutsideEnimation.frameWidth * 2, this.shieldOutsideEnimation.frameHeight * 2)
+    this.shieldOutsideEnimation.alpha = 0.8
+
+    /** 안티 보스의 쉴드(인사이드 부분)를 보여주는지에 대한 여부 */ this.isViewShieldInside = true
+    /** 안티 보스의 쉴드(아웃사이드 부분)를 보여주는지에 대한 여부 */ this.isViewShieldOutside = true
+
+    this.STATE_RINGNORMAL = 'ringnormal'
+    this.STATE_RINGLINE = 'ringline'
+    this.STATE_RINGBOOM = 'ringboom'
+    this.STATE_RINGROLLING = 'ringrolling'
+    this.STATE_GRAVITYBALL = 'gravityball'
+    this.STATE_BACKSHOT = 'backshot'
+    this.state = this.STATE_RINGNORMAL
+
+    this.RING_DELAY = 180
+    this.RING_PREDELAY = 30
+    this.GRAVITYBALL_DELAY = 420
+    this.GRAVITYBALL_PREDELAY = 60
+    this.BACKSHOT_DELAY = 300
+    this.RINGROLLING_DELAY = 360
+    this.RINGROLLING_PREDELAY = 30
+    this.attackDelay = new DelayData(300)
+    this.moveDelay = new DelayData(120)
+
+    /** 총합 패턴 번호 (지금까지 사용했던 패턴의 개수) */ this.patternCount = 0
+    /** 패턴의 레벨 (0, 1, 2가 있음.) 숫자가 높을수록 적의 공격빈도와 개수가 상승 */ this.patternLevel = 0
+    this.myStatic = TowerEnemyGroup4AntijemulP3_1
+
+    this.saveList = {
+      patternCount: this.patternCount
+    }
+  }
+
+  saveProcess () {
+    this.saveList.patternCount = this.patternCount
+  }
+
+  loadProcess () {
+    this.patternCount = this.saveList.patternCount
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      this.changeAttack()
+      this.patternCount++
+    }
+
+    // patternLevel check
+    // hp 100% ~ 50% = pattern 1
+    // hp 50% ~ 20% = pattern 2
+    // hp 20% ~ 0% = pattern 3
+    if (this.hp > this.hpMax * 0.5) {
+      this.patternLevel = 0
+    } else if (this.hp > this.hpMax * 0.2 && this.hp <= this.hpMax * 0.5) {
+      this.patternLevel = 1
+    } else if (this.hp <= this.hpMax * 0.2) {
+      this.patternLevel = 2
+    }
+
+    // this.patternLevel = 2
+
+    // this.processAttackDebug()
+
+    switch (this.state) {
+      case this.STATE_RINGNORMAL: this.processAttackRingNormal(); break
+      case this.STATE_RINGBOOM: this.processAttackRingBomb(); break
+      case this.STATE_RINGLINE: this.processAttackRingLine(); break
+      case this.STATE_BACKSHOT: this.processAttackBackshot(); break
+      case this.STATE_GRAVITYBALL: this.processAttackGravityBall(); break
+      case this.STATE_RINGROLLING: this.processAttackRingRolling(); break
+    }
+  }
+
+  processAttackDebug () {
+    // this.processAttackGravityBall()
+    // this.processAttackBackshot()
+    // this.state = this.STATE_RINGROLLING
+    // this.processAttackRingRolling()
+    return
+  }
+
+  changeAttack () {
+    let isRingPattern = (this.patternCount >= 0 && this.patternCount <= 4)
+      || (this.patternCount >= 8 && this.patternCount <= 10)
+      || (this.patternCount >= 11 && this.patternCount % 2 === 1)
+
+    if (isRingPattern) {
+      // 0 ~ 4번, 8 ~ 10번, 11번 이후 홀수간격
+      let random = Math.floor(Math.random() * 3)
+      switch (random) {
+        case 0: this.state = this.STATE_RINGNORMAL; break
+        case 1: this.state = this.STATE_RINGBOOM; break
+        case 2: this.state = this.STATE_RINGLINE; break
+      }
+    } else if (this.patternCount >= 5 && this.patternCount <= 7) {
+      // 5 ~ 7번 특수 패턴 (순서대로 진행)
+      switch (this.patternCount) {
+        case 5: this.state = this.STATE_GRAVITYBALL; break
+        case 6: this.state = this.STATE_BACKSHOT; break
+        case 7: this.state = this.STATE_RINGROLLING; break
+      }
+    } else if (this.patternCount >= 11 && this.patternCount % 2 === 0) {
+      // 11번 이후 짝수간격 (랜덤)
+      let random = Math.floor(Math.random() * 3)
+      switch (random) {
+        case 0: this.state = this.STATE_GRAVITYBALL; break
+        case 1: this.state = this.STATE_BACKSHOT; break
+        case 2: this.state = this.STATE_RINGROLLING; break
+      }
+    }
+  }
+
+  processAttackRingNormal () {
+    if (this.attackDelay.count < this.RING_PREDELAY) return
+    this.attackDelay.setDelay(this.RING_DELAY)
+
+    const levelDelayTable = [40, 30, 25]
+    const chaseShotCount = [2, 2, 2]
+    const normalShotCount = [5, 5, 6]
+
+    if (this.attackDelay.divCheck(levelDelayTable[this.patternLevel])) {
+      // 일반 총알
+      for (let i = 0; i < normalShotCount[this.patternLevel]; i++) {
+        let bullet = new this.myStatic.AntiPhase3Ring()
+        bullet.x = this.centerX - (bullet.width / 2)
+        bullet.y = this.centerY - (bullet.height / 2)
+        fieldState.createEnemyBulletObject(bullet)
+      }
+
+      // 유도 총알
+      let player = fieldState.getPlayerObject()
+      for (let i = 0; i < chaseShotCount[this.patternLevel]; i++) {
+        let bullet = new this.myStatic.AntiPhase3Ring()
+        bullet.x = this.centerX - (bullet.width / 2)
+        bullet.y = this.centerY - (bullet.height / 2)
+         // 플레이어를 추적
+        bullet.setMoveSpeedChaseLine(player.x, player.y, 120, 4)
+        // 하지만 약간의 오차가 있음.
+        bullet.setMoveSpeed(this.moveSpeedX + (Math.random() * 1) - 0.5, this.moveSpeedY + (Math.random() * 1) - 0.5)
+        fieldState.createEnemyBulletObject(bullet)
+      }
+
+      soundSystem.play(soundSrc.enemyAttack.towerAntijemulRing)
+    }
+  }
+
+  processAttackRingBomb () {
+    if (this.attackDelay.count < this.RING_PREDELAY) return
+    this.attackDelay.setDelay(this.RING_DELAY)
+    
+    const levelDelayTable = [30, 25, 20]
+    const normalShotCount = [3, 4, 4]
+
+    if (this.attackDelay.divCheck(levelDelayTable[this.patternLevel])) {
+      for (let i = 0; i < normalShotCount[this.patternLevel]; i++) {
+        let bullet = new this.myStatic.AntiPhase3RingBomb()
+        bullet.x = this.centerX - (bullet.width / 2)
+        bullet.y = this.centerY - (bullet.height / 2)
+        fieldState.createEnemyBulletObject(bullet)
+      }
+
+      soundSystem.play(soundSrc.enemyAttack.towerAntijemulRingBomb)
+    }
+  }
+
+  processAttackRingLine () {
+    if (this.attackDelay.count < this.RING_PREDELAY) return
+    this.attackDelay.setDelay(this.RING_DELAY)
+
+    const levelDelayTable = [50, 40, 35]
+    const normalShotCount = [6, 8, 8]
+    const speedTable = [6, 8, 10]
+
+    if (this.attackDelay.divCheck(levelDelayTable[this.patternLevel])) {
+      for (let i = 0; i < normalShotCount[this.patternLevel]; i++) {
+        let bullet = new this.myStatic.AntiPhase3Ring()
+        // 왼쪽 그리고 오른쪽
+        let speedX = i % 2 === 0 ? -speedTable[this.patternLevel] : speedTable[this.patternLevel]
+        bullet.x = this.centerX - (bullet.width / 2)
+        bullet.y = this.centerY - ((bullet.height / 2) * (-2 + Math.floor(i / 2)))
+        bullet.setMoveSpeed(speedX, Math.random() * 2 - 1) // y축은 약간 어긋나있음
+        fieldState.createEnemyBulletObject(bullet)
+      }
+
+      for (let i = 0; i < normalShotCount[this.patternLevel]; i++) {
+        let bullet = new this.myStatic.AntiPhase3Ring()
+        // 위쪽 그리고 아래쪽
+        let speedY = i % 2 === 0 ? -speedTable[this.patternLevel] : speedTable[this.patternLevel]
+        bullet.x = this.centerX - (bullet.width / 2) * (-2 + Math.floor(i / 2))
+        bullet.y = this.centerY - (bullet.height / 2)
+        bullet.setMoveSpeed(Math.random() * 2 - 1, speedY) // y축은 약간 어긋나있음
+        fieldState.createEnemyBulletObject(bullet)
+      }
+
+      soundSystem.play(soundSrc.enemyAttack.towerAntijemulRing)
+    }
+  }
+
+  processAttackGravityBall () {
+    if (this.attackDelay.count < this.GRAVITYBALL_PREDELAY) return
+    this.attackDelay.setDelay(this.GRAVITYBALL_DELAY)
+
+    const levelDelayTable = [20, 15, 12]
+    const levelDelayMaxTable = [140, 165, 180]
+
+    if (this.attackDelay.divCheck(levelDelayTable[this.patternLevel]) 
+      && this.attackDelay.count <= levelDelayMaxTable[this.patternLevel]) {
+      let bullet = new this.myStatic.AntiPhase3GravityBall()
+      bullet.x = this.centerX - (bullet.width / 2)
+      bullet.y = this.centerY - (bullet.height / 2)
+      fieldState.createEnemyBulletObject(bullet)
+      soundSystem.play(soundSrc.enemyAttack.towerAntijemulGravityBall)
+    }
+  }
+
+  processAttackBackshot () {
+    this.attackDelay.setDelay(this.BACKSHOT_DELAY)
+    const levelDelayTable = [11, 9, 7]
+    const normalShotCount = [3, 3, 3]
+    const BACK_FRAME = 60
+    const SHOT_FRAME = 240
+    const ROLLBACK_FRAME = 300
+
+    if (this.attackDelay.count === 1) {
+      this.isPossibleExit = true // 임시로 나갈 수 있게 허용
+      this.isExitToReset = false
+      // 적은 기본값이 왼쪽 방향이동이기에, 오른쪽으로 이동시키려면 방향을 변경해야함
+      this.setMoveSpeed(0, 0)
+      this.setMoveDirection(FieldData.direction.RIGHT)
+    } else if (this.attackDelay.count >= 2 && this.attackDelay.count <= BACK_FRAME) {
+      // 2초간 오른쪽으로 가속하고, 일정 범위를 벗어나면 위치 고정 (화면 바깥에 있음)
+      this.setMoveSpeed(this.moveSpeedX + 0.42, 0)
+      if (this.x > graphicSystem.CANVAS_WIDTH + 50) {
+        this.x = graphicSystem.CANVAS_WIDTH + 45
+      }
+    } else if (this.attackDelay.count > BACK_FRAME && this.attackDelay.count <= SHOT_FRAME) {
+      // 61프레임 ~ 240프레임동안 총알 발사
+      this.setMoveSpeed(0, 0)
+      this.x = graphicSystem.CANVAS_WIDTH + 45
+      
+      if (this.attackDelay.divCheck(levelDelayTable[this.patternLevel])) {
+        soundSystem.play(soundSrc.enemyAttack.towerAntijemulBackshot)
+        for (let i = 0; i < normalShotCount[this.patternLevel]; i++) {
+          let bullet = new this.myStatic.AntiPhase3BackShot()
+          bullet.x = graphicSystem.CANVAS_WIDTH + 1
+          bullet.y = Math.random() * graphicSystem.CANVAS_HEIGHT
+          fieldState.createEnemyBulletObject(bullet)
+        }
+      }
+    } else if (this.attackDelay.count >= SHOT_FRAME && this.attackDelay.count <= ROLLBACK_FRAME) {
+      // 이후 다시 화면 오른쪽으로 이동
+      let runningFrame = this.attackDelay.count - SHOT_FRAME
+      const leftHalfFrame = (ROLLBACK_FRAME - SHOT_FRAME) / 2
+      this.setMoveSpeed(runningFrame <= leftHalfFrame ? this.moveSpeedX - 0.7 : this.moveSpeedX + 0.7)
+      if (this.attackDelay.count === this.attackDelay.delay - 5) {
+        // 아까의 상태를 원래대로 복구
+        this.setMoveDirection(FieldData.direction.LEFT)
+        this.isPossibleExit = false
+        this.isExitToReset = true
+      }
+    }
+  }
+
+  processAttackRingRolling () {
+    if (this.attackDelay.count < this.RINGROLLING_PREDELAY) return
+    this.attackDelay.setDelay(this.RINGROLLING_DELAY)
+    const levelDelayTable = [60, 45, 30]
+    const normalShotCount = [5, 5, 5]
+    const ringSpeedTable = [360 / 60, 360 / 45, 360 / 30]
+
+    if (this.attackDelay.divCheck(levelDelayTable[this.patternLevel])) {
+      soundSystem.play(soundSrc.enemyAttack.towerAntijemulRingRolling)
+      for (let i = 0; i < normalShotCount[this.patternLevel]; i++) {
+        let bullet = new this.myStatic.AntiPhase3RingOrange()
+        bullet.setRadius(i * 50, 270, ringSpeedTable[this.patternLevel])
+        bullet.setBaseXY(this.centerX, this.centerY)
+        fieldState.createEnemyBulletObject(bullet)
+      }
+    }
+  }
+
+  processMove () {
+    super.processMove()
+    if (this.state === this.STATE_BACKSHOT) return
+    if (this.state === this.STATE_RINGROLLING) {
+      let player = fieldState.getPlayerObject()
+      // ringRolling 패턴은, 플레이어를 추적하면서 이동하며, 패턴 레벨이 상승하면 더욱 빠르게 이동합니다.
+      const speedDivTable = [200, 170, 140]
+
+      this.x += (player.x - this.x) / speedDivTable[this.patternLevel]
+      this.y += (player.y - this.y) / speedDivTable[this.patternLevel]
+      return
+    }
+
+    if (this.moveDelay.check()) {
+      this.setRandomMoveSpeedMinMax(0.6, 0.6, 1.2, 1.2, true)
+    }
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+    if (this.isDied && this.dieAfterDeleteDelay.divCheck(12)) {
+      soundSystem.play(this.dieSound)
+      if (this.dieEffect != null){
+        fieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
+      }
+    }
+  }
+
+  /** 
+   * 안티 제물 보스의 쉴드를 보여주는 여부를 설정합니다.
+   * @param {boolean} inside 
+   * @param {boolean} outside 
+   */
+  setShieldView (inside = true, outside = true) {
+    this.isViewShieldInside = inside
+    this.isViewShieldOutside = outside
+  }
+
+  processEnimation () {
+    super.processEnimation()
+    this.shieldInsideEnimation.process()
+    this.shieldOutsideEnimation.process()
+  }
+
+  display () {
+    // 이 보스는 현재 좌표를 기준으로, 쉴드와의 크기를 비교하여, 쉴드가 표시될 자리를 정합니다.
+    // 쉴드의 자리는 크기의 상관없이 보스가 있는곳의 중앙이 되게끔 배치해야합니다.
+    // 그래서, 각 원본 너비와 높이의 차이를 2로 나누고, 
+    // 실제 적의 크기는 2배이므로 2로 나눈 값을 다시 2로 곱해줍니다.
+    if (this.isViewShieldInside) this.displayShieldInside()
+    if (this.isViewShieldOutside) this.displayShieldOutside()
+
+    // 안티 보스는 페이즈 3-1의 경우 2종류의 쉴드가 표시되며,
+    // 페이즈 3-2의 경우 1종류의 쉴드가 표시됩니다.
+    // 쉴드 표시 종류를 나눠야 하기 때문에, 서로의 기능을 분리하였습니다.
+    // 또한 이 클래스를 상속해 다음 페이즈의 보스를 만들 때
+    // display의 기능을 재정의 하지 않도록 대신 shield를 보여주는지 선택하는 변수를 추가했습니다.
+    super.display()
+
+    // graphicSystem.fillText(this.state, 0, 80, 'blue')
+  }
+
+  displayShieldInside () {
+    const imgDbase = imageDataInfo.towerEnemyGroup4.anti
+    const imgDshield1 = imageDataInfo.towerEnemyGroup4.antishieldInside
+    const imgMulSize = 2
+
+    let shield1X = this.x - ((imgDshield1.width - imgDbase.width) / 2 * imgMulSize)
+    let shield1Y = this.y - ((imgDshield1.height - imgDbase.height) / 2 * imgMulSize)
+
+    this.shieldInsideEnimation.display(shield1X, shield1Y)
+  }
+
+  displayShieldOutside () {
+    const imgDbase = imageDataInfo.towerEnemyGroup4.anti
+    const imgDshield2 = imageDataInfo.towerEnemyGroup4.antishieldOutside
+    const imgMulSize = 2
+    let shield2X = this.x - ((imgDshield2.width - imgDbase.width) / 2 * imgMulSize)
+    let shield2Y = this.y - ((imgDshield2.height - imgDbase.height) / 2 * imgMulSize)
+    this.shieldOutsideEnimation.display(shield2X, shield2Y)
+  }
+
+  static AntiPhase3Ring = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiRing, 5)
+      this.setRandomMoveSpeedMinMax(2, 2, 6, 6, true)
+      this.maxRunningFrame = 180
+    }
+  }
+
+  static AntiPhase3RingOrange = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiRingOrange, 4)
+      this.maxRunningFrame = 120
+      this.repeatCount = 10
+      this.collisionDelay.delay = 20
+      this.saveList = {
+        baseRadius: 0,
+        baseRadiusDegree: 0,
+        baseX: 0,
+        baseY: 0,
+        degreeSpeed: 0,
+      }
+    }
+
+    setBaseXY (baseX = 0, baseY = 0) {
+      this.saveList.baseX = baseX
+      this.saveList.baseY = baseY
+    }
+
+    /**
+     * 회전 반경의 반지름 값 (참고: 한 바퀴를 돌면 이 개체는 사라집니다.)
+     * 
+     * 참고: 0도는 왼쪽입니다. 위에서 시작하려면, 270도를 입력해주세요.
+     * @param {number} radius 반지름
+     * @param {number} [degree=0] 각도
+     * @param {number} [degreeSpeed=5] 각도 변경 속도
+     */
+    setRadius (radius = 1, degree = 0, degreeSpeed = 5) {
+      this.saveList.baseRadius = radius
+      this.saveList.baseRadiusDegree = degree
+      this.saveList.degreeSpeed = 5
+      this.maxRunningFrame = Math.floor(360 / degreeSpeed)
+    }
+
+    processMove () {
+      this.saveList.baseRadiusDegree += (360 / this.maxRunningFrame)
+      let radian = this.saveList.baseRadiusDegree * Math.PI / 180
+      this.x = this.saveList.baseX + (this.saveList.baseRadius) * Math.cos(radian)
+      this.y = this.saveList.baseY + (this.saveList.baseRadius) * Math.sin(radian)
+    }
+  }
+
+  static AntiPhase3BackShot = class extends CustomEnemyBullet {
+    constructor () {
+      super(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiBackshot, 3)
+      this.setRandomMoveSpeedMinMax(-9, -3, -6, 3)
+      this.maxRunningFrame = 300
+    }
+  }
+
+  static AntiPhase3RingBomb = class extends CustomEnemyBullet {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiRingBombRing, 5)
+      this.attack = 13
+      this.setRandomMoveSpeed(3, 3, true)
+      this.waveEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiRingBombWave, 3, -1)
+    }
+
+    processEnimation () {
+      super.processEnimation()
+      this.waveEnimation.process()
+    }
+
+    processCollision () {
+      super.processCollision()
+
+      if (this.elapsedFrame >= 120) {
+        this.isDeleted = true
+      }
+
+      // 만약 충돌 후의 상태또는 삭제 대기 상태라면 폭발하는 총알을 생성
+      if (this.isDeleted) {
+        let bullet = new TowerEnemyGroup4AntijemulP3_1.AntiPhase3RingBombEffect()
+        fieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
+        soundSystem.play(soundSrc.enemyAttack.towerAntijemulRingBombEffect)
+      }
+    }
+
+    processMove () {
+      super.processMove()
+
+      // 벽 튕기기
+      if (this.x < 0) {
+        this.x = 0
+        this.moveSpeedX = Math.abs(this.moveSpeedX)
+      } else if (this.x + this.width > graphicSystem.CANVAS_WIDTH) {
+        this.x = graphicSystem.CANVAS_WIDTH - this.width
+        this.moveSpeedX = -Math.abs(this.moveSpeedX)
+      }
+      
+      if (this.y < 0) {
+        this.y = 0
+        this.moveSpeedY = Math.abs(this.moveSpeedY)
+      } else if (this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
+        this.y = graphicSystem.CANVAS_HEIGHT - this.height
+        this.moveSpeedY = -Math.abs(this.moveSpeedY)
+      }
+    }
+
+    display () {
+      super.display()
+      this.waveEnimation.display(this.x - 10, this.y - 10)
+    }
+  }
+
+  static AntiPhase3RingBombEffect = class extends CustomEnemyBullet {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiRingBombEffect, 3)
+      this.attack = 2
+      this.collisionDelay.delay = 6
+      this.repeatCount = 60
+      this.setMoveSpeed(0, 0)
+    }
+
+    processState () {
+      super.processState()
+      if (this.elapsedFrame >= 48) {
+        this.isDeleted = true
+      }
+
+      // 투명도 시간에 따라서 변경
+      if (this.elapsedFrame >= 24) {
+        this.alpha = (48 - this.elapsedFrame) / 24
+      }
+    }
+
+    display () {
+      super.display()
+    }
+  }
+
+  static AntiPhase3GravityBall = class extends CustomEnemyBullet {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiGravityBall)
+      this.fallPositionX = 0
+      this.fallPositionY = 0
+      this.startX = 0
+      this.startY = 0
+      this.shadowObject = {x: 0, y: 0, width: 0, height: 0, alpha: 0}
+      this.setMoveSpeed(0, 0)
+      this.maxRunningFrame = 900
+      this.repeatCount = 44
+      this.attack = 5
+      this.collisionDelay.delay = 10
+
+      this.stateDelay = new DelayData(600)
+      this.STATE_UP = 'up'
+      this.STATE_WAIT = 'wait'
+      this.STATE_DOWN = 'down'
+      this.STATE_ATTACK = 'attack'
+      this.DELAY_UP = 120
+      this.DELAY_WAIT = 30
+      this.DELAY_DOWN = 180
+      this.FALL_START_FRAME = 120
+      this.DELAY_ATTACK = 60
+      this.MAX_SIZE = 360
+    }
+
+    /**
+     * 크기를 조정하고 중앙좌표로 다시 배치합니다.
+     * @param {number} changeWidth 
+     * @param {number} changeHeight 
+     */
+    changeWidthHeightCenter (changeWidth, changeHeight) {
+      this.setWidthHeight(this.width + changeWidth, this.height + changeHeight)
+      this.x -= (changeWidth / 2)
+      this.y -= (changeHeight / 2)
+    }
+
+    saveProcess () {
+      this.saveString = '' + this.fallPositionX + '|' + this.fallPositionY
+      this.saveList.shadowObject = this.shadowObject
+    }
+
+    loadProcess () {
+      let str = this.saveString.split('|')
+      this.fallPositionX = Number(str[0])
+      this.fallPositionY = Number(str[1])
+
+      this.shadowObject = this.saveList.shadowObject
+    }
+
+    afterInit () {
+      this.fallPositionX = Math.random() * (graphicSystem.CANVAS_WIDTH - this.width)
+      this.fallPositionY = Math.random() * (graphicSystem.CANVAS_HEIGHT - this.height)
+      this.startX = this.x
+      this.startY = this.y
+      this.setWidthHeight(2, 2)
+      this.x = this.startX + 48
+      this.y = this.startY + 48
+      this.state = this.STATE_UP
+    }
+
+    processMove () {
+      super.processMove()
+      this.stateDelay.check()
+      if (this.state === this.STATE_UP) {
+        this.changeWidthHeightCenter(3, 3)
+        this.alpha = (this.DELAY_UP - this.elapsedFrame) / this.DELAY_UP
+
+        if (this.stateDelay.count >= this.DELAY_UP) {
+          this.state = this.STATE_WAIT
+          this.stateDelay.count = 0
+          // baseSize = 100, 확장크기가 360임, 이걸 260만큼 낮춰서 내려오는 이미지를 구현해야 하므로
+          // 중앙 배치를 위해 260 / 2만큼 x축, y축을 마이너스함.
+          this.x = this.fallPositionX - (260 / 2)
+          this.y = this.fallPositionY - (260 / 2)
+          this.setWidthHeight(360, 360)
+
+          // 그림자 오브젝트도 처리 (그림자가 중앙에 배치되게끔, 떨어지는 최종 위치의 좌표를 96 / 2 만큼 더합니다.)
+          this.shadowObject.width = 2
+          this.shadowObject.height = 2
+          this.shadowObject.x = this.fallPositionX + 48
+          this.shadowObject.y = this.fallPositionY + 48
+        }
+      } else if (this.state === this.STATE_WAIT) {
+        // 대기상태
+        if (this.stateDelay.count >= 30) {
+          this.state = this.STATE_DOWN
+          this.stateDelay.count = 0
+        }
+      } else if (this.state === this.STATE_DOWN) {
+        // 행성이 떨어지는것이 보여진 후 프레임
+        const fallTotalFrame = this.DELAY_DOWN - this.FALL_START_FRAME
+        const runningFrame = this.stateDelay.count - this.FALL_START_FRAME
+        const runningShadowFrame = this.stateDelay.count // 그림자 진행 프레임
+        if (this.shadowObject.width < 100 && this.shadowObject.height < 100) {
+          // 그림자가 일정 크기 미만이면 계속 확대합니다.
+          this.shadowObject.x -= 0.3
+          this.shadowObject.y -= 0.3
+          this.shadowObject.width += 0.6
+          this.shadowObject.height += 0.6
+        }
+
+        if (runningShadowFrame < this.DELAY_DOWN - 30) {
+          this.shadowObject.alpha = 0.7 / this.DELAY_DOWN * runningShadowFrame
+        } else {
+          // 그라비티볼이 바닥에 닿을 때 쯤, 투명도로 그림자가 사라지게끔 변경
+          this.shadowObject.alpha = 0.7 / 30 * (this.DELAY_DOWN - runningShadowFrame)
+          if (this.shadowObject.alpha < 0) this.shadowObject.alpha = 0
+        }
+
+        if (this.stateDelay.count >= this.FALL_START_FRAME) {
+          if (this.width > this.imageData.width && this.height > this.imageData.height) {
+            // fallTimeFrame에 조금 더 높은 수치로 나누는것은, 조금 더 자연스럽게 바닥에 닿는걸 보여주기 위한것
+            this.changeWidthHeightCenter(this.MAX_SIZE / (-fallTotalFrame - 10), this.MAX_SIZE / (-fallTotalFrame - 10))            
+          }
+        }
+        this.alpha = 1 / (this.DELAY_DOWN - this.FALL_START_FRAME) * runningFrame
+        if (this.stateDelay.count === this.FALL_START_FRAME) {
+          soundSystem.play(soundSrc.enemyAttack.towerAntijemulGravityBallFall)
+        }
+
+        // 떨어지는게 완료된경우
+        if (this.stateDelay.count >= this.DELAY_DOWN) {
+          this.state = this.STATE_ATTACK
+          this.x = this.fallPositionX
+          this.y = this.fallPositionY
+          this.setWidthHeight(this.imageData.width, this.imageData.height)
+          soundSystem.play(soundSrc.enemyAttack.towerAntijemulGravityBallEffect)
+          this.stateDelay.count = 0
+          this.alpha = 1
+          this.shadowObject.alpha = 0
+        }
+      } else if (this.state === this.STATE_ATTACK) {
+        // 잠시동안 개체가 흔들림
+        this.x = this.fallPositionX + Math.random() * 4
+        this.y = this.fallPositionY + Math.random() * 4
+
+        // 모든 패턴 완료
+        if (this.stateDelay.count >= this.DELAY_ATTACK) {
+          this.isDeleted = true
+        }
+      }
+    }
+
+    processCollision () {
+      if (this.state === this.STATE_ATTACK) {
+        // 공격 상태일때만 정상적으로 충돌 로직 적용 (그 이외는 무시)
+        super.processCollision()
+      }
+    }
+
+    display () {
+      // 그라비티 볼 그림자
+      // 떨어지는 상태에서 동그라미가 완전히 닿기 전에 그림자가 사라질 수 있도록 출력하는 구간이 조정되었음
+      if (this.state === this.STATE_WAIT 
+        || (this.state === this.STATE_DOWN && this.stateDelay.count <= this.DELAY_DOWN - 5)) {
+        this.imageObjectDisplay(
+          imageSrc.enemy.towerEnemyGroup4, 
+          imageDataInfo.towerEnemyGroup4.antiGravityBallShadow,
+          this.shadowObject.x,
+          this.shadowObject.y,
+          this.shadowObject.width,
+          this.shadowObject.height,
+          this.flip,
+          this.degree,
+          this.shadowObject.alpha
+        )
+      }
+
+      // 그라비티 볼
+      if (this.state === this.STATE_UP 
+        || (this.state === this.STATE_DOWN && this.stateDelay.count >= this.FALL_START_FRAME) 
+        || this.state === this.STATE_ATTACK) {
+        super.display()
+      }
+
+      // 디버그 텍스트
+      // graphicSystem.fillText(this.x + ', ' + this.y + ', ' + this.width + ', ' + this.height + ', A: ' + this.alpha, 20, 40, 'lime')
+      // graphicSystem.fillText(Math.floor(this.shadowObject.x) + ', ' + Math.floor(this.shadowObject.y) + ', ' + this.shadowObject.width + ', ' + this.shadowObject.height + ', A: ' + this.shadowObject.alpha, 20, 60, 'blue')
+      // graphicSystem.fillText(this.fallPositionX + ', ' + this.fallPositionY + ', 100, 100', 20, 80, 'red')
+
+      // 떨어지는 영역 표시 (디버그)
+      // graphicSystem.strokeRect(this.fallPositionX, this.fallPositionY, 100, 100, 'red')
+    }
+  }
+}
+
+class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 3)
+    this.setEnemyByCpStat(16000, 0)
+  }
+}
+
+class TowerEnemyGroup4AntijemulP4_1 extends TowerEnemyGroup4AntijemulP3_1 {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 3)
+    this.setEnemyByCpStat(16000, 0)
+  }
+}
+
+class TowerEnemyGroup4AntijemulP4_2 extends TowerEnemyGroup4AntijemulP3_1 {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 3)
+    this.setEnemyByCpStat(16000, 0)
+  }
+}
 
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
@@ -12332,3 +13063,7 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup4.blackSpaceArea, TowerEnemyGroup4Bl
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.blackSpaceGreen, TowerEnemyGroup4BlackSpaceGreen)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.blackSpaceRed, TowerEnemyGroup4BlackSpaceRed)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.blackSpaceTornado, TowerEnemyGroup4BlackSpaceTornado)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup4.antijemulP3_1, TowerEnemyGroup4AntijemulP3_1)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup4.antijemulP3_2, TowerEnemyGroup4AntijemulP3_2)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup4.antijemulP4_1, TowerEnemyGroup4AntijemulP4_1)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup4.antijemulP4_2, TowerEnemyGroup4AntijemulP4_2)

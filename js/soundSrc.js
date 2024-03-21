@@ -217,6 +217,14 @@ export class soundSrc {
     towerNokgasiGasiHyper: './sound/enemyTowerNokgasiGasiHyper.ogg',
     towerNokgasiGasiShot: './sound/enemyTowerNokgasiGasiShot.ogg',
     towerNokgasiGasiPattern5: './sound/enemyTowerNokgasiGasiPattern5.ogg',
+    towerAntijemulGravityBall: './sound/enemyTowerAntijemulGravityBall.ogg',
+    towerAntijemulGravityBallEffect: './sound/enemyTowerAntijemulGravityBallEffect.ogg',
+    towerAntijemulGravityBallFall: './sound/enemyTowerAntijemulGravityBallFall.ogg',
+    towerAntijemulRing: './sound/enemyTowerAntijemulRing.ogg',
+    towerAntijemulRingBomb: './sound/enemyTowerAntijemulRingBomb.ogg',
+    towerAntijemulRingBombEffect: './sound/enemyTowerAntijemulRingBombEffect.ogg',
+    towerAntijemulRingRolling: './sound/enemyTowerAntijemulRingRolling.ogg',
+    towerAntijemulBackshot: './sound/enemyTowerAntijemulBackshot.ogg',
   }
 
   static round = {
@@ -260,6 +268,8 @@ export class soundSrc {
     r3_bossWarningKeyboard: './sound/round3_bossWarningKeyboard.ogg',
     r3_5_phase2Start: './sound/round3_5_phase2Start.ogg',
     r3_5_message1: './sound/round3_5_message1.ogg',
+    r3_5_message2: './sound/round3_5_message2.ogg',
+    r3_5_message3: './sound/round3_5_message3.ogg',
     r3_5_blackSpaceAreaDie: './sound/round3_5_blackSpaceAreaDie.ogg',
     r3_5_blackSpaceCatch: './sound/round3_5_blackSpaceCatch.ogg',
     r3_5_blackSpaceFind: './sound/round3_5_blackSpaceFind.ogg',
