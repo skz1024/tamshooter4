@@ -172,6 +172,7 @@ export class imageSrc {
     round3_5_blackSpaceRed: './image/round/round3_5_blackSpaceRed.png',
     round3_5_blackSpaceGreen: './image/round/round3_5_blackSpaceGreen.png',
     round3_5_blackSpaceTornado: './image/round/round3_5_blackSpaceTornado.png',
+    round3_5_redzone: './image/round/round3_5_redzone.png',
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -643,10 +644,14 @@ export class imageDataInfo {
     antiRingBombRing: new ImageDataObject(1000, 762, 40, 40, 12),
     antiRing: new ImageDataObject(1480, 762, 40, 40, 1),
     antiRingOrange: new ImageDataObject(1520, 762, 40, 40, 1),
+    antiRingBlue: new ImageDataObject(1560, 762, 40, 40, 1),
     antiRingBombEffect: new ImageDataObject(0, 1000, 120, 120, 10),
     antiGravityBall: new ImageDataObject(1401, 600, 100, 100),
     antiGravityBallShadow: new ImageDataObject(1401, 499, 100, 100),
+    antiGravityRect: new ImageDataObject(1401, 0, 100, 100),
+    antiGravityRectShadow: new ImageDataObject(1401, 101, 100, 100),
     antiBackshot: new ImageDataObject(1100, 100, 30, 20),
+    antiDieEffect: new ImageDataObject(1000, 803, 40, 40, 15)
   }
 
   static fieldSystem = {

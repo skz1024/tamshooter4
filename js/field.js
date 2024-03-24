@@ -1008,6 +1008,8 @@ export class fieldState {
         // 변수 이름 변경... 및 타입Id에 입력된 CustomEffectData에서 새 오브젝트를 얻어옴.
         /** @type {EffectData} */
         customEffectObject = typeId.getObject()
+        if (x == null) x = typeId.x
+        if (y == null) y = typeId.y
       } else if (typeId instanceof CustomEditEffect) {
         /** @type {EffectData} */
         customEffectObject = typeId // 새로 생성된 인스턴스
@@ -1555,7 +1557,8 @@ export class fieldSystem {
   static processRoundClear () {
     // 라운드 클리어 사운드 재생 (딜레이카운트가 0일때만 재생해서 중복 재생 방지)
     if (this.exitDelayCount === 0 && this.round != null) {
-      game.sound.play(soundSrc.system.systemRoundClear)
+      let clearSoundSrc = this.round.clearSoundSrc !== '' ? this.round.clearSoundSrc : soundSrc.system.systemRoundClear
+      game.sound.play(clearSoundSrc)
       userSystem.plusExp(this.round.stat.clearBonus)
       this.totalScore = this.fieldScore + this.round.stat.clearBonus
       this.message = this.messageList.REQUEST_SAVE // 강제 저장을 통해 필드 저장 데이터를 삭제하고, 메인화면으로 돌아가게끔 유도

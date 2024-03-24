@@ -920,7 +920,7 @@ class BaseSound {
    * 음악을 페이드 아웃 합니다.
    * @param {number} fadeFrame 페이드를 진행하는 총 프레임 수 (주의: soundSystem의 musicFadeout과 시간 적용 방식이 다릅니다.)
    */
-  static musicFadeOut (fadeFrame) {
+  static musicFadeOut (fadeFrame = 0) {
     soundSystem.musicFadeOut(fadeFrame / game.FPS)
   }
 
@@ -929,7 +929,7 @@ class BaseSound {
    * @param {string} audioSrc
    * @param {number} fadeFrame 
    */
-  static musicFadeIn (audioSrc, fadeFrame) {
+  static musicFadeIn (audioSrc, fadeFrame = 0) {
     if (audioSrc === '') return
 
     soundSystem.musicPlay(audioSrc, 0, fadeFrame / game.FPS)
@@ -1286,6 +1286,8 @@ export class RoundPackLoad {
       soundSrc.enemyAttack.towerAntijemulGravityBall,
       soundSrc.enemyAttack.towerAntijemulGravityBallEffect,
       soundSrc.enemyAttack.towerAntijemulGravityBallFall,
+      soundSrc.enemyAttack.towerAntijemulGravityRectEffect,
+      soundSrc.enemyAttack.towerAntijemulGravityRectFall,
       soundSrc.enemyAttack.towerAntijemulRing,
       soundSrc.enemyAttack.towerAntijemulRingBomb,
       soundSrc.enemyAttack.towerAntijemulRingBombEffect,
@@ -1689,6 +1691,9 @@ export class RoundData {
     this.sound = BaseSound
     this.sound.musicStop() // 미리 저장된 음악이 출력되는것을 막기 위해 음악을 정지시킴
     this.sound.roundStartMusicSrc = '' // 음악의 기본값 설정 (다른 라운드가 이 값을 공유하기 때문에 라운드 시작시마다 갱신해야함)
+
+    /** 라운드 클리어 사운드 (아무것도 없다면 기본값) */
+    this.clearSoundSrc = ''
 
     /** 라운드의 상태 (저장용도) @type {string} */ 
     this.state = ''
@@ -8735,6 +8740,7 @@ class Round3TempleteBossSprite extends FieldData {
     this.TYPE_ANTI_PHASE2 = 'antiPhase2'
     this.TYPE_ANTI_PHASE3 = 'antiPhase3'
     this.TYPE_ANTI_PHASE4 = 'antiPhase4'
+    this.TYPE_ANTI_PHASECLEAR = 'antiPhaseClear'
     this.state = ''
     this.dasuCore = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}]
   }
@@ -8760,7 +8766,7 @@ class Round3TempleteBossSprite extends FieldData {
   }
 
   createSpriteAntiPhase2 () {
-    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 3)
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 4)
     this.elapsedFrame = 0
     this.subType = this.TYPE_ANTI_PHASE2
     this.x = graphicSystem.CANVAS_WIDTH_HALF - (imageDataInfo.towerEnemyGroup4.anti.width / 2)
@@ -8769,9 +8775,34 @@ class Round3TempleteBossSprite extends FieldData {
   }
 
   createSpriteAntiPhase3 () {
-    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 3)
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 4)
     this.elapsedFrame = 0
     this.subType = this.TYPE_ANTI_PHASE3
+    this.setMoveSpeed(0, 0)
+  }
+
+  createSpriteAntiPhase4 () {
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 4)
+    this.setWidthHeight(this.width * 2, this.height * 2)
+    this.elapsedFrame = 0
+    this.subType = this.TYPE_ANTI_PHASE4
+    this.x = graphicSystem.CANVAS_WIDTH_HALF - (this.width / 2)
+    this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
+    this.setMoveSpeed(0, 0)
+  }
+
+  /**
+   * (참고: 이 함수는, 스프라이트에서 적의 좌표를 참조할 수 없기 때문에 좌표값을 입력해줘야 합니다.)
+   * @param {number} targetX 
+   * @param {number} targetY 
+   */
+  createSpriteAntiClear (targetX, targetY) {
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 1800)
+    this.setWidthHeight(this.width * 2, this.height * 2)
+    this.elapsedFrame = 0
+    this.subType = this.TYPE_ANTI_PHASECLEAR
+    this.x = targetX
+    this.y = targetY
     this.setMoveSpeed(0, 0)
   }
 
@@ -8803,8 +8834,9 @@ class Round3TempleteBossSprite extends FieldData {
       this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.crazyRobot, 0)
     } else if (this.subType === this.TYPE_DASU) {
       this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.bossDasu, 0)
-    } else if (this.subType === this.TYPE_ANTI_PHASE2 || this.subType === this.TYPE_ANTI_PHASE3) {
+    } else if (this.subType === this.TYPE_ANTI_PHASE2 || this.subType === this.TYPE_ANTI_PHASE3 || this.subType === this.TYPE_ANTI_PHASE4) {
       this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 3)
+      this.setWidthHeight(this.width * 2, this.height * 2)
     }
   }
 
@@ -8820,6 +8852,10 @@ class Round3TempleteBossSprite extends FieldData {
       // 이 객체는 확대축소로 인해서 좌표를 강제조정하지만 이동하는것은 아님
     } else if (this.subType === this.TYPE_ANTI_PHASE3) {
       this.processMoveAntiPhase3()
+    } else if (this.subType === this.TYPE_ANTI_PHASE4) {
+      this.processMoveAntiPhase4()
+    } else if (this.subType === this.TYPE_ANTI_PHASECLEAR) {
+      this.processMoveAntiPhaseClear()
     }
   }
 
@@ -8889,20 +8925,16 @@ class Round3TempleteBossSprite extends FieldData {
 
   processMoveAntiPhase2 () {
     if (this.elapsedFrame >= 360 && this.elapsedFrame <= 540) {
-      if (this.enimation) {
-        this.enimation.alpha -= 0.005
-        if (this.enimation.alpha < 0) this.enimation.alpha = 0
-      }
+      this.alpha -= 0.005
+      if (this.alpha < 0) this.alpha = 0
 
       this.x -= 7 // 보스 너비 1/20
       this.y -= 3 // 보스 높이 1/20
       this.setWidthHeight(this.width + 14, this.height + 6) // 그리고 아까 깍은값의 2배 (그래야 자연스럽게 중앙에 배치되므로)
     } else if (this.elapsedFrame >= 541) {
-      if (this.enimation) {
-        // 알파값을 원래대로 복구하고 해당 스프라이트 제거
-        this.enimation.alpha = 1
-        this.subType = ''
-      }
+      // 알파값을 원래대로 복구하고 해당 스프라이트 제거
+      this.alpha = 1
+      this.subType = ''
     }
   }
 
@@ -8921,7 +8953,7 @@ class Round3TempleteBossSprite extends FieldData {
     this.x = graphicSystem.CANVAS_WIDTH_HALF - (this.width / 2)
     this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
 
-    if (this.elapsedFrame >= 360 && this.elapsedFrame <= 600) {
+    if (this.elapsedFrame >= 300 && this.elapsedFrame <= 600) {
       if (this.elapsedFrame % 15 === 0) {
         soundSystem.play(soundSrc.enemyAttack.towerAntijemulRing)
         for (let i = 0; i < 4; i++) {
@@ -8941,11 +8973,27 @@ class Round3TempleteBossSprite extends FieldData {
           fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
         }
       }
-    } else if (this.elapsedFrame >= 1080) {
+    } else if (this.elapsedFrame >= 780) {
       // 적 생성 후, 스프라이트 처리 종료
       fieldState.createEnemyObject(ID.enemy.towerEnemyGroup4.antijemulP3_1, this.x, this.y)
       this.subType = ''
     }
+  }
+
+  processMoveAntiPhase4 () {
+    if (this.elapsedFrame >= 780) {
+      // 적 생성, 스프라이트 처리 종료
+      fieldState.createEnemyObject(ID.enemy.towerEnemyGroup4.antijemulP4_1, this.x, this.y)
+      this.subType = ''
+    }
+  }
+
+  processMoveAntiPhaseClear () {
+    // 서서히 투명해지게 하기 (그러나 완전히 사라지진 않습니다.)
+    let alphaCount = (this.elapsedFrame - 240)
+    if (alphaCount < 0) alphaCount = 0
+    this.alpha = 1 - (1 / 180 * alphaCount)
+    if (this.alpha < 0.4) this.alpha = 0.4
   }
 
   display () {
@@ -9172,6 +9220,14 @@ class Round3Templete extends RoundData {
     } else {
       this.meter.bossHpUserStyle(enemyId, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 30, text, ['#FF7171'], ['#afafaf'], 2)
     }
+  }
+
+  /** 라운드 3 전용 보스 체력 출력: 이것은 초록색에서 체력이 감소할 때마다 빨간색으로 변경됨 */
+  bossHpMeterVer3 (enemyId = 0, text = '') {
+    let enemy = enemyId === 0 ? BaseField.getEnemyObject()[0] : BaseField.getEnemyObjectById(enemyId)
+    if (enemy == null) return
+
+    this.meter.bossHpUserStyle(enemyId, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 30, text, ['#ffe5fd', '#ffee80'], ['#afafaf'], 2)
   }
 
   processSaveString () {
@@ -10369,6 +10425,9 @@ class Round3_5 extends Round3Templete {
 
     this.sound.currentMusicSrc = '' // 음악 없음 (보스가 나오고 음악이 직접 재생됨)
 
+    /** 페이즈 4-3에서, 보스 좌표를 추적하는데 사용 */ this.antiBossX = 0
+    /** 페이즈 4-3에서, 보스 좌표를 추적하는데 사용 */ this.antiBossY = 0
+
     // 배경
     this.bgLayer.addLayerImage(imageSrc.round.round3_4_level7, 1)
     this.bgLayer.addLayerImage(imageSrc.round.round3_5_blackSpace1, 0)
@@ -10376,8 +10435,10 @@ class Round3_5 extends Round3Templete {
     this.bgLayer.addLayerImage(imageSrc.round.round3_5_blackSpaceRed, 0)
     this.bgLayer.addLayerImage(imageSrc.round.round3_5_blackSpaceGreen, 0)
     this.bgLayer.addLayerImage(imageSrc.round.round3_5_blackSpaceTornado, 0)
+    this.bgLayer.addLayerImage(imageSrc.round.round3_5_redzone, 0)
     this.bgLayer.setBackgroundSpeed(2, 1)
 
+    /** 레이어 번호를 외우기 어려워서 만든 레이어 번호 리스트 */
     this.layerList = {
       DOWNTOWER: 0,
       BLACKSPACE1: 1,
@@ -10385,15 +10446,36 @@ class Round3_5 extends Round3Templete {
       BLACKSPACERED: 3,
       BLACKSPACEGREEN: 4,
       BLACKSPACETORNADO: 5,
+      REDZONE: 6,
     }
+    
+    // targetDps (basecp 70000)
+    // phase 1-1: 140% x 80 = 11200%
+    // phase 1-2: 200% x 70 = 14000%
+    // after 1s = 200% dps
+    // phase 2-1: 12s = 2400% (boss entrance 8sec / 18)
+    // phase 2-2: 15s = 3000%, 12s = 2400%, 30s = 6000%
+    // phase 2-3: 20s = 4000%
+    // -
+    // phase 3-1: 90s + 2000% = 20000% (이 보스는 다른 구간보다 체력이 더 많이 설정되어있음.)
+    // phase 3-2: 90s + 2000% = 20000%
+    // phase 4-1: 20s = 4000%
+    // phase 4-2: 15s = 3000%
+    // phase 4-3: 15s = 3000%
+    // phase 4-F: 10s
 
     this.phase.addRoundPhase(this, this.roundPhase01_1, 0, 80)
-    this.phase.addRoundPhase(this, this.roundPhase01_2, 81, 150)
-    this.phase.addRoundPhase(this, this.roundPhase02_0, 151, 170)
-    this.phase.addRoundPhase(this, this.roundPhase02_1, 171, 250)
-    this.phase.addRoundPhase(this, this.roundPhase02_2, 251, 350)
-    this.phase.addRoundPhase(this, this.roundPhase02_3, 351, 380)
-    this.phase.addRoundPhase(this, this.roundPhase03, 381, 470)
+    this.phase.addRoundPhase(this, this.roundPhase01_2, 81, 150) // 80 + 70 (total 150)
+    this.phase.addRoundPhase(this, this.roundPhase02_0, 151, 168)
+    this.phase.addRoundPhase(this, this.roundPhase02_1, 169, 240)
+    this.phase.addRoundPhase(this, this.roundPhase02_2, 241, 340)
+    this.phase.addRoundPhase(this, this.roundPhase02_3, 341, 360) // 18 + 72 + 100 + 20 (total 210)
+    this.phase.addRoundPhase(this, this.roundPhase03_1, 361, 450)
+    this.phase.addRoundPhase(this, this.roundPhase03_2, 451, 540) // 90 + 90 (total 180)
+    this.phase.addRoundPhase(this, this.roundPhase04_1, 541, 570) 
+    this.phase.addRoundPhase(this, this.roundPhase04_2, 571, 585)
+    this.phase.addRoundPhase(this, this.roundPhase04_3, 586, 600)
+    this.phase.addRoundPhase(this, this.roundPhase04_F, 601, 610) // 30s + 15s + 15s + 10s (total 70)
 
     this.areaPhase2 = {
       /** 
@@ -10407,10 +10489,7 @@ class Round3_5 extends Round3Templete {
       /** 페이즈 2 이동 점수 */ moveScore: 0,
       /** 페이즈 2 플레이어 이동좌표 저장값 */ playerX: -1,
       /** 페이즈 2 플레이어 이동좌표 저장값 */ playerY: -1,
-      /** 페이즈 2-1-1를 클리어하기 위한 이동좌표 기준값 */ SCORE_SPACE1: 3000,
-      /** 페이즈 2-1-2를 클리어하기 위한 이동좌표 기준값 */ SCORE_SPACE2: 3500,
-      /** 페이즈 2-1-3를 클리어하기 위한 이동좌표 기준값 */ SCORE_SPACE3: 4000,
-      /** 페이즈 2-1-4를 클리어하기 위한 이동좌표 기준값 */ SCORE_SPACE4: 4500,
+      /** 페이즈 2-1를 클리어하기 위한 내부 점수 기준값 */ SCORE_OBJECT_SPACE: 480,
       /** 페이즈 2 각 공간에 대한 진행프레임 */ elapsedFrame: 0,
       /** 페이즈 2 현재 공간에 보스가 생성되었는지 확인 */ isCreateBoss: false,
       /** 페이즈 2-2 의 현재 위치에 대한 값 */ roomNumber: 0,
@@ -10440,6 +10519,9 @@ class Round3_5 extends Round3Templete {
       soundSrc.round.r3_5_message2,
       soundSrc.round.r3_5_message3,
       soundSrc.round.r3_5_phase2Start,
+      soundSrc.round.r3_5_phase4Start,
+      soundSrc.round.r3_5_antijemulDie,
+      soundSrc.round.r3_5_clear,
       soundSrc.round.r3_5_blackSpaceAreaDie,
       soundSrc.round.r3_5_blackSpaceGreen,
       soundSrc.round.r3_5_blackSpaceCatch,
@@ -10458,6 +10540,17 @@ class Round3_5 extends Round3Templete {
     ])
   }
 
+  /** 현재 보스가 죽었는지를 확인 */
+  currentBossDieCheck () {
+    let enemyObject = this.field.getEnemyObject()
+    let enemy = enemyObject[0]
+    if (enemy == null) return true
+    else {
+      if (enemy.isDied) return true
+      else return false
+    }
+  }
+
   roundPhase01_1 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     const pEnd = this.phase.getCurrentPhaseEndTime()
@@ -10465,48 +10558,34 @@ class Round3_5 extends Round3Templete {
     if (this.timeCheckFrame(pTime + 3)) {
       this.bossWarning.createWarning(this.bossTextList.bossNokgasi)
       this.sound.musicStop()
-    } else if (this.timeCheckFrame(pTime + 10)) {
-      // 10초에 배경 전환 및 배경 음악 재생 시작
+    } else if (this.timeCheckFrame(pTime + 9)) {
       this.sound.musicFadeIn(soundSrc.music.music19_round3_5_phase1, 120)
-    } else if (this.timeCheckFrame(pTime + 11)) {
-      // 보스 등장
       this.field.createEnemy(ID.enemy.towerEnemyGroup4.nokgasi1)
     }
 
-    // 보스 진행
-    if (this.timeCheckInterval(pTime + 11, pEnd - 2)) {
-      let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.nokgasi1)
-      if (enemy != null) {
-        if (enemy.isDied) {
-          // 적이 죽은 경우, 화면 안의 모든 총알을 삭제하고 시간을 다음 페이즈로 이동시킵니다.
-          fieldState.allEnemyBulletDelete()
-          this.time.setCurrentTime(pEnd - 1)
-          this.time.setCurrentTimePause(false)
-        } else {
-          this.timePauseWithEnemyCount(pEnd - 3) // 해당 시간이 다 될 때 까지 보스가 남아있으면 시간이 멈춥니다.
-        }
-      } else {
-        this.time.setCurrentTimePause(false) // 정해진 적이 없다면 시간 멈춤을 해제합니다.
+    if (this.timeCheckInterval(pTime + 10, pEnd - 1)) {
+      this.timePauseWithEnemyCount(pEnd - 1) // 적이 남아있으면 페이즈 끝 시간에서 진행 시간을 일시정지
+      if (this.currentBossDieCheck()) {
+        fieldState.allEnemyBulletDelete() // 모든 총알 삭제
+        this.time.setCurrentTime(pEnd - 1) // 다음 페이즈 시간으로 이동시킴
+        this.time.setCurrentTimePause(false) // 시간 일시정지 해제
       }
     }
   }
 
   roundPhase01_2 () {
+    // 보스는 nokgasi1이 죽은경우, nokgasi2가 자동 생성됨
     const pTime = this.phase.getCurrentPhaseStartTime()
     const pEnd = this.phase.getCurrentPhaseEndTime()
+    if (this.timeCheckInterval(pTime + 5, pEnd - 1)) {
+      this.timePauseWithEnemyCount(pEnd - 1) // 적이 남아있으면 페이즈 끝 시간에서 진행 시간을 일시정지
+      if (this.currentBossDieCheck()) {
+        fieldState.allEnemyBulletDelete() // 모든 총알 삭제
+        this.time.setCurrentTime(pEnd - 1) // 현재 페이즈의 끝시간으로 이동시킴 (위의 조건 체크를 완료하기 위하여)
+        this.sound.musicStop() // 음악 정지
 
-    // 페이즈 1-1은 적이 적을 생성하는 구조라 해당 ID와 관련된 적이 있는지만 확인하지만,
-    // 페이즈 1-2은 전체적으로 적이 남아있는지를 판단합니다. (무슨차이냐면, 적이 남아있을 때 시간 진행을 막기 위함)
-    // 그러나 페이즈 1-1에서 밑과 같은 처리를 하면 영원히 시간이 멈추고 잘못된 현상이 벌어지게됨
-    this.timePauseWithEnemyCount(pEnd - 4)
-    if (this.timeCheckInterval(pTime + 10, pEnd - 4)) {
-      let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.nokgasi2)
-      if (enemy != null) {
-        if (enemy.isDied) {
-          this.time.setCurrentTime(pEnd - 4)
-          fieldState.allEnemyBulletDelete()
-          this.sound.musicStop()
-        }
+        // 참고: 1-2페이즈에서는 보스가 죽으면 음악이 정지되고, 
+        // 적이 파괴되는동안에는 시간 멈춤되었을경우, 적이 사라지기 전까지 시간이 진행되지 않습니다.
       }
     }
   }
@@ -10516,15 +10595,15 @@ class Round3_5 extends Round3Templete {
 
     if (this.timeCheckFrame(pTime + 0)) {
       this.bgLayer.setBackgroundSpeed(0, 0) // 배경 이동 멈춤
-    } else if (this.timeCheckFrame(pTime + 4)) {
+    } else if (this.timeCheckFrame(pTime + 2)) {
       this.bossWarning.createWarning(this.bossTextList.bossAnti)
-    } else if (this.timeCheckFrame(pTime + 10)) {
+    } else if (this.timeCheckFrame(pTime + 8)) {
       this.bossSprite.createSpriteAntiPhase2()
       this.sound.play(soundSrc.round.r3_5_message1)
-    } else if (this.timeCheckFrame(pTime + 16)) {
-      this.bgLayer.setLayerAlphaFade(0, 0, 90)
+    } else if (this.timeCheckFrame(pTime + 14)) {
+      this.bgLayer.setLayerAlphaFade(0, 0, 120)
       this.sound.play(soundSrc.round.r3_5_phase2Start)
-    } else if (this.timeCheckFrame(pTime + 18)) {
+    } else if (this.timeCheckFrame(pTime + 17)) {
       this.bgLayer.setBackgroundPosition(0, 0)
       this.bgLayer.setBackgroundSpeed(0, 0)
     }
@@ -10567,6 +10646,7 @@ class Round3_5 extends Round3Templete {
   roundPhase02_1BackgroundProcess () {
     // spaceNumber가 1 ~ 4 (공간 진행 중) 일 때에만 배경 페이드가 지속됩니다.
     // spaceNumber가 5가되면 공간을 클리어한것이므로, 더이상 안개 배경이 등장하지 않습니다.
+    // 착시현상이 있지만, 내가 의도한 것은 아님, 그러나 착시현상이 마음에 듬... (베경 멀미가 있음...)
     if (this.areaPhase2.spaceNumber >= 1 && this.areaPhase2.spaceNumber <= 4) {
       if (this.time.currentTime % 10 === 0) {
         this.bgLayer.setLayerAlphaFade(this.layerList.BLACKSPACE1, 1, 180)
@@ -10582,21 +10662,12 @@ class Round3_5 extends Round3Templete {
       }
     }
 
-    if (this.areaPhase2.spaceNumber === 1) {
-      this.bgLayer.setLayerSpeed(this.layerList.BLACKSPACE1, 0.2, 0)
-      this.bgLayer.setLayerSpeed(this.layerList.BLACKSPACE2, 0.3, 0)
-    } else if (this.areaPhase2.spaceNumber === 2) {
-      this.bgLayer.setLayerSpeed(this.layerList.BLACKSPACE1, 0.6, 0)
-      this.bgLayer.setLayerSpeed(this.layerList.BLACKSPACE2, 0.7, 0)
-    } else if (this.areaPhase2.spaceNumber === 3) {
-      this.bgLayer.setLayerSpeed(this.layerList.BLACKSPACE1, 1.4, 0)
-      this.bgLayer.setLayerSpeed(this.layerList.BLACKSPACE2, 1.6, 0)
-    } else if (this.areaPhase2.spaceNumber === 4) {
-      this.bgLayer.setLayerSpeed(this.layerList.BLACKSPACE1, 2.5, 0)
-      this.bgLayer.setLayerSpeed(this.layerList.BLACKSPACE2, 2.9, 0)
-    } else if (this.areaPhase2.spaceNumber === 5) {
-      this.bgLayer.setLayerSpeed(this.layerList.BLACKSPACE1, 0, 0)
-      this.bgLayer.setLayerSpeed(this.layerList.BLACKSPACE2, 0, 0)
+    const speedTable1 = [0, 0.2, 0.6, 1.4, 2.5, 0]
+    const speedTable2 = [0, 0.3, 0.7, 1.6, 2.8, 0]
+    this.bgLayer.setLayerSpeed(this.layerList.BLACKSPACE1, speedTable1[this.areaPhase2.spaceNumber], 0)
+    this.bgLayer.setLayerSpeed(this.layerList.BLACKSPACE2, speedTable2[this.areaPhase2.spaceNumber], 0)
+
+    if (this.areaPhase2.spaceNumber === 5) {
       this.bgLayer.setLayerAlphaFade(this.layerList.BLACKSPACE1, 0, 30)
       this.bgLayer.setLayerAlphaFade(this.layerList.BLACKSPACE2, 0, 30)
     }
@@ -10604,7 +10675,7 @@ class Round3_5 extends Round3Templete {
 
   roundPhase02_1BlackSpace () {
     // 토네이도 생성 (일시정지 상황에서도 토네이도는 생성되어야 합니다.)
-    let tornadoDelayTable = [60, 60, 30, 20, 15]
+    let tornadoDelayTable = [60, 40, 20, 15, 12]
     
     if (this.time.totalFrame % tornadoDelayTable[this.areaPhase2.spaceNumber] === 0) {
       this.createBlackSpaceTornado()
@@ -10614,10 +10685,10 @@ class Round3_5 extends Round3Templete {
   roundPhase02_1BossLogic () {
     let scoreTable = [
       0,
-      this.areaPhase2.SCORE_SPACE2,
-      this.areaPhase2.SCORE_SPACE1,
-      this.areaPhase2.SCORE_SPACE3,
-      this.areaPhase2.SCORE_SPACE4,
+      this.areaPhase2.SCORE_OBJECT_SPACE,
+      this.areaPhase2.SCORE_OBJECT_SPACE,
+      this.areaPhase2.SCORE_OBJECT_SPACE,
+      this.areaPhase2.SCORE_OBJECT_SPACE,
     ]
     
     if (this.areaPhase2.isCreateBoss) {
@@ -10677,14 +10748,6 @@ class Round3_5 extends Round3Templete {
     } else {
       return false
     }
-    
-    // let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.blackSpaceAnti)
-    // if (enemy == null) return false
-    // if (enemy.isDied) {
-      // this.areaPhase2.isCreateBoss = false // 보스를 다시 생성할 수 있게 하기 위해 보스가 생성되지 않은 상태로 돌아감
-      // return true
-    // }
-    // return false
   }
 
   roundPhase02_1MoveScore () {
@@ -10696,10 +10759,14 @@ class Round3_5 extends Round3Templete {
       this.areaPhase2.playerX = player.x
       this.areaPhase2.playerY = player.y
     } else {
+      // 클리어 조건이 시간 진행으로 변경되어서, 더이상 이동점수는 의미가 없습니다.
+      // 다만 코드는 다른 용도로도 활용 할 수 있으므로 남겨두겠습니다.
       // 이동 차이 값 만큼을 점수로 환산합니다. (점수는 플러스이기 때문에 Math.abs를 통해 계산)
       let diffScoreX = Math.abs(this.areaPhase2.playerX - player.x)
       let diffScoreY = Math.abs(this.areaPhase2.playerY - player.y)
-      this.areaPhase2.moveScore += diffScoreX + diffScoreY
+  
+      // 점수 처리 없음 (코드는 임시로 남겨둠)
+      this.areaPhase2.moveScore += (diffScoreX + diffScoreY) > 1 ? 0 : 0
 
       // 위치 갱신
       this.areaPhase2.playerX = player.x
@@ -10707,20 +10774,21 @@ class Round3_5 extends Round3Templete {
     }
 
     // 시간 진행에 따른 점수 계산
-    if (this.areaPhase2.elapsedFrame >= 300 && this.areaPhase2.elapsedFrame <= 600) {
-      this.areaPhase2.moveScore += 2
-    } else if (this.areaPhase2.elapsedFrame >= 600 && this.areaPhase2.elapsedFrame <= 900) {
-      this.areaPhase2.moveScore += 4
-    } else if (this.areaPhase2.elapsedFrame >= 900) {
-      this.areaPhase2.moveScore += 10
-    }
+    // 8초가 지나면 보스가 등장하므로, 8 x 60 = 480프레임 필요
+    this.areaPhase2.moveScore++
   }
 
   roundPhase02_1TimeStop () {
     const pTime = this.phase.getCurrentPhaseStartTime()
 
     // 시간 정지 테이블
-    let stopTimeTable = [0, pTime + 16, pTime + 36, pTime + 56, pTime + 78]
+    let stopTimeTable = [0, pTime + 17, pTime + 34, pTime + 51, pTime + 69]
+
+    // 만약 해당 구간을 빨리 클리어한다면, 시간을 건너뛰도록 함
+    if (this.timeCheckInterval(pTime + 0, pTime + 68) && this.areaPhase2.spaceNumber >= 5) {
+      this.time.setCurrentTime(pTime + 69)
+      return
+    }
 
     // 각 구간에 따라 시간이 정지되도록 함
     for (let i = 0; i < stopTimeTable.length; i++) {
@@ -10731,11 +10799,6 @@ class Round3_5 extends Round3Templete {
         this.time.setCurrentTimePause(false)
       }
     }
-
-    // 만약 해당 구간을 빨리 클리어한다면, 시간을 건너뛰도록 함
-    if (this.areaPhase2.spaceNumber >= 5) {
-      this.time.setCurrentTime(pTime + 79)
-    }
   }
 
   roundPhase02_2 () {
@@ -10743,19 +10806,23 @@ class Round3_5 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 0)) {
       this.roundPhase02_2StartInit()
     }
-
+    
     this.roundPhase02_2TimeStop()
-    if (this.areaPhase2.roomNumber === 0) {
-      this.roundPhase02_2PlayerSelect()
-    } else if (this.areaPhase2.roomNumber === this.areaPhase2.ROOM_RED) {
-      this.roundPhase02_2RedRoom()
-    } else if (this.areaPhase2.roomNumber === this.areaPhase2.ROOM_YELLOW) {
-      this.roundPhase02_2YellowRoom()
-    } else if (this.areaPhase2.roomNumber === this.areaPhase2.ROOM_GREEN) {
-      this.roundPhase02_2GreenRoom()
-    } else if (this.areaPhase2.roomNumber === this.areaPhase2.ROOM_TORNADO) {
-      this.roundPhase02_2TornadoRoom()
+    if (this.areaPhase2.roomNumber !== 0) this.areaPhase2.elapsedFrame++
+
+    // 해당 공간을 클리어한 상태에서는 해당 방의 로직을 동작하지 않습니다.
+    // 0번방은 클리어되지 않습니다.
+    if (this.roundPhase02_2RoomClear()) return
+
+    switch (this.areaPhase2.roomNumber) {
+      case 0: this.roundPhase02_2PlayerSelect(); break
+      case this.areaPhase2.ROOM_RED: this.roundPhase02_2RedRoom(); break
+      case this.areaPhase2.ROOM_YELLOW: this.roundPhase02_2YellowRoom(); break
+      case this.areaPhase2.ROOM_GREEN: this.roundPhase02_2GreenRoom(); break
+      case this.areaPhase2.ROOM_TORNADO: this.roundPhase02_2TornadoRoom(); break
     }
+
+    this.roundPhase02_2BossDie()
   }
 
   /** 라운드 페이즈 2-2에 처음 진입했을 때 사용하는 함수 */
@@ -10808,6 +10875,7 @@ class Round3_5 extends Round3Templete {
       isWarp = true
     }
 
+    // 워프를 성공했다면, 사운드 재생 및, 플레이어 위치 강제 이동
     if (isWarp) {
       this.sound.play(soundSrc.round.r3_5_blackSpaceWarp)
       player.x = 0
@@ -10816,6 +10884,7 @@ class Round3_5 extends Round3Templete {
 
   /** 라운드 페이즈 2-2의 모든 방(검은 방 제외)를 클리어 하였는지 학인합니다. */
   roundPhase02_2CheckAllRoomClear () {
+    // 0번방은 방을 선택하는 공간이므로 판단하지 않음
     for (let i = 1; i <= this.areaPhase2.roomClearTable.length; i++) {
       if (!this.areaPhase2.roomClearTable[i]) return false
     }
@@ -10827,8 +10896,8 @@ class Round3_5 extends Round3Templete {
     const pTime = this.phase.getCurrentPhaseStartTime()
 
     // 시간 정지 테이블
-    let stopTimeTable = [pTime + 24, pTime + 49, pTime + 74, pTime + 97]
-    let loopStopTimeTable = [pTime + 3, pTime + 28, pTime + 53, pTime + 78]
+    let stopTimeTable = [pTime + 24, pTime + 49, pTime + 74, pTime + 98]
+    let loopStopTimeTable = [pTime + 2, pTime + 27, pTime + 52, pTime + 77]
     let clearCount = 0
 
     // 총 클리어 개수를 살펴봄
@@ -10836,6 +10905,7 @@ class Round3_5 extends Round3Templete {
       if (this.areaPhase2.roomClearTable[i]) clearCount++
     }
 
+    // 룸 번호가 0번이면, 박스 선택 상황이고, 다른번호면 박스 내부를 진행중인 상황임
     if (this.areaPhase2.roomNumber === 0) {
       if (this.timeCheckInterval(loopStopTimeTable[clearCount])) {
         this.time.setCurrentTimePause(true, 'select box')
@@ -10856,26 +10926,34 @@ class Round3_5 extends Round3Templete {
     }
   }
 
-  roundPhase02_2RedRoom () {
-    // 레드 총알 생성
-    // 룸에 들어가면 elaspedFrame이 증가
-    // 가운데에서 지속적으로 총알이 생성되며, 12초가 경과한 이후 보스가 등장함
-    this.areaPhase2.elapsedFrame++
-    let elapsed = this.areaPhase2.elapsedFrame
-
+  roundPhase02_2RoomClear () {
     // 해당 공간을 클리어한 상태에서는 해당 방의 로직을 동작하지 않습니다.
-    if (this.areaPhase2.roomClearTable[this.areaPhase2.ROOM_RED]) {
-      if (this.areaPhase2.elapsedFrame >= 180) {
-        // 일정 시간 이후 원래 룸으로 되돌아갑니다.
-        this.roundPhase02_2RoomInit()
+    if (this.areaPhase2.roomClearTable[this.areaPhase2.roomNumber]) {
+      if (this.areaPhase2.elapsedFrame >= 120) {
+        this.roundPhase02_2RoomInit() // 일정 시간 이후 원래 룸으로 되돌아갑니다.
       }
-      return
-    }
 
+      return true
+    }
+    return false
+  }
+
+  roundPhase02_2BossDie () {
+    if (this.areaPhase2.isCreateBoss) {
+      if (this.checkBlackSpaceBossDie()) {
+        this.field.allEnemyBulletDelete()
+        this.areaPhase2.roomClearTable[this.areaPhase2.roomNumber] = true
+        this.areaPhase2.elapsedFrame = 0 // 이 프레임을 리셋해서, 대기시간을 처리
+      }
+    }
+  }
+
+  roundPhase02_2RedRoom () {
+    // 레드 총알 생성, 가운데에서 지속적으로 총알이 생성되며, 10초가 경과한 이후 보스가 등장함
+    let elapsed = this.areaPhase2.elapsedFrame
     let bulletCondition = (elapsed <= 300 && elapsed % 30 === 0) 
       || (elapsed >= 301 && elapsed <= 600 && elapsed % 20 === 0) 
-      || (elapsed >= 601 && elapsed <= 900 && elapsed % 15 === 0)
-      || (elapsed >= 901 && elapsed <= 1800 && elapsed % 10 === 0)
+      || (elapsed >= 601 && elapsed <= 1860 && elapsed % 15 === 0)
 
     if (bulletCondition) {
       let bullet = new Round3_5.BlackSpaceBulletRed()
@@ -10885,33 +10963,13 @@ class Round3_5 extends Round3Templete {
       this.sound.play(soundSrc.round.r3_5_blackSpaceRed)
     }
 
-    if (this.areaPhase2.elapsedFrame >= 720 && !this.areaPhase2.isCreateBoss) {
-      // 보스 생성
+    if (this.areaPhase2.elapsedFrame >= 600 && !this.areaPhase2.isCreateBoss) {
       this.createBlackSpaceBossPhase2_1(ID.enemy.towerEnemyGroup4.blackSpaceRed)
-    }
-
-    if (this.areaPhase2.isCreateBoss) {
-      if (this.checkBlackSpaceBossDie()) {
-        this.field.allEnemyBulletDelete()
-        this.areaPhase2.roomClearTable[this.areaPhase2.ROOM_RED] = true
-        this.areaPhase2.elapsedFrame = 0 // 이 프레임을 리셋해서, 대기시간을 처리
-      }
     }
   }
 
   roundPhase02_2YellowRoom () {
-    // 옐로우 레이저 생성
-    // 랜덤한 가로 영역에 레이저가 예고 후 생성되며, 10초 후 보스가 등장함
-    this.areaPhase2.elapsedFrame++
-    // 해당 공간을 클리어한 상태에서는 해당 방의 로직을 동작하지 않습니다.
-    if (this.areaPhase2.roomClearTable[this.areaPhase2.ROOM_YELLOW]) {
-      if (this.areaPhase2.elapsedFrame >= 180) {
-        // 일정 시간 이후 원래 룸으로 되돌아갑니다.
-        this.roundPhase02_2RoomInit()
-      }
-      return
-    }
-
+    // 옐로우 레이저 생성, 랜덤한 가로 영역에 레이저가 예고 후 생성되며, 15초 후 보스가 등장함
     if (this.areaPhase2.elapsedFrame >= 180 && this.areaPhase2.elapsedFrame % 180 === 1) {
       let skipNumber = Math.floor(Math.random() * 6)
       for (let i = 0; i < 6; i++) {
@@ -10934,31 +10992,12 @@ class Round3_5 extends Round3Templete {
       this.sound.play(soundSrc.round.r3_5_blackSpaceYellow)
     }
 
-    if (this.areaPhase2.elapsedFrame >= 600 && !this.areaPhase2.isCreateBoss) {
-      // 보스 생성
+    if (this.areaPhase2.elapsedFrame >= 900 && !this.areaPhase2.isCreateBoss) {
       this.createBlackSpaceBossPhase2_1()
-    }
-
-    if (this.areaPhase2.isCreateBoss) {
-      if (this.checkBlackSpaceBossDie()) {
-        this.field.allEnemyBulletDelete()
-        this.areaPhase2.roomClearTable[this.areaPhase2.ROOM_YELLOW] = true
-        this.areaPhase2.elapsedFrame = 0 // 이 프레임을 리셋해서, 대기시간을 처리
-      }
     }
   }
 
   roundPhase02_2GreenRoom () {
-    this.areaPhase2.elapsedFrame++
-    // 해당 공간을 클리어한 상태에서는 해당 방의 로직을 동작하지 않습니다.
-    if (this.areaPhase2.roomClearTable[this.areaPhase2.ROOM_GREEN]) {
-      if (this.areaPhase2.elapsedFrame >= 180) {
-        // 일정 시간 이후 원래 룸으로 되돌아갑니다.
-        this.roundPhase02_2RoomInit()
-      }
-      return
-    }
-
     // 필드 영역 (맨 위, 맨 아래에 전부 가시가 있음)
     if (this.areaPhase2.elapsedFrame === 1) {
       for (let i = 0; i < 16; i++) {
@@ -10969,9 +11008,14 @@ class Round3_5 extends Round3Templete {
         fieldState.createSpriteObject(bullet)
       }
     }
+
+    let elapsed = this.areaPhase2.elapsedFrame
+    let bulletCondition = (elapsed <= 300 && elapsed % 30 === 0) 
+      || (elapsed >= 301 && elapsed <= 600 && elapsed % 20 === 0) 
+      || (elapsed >= 601 && elapsed <= 1860 && elapsed % 15 === 0)
     
     // 랜덤 총알 영역 (정해진 구간중에서 랜덤하게 총알이 발사됨)
-    if (this.areaPhase2.elapsedFrame % 30 === 0) {
+    if (bulletCondition) {
       let randomNumber = Math.floor(Math.random() * 16)
       let lineNumber = Math.floor(randomNumber / 8)
       let XNumber = randomNumber % 8
@@ -10984,31 +11028,14 @@ class Round3_5 extends Round3Templete {
       this.sound.play(soundSrc.round.r3_5_blackSpaceGreen)
     }
 
-    if (this.areaPhase2.elapsedFrame >= 720 && !this.areaPhase2.isCreateBoss) {
-      // 보스 생성
+    if (this.areaPhase2.elapsedFrame >= 600 && !this.areaPhase2.isCreateBoss) {
       this.createBlackSpaceBossPhase2_1(ID.enemy.towerEnemyGroup4.blackSpaceGreen)
-    }
-
-    if (this.areaPhase2.isCreateBoss) {
-      if (this.checkBlackSpaceBossDie()) {
-        this.field.allEnemyBulletDelete()
-        this.field.allSpriteDelete() // 적 총알중 일부는 스프라이트이므로, 스프라이트를 전부 삭제해야 합니다.
-        this.areaPhase2.roomClearTable[this.areaPhase2.ROOM_GREEN] = true
-        this.areaPhase2.elapsedFrame = 0 // 이 프레임을 리셋해서, 대기시간을 처리
-      }
     }
   }
 
   roundPhase02_2TornadoRoom () {
-    this.areaPhase2.elapsedFrame++
-    // 해당 공간을 클리어한 상태에서는 해당 방의 로직을 동작하지 않습니다.
-    if (this.areaPhase2.roomClearTable[this.areaPhase2.ROOM_TORNADO]) {
-      if (this.areaPhase2.elapsedFrame >= 180) {
-        // 일정 시간 이후 원래 룸으로 되돌아갑니다.
-        this.roundPhase02_2RoomInit()
-      }
-      return
-    }
+    // 토네이도 룸
+    // 토네이도는 곧바로 생성되며, 주기적으로 토네이도를 소환하고 플레이어를 중앙으로 끌어당김
 
     let player = fieldState.getPlayerObject()
     // 플레이어를 강제로 부분적으로 이동시킴 (토네이도가 있는 쪽으로)
@@ -11018,38 +11045,25 @@ class Round3_5 extends Round3Templete {
     if (player.y < graphicSystem.CANVAS_HEIGHT_HALF) player.y += 2
     else if (player.y > graphicSystem.CANVAS_HEIGHT_HALF) player.y -= 2
 
-    if (this.areaPhase2.elapsedFrame === 30) {
-      // 토네이도 생성
+    if (this.areaPhase2.elapsedFrame === 15) {
       this.createBlackSpaceBossPhase2_1(ID.enemy.towerEnemyGroup4.blackSpaceTornado)
     }
 
-    if (this.areaPhase2.elapsedFrame % 60 === 0) {
-      // 랜덤한 토네이도가 중앙에서 나옴
+    if (this.areaPhase2.elapsedFrame % 30 === 0) {
+      // 랜덤한 토네이도가 중앙에서 나옴, 토네이도가 죽었을 때 삭제시키기 위해 총알로 설정함
       let bullet = new Round3_5.BlackSpaceTornadoPhase2_2()
       bullet.x = graphicSystem.CANVAS_WIDTH_HALF - (bullet.width / 2)
       bullet.y = graphicSystem.CANVAS_HEIGHT_HALF - (bullet.height / 2)
-      fieldState.createSpriteObject(bullet)
-    }
-
-    if (this.areaPhase2.isCreateBoss) {
-      if (this.checkBlackSpaceBossDie()) {
-        this.field.allEnemyBulletDelete()
-        this.areaPhase2.roomClearTable[this.areaPhase2.ROOM_TORNADO] = true
-        this.areaPhase2.elapsedFrame = 0 // 이 프레임을 리셋해서, 대기시간을 처리
-
-        let sprite = this.field.getSpriteObject()
-        for (let i = 0; i < sprite.length; i++) {
-          sprite[i].isDeleted = true // 스프라이트 전부 삭제
-        }
-      }
+      fieldState.createEnemyBulletObject(bullet)
     }
   }
 
   roundPhase02_3 () {
     this.roundPhase02_3ZeroRoom()
     this.roundPhase02_3BlackRoom()
+
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 4)) {
+    if (this.timeCheckFrame(pTime + 1)) {
       // 모든 레이어를 배경과 동기화하고 기존 블랙스페이스 배경을 표시
       this.bgLayer.setBackgroundSynchronize()
       this.bgLayer.setBackgroundSpeed(0, 0)
@@ -11058,7 +11072,7 @@ class Round3_5 extends Round3Templete {
       this.bgLayer.setLayerAlpha(this.layerList.BLACKSPACEGREEN, 0)
       this.bgLayer.setLayerAlpha(this.layerList.BLACKSPACERED, 0)
       this.bgLayer.setLayerAlpha(this.layerList.BLACKSPACETORNADO, 0)
-    } else if (this.timeCheckFrame(pTime + 29)) {
+    } else if (this.timeCheckFrame(pTime + 19)) {
       this.bgLayer.setLayerAlpha(this.layerList.DOWNTOWER, 1)
       this.bgLayer.setLayerAlphaFade(this.layerList.BLACKSPACE1, 120, 0)
       this.bgLayer.setLayerAlphaFade(this.layerList.BLACKSPACE2, 120, 0)
@@ -11067,7 +11081,7 @@ class Round3_5 extends Round3Templete {
 
   roundPhase02_3ZeroRoom () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (!this.timeCheckInterval(pTime + 3)) return
+    if (!this.timeCheckInterval(pTime + 1)) return
 
     if (this.areaPhase2.spaceNumber !== 7) {
       this.time.setCurrentTimePause(true, 'box select')
@@ -11089,14 +11103,15 @@ class Round3_5 extends Round3Templete {
 
   roundPhase02_3BlackRoom () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (!this.timeCheckInterval(pTime + 5, pTime + 29)) return
+    const pEnd = this.phase.getCurrentPhaseEndTime()
+    if (!this.timeCheckInterval(pTime + 3, pEnd)) return
 
-    this.timePauseWithEnemyCount(pTime + 29) // 특정 시간이 되면 적이 완전히 사라질 때까지 멈춥니다. 
-    this.areaPhase2.elapsedFrame++
-    if (this.areaPhase2.elapsedFrame === 120) {
-      // 보스 생성
-      this.createBlackSpaceBossPhase2_1(ID.enemy.towerEnemyGroup4.blackSpaceArea)
-      this.sound.musicFadeOut(300) // 음악 페이드 아웃
+    // 2-3페이즈는 2-2페이즈랑 다르게 elapsedFrame을 증가하지 않으면 보스가 등장하지 못함
+    this.areaPhase2.elapsedFrame++ 
+    this.timePauseWithEnemyCount(pEnd) // 특정 시간이 되면 적이 완전히 사라질 때까지 멈춥니다. 
+    if (this.areaPhase2.elapsedFrame === 60) {
+      this.createBlackSpaceBossPhase2_1(ID.enemy.towerEnemyGroup4.blackSpaceArea) // 보스 생성
+      this.sound.musicFadeOut(180) // 음악 페이드 아웃
     }
     
     let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.blackSpaceArea)
@@ -11105,50 +11120,159 @@ class Round3_5 extends Round3Templete {
     if (enemy.hp <= enemy.hpMax * 0.5) {
       let hpPercent = (enemy.hp / enemy.hpMax)
 
+      // 적의 체력이 감소할수록 다운타워의 배경이 보여지고, 블랙스페이스의 배경은 사라짐
       this.bgLayer.setLayerAlpha(this.layerList.DOWNTOWER, 0.5 - hpPercent)
       this.bgLayer.setLayerAlpha(this.layerList.BLACKSPACE1, hpPercent + 0.5)
       this.bgLayer.setLayerAlpha(this.layerList.BLACKSPACE2, hpPercent + 0.5)
     }
 
-    if (enemy.isDied && this.timeCheckInterval(pTime + 15, pTime + 27)) {
-      this.time.setCurrentTime(pTime + 29)
+    if (enemy.isDied && this.timeCheckInterval(pTime + 5, pEnd)) {
+      this.time.setCurrentTime(pEnd)
     }
   }
 
-  roundPhase03 () {
+  roundPhase03_1 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
+    const pEnd = this.phase.getCurrentPhaseEndTime()
     if (this.timeCheckFrame(pTime + 0)) {
+      this.sound.musicStop()
       this.bgLayer.setLayerAlphaFade(this.layerList.DOWNTOWER, 1, 60)
       this.bgLayer.setLayerAlphaFade(this.layerList.BLACKSPACE1, 0, 60)
       this.bgLayer.setLayerAlphaFade(this.layerList.BLACKSPACE2, 0, 60)
-      this.sound.musicStop()
       this.bgLayer.setBackgroundSpeed(0, 0)
-    } else if (this.timeCheckFrame(pTime + 2)) {
+    } else if (this.timeCheckFrame(pTime + 1)) {
       // 메세지 2 발생, 스프라이트 생성
       soundSystem.play(soundSrc.round.r3_5_message2)
       this.bossSprite.createSpriteAntiPhase3()
-    } else if (this.timeCheckFrame(pTime + 20)) {
+    } else if (this.timeCheckFrame(pTime + 19)) {
       // 보스전 시작 및 사운드 재생
       this.sound.currentMusicSrc = soundSrc.music.music21_round3_5_antijemulNormal
       this.sound.musicPlay()
     }
 
-    if (this.timeCheckInterval(pTime + 24, pTime + 87)) {
-      if (this.field.getEnemyCount() === 0) {
-        // next phase
+    this.timePauseWithEnemyCount(pEnd - 1)
+    if (this.timeCheckInterval(pTime + 24, pEnd - 1)) {
+      this.timePauseWithEnemyCount(pEnd - 1) // 적이 남아있으면 페이즈 끝 시간에서 진행 시간을 일시정지
+      if (this.currentBossDieCheck()) {
+        fieldState.allEnemyBulletDelete() // 모든 총알 삭제
+        this.time.setCurrentTime(pEnd - 1) // 다음 페이즈 시간으로 이동시킴
+        this.time.setCurrentTimePause(false) // 시간 일시정지 해제
       }
     }
   }
 
-  roundPhase04 () {}
-  roundPhase05 () {}
-  roundPhase06 () {}
+  roundPhase03_2 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    const pEnd = this.phase.getCurrentPhaseEndTime()
+    if (this.timeCheckFrame(pTime + 0)) {
+      this.field.createEnemy(ID.enemy.towerEnemyGroup4.antijemulP3_2)
+    }
+
+    if (this.timeCheckInterval(pTime + 10, pEnd - 1)) {
+      this.timePauseWithEnemyCount(pEnd - 1) // 적이 남아있으면 페이즈 끝 시간에서 진행 시간을 일시정지
+      if (this.currentBossDieCheck()) {
+        fieldState.allEnemyBulletDelete() // 모든 총알 삭제
+        this.time.setCurrentTime(pEnd - 1) // 다음 페이즈 시간으로 이동시킴
+        this.time.setCurrentTimePause(false) // 시간 일시정지 해제
+        this.sound.musicStop() // 음악 정지
+
+        this.bossSprite.createSpriteAntiPhase4() // 새 스프라이트 생성 (다음페이즈에서 사용)
+        this.bgLayer.setBackgroundSpeed(0, 0) // 배경 스피드 고정
+      }
+    }
+  }
+
+  roundPhase04_1 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    const pEnd = this.phase.getCurrentPhaseEndTime()
+    if (this.timeCheckFrame(pTime + 2)) {
+      this.sound.musicStop()
+      this.sound.play(soundSrc.round.r3_5_message3)
+    } else if (this.timeCheckFrame(pTime + 7)) {
+      this.bgLayer.setLayerAlphaFade(this.layerList.DOWNTOWER, 0, 120)
+      this.bgLayer.setLayerAlphaFade(this.layerList.REDZONE, 1, 300)
+      this.sound.play(soundSrc.round.r3_5_phase4Start)
+    } else if (this.timeCheckFrame(pTime + 12)) {
+      this.sound.musicFadeIn(soundSrc.music.music22_round3_5_antijemulHyper, 0)
+    }
+
+    if (this.timeCheckInterval(pTime + 15, pEnd - 1)) {
+      let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.antijemulP4_1)
+      if (enemy == null) {
+        fieldState.allEnemyBulletDelete() // 모든 총알 삭제
+        this.time.setCurrentTime(pEnd) // 다음 페이즈 시간으로 이동시킴
+        this.time.setCurrentTimePause(false) // 시간 일시정지 해제
+      } else {
+        this.timePauseWithEnemyCount(pEnd - 1)
+      }
+    }
+  }
+
+  roundPhase04_2 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    const pEnd = this.phase.getCurrentPhaseEndTime()
+    this.bgLayer.setBackgroundSpeed(4, 0)
+
+    if (this.timeCheckInterval(pTime + 4, pEnd - 1)) {
+      let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.antijemulP4_2)
+      if (enemy == null) {
+        fieldState.allEnemyBulletDelete() // 모든 총알 삭제
+        this.time.setCurrentTime(pEnd) // 다음 페이즈 시간으로 이동시킴
+        this.time.setCurrentTimePause(false) // 시간 일시정지 해제
+      } else {
+        this.timePauseWithEnemyCount(pEnd - 1)
+      }
+    }
+  }
+
+  roundPhase04_3 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    const pEnd = this.phase.getCurrentPhaseEndTime()
+    this.bgLayer.setBackgroundSpeed(8, 6)
+
+    if (this.timeCheckInterval(pTime + 4, pEnd - 1)) {
+      let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.antijemulP4_3)
+      if (enemy == null) {
+        fieldState.allEnemyBulletDelete() // 모든 총알 삭제
+        this.time.setCurrentTime(pEnd) // 다음 페이즈 시간으로 이동시킴
+        this.time.setCurrentTimePause(false) // 시간 일시정지 해제
+        this.sound.musicFadeOut(120)
+        this.bossSprite.createSpriteAntiClear(this.antiBossX, this.antiBossY)
+      } else {
+        this.antiBossX = enemy.x
+        this.antiBossY = enemy.y
+        this.timePauseWithEnemyCount(pEnd - 1)
+      }
+    }
+  }
+
+  roundPhase04_F () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    this.bgLayer.setBackgroundSpeed(0, 0)
+    this.clearSoundSrc = soundSrc.round.r3_5_clear // 클리어 사운드 변경 (이건 이스테에그같은거임)
+    if (this.timeCheckFrame(pTime + 0)) {
+      
+    } else if (this.timeCheckFrame(pTime + 1)) {
+      this.bgLayer.setLayerAlphaFade(this.layerList.DOWNTOWER, 1, 60)
+      this.bgLayer.setLayerAlphaFade(this.layerList.REDZONE, 0, 120)
+    } else if (this.timeCheckFrame(pTime + 2)) {
+      soundSystem.play(soundSrc.round.r3_5_antijemulDie)
+    }
+
+    if (this.timeCheckInterval(pTime + 2, pTime + 8, 4)) {
+      let effect = new Round3_5.antijemulDieEffect()
+      effect.x = this.bossSprite.x + (Math.random() * this.bossSprite.width)
+      effect.y = this.bossSprite.y + (Math.random() * this.bossSprite.height)
+      effect.setWidthHeight(effect.width * 2, effect.height * 2)
+      fieldState.createEffectObject(effect)
+    }
+  }
 
   createBlackSpaceTornado () {
     let tornado = new Round3_5.BlackSpaceTornadoPhase2_1()
     let targetX = graphicSystem.CANVAS_WIDTH + tornado.width
     let targetY = Math.random() * (graphicSystem.CANVAS_HEIGHT - tornado.height)
-    fieldState.createSpriteObject(tornado, targetX, targetY)
+    fieldState.createEnemyBulletObject(tornado, targetX, targetY)
   }
 
   processSaveString () {
@@ -11180,7 +11304,7 @@ class Round3_5 extends Round3Templete {
 
   processDebug () {
     if (this.timeCheckFrame(1)) {
-      this.time.setCurrentTime(380)
+      // this.time.setCurrentTime(537)
       // this.bgLayer.setLayerAlpha(0, 0)
       // this.time.setCurrentTime(250)
     }
@@ -11203,6 +11327,9 @@ class Round3_5 extends Round3Templete {
       case 5: this.bossHpMeter(ID.enemy.towerEnemyGroup4.blackSpaceArea, 'PHASE 2-3 BLACKSPACE AREA HP: '); break
       case 6: this.bossHpMeterVer2(ID.enemy.towerEnemyGroup4.antijemulP3_1, 'PHASE 3-1 ANTIJEMUL HP: '); break
       case 7: this.bossHpMeterVer2(ID.enemy.towerEnemyGroup4.antijemulP3_2, 'PHASE 3-2 ANTIJEMUL HP: '); break
+      case 8: this.bossHpMeterVer3(ID.enemy.towerEnemyGroup4.antijemulP4_1, 'PHASE 4-1 ANTIJEMUL HP: '); break
+      case 9: this.bossHpMeterVer3(ID.enemy.towerEnemyGroup4.antijemulP4_2, 'PHASE 4-2 ANTIJEMUL HP: '); break
+      case 10: this.bossHpMeterVer3(ID.enemy.towerEnemyGroup4.antijemulP4_3, 'PHASE 4-3 FINAL ANTIJEMUL HP: '); break
     }
 
     if (this.phase.getCurrentPhase() === 4) {
@@ -11270,14 +11397,16 @@ class Round3_5 extends Round3Templete {
     PREYELLOW: 'yellow',
   }
 
-  static BlackSpaceTornadoPhase2_1 = class extends FieldData {
+  static BlackSpaceTornadoPhase2_1 = class extends EnemyBulletData {
     constructor () {
       super()
       this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.blackSpaceTornado, 5)
       this.setMoveSpeed(-1, 0)
       this.moveDelay = new DelayData(60)
       this.targetSpeed = 0
-      this.collisionDelay = new DelayData(12)
+      this.repeatCount = 10
+      this.maxRunningFrame = 600
+      this.collisionDelay.setDelay(12)
       this.attack = 4
       this.mainType = Round3_5.spriteList.TORNADO_PHASE2_1
     }
@@ -11300,21 +11429,10 @@ class Round3_5 extends Round3Templete {
       this.setMoveSpeed(-currentSpeed, 0)
     }
 
-    processState () {
-      super.processState()
-      let player = fieldState.getPlayerObject()
-      let collisionArea = {
-        x: this.x + 10, y: this.y + 10, width: 40, height: 60
-      }
-
-      if (this.collisionDelay.check(false) && collision(player, collisionArea)) {
-        player.addDamage(this.attack)
-        this.collisionDelay.count = 0
+    processCollision () {
+      super.processCollision ()
+      if (this.isCurrentCollision) {
         soundSystem.play(soundSrc.round.r3_5_blackSpaceTornado)
-      }
-
-      if (this.outAreaCheck(200)) {
-        this.isDeleted = true
       }
     }
   }
@@ -11423,7 +11541,7 @@ class Round3_5 extends Round3Templete {
     }
   }
 
-  static BlackSpaceTornadoPhase2_2 = class extends FieldData {
+  static BlackSpaceTornadoPhase2_2 = class extends EnemyBulletData {
     constructor () {
       super()
       this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.blackSpaceTornado, 5)
@@ -11432,26 +11550,9 @@ class Round3_5 extends Round3Templete {
       this.targetSpeed = 0
       this.collisionDelay = new DelayData(12)
       this.attack = 4
-      this.mainType = Round3_5.spriteList.TORNADO_PHASE2_2
+      this.maxRunningFrame = 600
       this.repeatCount = 10
-    }
-
-    processState () {
-      super.processState()
-      let player = fieldState.getPlayerObject()
-      let collisionArea = {
-        x: this.x + 10, y: this.y + 10, width: 40, height: 60
-      }
-
-      if (this.collisionDelay.check(false) && collision(player, collisionArea)) {
-        player.addDamage(this.attack)
-        this.collisionDelay.count = 0
-        soundSystem.play(soundSrc.round.r3_5_blackSpaceTornado)
-      }
-
-      if (this.outAreaCheck(200)) {
-        this.isDeleted = true
-      }
+      this.mainType = Round3_5.spriteList.TORNADO_PHASE2_2
     }
 
     processMove () {
@@ -11460,6 +11561,19 @@ class Round3_5 extends Round3Templete {
         this.moveSpeedX += this.moveSpeedX > 0 ? Math.random() * 1 : Math.random() * -1
         this.moveSpeedY += this.moveSpeedY > 0 ? Math.random() * 1 : Math.random() * -1
       }
+    }
+
+    processCollision () {
+      super.processCollision ()
+      if (this.isCurrentCollision) {
+        soundSystem.play(soundSrc.round.r3_5_blackSpaceTornado)
+      }
+    }
+  }
+
+  static antijemulDieEffect = class extends CustomEffect {
+    constructor () {
+      super(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiDieEffect, undefined, undefined, 2)
     }
   }
 }
@@ -11483,8 +11597,9 @@ class Round3_test extends Round3Templete {
     this.phase.addRoundPhase(this, () => {
 
       if (this.timeCheckFrame(2)) {
-        this.sound.musicFadeIn(soundSrc.music.music18_down_tower_void, 300)
-        this.field.createEnemy(ID.enemy.towerEnemyGroup3.clockJong)
+        this.field.createEnemy(ID.enemy.towerEnemyGroup1.crazyRobot)
+        // this.sound.musicFadeIn(soundSrc.music.music18_down_tower_void, 300)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.clockJong)
       }
 
       // if (this.timeCheckInterval(0, 999, 20) && this.field.getEnemyCount() === 0) {
@@ -11574,6 +11689,8 @@ class Round3_test extends Round3Templete {
   display () {
     super.display()
 
+    this.bossHpMeterVer3(ID.enemy.towerEnemyGroup1.crazyRobot, 'TEST')
+
     // if (this.playerOption.optionObject[0]) {
     //   graphicSystem.fillText(this.playerOption.optionObject[0].x + ', ' + this.playerOption.optionObject[0].y + ', ' + this.playerOption.optionObject[0].color + ', spd: ' + this.playerOption.optionObject[0].moveSpeedX, 0, 0, 'white')
     // }
@@ -11601,7 +11718,7 @@ class Round3_test extends Round3Templete {
       }
     }
 
-    this.meter.bossHpDefaultStyle()
+    // this.meter.bossHpDefaultStyle()
     // this.playerOption.display()
   }
 }

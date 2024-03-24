@@ -820,11 +820,22 @@ export class FieldData {
 
     let speedX = (targetX - this.x) / divValue
     let speedY = (targetY - this.y) / divValue
-    if (Math.abs(speedX) < minSpeed && Math.abs(speedY) < minSpeed) {
+    let absSpeedX = Math.abs(speedX)
+    let absSpeedY = Math.abs(speedY)
+
+    if (absSpeedX < minSpeed && absSpeedY < minSpeed) {
       // speedX와 speedY의 값을 비교하여 가장 높은 값을 최소 속도에 맞춰지도록 조정합니다.
-      let mul = Math.abs(speedX) < Math.abs(speedY) ? minSpeed / Math.abs(speedY) : minSpeed / Math.abs(speedX)
-      speedX *= mul
-      speedY *= mul
+      // 단 0으로 나누기는 금지됨
+      if (absSpeedX === 0 && absSpeedY === 0) {
+        let mul = absSpeedX < absSpeedY ? minSpeed / absSpeedY : minSpeed / absSpeedX
+        speedX *= mul
+        speedY *= mul
+      }
+    }
+
+    if (isNaN(speedX) || isNaN(speedY)) {
+      // ??!
+      console.log(speedX, speedY)
     }
 
     // 이동 방향에 따라서 속도를 재설정 하도록 변경 

@@ -721,6 +721,52 @@ export class ControlSystem {
   /** 마우스 누른상태 확인 */ isMouseDown = false
   /** 마우스 이동 확인 이나 사용하지 않음 */ isMouseMove = false
   /** 마우스 클릭 확인 */ isClicked = false
+  /** 마우스 클릭 인터벌 id */ clickIntervalId = 0
+
+  /**
+   * 이 함수가 호출될 때마다 isClicked는 false가 됩니다.
+   * 
+   * click은 일정 시간이 지나도 false가 되지 않기 때문에, 
+   * 주기적으로 해당 click값을 지워줘야 합니다.
+   * 
+   * tamsaEngine에서 사용할 경우에는 해당 함수가 실행되지 않습니다.
+   * 
+   * @deprecated
+   * @param {number} ms 
+   */
+
+  setIntervalMouseClickCancle (ms = 20) {
+    if (this.clickIntervalId!== 0) {
+      // 이미 id가 있는경우 기존 interval를 해제합니다.
+      clearInterval(this.clickIntervalId)
+    }
+
+    // 새 interval 생성
+    this.clickIntervalId = setInterval(() => {
+      this.processMouse()
+    }, ms)
+  }
+
+  /** 
+   * setInterval에 등록되었던 click interval을 확인하는 함수를 제거합니다. 
+   * 
+   * tamsaEngine을 사용할경우 이 함수를 자동으로 호출하지만 사용자가 control.js 파일만 단독으로 사용한다면
+   * 이 함수를 사용하기 전까지 clearIntervalMouseClickCancle이 일정시간마다 호출됩니다.
+   */
+  clearIntervalMouseClickCancle () {
+    clearInterval(this.clickIntervalId)
+    this.clickIntervalId = 0
+  }
+
+  /** 
+   * 마우스 프로세스 
+   * 
+   * 일정 주기로 클릭을 지워주는 역할을 함 (의도하지 않는 클릭 방지, 클릭 이벤트 자체는 자동 해제가 안되어서 주기적으로 해제해야함.)
+   */
+  processMouse () {
+    this.isClicked = false
+  }
+
 
   /**
    * 현재 마우스의 위치를 설정합니다.
@@ -747,9 +793,12 @@ export class ControlSystem {
    * 마우스를 누른 상태를 해제합니다.
    * 
    * 마우스를 누른 상태로 만드려면 setMouseDown을 사용해주세요.
+   * 
+   * clicked도 해제됩니다.
    */
   setMouseUp () {
     this.isMouseDown = false
+    this.isClicked = false
   }
 
   /**

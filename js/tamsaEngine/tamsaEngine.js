@@ -774,7 +774,9 @@ export class TamsaEngine {
 
     // tamsaEngine에서 processButton 함수를 수행하므로 
     // clearInterval을 하지 않으면 processButton이 중복으로 호출될 수 있습니다.
+    // 이것은 processMouse도 마찬가지
     this.control.clearIntervalButtonDown() 
+    this.control.clearIntervalMouseClickCancle()
     // this.control.setIntervalButtonDown(20)
 
     /** 해당 엔진에서 사용하는 사운드 시스템 */
@@ -818,6 +820,9 @@ export class TamsaEngine {
     /** 바이오스 모드 사용 여부 (사용자가 실행하거나 게임이 없는 경우에 바이오스가 자동으로 실행됨) */
     this.isBiosMode = false
 
+    /** 바이오스에 진입이 가능한 여부 (이 값이 false면 무슨짓을 해도 진입 불가능) */
+    this.isBiosDisplayPossible = true
+
     /** 바이오스 */
     this.bios = null
 
@@ -840,9 +845,10 @@ export class TamsaEngine {
 
   /** 바이오스 진입 여부 체크 */
   biosCheck () {
-    if (this.isBiosMode) return
+    if (this.isBiosMode || this.elaspedFrame >= 300 || !this.isBiosDisplayPossible) return
 
-    // 바이오스를 진입하기 위해서 2초 이내에 select 버튼을 총 5번 눌러야 합니다.
+    // 바이오스를 진입하기 위해서 게임을 시작하고 5초 이내에만 접근 가능
+    // 그 상황에서 2초 이내에 select 버튼을 총 5번 눌러야 합니다.
     const WAIT_FRAME = 120
     const PRESS_COUNT = 5
     let buttonSelect = this.control.getButtonInput(this.control.buttonIndex.SELECT)
@@ -861,6 +867,23 @@ export class TamsaEngine {
       this.biosButtonWaitFrame = 0
       this.biosButtonDownCount = 0
     }
+  }
+
+  /** 바이오스 메뉴를 호출합니다. (이것은 게임 내에서 바이오스 메뉴를 호출할 수 있게 하기 위한 함수입니다.) */
+  runBiosMode () {
+    this.isBiosMode = true
+    this.biosButtonWaitFrame = 0
+    this.biosButtonDownCount = 0
+  }
+
+  /** 
+   * 바이오스 디스플레이를 보여줄 수 있는지에 대한 여부를 설정합니다.
+   * @param {boolean} [isPossible=true] 
+   * 이 값이 true인경우, 특정 조건에 따라 바이오스 메뉴를 호출할 수 있습니다. 
+   * 이 값이 false인경우 무슨짓을 해도 바이오스 메뉴를 호출할 수 없습니다. (runBiosMode는 제외)
+   */
+  setBiosDisplayPossible (isPossible = true) {
+    this.isBiosDisplayPossible = isPossible
   }
 
   /** 바이오스 상태에 있는 경우 */
@@ -903,7 +926,6 @@ export class TamsaEngine {
       this.thenAnimationTime = this.timestamp - (elapsed % fpsInterval)
       this.frameCount++
       this.elaspedFrame++
-      this.control.processButton() // 키 입력 프로세스
       this.biosCheck()
 
       // 게임 내부 로직 진행
@@ -921,6 +943,8 @@ export class TamsaEngine {
         }
       }
 
+      this.control.processButton() // 키 입력 프로세스
+      this.control.processMouse() // 마우스 입력 프로세스
       // 사실 이렇게 된건 firefox의 setInterval이 느리게 작동하기 때문이다.
       // 어쩔수 없이 requsetAnimationFrame을 사용해야 한다.
     }

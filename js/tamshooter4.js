@@ -304,16 +304,16 @@ class MenuSystem {
    */
   processSelect () {
     // 이와 같은 로직을 사용하면, selected가 false일때 이 함수는 실행되지 않습니다.
-    if (!this.selectedCheck()) return
+    // if (!this.selectedCheck()) return
 
     // 이 방법도 있지만 들여쓰기가 필요하고 로직이 복잡할 수 있으므로 사용하진 마세요.
-    if (this.selectedCheck()) {
+    // if (this.selectedCheck()) {
       // 로직...
-    }
+    // }
 
     // 그러나 이 함수를 호출할 때 절대 이 방식을 사용하지마세요. 비직관적입니다.
     // 구조상 재귀호출 될 염려는 없으므로, 일단은 냅두겠습니다.
-    if (this.selectedCheck()) this.processSelect()
+    // if (this.selectedCheck()) this.processSelect()
   }
 
   /**
@@ -459,6 +459,9 @@ class MainSystem extends MenuSystem {
   }
 
   process () {
+    if (this.selected) {
+      console.log('check')
+    }
     this.processMouse()
     this.processButton()
     this.processFocus()
@@ -2542,7 +2545,6 @@ export class gameSystem {
    */
   static process () {
     if (this.stateId === this.STATE_LOAD_ERROR) return
-    this.mainSystem.selected = false // 간혹 필드를 나갔을 때 메뉴가 눌리는 상황이 있기 때문에 이를 막기 위함
     
     this.userSystem.process()
     if (this.stateId === this.STATE_MAIN) this.userSystem.showUserStat()
@@ -2582,8 +2584,6 @@ export class gameSystem {
         break
       case messageList.STATE_MAIN:
         this.stateId = this.STATE_MAIN
-        this.mainSystem.selected = false // 간혹 필드를 나갔을 때 메뉴가 눌리는 상황이 있기 때문에 이를 막기 위함
-        game.control.resetButtonInput() // 버튼이 잘못눌리는 상황을 막기 위해 입력된 버튼들을 전부 리셋시킵니다.
         break
       case messageList.STATE_FIELD:
         this.stateId = this.STATE_FIELD

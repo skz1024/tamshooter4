@@ -297,6 +297,7 @@ export class ID {
       antijemulP3_2: 20329,
       antijemulP4_1: 20330,
       antijemulP4_2: 20331,
+      antijemulP4_3: 20332,
     }
   }
 
@@ -308,6 +309,7 @@ export class ID {
     jemulEnemyAir: 30147
   }
 
+  /** 더이상 사용하지 않을 수 있음. @deprecated */
   static effect = {
     missile: 40000,
     parapo: 40001,
