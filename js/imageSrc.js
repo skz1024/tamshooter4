@@ -691,11 +691,37 @@ export class imageDataInfo {
     enemyDieSirenBlue: new ImageDataObject(480, 290, 80, 80, 1),
     hellnet: new ImageDataObject(0, 400, 180, 90, 5),
     helltell: new ImageDataObject(0, 500, 160, 60, 6),
+    gabudanComputer: new ImageDataObject(850, 200, 330, 190, 1),
 
     cameraAttackArea: new ImageDataObject(600, 200, 100, 100),
     cameraAttackAreaShot: new ImageDataObject(701, 200, 100, 100),
     helltellAttack: new ImageDataObject(802, 200, 40, 60),
-    radioAttack: new ImageDataObject(0, 600, 100, 40, 8)
+    radioAttack: new ImageDataObject(0, 600, 100, 40, 8),
+  }
+
+  static towerEnemyGroup5Gabudan = {
+    biosCheck1: new ImageDataObject(0, 0, 320, 180),
+    biosCheck2: new ImageDataObject(320, 0, 320, 180),
+    biosCheck3: new ImageDataObject(640, 0, 320, 180),
+    biosCheck4: new ImageDataObject(960, 0, 320, 180),
+
+    osLoading1: new ImageDataObject(0, 180, 320, 180),
+    osLoading2: new ImageDataObject(320, 180, 320, 180),
+    osLoading3: new ImageDataObject(640, 180, 320, 180),
+    osLoading4: new ImageDataObject(960, 180, 320, 180),
+
+    background: new ImageDataObject(0, 360, 320, 180),
+    backgroundIcon: new ImageDataObject(320, 360, 320, 180),
+    programLoading: new ImageDataObject(640, 360, 320, 180),
+
+    programRunning1: new ImageDataObject(0, 540, 320, 180),
+    programRunning2: new ImageDataObject(320, 540, 320, 180),
+    programRunning3: new ImageDataObject(640, 540, 320, 180),
+
+    error1: new ImageDataObject(0, 720, 320, 180),
+    error2: new ImageDataObject(320, 720, 320, 180),
+    panicOutofMemory: new ImageDataObject(640, 720, 320, 180),
+    panicDeviceBroken: new ImageDataObject(960, 720, 320, 180),
   }
 
   static fieldSystem = {

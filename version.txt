@@ -1400,3 +1400,5 @@ weapon, enemy는 id기반으로 생성하기 때문에 좌표가 자동 지정�
 
 
 2024/03/29 v0.47.1 - round 3-6 file add, checkpoint
+
+2024/03/30 v0.47.2 - round 3-6 ~ 3-7 file add, checkpoint

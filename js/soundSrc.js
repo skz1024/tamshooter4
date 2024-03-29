@@ -1,3 +1,5 @@
+//@ts-check
+
 export class soundSrc {
   static system = {
     systemBack: './sound/systemBack.wav',
@@ -160,7 +162,16 @@ export class soundSrc {
     enemyDieTowerStar: './sound/enemyDieTowerStar.ogg',
 
     // tower group 4 (3-5)
-    enemyDieTowerNokgasi: './sound/enemyDieTowerNokgasi.ogg'
+    enemyDieTowerNokgasi: './sound/enemyDieTowerNokgasi.ogg',
+
+    // tower group 5 (3-6)
+    enemyDieTowerBlub: './sound/enemyDieTowerBlub.ogg',
+    enemyDieTowerCctv: './sound/enemyDieTowerCctv.ogg',
+    enemyDieTowerCamera: './sound/enemyDieTowerCamera.ogg',
+    enemyDieTowerHellnet: './sound/enemyDieTowerHellnet.ogg',
+    enemyDieTowerHelltell: './sound/enemyDieTowerHelltell.ogg',
+    enemyDieTowerRadio: './sound/enemyDieTowerRadio.ogg',
+    enemyDieTowerSiren: './sound/enemyDieTowerSiren.ogg',
   }
 
   static enemyAttack = {
@@ -227,6 +238,15 @@ export class soundSrc {
     towerAntijemulRingBombEffect: './sound/enemyTowerAntijemulRingBombEffect.ogg',
     towerAntijemulRingRolling: './sound/enemyTowerAntijemulRingRolling.ogg',
     towerAntijemulBackshot: './sound/enemyTowerAntijemulBackshot.ogg',
+    towerCameraAttackShot: './sound/enemyTowerCameraAttackShot.ogg',
+    towerCameraAttackWait: './sound/enemyTowerCameraAttackWait.ogg',
+    towerGabudanBooting: './sound/enemyTowerGabudanBooting.ogg',
+    towerGabudanStartup: './sound/enemyTowerGabudanStartup.ogg',
+    towerGabudanKernelPanic: './sound/enemyTowerGabudanKernelPanic.ogg',
+    towerRadioAttack: './sound/enemyTowerRadioAttack.ogg',
+    towerSirenBlueMove: './sound/enemyTowerSirenBlueMove.ogg',
+    towerSirenGreenMove: './sound/enemyTowerSirenGreenMove.ogg',
+    towerSirenRedMove: './sound/enemyTowerSirenRedMove.ogg',
   }
 
   static round = {
@@ -329,5 +349,6 @@ export class soundSrc {
     music20_round3_5_blackSpace: './music/music20_round3_5_blackSpace.ogg',
     music21_round3_5_antijemulNormal: './music/music21_round3_5_antijemulNormal.ogg',
     music22_round3_5_antijemulHyper: './music/music22_round3_5_antijemulHyper.ogg',
+    music23_down_tower_core: './music/music23_down_tower_core.ogg',
   }
 }
