@@ -11578,6 +11578,10 @@ class Round3_5 extends Round3Templete {
   }
 }
 
+class Round3_6 extends Round3Templete {
+  
+}
+
 class Round3_test extends Round3Templete {
   constructor () {
     super()

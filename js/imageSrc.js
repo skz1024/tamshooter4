@@ -83,6 +83,7 @@ export class imageSrc {
     towerEnemyGroup2: './image/enemy/towerEnemyGroup2.png',
     towerEnemyGroup3: './image/enemy/towerEnemyGroup3.png',
     towerEnemyGroup4: './image/enemy/towerEnemyGroup4.png',
+    towerEnemyGroup5: './image/enemy/towerEnemyGroup5.png',
   }
 
   static enemyDie = {
@@ -173,6 +174,25 @@ export class imageSrc {
     round3_5_blackSpaceGreen: './image/round/round3_5_blackSpaceGreen.png',
     round3_5_blackSpaceTornado: './image/round/round3_5_blackSpaceTornado.png',
     round3_5_redzone: './image/round/round3_5_redzone.png',
+    round3_6_coreInfo: './image/round/round3_6_coreInfo.png',
+    round3_6_floor1: './image/round/round3_6_floor1.png',
+    round3_6_floor2: './image/round/round3_6_floor2.png',
+    round3_6_light1: './image/round/round3_6_light1.png',
+    round3_6_light2: './image/round/round3_6_light2.png',
+    round3_6_pillar: './image/round/round3_6_pillar.png',
+    round3_6_pillarLayer: './image/round/round3_6_pillarLayer.png',
+    round3_6_stair: './image/round/round3_6_stair.png',
+    round3_6_stairIn: './image/round/round3_6_stairIn.png',
+    round3_6_stairOut: './image/round/round3_6_stairOut.png',
+    round3_7_computerRoom: './image/round/round3_7_computerRoom.png',
+    round3_7_floor1: './image/round/round3_7_floor1.png',
+    round3_7_floor2: './image/round/round3_7_floor2.png',
+    round3_7_light1: './image/round/round3_7_light1.png',
+    round3_7_light2: './image/round/round3_7_light2.png',
+    round3_7_PassageInfo: './image/round/round3_7_PassageInfo.png',
+    round3_7_stair: './image/round/round3_7_stair.png',
+    round3_7_stairIn: './image/round/round3_7_stairIn.png',
+    round3_7_stairOut: './image/round/round3_7_stairOut.png',
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -652,6 +672,30 @@ export class imageDataInfo {
     antiGravityRectShadow: new ImageDataObject(1401, 101, 100, 100),
     antiBackshot: new ImageDataObject(1100, 100, 30, 20),
     antiDieEffect: new ImageDataObject(1000, 803, 40, 40, 15)
+  }
+
+  static towerEnemyGroup5 = {
+    camera: new ImageDataObject(0, 0, 120, 80),
+    enemyDieCamera: new ImageDataObject(121, 0, 120, 80),
+    cctv: new ImageDataObject(250, 0, 50, 50),
+    enemyDieCctv: new ImageDataObject(301, 0, 50, 50),
+    radio: new ImageDataObject(360, 0, 60, 120),
+    enemyDieRadio: new ImageDataObject(421, 0, 60, 120),
+    bulb: new ImageDataObject(600, 0, 50, 80, 9),
+    enemyDieBulb: new ImageDataObject(600, 90, 50, 80, 9),
+    sirenRed: new ImageDataObject(0, 130, 80, 80, 6),
+    sirenGreen: new ImageDataObject(0, 210, 80, 80, 6),
+    sirenBlue: new ImageDataObject(0, 290, 80, 80, 6),
+    enemyDieSirenRed: new ImageDataObject(480, 130, 80, 80, 1),
+    enemyDieSirenGreen: new ImageDataObject(480, 210, 80, 80, 1),
+    enemyDieSirenBlue: new ImageDataObject(480, 290, 80, 80, 1),
+    hellnet: new ImageDataObject(0, 400, 180, 90, 5),
+    helltell: new ImageDataObject(0, 500, 160, 60, 6),
+
+    cameraAttackArea: new ImageDataObject(600, 200, 100, 100),
+    cameraAttackAreaShot: new ImageDataObject(701, 200, 100, 100),
+    helltellAttack: new ImageDataObject(802, 200, 40, 60),
+    radioAttack: new ImageDataObject(0, 600, 100, 40, 8)
   }
 
   static fieldSystem = {
