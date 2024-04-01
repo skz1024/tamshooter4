@@ -84,6 +84,7 @@ export class imageSrc {
     towerEnemyGroup3: './image/enemy/towerEnemyGroup3.png',
     towerEnemyGroup4: './image/enemy/towerEnemyGroup4.png',
     towerEnemyGroup5: './image/enemy/towerEnemyGroup5.png',
+    towerEnemyGroup5Gabudan: './image/enemy/towerEnemyGroup5Gabudan.png'
   }
 
   static enemyDie = {
@@ -680,8 +681,9 @@ export class imageDataInfo {
     cctv: new ImageDataObject(250, 0, 50, 50),
     enemyDieCctv: new ImageDataObject(301, 0, 50, 50),
     radio: new ImageDataObject(360, 0, 60, 120),
-    enemyDieRadio: new ImageDataObject(421, 0, 60, 120),
-    bulb: new ImageDataObject(600, 0, 50, 80, 9),
+    radioSend: new ImageDataObject(360, 0, 60, 120, 3),
+    enemyDieRadio: new ImageDataObject(541, 0, 60, 120),
+    bulb: new ImageDataObject(700, 0, 50, 80, 9),
     enemyDieBulb: new ImageDataObject(600, 90, 50, 80, 9),
     sirenRed: new ImageDataObject(0, 130, 80, 80, 6),
     sirenGreen: new ImageDataObject(0, 210, 80, 80, 6),
@@ -713,15 +715,16 @@ export class imageDataInfo {
     background: new ImageDataObject(0, 360, 320, 180),
     backgroundIcon: new ImageDataObject(320, 360, 320, 180),
     programLoading: new ImageDataObject(640, 360, 320, 180),
+    programRunning: new ImageDataObject(960, 360, 320, 180),
 
-    programRunning1: new ImageDataObject(0, 540, 320, 180),
-    programRunning2: new ImageDataObject(320, 540, 320, 180),
-    programRunning3: new ImageDataObject(640, 540, 320, 180),
+    programBackground1: new ImageDataObject(0, 540, 320, 180),
+    programBackground2: new ImageDataObject(320, 540, 320, 180),
+    programBackground3: new ImageDataObject(640, 540, 320, 180),
 
-    error1: new ImageDataObject(0, 720, 320, 180),
-    error2: new ImageDataObject(320, 720, 320, 180),
-    panicOutofMemory: new ImageDataObject(640, 720, 320, 180),
-    panicDeviceBroken: new ImageDataObject(960, 720, 320, 180),
+    programError1: new ImageDataObject(0, 720, 320, 180),
+    programError2: new ImageDataObject(320, 720, 320, 180),
+    kernelPanicOutofMemory: new ImageDataObject(640, 720, 320, 180),
+    kernelPanicDeviceBroken: new ImageDataObject(960, 720, 320, 180),
   }
 
   static fieldSystem = {

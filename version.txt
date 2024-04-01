@@ -1402,3 +1402,8 @@ weapon, enemy는 id기반으로 생성하기 때문에 좌표가 자동 지정�
 2024/03/29 v0.47.1 - round 3-6 file add, checkpoint
 
 2024/03/30 v0.47.2 - round 3-6 ~ 3-7 file add, checkpoint
+
+2024/04/02 v0.47.3 - roundicon code moved datastat.js
+1. 라운드 아이콘은 이제, dataStat.js에 정의됩니다.
+tamshooter4.js에 정의되었던 라운드 아이콘과 관련한 코드가 전부 삭제됩니다.
+2. 라운드 3-6이 부분적으로 업데이트되었지만, 완성되지 않았습니다.

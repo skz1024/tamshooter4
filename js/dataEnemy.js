@@ -7670,13 +7670,20 @@ class TowerEnemyHellTemplet extends TowerEnemy {
 
   processRandomSpeed () {
     this.targetSpeed._x = (Math.random() * this.targetSpeed.xBase * 2) - this.targetSpeed.xBase - 0.2
-    if (this.x > graphicSystem.CANVAS_WIDTH - 100) { // 너무 오른쪽에 있으면, 왼쪽으로 이동하도록 유도
+    if (this.x > graphicSystem.CANVAS_WIDTH - 200) { // 너무 오른쪽에 있으면, 왼쪽으로 이동하도록 유도
       this.targetSpeed._x = -Math.abs(this.targetSpeed._x)
-    } else if (this.x < 100) { // 너무 왼쪽에 있으면, 오른쪽에 이동하도록 유도
+    } else if (this.x < 200) { // 너무 왼쪽에 있으면, 오른쪽에 이동하도록 유도
       this.targetSpeed._x = Math.abs(this.targetSpeed._x)
     }
 
+    // y축도 마찬가지 적용
     this.targetSpeed._y = (Math.random() * this.targetSpeed.yBase * 2) - this.targetSpeed.yBase
+    if (this.y > graphicSystem.CANVAS_HEIGHT - 100) {
+      this.targetSpeed._y = -Math.abs(this.targetSpeed._y)
+    } else if (this.y < 100) {
+      this.targetSpeed._y = Math.abs(this.targetSpeed._y)
+    }
+
   }
 
   processMove () {
@@ -13530,6 +13537,651 @@ class TowerEnemyGroup4AntijemulP4_3 extends TowerEnemyGroup4AntijemulP4_1 {
   }
 }
 
+class TowerEnemyGroup5Camera extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.camera)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerCamera, imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.enemyDieCamera, 60)
+    this.setEnemyByCpStat(20, 13)
+    this.moveDelay = new DelayData(480)
+    this.moveDelay.setCountMax()
+    this.setMoveDirection()
+
+    this.DIV_DELAY = 240 // 목표지점까지 이동하는데 4초
+    this.saveList = {
+      /** 도착할 목표지점 X */ finishX: 0,
+      /** 도착할 목표지점 Y */ finishY: 0,
+      /** 목표지점까지의 이동속도X */ finishXSpeed: 0,
+      /** 목표지점까지의 이동속도Y */ finishYSpeed: 0,
+    }
+  }
+
+  processMove () {
+    // 공격주기의 절반을 넘어갈때만 이동합니다. (공격 직후 이동하면 안됨)
+    if (this.moveDelay.count < this.DIV_DELAY) {
+      this.setMoveSpeed(this.saveList.finishXSpeed, this.saveList.finishYSpeed)
+      super.processMove()
+    } else if (this.moveDelay.count === this.DIV_DELAY) {
+      // enemyBullet
+      let bullet = new TowerEnemyGroup5Camera.CameraBullet()
+      bullet.setPosition(this.x + Math.random() * 300 - 150, this.y + Math.random() * 200 - 100)
+      fieldState.createEnemyBulletObject(bullet)
+      soundSystem.play(soundSrc.enemyAttack.towerCameraAttackWait)
+    }
+
+    if (this.moveDelay.check()) {
+      this.saveList.finishX = this.width + Math.random() * (graphicSystem.CANVAS_WIDTH - this.width * 2)
+      this.saveList.finishY = this.height + Math.random() * (graphicSystem.CANVAS_HEIGHT - this.height * 2)
+      this.saveList.finishXSpeed = (this.saveList.finishX - this.x) / this.DIV_DELAY
+      this.saveList.finishYSpeed = (this.saveList.finishY - this.y) / this.DIV_DELAY
+    }
+  }
+
+  static CameraBullet = class extends EnemyBulletData {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.cameraAttackArea)
+      this.attackDelay = new DelayData(120)
+      this.maxRunningFrame = 180
+      this.collisionDelay.setDelay(10)
+      this.attack = 4
+      this.setMoveSpeed(0, 0)
+      this.state = 'normal'
+      this.STATE_NORMAL = 'normal'
+      this.STATE_ATTACK = 'attack'
+      this.repeatCount = 15
+    }
+
+    processState () {
+      if (this.state === this.STATE_NORMAL) {
+        this.alpha = 1 // 보여지지 않음
+      } else if (this.state === this.STATE_ATTACK) {
+        if (this.attackDelay.count <= 10) {
+          this.alpha = 1 / 10 * this.attackDelay.count
+        } else if (this.attackDelay.count <= 50) {
+          this.alpha = 1
+        } else if (this.attackDelay.count <= 60) {
+          this.alpha = 1 / 10 * (60 - this.attackDelay.count)
+        }
+        console.log(this.alpha)
+      }
+    }
+
+    processCollision () {
+      if (this.state === this.STATE_ATTACK) {
+        super.processCollision()
+      }
+    }
+
+    processAttack () {
+      if (this.attackDelay.check()) {
+        this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.cameraAttackAreaShot)
+        soundSystem.play(soundSrc.enemyAttack.towerCameraAttackShot)
+        this.state = this.STATE_ATTACK
+      }
+    }
+  }
+}
+
+class TowerEnemyGroup5Cctv extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.cctv)
+    this.setEnemyByCpStat(18, 8)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerCctv, imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.enemyDieCctv, 60)
+    this.isPossibleExit = false
+    this.setRandomMoveSpeed(2, 0)
+    this.attackDelay = new DelayData(120)
+  }
+
+  afterInit () {
+    this.y = 0 // 위로 보내버리기 (그리고 내려오지 않음)
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let bullet = TowerEnemy.bulletYellow.getCreateObject()
+      bullet.setMoveSpeed(Math.random() * 4 - 2, 6)
+      bullet.setPosition(this.x, this.y + 30)
+      fieldState.createEnemyBulletObject(bullet)
+    }
+  }
+}
+
+class TowerEnemyGroup5Radio extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.radioSend, 4)
+    this.setEnemyByCpStat(50, 10)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerRadio, imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.enemyDieRadio, 60)
+    this.setMoveSpeed(1, 0)
+    this.isPossibleExit = false
+    this.attackDelay = new DelayData(240)
+    this.STATE_NORMAL = 'normal'
+    this.STATE_SEND = 'send'
+    this.state = 'normal'
+  }
+
+  processEnimation () {
+    // 전송 중일때만 에니메이션 재생
+    if (this.state === this.STATE_SEND) {
+      super.processEnimation()
+    } else {
+      if (this.enimation != null) {
+        // 그게 아니라면, 에니메이션을 정지하고, 0프레임으로 되돌림
+        this.enimation.reset()
+      }
+    }
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let bullet = new TowerEnemyGroup5Radio.NoiseBullet()
+      bullet.x = this.x
+      bullet.y = this.centerY
+      // target 찾기 (같은 종류의 적이 있는지를 확인, 자기 자신은 제외됩니다.)
+      let list = fieldState.getEnemyObjectById(this.id)
+      if (list.length <= 1) {
+        // 같은 종류의 다른 적이 없다면, 임의의 4방향중 하나에 총알 발사
+        let random = Math.floor(Math.random() * 4)
+        switch (random) {
+          case 0: bullet.setMoveSpeed(0, -10); break
+          case 1: bullet.setMoveSpeed(0, 10); break
+          case 2: bullet.setMoveSpeed(10, 0); break
+          default: bullet.setMoveSpeed(-10, 0);  break
+        }
+
+        this.setMoveSpeed(1, 0) // 무전기 다시 이동 (자기 자신만 있는경우)
+        this.state = this.STATE_NORMAL
+      } else {
+        // 자기 자신 제외, 자기 자신이 대상이 된 경우, 그 다음 배열 번호를 지정
+        // 배열 번호가 잘못된 인덱스를 가리키지 않도록, 배열의 길이만큼 나머지 계산
+        let targetNumber = Math.floor(Math.random() * list.length)
+        let target = this.createId === list[targetNumber].createId ? list[(targetNumber + 1) % list.length] : list[targetNumber]
+        bullet.setMoveSpeedChaseLine(target.centerX, target.centerY, 120, 3)
+
+        this.setMoveSpeed(0, 0) // 무전기 이동 정지 (다른 무전기가 있는 경우)
+        this.state = this.STATE_SEND
+      }
+
+      soundSystem.play(soundSrc.enemyAttack.towerRadioAttack)
+      fieldState.createEnemyBulletObject(bullet)
+    }
+  }
+
+  static NoiseBullet = class extends EnemyBulletData {
+    constructor () {
+      super()
+      this.maxRunningFrame = 480
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.radioAttack, 2)
+      this.attack = 3
+      this.repeatCount = 6
+      this.collisionDelay.setDelay(12)
+      this.isCollision = false
+    }
+
+    processState () {
+      if (this.elapsedFrame <= 60 || this.isCollision) return
+
+      let list = fieldState.getEnemyObjectById(ID.enemy.towerEnemyGroup5.radio)
+      if (list.length === 0) return
+
+      for (let i = 0; i < list.length; i++) {
+        if (collision(this, list[i])) {
+          this.setMoveSpeed(this.moveSpeedX * -1, this.moveSpeedY * -1) // 반대방향으로 변경
+          this.isCollision = true // 이후 다시 방향이 변경되지 않음
+          break
+        }
+      }
+    }
+  }
+}
+
+class TowerEnemyGroup5SirenRed extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.sirenRed, 3)
+    this.setEnemyByCpStat(12, 10)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerSiren)
+    this.setRandomMoveSpeed(1.4, 0)
+    this.dieAfterDeleteDelay = new DelayData(120)
+    this.isPossibleExit = false
+    this.attackDelay = new DelayData(30)
+    this.STATE_DETECT = 'detect'
+    this.STATE_NORMAL = ''
+    this.state = this.STATE_NORMAL
+    this.gravity = 0
+    /** 사이렌 사운드 */ this.sirenSound = soundSrc.enemyAttack.towerSirenRedMove
+
+    this.dieImageObject = imageDataInfo.towerEnemyGroup5.enemyDieSirenRed
+  }
+
+  processEnimation () {
+    if (this.state === this.STATE_NORMAL) {
+      if (this.enimation != null) {
+        this.enimation.reset()
+      }
+    } else if (this.state === this.STATE_DETECT) {
+      super.processEnimation()
+    }
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let prevDetect = this.state === this.STATE_DETECT ? true : false
+      this.state = this.detectCheck() ? this.STATE_DETECT : this.STATE_NORMAL
+      if (prevDetect && this.state === this.STATE_NORMAL) {
+        this.setRandomMoveSpeed(1.4, 0)
+      }
+    }
+
+    if (this.state === this.STATE_DETECT && this.attackDelay.divCheck(30)) {
+      soundSystem.play(this.sirenSound)
+    }
+  }
+
+  detectCheck () {
+    let player = fieldState.getPlayerObject()
+    let detectArea = {x: this.x - 200, y: this.y - 200, width: 400, height: 400}
+    if (collision(player, detectArea)) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+  processMove () {
+    super.processMove()
+    if (this.state === this.STATE_NORMAL) {
+      this.processMoveNormal()
+    } else if (this.state === this.STATE_DETECT) {
+      this.processMoveDetect()
+    }
+  }
+
+  processMoveNormal () {
+    
+  }
+
+  processMoveDetect () {
+    let player = fieldState.getPlayerObject()
+    this.setMoveSpeedChaseLine(player.x, player.y, 240, 2)
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+    if (!this.isDied) return
+
+    this.y += this.gravity
+    if (this.y + this.height < graphicSystem.CANVAS_HEIGHT) {
+      this.gravity += 1
+    } else {
+      if (this.gravity >= 4) {
+        this.gravity /= 2
+        this.gravity *= -1
+        this.y = graphicSystem.CANVAS_HEIGHT - this.height - 2
+      } else {
+        this.gravity = 0
+        this.y = graphicSystem.CANVAS_HEIGHT - this.height
+      }
+    }
+  }
+
+  display () {
+    if (this.isDied) {
+      this.imageObjectDisplay(imageSrc.enemy.towerEnemyGroup5, this.dieImageObject, this.x, this.y)
+    } else {
+      super.display()
+    }
+  }
+}
+
+class TowerEnemyGroup5SirenGreen extends TowerEnemyGroup5SirenRed {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.sirenGreen, 3)
+    this.setEnemyByCpStat(13, 10)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerSiren)
+    this.sirenSound = soundSrc.enemyAttack.towerSirenGreenMove
+    this.dieImageObject = imageDataInfo.towerEnemyGroup5.enemyDieSirenGreen
+  }
+
+  detectCheck () {
+    let area1 = {x: 0, y: this.y, width: 1200, height: this.height}
+    let area2 = {x: this.x, y: 0, width: this.width, height: 1200}
+    let player = fieldState.getPlayerObject()
+    if (collision(area1, player) || collision(area2, player)) {
+      return true
+    } else {
+      return false
+    }
+  }
+}
+
+class TowerEnemyGroup5SirenBlue extends TowerEnemyGroup5SirenRed {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.sirenBlue, 3)
+    this.setEnemyByCpStat(14, 10)
+    this.attackDelay.setDelay(240)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerSiren)
+    this.sirenSound = soundSrc.enemyAttack.towerSirenBlueMove
+    this.dieImageObject = imageDataInfo.towerEnemyGroup5.enemyDieSirenBlue
+  }
+
+  detectCheck () {
+    if (Math.random() < 0.5) {
+      return true
+    } else {
+      return false
+    }
+  }
+}
+
+class TowerEnemyGroup5Blub extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.bulb, 6)
+    this.setEnemyByCpStat(10, 7)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerBlub, imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.enemyDieBulb)
+    this.setRandomMoveSpeed(2, 2, true)
+  }
+}
+
+class TowerEnemyGroup5Hellnet extends TowerEnemyHellTemplet {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.hellnet, 3)
+    this.setEnemyByCpStat(40, 11)
+    this.dieColor = this.dieColorList.violet
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHellnet)
+    this.attackDelay.setDelay(180)
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      const targetSpeedX = this.flip === 0 ? Math.random() * 2 + 1 : Math.random() * -2 - 1
+      const targetSpeedY = Math.random() * -2 - 1
+      let bullet = new TowerEnemyGroup5Radio.NoiseBullet()
+      bullet.x = this.centerX
+      bullet.y = this.centerY
+      bullet.setMoveSpeed(targetSpeedX, targetSpeedY)
+
+      fieldState.createEnemyBulletObject(bullet)
+      soundSystem.play(soundSrc.enemyAttack.towerRadioAttack)
+    }
+  }
+
+  processChangeAngle () {
+    // y축의 속도에 따라 각도 조절 (단 일정 각도를 벗어나지 못함) - hellgi랑 같음
+    if (this.moveSpeedY <= 0.5 && this.moveSpeedY >= -0.5) {
+      this.degree = 0
+    } else if (this.moveSpeedY >= 0.5) {
+      this.degree = (this.moveSpeedY - 0.5) * -6
+      if (this.degree > 30 && this.degree < 180) this.degree = 30
+    } else if (this.moveSpeedY <= -0.5) {
+      this.degree = (this.moveSpeedY + 0.5) * -6
+      if (this.degree > 180 && this.degree < 330) this.degree = 330
+    }
+
+    // 이동 속도에 따라서, 좌우 반전 결정 (왼쪽이 마이너스입니다. 그래서 왼쪽방향일때만 반전 적용)
+    if (this.moveSpeedX < 0) this.flip = 1
+    else this.flip = 0
+  }
+}
+
+class TowerEnemyGroup5Helltell extends TowerEnemyHellTemplet {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.helltell, 2)
+    this.setEnemyByCpStat(16, 12)
+    this.dieColor = this.dieColorList.blue
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerHelltell)
+    this.attackDelay.setDelay(150)
+    this.targetSpeed.xBase = 2
+    this.targetSpeed.yBase = 2
+    this.targetSpeed.xChange = 0.05
+    this.targetSpeed.yChange = 0.05
+  }
+
+  processAttack () {
+    if (this.attackDelay.check()) {
+      let bullet = new TowerEnemyGroup5Helltell.tellBullet()
+      bullet.setPosition(this.centerX, this.y)
+      bullet.setMoveSpeed(this.moveSpeedX * 3, this.moveSpeedY * 3)
+      bullet.degree = this.degree
+      fieldState.createEnemyBulletObject(bullet)
+    }
+  }
+
+  static tellBullet = class extends EnemyBulletData {
+    constructor () {
+      super()
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.helltellAttack)
+      this.repeatCount = 10
+      this.attack = 4
+      this.collisionDelay.setDelay(8)
+      this.moveDelay = new DelayData(4)
+    }
+
+    processMove () {
+      super.processMove()
+      if (this.moveDelay.check()) {
+        this.setWidthHeight(this.width + 1, this.height + 3)
+      }
+    }
+  }
+}
+
+class TowerEnemyGroup5Gabudan extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.gabudanComputer)
+    this.setEnemyByCpStat(14000, 0)
+    this.setDieEffectTemplet('', imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedOrange)
+    this.dieAfterDeleteDelay = new DelayData(240)
+    this.attackDelay = new DelayData(20)
+
+    this.STATE_BLACK = 'black'
+    this.STATE_BOOTING1 = 'booting1'
+    this.STATE_BOOTING2 = 'booting2'
+    this.STATE_BOOTING3 = 'booting3'
+    this.STATE_BOOTING4 = 'booting4'
+    this.STATE_OSLOADING = 'osloading'
+    this.STATE_BACKGROUND1 = 'background1'
+    this.STATE_BACKGROUND2 = 'background2'
+    this.STATE_BACKGROUND3 = 'background3'
+    this.STATE_PROGRAM = 'program'
+    this.STATE_PROGRAM_RUN1 = 'programrun1'
+    this.STATE_PROGRAM_RUN2 = 'programrun2'
+    this.STATE_ERROR1 = 'panic1'
+    this.STATE_ERROR2 = 'panic2'
+    this.STATE_KERNEL_PANIC = 'kernelpanic'
+    /** 이것은, 보스가 제한된 시간보다 빨리 죽었을 때만 적용된다. */ this.STATE_KERNEL_DEAD = 'kerneldead'
+    this.state = this.STATE_BLACK
+
+    // 이 메세지들은, 보스의 패턴 시작과 끝을 알립니다. (라운드에서 보스 배경음을 재생해야 하므로...)
+    this.MESSAGE_START = 'start'
+    this.MESSAGE_END = 'end'
+
+    /** 배경 이미지 경로 */ this.bgSrc = imageSrc.enemy.towerEnemyGroup5Gabudan
+    /** 배경 이미지 데이터의 객체 리스트 */ this.bgData = imageDataInfo.towerEnemyGroup5Gabudan
+  }
+
+  processAttack () {
+    if (this.state === this.STATE_PROGRAM_RUN1 && this.attackDelay.check()) {
+      // 원형 탄막 생성
+      const baseSpeed = 3
+      for (let i = 0; i < 20; i++) {
+        let bullet = TowerEnemy.bulletRed.getCreateObject()
+        bullet.setPosition(graphicSystem.CANVAS_WIDTH_HALF, graphicSystem.CANVAS_HEIGHT_HALF)
+        
+        let degree = (i * 360 / 20) + (this.elapsedFrame % (360 / 20))
+        let radian = Math.PI / 180 * degree
+        let speedX = Math.cos(radian) * baseSpeed
+        let speedY = Math.sin(radian) * baseSpeed
+        bullet.setMoveSpeed(speedX, speedY)
+        fieldState.createEnemyBulletObject(bullet)
+      }
+    } else if (this.state === this.STATE_PROGRAM_RUN2 && this.attackDelay.check()) {
+      // 확산 탄막 생성 (위, 아래 방향)
+      const baseSpeed = 3
+      for (let i = 0; i < 14; i++) {
+        let bullet = TowerEnemy.bulletBlue.getCreateObject()
+        bullet.setPosition(graphicSystem.CANVAS_WIDTH_HALF, graphicSystem.CANVAS_HEIGHT_HALF)
+
+        let speedX = -3 + (i % 7)
+        let speedY = Math.floor(i / 7) === 0 ? -baseSpeed : baseSpeed
+        bullet.setMoveSpeed(speedX, speedY)
+        fieldState.createEnemyBulletObject(bullet)
+      }
+
+      // 왼쪽, 오른쪽 방향
+      for (let i = 0; i < 14; i++) {
+        let bullet = TowerEnemy.bulletBlue.getCreateObject()
+        bullet.setPosition(graphicSystem.CANVAS_WIDTH_HALF, graphicSystem.CANVAS_HEIGHT_HALF)
+
+        let speedX = Math.floor(i / 7) === 0 ? -baseSpeed : baseSpeed
+        let speedY = -3 + (i % 7)
+        bullet.setMoveSpeed(speedX, speedY)
+        fieldState.createEnemyBulletObject(bullet)
+      }
+    }
+  }
+
+  processState () {
+    // 만약, 커널 패닉이 아니거나, 커널 데드가 아닌 상황에서
+    // 죽은 상태 (hp가 0이하)가 된 경우, 커널 데드 화면이 표시되고 상태 변경은 되지 않습니다.
+    if (this.state !== this.STATE_KERNEL_DEAD && this.state !== this.STATE_KERNEL_PANIC) {
+      if (this.isDied) {
+        this.state = this.STATE_KERNEL_DEAD
+        this.message = this.MESSAGE_END
+      }
+    }
+
+    // 커널이 죽은 상황에서 더이상 상태변경은 없음
+    if (this.state === this.STATE_KERNEL_DEAD) return
+    this.processStateChange()
+  }
+
+  processStateChange () {
+    const FPS = 60
+
+    // 보스 배경음을 재생시키기 위한 메세지 설정
+    if (this.elapsedFrame === FPS * 20) this.message = this.MESSAGE_START
+    else if (this.elapsedFrame === FPS * 36) this.message = this.MESSAGE_END
+
+    // 사운드 재생
+    if (this.elapsedFrame === FPS * 1) soundSystem.play(soundSrc.enemyAttack.towerGabudanBooting)
+    else if (this.elapsedFrame === FPS * 11) soundSystem.play(soundSrc.enemyAttack.towerGabudanStartup)
+    else if (this.elapsedFrame === FPS * 36) soundSystem.play(soundSrc.enemyAttack.towerGabudanKernelPanic)
+
+    // 화면을 표시하기 위한 상태 변경
+    switch (this.elapsedFrame) {
+      case FPS * 1: this.state = this.STATE_BOOTING1; break
+      case FPS * 4: this.state = this.STATE_BOOTING2; break
+      case FPS * 5: this.state = this.STATE_BOOTING3; break // ㅂ팅 스크린
+      case FPS * 6: this.state = this.STATE_OSLOADING; break // os loading 화면
+      case FPS * 10: this.state = this.STATE_BACKGROUND1; break // 배경만 표시
+      case FPS * 12: this.state = this.STATE_BACKGROUND2; break // 배경 + 아이콘 표시
+      case FPS * 14: this.state = this.STATE_BACKGROUND3; break // 배경 + 아이콘 + 프로그램 표시
+      case FPS * 18: this.state = this.STATE_PROGRAM; break // 프로그램 표시
+      case FPS * 20: this.state = this.STATE_PROGRAM_RUN1; break // 총알 패턴 1
+      case FPS * 28: this.state = this.STATE_PROGRAM_RUN2; break // 총알 패턴 2
+      case FPS * 36: this.state = this.STATE_ERROR1; break
+      case FPS * 38: this.state = this.STATE_ERROR2; break
+      case FPS * 40: this.state = this.STATE_KERNEL_PANIC; break
+    }
+  }
+
+  /**
+   * 지정된 화면을 보여줌 (가부단은 모니터에 화면을 표시해야하는데, 어떤것을 표시하는지에 대한 값임)
+   * 
+   * 경고: 무조건 gabudan 전용 데이터를 사용해야 합니다.
+   * @param {ImageDataObject} imageData 
+   */
+  displayTargetWindow (imageData, alpha = 1) {
+    this.imageObjectDisplay(this.bgSrc, imageData, this.x + 5, this.y + 5, undefined, undefined, undefined, undefined, alpha)
+  }
+
+  display () {
+    super.display()
+
+    // display background
+    switch (this.state) {
+      case this.STATE_BOOTING1: this.displayTargetWindow(this.bgData.biosCheck1); break
+      case this.STATE_BOOTING2: this.displayTargetWindow(this.bgData.biosCheck2); break
+      case this.STATE_BOOTING3: this.displayTargetWindow(this.bgData.biosCheck3); break
+      case this.STATE_BOOTING4: this.displayTargetWindow(this.bgData.biosCheck4); break
+      case this.STATE_OSLOADING: this.displayOsLoading(); break
+      case this.STATE_BACKGROUND1: this.displayTargetWindow(this.bgData.background); break
+      case this.STATE_BACKGROUND2:
+        this.displayTargetWindow(this.bgData.background)
+        this.displayTargetWindow(this.bgData.backgroundIcon)
+        break
+      case this.STATE_BACKGROUND3:
+        this.displayTargetWindow(this.bgData.background)
+        this.displayTargetWindow(this.bgData.backgroundIcon)
+        this.displayTargetWindow(this.bgData.programLoading)
+        break
+      case this.STATE_PROGRAM: // PROGRAM ~ PROGRAM_RUN까지 같은 화면을 공유함
+      case this.STATE_PROGRAM_RUN1:
+      case this.STATE_PROGRAM_RUN2:
+        this.dipslayProgram()
+        break
+      case this.STATE_ERROR1: this.displayTargetWindow(this.bgData.programError1); break
+      case this.STATE_ERROR2: this.displayTargetWindow(this.bgData.programError2); break
+      case this.STATE_KERNEL_PANIC: this.displayTargetWindow(this.bgData.kernelPanicOutofMemory); break
+      case this.STATE_KERNEL_DEAD: this.displayTargetWindow(this.bgData.kernelPanicDeviceBroken); break
+    }
+  }
+
+  displayOsLoading () {
+    let currentFrame = Math.floor(this.elapsedFrame / 8) % 4
+    switch (currentFrame) {
+      case 0: this.displayTargetWindow(this.bgData.osLoading1); break
+      case 1: this.displayTargetWindow(this.bgData.osLoading2); break
+      case 2: this.displayTargetWindow(this.bgData.osLoading3); break
+      case 3: this.displayTargetWindow(this.bgData.osLoading4); break
+    }
+  }
+
+  dipslayProgram () {
+    const FIRST = 90
+    const SECOND = 180
+    const THRID = 270
+    let frame = this.elapsedFrame % THRID
+    let alphaTable = [1, 0, 0]
+
+    // 0 ~ 90까지 알파값 상승, 91 ~ 180까지 알파값 감소
+    if (frame <= FIRST) alphaTable[1] = 1 / FIRST * frame
+    else if (frame > FIRST && frame <= SECOND) alphaTable[1] = 1 / FIRST * (SECOND - frame)
+
+    // 90 ~ 180까지 알파값 상승, 181 ~ 270까지 알파값 감소
+    if (frame > FIRST && frame <= SECOND) alphaTable[2] = 1 / FIRST * (frame - FIRST)
+    else if (frame > SECOND && frame <= THRID) alphaTable[2] = 1 / FIRST * (THRID - frame)
+
+    this.displayTargetWindow(this.bgData.programBackground1, alphaTable[0])
+    this.displayTargetWindow(this.bgData.programBackground2, alphaTable[1])
+    this.displayTargetWindow(this.bgData.programBackground3, alphaTable[2])
+    this.displayTargetWindow(this.bgData.programRunning)
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+
+    if (this.isDied && this.dieAfterDeleteDelay.divCheck(20)) {
+      if (this.dieEffect != null) {
+        let effect = this.dieEffect.getObject()
+        effect.setPosition(this.x, this.y)
+        fieldState.createEffectObject(effect)
+      }
+
+      soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
+    }
+  }
+}
+
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
  */
@@ -13745,3 +14397,15 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup4.antijemulP3_2, TowerEnemyGroup4Ant
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.antijemulP4_1, TowerEnemyGroup4AntijemulP4_1)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.antijemulP4_2, TowerEnemyGroup4AntijemulP4_2)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.antijemulP4_3, TowerEnemyGroup4AntijemulP4_3)
+
+// towerEnemyGroup5 / round 3-6 ~ 3-7
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.blub, TowerEnemyGroup5Blub)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.camera, TowerEnemyGroup5Camera)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.cctv, TowerEnemyGroup5Cctv)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.gabudan, TowerEnemyGroup5Gabudan)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.hellnet, TowerEnemyGroup5Hellnet)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.helltell, TowerEnemyGroup5Helltell)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.radio, TowerEnemyGroup5Radio)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.sirenBlue, TowerEnemyGroup5SirenBlue)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.sirenGreen, TowerEnemyGroup5SirenGreen)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.sirenRed, TowerEnemyGroup5SirenRed)

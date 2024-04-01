@@ -123,6 +123,7 @@ export class StatRound {
    * (라운드의 구현은 dataRound.js에서 처리합니다. 이 클래스는 스탯값만 정의하고 알고리즘 또는 라운드 구현을 하지 않습니다.)
    * 
    * (참고: 입력될 내용의 문자열이 길 수 있기 때문에 roundInfo는 맨 마지막 매개변수로 지정되었습니다.)
+   * @param {number} [iconNumber=-1] 라운드 아이콘의 번호 (roundIcon.png에 있는 여러 아이콘들중에 어떤것을 선택할건지에 대한 값), -1은 아이콘 없음
    * @param {string} roundText 라운드 값을 표시할 텍스트, 예시: 1-1, 한글 사용 금지, 일부 기호와 알파벳만 사용가능, 최대 5글자까지 지원(검사하진 않음...)
    * @param {string} roundName 라운드의 이름
    * @param {number} requireLevel 해당 라운드를 플레이하기 위한 최소 레벨 (해당 레벨 이상만 플레이 가능)
@@ -131,7 +132,8 @@ export class StatRound {
    * @param {number} clearBonus 
    * @param {string} roundInfo 
    */
-  constructor (roundText = 'NULL', roundName = 'NULL', requireLevel = 0, standardPower = 0, finishTime = 1, clearBonus = 0, roundInfo = '') {
+  constructor (iconNumber = -1, roundText = 'NULL', roundName = 'NULL', requireLevel = 0, standardPower = 0, finishTime = 1, clearBonus = 0, roundInfo = '') {
+    this.iconNumber = iconNumber
     this.roundText = roundText
     this.roundName = roundName
     this.requireLevel = requireLevel
@@ -247,28 +249,33 @@ dataExportStatPlayerSkill.set(ID.playerSkill.moon, new StatPlayerSkill('moon', 2
 export const dataExportStatRound = new Map()
 dataExportStatRound.set(ID.round.UNUSED, new StatRound())
 // round 1
-dataExportStatRound.set(ID.round.round1_1, new StatRound('1-1', '우주 여행 - 공허', 0, 40000, 150, 30000, ''))
-dataExportStatRound.set(ID.round.round1_2, new StatRound('1-2', '운석 지대', 1, 40000, 180, 36000, ''))
-dataExportStatRound.set(ID.round.round1_3, new StatRound('1-3', '운석 지대 - 무인기 충돌', 1, 40000, 210, 39000, ''))
-dataExportStatRound.set(ID.round.round1_4, new StatRound('1-4', '의식의 공간', 4, 40000, 152, 38000, ''))
-dataExportStatRound.set(ID.round.round1_5, new StatRound('1-5', '운석 지대 - 레드 존', 4, 40000, 210, 41000, ''))
-dataExportStatRound.set(ID.round.round1_6, new StatRound('1-6', '우주 여행 - 파란 행성 가는 길', 6, 40000, 152, 35000, ''))
-dataExportStatRound.set(ID.round.round1_test, new StatRound('TEST1', 'TEST1', 0, 0, 600, 0, '테스트 라운드 (디버그 용도)'))
+dataExportStatRound.set(ID.round.round1_1, new StatRound(2, '1-1', '우주 여행 - 공허', 0, 40000, 150, 30000, ''))
+dataExportStatRound.set(ID.round.round1_2, new StatRound(3, '1-2', '운석 지대', 1, 40000, 180, 36000, ''))
+dataExportStatRound.set(ID.round.round1_3, new StatRound(4, '1-3', '운석 지대 - 무인기 충돌', 1, 40000, 210, 39000, ''))
+dataExportStatRound.set(ID.round.round1_4, new StatRound(5, '1-4', '의식의 공간', 4, 40000, 152, 38000, ''))
+dataExportStatRound.set(ID.round.round1_5, new StatRound(6, '1-5', '운석 지대 - 레드 존', 4, 40000, 210, 41000, ''))
+dataExportStatRound.set(ID.round.round1_6, new StatRound(7, '1-6', '우주 여행 - 파란 행성 가는 길', 6, 40000, 152, 35000, ''))
+dataExportStatRound.set(ID.round.round1_test, new StatRound(8, 'TEST1', 'TEST1', 0, 0, 600, 0, '테스트 라운드 (디버그 용도)'))
 // round 2
-dataExportStatRound.set(ID.round.round2_1, new StatRound('2-1', '파란 행성 - 하늘 300km ~ 250km', 8, 50000, 150, 40000, ''))
-dataExportStatRound.set(ID.round.round2_2, new StatRound('2-2', '동그라미 마을', 8, 50000, 170, 44000, ''))
-dataExportStatRound.set(ID.round.round2_3, new StatRound('2-3', '동그라미 스페이스', 12, 50000, 192, 48000, ''))
-dataExportStatRound.set(ID.round.round2_4, new StatRound('2-4', '동그라미 마을 홀', 12, 60000, 207, 52000, ''))
-dataExportStatRound.set(ID.round.round2_5, new StatRound('2-5', '지하실 전투', 14, 60000, 200, 32000, ''))
-dataExportStatRound.set(ID.round.round2_6, new StatRound('2-6', '폐허가 된 동그라미 마을', 15, 60000, 150, 48000, ''))
-dataExportStatRound.set(ID.round.round2_test, new StatRound('TEST2', 'TEST2', 0, 0, 600, 0))
+dataExportStatRound.set(ID.round.round2_1, new StatRound(11, '2-1', '파란 행성 - 하늘 300km ~ 250km', 8, 50000, 150, 40000, ''))
+dataExportStatRound.set(ID.round.round2_2, new StatRound(12, '2-2', '동그라미 마을', 8, 50000, 170, 44000, ''))
+dataExportStatRound.set(ID.round.round2_3, new StatRound(13, '2-3', '동그라미 스페이스', 12, 50000, 192, 48000, ''))
+dataExportStatRound.set(ID.round.round2_4, new StatRound(14, '2-4', '동그라미 마을 홀', 12, 60000, 207, 52000, ''))
+dataExportStatRound.set(ID.round.round2_5, new StatRound(15, '2-5', '지하실 전투', 14, 60000, 200, 32000, ''))
+dataExportStatRound.set(ID.round.round2_6, new StatRound(16, '2-6', '폐허가 된 동그라미 마을', 15, 60000, 150, 48000, ''))
+dataExportStatRound.set(ID.round.round2_test, new StatRound(8, 'TEST2', 'TEST2', 0, 0, 600, 0))
 // round 3
-dataExportStatRound.set(ID.round.round3_1, new StatRound('3-1', '다운 타워 1', 20, 70000, 200, 71400, ''))
-dataExportStatRound.set(ID.round.round3_2, new StatRound('3-2', '다운 타워 2', 20, 70000, 220, 72800, ''))
-dataExportStatRound.set(ID.round.round3_3, new StatRound('3-3', '다운 타워 3', 20, 70000, 200, 74200, ''))
-dataExportStatRound.set(ID.round.round3_4, new StatRound('3-4', '다운 타워 보이드', 22, 70000, 240, 78000, ''))
-dataExportStatRound.set(ID.round.round3_5, new StatRound('3-5', '안티 제물', 25, 70000, 610, 120000, ''))
-dataExportStatRound.set(ID.round.round3_test, new StatRound('TEST3', 'round 3 test mode', 20, 0, 999, 0, 'round3을 제작하는 과정에서 만들어진 테스트 라운드'))
+dataExportStatRound.set(ID.round.round3_1, new StatRound(21, '3-1', '다운 타워 1', 20, 70000, 200, 71400, ''))
+dataExportStatRound.set(ID.round.round3_2, new StatRound(22, '3-2', '다운 타워 2', 20, 70000, 220, 72800, ''))
+dataExportStatRound.set(ID.round.round3_3, new StatRound(23, '3-3', '다운 타워 3', 20, 70000, 200, 74200, ''))
+dataExportStatRound.set(ID.round.round3_4, new StatRound(24, '3-4', '다운 타워 보이드', 22, 70000, 240, 78000, ''))
+dataExportStatRound.set(ID.round.round3_5, new StatRound(35, '3-5', '안티 제물', 25, 70000, 610, 120000, ''))
+dataExportStatRound.set(ID.round.round3_6, new StatRound(36, '3-6', '다운 타워 코어 1', 25, 77000, 225, 83800, ''))
+dataExportStatRound.set(ID.round.round3_7, new StatRound(-1, '3-7', '다운 타워 코어 2', 25, 77000, 225, 84600, ''))
+dataExportStatRound.set(ID.round.round3_8, new StatRound(-1, '3-8', '다운 타워 통로 1', 25, 77000, 210, 86600, ''))
+dataExportStatRound.set(ID.round.round3_9, new StatRound(-1, '3-9', '다운 타워 통로 2', 25, 77000, 210, 87800, ''))
+dataExportStatRound.set(ID.round.round3_10, new StatRound(-1, '3-10', '동그라미 마을로 돌아가는 길', 25, 77000, 270, 90000, ''))
+dataExportStatRound.set(ID.round.round3_test, new StatRound(8, 'TEST3', 'round 3 test mode', 20, 0, 999, 0, 'round3을 제작하는 과정에서 만들어진 테스트 라운드'))
 
 // 미정...
 // 3-6 다운타워 - 기술실 이동 통로

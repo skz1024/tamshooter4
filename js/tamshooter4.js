@@ -767,7 +767,7 @@ class RoundSelectSystem extends MenuSystem {
   /** 커서 모드 */ cursorMode = this.CURSORMODE_MAIN
   /** 최소 라운드: 게임은 1라운드부터 시작 */ MIN_ROUND = 1
   /** 최대 라운드: 8 */ MAX_ROUND = 8
-  roundIcon = imageSrc.system.roundIcon
+  roundIconSrc = imageSrc.system.roundIcon
   roundIconSize = { width: 59, height: 59 }
 
 
@@ -776,19 +776,16 @@ class RoundSelectSystem extends MenuSystem {
 
     let r = ID.round
     const unused = ID.round.UNUSED
+
+    /** @type {object} */
     this.roundIdTable = {
       r1: [r.round1_1, r.round1_2, r.round1_3, r.round1_4, r.round1_5, r.round1_6, unused, unused, r.round1_test, unused],
       r2: [r.round2_1, r.round2_2, r.round2_3, r.round2_4, r.round2_5, r.round2_6, unused, unused, r.round2_test, unused],
-      r3: [r.round3_1, r.round3_2, r.round3_3, r.round3_4, r.round3_5, r.round3_6, r.round3_7, r.round3_8, r.round3_9, r.round3_test],
+      r3: [r.round3_1, r.round3_2, r.round3_3, r.round3_4, r.round3_5, r.round3_6, r.round3_7, r.round3_8, r.round3_9, r.round3_10,
+           r.round3_test],
     }
 
     this.roundWorldIconNumber = [1, 10, 20]
-
-    this.roundIconTable = {
-      r1: [2, 3, 4, 5, 6, 7, -1, -1, 8, -1],
-      r2: [11, 12, 13, 14, 15, 16, -1, -1, 8, -1],
-      r3: [21, 22, 23, 24, 35, 36, -1, -1, -1, 8],
-    }
 
     const layerX = 10
     const layer1Y = 10
@@ -1013,15 +1010,6 @@ class RoundSelectSystem extends MenuSystem {
     }
   }
 
-  getCurrentRoundIconTable () {
-    switch (this.cursorRound) {
-      case 0: return this.roundIconTable.r1
-      case 1: return this.roundIconTable.r2
-      case 2: return this.roundIconTable.r3
-      default: return []
-    }
-  }
-
   getRoundIdTable () {
     switch (this.cursorRound) {
       case 0: return this.roundIdTable.r1
@@ -1043,19 +1031,22 @@ class RoundSelectSystem extends MenuSystem {
 
   displaySubRound () {
     for (let i = this.CURSOR_POSITION_START_SUB; i < this.CURSOR_POSITION_START_SUB + 19; i++) {
-      let position = -1
+      // 라운드 id테이블을 가져와서 현재 라운드의 id가 무엇인지를 확인
+      let roundIdTable = this.getRoundIdTable()
       let number = i - this.CURSOR_POSITION_START_SUB
-      let getIdTable = this.getCurrentRoundIconTable()
+      let roundId = roundIdTable[number]
+      if (roundId === 0) return
 
-      if (number < getIdTable.length) {
-        position = getIdTable[number]
-      }
-
-      if (position !== -1) {
+      // 해당 라운드의 id에 따른 데이터를 가져옴
+      let stat = dataExportStatRound.get(roundId)
+      if (stat == null) return
+      
+      let iconNumber = stat.iconNumber
+      if (iconNumber !== -1) {
         const imageSize = 60 - 1 // 이미지의 크기
         const imageSection = 60 // 이미지의 공간 (60x60의 공간중 59x59가 이미지 (나머지 공간은 확대/축소할 때 안티에일러싱 방지용))
-        const positionX = position % 10
-        const positionY = Math.floor(position / 10) 
+        const positionX = iconNumber % 10
+        const positionY = Math.floor(iconNumber / 10) 
         game.graphic.imageDisplay(imageSrc.system.roundIcon, positionX * imageSection, positionY * imageSection, imageSize, imageSize, this.menuList[i].x, this.menuList[i].y, imageSize, imageSize)
       }
 
@@ -1072,18 +1063,8 @@ class RoundSelectSystem extends MenuSystem {
         )
       }
 
-      let roundIdTable = this.getRoundIdTable()
-      let roundId = 0
-      if (roundIdTable != null) {
-        roundId = roundIdTable[number]
-      }
-
-      if (roundId !== 0) {
-        let stat = dataExportStatRound.get(roundId)
-        if (stat != null) {
-          digitalDisplay(stat.roundText, this.menuList[i].x, this.menuList[i].y + this.menuList[i].height)
-        }
-      }
+      // 라운드의 텍스트 표시
+      digitalDisplay(stat.roundText, this.menuList[i].x, this.menuList[i].y + this.menuList[i].height)
     }
   }
 

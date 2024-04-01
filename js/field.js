@@ -895,6 +895,31 @@ export class fieldState {
   }
 
   /**
+   * 특정한 ID를 가진 적 객체를 얻어옵니다.
+   * @param {number} targetId 타겟의 id
+   * @param {number} getMaxCount 얻어올 최대 개수, 0이하로 설정되면 전부 얻어옵니다.
+   */
+  static getEnemyObjectById (targetId, getMaxCount = 0) {
+    let list = []
+    let totalCount = 0
+
+    for (let i = 0; i < this.enemyObject.length; i++) {
+      let current = this.enemyObject[i]
+      if (targetId === current.id) {
+        totalCount++
+        list.push(current)
+      }
+
+      // getMaxCount가 0이면 최대개수에 제한이 없음
+      if (getMaxCount >= 1 && totalCount >= getMaxCount) {
+        break
+      }
+    }
+
+    return list
+  }
+
+  /**
    * 무기 객체를 생성합니다. (플레이어가 사용하는 무기, 스킬이 해당 객체로 생성됨)
    * @param {number} typeId 타입의 id
    * @param {number} x

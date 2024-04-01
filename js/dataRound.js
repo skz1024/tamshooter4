@@ -596,7 +596,7 @@ class BgLayer {
    * @param {number} height 높이
    * @param {boolean} isVertical 수평 여부 (아닐경우 수직방향)
    */
-  setBackgroundGadient (startColor, endColor, x, y, width, height, isVertical) {
+  setBackgroundGadient (startColor, endColor, x, y, width, height, isVertical = true) {
     this._backGradient.push(new BgLayer._BackGradient(startColor, endColor, x, y, width, height, isVertical))
 
     // 그라디언트도 배경으로 처리하기 때문에 배경이 등록된것으로 처리됩니다.
@@ -1202,10 +1202,13 @@ export class RoundPackLoad {
       soundSrc.enemyDie.enemyDieTowerBar1,
       soundSrc.enemyDie.enemyDieTowerBar2,
       soundSrc.enemyDie.enemyDieTowerBar3,
+      soundSrc.enemyDie.enemyDieTowerBlub,
       soundSrc.enemyDie.enemyDieTowerBossBar,
       soundSrc.enemyDie.enemyDieTowerBossDasu,
       soundSrc.enemyDie.enemyDieTowerBossRobot1,
       soundSrc.enemyDie.enemyDieTowerBossCommon,
+      soundSrc.enemyDie.enemyDieTowerCamera,
+      soundSrc.enemyDie.enemyDieTowerCctv,
       soundSrc.enemyDie.enemyDieTowerClockAnalog,
       soundSrc.enemyDie.enemyDieTowerClockDigital,
       soundSrc.enemyDie.enemyDieTowerClockJong,
@@ -1222,8 +1225,10 @@ export class RoundPackLoad {
       soundSrc.enemyDie.enemyDieTowerHellgi,
       soundSrc.enemyDie.enemyDieTowerHellla,
       soundSrc.enemyDie.enemyDieTowerHellna,
+      soundSrc.enemyDie.enemyDieTowerHellnet,
       soundSrc.enemyDie.enemyDieTowerHellpa,
       soundSrc.enemyDie.enemyDieTowerHellpo,
+      soundSrc.enemyDie.enemyDieTowerHelltell,
       soundSrc.enemyDie.enemyDieTowerHexagon,
       soundSrc.enemyDie.enemyDieTowerJagijang,
       soundSrc.enemyDie.enemyDieTowerI,
@@ -1244,6 +1249,7 @@ export class RoundPackLoad {
       soundSrc.enemyDie.enemyDieTowerSandglass,
       soundSrc.enemyDie.enemyDieTowerShipBig,
       soundSrc.enemyDie.enemyDieTowerShipSmall,
+      soundSrc.enemyDie.enemyDieTowerSiren,
       soundSrc.enemyDie.enemyDieTowerSquare,
       soundSrc.enemyDie.enemyDieTowerStar,
       soundSrc.enemyDie.enemyDieTowerTapo,
@@ -1251,37 +1257,6 @@ export class RoundPackLoad {
       
 
       // enemyAttack
-      soundSrc.enemyAttack.towerAttackDaepo,
-      soundSrc.enemyAttack.towerAttackRocket,
-      soundSrc.enemyAttack.towerAttackRocketBomb,
-      soundSrc.enemyAttack.towerPunchAttack,
-      soundSrc.enemyAttack.towerHellbaAttack,
-      soundSrc.enemyAttack.towerBossBarAttack,
-      soundSrc.enemyAttack.towerJagijangAttack,
-      soundSrc.enemyAttack.towerLightningAttack,
-      soundSrc.enemyAttack.towerBarAttack1,
-      soundSrc.enemyAttack.towerBarAttack2,
-      soundSrc.enemyAttack.towerBarAttack3,
-      soundSrc.enemyAttack.towerBossBarAttack,
-      soundSrc.enemyAttack.towerBossDasuCoreArrangeMent,
-      soundSrc.enemyAttack.towerBossDasuCoreAttack,
-      soundSrc.enemyAttack.towerBossDasuCoreReflect,
-      soundSrc.enemyAttack.towerBossDasuCoreSummon,
-      soundSrc.enemyAttack.towerClockAttack,
-      soundSrc.enemyAttack.towerCoreSummonBrown,
-      soundSrc.enemyAttack.towerCoreSummonRainbow,
-      soundSrc.enemyAttack.towerShipEquipCore,
-      soundSrc.enemyAttack.towerFakeBarAttack,
-      soundSrc.enemyAttack.towerNokgasiGasiBottom,
-      soundSrc.enemyAttack.towerNokgasiGasiHyper,
-      soundSrc.enemyAttack.towerNokgasiGasiShot,
-      soundSrc.enemyAttack.towerNokgasiGasiSpear,
-      soundSrc.enemyAttack.towerNokgasiGasiSting,
-      soundSrc.enemyAttack.towerNokgasiGasiThrow,
-      soundSrc.enemyAttack.towerNokgasiAttackBlue,
-      soundSrc.enemyAttack.towerNokgasiAttackGreenGrey,
-      soundSrc.enemyAttack.towerNokgasiAttackOrangePurple,
-      soundSrc.enemyAttack.towerNokgasiAttackPink,
       soundSrc.enemyAttack.towerAntijemulBackshot,
       soundSrc.enemyAttack.towerAntijemulGravityBall,
       soundSrc.enemyAttack.towerAntijemulGravityBallEffect,
@@ -1292,6 +1267,47 @@ export class RoundPackLoad {
       soundSrc.enemyAttack.towerAntijemulRingBomb,
       soundSrc.enemyAttack.towerAntijemulRingBombEffect,
       soundSrc.enemyAttack.towerAntijemulRingRolling,
+      soundSrc.enemyAttack.towerAttackDaepo,
+      soundSrc.enemyAttack.towerAttackRocket,
+      soundSrc.enemyAttack.towerAttackRocketBomb,
+      soundSrc.enemyAttack.towerBarAttack1,
+      soundSrc.enemyAttack.towerBarAttack2,
+      soundSrc.enemyAttack.towerBarAttack3,
+      soundSrc.enemyAttack.towerBossBarAttack,
+      soundSrc.enemyAttack.towerBossDasuCoreArrangeMent,
+      soundSrc.enemyAttack.towerBossDasuCoreAttack,
+      soundSrc.enemyAttack.towerBossDasuCoreReflect,
+      soundSrc.enemyAttack.towerBossDasuCoreSummon,
+      soundSrc.enemyAttack.towerCameraAttackShot,
+      soundSrc.enemyAttack.towerCameraAttackWait,
+      soundSrc.enemyAttack.towerClockAttack,
+      soundSrc.enemyAttack.towerClockVibration,
+      soundSrc.enemyAttack.towerCoreSummonBrown,
+      soundSrc.enemyAttack.towerCoreSummonRainbow,
+      soundSrc.enemyAttack.towerFakeBarAttack,
+      soundSrc.enemyAttack.towerGabudanBooting,
+      soundSrc.enemyAttack.towerGabudanStartup,
+      soundSrc.enemyAttack.towerGabudanKernelPanic,
+      soundSrc.enemyAttack.towerHellbaAttack,
+      soundSrc.enemyAttack.towerHellpaAttack,
+      soundSrc.enemyAttack.towerJagijangAttack,
+      soundSrc.enemyAttack.towerLightningAttack,
+      soundSrc.enemyAttack.towerNokgasiGasiBottom,
+      soundSrc.enemyAttack.towerNokgasiGasiHyper,
+      soundSrc.enemyAttack.towerNokgasiGasiShot,
+      soundSrc.enemyAttack.towerNokgasiGasiSpear,
+      soundSrc.enemyAttack.towerNokgasiGasiSting,
+      soundSrc.enemyAttack.towerNokgasiGasiThrow,
+      soundSrc.enemyAttack.towerNokgasiAttackBlue,
+      soundSrc.enemyAttack.towerNokgasiAttackGreenGrey,
+      soundSrc.enemyAttack.towerNokgasiAttackOrangePurple,
+      soundSrc.enemyAttack.towerNokgasiAttackPink,
+      soundSrc.enemyAttack.towerPunchAttack,
+      soundSrc.enemyAttack.towerRadioAttack,
+      soundSrc.enemyAttack.towerShipEquipCore,
+      soundSrc.enemyAttack.towerSirenBlueMove,
+      soundSrc.enemyAttack.towerSirenGreenMove,
+      soundSrc.enemyAttack.towerSirenRedMove,
     ]
   }
 }
@@ -3569,7 +3585,10 @@ class Round1_test extends RoundData {
     this.phase.addRoundPhase(this, () => {
       if (this.timeCheckInterval(1, 999, 60)) {
         if (this.field.getEnemyCount() === 0) {
-          this.field.createEnemy(ID.enemy.test)
+          this.field.createEnemy(ID.enemy.towerEnemyGroup5.gabudan, 300, 100)
+          // this.field.createEnemy(ID.enemy.towerEnemyGroup5.radio)
+          // this.field.createEnemy(ID.enemy.towerEnemyGroup5.radio)
+          // this.field.createEnemy(ID.enemy.towerEnemyGroup5.radio)
         }
 
         // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeBar, 600, 200)
@@ -3582,6 +3601,17 @@ class Round1_test extends RoundData {
         // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeCore, 600)
         // this.field.createEnemy(ID.enemy.towerEnemyGroup3.corePotion, 600)
         // this.field.createEnemy(ID.enemy.towerEnemyGroup3.core8, 600)
+      }
+
+      let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup5.gabudan)
+      if (enemy) {
+        if (enemy.message === 'start') {
+          enemy.message = ''
+          this.sound.musicFadeIn(soundSrc.music.music17_down_tower_boss)
+        } else if (enemy.message === 'end') {
+          enemy.message = ''
+          this.sound.musicStop()
+        }
       }
     }, 0, 999)
   }
@@ -11579,8 +11609,117 @@ class Round3_5 extends Round3Templete {
 }
 
 class Round3_6 extends Round3Templete {
-  
+  constructor () {
+    super()
+    this.stat.setStat(ID.round.round3_6)
+    this.sound.roundStartMusicSrc = soundSrc.music.music23_down_tower_core
+
+    // 배경
+    this.setBackground()
+
+    this.phase.addRoundPhase(this, this.roundPhase00, 0, 40)
+    this.phase.addRoundPhase(this, this.roundPhase01, 41, 80)
+    this.phase.addRoundPhase(this, this.roundPhase02, 81, 120)
+  }
+
+  setBackground () {
+    this.bgLayer.setBackgroundGadient('#212121', '#212121', 0, 0, 7200, 2400, true)
+    this.bgLayer.setBackgroundGadient('#616161', '#212121', 0, 0, 2400, 600, true)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_floor1, 0, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_floor1, 800, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_floor1, 1600, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_pillar, 2400, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_pillar, 3200, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_pillar, 4000, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_pillar, 4800, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_pillar, 5600, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_pillar, 6400, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_stairIn, 7200, 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_stair, 7200, 600)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_stair, 7200, 1200)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_stairOut, 7200, 1800)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_stairOut, 7200, 1200)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_floor2, 800, 1200)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_floor2, 1600, 1200)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_6_coreInfo, 2400, 1200)
+    this.bgLayer.setBackgroundScroolLoop(false, false)
+    this.bgLayer.setBackgroundSpeed(1, 0)
+
+    this.bgLayer.addLayerImage(imageSrc.round.round3_6_light1, 0)
+    this.bgLayer.addLayerImage(imageSrc.round.round3_6_light2, 0)
+    this.bgLayer.addLayerImage(imageSrc.round.round3_6_pillarLayer, 0)
+  }
+
+  processBackground () {
+    super.processBackground()
+
+    let position = this.bgLayer.getBackgroundPosition()
+    if (position.x === 6400 && position.y === 0) {
+      this.bgLayer.setBackgroundSpeed(0, 1)
+    } else if (position.x === 6400 && position.y === 1800) {
+      this.bgLayer.setBackgroundPosition(0, 1200)
+      this.bgLayer.setBackgroundSpeed(1, 0)
+    } else if (this.time.currentTime > 160 && position.x > 2400 && position.y === 1200) {
+      this.bgLayer.setBackgroundPosition(2400, 1200)
+      this.bgLayer.setBackgroundSpeed(0, 0)
+    }
+
+    if (this.timeCheckFrame(80)) {
+      this.bgLayer.setLayerAlphaFade(2, 0.4, 600)
+    } else if (this.timeCheckFrame(100)) {
+      this.bgLayer.setLayerAlphaFade(2, 0, 600)
+    }
+
+    if (this.timeCheckFrame(60)) {
+      this.bgLayer.setLayerAlphaFade(0, 1, 300)
+    } else if (this.timeCheckFrame(65)) {
+      this.bgLayer.setLayerAlphaFade(0, 0, 300)
+    } else if (this.timeCheckFrame(70)) {
+      this.bgLayer.setLayerAlphaFade(0, 1, 300)
+    } else if (this.timeCheckFrame(75)) {
+      this.bgLayer.setLayerAlphaFade(0, 0, 300)
+    } else if (this.timeCheckFrame(80)) {
+      this.bgLayer.setLayerAlphaFade(0, 1, 300)
+      this.bgLayer.setLayerAlphaFade(1, 1, 300)
+    } else if (this.timeCheckFrame(85)) {
+      this.bgLayer.setLayerAlphaFade(0, 0, 300)
+      this.bgLayer.setLayerAlphaFade(1, 0, 300)
+    } else if (this.timeCheckFrame(90)) {
+      this.bgLayer.setLayerAlphaFade(0, 1, 300)
+      this.bgLayer.setLayerAlphaFade(1, 1, 300)
+    } else if (this.timeCheckFrame(95)) {
+      this.bgLayer.setLayerAlphaFade(0, 0, 300)
+      this.bgLayer.setLayerAlphaFade(1, 0, 300)
+    } else if (this.timeCheckFrame(100)) {
+      this.bgLayer.setLayerAlphaFade(0, 1, 300)
+      this.bgLayer.setLayerAlphaFade(1, 1, 300)
+    } else if (this.timeCheckFrame(105)) {
+      this.bgLayer.setLayerAlphaFade(0, 0, 300)
+      this.bgLayer.setLayerAlphaFade(1, 0, 300)
+    } else if (this.timeCheckFrame(110)) {
+      this.bgLayer.setLayerAlphaFade(0, 1, 300)
+    }
+  }
+
+  roundPhase00 () {}
+  roundPhase01 () {}
+  roundPhase02 () {}
+  roundPhase03 () {}
+  roundPhase04 () {}
+  roundPhase05 () {}
+  roundPhase06 () {}
+  roundPhase07 () {}
+
+  display () {
+    super.display()
+    graphicSystem.fillText(this.bgLayer.getBackgroundPosition().x + ', ' + this.bgLayer.getBackgroundPosition().y, 0, 0, 'orange')
+  }
 }
+
+class Round3_7 extends Round3Templete {}
+class Round3_8 extends Round3Templete {}
+class Round3_9 extends Round3Templete {}
+class Round3_10 extends Round3Templete {}
 
 class Round3_test extends Round3Templete {
   constructor () {
@@ -11601,7 +11740,7 @@ class Round3_test extends Round3Templete {
     this.phase.addRoundPhase(this, () => {
 
       if (this.timeCheckFrame(2)) {
-        this.field.createEnemy(ID.enemy.towerEnemyGroup1.crazyRobot)
+        this.field.createEnemy(ID.enemy.towerEnemyGroup5.gabudan)
         // this.sound.musicFadeIn(soundSrc.music.music18_down_tower_void, 300)
         // this.field.createEnemy(ID.enemy.towerEnemyGroup3.clockJong)
       }
@@ -11634,6 +11773,16 @@ class Round3_test extends Round3Templete {
       //   this.bgLayer.setLayerAlphaFade(0, 1, 300) // 첫번째 배경으로 되돌아감
       // }
 
+      let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup5.gabudan)
+      if (enemy) {
+        if (enemy.message === 'start') {
+          enemy.message = ''
+          this.sound.musicFadeIn(soundSrc.music.music17_down_tower_boss)
+        } else if (enemy.message === 'end') {
+          enemy.message = ''
+          this.sound.musicStop()
+        }
+      }
 
       if (this.timeCheckFrame(1)) {
         // this.sound.musicFadeOut(60)
@@ -11693,7 +11842,8 @@ class Round3_test extends Round3Templete {
   display () {
     super.display()
 
-    this.bossHpMeterVer3(ID.enemy.towerEnemyGroup1.crazyRobot, 'TEST')
+    // this.bossHpMeterVer3(ID.enemy.towerEnemyGroup1.crazyRobot, 'TEST')
+    this.bossHpMeter()
 
     // if (this.playerOption.optionObject[0]) {
     //   graphicSystem.fillText(this.playerOption.optionObject[0].x + ', ' + this.playerOption.optionObject[0].y + ', ' + this.playerOption.optionObject[0].color + ', spd: ' + this.playerOption.optionObject[0].moveSpeedX, 0, 0, 'white')
@@ -11748,8 +11898,13 @@ dataExportRound.set(ID.round.round2_6, Round2_6)
 dataExportRound.set(ID.round.round2_test, Round2_test)
 dataExportRound.set(ID.round.round3_1, Round3_1)
 dataExportRound.set(ID.round.round3_2, Round3_2)
-dataExportRound.set(ID.round.round3_test, Round3_test)
 dataExportRound.set(ID.round.round3_3, Round3_3)
 dataExportRound.set(ID.round.round3_4, Round3_4)
 dataExportRound.set(ID.round.round3_5, Round3_5)
+dataExportRound.set(ID.round.round3_6, Round3_6)
+dataExportRound.set(ID.round.round3_7, Round3_7)
+dataExportRound.set(ID.round.round3_8, Round3_8)
+dataExportRound.set(ID.round.round3_9, Round3_9)
+dataExportRound.set(ID.round.round3_10, Round3_10)
+dataExportRound.set(ID.round.round3_test, Round3_test)
 

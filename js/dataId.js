@@ -298,6 +298,18 @@ export class ID {
       antijemulP4_1: 20330,
       antijemulP4_2: 20331,
       antijemulP4_3: 20332,
+    },
+    towerEnemyGroup5: {
+      camera: 20335,
+      cctv: 20336,
+      radio: 20337,
+      sirenRed: 20338,
+      sirenGreen: 20339,
+      sirenBlue: 20340,
+      blub: 20341,
+      hellnet: 20342,
+      helltell: 20343,
+      gabudan: 20344,
     }
   }
 
@@ -352,6 +364,7 @@ export class ID {
     round3_7: 70037,
     round3_8: 70038,
     round3_9: 70039,
+    round3_10: 70040,
     round3_A1: 70041,
     round3_A2: 70042,
     round3_A3: 70043,

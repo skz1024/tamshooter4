@@ -826,16 +826,11 @@ export class FieldData {
     if (absSpeedX < minSpeed && absSpeedY < minSpeed) {
       // speedX와 speedY의 값을 비교하여 가장 높은 값을 최소 속도에 맞춰지도록 조정합니다.
       // 단 0으로 나누기는 금지됨
-      if (absSpeedX === 0 && absSpeedY === 0) {
+      if (absSpeedX !== 0 || absSpeedY !== 0) {
         let mul = absSpeedX < absSpeedY ? minSpeed / absSpeedY : minSpeed / absSpeedX
         speedX *= mul
         speedY *= mul
       }
-    }
-
-    if (isNaN(speedX) || isNaN(speedY)) {
-      // ??!
-      console.log(speedX, speedY)
     }
 
     // 이동 방향에 따라서 속도를 재설정 하도록 변경 
@@ -1251,7 +1246,10 @@ export class FieldData {
   }
 
   /** 
-   * 불러오기를 했을 때 만약 saveString, saveList에 관한 정보를 사용해야 한다면, 이 함수 내에서 처리해주세요.
+   * 불러오기를 했을 때 만약 saveString, saveList에 관한 정보를 세부적으로 사용해야 한다면, 이 함수 내에서 처리해주세요.
+   * 
+   * 그러나, saveList와 saveString을 단일 요소로 활용한다면 이 함수는 사용하지 않아도 됩니다.
+   * (이 함수는 복잡한 처리 및 가독성 향상을 위해 만들어진 것이므로, 필수로 사용하지 않습니다.)
    * 
    * 이 함수는 불러오기 할 때 자동으로 호출됩니다.
    */
@@ -1260,7 +1258,13 @@ export class FieldData {
   }
 
   /** 
-   * 필드 상태에서 저장할 때마다 saveString, saveList에 관한 정보를 한번에 처리하고 싶다면 이 함수를 사용해주세요. 
+   * 필드 상태에서 저장할 때마다 saveString, saveList에 관한 
+   * 더 세부적인 정보를 한번에 처리하고 싶다면 가독성을 위해서 이 함수를 사용해주세요. 
+   * 
+   * 그러나 saveList 또는 saveString을 직접 변경하는 경우, 이 함수는 사용하지 않아도 됩니다.
+   * (이 함수는 복잡한 처리 및 가독성 향상을 위해 만들어진 것이므로, 필수로 사용하지 않습니다.)
+   * 
+   * (저장 중에 saveList, saveString도 같이 저장됩니다.)
    */
   saveProcess () {
 
