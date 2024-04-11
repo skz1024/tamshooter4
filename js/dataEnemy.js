@@ -13741,10 +13741,10 @@ class TowerEnemyGroup5SirenRed extends TowerEnemy {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.sirenRed, 3)
-    this.setEnemyByCpStat(12, 10)
+    this.setEnemyByCpStat(22, 10)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerSiren)
-    this.setRandomMoveSpeed(1.4, 0)
-    this.dieAfterDeleteDelay = new DelayData(120)
+    this.setRandomMoveSpeed(3.4, 0)
+    this.dieAfterDeleteDelay = new DelayData(60)
     this.isPossibleExit = false
     this.attackDelay = new DelayData(30)
     this.STATE_DETECT = 'detect'
@@ -13771,7 +13771,7 @@ class TowerEnemyGroup5SirenRed extends TowerEnemy {
       let prevDetect = this.state === this.STATE_DETECT ? true : false
       this.state = this.detectCheck() ? this.STATE_DETECT : this.STATE_NORMAL
       if (prevDetect && this.state === this.STATE_NORMAL) {
-        this.setRandomMoveSpeed(1.4, 0)
+        this.setRandomMoveSpeed(3.4, 0)
       }
     }
 
@@ -13840,7 +13840,7 @@ class TowerEnemyGroup5SirenGreen extends TowerEnemyGroup5SirenRed {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.sirenGreen, 3)
-    this.setEnemyByCpStat(13, 10)
+    this.setEnemyByCpStat(23, 10)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerSiren)
     this.sirenSound = soundSrc.enemyAttack.towerSirenGreenMove
     this.dieImageObject = imageDataInfo.towerEnemyGroup5.enemyDieSirenGreen
@@ -13862,7 +13862,7 @@ class TowerEnemyGroup5SirenBlue extends TowerEnemyGroup5SirenRed {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.sirenBlue, 3)
-    this.setEnemyByCpStat(14, 10)
+    this.setEnemyByCpStat(24, 10)
     this.attackDelay.setDelay(240)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerSiren)
     this.sirenSound = soundSrc.enemyAttack.towerSirenBlueMove
@@ -13962,6 +13962,7 @@ class TowerEnemyGroup5Helltell extends TowerEnemyHellTemplet {
       this.attack = 4
       this.collisionDelay.setDelay(8)
       this.moveDelay = new DelayData(4)
+      this.maxRunningFrame = 180
     }
 
     processMove () {
@@ -14012,11 +14013,11 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
     if (this.state === this.STATE_PROGRAM_RUN1 && this.attackDelay.check()) {
       // 원형 탄막 생성
       const baseSpeed = 3
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 16; i++) {
         let bullet = TowerEnemy.bulletRed.getCreateObject()
         bullet.setPosition(graphicSystem.CANVAS_WIDTH_HALF, graphicSystem.CANVAS_HEIGHT_HALF)
         
-        let degree = (i * 360 / 20) + (this.elapsedFrame % (360 / 20))
+        let degree = (i * 360 / 16) + (this.elapsedFrame % (360 / 16))
         let radian = Math.PI / 180 * degree
         let speedX = Math.cos(radian) * baseSpeed
         let speedY = Math.sin(radian) * baseSpeed
@@ -14026,12 +14027,12 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
     } else if (this.state === this.STATE_PROGRAM_RUN2 && this.attackDelay.check()) {
       // 확산 탄막 생성 (위, 아래 방향)
       const baseSpeed = 3
-      for (let i = 0; i < 14; i++) {
+      for (let i = 0; i < 8; i++) {
         let bullet = TowerEnemy.bulletBlue.getCreateObject()
         bullet.setPosition(graphicSystem.CANVAS_WIDTH_HALF, graphicSystem.CANVAS_HEIGHT_HALF)
 
-        let speedX = -3 + (i % 7)
-        let speedY = Math.floor(i / 7) === 0 ? -baseSpeed : baseSpeed
+        let speedX = -1 + (i % 4)
+        let speedY = Math.floor(i / 4) === 0 ? -baseSpeed : baseSpeed
         bullet.setMoveSpeed(speedX, speedY)
         fieldState.createEnemyBulletObject(bullet)
       }
@@ -14050,6 +14051,11 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
   }
 
   processState () {
+    // 생성된지 60초가 지날경우, 빠른 클리어를 위해 hp를 강제 감소시킴 (초당 10% 감소)
+    if (this.elapsedFrame >= 60 * 60 && this.hp > 0) {
+      this.hp -= Math.floor(this.hpMax / 600)
+    }
+
     // 만약, 커널 패닉이 아니거나, 커널 데드가 아닌 상황에서
     // 죽은 상태 (hp가 0이하)가 된 경우, 커널 데드 화면이 표시되고 상태 변경은 되지 않습니다.
     if (this.state !== this.STATE_KERNEL_DEAD && this.state !== this.STATE_KERNEL_PANIC) {
@@ -14069,12 +14075,12 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
 
     // 보스 배경음을 재생시키기 위한 메세지 설정
     if (this.elapsedFrame === FPS * 20) this.message = this.MESSAGE_START
-    else if (this.elapsedFrame === FPS * 36) this.message = this.MESSAGE_END
+    else if (this.elapsedFrame === FPS * 44) this.message = this.MESSAGE_END
 
     // 사운드 재생
     if (this.elapsedFrame === FPS * 1) soundSystem.play(soundSrc.enemyAttack.towerGabudanBooting)
     else if (this.elapsedFrame === FPS * 11) soundSystem.play(soundSrc.enemyAttack.towerGabudanStartup)
-    else if (this.elapsedFrame === FPS * 36) soundSystem.play(soundSrc.enemyAttack.towerGabudanKernelPanic)
+    else if (this.elapsedFrame === FPS * 44) soundSystem.play(soundSrc.enemyAttack.towerGabudanKernelPanic)
 
     // 화면을 표시하기 위한 상태 변경
     switch (this.elapsedFrame) {
@@ -14087,10 +14093,10 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
       case FPS * 14: this.state = this.STATE_BACKGROUND3; break // 배경 + 아이콘 + 프로그램 표시
       case FPS * 18: this.state = this.STATE_PROGRAM; break // 프로그램 표시
       case FPS * 20: this.state = this.STATE_PROGRAM_RUN1; break // 총알 패턴 1
-      case FPS * 28: this.state = this.STATE_PROGRAM_RUN2; break // 총알 패턴 2
-      case FPS * 36: this.state = this.STATE_ERROR1; break
-      case FPS * 38: this.state = this.STATE_ERROR2; break
-      case FPS * 40: this.state = this.STATE_KERNEL_PANIC; break
+      case FPS * 32: this.state = this.STATE_PROGRAM_RUN2; break // 총알 패턴 2
+      case FPS * 44: this.state = this.STATE_ERROR1; break
+      case FPS * 46: this.state = this.STATE_ERROR2; break
+      case FPS * 48: this.state = this.STATE_KERNEL_PANIC; break
     }
   }
 

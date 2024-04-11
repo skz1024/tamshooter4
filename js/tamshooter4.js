@@ -1015,6 +1015,7 @@ class RoundSelectSystem extends MenuSystem {
       case 0: return this.roundIdTable.r1
       case 1: return this.roundIdTable.r2
       case 2: return this.roundIdTable.r3
+      default: return undefined
     }
   }
 
@@ -1033,13 +1034,15 @@ class RoundSelectSystem extends MenuSystem {
     for (let i = this.CURSOR_POSITION_START_SUB; i < this.CURSOR_POSITION_START_SUB + 19; i++) {
       // 라운드 id테이블을 가져와서 현재 라운드의 id가 무엇인지를 확인
       let roundIdTable = this.getRoundIdTable()
+      if (roundIdTable == null) return
+
       let number = i - this.CURSOR_POSITION_START_SUB
       let roundId = roundIdTable[number]
-      if (roundId === 0) return
+      if (roundId === 0) continue
 
       // 해당 라운드의 id에 따른 데이터를 가져옴
       let stat = dataExportStatRound.get(roundId)
-      if (stat == null) return
+      if (stat == null) continue
       
       let iconNumber = stat.iconNumber
       if (iconNumber !== -1) {
