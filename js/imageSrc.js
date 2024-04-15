@@ -194,6 +194,19 @@ export class imageSrc {
     round3_7_stair: './image/round/round3_7_stair.png',
     round3_7_stairIn: './image/round/round3_7_stairIn.png',
     round3_7_stairOut: './image/round/round3_7_stairOut.png',
+    round3_8_level1: './image/round/round3_8_level1.png',
+    round3_8_level2: './image/round/round3_8_level2.png',
+    round3_8_level3: './image/round/round3_8_level3.png',
+    round3_8_level4: './image/round/round3_8_level4.png',
+    round3_8_finishArea: './image/round/round3_8_finishArea.png',
+    round3_8_finishStart: './image/round/round3_8_finishStart.png',
+    round3_9_level1: './image/round/round3_9_level1.png',
+    round3_9_level2: './image/round/round3_9_level2.png',
+    round3_9_level3: './image/round/round3_9_level3.png',
+    round3_9_level4: './image/round/round3_9_level4.png',
+    round3_9_layerBackground: './image/round/round3_9_layerBackground.png',
+    round3_9_finishArea: './image/round/round3_9_finishArea.png',
+    round3_9_finishStart: './image/round/round3_9_finishStart.png',
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -676,6 +689,7 @@ export class imageDataInfo {
   }
 
   static towerEnemyGroup5 = {
+    // round 3-6
     camera: new ImageDataObject(0, 0, 120, 80),
     enemyDieCamera: new ImageDataObject(121, 0, 120, 80),
     cctv: new ImageDataObject(250, 0, 50, 50),
@@ -694,6 +708,34 @@ export class imageDataInfo {
     hellnet: new ImageDataObject(0, 400, 180, 90, 5),
     helltell: new ImageDataObject(0, 500, 160, 60, 6),
     gabudanComputer: new ImageDataObject(850, 200, 330, 190, 1),
+
+    // round 3-8
+    dust1: new ImageDataObject(0, 650, 40, 40),
+    enemyDieDust1: new ImageDataObject(0, 650, 40, 40, 11),
+    dust2: new ImageDataObject(0, 691, 40, 40),
+    enemyDieDust2: new ImageDataObject(0, 691, 40, 40, 11),
+    dust3: new ImageDataObject(0, 732, 60, 60),
+    enemyDieDust3: new ImageDataObject(0, 732, 60, 60, 11),
+    dust4: new ImageDataObject(0, 793, 80, 80),
+    enemyDieDust4: new ImageDataObject(0, 793, 80, 80, 11),
+    brokenWing1: new ImageDataObject(0, 900, 30, 40),
+    brokenWing2: new ImageDataObject(40, 900, 300, 24),
+    brokenWing3: new ImageDataObject(80, 900, 60, 20),
+    brokenWing4: new ImageDataObject(150, 900, 60, 20),
+    brokenRotor1: new ImageDataObject(220, 900, 80, 7),
+    brokenRotor2: new ImageDataObject(220, 910, 80, 7),
+    brokenRotor3: new ImageDataObject(220, 920, 80, 7),
+    brokenRotor4: new ImageDataObject(220, 930, 80, 7),
+    sujipgi: new ImageDataObject(0, 950, 80, 50, 6),
+    roller: new ImageDataObject(0, 1001, 120, 80, 4),
+    cutternal: new ImageDataObject(500, 650, 50, 80, 8),
+    vacuumCleaner: new ImageDataObject(1000, 650, 200, 300),
+    vacuumCleanerHoseHorizontal: new ImageDataObject(940, 650, 60, 300),
+    vacuumCleanerHoseVertical: new ImageDataObject(900, 950, 300, 60),
+    vacuumCleanerHoseRect: new ImageDataObject(500, 950, 60, 60),
+    vacuumCleanerHoseLeftDownCornor: new ImageDataObject(560, 950, 60, 60),
+    vacuumCleanerHoseDownRightCornor: new ImageDataObject(620, 950, 60, 60),
+    vacuumCleanerInhaler: new ImageDataObject(800, 900, 60, 240),
 
     cameraAttackArea: new ImageDataObject(600, 200, 100, 100),
     cameraAttackAreaShot: new ImageDataObject(701, 200, 100, 100),
