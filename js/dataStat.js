@@ -255,7 +255,7 @@ dataExportStatRound.set(ID.round.round1_3, new StatRound(4, '1-3', '운석 지�
 dataExportStatRound.set(ID.round.round1_4, new StatRound(5, '1-4', '의식의 공간', 4, 40000, 152, 38000, ''))
 dataExportStatRound.set(ID.round.round1_5, new StatRound(6, '1-5', '운석 지대 - 레드 존', 4, 40000, 210, 41000, ''))
 dataExportStatRound.set(ID.round.round1_6, new StatRound(7, '1-6', '우주 여행 - 파란 행성 가는 길', 6, 40000, 152, 35000, ''))
-dataExportStatRound.set(ID.round.round1_test, new StatRound(8, 'TEST1', 'TEST1', 0, 0, 600, 0, '테스트 라운드 (디버그 용도)'))
+dataExportStatRound.set(ID.round.round1_test, new StatRound(8, 'TEST1', 'TEST1', 0, 0, 9900, 0, '테스트 라운드 (디버그 용도)'))
 // round 2
 dataExportStatRound.set(ID.round.round2_1, new StatRound(11, '2-1', '파란 행성 - 하늘 300km ~ 250km', 8, 50000, 150, 40000, ''))
 dataExportStatRound.set(ID.round.round2_2, new StatRound(12, '2-2', '동그라미 마을', 8, 50000, 170, 44000, ''))
@@ -263,7 +263,7 @@ dataExportStatRound.set(ID.round.round2_3, new StatRound(13, '2-3', '동그라�
 dataExportStatRound.set(ID.round.round2_4, new StatRound(14, '2-4', '동그라미 마을 홀', 12, 60000, 207, 52000, ''))
 dataExportStatRound.set(ID.round.round2_5, new StatRound(15, '2-5', '지하실 전투', 14, 60000, 200, 32000, ''))
 dataExportStatRound.set(ID.round.round2_6, new StatRound(16, '2-6', '폐허가 된 동그라미 마을', 15, 60000, 150, 48000, ''))
-dataExportStatRound.set(ID.round.round2_test, new StatRound(8, 'TEST2', 'TEST2', 0, 0, 600, 0))
+dataExportStatRound.set(ID.round.round2_test, new StatRound(8, 'TEST2', 'TEST2', 0, 0, 9900, 0))
 // round 3
 dataExportStatRound.set(ID.round.round3_1, new StatRound(21, '3-1', '다운 타워 1', 20, 70000, 200, 71400, ''))
 dataExportStatRound.set(ID.round.round3_2, new StatRound(22, '3-2', '다운 타워 2', 20, 70000, 220, 72800, ''))
@@ -272,15 +272,7 @@ dataExportStatRound.set(ID.round.round3_4, new StatRound(24, '3-4', '다운 타�
 dataExportStatRound.set(ID.round.round3_5, new StatRound(35, '3-5', '안티 제물', 25, 70000, 610, 120000, ''))
 dataExportStatRound.set(ID.round.round3_6, new StatRound(36, '3-6', '다운 타워 코어 1', 25, 77000, 220, 83800, ''))
 dataExportStatRound.set(ID.round.round3_7, new StatRound(-1, '3-7', '다운 타워 코어 2', 25, 77000, 220, 84600, ''))
-dataExportStatRound.set(ID.round.round3_8, new StatRound(-1, '3-8', '다운 타워 통로 1', 25, 77000, 210, 86600, ''))
-dataExportStatRound.set(ID.round.round3_9, new StatRound(-1, '3-9', '다운 타워 통로 2', 25, 77000, 210, 87800, ''))
+dataExportStatRound.set(ID.round.round3_8, new StatRound(-1, '3-8', '다운 타워 통로 1', 25, 77000, 220, 86600, ''))
+dataExportStatRound.set(ID.round.round3_9, new StatRound(-1, '3-9', '다운 타워 통로 2', 25, 77000, 220, 87800, ''))
 dataExportStatRound.set(ID.round.round3_10, new StatRound(-1, '3-10', '동그라미 마을로 돌아가는 길', 25, 77000, 270, 90000, ''))
-dataExportStatRound.set(ID.round.round3_test, new StatRound(8, 'TEST3', 'round 3 test mode', 20, 0, 999, 0, 'round3을 제작하는 과정에서 만들어진 테스트 라운드'))
-
-// 미정...
-// 3-6 다운타워 - 기술실 이동 통로
-// 3-7 다운타워 - 기술실 내부 코어
-// 3-8 다운타워 - 빠른 이동 통로
-// 3-A1 다운타워 코어 - 숨겨진 통로
-// 3-A2 다운타워 코어 - 위험한 함정
-// 3-A3 다운타워 코어 - 마을을 지배하는 자
+dataExportStatRound.set(ID.round.round3_test, new StatRound(8, 'TEST3', 'round 3 test mode', 20, 0, 9900, 0, 'round3을 제작하는 과정에서 만들어진 테스트 라운드'))

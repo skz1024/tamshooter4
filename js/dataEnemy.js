@@ -9348,7 +9348,7 @@ class TowerEnemyGroup2HexaLight extends TowerEnemyGroup2HexaShadow {
   constructor () { super(); this.setAutoFigure(this.subTypeList.HEXA_LIGHT) }
 }
 class TowerEnemyGroup2OctaShadow extends TowerEnemyPentaShadowTemplete {
-  constructor () { super(); this.setAutoFigure(this.subTypeList.OCTA_LIGHT) }
+  constructor () { super(); this.setAutoFigure(this.subTypeList.OCTA_SHADOW) }
   getCollisionArea () {
     return [ this.getCollisionAreaCalcurationObject(0, 39, 148, 60),
       this.getCollisionAreaCalcurationObject(28, 0, 86, 39),
@@ -9356,7 +9356,7 @@ class TowerEnemyGroup2OctaShadow extends TowerEnemyPentaShadowTemplete {
   }
 }
 class TowerEnemyGroup2OctaLight extends TowerEnemyGroup2OctaShadow {
-  constructor () { super(); this.setAutoFigure(this.subTypeList.OCTA_SHADOW) }
+  constructor () { super(); this.setAutoFigure(this.subTypeList.OCTA_LIGHT) }
 }
 
 class TowerEnemyGroup2BigBar extends TowerEnemy {
@@ -13502,11 +13502,6 @@ class TowerEnemyGroup4AntijemulP4_2 extends TowerEnemyGroup4AntijemulP4_1 {
       }
     }
   }
-
-  display () {
-    super.display()
-    graphicSystem.fillText(this.bulletYLine + ',' + this.bulletYLineSpeed, 0, 80, 'pink')
-  }
 }
 
 class TowerEnemyGroup4AntijemulP4_3 extends TowerEnemyGroup4AntijemulP4_1 {
@@ -14188,6 +14183,787 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
   }
 }
 
+class TowerEnemyTrashTemplete extends TowerEnemy {
+  /** 이 템플릿을 사용하는 메인타입은 towerTrash로 지정됩니다. */
+  static MAINTYPE_TOWERTRASH = 'towerTrash'
+
+  /** 이 템플릿에서 사용하는 모든 객체들은, 수집기(sujipgi) 적한테 흡수당할 수 있습니다.
+   * 흡수 대상이 되면 내부 상태값이 이 값으로 변경됩니다. (참고로 쓰레기 내부의 상태는 쓰레기 스스로 결정하지 않습니다.) */
+  static STATE_TRASH_RUNNING_INHALER = 'trashRunningInhaler'
+
+  constructor () {
+    super()
+    this.subTypeList = TowerEnemyTrashTemplete.subTypeList
+    this.imageSrc = imageSrc.enemy.towerEnemyGroup5
+
+    this.mainType = TowerEnemyTrashTemplete.MAINTYPE_TOWERTRASH
+    this.degreeSpeed = 4
+    this.setRandomMoveSpeed(6, 6, true)
+    this.state = '' // 기본 상태값 없음 (sujipgi와의 연계 때문에 이 상태값은 명시적으로 ''(공백) 값이 부여됩니다.)
+  }
+
+  static subTypeList = {
+    trashGroup1: 'trash1',
+    trashGroup2: 'trash2',
+    trashWing: 'trashWing',
+    trashLotter: 'trashLotter',    
+  }
+
+  /**
+   * 쓰레기 타입 설정 (subTypeList 참고)
+   * 
+   * 참고: 여기서, 스탯, 이미지, 죽음이펙트가 설정되므로, 다른곳에서 (스탯, 이밎, 죽음이펙트)변경하지 마세요.
+   * @param {string} subType 
+   */
+  setTrashType (subType) {
+    this.subType = subType
+    if (subType === this.subTypeList.trashGroup1) {
+      let random = Math.floor(Math.random() * 3)
+      let targetImageDataList = [
+        imageDataInfo.towerEnemyGroup5.trash1,
+        imageDataInfo.towerEnemyGroup5.trash2,
+        imageDataInfo.towerEnemyGroup5.trash3,
+      ]
+      let targetDieImageDataList = [
+        imageDataInfo.towerEnemyGroup5.enemyDieTrash1,
+        imageDataInfo.towerEnemyGroup5.enemyDieTrash2,
+        imageDataInfo.towerEnemyGroup5.enemyDieTrash3,
+      ]
+      this.setAutoImageData(this.imageSrc, targetImageDataList[random])
+      this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerTrash1, this.imageSrc, targetDieImageDataList[random])
+      this.setEnemyByCpStat(4, 4)
+      this.degreeSpeed = Math.floor(Math.random() * 4) + 1
+    } else if (subType === this.subTypeList.trashGroup2) {
+      this.setAutoImageData(this.imageSrc, imageDataInfo.towerEnemyGroup5.trash4)
+      this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerTrash2, this.imageSrc, imageDataInfo.towerEnemyGroup5.enemyDieTrash4)
+      this.setEnemyByCpStat(12, 4)
+      this.degreeSpeed = 1
+    } else if (subType === this.subTypeList.trashWing) {
+      let random = Math.floor(Math.random() * 4)
+      let targetImageDataList = [
+        imageDataInfo.towerEnemyGroup5.trashWing1,
+        imageDataInfo.towerEnemyGroup5.trashWing2,
+        imageDataInfo.towerEnemyGroup5.trashWing3,
+        imageDataInfo.towerEnemyGroup5.trashWing4,
+      ]
+      this.setAutoImageData(this.imageSrc, targetImageDataList[random])
+      this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerTrashWing, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedOrange)
+      this.setEnemyByCpStat(5, 4)
+      this.degreeSpeed = 12
+    } else if (subType === this.subTypeList.trashLotter) {
+      let random = Math.floor(Math.random() * 4)
+      let targetImageDataList = [
+        imageDataInfo.towerEnemyGroup5.trashLotor1,
+        imageDataInfo.towerEnemyGroup5.trashLotor2,
+        imageDataInfo.towerEnemyGroup5.trashLotor3,
+        imageDataInfo.towerEnemyGroup5.trashLotor4,
+      ]
+      this.setAutoImageData(this.imageSrc, targetImageDataList[random])
+      this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerTrashLotter, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleRedWhite)
+      this.setEnemyByCpStat(6, 4)
+      this.degreeSpeed = 0
+
+      let changeDegree = Math.floor(Math.random() * 30)
+      this.degree = Math.random() < 0.5 ? changeDegree : changeDegree
+    } else {
+      // 만약 아무 타입도 해당 사항이 없다면, 강제로 임의 타입 지정 후 해당 함수 다시 호출
+      // 이 함수는 무한루프되지 않음
+      this.setTrashType(this.subTypeList.trashGroup1)
+    }
+  }
+
+  processMove () {
+    super.processMove()
+    this.degree += this.degreeSpeed
+  }
+}
+
+class TowerEnemyGroup5Trash1 extends TowerEnemyTrashTemplete {
+  constructor () { super(); this.setTrashType(this.subTypeList.trashGroup1) }
+}
+class TowerEnemyGroup5Trash2 extends TowerEnemyTrashTemplete {
+  constructor () { super(); this.setTrashType(this.subTypeList.trashGroup2) }
+}
+class TowerEnemyGroup5TrashWing extends TowerEnemyTrashTemplete {
+  constructor () { super(); this.setTrashType(this.subTypeList.trashWing) }
+}
+class TowerEnemyGroup5TrashLotter extends TowerEnemyTrashTemplete {
+  constructor () { super(); this.setTrashType(this.subTypeList.trashLotter) }
+}
+
+class TowerEnemyGroup5Sujipgi extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.sujipgi, 4)
+    this.setEnemyByCpStat(22, 11)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerSujipgi, imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.enemyDieSujipgi, 45)
+    this.setMoveDirection()
+
+    this.STATE_STARTUP = 'startup'
+    this.STATE_NODETECT = 'nodetect'
+    this.STATE_RUNNING = 'running'
+    this.STATE_WAIT = 'wait'
+    this.state = this.STATE_STARTUP
+    this.DIV_VALUE = 180
+    this.TRASH_DIV_VALUE = 96
+    this.TRASH_STATE_TEXT = 'trashTextEnableMode'
+    this.TRASH_MAIN_TYPE = TowerEnemyTrashTemplete.MAINTYPE_TOWERTRASH
+
+    this.enimationRunning = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.sujipgiRunning, 2, -1)
+
+    this.stateDelay = new DelayData(180)
+    this.moveDelay = new DelayData(180)
+    this.attackDelay = new DelayData(120)
+
+    this.saveList = {
+      finishX: 0,
+      finishY: 0
+    }
+  }
+
+  processEnimation () {
+    super.processEnimation()
+    this.enimationRunning.process()
+  }
+
+  afterInit () {
+    this.setRadnomFinishPosition()
+  }
+
+  setRadnomFinishPosition () {
+    this.saveList.finishX = Math.floor(Math.random() * graphicSystem.CANVAS_WIDTH)
+    this.saveList.finishY = Math.floor(Math.random() * graphicSystem.CANVAS_HEIGHT)
+    this.setMoveSpeedChaseLine(this.saveList.finishX, this.saveList.finishY, this.DIV_VALUE, 0)
+  }
+
+  processState () {
+    if (!this.stateDelay.check()) return
+    
+    if (this.state === this.STATE_STARTUP) {
+      this.processStateChangeStartUp()
+    } else if (this.state === this.STATE_NODETECT) {
+      this.setRadnomFinishPosition() // 다른 곳으로 이동
+      this.state = this.STATE_STARTUP
+    } else if (this.state === this.STATE_RUNNING) {
+      this.state = this.STATE_WAIT
+      this.stateDelay.count = this.stateDelay.delay - 120
+    } else if (this.state === this.STATE_WAIT) {
+      // 쓰레기를 찾은 상태에서는 다른곳으로 이동하지 않습니다.
+      this.state = this.STATE_STARTUP 
+      this.stateDelay.count = this.stateDelay.delay - 5 // 대기상태가 끝난 이후, 곧바로 스타트업상태를 완료시킴
+    }
+  }
+
+  processStateChangeStartUp () {
+    // startup 상태에서 다른 상태로 변경할 때 주위에 쓰레기(적)가 있는지 살펴봅니다.
+    // 만약 해당 쓰레기(적)가 있다면, 다음 상태는 running이고
+    // 아니라면, 다음 상태는 nodetect입니다.
+    let detectArea = {x: this.x - 250, y: this.y - 250, width: 500, height: 500}
+    let enemyList = fieldState.getEnemyObject()
+    let isTargeted = false
+    for (let i = 0; i < enemyList.length; i++) {
+      let enemy = enemyList[i]
+
+      // 해당값이 아닐경우, 충돌계산을 하지 않음
+      if (enemy.mainType !== this.TRASH_MAIN_TYPE) continue
+      if (enemy.state === this.TRASH_STATE_TEXT) continue
+
+      // 충돌이 된 경우에는 적 상태와 속도를 변경함
+      if (collision(enemy, detectArea)) {
+        enemy.state = this.TRASH_STATE_TEXT
+        enemy.setMoveSpeedChaseLine(this.x, this.y, this.TRASH_DIV_VALUE, 0) // 해당 적은 수집기 쪽으로 이동함
+        isTargeted = true
+        break // 루프 종료
+      }
+    }
+
+    // 쓰레기를 detect했는지에 따라 상태 변경 
+    this.state = isTargeted ? this.STATE_RUNNING : this.STATE_NODETECT
+
+    // 그리고 타겟되지 않았다면, 상태 변경 간격을 임시로 줄임
+    if (!isTargeted) this.stateDelay.count = this.stateDelay.delay - 120
+  }
+
+  processMove () {
+    // startup 상태 이외는 이동하지 않습니다.
+    if (this.state === this.STATE_STARTUP) {
+      super.processMove()
+    }
+
+    this.processMoveTrashCollision()
+  }
+
+  processMoveTrashCollision () {
+    if (this.state !== this.STATE_RUNNING) return
+    // 만약, running상태일경우, 특정 적이랑 이 오브젝트랑 닿았는지 확인하여, 
+    // 서로 닿았다면 적은 제거됩니다.
+
+    let enemyList = fieldState.getEnemyObject()
+    for (let i = 0; i < enemyList.length; i++) {
+      let enemy = enemyList[i]
+      if (enemy.mainType !== this.TRASH_MAIN_TYPE) continue
+
+      if (collision(enemy, this)) {
+        enemy.hp = 0 // 닿은 적은 즉시 hp가 0이됨
+      }
+    }
+  }
+
+  display () {
+    if (this.state === this.STATE_RUNNING) {
+      this.enimationRunning.display(this.x, this.y)
+    } else {
+      super.display()
+    }
+  }
+}
+
+class TowerEnemyGroup5Roller extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.roller, 3)
+    this.setEnemyByCpStat(21, 8)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerRoller, imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.enemyDieRoller, 45)
+
+    this.STATE_NORMAL = 'normal'
+    this.STATE_COLLISION = 'collision'
+    this.state = this.STATE_NORMAL
+    this.collisionDelay.delay = 120
+
+    this.saveList = {
+      accSpeed: 0,
+    }
+
+    this.moveDelay = new DelayData(120)
+  }
+
+  processPlayerCollisionSuccessAfter () {
+    this.state = this.STATE_COLLISION
+    this.saveList.accSpeed = -Math.abs(this.saveList.accSpeed + 1)
+    this.moveDelay.count = 0
+    soundSystem.play(soundSrc.enemyAttack.towerRollerCollision)
+  }
+
+  processMove () {
+    super.processMove()
+
+    if (this.state === this.STATE_NORMAL) this.processMoveNormal()
+    else if (this.state === this.STATE_COLLISION) this.processMoveCollision()
+  }
+
+  processMoveNormal () {
+    this.moveDelay.check()
+    if (!this.moveDelay.divCheck(4)) return
+
+    this.saveList.accSpeed += 0.1
+    if (this.saveList.accSpeed > 7) this.saveList.accSpeed = 7
+    this.setMoveSpeed(this.saveList.accSpeed, this.moveSpeedY)
+  }
+
+  processMoveCollision () {
+    this.saveList.accSpeed += 0.1
+    if (this.saveList.accSpeed > 0) this.saveList.accSpeed = 0
+    this.setMoveSpeed(this.saveList.accSpeed, this.moveSpeedY)
+
+    if (this.moveDelay.check()) {
+      this.state = this.STATE_NORMAL
+    }
+  }
+
+  display () {
+    if (this.state === this.STATE_NORMAL) {
+      super.display()
+    } else {
+      this.imageObjectDisplay(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.rollerCollision, this.x, this.y)
+    }
+  }
+}
+
+class TowerEnemyGroup5Cutter extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.cutter, 1)
+    this.setEnemyByCpStat(10, 6)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerCutter, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.metalSlashGrey, 2)
+
+    this.STATE_UP = 'up'
+    this.STATE_SIDE = 'side'
+    this.state = this.STATE_UP
+
+    this.saveList = {
+      finishY: 0
+    }
+  }
+
+  afterInit () {
+    this.x = Math.random() * 100 + graphicSystem.CANVAS_WIDTH - 200
+    this.y = graphicSystem.CANVAS_HEIGHT + 100
+    this.saveList.finishY = Math.random() * 200
+    this.setMoveSpeed(0, -Math.random() * 3 - 4)
+  }
+
+  processMove () {
+    super.processMove()
+    if (this.state === this.STATE_UP) {
+      if (this.y <= this.saveList.finishY) {
+        this.state = this.STATE_SIDE
+        this.setRandomMoveSpeedMinMax(6, -2, 11, 2)
+      }
+    }
+  }
+}
+
+class TowerEnemyGroup5VaccumCleaner extends TowerEnemy {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.vacuumCleaner)
+    this.setEnemyByCpStat(12000, 15)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerVacuumCleaner, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleBlue)
+    this.isPossibleExit = false
+    this.setMoveSpeed(0, 0)
+
+    const horizontalSize = imageDataInfo.towerEnemyGroup5.vacuumCleanerHoseHorizontal.height
+    const verticalSize = imageDataInfo.towerEnemyGroup5.vacuumCleanerHoseVertical.width
+    this.objectList = {
+      hoseVertical: {x: 0, y: 0, width: 0, height: 0, degree: 0},
+      hoseHorizontal: {x: 0, y: 0, width: 0, height: 0, distance: 0, degree: 0},
+      hoseConnect1: {x: 0, y: 0, width: 0, height: 0, degree: 0},
+      hoseConnect2: {x: 0, y: 0, width: 0, height: 0, degree: 0},
+      hoseRect: {x: 0, y: 0, width: 0, height: 0, degree: 0},
+      inhaler: {x: 0, y: 0, width: 0, height: 0, degree: 0},
+      distance: {h: horizontalSize, v: verticalSize, hDirection: 0, vDirection: 0},
+      gravity: 0,
+      hyperPosition: {x: 0, y: 0, time: 0}
+    }
+
+    this.hoseTypeList = {
+      UPLEFT: 'upleft',
+      LEFTDOWN: 'leftdown',
+      DOWNRIGHT: 'downright',
+      RIGHTUP: 'rightup'
+    }
+
+    this.boostSpeed = 0
+
+    this.stateDelay = new DelayData(600)
+    this.attackDelay = new DelayData(60)
+    this.dieAfterDeleteDelay = new DelayData(240)
+
+    this.STATE_HYPER = 'hyper'
+    this.STATE_FIRST = 'first'
+    this.STATE_HOSE_VERTICAL = 'hoseVertical'
+    this.STATE_HOSE_HORIZONTAL = 'hoseHorizontal'
+    this.STATE_RUSH = 'rush'
+    this.STATE_TRASH_THROW = 'trashTrhow'
+    this.STATE_HOSE_RANDOM = 'hoseRandom'
+    this.state = this.STATE_FIRST
+  }
+
+  getCollisionArea () {
+    if (this.state === this.STATE_HYPER) {
+      return [
+        this.getCollisionAreaCalcurationObject()
+      ]
+    } else {
+      return [
+        this.getCollisionAreaCalcurationObject(),
+        this.objectList.hoseVertical,
+        this.objectList.hoseHorizontal,
+        this.objectList.hoseConnect1,
+        this.objectList.hoseConnect2,
+        this.objectList.hoseRect,
+        this.objectList.inhaler
+      ]
+    }
+  }
+
+  afterInit () {
+    // 각 연결된 호스의 크기 기본값들...
+    const RECT_SIZE = imageDataInfo.towerEnemyGroup5.vacuumCleanerHoseRect.width
+    const VERTICAL_SIZE = imageDataInfo.towerEnemyGroup5.vacuumCleanerHoseVertical.width
+    const HORIZONTAL_SIZE = imageDataInfo.towerEnemyGroup5.vacuumCleanerHoseVertical.height
+    this.objectList.hoseVertical.width = VERTICAL_SIZE
+    this.objectList.hoseVertical.height = RECT_SIZE
+    this.objectList.hoseConnect1.width = RECT_SIZE
+    this.objectList.hoseConnect1.height = RECT_SIZE
+    this.objectList.hoseHorizontal.width = RECT_SIZE
+    this.objectList.hoseHorizontal.height = HORIZONTAL_SIZE
+    this.objectList.hoseConnect2.width = RECT_SIZE
+    this.objectList.hoseConnect2.height = RECT_SIZE
+    this.objectList.hoseRect.width = RECT_SIZE
+    this.objectList.hoseRect.height = RECT_SIZE
+    this.objectList.inhaler.width = imageDataInfo.towerEnemyGroup5.vacuumCleanerInhaler.width
+    this.objectList.inhaler.height = imageDataInfo.towerEnemyGroup5.vacuumCleanerInhaler.height
+
+    // 호스 길이 설정
+    this.objectList.distance.v = 120
+    this.objectList.distance.h = 60
+  }
+
+  saveProcess () {
+    this.saveList = this.objectList
+  }
+
+  loadProcess () {
+    this.objectList = this.saveList
+  }
+
+  processState () {
+    this.processObjectCalcuration()
+
+    if (this.hp <= this.hpMax * 0.2 && this.state !== this.STATE_HYPER) {
+      this.state = this.STATE_HYPER
+      this.objectList.gravity++
+      this.setMoveSpeed(0, 0)
+      soundSystem.play(soundSrc.enemyDie.enemyDieTowerVacuumCleaner)
+      this.objectList.hyperPosition.x = this.x
+      this.objectList.hyperPosition.y = this.y
+    }
+
+    if (this.state === this.STATE_RUSH) {
+      this.isPossibleExit = true
+    } else {
+      this.isPossibleExit = false
+    }
+
+    if (this.stateDelay.check() && this.state !== this.STATE_HYPER) {
+      // stateChange
+      switch (this.state) {
+        case this.STATE_FIRST: this.state = this.STATE_HOSE_VERTICAL; break
+        case this.STATE_HOSE_VERTICAL: this.state = this.STATE_HOSE_HORIZONTAL; break
+        case this.STATE_HOSE_HORIZONTAL: this.state = this.STATE_RUSH; break
+        // 이후 3개의 패턴만 반복됨
+        case this.STATE_RUSH: this.state = this.STATE_TRASH_THROW; break
+        case this.STATE_TRASH_THROW: this.state = this.STATE_HOSE_RANDOM; break
+        case this.STATE_HOSE_RANDOM: this.state = this.STATE_RUSH; break
+      }
+    }
+  }
+
+  processAttack () {
+    switch (this.state) {
+      case this.STATE_FIRST: this.processAttackFirst(); break
+      case this.STATE_HOSE_VERTICAL: this.processAttackHoseVertical(); break
+      case this.STATE_HOSE_HORIZONTAL: this.processAttackHoseHorizontal(); break
+      case this.STATE_RUSH: this.processAttackHoseRush(); break
+      case this.STATE_TRASH_THROW: this.processAttackHoseTrashThrow(); break
+      case this.STATE_HOSE_RANDOM: this.processAttackHoseRandom(); break
+      case this.STATE_HYPER: this.processAttackHyper(); break
+    }
+  }
+
+  processAttackFirst () {
+    this.stateDelay.setDelay(600)
+
+    // 적 총알과의 충돌 체크 (inhaler object에 닿으면 적 총알은 사라져야 함)
+    this.processAttackFirstInhalerCollision()
+
+    // 사운드 재생 (stateDelayCount가 0인상태에서 사운드가 재생되지 않으므로, 첫번째 사운드가 출력되도록 조건을 추가함)
+    if (this.stateDelay.count === 1 || this.stateDelay.divCheck(120)) {
+      soundSystem.play(soundSrc.enemyAttack.towerVacuumCleanerFirst)
+    }
+
+    // 공격 주기 확인
+    this.attackDelay.setDelay(15)
+    if (this.stateDelay.count <= this.stateDelay.delay - 120 && this.attackDelay.check()) {
+      this.processAttackFirstCreate()
+    } 
+  }
+
+  processAttackFirstCreate () {
+    // 4방에서 쓰레기가 흡입기에 들어가도록 생성 (시계 방향 순서)
+    const trashSize = 40
+    let arrayX = [Math.random() * graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_WIDTH + trashSize, Math.random() * graphicSystem.CANVAS_WIDTH, 0 - trashSize]
+    let arrayY = [0 - trashSize, Math.random() * graphicSystem.CANVAS_HEIGHT, graphicSystem.CANVAS_HEIGHT + trashSize, Math.random() * graphicSystem.CANVAS_HEIGHT]
+    let inhalerCenterX = this.objectList.inhaler.x + (this.objectList.inhaler.width / 2)
+    let inhalerCenterY = this.objectList.inhaler.y + (this.objectList.inhaler.height / 2)
+
+    for (let i = 0; i < 4; i++) {
+      let bullet = new TowerEnemyGroup5VaccumCleaner.TrashBullet()
+      bullet.setPosition(arrayX[i], arrayY[i])
+      bullet.setMoveSpeedChaseLine(inhalerCenterX, inhalerCenterY, 120, 2)
+      fieldState.createEnemyBulletObject(bullet)
+    }
+  }
+
+  processAttackFirstInhalerCollision () {
+    // 적 총알이 흡입기에 닿는지를 판정함
+    let enemyBulletList = fieldState.getEnemyBulletObject()
+    for (let i = 0; i < enemyBulletList.length; i++) {
+      let enemybullet = enemyBulletList[i]
+      if (collision(enemybullet, this.objectList.inhaler)) {
+        enemybullet.isDeleted = true
+      }
+    }
+  }
+
+  processAttackHoseVertical () {
+    this.stateDelay.setDelay(240)
+    let randomSpeed = Math.floor(Math.random() * 6) + 6
+    this.processAttackHoseMoveVertical(randomSpeed)
+  }
+
+  processAttackHoseHorizontal () {
+    this.stateDelay.setDelay(240)
+    let randomSpeed = Math.floor(Math.random() * 12) + 12
+    this.processAttackHoseMoveHorizontal(randomSpeed)
+  }
+
+  processAttackHoseRush () {
+    this.stateDelay.setDelay(300)
+    if (this.stateDelay.count === 1) {
+      this.boostSpeed = 0.1
+    }
+
+    if (this.stateDelay.divCheck(120)) {
+      soundSystem.play(soundSrc.enemyAttack.towerVacuumCleanerRush)
+    }
+
+    if (this.stateDelay.count < this.stateDelay.delay - 60) {
+      this.boostSpeed += 0.1
+      if (this.boostSpeed > 10) this.boostSpeed = 10  
+    } else {
+      this.boostSpeed -= 0.4
+      if (this.boostSpeed < 0) this.boostSpeed = 0
+    }
+
+    this.setMoveSpeed(this.boostSpeed, 0)
+  }
+
+  processAttackHoseTrashThrow () {
+    this.stateDelay.setDelay(360)
+
+    // 청소기 강제 이동
+    if (this.x + this.width < graphicSystem.CANVAS_WIDTH) {
+      this.x += 10
+      if (this.x + this.width > graphicSystem.CANVAS_WIDTH) {
+        this.x = graphicSystem.CANVAS_WIDTH - this.width
+      }
+    }
+
+    this.attackDelay.setDelay(60)
+    if (!this.attackDelay.check()) return
+    let player = fieldState.getPlayerObject()
+    soundSystem.play(soundSrc.enemyAttack.towerVacuumCleanerTrash)
+
+    for (let i = 0; i < 4; i++) {
+      let bullet = new TowerEnemyGroup5VaccumCleaner.TrashBullet()
+      bullet.setPosition(this.objectList.inhaler.x, this.objectList.inhaler.y + (40 * i))
+      if (Math.random() < 0.25) {
+        bullet.setMoveSpeedChaseLine(player.x, player.y, 150, 3)
+      } else {
+        bullet.setRandomMoveSpeedMinMax(2, 0, 4, 3, true)
+      }
+      fieldState.createEnemyBulletObject(bullet)
+    }
+  }
+
+  processAttackHoseRandom () {
+    this.stateDelay.setDelay(480)
+
+    let randomSpeedV = Math.floor(Math.random() * 12) + 4
+    let randomSpeedH = Math.floor(Math.random() * 6) + 4
+    this.processAttackHoseMoveVertical(randomSpeedV)
+    this.processAttackHoseMoveHorizontal(randomSpeedH)
+
+    if (this.stateDelay.divCheck(120)) {
+      this.setRandomMoveSpeed(2, 2, true)
+    }
+  }
+
+  /**
+   * 호스 수평 방향의 이동속도 결정
+   * @param {number} speed 속도
+   */
+  processAttackHoseMoveVertical (speed = 5) {
+    const MAX_SIZE = 300
+    const MIN_SIZE = 12
+    if (this.objectList.distance.vDirection === 0) {
+      this.objectList.distance.vDirection = -1
+    }
+
+    // vDirection (방향, 1: 오른쪽, -1: 왼쪽, 0: 없음 -> 기본값으로 변환)
+    // 특정 길이를 벗어나면은 방향을 변경합니다.
+    if (this.objectList.distance.vDirection === -1) {
+      this.objectList.distance.v -= speed
+      if (this.objectList.distance.v < MIN_SIZE) {
+        this.objectList.distance.v = MIN_SIZE
+        this.objectList.distance.vDirection = 1
+        soundSystem.play(soundSrc.enemyAttack.towerVacuumCleanerHose)
+      }
+    } else if (this.objectList.distance.vDirection === 1) {
+      this.objectList.distance.v += speed
+      if (this.objectList.distance.v > MAX_SIZE) {
+        this.objectList.distance.v = MAX_SIZE
+        this.objectList.distance.vDirection = -1
+        soundSystem.play(soundSrc.enemyAttack.towerVacuumCleanerHose)
+      }
+    }
+  }
+
+  /**
+   * 호스 수직 방향의 이동속도 결정
+   * @param {number} speed 속도
+   */
+  processAttackHoseMoveHorizontal (speed = 5) {
+    const MAX_SIZE = 300
+
+    if (this.objectList.distance.hDirection === 0) {
+      this.objectList.distance.hDirection = -1
+    }
+
+    // hDirection도 규칙은 vDirection과 동일 (위, 아래 방향)
+    if (this.objectList.distance.hDirection === -1) {
+      this.objectList.distance.h -= speed
+      if (this.objectList.distance.h < -MAX_SIZE) {
+        this.objectList.distance.h = -MAX_SIZE
+        this.objectList.distance.hDirection = 1
+        soundSystem.play(soundSrc.enemyAttack.towerVacuumCleanerHose)
+      }
+    } else if (this.objectList.distance.hDirection === 1) {
+      this.objectList.distance.h += speed
+      if (this.objectList.distance.h > MAX_SIZE) {
+        this.objectList.distance.h = MAX_SIZE
+        this.objectList.distance.hDirection = -1
+        soundSystem.play(soundSrc.enemyAttack.towerVacuumCleanerHose)
+      }
+    }
+  }
+
+  processAttackHyper () {
+    this.objectList.gravity++ // 나머지 개체들의 중력 증가 (바깥으로 사라짐)
+    this.objectList.hyperPosition.time++ // 하이퍼 진행시간 증가
+
+    // 개체 흔들기
+    if (this.objectList.hyperPosition.time >= 120) {
+      this.x = this.objectList.hyperPosition.x + Math.floor(Math.random() * 40) - 20
+      this.y = this.objectList.hyperPosition.y + Math.floor(Math.random() * 40) - 20
+    }
+
+    if (this.stateDelay.divCheck(120)) {
+      soundSystem.play(soundSrc.enemyAttack.towerVacuumCleanerHyper)
+    }
+
+    this.attackDelay.setDelay(45)
+    if (!this.attackDelay.check()) return
+
+    for (let i = 0; i < 8; i++) {
+      let bullet = new TowerEnemyGroup5VaccumCleaner.TrashBullet()
+      bullet.setPosition(this.centerX, this.centerY)
+      bullet.setRandomMoveSpeedMinMax(1, 1, 3, 3, true)
+      fieldState.createEnemyBulletObject(bullet)
+    }
+  }
+
+  processObjectCalcuration () {
+    // 크기 변경
+    this.objectList.hoseVertical.width = this.objectList.distance.v
+    this.objectList.hoseHorizontal.height = Math.abs(this.objectList.distance.h) // 이 값은 마이너스도 가능하므로, 플러스값으로 변경해야함
+  
+    // 위치 계산
+    this.objectList.hoseVertical.x = this.x + 70 - this.objectList.hoseVertical.width + this.objectList.hoseRect.width
+    this.objectList.hoseVertical.y = this.y + 140
+    this.objectList.hoseConnect1.x = this.objectList.hoseVertical.x - this.objectList.hoseRect.width
+    this.objectList.hoseConnect1.y = this.objectList.hoseVertical.y
+    this.objectList.hoseHorizontal.x = this.objectList.hoseConnect1.x
+    this.objectList.hoseHorizontal.y = this.objectList.distance.h >= 0 ? this.objectList.hoseConnect1.y + this.objectList.hoseConnect1.height : this.objectList.hoseConnect1.y - this.objectList.hoseHorizontal.height
+    this.objectList.hoseConnect2.x = this.objectList.hoseHorizontal.x
+    this.objectList.hoseConnect2.y = this.objectList.distance.h > 0 ? this.objectList.hoseHorizontal.y + this.objectList.hoseHorizontal.height : this.objectList.hoseHorizontal.y - this.objectList.hoseConnect2.height
+    this.objectList.hoseRect.x = this.objectList.hoseConnect2.x - this.objectList.hoseConnect2.width
+    this.objectList.hoseRect.y = this.objectList.hoseConnect2.y
+    this.objectList.inhaler.x = this.objectList.hoseRect.x - this.objectList.inhaler.width 
+    this.objectList.inhaler.y = this.objectList.hoseRect.y - (this.objectList.inhaler.height / 8 * 3)
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+
+    if (this.isDied && this.dieAfterDeleteDelay.divCheck(9)) {
+      soundSystem.play(this.dieSound)
+
+      if (this.dieEffect != null) {
+        this.dieEffect.setWidthHeight(40, 40)
+        fieldState.createEffectObject(this.dieEffect.getObject(), this.x + Math.random() * this.width, this.y + Math.random() * this.height)
+      }
+    }
+
+    if (this.dieAfterDeleteDelay.count == this.dieAfterDeleteDelay.delay - 1) {
+      soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
+      if (this.dieEffect != null) {
+        this.dieEffect.setWidthHeight(this.width, this.height)
+        fieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
+      }
+    }
+  }
+
+  display () {
+    const imgD = imageDataInfo.towerEnemyGroup5
+    const objD = this.objectList
+
+    super.display() // 원본 출력
+    if (this.state === this.STATE_HYPER) { // 부서진 청소기 가운데 부품 출력
+      this.imageObjectDisplay(imageSrc.enemy.towerEnemyGroup5, imgD.vacuumCleanerBrokenMiddle, this.x + 60, this.y + 130)
+    }
+    if (objD.gravity >= 240) return // 중력 120이상은 나머지 오브젝트 출력 무시
+
+    // hoseVertical, hoseHorizontal은, 크기가 변경되어도 확대/축소 효과를 사용하지 않습니다.
+    // 그래서 직접 이미지를 slice하기 위해, graphicSystem함수를 호출했습니다.
+    // 다만, 이로 인하여, 정해진 범위를 초과하게되면, 이상한 그림이 출력될 수 있습니다. (이것을 검사하지는 않습니다.)
+    // 참고: 그라비티가 0보다 높은경우는 하이퍼모드이고, 나머지 부품을 화면 바깥으로 내보내야 하므로, 회전 + 떨어지는 효과를 적용하도록 함
+    graphicSystem.imageDisplay(
+      this.imageSrc, 
+      imgD.vacuumCleanerHoseVertical.x, 
+      imgD.vacuumCleanerHoseVertical.y,
+      objD.hoseVertical.width,
+      objD.hoseVertical.height,
+      objD.hoseVertical.x,
+      objD.hoseVertical.y + (objD.gravity * 5),
+      objD.hoseVertical.width,
+      objD.hoseVertical.height,
+      0,
+      objD.gravity * 4
+    )
+
+    graphicSystem.imageDisplay(
+      this.imageSrc,
+      imgD.vacuumCleanerHoseHorizontal.x,
+      imgD.vacuumCleanerHoseHorizontal.y,
+      objD.hoseHorizontal.width,
+      objD.hoseHorizontal.height,
+      objD.hoseHorizontal.x,
+      objD.hoseHorizontal.y + (objD.gravity * 5),
+      objD.hoseHorizontal.width,
+      objD.hoseHorizontal.height,
+      0,
+      objD.gravity * 4
+    )
+
+    let connectImgD1 = objD.distance.h >= 0 ? imgD.vacuumCleanerHoseClockwise1 : imgD.vacuumCleanerHoseClockwise4
+    let connectImgD2 = objD.distance.h >= 0 ? imgD.vacuumCleanerHoseClockwise3 : imgD.vacuumCleanerHoseClockwise2
+
+    this.imageObjectDisplay(this.imageSrc, connectImgD1, objD.hoseConnect1.x, objD.hoseConnect1.y + (objD.gravity * 5), objD.hoseConnect1.width, objD.hoseConnect1.height, 0, objD.gravity * 12)
+    this.imageObjectDisplay(this.imageSrc, connectImgD2, objD.hoseConnect2.x, objD.hoseConnect2.y + (objD.gravity * 5), objD.hoseConnect2.width, objD.hoseConnect2.height, 0, objD.gravity * 12)
+    this.imageObjectDisplay(this.imageSrc, imgD.vacuumCleanerHoseRect, objD.hoseRect.x, objD.hoseRect.y + (objD.gravity * 5), objD.hoseRect.width, objD.hoseRect.height, 0, objD.gravity * 12)
+    this.imageObjectDisplay(this.imageSrc, imgD.vacuumCleanerInhaler, objD.inhaler.x, objD.inhaler.y + (objD.gravity * 5), objD.inhaler.width, objD.inhaler.height, 0, objD.gravity * 12)
+  }
+
+  static TrashBullet = class extends CustomEnemyBullet {
+    constructor () {
+      super()
+      let imageDataList = [
+        imageDataInfo.towerEnemyGroup5.trash1,
+        imageDataInfo.towerEnemyGroup5.trash2,
+        imageDataInfo.towerEnemyGroup5.trash3,
+      ]
+      let random = Math.floor(Math.random() * imageDataList.length)
+
+      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataList[random])
+      this.attack = 4
+      this.setRandomMoveSpeed(4, 4, true)
+    }
+  }
+}
+
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
  */
@@ -14311,7 +15087,7 @@ dataExportEnemy.set(ID.enemy.intruder.hanoi, IntruderEnemyHanoi)
 dataExportEnemy.set(ID.enemy.intruder.daseok, IntruderEnemyDaseok)
 dataExportEnemy.set(ID.enemy.intruder.towerLaserMini, IntruderEnemyTowerLaserMini)
 
-// towerEnemyGroup1 / round 3-1 ~ 3-9
+// towerEnemyGroup1 / round 3-1 plus
 dataExportEnemy.set(ID.enemy.towerEnemyGroup1.moveBlue, TowerEnemyGroup1MoveBlue)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup1.moveViolet, TowerEnemyGroup1MoveViolet)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup1.moveDarkViolet, TowerEnemyGroup1MoveDarkViolet)
@@ -14344,7 +15120,7 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup1.octagon, TowerEnemyGroup1Octagon)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup1.octagonMini, TowerEnemyGroup1OctagonMini)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup1.crazyRobot, TowerEnemyGroup1CrazyRobot)
 
-// towerEnemyGroup2 / round 3-2 ~ 3-9
+// towerEnemyGroup2 / round 3-2 plus
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.barRandom, TowerEnemyBarTemplete)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.barCyan, TowerEnemyGroup2BarCyan)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.barOrange, TowerEnemyGroup2BarOrnage)
@@ -14367,7 +15143,7 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup2.hexaShadow, TowerEnemyGroup2HexaSh
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.hexaLight, TowerEnemyGroup2HexaLight)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.bigBar, TowerEnemyGroup2BigBar)
 
-// towerEnemyGroup3 / round 3-3 ~ 3-9
+// towerEnemyGroup3 / round 3-3 plus
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.core8, TowerEnemyGroup3Core8)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.coreBrown, TowerEnemyGroup3CoreBrown)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.coreMetal, TowerEnemyGroup3CoreMetal)
@@ -14390,7 +15166,7 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup3.energyA, TowerEnemyGroup3EnergyA)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.energyBlue, TowerEnemyGroup3EnergyBlue)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.energyOrange, TowerEnemyGroup3EnergyOrange)
 
-// towerEnemyGroup4 / round 3-5
+// towerEnemyGroup4 / round 3-5 only
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.nokgasi1, TowerEnemyGroup4Nokgasi1)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.nokgasi2, TowerEnemyGroup4Nokgasi2)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.blackSpaceAnti, TowerEnemyGroup4BlackSpaceAnti)
@@ -14404,7 +15180,7 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup4.antijemulP4_1, TowerEnemyGroup4Ant
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.antijemulP4_2, TowerEnemyGroup4AntijemulP4_2)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup4.antijemulP4_3, TowerEnemyGroup4AntijemulP4_3)
 
-// towerEnemyGroup5 / round 3-6 ~ 3-7
+// towerEnemyGroup5 / round 3-6 plus
 dataExportEnemy.set(ID.enemy.towerEnemyGroup5.blub, TowerEnemyGroup5Blub)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup5.camera, TowerEnemyGroup5Camera)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup5.cctv, TowerEnemyGroup5Cctv)
@@ -14415,3 +15191,11 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup5.radio, TowerEnemyGroup5Radio)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup5.sirenBlue, TowerEnemyGroup5SirenBlue)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup5.sirenGreen, TowerEnemyGroup5SirenGreen)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup5.sirenRed, TowerEnemyGroup5SirenRed)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.trash1, TowerEnemyGroup5Trash1)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.trash2, TowerEnemyGroup5Trash2)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.trashWing, TowerEnemyGroup5TrashWing)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.trashLotter, TowerEnemyGroup5TrashLotter)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.sujipgi, TowerEnemyGroup5Sujipgi)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.roller, TowerEnemyGroup5Roller)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.cutter, TowerEnemyGroup5Cutter)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.vacuumCleaner, TowerEnemyGroup5VaccumCleaner)

@@ -1400,7 +1400,6 @@ weapon, enemy는 id기반으로 생성하기 때문에 좌표가 자동 지정�
 
 
 2024/03/29 v0.47.1 - round 3-6 file add, checkpoint
-
 2024/03/30 v0.47.2 - round 3-6 ~ 3-7 file add, checkpoint
 
 2024/04/02 v0.47.3 - roundicon code moved datastat.js
@@ -1422,5 +1421,15 @@ tamshooter4.js에 정의되었던 라운드 아이콘과 관련한 코드가 전
 
 
 2024/04/16 v0.47.5 - round 3-8 ~ 3-9 image add
-
 2024/04/18 v0.47.6 - new music add
+
+2024/04/22 v0.47.7 - round 3-8 ~ 3-9 complete
+1. 일부 디버그 코드 제거
+2. round 3에서 보스 이름이 출력되도록 변경
+3. 라운드 3-8, 3-9 추가
+4. towerEnemyGroup2의 octaShadow와 octaLight의 타입이 서로 잘못되었던 점 수점
+(라운드 3-2를 진행할 때는 잘못처리되긴 했지만, 게임 진행이 가능했으나
+우연히, 이 적들을 다른 라운드에서 생성했을 때 무한생성되는 버그를 알게됨)
+5. round 3-5에서 phase2 blackspace에서 greenRoom의 gasi가 제대로 삭제되지 않는 문제 수정
+6. round 3-5 phase 3 antijemul의 등장 시점 및 배경음악 재생 시점 수정
+7. 라운드 3-8, 3-9는 옵션 등장 구조가 미완성입니다. 조만간 옵션 밸런스를 수정할 예정

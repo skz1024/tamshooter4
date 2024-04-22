@@ -310,6 +310,14 @@ export class ID {
       hellnet: 20342,
       helltell: 20343,
       gabudan: 20344,
+      trash1: 20345,
+      trash2: 20346,
+      trashWing: 20347,
+      trashLotter: 20348,
+      sujipgi: 20349,
+      roller: 20350,
+      cutter: 20351,
+      vacuumCleaner: 20352,
     }
   }
 

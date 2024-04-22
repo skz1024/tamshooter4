@@ -172,6 +172,14 @@ export class soundSrc {
     enemyDieTowerHelltell: './sound/enemyDieTowerHelltell.ogg',
     enemyDieTowerRadio: './sound/enemyDieTowerRadio.ogg',
     enemyDieTowerSiren: './sound/enemyDieTowerSiren.ogg',
+    enemyDieTowerSujipgi: './sound/enemyDieTowerSujipgi.ogg',
+    enemyDieTowerRoller: './sound/enemyDieTowerRoller.ogg',
+    enemyDieTowerCutter: './sound/enemyDieTowerCutter.ogg',
+    enemyDieTowerVacuumCleaner: './sound/enemyDieTowerVacuumCleaner.ogg',
+    enemyDieTowerTrash1: './sound/enemyDieTowerTrash1.ogg',
+    enemyDieTowerTrash2: './sound/enemyDieTowerTrash2.ogg',
+    enemyDieTowerTrashWing: './sound/enemyDieTowerTrashWing.ogg',
+    enemyDieTowerTrashLotter: './sound/enemyDieTowerTrashLotter.ogg',
   }
 
   static enemyAttack = {
@@ -247,6 +255,12 @@ export class soundSrc {
     towerSirenBlueMove: './sound/enemyTowerSirenBlueMove.ogg',
     towerSirenGreenMove: './sound/enemyTowerSirenGreenMove.ogg',
     towerSirenRedMove: './sound/enemyTowerSirenRedMove.ogg',
+    towerRollerCollision: './sound/enemyTowerRollerCollision.ogg',
+    towerVacuumCleanerFirst: './sound/enemyTowerVacuumCleanerFirst.ogg',
+    towerVacuumCleanerHose: './sound/enemyTowerVacuumCleanerHose.ogg',
+    towerVacuumCleanerHyper: './sound/enemyTowerVacuumCleanerHyper.ogg',
+    towerVacuumCleanerRush: './sound/enemyTowerVacuumCleanerRush.ogg',
+    towerVacuumCleanerTrash: './sound/enemyTowerVacuumCleanerTrash.ogg',
   }
 
   static round = {
@@ -350,5 +364,6 @@ export class soundSrc {
     music21_round3_5_antijemulNormal: './music/music21_round3_5_antijemulNormal.ogg',
     music22_round3_5_antijemulHyper: './music/music22_round3_5_antijemulHyper.ogg',
     music23_down_tower_core: './music/music23_down_tower_core.ogg',
+    music24_down_tower_passage: './music/music24_down_tower_passage.ogg'
   }
 }
