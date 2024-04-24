@@ -103,8 +103,6 @@ export class WeaponData extends FieldData {
      * @type {number}
      */
     this.maxTarget = 20
-
-  
   }
 
   /**
@@ -188,6 +186,10 @@ export class WeaponData extends FieldData {
    * 이 함수에서 공격횟수를 소모하고, 적을 공격하기 위해서는 이 함수 내부에서 hitObjectProgress를 사용해야 합니다.
    */
   processAttack () {
+    // 공격 딜레이가 있으며, 공격딜레이 값을 채우지 못했다면 공격을 시도하지 않습니다.
+    // 공격 딜레이는 적을 공격했을시에만 리셋됩니다.
+    if (this.attackDelay != null && !this.attackDelay.check(false)) return
+
     this.processHitObject()
   }
 
@@ -252,6 +254,11 @@ export class WeaponData extends FieldData {
           }
         }
       }
+    }
+
+    // 공격딜레이가 있는경우, 카운터를 리셋시킵니다.
+    if (this.attackDelay != null) {
+      this.attackDelay.countReset()
     }
   }
 

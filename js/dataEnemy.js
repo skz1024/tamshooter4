@@ -13695,7 +13695,6 @@ class TowerEnemyGroup5Radio extends TowerEnemy {
         let target = this.createId === list[targetNumber].createId ? list[(targetNumber + 1) % list.length] : list[targetNumber]
         bullet.setMoveSpeedChaseLine(target.centerX, target.centerY, 120, 3)
 
-        this.setMoveSpeed(0, 0) // 무전기 이동 정지 (다른 무전기가 있는 경우)
         this.state = this.STATE_SEND
       }
 
@@ -14517,7 +14516,7 @@ class TowerEnemyGroup5VaccumCleaner extends TowerEnemy {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.vacuumCleaner)
-    this.setEnemyByCpStat(12000, 15)
+    this.setEnemyByCpStat(9000, 15)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerVacuumCleaner, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleBlue)
     this.isPossibleExit = false
     this.setMoveSpeed(0, 0)

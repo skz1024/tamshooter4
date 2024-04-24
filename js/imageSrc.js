@@ -891,6 +891,7 @@ export class imageDataInfo {
     purpleItem: new ImageDataObject(200, 120, 40, 40, 1),
     khakiItem: new ImageDataObject(240, 120, 40, 40, 1),
     skyblueSplash: new ImageDataObject(0, 260, 60, 60, 10),
+    get: new ImageDataObject(890, 100, 110, 110)
   }
 
   static round3_bossWarning = {

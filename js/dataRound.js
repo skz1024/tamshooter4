@@ -8160,7 +8160,7 @@ class Round3TempletePlayerOption extends FieldData {
     /** 플레이어 위치 기준 옵션의 상대 위치값 첫번째 옵션의 Y좌표 @type {number} */ this.POSITION_Y = -10
     /** 옵션의 현재 색 @type {string} */ this._color = ''
     /** 현재 옵션의 레벨 (게임 도중에 리셋되지 않습니다.), 이 값을 수정하려면 setLevel을 사용해주세요. @type {number} */ this._level = 0
-    /** 현재 레벨에 따른 dps퍼센트값 기준 @type {number[]} */ this.dpsPercentLevel = [10, 12, 20, 24, 40, 48, 56, 80, 90, 100]
+    /** 현재 레벨에 따른 dps퍼센트값 기준 @type {number[]} */ this.dpsPercentLevel = [10, 14, 18, 30, 36, 42, 60, 70, 80, 100]
     this.imageSrc = imageSrc.round.round3_playerOption
     /** 옵션을 가지고 있는 여부 @type {boolean} */ this._hasOption = false
     /** 옵션의 무기 발사에 대한 지연시간 카운터 */ this._delayCount = 0
@@ -8170,6 +8170,9 @@ class Round3TempletePlayerOption extends FieldData {
 
     /** 초당 프레임 횟수: 게임 기본값 60, 이 값을 기준으로 각 무기들의 delay가 결정됩니다. */
     this.FRAME_PER_SECOND = 60
+
+    /** 그린의 발사 방향 (플레이어의 최근 이동방향을 기준으로 처리함) */
+    this.greenDirectionSpeed = {x: 1, y: 0}
 
     /**
      * @typedef optionInfo 옵션에 대한 정보
@@ -8181,22 +8184,22 @@ class Round3TempletePlayerOption extends FieldData {
      * 옵션에 대한 확장 정보 
      */ 
     this.optionInfo = {
-      /** @type {optionInfo} */ orange: {shotPerSecond: [5, 6, 10, 10], shotPerCount: [4, 4, 4, 4], attackMultiple: 1},
-      /** @type {optionInfo} */ green: {shotPerSecond: [10, 10, 12, 15], shotPerCount: [3, 4, 4, 4], attackMultiple: 1.4},
-      /** @type {optionInfo} */ skyblue: {shotPerSecond: [2, 2, 2, 2], shotPerCount: [1, 2, 3, 4], attackMultiple: 0.7}, // splash의 특성때문에 데미지가 낮게 설계됨
-      /** @type {optionInfo} */ black: {shotPerSecond: [2, 3, 3, 4], shotPerCount: [2, 2, 4, 4], attackMultiple: 0.6}, // black은 무기가 2번 공격할 수 있음 따라서 0.6 * 2 = 1.2
-      /** @type {optionInfo} */ pink: {shotPerSecond: [4, 4, 4, 4], shotPerCount: [1, 2, 3, 4], attackMultiple: 1},
-      /** @type {optionInfo} */ purple: {shotPerSecond: [10, 12, 15, 20], shotPerCount: [1, 1, 1, 1], attackMultiple: 1},
-      /** @type {optionInfo} */ khaki: {shotPerSecond: [3, 4, 5, 6], shotPerCount: [4, 4, 4, 4], attackMultiple: 1.1},
+      /** @type {optionInfo} */ orange: {shotPerSecond: [6, 10, 12, 15], shotPerCount: [2, 3, 4, 5], attackMultiple: 1},
+      /** @type {optionInfo} */ green: {shotPerSecond: [6, 10, 10, 15], shotPerCount: [6, 6, 12, 12], attackMultiple: 1.15},
+      /** @type {optionInfo} */ skyblue: {shotPerSecond: [2, 4, 4, 4], shotPerCount: [1, 1, 2, 3], attackMultiple: 0.75}, // splash의 특성때문에 데미지가 낮게 설계됨
+      /** @type {optionInfo} */ black: {shotPerSecond: [1, 2, 3, 4], shotPerCount: [2, 2, 2, 2], attackMultiple: 1.05}, // black은 무기가 2번 공격할 수 있음 따라서 0.6 * 2 = 1.2
+      /** @type {optionInfo} */ pink: {shotPerSecond: [4, 6, 6, 6], shotPerCount: [1, 2, 3, 4], attackMultiple: 1},
+      /** @type {optionInfo} */ purple: {shotPerSecond: [4, 6, 10, 12], shotPerCount: [1, 2, 3, 3], attackMultiple: 1},
+      /** @type {optionInfo} */ khaki: {shotPerSecond: [3, 4, 6, 6], shotPerCount: [2, 4, 4, 4], attackMultiple: 1.05},
     }
 
     /** 
      * 레벨에 대한 클래스 레벨값: 이 값들은 무기의 단계를 표현할 때 사용합니다.
-     * 예를들어, 레벨 4라면, 클래스레벨은 2가 되는 형식입니다.
+     * 예를들어, 레벨 4라면, 클래스레벨은 1가 되는 형식입니다.
      * 
      * 최대레벨은 9입니다.
      */
-    this.classLevel = [0, 0, 1, 1, 2, 2, 2, 3, 3, 3]
+    this.classLevel = [0, 0, 0, 1, 1, 1, 2, 2, 2, 3]
 
     /** 옵션의 최대 레벨 @type {number} */ this.LEVEL_MAX = this.classLevel.length - 1
 
@@ -8333,33 +8336,69 @@ class Round3TempletePlayerOption extends FieldData {
     }
   }
 
+  processWeaponGreenMoveCheck () {
+    if (this._color !== this.colorList.green) return
+
+    let player = fieldState.getPlayerObject()
+
+    // 플레이어 이동속도에 변화가 있을때만 초록색 샷 방향이 변경됩니다.
+    if (player.moveSpeedX === 0 && player.moveSpeedY !== 0) {
+      this.greenDirectionSpeed.x = 0
+      this.greenDirectionSpeed.y = player.moveSpeedY < 0 ? -1 : 1
+    } else if (player.moveSpeedY === 0 && player.moveSpeedX !== 0) {
+      this.greenDirectionSpeed.x = player.moveSpeedX < 0 ? -1 : 1
+      this.greenDirectionSpeed.y = 0
+    } else if (player.moveSpeedX !== 0 && player.moveSpeedY !== 0) {
+      this.greenDirectionSpeed.x = player.moveSpeedX < 0 ? -1 : 1
+      this.greenDirectionSpeed.y = player.moveSpeedY < 0 ? -1 : 1
+    }
+  }
+
   processAttack () {
     let getData = this.getCurrentOptionInfo()
     let delay = this.FRAME_PER_SECOND / getData.shotPerSecond
     
     this._delayCount++
-    if (this._delayCount > delay) {
-      this._delayCount -= delay
-      let attack = this.getAttack()
-      let count = getData.shotPerCount
-      for (let i = 0; i < count; i++) {
-        let weapon = this.getCurrentWeapon()
-        let lineNumber = -count + 1 + (i * 2)
-        weapon.x = this.x
-        
-        // 중앙점에서 발사되게 하기 위해 여러 계산식이 들어갔습니다.
-        // lineNumber가 2단위로 증가하므로, height만큼에서 2를 추가로 나누었습니다.
-        // 그리고 무기의 절반높이만큼을 중심에서 마이너스 계산을 합니다.
-        weapon.y = this.centerY - (weapon.height / 2) + (lineNumber * weapon.height / 2)
-        weapon.attack = attack
+    if (this._delayCount < delay) return
 
-        // 참고: 검정색 무기는 y축 대각선 양방향으로 나가야하기 때문에, 일시적인 예외로직을 적용합니다.
-        if (this._color === this.colorList.black && i % 2 === 1) {
-          weapon.setMoveSpeed(weapon.moveSpeedX, -weapon.moveSpeedY)
-        }
+    this._delayCount -= delay
+    let count = getData.shotPerCount
+    for (let i = 0; i < count; i++) {
+      let weapon = this.getCurrentWeapon()
+      let lineNumber = -count + 1 + (i * 2)
+      weapon.x = this.x
+      
+      // 중앙점에서 발사되게 하기 위해 여러 계산식이 들어갔습니다.
+      // lineNumber가 2단위로 증가하므로, height만큼에서 2를 추가로 나누었습니다.
+      // 그리고 무기의 절반높이만큼을 중심에서 마이너스 계산을 합니다.
+      weapon.y = this.centerY - (weapon.height / 2) + (lineNumber * weapon.height / 2)
 
-        this.weaponObject.push(weapon)
+      // 무기의 최종 공격력은 기준 공격력의 반복 횟수만큼 나누어집니다.
+      weapon.attack = Math.floor(this.getAttack() / weapon.repeatCount)
+
+      // 참고: 일부 무기는 발사 위치 특성으로 인해 예외로직을 추가 적용
+      if (this._color === this.colorList.black && i % 2 === 1) {
+        // 검정색 무기는 y축 대각선 양방향으로 나가야하기 때문에, 
+        weapon.setMoveSpeed(weapon.moveSpeedX, -weapon.moveSpeedY)
+      } else if (this._color === this.colorList.purple && count >= 2) {
+        // 보라색무기는 3방향으로 날라갑니다. (다만, 1레벨한정으로 1방향임)
+        if (i === 0) weapon.setMoveSpeed(weapon.moveSpeedX, -3)
+        else if (i === 1) weapon.setMoveSpeed(weapon.moveSpeedX, 0)
+        else if (i === 2) weapon.setMoveSpeed(weapon.moveSpeedX, 3)
+      } else if (this._color === this.colorList.khaki && i % 2 === 1) {
+        // 카키는 위 방향으로 발사될 수 있음
+        weapon.setMoveSpeed(weapon.moveSpeedX, -weapon.moveSpeedY)
+      } else if (this._color === this.colorList.green && (i !== 0 && i !== count - 1)) {
+        // 초록색의 임의 이동방향을 정함 (첫번재, 마지막 제외)
+        if (this.greenDirectionSpeed.x === 0) {
+          // 속도 X/Y축 반전
+          weapon.setMoveSpeed(weapon.moveSpeedY * 4, weapon.moveSpeedX * this.greenDirectionSpeed.y)
+        } else if (this.greenDirectionSpeed.y === 0) {
+          weapon.setMoveSpeed(weapon.moveSpeedX * this.greenDirectionSpeed.x, weapon.moveSpeedY)
+        } 
       }
+
+      this.weaponObject.push(weapon)
     }
   }
 
@@ -8415,12 +8454,14 @@ class Round3TempletePlayerOption extends FieldData {
 
   /**
    * 새로운 옵션 아이템을 생성합니다. (옵션의 색을 지정해주세요.)
+   * 
+   * 참고: 옵션아이템은 한번에 2개까지만 생성하는것을 권장합니다. (안그러면 옵션 여러개가 겹쳐져서 출력됨)
    * @param {string} color 옵션의 색
-   * @param {number} x 생성할 x좌표
-   * @param {number} y 생성할 y좌표
    */
-  createOptionItem (color, x = graphicSystem.CANVAS_WIDTH, y = graphicSystem.CANVAS_HEIGHT_HALF + (Math.random() * 200) - 100) {
+  createOptionItem (color) {
     let option = new Round3TempletePlayerOption.OptionObject(color)
+    let x = graphicSystem.CANVAS_WIDTH
+    let y = graphicSystem.CANVAS_HEIGHT_HALF - 120 + (120 * this.optionObject.length)
     option.setPosition(x, y)
     this.optionObject.push(option)
   }
@@ -8436,6 +8477,7 @@ class Round3TempletePlayerOption extends FieldData {
       // processMove는 super.process에서 처리하므로 따로 명시할 필요가 없습니다.
       this.isAttackEnable = true
       this.processWeapon()
+      this.processWeaponGreenMoveCheck()
     }
   }
 
@@ -8532,7 +8574,7 @@ class Round3TempletePlayerOption extends FieldData {
     constructor () {
       super()
       this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.greenShot)
-      this.setMoveSpeed(20, Math.random() * 4 - 2)
+      this.setMoveSpeed(20, Math.random() * 8 - 4)
     }
   }
 
@@ -8541,18 +8583,14 @@ class Round3TempletePlayerOption extends FieldData {
     constructor () {
       super()
       this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.blackShot)
-      this.setMoveSpeed(Math.random() * 2 - 1 + 10, Math.random() * 2 - 1 + 10)
+      this.setMoveSpeed(Math.random() * 4 - 2 + 20, Math.random() * 4 - 2 + 20)
 
-      this.repeatCount = 2 // 반복 횟수
+      this.repeatCount = 4 // 반복 횟수
       /** 벽 튕기기 횟수 (이 숫자가 0이되면 무기는 사라짐) */ this.reflectCount = 5
     }
 
     process () {
       super.process()
-
-      if (this.enemyHitedCheck()) {
-        this.setMoveSpeed(this.moveSpeedX *= -1, this.moveSpeedY *= -1)
-      }
 
       // 벽 튕기기: 벽은 화면 기준
       if (this.x + this.width < 0) {
@@ -8583,14 +8621,12 @@ class Round3TempletePlayerOption extends FieldData {
   }
 
   static WeaponPink = class WeaponPink extends WeaponData {
-    static hitEffect = new CustomEffect(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.pinkShot, undefined, undefined)
-
     constructor () {
       super()
-      this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.pinkShot, 3)
+      this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.pinkShot, 2)
       this.effectDelay = new DelayData(20)
       this.attackDelay = new DelayData(4)
-      this.setMultiTarget(6)
+      this.repeatCount = 4
       this.setMoveSpeed(6, 0)
     }
 
@@ -8601,27 +8637,13 @@ class Round3TempletePlayerOption extends FieldData {
         this.setMoveSpeedChaseLine(enemy.centerX, enemy.centerY, 50, 6)
       }
     }
-
-    processMove () {
-      super.processMove()
-      if (this.effectDelay.check()) {
-        BaseField.createEffect(WeaponPink.hitEffect, this.x, this.y)
-      }
-    }
-
-    processAttack () {
-      if (this.attackDelay.check(false) && this.enemyHitedCheck()) {
-        this.processHitObject()
-        this.attackDelay.count = 0
-      }
-    }
   }
 
   static WeaponPurple = class WeaponPurple extends WeaponData {
     constructor () {
       super()
       this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.purpleShot)
-      this.setMoveSpeed(16, 0)
+      this.setMoveSpeed(20, 0)
 
       this.STATE_FRONT = 'front'
       this.STATE_CHASE = 'chase'
@@ -8634,7 +8656,7 @@ class Round3TempletePlayerOption extends FieldData {
         this.state = this.STATE_CHASE
         let randomEnemy = fieldState.getRandomEnemyObject()
         if (randomEnemy != null) {
-          this.setMoveSpeedChaseLine(randomEnemy.centerX, randomEnemy.centerY, 60, 6)
+          this.setMoveSpeedChaseLine(randomEnemy.centerX, randomEnemy.centerY, 20, 10)
         }
       }
     }
@@ -8645,15 +8667,20 @@ class Round3TempletePlayerOption extends FieldData {
       super()
       this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.khakiShot)
       this.setMoveSpeed(Math.random() * 4 - 2, Math.random() * 1 + 10)
+      this.STATE_NORMAL = 'normal'
+      this.STATE_CHASE = 'chase'
+      this.setWidthHeight(this.width * 2, this.height * 2)
     }
 
     processMove () {
       super.processMove()
-      if (this.y > graphicSystem.CANVAS_HEIGHT) {
+      if (this.state === this.STATE_CHASE) return
+
+      if (this.y > graphicSystem.CANVAS_HEIGHT || this.y < 0) {
+        this.state = this.STATE_CHASE
         let randomEnemy = fieldState.getRandomEnemyObject()
-        this.y = graphicSystem.CANVAS_HEIGHT - 1
         if (randomEnemy != null) {
-          this.setMoveSpeedChaseLine(randomEnemy.centerX, randomEnemy.centerY, 80, 6)
+          this.setMoveSpeedChaseLine(randomEnemy.centerX, randomEnemy.centerY, 30, 8)
         } else {
           this.setMoveSpeed(Math.random() * 4 - 2, Math.random() * -1 - 6)
         }
@@ -9363,10 +9390,8 @@ class Round3_1 extends Round3Templete {
     const pTime = this.phase.getCurrentPhaseStartTime()
 
     // 옵션 생성
-    // 옵션을 획득하는것을 유도? 하기 위해 초반엔 안내가 표시되며 (추후 추가 예정)
-    // 초반에는 적이 나오지 않습니다.
-
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 11)) {
+    // 옵션을 획득하는것을 유도 하기 위해 초반엔 GET 안내가 표시
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
       this.playerOption.createOptionItem(this.playerOption.colorList.orange)
     }
     
@@ -9396,8 +9421,8 @@ class Round3_1 extends Round3Templete {
 
   roundPhase01 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.green) // 화면상에 옵션 추가
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.green)
     }
 
     // 특수한 적들 등장 (dps: 80% ~ 120%)
@@ -9436,8 +9461,8 @@ class Round3_1 extends Round3Templete {
 
   roundPhase02 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue) // 화면상에 옵션 추가
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue)
     }
 
     // dps 100% ~ 120%
@@ -9471,8 +9496,8 @@ class Round3_1 extends Round3Templete {
 
   roundPhase03 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue) // 화면상에 옵션 추가
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue)
     }
 
     // dps: 200%
@@ -9490,9 +9515,9 @@ class Round3_1 extends Round3Templete {
 
   roundPhase04 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 12) || this.timeCheckFrame(pTime + 24)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 200) // 화면상에 옵션 추가
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue, undefined, 400) // 화면상에 옵션 추가
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
+      this.playerOption.createOptionItem(this.playerOption.colorList.green)
     }
 
     // 새로운 적인 도형들의 등장 dps 160% ~ 200%
@@ -9522,12 +9547,8 @@ class Round3_1 extends Round3Templete {
 
   roundPhase05 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 1)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.green, undefined, 60)
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue, undefined, 280)
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 420)
-    } else if (this.timeCheckFrame(pTime + 14) || this.timeCheckFrame(pTime + 21)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 420)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
     }
 
     // 이 페이즈는 dps가 약 160% ~ 200%
@@ -9579,19 +9600,18 @@ class Round3_1 extends Round3Templete {
   display () {
     super.display()
 
+    // 옵션 안내 표시
+    if (this.time.currentTime <= 7 && this.playerOption.optionObject.length >= 1) {
+      let src = imageSrc.round.round3_playerOption
+      let imgD = imageDataInfo.round3_optionWeapon.get
+      let option = this.playerOption.optionObject[0]
+      this.imageObjectDisplay(src, imgD, option.x - 15, option.y - (imgD.height) - 10)
+    }
+
     // 보스 체력 표시
     if (this.phase.getCurrentPhase() === 6) {
       this.bossHpMeter(ID.enemy.towerEnemyGroup1.crazyRobot, this.bossTextList.bossCrazyRobot + ' HP: ')
     }
-  }
-
-  processDebug () {
-    // if (this.timeCheckFrame(0, 15)) {
-    //   this.time.setCurrentTime(220)
-    //   this.playerOption.setLevel(4)
-    //   this.playerOption.setColor(this.playerOption.colorList.orange)
-    //   this.playerOption.hasOption = true
-    // }
   }
 }
 
@@ -9638,8 +9658,8 @@ class Round3_2 extends Round3Templete {
 
   roundPhase00 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 11)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.khaki, undefined, 300)
+    if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 15)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.khaki)
     }
 
     // dps 80%
@@ -9671,13 +9691,11 @@ class Round3_2 extends Round3Templete {
   roundPhase01 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 1)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.black, undefined, 100)
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 250)
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 400)
-    } else if (this.timeCheckFrame(pTime + 11)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.black, undefined, 100)
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 250)
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 400)
+      this.playerOption.createOptionItem(this.playerOption.colorList.black)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
+    } else if (this.timeCheckFrame(pTime + 15)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
+      this.playerOption.createOptionItem(this.playerOption.colorList.purple)
     }
 
     // 신규 헬기 시리즈 적들 등장 dps: 120% ~ 160%
@@ -9705,8 +9723,8 @@ class Round3_2 extends Round3Templete {
   roundPhase02 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 150)
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue, undefined, 300)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
+      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue)
     }
 
     // 평균dps 50% + 100 ~ 150%
@@ -9738,10 +9756,8 @@ class Round3_2 extends Round3Templete {
   roundPhase03 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 100)
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue, undefined, 220)
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 340)
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 460)
+      this.playerOption.createOptionItem(this.playerOption.colorList.green)
+      this.playerOption.createOptionItem(this.playerOption.colorList.black)
     }
 
     // 이 페이즈부터 dps 160% ~ 200%
@@ -9768,9 +9784,8 @@ class Round3_2 extends Round3Templete {
   roundPhase04 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 100)
-      this.playerOption.createOptionItem(this.playerOption.colorList.green, undefined, 220)
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue, undefined, 340)
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
+      this.playerOption.createOptionItem(this.playerOption.colorList.green)
     }
 
     // dps 200%
@@ -9794,8 +9809,8 @@ class Round3_2 extends Round3Templete {
   roundPhase05 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.black, undefined, 100)
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 220)
+      this.playerOption.createOptionItem(this.playerOption.colorList.black)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
     }
 
     // 대포의 반란 (dps 160%)
@@ -9822,14 +9837,9 @@ class Round3_2 extends Round3Templete {
 
   roundPhase06 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 1)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 100)
-      this.playerOption.createOptionItem(this.playerOption.colorList.khaki, undefined, 220)
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 340)
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 460)
-    } else if (this.timeCheckFrame(pTime + 12)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 100)
-      this.playerOption.createOptionItem(this.playerOption.colorList.khaki, undefined, 220)
+    if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 15)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.khaki)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
     }
 
     // 적들의 최후의 일격
@@ -9943,9 +9953,9 @@ class Round3_3 extends Round3Templete {
   roundPhase00 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
 
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 11)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.green, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.purple)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
     }
 
     // 코어의 등장 dps 80%
@@ -9968,9 +9978,8 @@ class Round3_3 extends Round3Templete {
     const pTime = this.phase.getCurrentPhaseStartTime()
 
     if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 100)
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue, undefined, 250)
-      this.playerOption.createOptionItem(this.playerOption.colorList.black, undefined, 400)
+      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue)
+      this.playerOption.createOptionItem(this.playerOption.colorList.black)
     }
 
     // 함선은 dps가 1개체당 200%이며, 이로인해, 2초에 1개씩만 등장합니다.
@@ -10001,8 +10010,8 @@ class Round3_3 extends Round3Templete {
   roundPhase02 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 100)
-      this.playerOption.createOptionItem(this.playerOption.colorList.green, undefined, 250)
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
+      this.playerOption.createOptionItem(this.playerOption.colorList.green)
     }
 
     // 가짜 적들의 등장 (적이 가짜란 뜻이 아니고, 적 테마가 fake 임)
@@ -10023,10 +10032,8 @@ class Round3_3 extends Round3Templete {
   roundPhase03 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.black, undefined, 100)
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 300)
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 400)
+      this.playerOption.createOptionItem(this.playerOption.colorList.purple)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
     }
 
     // (여기서부터 dps 총합은 200%)
@@ -10060,8 +10067,8 @@ class Round3_3 extends Round3Templete {
   roundPhase04 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 100)
-      this.playerOption.createOptionItem(this.playerOption.colorList.green, undefined, 200)
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
+      this.playerOption.createOptionItem(this.playerOption.colorList.green)
     }
 
     // 함선들의 등장 (그러나 코어가 없다.)
@@ -10084,10 +10091,8 @@ class Round3_3 extends Round3Templete {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
       // 오렌지만 나오는건 당연히 이유가 있겠지요?
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 100)
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 300)
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 400)
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
     }
 
     // 마지막 적들의 쇼타임
@@ -10228,8 +10233,8 @@ class Round3_4 extends Round3Templete {
     // 0 ~ 15초 구간: 기존 적들중 일부가 다시 나옴
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.black, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 400)
+      this.playerOption.createOptionItem(this.playerOption.colorList.purple)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
     }
 
     // 초반 적들 (dps 60% ~ 80%)
@@ -10256,8 +10261,8 @@ class Round3_4 extends Round3Templete {
   roundPhase01 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.green, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 400)
+      this.playerOption.createOptionItem(this.playerOption.colorList.green)
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
     }
 
     // 신규 적 시계 등장
@@ -10277,8 +10282,8 @@ class Round3_4 extends Round3Templete {
   roundPhase02 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 400)
+      this.playerOption.createOptionItem(this.playerOption.colorList.purple)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
     }
 
     // 신규 적 에너지체 출현
@@ -10295,9 +10300,8 @@ class Round3_4 extends Round3Templete {
   roundPhase03 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 300)
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 400)
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
     }
 
     // 함선과 코어의 재등장 (30초동안...) 함선의 dps는 150% ~ 200%, 코어의 dps는 40%
@@ -10330,9 +10334,8 @@ class Round3_4 extends Round3Templete {
   roundPhase04 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 300)
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 400)
+      this.playerOption.createOptionItem(this.playerOption.colorList.purple)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
     }
 
     // star (dps 20%)
@@ -10360,7 +10363,7 @@ class Round3_4 extends Round3Templete {
   roundPhase05 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 200)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
     }
 
     // 시계 나오기 이전 나머지 적들이 전부 죽지 않는다면 일시적으로 진행 시간이 멈춥니다.
@@ -10389,7 +10392,7 @@ class Round3_4 extends Round3Templete {
   roundPhase06 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 200)
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
     }
 
     // 이 페이즈도 마찬가지 (다만, 요구되는 dps는 240%까지 상승합니다.)
@@ -10414,7 +10417,7 @@ class Round3_4 extends Round3Templete {
   roundPhase07 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue, undefined, 200)
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
     }
 
     // 음악 페이드 아웃 및 정지
@@ -10455,7 +10458,7 @@ class Round3_4 extends Round3Templete {
     }
 
     // 적을 모두 죽이기 전까지 진행 불가능
-    this.timePauseWithEnemyCount(pTime + 27)
+    this.timePauseWithEnemyCount(pTime + 28)
   }
 }
 
@@ -11762,9 +11765,9 @@ class Round3_6 extends Round3Templete {
 
   roundPhase01 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
     }
 
     // 여기서부터 dps: 60% ~ 160%
@@ -11789,9 +11792,9 @@ class Round3_6 extends Round3Templete {
 
   roundPhase02 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.purple)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
     }
 
     // 여기서부터 dps 140% ~ 200%
@@ -11820,9 +11823,9 @@ class Round3_6 extends Round3Templete {
 
   roundPhase03 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.green)
+      this.playerOption.createOptionItem(this.playerOption.colorList.black)
     }
 
     // 헬시리즈의 등장
@@ -11848,9 +11851,9 @@ class Round3_6 extends Round3Templete {
 
   roundPhase04 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.black, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.khaki)
+      this.playerOption.createOptionItem(this.playerOption.colorList.purple)
     }
 
     // 헬넷과 무전기의 환상조합...
@@ -11871,8 +11874,8 @@ class Round3_6 extends Round3Templete {
     const pTime = this.phase.getCurrentPhaseStartTime()
     const pEnd = this.phase.getCurrentPhaseEndTime()
     if (this.timeCheckFrame(pTime + 0, 30)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 400)
+      this.playerOption.createOptionItem(this.playerOption.colorList.khaki)
+      this.playerOption.createOptionItem(this.playerOption.colorList.black)
     }
 
     // 사이렌들의 등장
@@ -11982,9 +11985,9 @@ class Round3_7 extends Round3Templete {
 
   roundPhase00 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15, 30)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20, 30)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.khaki)
+      this.playerOption.createOptionItem(this.playerOption.colorList.purple)
     }
 
     if (this.timeCheckInterval(pTime + 4, pTime + 21, 60)) {
@@ -12009,9 +12012,9 @@ class Round3_7 extends Round3Templete {
 
   roundPhase01 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15, 30)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20, 30)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
     }
 
     // dps 120% ~ 140%
@@ -12034,9 +12037,9 @@ class Round3_7 extends Round3Templete {
 
   roundPhase02 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 15, 30)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20, 30)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
     }
 
     // blue zone (dps: maybe 180% ~ 200%)
@@ -12128,7 +12131,7 @@ class Round3_7 extends Round3Templete {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.radio)
     }
 
-    this.timePauseWithEnemyCount(pTime + 37)
+    this.timePauseWithEnemyCount(pTime + 38)
   }
 
   display () {
@@ -12249,9 +12252,9 @@ class Round3_8 extends Round3Templete {
 
   roundPhase00 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 17, 30) || this.timeCheckFrame(pTime + 34, 30)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.black)
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
     }
 
     // dps 30% ~ 100%
@@ -12267,11 +12270,11 @@ class Round3_8 extends Round3Templete {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.trash2)
     } else if (this.timeCheckInterval(pTime + 25, pTime + 28, 12)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.trash2)
-    } else if (this.timeCheckInterval(pTime + 29, pTime + 32, 8)) {
+    } else if (this.timeCheckInterval(pTime + 29, pTime + 32, 10)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.trashWing)
-    } else if (this.timeCheckInterval(pTime + 33, pTime + 39, 7)) {
+    } else if (this.timeCheckInterval(pTime + 33, pTime + 39, 10)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.trashLotter)
-    } else if (this.timeCheckInterval(pTime + 40, pTime + 50, 15)) {
+    } else if (this.timeCheckInterval(pTime + 40, pTime + 50, 20)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.trash1)
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.trash2)
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.trashWing)
@@ -12281,9 +12284,9 @@ class Round3_8 extends Round3Templete {
 
   roundPhase01 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 17, 30) || this.timeCheckFrame(pTime + 34, 30)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.orange, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.black)
+      this.playerOption.createOptionItem(this.playerOption.colorList.purple)
     }
     
     // main dps 120% + subdps 0% ~ 40% = total max 160%
@@ -12297,7 +12300,7 @@ class Round3_8 extends Round3Templete {
     }
 
     // sub dps 40% ~ 50%
-    if (this.timeCheckInterval(pTime + 5, pTime + 10, 4)) {
+    if (this.timeCheckInterval(pTime + 5, pTime + 10, 9)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.trash1)
     } else if (this.timeCheckInterval(pTime + 28, pTime + 38, 20)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.trash1)
@@ -12312,9 +12315,9 @@ class Round3_8 extends Round3Templete {
 
   roundPhase02 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 17, 30) || this.timeCheckFrame(pTime + 34, 30)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.khaki)
+      this.playerOption.createOptionItem(this.playerOption.colorList.black)
     }
 
     // 길을 잃은 동그라미들... (내부 dps는 15%로 취급)
@@ -12322,7 +12325,7 @@ class Round3_8 extends Round3Templete {
       this.field.createEnemy(ID.enemy.donggramiEnemy.normal)
     }
 
-    // 길을 잃은 헬기들... (dps 80%)
+    // 길을 잃은 헬기들... (dps 100%)
     if (this.timeCheckInterval(pTime + 0, pTime + 11, 60)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgi)
       this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeHell)
@@ -12356,25 +12359,25 @@ class Round3_8 extends Round3Templete {
         case 3: this.field.createEnemy(ID.enemy.towerEnemyGroup3.energyOrange); break
         case 4: this.field.createEnemy(ID.enemy.towerEnemyGroup2.octaShadow); break
       }
-    } else if (this.timeCheckInterval(pTime + 26, pTime + 37, 120)) {
+    } else if (this.timeCheckInterval(pTime + 26, pTime + 37, 110)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup3.clockAnalog)
       this.field.createEnemy(ID.enemy.towerEnemyGroup3.clockDigital)
-    } else if (this.timeCheckInterval(pTime + 38, pTime + 48, 12)) {
+    } else if (this.timeCheckInterval(pTime + 38, pTime + 48, 10)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.roller)
     }
   }
 
   roundPhase03 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 17, 30) || this.timeCheckFrame(pTime + 34, 30)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
+      this.playerOption.createOptionItem(this.playerOption.colorList.purple)
     }
     // this phase after dps 180% ~ 220%
     // cutter rush
     if (this.timeCheckInterval(pTime + 0, pTime + 7, 5)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.cutter)
-    } else if (this.timeCheckInterval(pTime + 8, pTime + 11, 3)) {
+    } else if (this.timeCheckInterval(pTime + 8, pTime + 10, 3)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.cutter)
     }
 
@@ -12386,23 +12389,25 @@ class Round3_8 extends Round3Templete {
     }
 
     // star rush...
-    if (this.timeCheckInterval(pTime + 21, pTime + 26, 4)) {
+    if (this.timeCheckInterval(pTime + 22, pTime + 27, 4)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup3.star)
-    } else if (this.timeCheckInterval(pTime + 27, pTime + 29, 3)) {
+    } else if (this.timeCheckInterval(pTime + 28, pTime + 30, 3)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup3.star)
     }
 
     // trash rush
-    if (this.timeCheckInterval(pTime + 30, pTime + 45, 5)) {
+    if (this.timeCheckInterval(pTime + 32, pTime + 47, 10)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.trash1)
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.trashWing)
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.trashLotter)
     }
+
+    this.timePauseWithEnemyCount(pTime + 49)
   }
 
   roundPhase04 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckInterval(pTime + 1, pTime + 12, 25)) {
+    if (this.timeCheckInterval(pTime + 0, pTime + 16, 20)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.hellnet)
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.radio)
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.camera)
@@ -12412,7 +12417,7 @@ class Round3_8 extends Round3Templete {
       this.sound.musicFadeOut(180)
     }
 
-    this.timePauseWithEnemyCount(pTime + 17)
+    this.timePauseWithEnemyCount(pTime + 18)
   }
 }
 
@@ -12520,20 +12525,11 @@ class Round3_9 extends Round3Templete {
     }
   }
 
-  processDebug () {
-    // if (this.timeCheckFrame(0, 4)) {
-    //   this.time.setCurrentTime(175)
-    //   this.bgLayer.setBackgroundSpeed(16, 0)
-    //   this.playerOption.setColor(this.playerOption.colorList.orange)
-    //   this.playerOption.setLevel(4)
-    // }
-  }
-
   roundPhase00 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 17, 30) || this.timeCheckFrame(pTime + 34, 30)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.black)
+      this.playerOption.createOptionItem(this.playerOption.colorList.khaki)
     }
 
     // 쓰레기 dps 20%/40%/60%
@@ -12575,9 +12571,9 @@ class Round3_9 extends Round3Templete {
 
   roundPhase01 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 17, 30) || this.timeCheckFrame(pTime + 34, 30)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.orange)
+      this.playerOption.createOptionItem(this.playerOption.colorList.purple)
     }
 
     // 여기서부터 dps 100% ~ 180%
@@ -12622,9 +12618,9 @@ class Round3_9 extends Round3Templete {
 
   roundPhase02 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 17, 30) || this.timeCheckFrame(pTime + 34, 30)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.skyblue)
+      this.playerOption.createOptionItem(this.playerOption.colorList.green)
     }
 
     // total dps 180% ~ 220%
@@ -12661,22 +12657,21 @@ class Round3_9 extends Round3Templete {
   roundPhase03 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     const pEnd = this.phase.getCurrentPhaseEndTime()
-    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 17, 30) || this.timeCheckFrame(pTime + 34, 30)) {
-      this.playerOption.createOptionItem(this.playerOption.colorList.pink, undefined, 200)
-      this.playerOption.createOptionItem(this.playerOption.colorList.purple, undefined, 400)
+    if (this.timeCheckFrame(pTime + 0, 30) || this.timeCheckFrame(pTime + 20)) {
+      this.playerOption.createOptionItem(this.playerOption.colorList.pink)
+      this.playerOption.createOptionItem(this.playerOption.colorList.purple)
     }
 
-    // mix rush dps 220%
-    if (this.timeCheckInterval(pTime + 0, pTime + 4, 2)) {
-      this.field.createEnemy(ID.enemy.towerEnemyGroup1.gasiUp)
+    // mix rush dps 180% ~ 220%
+    if (this.timeCheckInterval(pTime + 0, pTime + 4, 6)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.gasiUp)
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.gasiDown)
-    } else if (this.timeCheckInterval(pTime + 5, pTime + 8, 5)) {
+    } else if (this.timeCheckInterval(pTime + 5, pTime + 8, 6)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup3.star)
-    } else if (this.timeCheckInterval(pTime + 9, pTime + 12, 5)) {
+    } else if (this.timeCheckInterval(pTime + 9, pTime + 12, 6)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveBlue)
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveDarkViolet)
-    } else if (this.timeCheckInterval(pTime + 13, pTime + 16, 5)) {
+    } else if (this.timeCheckInterval(pTime + 13, pTime + 16, 6)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.cutter)
     } else if (this.timeCheckInterval(pTime + 17, pTime + 20, 6)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.punch)
@@ -12725,8 +12720,8 @@ class Round3_test extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_test)
-    this.playerOption.setColor(this.playerOption.colorList.orange)
-    this.playerOption.setLevel(3)
+    this.playerOption.setColor(this.playerOption.colorList.green)
+    // this.playerOption.setLevel(3)
     // this.bgLayer.setColor('black')
     // this.sound.roundStartMusicSrc = soundSrc.music.music16_down_tower
 
@@ -12739,11 +12734,11 @@ class Round3_test extends Round3Templete {
 
     this.phase.addRoundPhase(this, () => {
 
-      if (this.timeCheckFrame(2)) {
-        this.field.createEnemy(ID.enemy.towerEnemyGroup5.gabudan, 300, 200)
+      if (this.timeCheckFrame(0, 4)) {
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup5.gabudan, 300, 200)
         this.time.setCurrentTime(100)
         // this.sound.musicFadeIn(soundSrc.music.music18_down_tower_void, 300)
-        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.clockJong)
+        // this.field.createEnemy(ID.enemy.towerEnemyGroup1.crazyRobot)
       }
 
       // if (this.timeCheckInterval(0, 999, 20) && this.field.getEnemyCount() === 0) {
@@ -12774,16 +12769,16 @@ class Round3_test extends Round3Templete {
       //   this.bgLayer.setLayerAlphaFade(0, 1, 300) // 첫번째 배경으로 되돌아감
       // }
 
-      let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup5.gabudan)
-      if (enemy) {
-        if (enemy.message === 'start') {
-          enemy.message = ''
-          this.sound.musicFadeIn(soundSrc.music.music17_down_tower_boss)
-        } else if (enemy.message === 'end') {
-          enemy.message = ''
-          this.sound.musicStop()
-        }
-      }
+      // let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup5.gabudan)
+      // if (enemy) {
+      //   if (enemy.message === 'start') {
+      //     enemy.message = ''
+      //     this.sound.musicFadeIn(soundSrc.music.music17_down_tower_boss)
+      //   } else if (enemy.message === 'end') {
+      //     enemy.message = ''
+      //     this.sound.musicStop()
+      //   }
+      // }
 
       if (this.timeCheckFrame(1)) {
         // this.sound.musicFadeOut(60)

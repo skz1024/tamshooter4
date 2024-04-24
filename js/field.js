@@ -125,6 +125,8 @@ class PlayerObject extends FieldData {
     this.autoMoveX = 0
     this.autoMoveY = 0
 
+    /** 기준 이동속도 값 */ this.BASE_SPEED = 8
+
     /** @type {SkillSlot[]} */ this.skillSlotA = []
     /** @type {SkillSlot[]} */ this.skillSlotB = []
     /** @type {WeaponSlot[]} */ this.weaponSlot = []
@@ -144,8 +146,8 @@ class PlayerObject extends FieldData {
     this.debug = false
     this.dieAfterDelayCount = 0
     this.isDied = false
-    this.moveSpeedX = 8
-    this.moveSpeedY = 8
+    this.moveSpeedX = 0
+    this.moveSpeedY = 0
     this.autoMoveFrame = 0
     this.autoMoveX = 0
     this.autoMoveY = 0
@@ -371,6 +373,7 @@ class PlayerObject extends FieldData {
       this.processShield()
       this.processDamage()
       this.processLevelupCheck()
+      this.processMove()
       this.processAutoMove()
     }
     this.processDie()
@@ -533,6 +536,19 @@ class PlayerObject extends FieldData {
     }
   }
 
+  processMove () {
+    // 이동 가능하거나, autoMoveFrame이 없을 때만 이동 가능합니다.
+    if (!this.isMoveEnable || this.autoMoveFrame > 0) return
+
+    super.processMove()
+
+    // 화면 영역에서 벗어나는거 금지
+    if (this.x < 0) this.x = 0
+    if (this.x > game.graphic.CANVAS_WIDTH - this.width) this.x = game.graphic.CANVAS_WIDTH - this.width
+    if (this.y < 0) this.y = 0
+    if (this.y > game.graphic.CANVAS_HEIGHT - this.height) this.y = game.graphic.CANVAS_HEIGHT - this.height
+  }
+
   processButton () {
     // 버튼의 목록
     const buttonLeft = game.control.getButtonDown(game.control.buttonIndex.LEFT)
@@ -548,17 +564,17 @@ class PlayerObject extends FieldData {
 
     // 이동 가능하거나, autoMoveFrame이 없을 때만 이동 가능합니다.
     if (this.isMoveEnable && this.autoMoveFrame <= 0) {
-      if (buttonLeft) this.x -= this.moveSpeedX
-      if (buttonRight) this.x += this.moveSpeedX
-      if (buttonDown) this.y += this.moveSpeedY
-      if (buttonUp) this.y -= this.moveSpeedY
-    }
+      // 버튼이 눌려있다면 이동속도 변경 
+      // (버튼을 여러개 눌러 중복처리되는것을 막기 위해 한쪽 방향을 누르면 반대방향 버튼은 입력이 무시됨)
+      if (buttonLeft && !buttonRight) this.moveSpeedX = -this.BASE_SPEED
+      if (buttonRight && !buttonLeft) this.moveSpeedX = this.BASE_SPEED
+      if (buttonDown && !buttonUp) this.moveSpeedY = this.BASE_SPEED
+      if (buttonUp && !buttonDown) this.moveSpeedY = -this.BASE_SPEED
 
-    // 화면 영역에서 벗어나는거 금지
-    if (this.x < 0) this.x = 0
-    if (this.x > game.graphic.CANVAS_WIDTH - this.width) this.x = game.graphic.CANVAS_WIDTH - this.width
-    if (this.y < 0) this.y = 0
-    if (this.y > game.graphic.CANVAS_HEIGHT - this.height) this.y = game.graphic.CANVAS_HEIGHT - this.height
+      // 버튼이 눌려져있지 않다면 속도를 원래대로 되돌림
+      if (!buttonLeft && !buttonRight) this.moveSpeedX = 0
+      if (!buttonDown && !buttonUp) this.moveSpeedY = 0
+    }
 
     // 중앙 좌표값 설정
     this.centerX = this.x + (this.width / 2)
