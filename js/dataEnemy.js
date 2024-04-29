@@ -14963,6 +14963,60 @@ class TowerEnemyGroup5VaccumCleaner extends TowerEnemy {
   }
 }
 
+class TowerEnemyGroup5GamokBangpae extends TowerEnemy {
+  constructor () {
+    super()
+    this.setWidthHeight(600, 400)
+    this.setEnemyByCpStat(7000, 0)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerGamokBangpae, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleViolet)
+    this.attackDelay = new DelayData(15)
+    this.dieAfterDeleteDelay = new DelayData(240)
+  }
+
+  processState () {
+    // 위치 고정
+    this.x = 100
+    this.y = 100
+  }
+
+  processAttack () {
+    if (!this.attackDelay.check()) return
+    let bullet = new IntruderEnemyDaseok.EnergyBullet()
+    let randomSound = Math.floor(Math.random() * 3)
+    switch (randomSound) {
+      case 0: soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergy); break
+      case 1: soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergyHigh); break
+      case 2: soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergyLow); break
+    }
+    
+    bullet.setPosition(graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
+    bullet.setMoveSpeed(-Math.random() * 5 - 4, Math.random() * 12 - 6)
+    fieldState.createEnemyBulletObject(bullet)
+  }
+
+  display () {} // 출력 없음
+
+  processDieAfter () {
+    super.processDieAfter()
+
+    if (this.isDied && this.dieAfterDeleteDelay.divCheck(6)) {
+      soundSystem.play(this.dieSound)
+      if (this.dieEffect) {
+        this.dieEffect.setWidthHeight(100, 100)
+        fieldState.createEffectObject(this.dieEffect.getObject(), Math.random() * graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
+      }
+    }
+
+    if (this.isDied && this.isDeleted) {
+      soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
+      if (this.dieEffect) {
+        this.dieEffect.setWidthHeight(graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT)
+        fieldState.createEffectObject(this.dieEffect.getObject(), 0, 0)
+      }
+    }
+  }
+}
+
 /**
  * 테스트용 적 (적의 형태를 만들기 전 테스트 용도로 사용하는 테스트용 적)
  */
@@ -15198,3 +15252,4 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup5.sujipgi, TowerEnemyGroup5Sujipgi)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup5.roller, TowerEnemyGroup5Roller)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup5.cutter, TowerEnemyGroup5Cutter)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup5.vacuumCleaner, TowerEnemyGroup5VaccumCleaner)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.gamokBangpae, TowerEnemyGroup5GamokBangpae)

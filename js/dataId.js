@@ -318,6 +318,7 @@ export class ID {
       roller: 20350,
       cutter: 20351,
       vacuumCleaner: 20352,
+      gamokBangpae: 20353,
     }
   }
 

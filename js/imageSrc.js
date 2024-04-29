@@ -207,6 +207,18 @@ export class imageSrc {
     round3_9_layerBackground: './image/round/round3_9_layerBackground.png',
     round3_9_finishArea: './image/round/round3_9_finishArea.png',
     round3_9_finishStart: './image/round/round3_9_finishStart.png',
+    round3_10_hallB5: './image/round/round3_10_hallB5.png',
+    round3_10_hallB5Gamok: './image/round/round3_10_hallB5Gamok.png',
+    round3_10_level1: './image/round/round3_10_level1.png',
+    round3_10_level2: './image/round/round3_10_level2.png',
+    round3_10_level3: './image/round/round3_10_level3.png',
+    round3_10_level4: './image/round/round3_10_level4.png',
+    round3_10_outside1: './image/round/round3_10_outside1.png',
+    round3_10_outside2: './image/round/round3_10_outside2.png',
+    round3_10_outside3: './image/round/round3_10_outside3.png',
+    round3_10_outside4: './image/round/round3_10_outside4.png',
+    round3_10_terrace:  './image/round/round3_10_terrace.png',
+    round3_10_rescueSprite: './image/round/round3_10_rescueSprite.png'
   }
 
   // 경고: canvas에 svg 이미지를 사용하지 마세요. 성능이 매우 안좋습니다.
@@ -898,6 +910,12 @@ export class imageDataInfo {
     warning: new ImageDataObject(0, 0, 660, 120),
     lightRed: new ImageDataObject(0, 120, 660, 120),
     red: new ImageDataObject(0, 240, 660, 120),
+  }
+
+  static round3_10_rescueSprite = {
+    resuceChracter: new ImageDataObject(300, 0, 550, 200),
+    faceEyeClose: new ImageDataObject(300, 200, 60, 80), 
+    faceEyeOpen: new ImageDataObject(360, 200, 60, 80)
   }
 
   static weapon = {
