@@ -1568,7 +1568,7 @@ class BaseMeter {
       graphicSystem.meterRect(10, 10, meterWidth, meterHeight, '#FF3B26', enemy.hp, enemy.hpMax, true, ['#C0C0C0'], 1)
     }
 
-    digitalDisplay('BOSS HP: ' + enemy.hp + '/' + enemy.hpMax, positionX + 2, positionY + 2)
+    digitalDisplay('BOSS HP: ' + enemy.hp + '/' + enemy.hpMax, positionX + 2, positionY + 3)
   }
 
   /**
@@ -2835,16 +2835,17 @@ class Round1_4 extends RoundData {
     this.phase.addRoundPhase(this, this.roundPhase00, 1, 20)
     this.phase.addRoundPhase(this, this.roundPhase01, 21, 80)
     this.phase.addRoundPhase(this, this.roundPhase02, 81, 110)
-    this.phase.addRoundPhase(this, this.roundPhase03, 111, 152)
+    this.phase.addRoundPhase(this, this.roundPhase03, 111, 150)
+    this.phase.addRoundPhase(this, this.roundPhase04, 151, 158)
 
     /** 제물스타 이펙트 */
-    this.effectJemulstar = new CustomEffect(imageSrc.effect.jemulstar, imageDataInfo.effect.jemulstar, 500, 320, 3, 2)
+    this.effectJemulstar = new CustomEffect(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulStarEffect, 500, 320, 3, 2)
 
     /** 제물 생성 이펙트 */
     this.EffectJemulCreate = class JemulCreateEffect extends CustomEditEffect {
       constructor () {
         super()
-        this.autoSetEnimation(imageSrc.effect.jemulCreate, imageDataInfo.effect.jemulCreate, 200, 200, 4, 15)
+        this.autoSetEnimation(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulCreateEffect, 200, 200, 4, 15)
       }
     
       process () {
@@ -2861,8 +2862,6 @@ class Round1_4 extends RoundData {
       imageSrc.round.round1_4_meteoriteDark,
       imageSrc.round.round1_4_redzone,
       imageSrc.enemy.jemulEnemy,
-      imageSrc.effect.jemulstar,
-      imageSrc.effect.jemulCreate,
     ])
 
     this.load.addSoundList([
@@ -3040,6 +3039,15 @@ class Round1_4 extends RoundData {
       this.sound.play(this.messageSound.jemulstart)
     } else if (this.timeCheckInterval(phase3Time + 4, phase3End - 4, 240)) {
       this.sound.play(this.messageSound.jemulrun)
+    }
+  }
+
+  roundPhase04 () {
+    const pTime = this.phase.getCurrentPhaseStartTime()
+    if (this.timeCheckFrame(pTime + 0)) {
+      this.bgLegacy.changeImage(imageSrc.round.round1_4_meteoriteDark, 180)
+    } else if (this.timeCheckFrame(pTime + 1)) {
+      this.sound.musicFadeOut(120)
     }
   }
 
@@ -3339,7 +3347,7 @@ class Round1_6 extends RoundData {
     this.phase.addRoundPhase(this, this.roundPhase01, 31, 60)
     this.phase.addRoundPhase(this, this.roundPhase02, 61, 90)
     this.phase.addRoundPhase(this, this.roundPhase03, 91, 120)
-    this.phase.addRoundPhase(this, this.roundPhase04, 121, 152)
+    this.phase.addRoundPhase(this, this.roundPhase04, 121, 154)
 
     /**
      * 이 라운드에서 행성을 보여주기 위한 오브젝트
@@ -3553,6 +3561,8 @@ class Round1_6 extends RoundData {
     const planetMusicPlayTime = 128 - fadeTime
     if (this.timeCheckFrame(planetMusicPlayTime, 0)) {
       this.sound.musicChangeOLD(this.musicPlanet, fadeTime)
+    } else if (this.timeCheckFrame(planetMusicPlayTime + 27)) {
+      this.sound.musicFadeOut(120)
     }
   }
   processSaveString () {
@@ -3658,6 +3668,7 @@ class Round2_1 extends RoundData {
     this.load.addImageList(RoundPackLoad.getRound2ShareImage())
     this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
 
+    this.BOSSTIME = 146
     this.setBgLayer()
   }
 
@@ -3704,7 +3715,7 @@ class Round2_1 extends RoundData {
     }
 
     // 보스 체력 보여주기 (동그라미가 등장했을 때)
-    if (this.time.currentTime === 147) Round2_1.displayBossHp()
+    if (this.time.currentTime === this.BOSSTIME) Round2_1.displayBossHp()
   }
 
   processBackground () {
@@ -3782,6 +3793,11 @@ class Round2_1 extends RoundData {
   roundPhase04 () {
     this.timePauseWithEnemyCount(93)
 
+    // 20초에 걸쳐서 구름 삭제
+    if (this.timeCheckFrame(100)) {
+      this.bgLayer.setLayerAlphaFade(0, 0, 1200)
+    }
+
     // talk 동그라미, 초당 dps 60%
     if (this.timeCheckInterval(95, 100, 20)) {
       this.field.createEnemy(ID.enemy.donggramiEnemy.talk)
@@ -3806,7 +3822,7 @@ class Round2_1 extends RoundData {
       this.field.createEnemy(ID.enemy.donggramiEnemy.mini)
     }
 
-    if (this.timeCheckInterval(121, 140, 20) && this.field.getEnemyCount() < 40) {
+    if (this.timeCheckInterval(121, this.BOSSTIME - 5, 20) && this.field.getEnemyCount() < 40) {
       let random = Math.floor(Math.random() * 5)
       switch (random) {
         case 0: this.field.createEnemy(ID.enemy.donggramiEnemy.exclamationMark); break
@@ -3817,15 +3833,19 @@ class Round2_1 extends RoundData {
       }
     }
 
-    this.timePauseWithEnemyCount(145)
+    this.timePauseWithEnemyCount(this.BOSSTIME - 2)
 
-    // 146초 보스전
-    if (this.timeCheckFrame(146, 1)) {
+    // 145초 보스전
+    if (this.timeCheckFrame(this.BOSSTIME - 1, 1)) {
       this.field.createEnemy(ID.enemy.donggramiEnemy.bossBig1)
       this.field.createEnemy(ID.enemy.donggramiEnemy.bossBig2)
-      this.time.setCurrentTime(147)
+      this.time.setCurrentTime(this.BOSSTIME)
     }
-    this.timePauseWithEnemyCount(147)
+    this.timePauseWithEnemyCount(this.BOSSTIME)
+
+    if (this.timeCheckFrame(this.BOSSTIME + 1)) {
+      this.sound.musicFadeOut(120)
+    }
   }
 
   /** 동그라미 보스 hp를 표시하는 전용 함수 ?! */
@@ -4052,7 +4072,7 @@ class Round2_2 extends RoundData {
     }
 
     if (this.timeCheckFrame(167, 12)) {
-      this.sound.musicChangeOLD('', 3)
+      this.sound.musicFadeOut(180)
     }
 
     // 적 남아있으면 시간 멈춤
@@ -7253,6 +7273,7 @@ class Round2_5 extends RoundData {
     this.bgLegacy.imageSrc = imageSrc.round.round2_5_floorB1Light
     this.bgLegacy.backgroundSpeedX = 0
     this.bgLegacy.color = Round2_1.getMaeulGradientColor()
+    this.clearSoundSrc = soundSrc.round.r2_5Clear // 클리어 사운드 변경
 
     // 타입 지정용 임시 클래스 (자동완성 목적)
     class SpriteDonggrami extends this.SpriteDonggrami {}
@@ -7278,7 +7299,8 @@ class Round2_5 extends RoundData {
       soundSrc.round.r2_5_breakRoom,
       soundSrc.music.music14_intruder_battle,
       soundSrc.round.r2_4_message1,
-      soundSrc.round.r2_3_a1_toyHammer
+      soundSrc.round.r2_3_a1_toyHammer,
+      soundSrc.round.r2_5Clear
     ])
 
     this.load.addImageList(RoundPackLoad.getRound2ShareImage())
@@ -10474,6 +10496,7 @@ class Round3_5 extends Round3Templete {
     // this.playerOption.setLevel(10) // 시간에 따른 레벨 변경으로 제대로 이 옵션은 적용이 안됨
 
     this.sound.currentMusicSrc = '' // 음악 없음 (보스가 나오고 음악이 직접 재생됨)
+    this.clearSoundSrc = soundSrc.round.r3_5_clear // 클리어 사운드 변경
 
     /** 페이즈 4-3에서, 보스 좌표를 추적하는데 사용 */ this.antiBossX = 0
     /** 페이즈 4-3에서, 보스 좌표를 추적하는데 사용 */ this.antiBossY = 0
@@ -11299,7 +11322,6 @@ class Round3_5 extends Round3Templete {
   roundPhase04_F () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     this.bgLayer.setBackgroundSpeed(0, 0)
-    this.clearSoundSrc = soundSrc.round.r3_5_clear // 클리어 사운드 변경 (이건 이스테에그같은거임)
     if (this.timeCheckFrame(pTime + 0)) {
       
     } else if (this.timeCheckFrame(pTime + 1)) {

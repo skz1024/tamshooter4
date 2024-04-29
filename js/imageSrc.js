@@ -48,11 +48,6 @@ export class imageSrc {
     round2_3_number: './image/round/round2_3_number.png'
   }
 
-  static effect = {
-    jemulstar: './image/effect/jemulstar.png',
-    jemulCreate: './image/effect/jemulCreate.png',
-  }
-
   static weaponImage = './image/weapon/weapon.png'
   static skillImage = './image/weapon/skill.png'
 
@@ -342,6 +337,10 @@ export class imageDataInfo {
     jemulEnemyAir: {x: 620, y: 400, width: 30, height: 20, frame: 1},
     jemulEnemyShip: {x: 600, y: 400, width: 20, height: 20, frame: 1},
     jemulEnemyHellSpike: {x: 650, y: 400, width: 15, height: 20, frame: 1},
+
+    // round1-4effect
+    jemulCreateEffect: new ImageDataObject(601, 430, 40, 40, 4),
+    jemulStarEffect: new ImageDataObject(762, 430, 60, 58, 10),
   }
 
   static donggramiEnemy = {
@@ -1005,11 +1004,6 @@ export class imageDataInfo {
     skillInfoSkyBlue: {x: 0, y: 60, width: 800, height: 20, frame: 1},
     skillInfoPurpleBlueTitle: {x: 0, y: 80, width: 800, height: 20, frame: 1},
     skillInfoPurpleBlue: {x: 0, y: 100, width: 800, height: 20, frame: 1},
-  }
-
-  static effect = {
-    jemulstar: {x: 0, y: 0, width: 60, height: 60, frame: 10},
-    jemulCreate: {x: 0, y: 0, width: 40, height: 40, frame: 4},
   }
 
   // : {x: , y: , width: , height: , frame: 1},
