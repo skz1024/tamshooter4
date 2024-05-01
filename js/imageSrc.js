@@ -93,6 +93,8 @@ export class imageSrc {
     round1_3_meteoriteDeep: './image/round/round1_3_meteoriteDeep.jpg',
     round1_4_meteoriteDark: './image/round/round1_4_meteoriteDark.jpg',
     round1_4_redzone: './image/round/round1_4_redZone.jpg',
+    round1_4_blackSpace: './image/round/round1_4_blackSpace.jpg',
+    round1_4_blackSpaceRedLayer: './image/round/round1_4_blackSpaceRedLayer.jpg',
     round1_5_meteoriteRed: './image/round/round1_5_meteoriteRed.jpg',
     round1_6_space: './image/round/round1_6_space.jpg',
     round1_6_paran_planet: './image/round/round1_6_paran_planet.png',
@@ -341,6 +343,9 @@ export class imageDataInfo {
     // round1-4effect
     jemulCreateEffect: new ImageDataObject(601, 430, 40, 40, 4),
     jemulStarEffect: new ImageDataObject(762, 430, 60, 58, 10),
+
+    // round1-4
+    blackWhiteRing: new ImageDataObject(1400, 400, 100, 100, 6),
   }
 
   static donggramiEnemy = {

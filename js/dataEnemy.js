@@ -2838,7 +2838,8 @@ class JemulEnemyBossEye extends JemulEnemyData {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.jemulEnemy.jemulBossEye, 5)
     this.setWidthHeight(400, 240) // 크기 3배
-    this.setEnemyStat(40000 * 60 * 4, 8000, 0)
+    this.setEnemyStat(40000 * 60 * 1, 8000, 0)
+    // this.setEnemyStat(40000 * 60 * 4, 8000, 0)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulBossEye, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.noiseRed, this.width, this.height, 10))
     this.attackDelay = new DelayData(6)
     this.isPossibleExit = false
@@ -2908,11 +2909,18 @@ class JemulEnemyBossEye extends JemulEnemyData {
     }
   }
 
+  /**
+   * 레이저 설정 함수
+   * @param {number} index 인덱스 번호
+   * @param {number} x x좌표
+   * @param {number} y y좌표
+   * @param {number} width 너비
+   * @param {number} height 높이
+   * @param {number} degree 각도
+   * @param {string} color1 색1
+   * @param {string} color2 색2
+   */
   setLaser (index, x, y, width, height, degree = 0, color1 = 'black', color2 = 'black') {
-    if (typeof degree === 'string') {
-      throw new Error('각도 값에 문자열을 사용할 수 없습니다. 인자의 순서를 착각한거 아닌가요?')
-    }
-
     this.laserObject[index].x = x
     this.laserObject[index].y = y
     this.laserObject[index].width = width
@@ -2936,12 +2944,10 @@ class JemulEnemyBossEye extends JemulEnemyData {
   }
 
   process () {
-    if (this.state === this.STATE_STOP && this.hp <= 0) {
+    if (this.state === this.STATE_STOP && this.hp <= 100000) {
       // 특정 상태에서는 더이상 죽지 않음. (죽음 상태 제외)
       this.hp = 100000
-    }
-
-    if (this.state === this.STATE_DIE) {
+    } else if (this.state === this.STATE_DIE) {
       this.hp = 0
     }
 
@@ -3098,7 +3104,7 @@ class JemulEnemyBossEye extends JemulEnemyData {
     const LASER_HEIGHT = 100
     const MOVE_SIZE = 8
     const HEIGHT_SIZE = 1
-    const COLOR1 = '#0B486B' 
+    const COLOR1 = '#0B486B'
     const COLOR2 = '#F56217'
     const GW_HALF = graphicSystem.CANVAS_WIDTH_HALF
     const GH_HALF = graphicSystem.CANVAS_HEIGHT_HALF
@@ -3284,7 +3290,8 @@ class JemulEnemyBossEye extends JemulEnemyData {
         graphicSystem.setDegree(laser.degree)
       }
 
-      graphicSystem.gradientRect(laser.x, laser.y, laser.width, laser.height, [laser.sideColor, laser.sideColor, laser.middleColor])
+      graphicSystem.setAlpha(0.7) // 레이저 알파값 추가
+      graphicSystem.gradientRect(laser.x, laser.y, laser.width, laser.height, [laser.sideColor, laser.middleColor])
       graphicSystem.restoreTransform()
     }
   }
@@ -3448,6 +3455,35 @@ class JemulEnemyRedJewel extends JemulEnemyData {
     } 
 
     super.processMove()
+  }
+}
+
+class jemulEnemyBlackSpaceRing extends JemulEnemyData {
+  constructor () {
+    // 1-4 특수 적
+    super()
+    this.setAutoImageData(this.imageSrc, imageDataInfo.jemulEnemy.blackWhiteRing, 5)
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieJemulBlackSpaceRing)
+    this.setEnemyStat(20000, 300, 10)
+    this.setRandomMoveSpeed(2, 0)
+    this.degreeSpeed = Math.floor(Math.random() * 6)
+    this.isExitToReset = true
+    this.moveDelay = new DelayData(300)
+  }
+
+  processMove () {
+    super.processMove()
+
+    this.degree += this.degreeSpeed
+    if (this.moveDelay.check()) {
+      this.degreeSpeed = Math.floor(Math.random() * 6)
+      let targetSpeed = Math.floor(Math.random() * 2) + 1
+      if (Math.random() < 0.5) {
+        this.setMoveSpeed(0, targetSpeed)
+      } else {
+        this.setMoveSpeed(targetSpeed, 0)
+      }
+    }
   }
 }
 
@@ -15085,6 +15121,7 @@ dataExportEnemy.set(ID.enemy.jemulEnemy.redShip, JemulEnemyRedShip)
 dataExportEnemy.set(ID.enemy.jemulEnemy.redMeteorite, JemulEnemyRedMeteorite)
 dataExportEnemy.set(ID.enemy.jemulEnemy.redMeteoriteImmortal, JemulEnemyRedMeteoriteImmortal)
 dataExportEnemy.set(ID.enemy.jemulEnemy.rotateRocket, JemulEnemyRotateRocket)
+dataExportEnemy.set(ID.enemy.jemulEnemy.blackSpaceRing, jemulEnemyBlackSpaceRing)
 
 // donggramiEnemy / round 2-1 ~ 2-6
 dataExportEnemy.set(ID.enemy.donggramiEnemy.miniBlue, DonggramiEnemyMiniBlue)

@@ -86,6 +86,9 @@ export class soundSrc {
     enemyDieJemulRedJewel: './sound/enemyDieJemulRedJewel.wav',
     enemyDieJemulRedAir: './sound/enemyDieJemulRedAir.wav',
 
+    // 1-4
+    enemyDieJemulBlackSpaceRing: './sound/enemyDieJemulBlackSpaceRing.ogg',
+
     // donggrami (2-1)
     enemyDieDonggrami: './sound/enemyDieDonggrami.wav',
     enemyDieDonggramiLeaf: './sound/enemyDieDonggramiLeaf.wav',
@@ -270,6 +273,7 @@ export class soundSrc {
     r1_4_jemulstar: './sound/round1_4_jemulstar.ogg',
     r1_4_jemulstart: './sound/round1_4_jemulstart.ogg',
     r1_4_jemulrun: './sound/round1_4_jemulrun.ogg',
+    r1_4_jemulFail: './sound/round1_4_jemulFail.ogg',
     r2_3_voiceComplete: './sound/round2_3_voiceComplete.ogg',
     r2_3_voiceDraw: './sound/round2_3_voiceDraw.ogg',
     r2_3_voiceFight: './sound/round2_3_voiceFight.ogg',
@@ -369,5 +373,6 @@ export class soundSrc {
     music23_down_tower_core: './music/music23_down_tower_core.ogg',
     music24_down_tower_passage: './music/music24_down_tower_passage.ogg',
     music25_down_tower_outwall: './music/music25_down_tower_outwall.ogg',
+    music26_round1_4_blackSpace: './music/music26_round1_4_blackSpace.ogg',
   }
 }

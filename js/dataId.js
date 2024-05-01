@@ -152,6 +152,7 @@ export class ID {
       redAir: 20150,
       redShip: 20151,
       redJewel: 20152,
+      blackSpaceRing: 20153,
     },
     donggramiEnemy: {
       miniBlue: 20170,
