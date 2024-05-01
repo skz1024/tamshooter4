@@ -2838,8 +2838,7 @@ class JemulEnemyBossEye extends JemulEnemyData {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.jemulEnemy.jemulBossEye, 5)
     this.setWidthHeight(400, 240) // 크기 3배
-    this.setEnemyStat(40000 * 60 * 1, 8000, 0)
-    // this.setEnemyStat(40000 * 60 * 4, 8000, 0)
+    this.setEnemyStat(100000 * 60, 8000, 0) // 100000(dps) x 60초 = 6000000
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulBossEye, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.noiseRed, this.width, this.height, 10))
     this.attackDelay = new DelayData(6)
     this.isPossibleExit = false
