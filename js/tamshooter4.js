@@ -1098,9 +1098,9 @@ class RoundSelectSystem extends MenuSystem {
     const layer2Y = 40
     const layer3Y = 60
     digitalDisplay('ROUND: ' + stat.roundText, layer1X, layer1Y)
+    digitalDisplay('FINISH TIME: ' + stat.finishTime, layer2X, layer1Y)
     digitalDisplay('REQUIRE LEVEL: ' + stat.requireLevel, layer1X, layer2Y)
-    digitalDisplay('STANDARD POWER: ' + stat.standardPower, layer2X, layer1Y)
-    digitalDisplay('FINISH TIME: ' + stat.finishTime, layer2X, layer2Y)
+    digitalDisplay('REQUIRE ATTACK: ' + stat.requireAttack, layer2X, layer2Y)
     digitalDisplay('TITLE: ', layer1X, layer3Y)
     game.graphic.fillText(stat.roundName, layer1X + 90, layer3Y)
   }

@@ -109,8 +109,10 @@ export class userSystem {
   /** 경험치: 경험치 값은 addExp, setExp등을 통해 수정해주세요. */ static exp = 0
   /** 쉴드 */ static shield = 200
   /** 쉴드 최대치 */ static shieldMax = 200
-  /** 체력 (100% 값처럼 취급됨.) */ static hp = 100
-  /** 체력 최대치 */ static hpMax = 100
+  /** 쉴드 회복량 (매 프레임마다), 참고: 이 값을 60번 적용해야 실제 쉴드가 1 회복됩니다. */ static shieldRecovery = 100
+  /** 쉴드 회복의 기준값 (이 수치가 전부 채워져야 1 회복) */ static SHIELD_RECOVERY_BASE_VALUE = 6000
+  /** 체력 (100% 값처럼 취급됨.) */ static hp = 300
+  /** 체력 최대치 */ static hpMax = 300
   /** 데미지 경고 프레임 */ static damageWarningFrame = 0
   /** 레벨업 이펙트 프레임 */ static levelUpEffectFrame = 0
   
@@ -125,8 +127,11 @@ export class userSystem {
     ID.playerWeapon.multyshot, ID.playerWeapon.missile, ID.playerWeapon.laser, ID.playerWeapon.sidewave
   ]
   
+  /** 플레이어가 기본적으로 가지는 공격력 */
+  static BASE_ATTACK = 40000
+
   /** 공격력(초당), 참고: 이 값은 processStat함수를 실행하지 않으면 값이 갱신되지 않습니다. */ 
-  static attack = 10000
+  static attack = userSystem.BASE_ATTACK
 
   /** 유저 스탯 숨기기 */ static isHideUserStat = false
   /** 숨기기를 사용할 때, 적용되는 알파값, 완전히 숨겨지면 0.2로 취급 */ static hideUserStatAlpha = 1
@@ -144,9 +149,9 @@ export class userSystem {
    * 공격력 보너스 테이블
    */
   static attackBonusTable = [0, // lv 0
-    0, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, // lv 1 ~ 10
-    2400, 2800, 3200, 3600, 4000, 4300, 4500, 4700, 6000, 6000, // lv 11 ~ 20
-    5130, 5240, 5330, 5410, 5500, 5600, 5700, 5800, 6000, 6000, // lv 21 ~ 30
+    0, 900, 1800, 2700, 3600, 4500, 5600, 6700, 7800, 10000, // lv 1 ~ 10
+    11500, 13000, 14500, 16000, 17500, 20000, 22500, 25000, 27500, 30000, // lv 11 ~ 20
+    31100, 32200, 33300, 34400, 35500, 37000, 37700, 38400, 39100, 40000, // lv 21 ~ 30
   ]
 
   /** 총 플레이 타임 에 관한 정보 */
@@ -507,12 +512,20 @@ export class userSystem {
   }
 
   /**
-   * 플레이어의 공격력 스탯 재측정
+   * 플레이어의 스탯 재측정 (현재는 공격력만 변함)
    * 
    * 해당 함수를 사용하지 않으면, 공격력이 변경되어도 해당 공격력이 적용되지 않습니다.
    */
   static processStat () {
-    this.attack = 10000 + this.attackBonusTable[this.lv]
+    let equipmentAttack = 0
+    let slotAttack = 0
+    let statAttack = 0
+
+    // 공격력 결정
+    this.attack = this.BASE_ATTACK + this.attackBonusTable[this.lv] + equipmentAttack + slotAttack + statAttack
+
+    // 체력 결정 (아직 해당 코드는 없음, 추후 추가될 수 있음)
+    // 쉴드 결정 (아직 해당 코드는 없음, 추후 추가될 수 있음)
   }
 
   /** 플레이어의 스탯을 재측정하고, 해당 플레이어 정보를 리턴합니다. */
@@ -524,6 +537,7 @@ export class userSystem {
       hpMax: this.hpMax,
       shield: this.shieldMax,
       shieldMax: this.shieldMax,
+      shieldRecovery: this.shieldRecovery,
       lv: this.lv,
       skillList: this.skillList
     }

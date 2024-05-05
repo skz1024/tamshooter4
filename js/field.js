@@ -108,11 +108,28 @@ class PlayerObject extends FieldData {
     // 일부 변수의 설명은 init 부분에 적혀있습니다. (참고: init함수는 다른 이름으로도 (initSkill, initWeapon등...) 여러개 있음.)
     this.shield = 0
     this.shieldMax = 0
-    this.shieldRecovery = 0
+    /** 쉴드 회복 기준값 */ this.shieldRecovery = 0
+    /** 쉴드 회복값의 현재값 */ this.shieldRecoveryCurrentValue = 0
     this.attackDelay = new DelayData(0)
     this.attackDelayCount = 0
     this.debug = false
     this.dieAfterDelayCount = 0
+
+    /** hp를 100배로 하여 다시 계산하기 위한 특수값, hp 자체는 정수로 처리되므로, 
+     * 데미지 감소에 의한 소수점 단위를 처리하기 위함 */ 
+    this.hpCalcValue = 0
+   
+    /** shield를 100배로 하여 다시 계산하기 위한 특수갑 (hpClacValue랑 같은 개념) */
+    this.shieldCalcValue = 0
+
+    /** hpClacValue, shieldCalcValue의 기준 배율 */
+    this.CALCVALUE_MULTIPLE = 100
+
+    /** 플레이어가 해당 라운드를 플레이할 때 사용하는 기준 공격력 (이 값은 내부적인 연산이 포함되어 있으므로, set함수를 사용해서 수정해야함) */
+    this.attack = 0
+
+    /** 데미지 감소 비율 (아직은 사용하지 않음. ) */
+    this.damageReduce = 0
 
     this.damageEnimationCount = 0
     this.levelupEnimationCount = 0
@@ -124,6 +141,9 @@ class PlayerObject extends FieldData {
     this.autoMoveFrame = 0
     this.autoMoveX = 0
     this.autoMoveY = 0
+
+    /** 무기의 기준 공격력 */ this.attackWaepon = 0
+    /** 스킬의 기준 공격력 */ this.attackSkill = 0
 
     /** 기준 이동속도 값 */ this.BASE_SPEED = 8
 
@@ -140,7 +160,6 @@ class PlayerObject extends FieldData {
    * 따라서, 이 함수는 보통 roundStart에서 호출합니다.
    */
   init () {
-    this.shieldRecovery = 0
     this.attackDelay.count = 0
     this.attackDelayCount = 0
     this.debug = false
@@ -163,10 +182,16 @@ class PlayerObject extends FieldData {
     const getData = userSystem.getPlayerObjectData()
     this.currentLevel = getData.lv
     this.attack = getData.attack
+    this.setPlayerAttack(this.attack)
     this.hp = getData.hp
     this.hpMax = getData.hpMax
     this.shield = getData.shield
     this.shieldMax = getData.shieldMax
+    this.shieldRecovery = getData.shieldRecovery
+
+    // 쉴드, 체력 설정
+    this.hpCalcValue = this.hp * this.CALCVALUE_MULTIPLE
+    this.shieldCalcValue = this.shield * this.CALCVALUE_MULTIPLE
     
     this.initSkill()
     this.initWeapon()
@@ -174,6 +199,17 @@ class PlayerObject extends FieldData {
     /** 이동 가능 여부 (false일경우 조작 불가 - 적이나 라운드에서 사용할 수도 있음) 
      * 하지만 해제하지 못하면 영원히 이동할 수 없으므로 주의 바람.*/ 
     this.isMoveEnable = true
+  }
+
+  /** 
+   * 플레이어의 공격력을 설정 
+   * @param {number} baseAttack 기준 공격력
+   */
+  setPlayerAttack (baseAttack) {
+    const WEAPON_VALUE = 0.28
+    const SKILL_VALUE = 0.18
+    this.attackWaepon = Math.floor(baseAttack * WEAPON_VALUE)
+    this.attackSkill = Math.floor(baseAttack * SKILL_VALUE)
   }
 
   /**
@@ -274,34 +310,42 @@ class PlayerObject extends FieldData {
 
   /**
    * 플레이어가 데미지를 받으면 사운드를 출력합니다.
-   * @param {number} shieldDamage 쉴드 데미지
-   * @param {number} hpDamage 체력 데미지
-   * @param {boolean} isDefaultSound 기본 사운드 사용? 값이 false면 데미지 받아도 소리가 안남
+   * @param {number} shieldDamageClac 쉴드 데미지
+   * @param {number} hpDamageCalc 체력 데미지
+   * @param {string} damageSoundSrc 기본 사운드 사용? 값이 false면 데미지 받아도 소리가 안남
    */
-  damageSoundPlay (shieldDamage = 0, hpDamage = 0, isDefaultSound = true) {
-    if (!isDefaultSound) return
+  damageSoundPlay (shieldDamageClac = 0, hpDamageCalc = 0, damageSoundSrc = '') {
+    // 임의 사운드가 지정된 경우, 다른 사운드가 출력됨
+    if (damageSoundSrc !== '') {
+      game.sound.play(damageSoundSrc)
+      return
+    }
 
-    const LOW_DAMAGE = 1
-    const MIDDLE_DAMAGE = 15
-    const HIGH_DAMAGE = 30
-    const HP_LOW_DAMAGE = 1
-    const HP_MIDDLE_DAMAGE = 7
-    const HP_HIGH_DAMAGE = 15
+    // 데미지는 현재의 쉴드 상태에 따라 소리가 조금 달라짐, 소리의 기준은 쉴드 최대치값임
+    // 쉴드가 감소할때 쉴드량의 6% 이하(200기준 12데미지), 
+    // 6% 이상 12% 이하(200기준 24데미지), 12% 초과(200기준 24데미지 초과) 때마다 소리가 다름
+    // 체력이 같이 감소한경우,
+    // 4% 이하, 8% 이하 (8 ~ 16데미지), 8% 초과(17데미지) 으로만 구분됨
 
-    if (hpDamage >= 1) {
-      if (hpDamage >= HP_LOW_DAMAGE && hpDamage < HP_MIDDLE_DAMAGE) {
+    const LOW_DAMAGE = (this.shieldMax * this.CALCVALUE_MULTIPLE) * 0.06
+    const MIDDLE_DAMAGE = (this.shieldMax * this.CALCVALUE_MULTIPLE) * 0.12
+    const HP_LOW_DAMAGE = (this.shieldMax * this.CALCVALUE_MULTIPLE) * 0.04
+    const HP_MIDDLE_DAMAGE = (this.shieldMax * this.CALCVALUE_MULTIPLE) * 0.08
+
+    if (hpDamageCalc >= 1) {
+      if (hpDamageCalc <= HP_LOW_DAMAGE) {
         game.sound.play(soundSrc.system.systemPlayerDamage)
-      } else if (hpDamage >= HP_MIDDLE_DAMAGE && hpDamage < HP_HIGH_DAMAGE) {
+      } else if (hpDamageCalc <= HP_MIDDLE_DAMAGE) {
         game.sound.play(soundSrc.system.systemPlayerDamageBig)
-      } else if (hpDamage >= HP_HIGH_DAMAGE) {
+      } else {
         game.sound.play(soundSrc.system.systemPlayerDamageDanger)
       }
     } else {
-      if (shieldDamage >= LOW_DAMAGE && shieldDamage < MIDDLE_DAMAGE) {
+      if (shieldDamageClac <= LOW_DAMAGE) {
         game.sound.play(soundSrc.system.systemPlayerDamage)
-      } else if (shieldDamage >= MIDDLE_DAMAGE && shieldDamage < HIGH_DAMAGE) {
+      } else if (shieldDamageClac <= MIDDLE_DAMAGE) {
         game.sound.play(soundSrc.system.systemPlayerDamageBig)
-      } else if (shieldDamage >= HIGH_DAMAGE) {
+      } else {
         game.sound.play(soundSrc.system.systemPlayerDamageDanger)
       }
     }
@@ -330,31 +374,69 @@ class PlayerObject extends FieldData {
    */
   addDamage (damage = 0) {
     if (this.isDied || damage === 0) return
+    let result = this.damageCalcuration(damage)
 
-    let hpDamage = 0
-    let shieldDamage = 0
+    this.damageSoundPlay(result.shield, result.hp)
+    this.damageEnimationSet(result.shield, result.hp)
+  }
 
-    if (this.shield >= damage) {
-      shieldDamage = damage
-      this.shield -= damage
-    } else if (this.shield < damage) {
-      if (this.shield > 0) {
-        shieldDamage = this.shield
-        hpDamage = Math.floor(damage - shieldDamage)
-        this.shield = 0
-        this.hp -= hpDamage
+  /**
+   * 플레이어가 받은 데미지를 추가하고 임의의 사운드를 같이 재생합니다. (플레이어가 죽거나 데미지가 없으면 무효)
+   * @param {number} damage 데미지 값 (정수)
+   * @param {string} soundSrc 사운드 경로
+   */
+  addDamageWithSound (damage, soundSrc) {
+    if (this.isDied || damage === 0) return
+    let result = this.damageCalcuration(damage)
+
+    this.damageSoundPlay(result.shield, result.hp, soundSrc)
+    this.damageEnimationSet(result.shield, result.hp)
+  }
+
+  /**
+   * 플레이어가 받은 데미지를 연산함 그리고 총 받은 데미지를 리턴 
+   * 
+   * (이 함수를 사용하면 유저의 실제 shield와 hp가 변경됩니다.)
+   * 
+   * (이 함수는 외부에서 사용할 수 없음)
+   * @param {number} damage 
+   */
+  damageCalcuration (damage) {
+    let damageCalcValue = damage * this.CALCVALUE_MULTIPLE
+    let hpClacDamage = 0
+    let shieldClacDamage = 0
+
+    if (this.shieldCalcValue > damageCalcValue) {
+      // 쉴드가 데미지보다 많을 때
+      this.shieldCalcValue -= damageCalcValue
+      shieldClacDamage = damageCalcValue
+    } else if (this.shieldCalcValue < damageCalcValue) {
+      // 쉴드가 데미지보다 적을 때
+      if (this.shieldCalcValue > 0) {
+        // 쉴드가 0 초과인 경우
+        shieldClacDamage = this.shieldCalcValue
+        hpClacDamage = damageCalcValue - shieldClacDamage
+        this.shieldCalcValue = 0
+        this.hpCalcValue -= hpClacDamage
       } else {
-        hpDamage = Math.floor(damage / 2)
-
-        // 만약 쉴드가 없는 상태에서 데미지를 받았다면 최소 1체력이 감소합니다.
-        // 이것은 1데미지로는 체력이 감소하지 않기 때문에 보정치를 넣은것입니다.
-        if (hpDamage <= 0) hpDamage = 1
-        this.hp -= hpDamage
+        // 쉴드가 0인경우
+        hpClacDamage = damageCalcValue
+        this.hpCalcValue -= damageCalcValue
       }
     }
 
-    this.damageSoundPlay(shieldDamage, hpDamage)
-    this.damageEnimationSet(shieldDamage, hpDamage)
+    // hp, shield 재설정
+    this.hp = Math.floor(this.hpCalcValue / 100)
+    this.shield = Math.floor(this.shieldCalcValue / 100)
+
+    // hpClac가 100미만일때, hp가 1로 표시되도록 처리
+    if (this.hp <= 0 && this.hpCalcValue >= 1) this.hp = 1
+
+    // 총 데미지값 리턴
+    return {
+      hp: hpClacDamage,
+      shield: shieldClacDamage
+    }
   }
 
   /** 플레이어에게 경험치를 추가합니다. */
@@ -370,7 +452,7 @@ class PlayerObject extends FieldData {
       this.processAttack()
       this.processSubAttack()
       this.processSkill()
-      this.processShield()
+      this.processHpShield()
       this.processDamage()
       this.processLevelupCheck()
       this.processMove()
@@ -451,14 +533,15 @@ class PlayerObject extends FieldData {
     }
   }
 
-  processShield () {
-    const SHIELD_RECOVERY_POINT = 6000
-    this.shieldRecovery += 100
+  /** hp와 쉴드를 처리함 (쉴드 회복도 여기서 처리) */
+  processHpShield () {
+    const SHIELD_RECOVERY_BASE_VALUE = 6000
+    this.shieldRecoveryCurrentValue += this.shieldRecovery
 
     // 쉴드 회복 처리
-    if (this.shieldRecovery >= SHIELD_RECOVERY_POINT) {
-      this.shield++
-      this.shieldRecovery -= SHIELD_RECOVERY_POINT
+    if (this.shieldRecoveryCurrentValue >= SHIELD_RECOVERY_BASE_VALUE) {
+      this.shieldCalcValue += this.CALCVALUE_MULTIPLE
+      this.shieldRecoveryCurrentValue -= SHIELD_RECOVERY_BASE_VALUE
     }
 
     // 쉴드 최대치 초과 금지
@@ -509,7 +592,7 @@ class PlayerObject extends FieldData {
 
     currentSkill.delayCount++ // 스킬 딜레이카운트 증가
     if (currentSkill.delayCount >= currentSkill.skill.delay) { // 딜레이카운트카 스킬 딜레이를 넘어가면 무기 생성
-      currentSkill.skill.create(this.attack, this.centerX, this.centerY)
+      currentSkill.skill.create(this.attackSkill, this.centerX, this.centerY)
       currentSkill.delayCount -= currentSkill.skill.delay // 스킬 딜레이카운트 감소
       currentSkill.repeatCount-- // 반복횟수 1회 감소
     }
@@ -607,21 +690,22 @@ class PlayerObject extends FieldData {
 
     currentWeapon.delayCount++
     if (currentWeapon.delayCount >= currentWeapon.weapon.delay) {
-      currentWeapon.weapon.create(this.attack, this.centerX, this.centerY)
+      currentWeapon.weapon.create(this.attackWaepon, this.centerX, this.centerY)
       currentWeapon.delayCount -= currentWeapon.weapon.delay
     }
   }
 
   processSubAttack () {
+    return // 서브웨폰은 제거됨
     // 무기를 사용하지 않는 상태일경우, 서브웨폰도 사용하지 않습니다.
-    if (this.weaponSlot[this.weaponSlotNumber].id === ID.playerWeapon.unused) return
-    if (this.subWeaponSlot.weapon == null) return
+    // if (this.weaponSlot[this.weaponSlotNumber].id === ID.playerWeapon.unused) return
+    // if (this.subWeaponSlot.weapon == null) return
 
-    this.subWeaponSlot.delayCount++
-    if (this.subWeaponSlot.delayCount >= this.subWeaponSlot.weapon.delay) {
-      this.subWeaponSlot.weapon.create(this.attack, this.centerX, this.centerY)
-      this.subWeaponSlot.delayCount -= this.subWeaponSlot.weapon.delay
-    }
+    // this.subWeaponSlot.delayCount++
+    // if (this.subWeaponSlot.delayCount >= this.subWeaponSlot.weapon.delay) {
+    //   this.subWeaponSlot.weapon.create(this.attackWaepon, this.centerX, this.centerY)
+    //   this.subWeaponSlot.delayCount -= this.subWeaponSlot.weapon.delay
+    // }
   }
 
   display () {
@@ -663,6 +747,8 @@ class PlayerObject extends FieldData {
       hp: this.hp,
       shield: this.shield,
       shieldMax: this.shieldMax,
+      hpCalcValue: this.hpCalcValue,
+      shieldCalcValue: this.shieldCalcValue,
 
       // 딜레이
       attackDelayCount: this.attackDelayCount,
@@ -735,6 +821,9 @@ class PlayerObject extends FieldData {
         this[key] = saveData[key]
       }
     }
+
+    // 로드 후, 유저 스탯을 다시 갱신함 (hpCalc를 간접 계산하는 것 때문에 바로 갱신이 안되어 강제로 갱신함)
+    this.processSendUserStat()
   }
 
   /**

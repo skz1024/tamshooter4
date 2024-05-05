@@ -79,14 +79,14 @@ export class EnemyData extends FieldData {
     this.dieEffect = null
 
     /**
-     * 기준 전투력 (해당 적 계열에 대해서)
+     * 적 hp에 대한 기준되는 초당 dps (해당 적 계열에 대해서)
      * 
      * 이 값은, 적 개별로 설정하지 않고, 각 그룹별로 묶어서 처리합니다.
      * 
-     * 그러니까, spaceEnemy 인경우 해당 그룹의 적은 baseCp 가 40000으로 지정되고, 
+     * 그러니까, spaceEnemy 인경우 해당 그룹의 적은 baseDps 가 40000으로 지정되고, 
      * 이렇게 한 후 적 스탯을 hp 비율만큼 자동 설정해서 수동으로 설정하는 불편함을 제거할 목적으로 만든 스탯입니다.
      */
-    this._baseCp = 40000
+    this._baseDps = 40000
 
     /**
      * 적을 죽였을 때 얻는 점수의 비중을 조절하는 변수 (단 setEnemyByCpStat을 사용한 경우에만 이 값에 영향을 받음)
@@ -190,7 +190,7 @@ export class EnemyData extends FieldData {
    * @param {number} hpDivScore hp를 나누는 점수량의 기준, 기본값은 100 (즉, 100당 1점이란 뜻) 이 숫자가 커지면 점수량이 낮아집니다.
    */
   setEnemyByCpStat (hpPercent = 10, attack = 0, hpDivScore = this.baseDivScore) {
-    let hpValue = Math.floor((this._baseCp * hpPercent) / 100)
+    let hpValue = Math.floor((this._baseDps * hpPercent) / 100)
     let scoreValue = Math.floor(hpValue / hpDivScore)
 
     this.hp = hpValue
@@ -791,7 +791,7 @@ class SpaceEnemyData extends EnemyData {
   constructor () {
     super()
     this.imageSrc = imageSrc.enemy.spaceEnemy
-    this._baseCp = 40000
+    this._baseDps = 40000
   }
 }
 
@@ -1439,7 +1439,7 @@ class SpaceEnemyDonggrami extends SpaceEnemyData {
 class MeteoriteEnemyData extends EnemyData {
   constructor () {
     super()
-    this._baseCp = 40000
+    this._baseDps = 40000
     this.imageSrc = imageSrc.enemy.meteoriteEnemy
   }
 }
@@ -2156,7 +2156,7 @@ class MeteoriteEnemyRed extends MeteoriteEnemyData {
 class JemulEnemyData extends EnemyData {
   constructor () {
     super()
-    this._baseCp = 40000
+    this._baseDps = 40000
     this.imageSrc = imageSrc.enemy.jemulEnemy
   }
 }
@@ -3490,7 +3490,7 @@ class jemulEnemyBlackSpaceRing extends JemulEnemyData {
 class DonggramiEnemy extends EnemyData {
   constructor () {
     super()
-    this._baseCp = 50000
+    this._baseDps = 50000
     this.imageSrc = imageSrc.enemy.donggramiEnemy
     this.color = ''
     this.colorNumber = 0
@@ -5808,7 +5808,7 @@ class DonggramiEnemyTalkRuinR2_6 extends DonggramiEnemyTalk {
 class IntruderEnemy extends EnemyData {
   constructor () {
     super()
-    this._baseCp = 50000
+    this._baseDps = 50000
     this.baseDivScore = 200
     this.imageSrc = imageSrc.enemy.intruderEnemy
     this.isExitToReset = true
@@ -7042,7 +7042,7 @@ class IntruderEnemyTowerLaserMini extends IntruderEnemy {
 class TowerEnemy extends EnemyData {
   constructor () {
     super()
-    this._baseCp = 70000
+    this._baseDps = 70000
     this.isExitToReset = true
     this.baseDivScore = 150
   }

@@ -127,23 +127,23 @@ export class StatRound {
    * @param {string} roundText 라운드 값을 표시할 텍스트, 예시: 1-1, 한글 사용 금지, 일부 기호와 알파벳만 사용가능, 최대 5글자까지 지원(검사하진 않음...)
    * @param {string} roundName 라운드의 이름
    * @param {number} requireLevel 해당 라운드를 플레이하기 위한 최소 레벨 (해당 레벨 이상만 플레이 가능)
-   * @param {number} standardPower 기준 파워(전투력) 해당 라운드에서 얼마만큼의 전투력을 기준으로 적을 배치했는지에 대한 값
+   * @param {number} requireAttack 기준 파워(전투력) 해당 라운드에서 얼마만큼의 전투력을 기준으로 적을 배치했는지에 대한 값
    * @param {number} finishTime 종료 시간(단위: 초), 해당 라운드를 클리어 하기 위해 사용해야 하는 시간 (단, 이것은 기준 시간이며, 일부 라운드는 특정 상황이 되면 강제로 클리어 할 수 있음.)
    * @param {number} clearBonus 
    * @param {string} roundInfo 
    */
-  constructor (iconNumber = -1, roundText = 'NULL', roundName = 'NULL', requireLevel = 0, standardPower = 0, finishTime = 1, clearBonus = 0, roundInfo = '') {
+  constructor (iconNumber = -1, roundText = 'NULL', roundName = 'NULL', requireLevel = 0, requireAttack = 0, finishTime = 1, clearBonus = 0, roundInfo = '') {
     this.iconNumber = iconNumber
     this.roundText = roundText
     this.roundName = roundName
     this.requireLevel = requireLevel
-    this.standardPower = standardPower
+    this.requireAttack = requireAttack
     this.finishTime = finishTime
     this.clearBonus = clearBonus
     this.roundInfo = roundInfo
 
     // 추가적인 옵션 자동 설정
-    this.minPower = Math.floor(standardPower * 0.8)
+    this.minPower = Math.floor(requireAttack * 0.8)
   }
 }
 

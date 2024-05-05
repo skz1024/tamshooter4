@@ -1349,7 +1349,7 @@ class BaseStat extends StatRound {
     /** (해당 라운드를 플레이 하기 위한) 필요 레벨, 필요 레벨 미만은 입장 불가 */ this.roundName = stat.roundName
     /** (해당 라운드를 원할하게 플레이 할 수 있는) 권장 공격력, 입장은 상관 없음 */ this.roundText = stat.roundText
     /** 라운드 값을 텍스트로 표시 (예: 1-1), 영어와 숫자만 사용 가능 */ this.requireLevel = stat.requireLevel
-    /** 라운드 이름, text.js에서 값을 가져와서 입력하세요. */ this.standardPower = stat.standardPower
+    /** 라운드 이름, text.js에서 값을 가져와서 입력하세요. */ this.requireAttack = stat.requireAttack
     /** 라운드 종료 시간(이 시간이 되면 클리어), 단위: 초 */ this.finishTime = stat.finishTime
     /** 클리어 보너스 점수 */ this.clearBonus = stat.clearBonus
   }
@@ -1366,7 +1366,7 @@ class BaseStat extends StatRound {
     this.roundName = stat.roundName
     this.roundText = stat.roundText
     this.requireLevel = stat.requireLevel
-    this.standardPower = stat.standardPower
+    this.requireAttack = stat.requireAttack
     this.finishTime = stat.finishTime
     this.clearBonus = stat.clearBonus
   }
