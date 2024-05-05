@@ -96,6 +96,9 @@ export class EnemyData extends FieldData {
      * 예시: hp 10000 / baseDivScore 100 -> 해당 적을 죽이면 10000 / 100 = 100점의 점수를 얻음 
      */
     this.baseDivScore = 100
+
+    /** 데미지 sound (이 값이 있을경우, 적이 플레이어랑 충돌했을 때 다른 사운드를 재생할 수 있음.) */
+    this.collisionSoundSrc = ''
   }
 
   /**
@@ -422,7 +425,8 @@ export class EnemyData extends FieldData {
       for (let i = 0; i < enemyArea.length; i++) {
         if (this.degree === 0 && collision(enemyArea[i], player)
          || this.degree !== 0 && collisionClass.collisionOBB(enemyArea[i], player)) {
-          player.addDamage(this.attack)
+          // 충돌 사운드가 없으면 기본함수를 사용하고, 충돌사운드가 있으면 따로 사운드를 출력시킴
+          this.collisionSoundSrc === '' ? player.addDamage(this.attack) : player.addDamageWithSound(this.attack, this.collisionSoundSrc)
           this.collisionDelay.count = 0 // 플레이어랑 충돌하면 충돌 딜레이카운트를 0으로 만듬
           this.processPlayerCollisionSuccessAfter() // 충돌 성공 이후 로직 처리
           break // 루프 종료 (여러 충돌객체중 하나만 충돌해야함, 중복 데미지 없음)
@@ -2303,22 +2307,7 @@ class JemulEnemyHellDrill extends JemulEnemyData {
     this.setRandomMoveSpeed(4, 2)
     this.isExitToReset = true
     this.state = ''
-  }
-
-  processPlayerCollision () {
-    if (this.collisionDelay.check(false)) {
-      const player = fieldState.getPlayerObject()
-      const enemy = this.getCollisionArea() // 적은 따로 충돌 영역을 얻습니다.
-
-      for (let i = 0; i < enemy.length; i++) {
-        if (collision(enemy[i], player)) {
-          soundSystem.play(soundSrc.enemyAttack.jemulHellDrillAttack) // 공격 성공시 사운드 출력
-          player.addDamage(this.attack)
-          this.collisionDelay.count = 0 // 플레이어랑 충돌하면 충돌 딜레이카운트를 0으로 만듬
-          return
-        }
-      }
-    }
+    this.collisionSoundSrc = soundSrc.enemyAttack.jemulHellDrillAttack
   }
 
   processMove () {
@@ -8719,7 +8708,6 @@ class TowerEnemyBarTemplete extends TowerEnemy {
     }
 
     this.setColor() // 자동 색 설정
-    this.collisionSoundSrc = ''
 
     // 랜덤한 죽음 사운드 결정
     const dieSoundList = TowerEnemyBarTemplete.dieSoundList
@@ -8735,11 +8723,6 @@ class TowerEnemyBarTemplete extends TowerEnemy {
     // 밑에서 등장할 수 있도록 좌표 조정
     this.x = Math.random() * (graphicSystem.CANVAS_WIDTH - this.width)
     this.y = graphicSystem.CANVAS_HEIGHT
-  }
-
-  processPlayerCollisionSuccessAfter () {
-    // 충돌 사운드 재생
-    soundSystem.play(this.collisionSoundSrc)
   }
 
   /**
@@ -9394,7 +9377,7 @@ class TowerEnemyGroup2OctaLight extends TowerEnemyGroup2OctaShadow {
   constructor () { super(); this.setAutoFigure(this.subTypeList.OCTA_LIGHT) }
 }
 
-class TowerEnemyGroup2BigBar extends TowerEnemy {
+class TowerEnemyGroup2BossBar extends TowerEnemy {
   constructor () {
     super()
     /** 최대 top 위치 px */ this.MAX_TOP = 0
@@ -9408,6 +9391,8 @@ class TowerEnemyGroup2BigBar extends TowerEnemy {
 
     this.customBullet = new CustomEnemyBullet(imageSrc.enemy.towerEnemyGroup2, imageDataInfo.towerEnemyGroup2.hellpaAttack, 10, 0, 2)
     this.customDieEffect = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.diamondBlue, 40, 40, 2)
+
+    this.collisionSoundSrc = soundSrc.enemyAttack.towerBossBarCollision
 
     if (this.dieEffect) {
       this.dieEffect.setWidthHeight(this.width, this.height)
@@ -9425,7 +9410,6 @@ class TowerEnemyGroup2BigBar extends TowerEnemy {
   }
 
   processPlayerCollisionSuccessAfter () {
-    soundSystem.play(soundSrc.enemyAttack.towerBossBarCollision)
     let player = fieldState.getPlayerObject()
     player.setAutoMove(Math.random() * graphicSystem.CANVAS_WIDTH, 0, 15)
   }
@@ -15230,7 +15214,7 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup2.octaShadow, TowerEnemyGroup2OctaSh
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.octaLight, TowerEnemyGroup2OctaLight)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.hexaShadow, TowerEnemyGroup2HexaShadow)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup2.hexaLight, TowerEnemyGroup2HexaLight)
-dataExportEnemy.set(ID.enemy.towerEnemyGroup2.bigBar, TowerEnemyGroup2BigBar)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup2.bossBar, TowerEnemyGroup2BossBar)
 
 // towerEnemyGroup3 / round 3-3 plus
 dataExportEnemy.set(ID.enemy.towerEnemyGroup3.core8, TowerEnemyGroup3Core8)

@@ -261,7 +261,7 @@ export class ID {
       hexaLight: 20294,
       octaShadow: 20295,
       octaLight: 20296,
-      bigBar: 20297,
+      bossBar: 20297,
     },
     towerEnemyGroup3: {
       core8: 20300,

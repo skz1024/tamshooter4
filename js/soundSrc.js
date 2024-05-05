@@ -212,7 +212,6 @@ export class soundSrc {
     towerHellbaAttack: './sound/enemyTowerHellbaAttack.ogg',
     towerAttackRocketBomb: './sound/enemyTowerAttackRocketBomb.ogg',
     towerLightningAttack: './sound/enemyTowerLightningAttack.ogg',
-    towerBossBarAttack: './sound/enemyTowerBossBarAttack.ogg',
     towerJagijangAttack: './sound/enemyTowerJagijangAttack.ogg',
     towerHellpaAttack: './sound/enemyTowerHellpaAttack.ogg',
     towerBarAttack1: './sound/enemyTowerBarAttack1.ogg',

@@ -1283,7 +1283,7 @@ export class RoundPackLoad {
       soundSrc.enemyAttack.towerBarAttack1,
       soundSrc.enemyAttack.towerBarAttack2,
       soundSrc.enemyAttack.towerBarAttack3,
-      soundSrc.enemyAttack.towerBossBarAttack,
+      soundSrc.enemyAttack.towerBossBarCollision,
       soundSrc.enemyAttack.towerBossDasuCoreArrangeMent,
       soundSrc.enemyAttack.towerBossDasuCoreAttack,
       soundSrc.enemyAttack.towerBossDasuCoreReflect,
@@ -5204,11 +5204,11 @@ class Round2_3 extends RoundData {
 
     // 좌우로만 이동 가능 (버튼 입력을 받아 간접적으로 처리합니다.)
     if (game.control.getButtonDown(game.control.buttonIndex.LEFT)) {
-      playerP.x -= playerP.moveSpeedX
+      playerP.x -= playerP.BASE_SPEED
     }
     
     if (game.control.getButtonDown(game.control.buttonIndex.RIGHT)) {
-      playerP.x += playerP.moveSpeedX
+      playerP.x += playerP.BASE_SPEED
     }
   }
 
@@ -9377,7 +9377,7 @@ class Round3Templete extends RoundData {
     this.bossSprite = new Round3TempleteBossSprite()
     this.bossTextList = {
       bossCrazyRobot: 'CRAZY ROBOT',
-      bossBigBar: 'ENEMY BAR',
+      bossBar: 'BOSS BAR',
       bossDasuCore: 'DASU CORE',
       bossNokgasi: 'NOKGASI',
       bossAnti: 'ANTI JEMUL',
@@ -10001,14 +10001,14 @@ class Round3_2 extends Round3Templete {
     if (this.timeCheckFrame(pTime + 0)) {
       this.sound.musicFadeOut(120) // 음악 페이드 아웃
     } else if (this.timeCheckFrame(pTime + 3)) {
-      this.field.createEnemy(ID.enemy.towerEnemyGroup2.bigBar, 0, graphicSystem.CANVAS_HEIGHT) // 스프라이트 방식의 등장이 없으므로 적을 직접 생성
+      this.field.createEnemy(ID.enemy.towerEnemyGroup2.bossBar, 0, graphicSystem.CANVAS_HEIGHT) // 스프라이트 방식의 등장이 없으므로 적을 직접 생성
       this.sound.currentMusicSrc = soundSrc.music.music17_down_tower_boss
       this.sound.musicPlay()
     }
 
-    this.timePauseWithEnemyCount(pTime + 5)
-    if (this.timeCheckInterval(pTime + 5)) {
-      let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup2.bigBar)
+    this.timePauseWithEnemyCount(pTime + 6)
+    if (this.timeCheckInterval(pTime + 6)) {
+      let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup2.bossBar)
       if (enemy != null && enemy.isDied) {
         fieldState.allEnemyBulletDelete()
         this.sound.musicStop()
@@ -10021,7 +10021,7 @@ class Round3_2 extends Round3Templete {
 
     // 보스 체력 표시
     if (this.phase.getCurrentPhase() === 7) {
-      this.bossHpMeter(ID.enemy.towerEnemyGroup2.bigBar, this.bossTextList.bossBigBar + ' HP: ')
+      this.bossHpMeter(ID.enemy.towerEnemyGroup2.bossBar, this.bossTextList.bossBar + ' HP: ')
     }
   }
 }
@@ -12593,9 +12593,11 @@ class Round3_9 extends Round3Templete {
     this.bgLayer.setBackgroundImage(imageSrc.round.round3_9_level4, BGWIDTH * 10, BGHEIGHT * 0)
     this.bgLayer.setBackgroundImage(imageSrc.round.round3_9_level4, BGWIDTH * 10, BGHEIGHT * 1)
     // final
+    let skyColor = Round2_1.getMaeulGradientColor()
     this.bgLayer.setBackgroundImage(imageSrc.round.round3_9_finishStart, BGWIDTH * 11, BGHEIGHT * 0)
     this.bgLayer.setBackgroundImage(imageSrc.round.round3_9_finishStart, BGWIDTH * 12, BGHEIGHT * 0)
     this.bgLayer.setBackgroundImage(imageSrc.round.round3_10_outside1, BGWIDTH * 13, BGHEIGHT * 0) // 3-10 배경 연결을 위한 배경
+    this.bgLayer.setBackgroundGadient(skyColor[1], skyColor[1], BGWIDTH * 13, BGHEIGHT * 0, BGWIDTH, BGHEIGHT)
     this.bgLayer.setBackgroundImage(imageSrc.round.round3_9_finishArea, BGWIDTH * 13, BGHEIGHT * 0)
 
     this.bgLayer.setBackgroundScroolLoop(false, true)

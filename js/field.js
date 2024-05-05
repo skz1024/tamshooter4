@@ -190,8 +190,8 @@ class PlayerObject extends FieldData {
     this.shieldRecovery = getData.shieldRecovery
 
     // 쉴드, 체력 설정
-    this.hpCalcValue = this.hp * this.CALCVALUE_MULTIPLE
-    this.shieldCalcValue = this.shield * this.CALCVALUE_MULTIPLE
+    this.hpCalcValue = this.hpMax * this.CALCVALUE_MULTIPLE
+    this.shieldCalcValue = this.shieldMax * this.CALCVALUE_MULTIPLE
     
     this.initSkill()
     this.initWeapon()
@@ -357,7 +357,8 @@ class PlayerObject extends FieldData {
    * @param {number} hpDamage 체력 데미지
    */
   damageEnimationSet (shieldDamage = 0, hpDamage = 0) {
-    let damageFrame = (shieldDamage * 2) + (hpDamage * 4)
+    let damagePercent = (shieldDamage + hpDamage) / ((this.hpMax + this.shieldMax) * this.CALCVALUE_MULTIPLE) * 100
+    let damageFrame = Math.floor(damagePercent * 12)
     if (damageFrame > 180) {
       damageFrame = 180
     } else if (damageFrame < 10) {
@@ -424,10 +425,6 @@ class PlayerObject extends FieldData {
         this.hpCalcValue -= damageCalcValue
       }
     }
-
-    // hp, shield 재설정
-    this.hp = Math.floor(this.hpCalcValue / 100)
-    this.shield = Math.floor(this.shieldCalcValue / 100)
 
     // hpClac가 100미만일때, hp가 1로 표시되도록 처리
     if (this.hp <= 0 && this.hpCalcValue >= 1) this.hp = 1
@@ -535,6 +532,10 @@ class PlayerObject extends FieldData {
 
   /** hp와 쉴드를 처리함 (쉴드 회복도 여기서 처리) */
   processHpShield () {
+    // hp, shield 재설정
+    this.hp = Math.floor(this.hpCalcValue / 100)
+    this.shield = Math.floor(this.shieldCalcValue / 100)
+
     const SHIELD_RECOVERY_BASE_VALUE = 6000
     this.shieldRecoveryCurrentValue += this.shieldRecovery
 
@@ -547,6 +548,10 @@ class PlayerObject extends FieldData {
     // 쉴드 최대치 초과 금지
     if (this.shield > this.shieldMax) {
       this.shield = this.shieldMax
+    }
+
+    if (this.shieldCalcValue > this.shieldMax * this.CALCVALUE_MULTIPLE) {
+      this.shieldCalcValue = this.shieldMax * this.CALCVALUE_MULTIPLE
     }
   }
 
