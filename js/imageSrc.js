@@ -993,13 +993,15 @@ export class imageDataInfo {
   }
 
   static menuList = {
-    roundSelect: {x: 0, y: 0, width: 400, height: 50, frame: 1},
-    weaponSelect: {x: 0, y: 50, width: 400, height: 50, frame: 1},
-    skillSelect: {x: 0, y: 100, width: 400, height: 50, frame: 1},
-    upgrade: {x: 0, y: 150, width: 400, height: 50, frame: 1},
-    option: {x: 0, y: 200, width: 400, height: 50, frame: 1},
-    data: {x: 0, y: 250, width: 400, height: 50, frame: 1},
-    etc: {x: 0, y: 300, width: 400, height: 50, frame: 1}
+    roundSelect: {x: 0, y: 0, width: 400, height: 40, frame: 1},
+    weaponSelect: {x: 0, y: 40, width: 400, height: 40, frame: 1},
+    skillSelect: {x: 0, y: 80, width: 400, height: 40, frame: 1},
+    upgrade: {x: 0, y: 120, width: 400, height: 40, frame: 1},
+    inventory: new ImageDataObject(0, 160, 400, 40),
+    story: new ImageDataObject(0, 200, 400, 40),
+    option: {x: 0, y: 240, width: 400, height: 40, frame: 1},
+    data: {x: 0, y: 280, width: 400, height: 40, frame: 1},
+    etc: {x: 0, y: 320, width: 400, height: 40, frame: 1}
   }
 
   static system = {

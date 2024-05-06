@@ -115,12 +115,58 @@ export class userSystem {
   /** 체력 최대치 */ static hpMax = 300
   /** 데미지 경고 프레임 */ static damageWarningFrame = 0
   /** 레벨업 이펙트 프레임 */ static levelUpEffectFrame = 0
+  /** 골드 (플레이어의 자원) */ static gold = 0
   
   /** 스킬 리스트(기본값) (총 8개, 이중 0 ~ 3번은 A슬롯, 4 ~ 7번은 B슬롯) */ 
   static skillList = [
     ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.sidewave, ID.playerSkill.critcalChaser,
     ID.playerSkill.hyperBall, ID.playerSkill.sword, ID.playerSkill.santansu, ID.playerSkill.hanjumoek
   ]
+
+  static equipment = {
+    id: 0,
+    upgradeLevel: 0,
+    totalUsingCost: 0,
+
+    // cache data
+    attack: 0,
+  }
+
+  /** @type {Map<number, number>} */
+  static inventory = new Map()
+
+  /** 
+   * 인벤토리에 아이템 추가 
+   * @param {number} id 아이템의 id
+   * @param {number} [count=1] 추가하는 개수 (참고: 아이템의 최대 개수는 제한이 없으나 2^53보다 높아지면 정밀도가 손실됨)
+   */
+  static addInventoryItem (id, count = 1) {
+    // 현재 id에 해당하는 아이템 개수를 가져옴
+    let targetItemCount = this.inventory.get(id)
+    if (targetItemCount == null) {
+      this.inventory.set(id, count) // 새로 개수를 추가
+    } else {
+      this.inventory.set(id, count + targetItemCount) // 기존 개수에 추가
+    }
+  }
+
+  /** 
+   * 인벤토리의 아이템 제거 
+   * @param {number} id 아이템의 id
+   * @param {number} [count=1] 제거해야 하는 개수 (참고: 음수값이면 전부 제거됨, 0은 제거되지 않음), 개수를 초과한경우에는 남은 개수를 전부 제거
+   */
+  static removeInventoryItem (id, count = 1) {
+    if (count === 0) return
+    
+    let targetItemCount = this.inventory.get(id)
+    if (targetItemCount == null) return
+
+    if (count < 0 || targetItemCount < count) {
+      this.inventory.delete(id) // 인벤토리 개수보다 더 많이 삭제하면 해당 아이템을 삭제
+    } else {
+      this.inventory.set(id, targetItemCount - count) // 아이템 개수 감소
+    }
+  }
 
   /** 무기 리스트(기본값), 0 ~ 3번까지만 있음. 4번은 무기를 사용하기 싫을 때 사용 따라서 무기가 지정되지 않음. */
   static weaponList = [

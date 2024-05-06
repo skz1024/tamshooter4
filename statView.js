@@ -1,4 +1,4 @@
-import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, dataExportStatWeapon } from "./js/dataStat.js"
+import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, dataExportStatWeapon, StatEquipMent } from "./js/dataStat.js"
 
 let pre = document.getElementById('pre')
 let element = document.createElement('pre')
@@ -66,7 +66,7 @@ pre.appendChild(element3)
 dataExportStatRound.forEach((value) => {
   let roundText = '' + value.roundText.padEnd(5, ' ').slice(0, 5) + '|'
   let requireLevel = ('' + value.requireLevel).padEnd(7, ' ') + '|'
-  let standardPower = ('' + value.standardPower).padEnd(8, ' ') + '|'
+  let requireAttack = ('' + value.requireAttack).padEnd(8, ' ') + '|'
   let finishTime = ('' + value.finishTime).padEnd(6, ' ') + '|'
   let clearBonus = ('' + value.clearBonus).padEnd(7, ' ') + '|'
   let roundName = '' + value.roundName.padEnd(15, ' ')
@@ -78,7 +78,41 @@ dataExportStatRound.forEach((value) => {
   element.style.margin = '0'
   element.style.background = color
   element.style.color = 'black'
-  element.textContent = roundText + requireLevel + standardPower + finishTime + clearBonus + roundName + roundInfo
+  element.textContent = roundText + requireLevel + requireAttack + finishTime + clearBonus + roundName + roundInfo
   pre.appendChild(element)
 })
 
+let element4 = document.createElement('pre')
+element4.textContent = '-upgradeCost-\n'
++ 'level|attack      |cost   |totalcost|refund |totalcost            |\n'
++ '     |percent|plus|percent|percent  |percent|refund   |diff |prev |\n'
+pre.appendChild(element4)
+
+for (let i = 0; i <= StatEquipMent.UPGRADE_LEVEL_MAX; i++) {
+  let level = ('' + i).padEnd(5, ' ') + '|'
+  let attackPercent = ('' + StatEquipMent.upgradeAttackPercentTable[i]).padEnd(7, ' ') + '|'
+  let attackDiffValue = i === 0 ? 0 : StatEquipMent.upgradeAttackPercentTable[i] - StatEquipMent.upgradeAttackPercentTable[i - 1]
+  let attackDifferent = ('' + attackDiffValue).padEnd(4, ' ') + '|'
+  let costPercent = ('' + StatEquipMent.upgradeCostPercentTable[i]).padEnd(7, ' ') + '|'
+  let totalCostPercentString = ('' + StatEquipMent.upgradeCostTotalPercentTable[i]).padEnd(9, ' ') + '|'
+  let refundPercent = ('' + StatEquipMent.upgradeRefundPercentTable[i]).padEnd(7, ' ') + '|'
+  let totalCostRefund = ('' + StatEquipMent.upgradeCostTotalRefundTable[i]).padEnd(9, ' ') + '|'
+
+  let totalCostDiffValue = i === 0 ? 0 : StatEquipMent.upgradeCostTotalPercentTable[i] - StatEquipMent.upgradeCostTotalRefundTable[i]
+  let totalCostPrevValue = i === 0 ? 0 : StatEquipMent.upgradeCostTotalPercentTable[i - 1] - StatEquipMent.upgradeCostTotalRefundTable[i - 1]
+  let totalCostDifferent = ('' + (totalCostDiffValue)).padEnd(5, ' ') + '|'
+  let totalCostPrevDiff = ('' + (totalCostDiffValue - totalCostPrevValue)).padEnd(5, ' ') + '|'
+
+  let color = 'white'
+  if (i === 14) color = 'GreenYellow'
+  else if (i === 23) color = 'LimeGreen'
+  else if (i === 30) color = 'YellowGreen'
+
+
+  let element = document.createElement('pre')
+  element.style.margin = '0'
+  element.style.background = color
+  element.style.color = 'black'
+  element.textContent = level + attackPercent + attackDifferent + costPercent + totalCostPercentString + refundPercent + totalCostRefund + totalCostDifferent + totalCostPrevDiff
+  pre.appendChild(element)
+}

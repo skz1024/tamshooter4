@@ -9,6 +9,7 @@ import { fieldSystem } from "./field.js";
 import { game, gameFunction } from "./game.js";
 import { stringText, systemText } from "./text.js";
 
+const versionText = 'created by skz1024 | ver 0.49'
 let digitalDisplay = gameFunction.digitalDisplay
 let loadComplete = false
 
@@ -385,22 +386,35 @@ class MainSystem extends MenuSystem {
   /** 메뉴: 무기 선택 */ MENU_WEAPON_SELECT = 1
   /** 메뉴: 스킬 선택 */ MENU_SKILL_SELECT = 2
   /** 메뉴: 강화 */ MENU_UPGRADE = 3
-  /** 메뉴: 옵션 */ MENU_OPTION = 4
-  /** 메뉴: 데이터 셋팅 */ MENU_DATA_SETTING = 5
-  /** 메뉴: 기타 */ MENU_ETC = 6
-  /** 메뉴: 풀스크린 */ MENU_FULLSCREEN = 7
+  /** 메뉴: 인벤토리 */ MENU_INVENTORY = 4
+  /** 메뉴: 스토리 */ MENU_STORY = 5
+  /** 메뉴: 옵션 */ MENU_OPTION = 6
+  /** 메뉴: 데이터 셋팅 */ MENU_DATA_SETTING = 7
+  /** 메뉴: 기타 */ MENU_ETC = 8
+  /** 메뉴: 풀스크린 */ MENU_FULLSCREEN = 9
+
+  menuImageSrc = imageSrc.system.menuList
+  imgDList = [
+    imageDataInfo.menuList.roundSelect,
+    imageDataInfo.menuList.weaponSelect,
+    imageDataInfo.menuList.skillSelect,
+    imageDataInfo.menuList.upgrade,
+    imageDataInfo.menuList.inventory,
+    imageDataInfo.menuList.story,
+    imageDataInfo.menuList.option,
+    imageDataInfo.menuList.data,
+    imageDataInfo.menuList.etc,
+  ]
 
   constructor () {
     super()
-    this.menuList[this.MENU_ROUND_SELECT] = new BoxImageObject(0, 100, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.roundSelect)
-    this.menuList[this.MENU_WEAPON_SELECT] = new BoxImageObject(0, 150, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.weaponSelect)
-    this.menuList[this.MENU_SKILL_SELECT] = new BoxImageObject(0, 200, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.skillSelect)
-    this.menuList[this.MENU_UPGRADE] = new BoxImageObject(0, 250, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.upgrade)
-    this.menuList[this.MENU_OPTION] = new BoxImageObject(0, 300, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.option)
-    this.menuList[this.MENU_DATA_SETTING] = new BoxImageObject(0, 350, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.data)
-    this.menuList[this.MENU_ETC] = new BoxImageObject(0, 400, 400, 50, '', imageSrc.system.menuList, imageDataInfo.menuList.etc)
-    this.menuList[this.MENU_FULLSCREEN] = new BoxObject(0, 450, 400, 50, 'full screen(pc only, deprecated.)', 'grey')
+    const MENU_WIDTH = this.imgDList[0].width
+    const MENU_HEIGHT = this.imgDList[0].height
+    const START_Y = 100
 
+    for (let i = 0; i < this.imgDList.length; i++) {
+      this.menuList[i] = new BoxImageObject(0, START_Y + (i * MENU_HEIGHT), MENU_WIDTH, MENU_HEIGHT, '', this.menuImageSrc, this.imgDList[i])
+    }
     this.backgroundColor = ['#78b3f2', '#d2dff6']
   }
 
@@ -431,6 +445,8 @@ class MainSystem extends MenuSystem {
       case this.MENU_OPTION: gameSystem.stateId = gameSystem.STATE_OPTION; break
       case this.MENU_DATA_SETTING: gameSystem.stateId = gameSystem.STATE_DATA_SETTING; break
       case this.MENU_ETC: gameSystem.stateId = gameSystem.STATE_ETC; break
+      case this.MENU_INVENTORY: gameSystem.stateId = gameSystem.STATE_INVENTORY; break
+      case this.MENU_STORY: gameSystem.stateId = gameSystem.STATE_STORY; break
       case this.MENU_FULLSCREEN: this.requestFullScreen(); break
     }
 
@@ -441,6 +457,10 @@ class MainSystem extends MenuSystem {
   /**
    * 풀스크린을 요청합니다.
    * [일부 브라우저는 기능을 지원하지 않을 수 있음.]
+   * 
+   * pc에서는 F11을 통해 풀스크린 전환이 가능하므로, 게임 내에선 제거됨
+   * 
+   * @deprecated
    */
   requestFullScreen () {
     if (document.fullscreenElement) {
@@ -459,9 +479,6 @@ class MainSystem extends MenuSystem {
   }
 
   process () {
-    if (this.selected) {
-      console.log('check')
-    }
     this.processMouse()
     this.processButton()
     this.processFocus()
@@ -470,7 +487,8 @@ class MainSystem extends MenuSystem {
 
   display () {
     super.display()
-    game.graphic.imageView(imageSrc.system.tamshooter4Title, 0, 0)
+    game.graphic.imageView(imageSrc.system.tamshooter4Title, 0, 10)
+    digitalDisplay(versionText, 10, 70)
   }
 }
 
@@ -1803,6 +1821,86 @@ class SkillSelectSystem extends WeaponSelectSystem {
   }
 }
 
+class UpgradeSystem extends MenuSystem {
+  constructor () {
+    super()
+  }
+
+  processSelect () {
+    if (!this.selectedCheck()) return
+
+    this.canceled = true
+  }
+
+  processMouseExtend () {
+    this.canceled = true
+  }
+
+  display () {
+    game.graphic.fillText('해당 기능은 나중에 구현될 예정', 0, 40)
+  }
+}
+
+class InventorySystem extends MenuSystem {
+  constructor () {
+    super()
+  }
+
+  processSelect () {
+    if (!this.selectedCheck()) return
+
+    this.canceled = true
+  }
+
+  processMouseExtend () {
+    this.canceled = true
+  }
+
+  display () {
+    game.graphic.fillText('해당 기능은 나중에 구현될 예정', 0, 40)
+  }
+}
+
+class StorySystem extends MenuSystem {
+  constructor () {
+    super()
+  }
+
+  processSelect () {
+    if (!this.selectedCheck()) return
+
+    this.canceled = true
+  }
+
+  processMouseExtend () {
+    this.canceled = true
+  }
+
+  display () {
+    game.graphic.fillText('해당 기능은 나중에 구현될 예정', 0, 40)
+  }
+}
+
+class EtcSystem extends MenuSystem {
+  constructor () {
+    super()
+  }
+
+  processSelect () {
+    if (!this.selectedCheck()) return
+
+    this.canceled = true
+  }
+
+  processMouseExtend () {
+    this.canceled = true
+  }
+
+  display () {
+    game.graphic.fillText('해당 기능은 나중에 구현될 예정', 0, 40)
+  }
+}
+
 /**
  * 유저 스탯과는 별도로, 게임 정보 또는 필드 정보를 표시하는 역할을 합니다.
  * 참고로, field.js에서 이 클래스를 통해 간접적으로 출력할 정보(텍스트)를 전달합니다.
@@ -1865,46 +1963,6 @@ class StatSystem {
   }
 }
 
-class UpgradeSystem extends MenuSystem {
-  constructor () {
-    super()
-  }
-
-  processSelect () {
-    if (!this.selectedCheck()) return
-
-    this.canceled = true
-  }
-
-  processMouseExtend () {
-    this.canceled = true
-  }
-
-  display () {
-    game.graphic.fillText('해당 기능은 나중에 구현될 예정', 0, 40)
-  }
-}
-
-class EtcSystem extends MenuSystem {
-  constructor () {
-    super()
-  }
-
-  processSelect () {
-    if (!this.selectedCheck()) return
-
-    this.canceled = true
-  }
-
-  processMouseExtend () {
-    this.canceled = true
-  }
-
-  display () {
-    game.graphic.fillText('해당 기능은 나중에 구현될 예정', 0, 40)
-  }
-}
-
 class LoadErrorSystem extends MenuSystem {
   constructor () {
     super()
@@ -1944,6 +2002,8 @@ export class gameSystem {
   /** 상태: 게임 옵션 */ static STATE_OPTION = 5
   /** 상태: 데이터 설정 */ static STATE_DATA_SETTING = 6
   /** 상태: 기타... */ static STATE_ETC = 7
+  /** 상태: 인벤토리 */ static STATE_INVENTORY = 8
+  /** 상태: 스토리 */ static STATE_STORY = 9
   /** 상태: 필드(게임 진행중) */ static STATE_FIELD = 12
   /** 상태: 오류 발생 */ static STATE_LOAD_ERROR = 13
   /** 게임 첫 실행시 로드를 하기 위한 초기화 확인 변수 */ static isLoad = false
@@ -1960,6 +2020,8 @@ export class gameSystem {
   /** 무기 선택 시스템 */ static weaponSelectSystem = new WeaponSelectSystem()
   /** 스킬 선택 시스템 */ static skillSelectSystem = new SkillSelectSystem()
   /** 업그레이드 시스템 */ static upgradeSystem = new UpgradeSystem()
+  /** 인벤토리 시스템 */ static inventorySystem = new InventorySystem()
+  /** 스토리 시스템 */ static storySystem = new StorySystem()
   /** etc... 시스템 */ static etcSystem = new EtcSystem()
   /** loadError 시스템 */ static loadErrorSystem = new LoadErrorSystem()
 
@@ -2542,6 +2604,8 @@ export class gameSystem {
       case this.STATE_SKILL_SELECT: this.skillSelectSystem.process(); break
       case this.STATE_UPGRADE: this.upgradeSystem.process(); break
       case this.STATE_ETC: this.etcSystem.process(); break
+      case this.STATE_INVENTORY: this.inventorySystem.process(); break
+      case this.STATE_STORY: this.storySystem.process(); break
       case this.STATE_FIELD: this.fieldProcess(); break
     }
 
@@ -2629,6 +2693,8 @@ export class gameSystem {
       case this.STATE_WEAPON_SELECT: this.weaponSelectSystem.display(); break
       case this.STATE_SKILL_SELECT: this.skillSelectSystem.display(); break
       case this.STATE_UPGRADE: this.upgradeSystem.display(); break
+      case this.STATE_INVENTORY: this.inventorySystem.display(); break
+      case this.STATE_STORY: this.storySystem.display(); break
       case this.STATE_ETC: this.etcSystem.display(); break
     }
 

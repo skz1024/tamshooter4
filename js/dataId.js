@@ -383,5 +383,18 @@ export class ID {
     //
     round4_1: 70101,
   }
+
+  static equipment = {
+    standardPlusC1Blue: 33500,
+    donggramiMugi: 33501,
+    hellgiJangbi: 33502,
+  }
+
+  static item = {
+    donggramiTicket: 35000,
+    donggramiUSB: 35001,
+    hellgiComponent: 35002,
+    upgradeStone: 35003,
+  }
 }
 Object.freeze(ID)
