@@ -717,6 +717,7 @@ export class FieldData {
 
     // 초기화 작업 수행
     this.afterInit()
+    this.afterInitDefault()
   }
 
   /**

@@ -570,6 +570,9 @@ export class EnemyBulletData extends FieldData {
 
     /** 최대 가동하는 프레임 수 (이 프레임을 초과하면 해당 객체는 자동으로 삭제됩니다.) */
     this.maxRunningFrame = 600
+
+    /** 충돌할경우 데미지 사운드 대신 다른 사운드 재생  */
+    this.collisionSoundSrc = ''
   }
 
   process () {
@@ -598,7 +601,7 @@ export class EnemyBulletData extends FieldData {
         if (this.degree === 0 && collision(enemyArea[i], player)
          || this.degree !== 0 && collisionClass.collisionOBB(enemyArea[i], player)) {
           this.repeatCount--
-          player.addDamage(this.attack)
+          this.collisionSoundSrc === '' ? player.addDamage(this.attack) : player.addDamageWithSound(this.attack, this.collisionSoundSrc)
           this.collisionDelay.countReset()
           this.isCurrentCollision = true
           break // 루프 종료 (여러 충돌객체중 하나만 충돌해야함, 중복 데미지 없음)
@@ -621,22 +624,6 @@ export class EnemyBulletData extends FieldData {
       } else {
         return false
       }
-  }
-
-  afterInitDefault (moveOption = {moveSpeedX: 1, moveSpeedY: 0, moveDirectionX: '', moveDirectionY: ''}) {
-    if (this.isNotMoveOption) return
-
-    this.moveSpeedX = moveOption.moveSpeedX
-    this.moveSpeedY = moveOption.moveSpeedY
-    this.moveDirectionX = moveOption.moveDirectionX
-    this.moveDirectionY = moveOption.moveDirectionY
-
-    if (this.moveDirectionX === '') {
-      this.moveSpeedX = this.moveSpeedX
-    }
-    if (this.moveDirectionY === '') {
-      this.moveSpeedY = this.moveSpeedY
-    }
   }
 
   /** 이동속도를 기준으로 자동으로 회전각도를 조정합니다. */
@@ -12106,15 +12093,12 @@ class TowerEnemyGroup4BlackSpaceTornado extends TowerEnemyGroup4BlackSpaceAnti {
     this.setEnemyByCpStat(6000, 4)
     this.setMoveSpeed(0, 0)
     this.collisionDelay.delay = 10
+    this.collisionSoundSrc = soundSrc.round.r3_5_blackSpaceTornado
   }
 
   afterInit () {
     this.x = graphicSystem.CANVAS_WIDTH_HALF - (this.width / 2)
     this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
-  }
-
-  processPlayerCollisionSuccessAfter () {
-    soundSystem.play(soundSrc.round.r3_5_blackSpaceTornado)
   }
 }
 
@@ -13617,7 +13601,6 @@ class TowerEnemyGroup5Camera extends TowerEnemy {
         } else if (this.attackDelay.count <= 60) {
           this.alpha = 1 / 10 * (60 - this.attackDelay.count)
         }
-        console.log(this.alpha)
       }
     }
 

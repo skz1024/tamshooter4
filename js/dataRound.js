@@ -11586,6 +11586,7 @@ class Round3_5 extends Round3Templete {
       this.collisionDelay.setDelay(12)
       this.attack = 4
       this.mainType = Round3_5.spriteList.TORNADO_PHASE2_1
+      this.collisionSoundSrc = soundSrc.round.r3_5_blackSpaceTornado
     }
 
     processMove () {
@@ -11604,13 +11605,6 @@ class Round3_5 extends Round3Templete {
       }
 
       this.setMoveSpeed(-currentSpeed, 0)
-    }
-
-    processCollision () {
-      super.processCollision ()
-      if (this.isCurrentCollision) {
-        soundSystem.play(soundSrc.round.r3_5_blackSpaceTornado)
-      }
     }
   }
 
@@ -11730,6 +11724,7 @@ class Round3_5 extends Round3Templete {
       this.maxRunningFrame = 600
       this.repeatCount = 10
       this.mainType = Round3_5.spriteList.TORNADO_PHASE2_2
+      this.collisionSoundSrc = soundSrc.round.r3_5_blackSpaceTornado
     }
 
     processMove () {
@@ -11737,13 +11732,6 @@ class Round3_5 extends Round3Templete {
       if (this.moveDelay.check()) {
         this.moveSpeedX += this.moveSpeedX > 0 ? Math.random() * 1 : Math.random() * -1
         this.moveSpeedY += this.moveSpeedY > 0 ? Math.random() * 1 : Math.random() * -1
-      }
-    }
-
-    processCollision () {
-      super.processCollision ()
-      if (this.isCurrentCollision) {
-        soundSystem.play(soundSrc.round.r3_5_blackSpaceTornado)
       }
     }
   }

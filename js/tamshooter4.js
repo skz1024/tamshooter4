@@ -8,6 +8,7 @@ import { gameVar, userSystem } from "./game.js";
 import { fieldSystem } from "./field.js";
 import { game, gameFunction } from "./game.js";
 import { stringText, systemText } from "./text.js";
+import { dataExportPlayerWeapon } from "./dataPlayer.js";
 
 const versionText = 'created by skz1024 | ver 0.49'
 let digitalDisplay = gameFunction.digitalDisplay
@@ -1505,7 +1506,7 @@ class WeaponSelectSystem extends MenuSystem {
 
   displayUserWeapon () {
     let outputY = 400
-    digitalDisplay('icon/name           /delay/shot/hit/multiple/attack/damage', 0, 400)
+    digitalDisplay('icon/name           |delay|shot|repeat|multiple|value|attack', 0, 400)
 
     let userWeapon = userSystem.getWeaponList()
     let weaponIcon = imageSrc.system.weaponIcon
@@ -1527,20 +1528,21 @@ class WeaponSelectSystem extends MenuSystem {
 
   /** 해당 아이콘 위치에 있는 무기 또는 스킬의 정보를 얻어옵니다. */
   getIconString (weaponId) {
-    let getData = dataExportStatPlayerWeapon.get(weaponId)
+    let getData = dataExportPlayerWeapon.get(weaponId)
     if (getData == null) return ''
+    if (getData.weapon == null) return ''
 
     let icon = '    ' // 공백 4칸
-    let name = getData.name.padEnd(16, ' ').slice(0, 16) + ' '
-    let delay = ('' + getData.delay).padEnd(5, ' ') + ' '
-    let shotCount = ('' + getData.shotCount).padEnd(4, ' ') + ' '
-    let attackCount = ('' + getData.attackCount).padEnd(3, ' ') + ' '
-    let attackMultiple = ('' + getData.attackMultiple).padEnd(8, ' ') + ' '
-    let weaponAttack = ('' + getData.weaponAttack).padEnd(6, ' ') + ' '
-    let currentAttack = ('' + getData.getCurrentAttack(userSystem.getPlayerObjectData().attack)).padEnd(8, ' ') + ' '
+    let name = '' + getData.weapon.mainType.padEnd(16, ' ').slice(0, 16) + '|'
+    let delay = ('' + getData.delay).padEnd(5, ' ') + '|'
+    let shotCount = ('' + getData.shotCount).padEnd(4, ' ') + '|'
+    let repeatCount = ('' + getData.weapon.repeatCount).padEnd(6, ' ') + '|'
+    let attackMultiple = ('' + getData.attackMultiple).padEnd(8, ' ') + '|'
+    let valueAttack = ('' + getData.getShotAttack(10000)).padEnd(5, ' ') + '|'
+    let currentAttack = ('' + getData.getShotAttack(userSystem.getAttackWeaponValue())).padEnd(8, ' ') + ' '
 
-    // 'icon/name           /delay/shot/hit/multiple/attack/damage'
-    return icon + name + delay + shotCount + attackCount + attackMultiple + weaponAttack + currentAttack
+    // 'icon/name           /delay/shot/repeat/multiple/attack/damage'
+    return icon + name + delay + shotCount + repeatCount + attackMultiple + valueAttack + currentAttack
   }
 
   display () {
@@ -1816,7 +1818,7 @@ class SkillSelectSystem extends WeaponSelectSystem {
     let delay = ('' + getData.delay).padEnd(4, ' ')
     let attackCount = ('' + getData.hit).padEnd(4, ' ')
     let weaponAttack = ('' + getData.weaponAttack).padEnd(6, ' ')
-    let currentAttack = ('' + getData.getCurrentAttack(userSystem.getPlayerObjectData().attack)).padEnd(9, ' ')
+    let currentAttack = ('' + getData.getCurrentAttack(userSystem.getAttackSkillValue())).padEnd(9, ' ')
 
     let finalString = icon + name + coolTime + attackMultiple + shotCount + repeatCount + delay + attackCount + weaponAttack + currentAttack
     return finalString

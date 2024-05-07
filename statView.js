@@ -1,11 +1,13 @@
+//@ts-check
+
 import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, dataExportStatWeapon, StatEquipMent } from "./js/dataStat.js"
 
 let pre = document.getElementById('pre')
 let element = document.createElement('pre')
-element.textContent = '-skillList-\n' 
+element.textContent = '-player skillList-\n' 
 + 'name      |cool|delay|attack  |shot |repeat|attack|weapon\n' 
 + '          |Time|     |Multiple|Count|Count |Count |Attack\n'
-pre.appendChild(element)
+pre?.appendChild(element)
 
 dataExportStatPlayerSkill.forEach((value) => {
   let name = '' + value.name.padEnd(10, ' ').slice(0, 10) + '|'
@@ -30,22 +32,25 @@ dataExportStatPlayerSkill.forEach((value) => {
   element.style.background = color
   element.style.color = 'black'
   element.textContent = name + coolTime + delay + attackMultiple + shotCount + repeatCount + attackCount + weaponAttack
-  pre.appendChild(element)
+  pre?.appendChild(element)
 })
 
 let element2 = document.createElement('pre')
-element2.textContent = '-weaponList- (60frame = 1second), (delay = frame)\n'
-+ 'name      |delay|shot |attack|attack  |weapon|\n'
-+ '          |     |Count|Count |Multiple|Attack|'
-pre.appendChild(element2)
+element2.textContent = '-player weaponList- (60frame = 1second), (delay = frame)\n'
++ 'name      |delay|shot |repeat|attack  |weapon|\n'
++ '          |     |Count|count |Multiple|Attack|'
+pre?.appendChild(element2)
 
 dataExportStatPlayerWeapon.forEach((value) => {
   let name = '' + value.name.padEnd(10, ' ').slice(0, 10) + '|'
   let delay = ('' + value.delay).padEnd(5, ' ') + '|'
   let shotCount = ('' + value.shotCount).padEnd(5, ' ') + '|'
-  let attackCount = ('' + value.attackCount).padEnd(6, ' ') + '|'
   let attackMultiple = ('' + value.attackMultiple).padEnd(8, ' ') + '|'
-  let weaponAttack = ('' + value.weaponAttack).padEnd(6, ' ') + '|'
+  
+  let weaponData = dataExportStatWeapon.get(value.weaponIdList[0])
+  if (weaponData == null) return
+  let repeatCount = weaponData.repeatCount
+  let weaponAttack = ('' + value.getCurrentAttack(10000, repeatCount)).padEnd(6, ' ') + '|'
 
   let color = 'pink'
 
@@ -53,15 +58,15 @@ dataExportStatPlayerWeapon.forEach((value) => {
   element.style.margin = '0'
   element.style.background = color
   element.style.color = 'black'
-  element.textContent = name + delay + shotCount + attackCount + attackMultiple + weaponAttack
-  pre.appendChild(element)
+  element.textContent = name + delay + shotCount + attackMultiple + weaponAttack
+  pre?.appendChild(element)
 })
 
 let element3 = document.createElement('pre')
 element3.textContent = '-roundList-\n'
 + 'round|require|standard|finish|clear  |round name|round info |\n'
 + 'text |level  |power   |time  |bonus  |          |           |\n'
-pre.appendChild(element3)
+pre?.appendChild(element3)
 
 dataExportStatRound.forEach((value) => {
   let roundText = '' + value.roundText.padEnd(5, ' ').slice(0, 5) + '|'
@@ -79,14 +84,14 @@ dataExportStatRound.forEach((value) => {
   element.style.background = color
   element.style.color = 'black'
   element.textContent = roundText + requireLevel + requireAttack + finishTime + clearBonus + roundName + roundInfo
-  pre.appendChild(element)
+  pre?.appendChild(element)
 })
 
 let element4 = document.createElement('pre')
 element4.textContent = '-upgradeCost-\n'
 + 'level|attack      |cost   |totalcost|refund |totalcost            |\n'
 + '     |percent|plus|percent|percent  |percent|refund   |diff |prev |\n'
-pre.appendChild(element4)
+pre?.appendChild(element4)
 
 for (let i = 0; i <= StatEquipMent.UPGRADE_LEVEL_MAX; i++) {
   let level = ('' + i).padEnd(5, ' ') + '|'
@@ -114,5 +119,5 @@ for (let i = 0; i <= StatEquipMent.UPGRADE_LEVEL_MAX; i++) {
   element.style.background = color
   element.style.color = 'black'
   element.textContent = level + attackPercent + attackDifferent + costPercent + totalCostPercentString + refundPercent + totalCostRefund + totalCostDifferent + totalCostPrevDiff
-  pre.appendChild(element)
+  pre?.appendChild(element)
 }

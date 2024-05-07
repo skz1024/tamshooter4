@@ -78,14 +78,6 @@ import { ImageDataObject } from "./imageSrc.js"
     }
   }
 
-  afterInitDefault (width, height) {
-    this.width = width
-    this.height = height
-    if (this.enimation != null) {
-      this.enimation.setOutputSize(width, height)
-    }
-  }
-
   process () {
     // beforeDelay가 남아있으면, 오브젝트는 표시되지만, 에니메이션은 재생되지 않습니다.
     // 그리고 로직 처리도 되지 않고 함수가 종료됩니다.

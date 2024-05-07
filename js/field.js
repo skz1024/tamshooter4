@@ -250,18 +250,8 @@ class PlayerObject extends FieldData {
     
     // 무기 슬롯 데이터 입력합니다.
     for (let i = 0; i < this.weaponSlot.length; i++) {
-      let getClass = tamshooter4Data.getPlayerWeapon(this.weaponSlot[i].id)
-      //@ts-expect-error
-      this.weaponSlot[i].weapon = getClass != null ? new getClass() : null
+      this.weaponSlot[i].weapon = tamshooter4Data.getPlayerWeapon(this.weaponSlot[i].id)
     }
-
-    // 서브 웨폰
-    let subWeaponClass = tamshooter4Data.getPlayerWeapon(this.subWeaponSlot.id)
-    //@ts-expect-error
-    this.subWeaponSlot.weapon = subWeaponClass != null ? new subWeaponClass() : null
-
-    /** 서브 웨폰 딜레이 */
-    this.playerSubWeaponDelayCount = 0
   }
 
   /**
@@ -294,19 +284,17 @@ class PlayerObject extends FieldData {
       { skill: null, id: getUserSkill[7], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 }
     ]
 
+    this.skillClassInput()
+  }
+
+  skillClassInput () {
     // 스킬 클래스 등록 (한번에 A, B 슬롯 두개를 등록하는건 귀찮아서...)
     // 여기서는 널 체크를 하지 않습니다. (process에서만 널 체크 진행)
     for (let i = 0; i < this.skillSlotA.length; i++) {
       const getIdA = this.skillSlotA[i].id
       const getIdB = this.skillSlotB[i].id
-      const getSkillA = tamshooter4Data.getPlayerSkill(getIdA)
-      const getSkillB = tamshooter4Data.getPlayerSkill(getIdB)
-
-      // 널체크와 동시에 클래스 인스턴스 생성 (null일경우 생성하지 않음.)
-      //@ts-expect-error 
-      this.skillSlotA[i].skill = getSkillA != null ? new getSkillA() : null
-      //@ts-expect-error
-      this.skillSlotB[i].skill = getSkillB != null ? new getSkillB() : null
+      this.skillSlotA[i].skill = tamshooter4Data.getPlayerSkill(getIdA)
+      this.skillSlotB[i].skill = tamshooter4Data.getPlayerSkill(getIdB)
     }
   }
 
@@ -844,9 +832,7 @@ class PlayerObject extends FieldData {
 
     // 무기 슬롯 데이터 입력합니다.
     for (let i = 0; i < this.weaponSlot.length; i++) {
-      let getClass = tamshooter4Data.getPlayerWeapon(this.weaponSlot[i].id)
-      //@ts-expect-error
-      this.weaponSlot[i].weapon = getClass != null ? new getClass() : null
+      this.weaponSlot[i].weapon = tamshooter4Data.getPlayerWeapon(this.weaponSlot[i].id)
     }
   }
 
@@ -876,19 +862,7 @@ class PlayerObject extends FieldData {
     // 스킬 불러온 후 스킬 다시 초기화
     // 스킬 클래스 등록 (한번에 A, B 슬롯 두개를 등록하는건 귀찮아서...)
     // 여기서는 널 체크를 하지 않습니다. (process에서만 널 체크 진행)
-    for (let i = 0; i < this.skillSlotA.length; i++) {
-      const getIdA = this.skillSlotA[i].id
-      const getIdB = this.skillSlotB[i].id
-      const getSkillA = tamshooter4Data.getPlayerSkill(getIdA)
-      const getSkillB = tamshooter4Data.getPlayerSkill(getIdB)
-
-      // 널체크와 동시에 클래스 인스턴스 생성 (null일경우 생성하지 않음.)
-      // @ts-expect-error
-      this.skillSlotA[i].skill = getSkillA != null ? new getSkillA() : null
-
-      // @ts-expect-error
-      this.skillSlotB[i].skill = getSkillB != null ? new getSkillB() : null
-    }
+    this.skillClassInput()
   }
 
   /**
@@ -927,6 +901,8 @@ export class fieldState {
   static getDamageObject () { return this.damageObject }
   static getEnemyBulletObject () { return this.enemyBulletObject }
   static getSpriteObject () { return this.spriteObject }
+
+  static getEnemyObjectCount () { return this.enemyObject.length }
 
   /**
    * 다음 생성할 오브젝트의 Id
@@ -1071,7 +1047,6 @@ export class fieldState {
     inputData.createId = this.getNextCreateId()
     inputData.id = typeId
     inputData.setPosition(x, y)
-    inputData.afterInitDefault()
     this.enemyObject.push(inputData)
     return inputData
   }
@@ -1094,7 +1069,6 @@ export class fieldState {
     inputData.createId = this.getNextCreateId()
     inputData.id = typeId
     inputData.setPosition(x, y)
-    inputData.afterInitDefault()
     this.enemyObject.push(inputData)
     return inputData // 보스로 생성된 적 객체는 리턴해서 객체를 가져올 수 있음.
   }

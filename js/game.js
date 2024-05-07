@@ -617,6 +617,16 @@ export class userSystem {
     }
   }
 
+  static getAttackWeaponValue () {
+    this.processStat()
+    return Math.floor(this.attack * 0.28)
+  }
+  
+  static getAttackSkillValue () {
+    this.processStat()
+    return Math.floor(this.attack * 0.18)
+  }
+
   /**
    * 저장 형식 (버전에 따라 변경될 수 있음.)
    * 

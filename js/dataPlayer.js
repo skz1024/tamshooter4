@@ -51,10 +51,14 @@ let graphicSystem = game.graphic
     this.attackMultiple = 1
 
     /**
+     * (모든 무기는 1회 발사한다고 가정됨)
+     * 
      * 무기에 따른 공격횟수 (발사 횟수랑 다르고, 무기 객체가 공격하는 횟수임.)
      * (명시적인 수치이나, 제작자의 실수로 로직과 다른 값이 명시될 수 있음.)
      * 
      * 지금은 왠만하면 무기 객체를 직접 참고하기 때문에, 해당하는 실수는 가능성이 낮음.
+     * 
+     * @deprecated 
      */
     this.attackCount = 1
 
@@ -138,21 +142,23 @@ let graphicSystem = game.graphic
     this.playerWeaponId = playerWeaponId
 
     let stat = dataExportStatPlayerWeapon.get(playerWeaponId)
-
+    if (stat == null) return
     
-    if (stat != null) {
-      this.delay = stat.delay
-      this.shotCount = stat.shotCount
-      this.attackCount = stat.attackCount
-      this.attackMultiple = stat.attackMultiple
-      this.weaponIdList = stat.weaponIdList
+    this.delay = stat.delay
+    this.shotCount = stat.shotCount
+    this.attackMultiple = stat.attackMultiple
+    this.weaponIdList = stat.weaponIdList
 
-      /** 
-       * 첫번째 무기는 무기의 기본 객체로 지정됩니다.
-       * @type {WeaponData} 
-       */
-      this.weapon = dataExportWeapon.get(stat.weaponIdList[0])
-    }
+    const wepaonData = dataExportWeapon.get(stat.weaponIdList[0])
+    /** 
+     * 첫번째 무기는 무기의 기본 객체로 지정됩니다.
+     * @type {WeaponData} 
+     */
+    this.weapon = new wepaonData()
+    if (this.weapon == null) return
+
+    this.weapon.id = stat.weaponIdList[0] // 무기의 id 입력
+    this.weapon.inputStat() // 무기에 해당하는 스탯 입력
   }
 
   /**
@@ -172,8 +178,11 @@ let graphicSystem = game.graphic
    * @param {number} multiple 배율 (최종 공격력의 배율)
    */
   getShotAttack (baseAttack, multiple = 1) {
+    let repeatCount = this.weapon != null ? this.weapon.repeatCount : 1
+    if (repeatCount <= 0) repeatCount = 1 // 0 나누기 금지 
+
     const secondPerCount = 60 / this.delay
-    const totalDivied = this.shotCount * this.attackCount
+    const totalDivied = this.shotCount * this.attackCount * repeatCount
     const totalMultiple = this.attackMultiple * multiple
     const resultAttack = (baseAttack * totalMultiple) / (secondPerCount * totalDivied)
     return Math.floor(resultAttack)
@@ -264,16 +273,6 @@ class PlayerSapia extends PlayerWeaponData {
   constructor () {
     super()
     this.setAutoPlayerWeapon(ID.playerWeapon.sapia)
-  }
-
-  create (attack = 0, x = 0, y = 0) {
-    // 사피아(30%) + 시파이샷(70%) 의 조합이기 때문에 이 함수에서 공격력을 다시 계산합니다.
-    let mainAttack = Math.floor(attack * 0.7)
-
-    // 사피아샷은 0.3배율을 가지는데, 이 값이 shotAttack값의 영향을 받음
-    let sapiaShotAttack = this.getShotAttack(attack, 0.3) 
-    this.option = [sapiaShotAttack]
-    super.create(mainAttack, x, y)
   }
 }
 
@@ -740,44 +739,46 @@ class PlayerSkillMoon extends PlayerSkillData {
 
 /**
  * 플레이어 무기 엑스포트 (data.js에서 사용)
+ * @type {Map<number, PlayerWeaponData>}
  */
 export const dataExportPlayerWeapon = new Map()
-dataExportPlayerWeapon.set(ID.playerWeapon.multyshot, PlayerMultyshot)
-dataExportPlayerWeapon.set(ID.playerWeapon.missile, PlayerMissile)
-dataExportPlayerWeapon.set(ID.playerWeapon.arrow, PlayerArrow)
-dataExportPlayerWeapon.set(ID.playerWeapon.sapia, PlayerSapia)
-dataExportPlayerWeapon.set(ID.playerWeapon.laser, PlayerLaser)
-dataExportPlayerWeapon.set(ID.playerWeapon.blaster, PlayerBlaster)
-dataExportPlayerWeapon.set(ID.playerWeapon.parapo, PlayerParapo)
-dataExportPlayerWeapon.set(ID.playerWeapon.sidewave, PlayerSidewave)
-dataExportPlayerWeapon.set(ID.playerWeapon.subMultyshot, PlayerSubMultyshot)
-dataExportPlayerWeapon.set(ID.playerWeapon.rapid, PlayerRapid)
-dataExportPlayerWeapon.set(ID.playerWeapon.ring, PlayerRing)
-dataExportPlayerWeapon.set(ID.playerWeapon.seondanil, PlayerSeondanil)
-dataExportPlayerWeapon.set(ID.playerWeapon.boomerang, PlayerBoomerang)
+dataExportPlayerWeapon.set(ID.playerWeapon.multyshot, new PlayerMultyshot)
+dataExportPlayerWeapon.set(ID.playerWeapon.missile, new PlayerMissile)
+dataExportPlayerWeapon.set(ID.playerWeapon.arrow, new PlayerArrow)
+dataExportPlayerWeapon.set(ID.playerWeapon.sapia, new PlayerSapia)
+dataExportPlayerWeapon.set(ID.playerWeapon.laser, new PlayerLaser)
+dataExportPlayerWeapon.set(ID.playerWeapon.blaster, new PlayerBlaster)
+dataExportPlayerWeapon.set(ID.playerWeapon.parapo, new PlayerParapo)
+dataExportPlayerWeapon.set(ID.playerWeapon.sidewave, new PlayerSidewave)
+dataExportPlayerWeapon.set(ID.playerWeapon.subMultyshot, new PlayerSubMultyshot)
+dataExportPlayerWeapon.set(ID.playerWeapon.rapid, new PlayerRapid)
+dataExportPlayerWeapon.set(ID.playerWeapon.ring, new PlayerRing)
+dataExportPlayerWeapon.set(ID.playerWeapon.seondanil, new PlayerSeondanil)
+dataExportPlayerWeapon.set(ID.playerWeapon.boomerang, new PlayerBoomerang)
 
 
 /**
  * 플레이어 스킬 엑스포트 (data.js에서 사용)
+ * @type {Map<number, PlayerSkillData>}
  */
 export const dataExportPlayerSkill = new Map()
-dataExportPlayerSkill.set(ID.playerSkill.arrow, PlayerSkillArrow)
-dataExportPlayerSkill.set(ID.playerSkill.blaster, PlayerSkillBlaster)
-dataExportPlayerSkill.set(ID.playerSkill.laser, PlayerSkillLaser)
-dataExportPlayerSkill.set(ID.playerSkill.missile, PlayerSkillMissile)
-dataExportPlayerSkill.set(ID.playerSkill.multyshot, PlayerSkillMultyshot)
-dataExportPlayerSkill.set(ID.playerSkill.parapo, PlayerSkillParapo)
-dataExportPlayerSkill.set(ID.playerSkill.sapia, PlayerSkillSapia)
-dataExportPlayerSkill.set(ID.playerSkill.sidewave, PlayerSkillSidewave)
-dataExportPlayerSkill.set(ID.playerSkill.sword, PlayerSkillSword)
-dataExportPlayerSkill.set(ID.playerSkill.hyperBall, PlayerSkillHyperBall)
-dataExportPlayerSkill.set(ID.playerSkill.critcalChaser, PlayerSkillCriticalChaser)
-dataExportPlayerSkill.set(ID.playerSkill.pileBunker, PlayerSkillPileBunker)
-dataExportPlayerSkill.set(ID.playerSkill.santansu, PlayerSkillSantansu)
-dataExportPlayerSkill.set(ID.playerSkill.whiteflash, PlayerSkillWhiteflash)
-dataExportPlayerSkill.set(ID.playerSkill.rapid, PlayerSkillRapid)
-dataExportPlayerSkill.set(ID.playerSkill.ring, PlayerSkillRing)
-dataExportPlayerSkill.set(ID.playerSkill.seondanil, PlayerSkillSeondanil)
-dataExportPlayerSkill.set(ID.playerSkill.hanjumoek, PlayerSkillHanjumeok)
-dataExportPlayerSkill.set(ID.playerSkill.boomerang, PlayerSkillBoomerang)
-dataExportPlayerSkill.set(ID.playerSkill.moon, PlayerSkillMoon)
+dataExportPlayerSkill.set(ID.playerSkill.arrow, new PlayerSkillArrow)
+dataExportPlayerSkill.set(ID.playerSkill.blaster, new PlayerSkillBlaster)
+dataExportPlayerSkill.set(ID.playerSkill.laser, new PlayerSkillLaser)
+dataExportPlayerSkill.set(ID.playerSkill.missile, new PlayerSkillMissile)
+dataExportPlayerSkill.set(ID.playerSkill.multyshot, new PlayerSkillMultyshot)
+dataExportPlayerSkill.set(ID.playerSkill.parapo, new PlayerSkillParapo)
+dataExportPlayerSkill.set(ID.playerSkill.sapia, new PlayerSkillSapia)
+dataExportPlayerSkill.set(ID.playerSkill.sidewave, new PlayerSkillSidewave)
+dataExportPlayerSkill.set(ID.playerSkill.sword, new PlayerSkillSword)
+dataExportPlayerSkill.set(ID.playerSkill.hyperBall, new PlayerSkillHyperBall)
+dataExportPlayerSkill.set(ID.playerSkill.critcalChaser, new PlayerSkillCriticalChaser)
+dataExportPlayerSkill.set(ID.playerSkill.pileBunker, new PlayerSkillPileBunker)
+dataExportPlayerSkill.set(ID.playerSkill.santansu, new PlayerSkillSantansu)
+dataExportPlayerSkill.set(ID.playerSkill.whiteflash, new PlayerSkillWhiteflash)
+dataExportPlayerSkill.set(ID.playerSkill.rapid, new PlayerSkillRapid)
+dataExportPlayerSkill.set(ID.playerSkill.ring, new PlayerSkillRing)
+dataExportPlayerSkill.set(ID.playerSkill.seondanil, new PlayerSkillSeondanil)
+dataExportPlayerSkill.set(ID.playerSkill.hanjumoek, new PlayerSkillHanjumeok)
+dataExportPlayerSkill.set(ID.playerSkill.boomerang, new PlayerSkillBoomerang)
+dataExportPlayerSkill.set(ID.playerSkill.moon, new PlayerSkillMoon)
