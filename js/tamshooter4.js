@@ -19,7 +19,7 @@ for (let target in imageSrc.system) {
   let src = imageSrc.system[target]
   systemImageList.push(src)
 }
-systemImageList.push(imageSrc.weaponImage) // 무기 이미지
+systemImageList.push(imageSrc.weapon.weapon) // 무기 이미지
 systemImageList.push(imageSrc.system.roundIcon) // 라운드 아이콘 이미지
 
 // 이미지 생성 시작
@@ -721,7 +721,9 @@ class OptionSystem extends MenuSystem {
 
     for (let i = 0; i < this.menuList.length; i++) {
       this.menuList[i].display()
-      let imageOptionCheck = imageSrc.system.optionCheck
+      let optionImageSrc = imageSrc.system.mainSystem
+      let imageOptionCheckedData = imageDataInfo.mainSystem.optionChecked
+      let imageOptionUnCheckedData = imageDataInfo.mainSystem.optionUnChecked
 
       // 두번째(1번) 메뉴부터 옵션 결과값이 쉽게 보여지도록 하얀색 박스 배경을 만듬.
       if (i !== 0) {
@@ -733,9 +735,9 @@ class OptionSystem extends MenuSystem {
         switch (typeof optionArray[i]) {
           case 'boolean':
             if (optionArray[i] === true) {
-              game.graphic.imageDisplay(imageOptionCheck, 0, imageOptionCheckHeight / 2, imageOptionCheckWidth, imageOptionCheckHeight / 2, this.menuList[i].x + this.menuList[i].width, this.menuList[i].y, imageOptionCheckWidth, imageOptionCheckHeight / 2)
+              gameFunction.imageObjectDisplay(optionImageSrc, imageOptionCheckedData, this.menuList[i].x + this.menuList[i].width, this.menuList[i].y)
             } else {
-              game.graphic.imageDisplay(imageOptionCheck, 0, 0, imageOptionCheckWidth, imageOptionCheckHeight / 2, this.menuList[i].x + this.menuList[i].width, this.menuList[i].y, imageOptionCheckWidth, imageOptionCheckHeight / 2)
+              gameFunction.imageObjectDisplay(optionImageSrc, imageOptionUnCheckedData, this.menuList[i].x + this.menuList[i].width, this.menuList[i].y)
             }
             break
           case 'number':

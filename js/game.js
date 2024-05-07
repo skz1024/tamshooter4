@@ -1,7 +1,7 @@
 //@ts-check
 
 import { ID } from "./dataId.js"
-import { imageSrc } from "./imageSrc.js"
+import { ImageDataObject, imageDataInfo, imageSrc } from "./imageSrc.js"
 import { soundSrc } from "./soundSrc.js"
 import { TamsaEngine } from "./tamsaEngine/tamsaEngine.js"
 import { systemText } from "./text.js"
@@ -77,6 +77,31 @@ export class gameFunction {
   static _digitalDisplaySmall = game.graphic.createCustomBitmapDisplay(imageSrc.system.digitalFontSmall, 12, 18)
   static _digitalDisplayMedium = game.graphic.createCustomBitmapDisplay(imageSrc.system.digitalFont, 20, 30)
   static _digitalDisplayBig = game.graphic.createCustomBitmapDisplay(imageSrc.system.digitalFontBig, 40, 60)
+
+  /**
+   * (fieldSystem에서 사용하는 imageObjectDisplay랑 동일)
+   * 
+   * 특정 이미지 데이터를 포함한 이미지를 출력합니다.
+   * 
+   * 자기 자신의 객체를 출력하려면 defaultDisplay 함수를 사용해주세요.
+   * 
+   * @param {string} imageSrc 
+   * @param {ImageDataObject} imageData 이미지 데이터
+   * @param {number} x 출력할 x좌표
+   * @param {number} y 출력할 y좌표
+   * @param {number} width 출력할 너비
+   * @param {number} height 출력할 높이
+   * @param {number} flip 뒤집기 (자세한것은 graphicSystem.setFilp(또는 game.grapic.setFlip) 참고)
+   * @param {number} degree 회전각도 (자세한것은 graphicSystem.setDegree(또는 game.grapic.setDegree) 참고) 
+   * @param {number} alpha 알파값 (자세한것은 graphicSystem.setAlpha(또는 game.grapic.setAlpha) 참고)
+   */
+  static imageObjectDisplay (imageSrc, imageData, x, y, width = imageData.width, height = imageData.height, flip = 0, degree = 0, alpha = 1) {
+    if (flip !== 0 || degree !== 0 || alpha !== 1) {
+      game.graphic.imageDisplay(imageSrc, imageData.x, imageData.y, imageData.width, imageData.height, x, y, width, height, flip, degree, alpha)
+    } else {
+      game.graphic.imageDisplay(imageSrc, imageData.x, imageData.y, imageData.width, imageData.height, x, y, width, height)
+    }
+  }
 }
 
 /** tamshooter4 게임에서 사용하는 공통 변수 */
@@ -453,7 +478,8 @@ export class userSystem {
   }
 
   static displayUserStatVer2 () {
-    const statImage = imageSrc.system.playerStat
+    const statImageSrc = imageSrc.system.mainSystem
+    const statImageData = imageDataInfo.mainSystem.playerStat
     const statImageX = 20
     const statImageY = 500
 
@@ -473,22 +499,14 @@ export class userSystem {
     const EXP_COLORB = ['#CF8BF3', '#4A00E0', '#3c1053']
 
     // stat image
-    game.graphic.imageView(statImage, statImageX, statImageY)
-
+    gameFunction.imageObjectDisplay(statImageSrc, statImageData, statImageX, statImageY)
 
     // skill display
     for (let i = 0; i < this.skillDisplayStat.length; i++) {
-      const skillNumberImage = imageSrc.system.skillNumber
       const skillIconImage = imageSrc.system.skillIcon
-      const NUMBER_SLICE_WIDTH = 20
-      const NUMBER_SLICE_HEIGHT = 20
-      // NUMBER_SLICEX는 1번부터 4번까지 차례대로 출력하므로, i값을 이용해 위치를 조절
-      const NUMBER_SLICEX = NUMBER_SLICE_WIDTH * i
-      // NUMBER_SLICEY는 스킬 쿨타임이 있을 때 흐린 이미지를 처리해야 하는데, 이 이미지가 0, 20위치에서 시작딤.
-      const NUMBER_SLICEY = this.skillDisplayStat[i].coolTime <= 0 ? 0 : NUMBER_SLICE_HEIGHT
       const AREA_WIDTH = 75 // 300 / 4 = 75
       const NUMBER_X = LAYERX
-      const SKILL_X = LAYERX + NUMBER_SLICE_WIDTH
+      const SKILL_X = LAYERX + imageDataInfo.mainSystem.skillSlot1Available.width
       const SKILL_WIDTH = 40
       const SKILL_HEIGHT = 20
       
@@ -497,8 +515,18 @@ export class userSystem {
       const OUTPUT_TIME_X = OUTPUT_SKILL_X
       const OUTPUT_TIME_Y = LAYERY1 + 1
 
-      game.graphic.imageDisplay(skillNumberImage, NUMBER_SLICEX, NUMBER_SLICEY, NUMBER_SLICE_WIDTH, NUMBER_SLICE_HEIGHT, OUTPUT_NUMBER_X, LAYERY1, NUMBER_SLICE_WIDTH, NUMBER_SLICE_HEIGHT)
-      
+      // skill number display
+      const imgD = imageDataInfo.mainSystem
+      let targetImgD = imageDataInfo.mainSystem.skillSlot1Available
+      let isAvailable = this.skillDisplayStat[i].coolTime <= 0
+      switch (i) {
+        case 0: targetImgD = isAvailable ? imgD.skillSlot1Available : imgD.skillSlot1Disable; break
+        case 1: targetImgD = isAvailable ? imgD.skillSlot2Available : imgD.skillSlot2Disable; break
+        case 2: targetImgD = isAvailable ? imgD.skillSlot3Available : imgD.skillSlot3Disable; break
+        case 3: targetImgD = isAvailable ? imgD.skillSlot4Available : imgD.skillSlot4Disable; break
+      }
+      gameFunction.imageObjectDisplay(imageSrc.system.mainSystem, targetImgD, OUTPUT_NUMBER_X, OUTPUT_TIME_Y)
+
       // 스킬 쿨타임이 남아있다면, 남은 시간이 숫자로 표시됩니다.
       // 스킬 쿨타임이 없다면, 스킬을 사용할 수 있으며, 스킬 아이콘이 표시됩니다.
       // 해당하는 스킬이 없다면, 스킬은 표시되지 않습니다.

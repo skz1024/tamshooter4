@@ -4,7 +4,7 @@
 import { tamshooter4Data } from './data.js'
 import { CustomEditEffect, CustomEffect, EffectData } from './dataEffect.js'
 import { EnemyBulletData, EnemyData } from './dataEnemy.js'
-import { DelayData, FieldData } from './dataField.js'
+import { DelayData, EnimationData, FieldData } from './dataField.js'
 import { ID } from './dataId.js'
 import { PlayerSkillData, PlayerWeaponData } from './dataPlayer.js'
 import { RoundData } from './dataRound.js'
@@ -88,10 +88,11 @@ class DamageObject {
  * 이 객체는 필드 상태에서 직접 생성해 만드는 객체이기 때문에 data.js에서 플레이어 데이터를 받아오지 않습니다.
  */
 class PlayerObject extends FieldData {
-  /** 플레이어 이미지 */ playerImage = imageSrc.system.playerImage
-  playerImageData = {
-    x: 0, y: 0, width: 40, height: 20, frame: 3
-  }
+  /** 플레이어 이미지 (필드시스템에서 참조됨) */ playerImage = imageSrc.system.fieldSystem
+  playerImageData = imageDataInfo.fieldSystem.player
+  playerDamageEnimation = EnimationData.createEnimation(imageSrc.system.fieldSystem, imageDataInfo.fieldSystem.playerDamageEffect, 2, -1)
+  playerLevelupEnimation = EnimationData.createEnimation(imageSrc.system.fieldSystem, imageDataInfo.fieldSystem.playerLevelupEffect, 3, -1)
+  playerDieEnimation = EnimationData.createEnimation(imageSrc.system.fieldSystem, imageDataInfo.fieldSystem.playerDieEffect, 1, -1)
 
   /**
    * @typedef {{skill: PlayerSkillData | null, id: number, coolTimeFrame: number, repeatCount: number, delayCount: number}} SkillSlot 플레이어가 사용하는 스킬 슬롯의 오브젝트 구조
@@ -103,6 +104,7 @@ class PlayerObject extends FieldData {
     this.objectType = 'player'
     this.width = this.playerImageData.width
     this.height = this.playerImageData.height
+    this.playerDieEnimation.setOutputSize(this.width * 2, this.height * 2)
 
     // 플레이어 전용 변수
     // 일부 변수의 설명은 init 부분에 적혀있습니다. (참고: init함수는 다른 이름으로도 (initSkill, initWeapon등...) 여러개 있음.)
@@ -467,6 +469,7 @@ class PlayerObject extends FieldData {
 
     if (this.levelupEnimationCount > 0) {
       this.levelupEnimationCount--
+      this.playerLevelupEnimation.process()
     }
   }
 
@@ -478,6 +481,7 @@ class PlayerObject extends FieldData {
     }
 
     if (this.isDied) {
+      this.playerDieEnimation.process()
       this.dieAfterDelayCount++
     }
   }
@@ -527,6 +531,7 @@ class PlayerObject extends FieldData {
   processDamage () {
     if (this.damageEnimationCount > 0) {
       this.damageEnimationCount--
+      this.playerDamageEnimation.process()
     }
   }
 
@@ -714,27 +719,23 @@ class PlayerObject extends FieldData {
   }
 
   display () {
+    // 죽은 경우에는, 60프레임을 넘기기 전까지 죽음 애니메이션 재생
+    if (this.isDied && this.dieAfterDelayCount >= 61) return
     if (this.isDied) {
-      if (this.dieAfterDelayCount <= 60) {
-        const dieImage = imageSrc.system.playerDie
-        game.graphic.imageDisplay(dieImage, (this.dieAfterDelayCount % 10) * 20, 0, 20, 20, this.x - 20, this.y - 20, this.width * 2, this.height * 2)
-      }
-    } else {
-      if (this.damageEnimationCount > 0) {
-        let targetFrame = this.damageEnimationCount % this.playerImageData.frame
-        let frameSliceX = targetFrame * this.playerImageData.width
-        game.graphic.imageDisplay(this.playerImage, frameSliceX, this.playerImageData.y, this.playerImageData.width, this.playerImageData.height, this.x, this.y, this.width, this.height)
-      } else {
-        game.graphic.imageDisplay(this.playerImage, this.playerImageData.x, this.playerImageData.y, this.playerImageData.width, this.playerImageData.height, this.x, this.y, this.width, this.height)
-      }
+      this.playerDieEnimation.display(this.x, this.y)
+      return
+    }
 
-      if (this.levelupEnimationCount > 0) {
-        let levelUpImage = imageSrc.system.playerLevelup
-        let targetFrame = Math.floor((this.levelupEnimationCount % 16) / 4)
-        let targetX = this.x - 15
-        let targetY = this.y + Math.floor(this.levelupEnimationCount / 4) - 10
-        game.graphic.imageDisplay(levelUpImage, (this.levelupEnimationCount % targetFrame) * 70, 0, 70, 15, targetX, targetY, 70, 15)
-      }
+    if (this.damageEnimationCount > 0) {
+      this.playerDamageEnimation.display(this.x, this.y)
+    } else {
+      this.imageObjectDisplay(this.playerImage, this.playerImageData, this.x, this.y, this.width, this.height)
+    }
+
+    if (this.levelupEnimationCount > 0) {
+      let targetX = this.x - 15
+      let targetY = this.y + Math.floor(this.levelupEnimationCount / 4) - 10
+      this.playerLevelupEnimation.display(targetX, targetY)
     }
   }
 

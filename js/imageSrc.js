@@ -28,15 +28,10 @@ export class imageSrc {
     digitalFont: './image/system/digitalFont.png',
     digitalFontSmall: './image/system/digitalFontSmall.png',
     digitalFontBig: './image/system/digitalFontBig.png',
-    playerImage: './image/system/playerImage.png',
     damageFont: './image/system/damageFont.png',
-    skillNumber: './image/system/skillNumber.png',
     skillIcon: './image/system/skillIcon.png',
     fieldSystem: './image/system/fieldSystem.png',
-    optionCheck: './image/system/optionCheck.png',
-    playerDie: './image/system/playerDie.png',
-    playerLevelup: './image/system/playerLevelup.png',
-    playerStat: './image/system/playerStat.png',
+    mainSystem: './image/system/mainSystem.png',
     menuList: './image/system/menuList.png',
     skillInfo: './image/system/skillInfo.png',
     weaponIcon: './image/system/weaponIcon.png',
@@ -48,25 +43,28 @@ export class imageSrc {
     round2_3_number: './image/round/round2_3_number.png'
   }
 
-  static weaponImage = './image/weapon/weapon.png'
-  static skillImage = './image/weapon/skill.png'
-
-  static weaponEffect = {
-    missile: './image/weapon/missileEffect.png',
-    parapo: './image/weapon/parapoEffect.png'
+  static weapon = {
+    weapon: './image/weapon/weapon.png',
+    skill: './image/weapon/skill.png',
+    weaponEffect: './image/weapon/weaponEffect.png'
   }
 
-  static skillEffect = {
-    missile: './image/weapon/skillMissileEffect.png',
-    parapo: './image/weapon/skillParapoEffect.png',
-    pileBunker: './image/weapon/skillPileBunkerEffect.png',
-    swordHit: './image/weapon/skillSwordHitEffect.png',
-    criticalChaser: './image/weapon/skillCriticalChaserEffect.png',
-    santansu: './image/weapon/skillSantansuEffect.png',
-    seondanil: './image/weapon/skillSeondanilEffect.png',
-    whiteflash: './image/weapon/skillWhiteflashEffect.png',
-    hanjumoekSplash: './image/weapon/skillHanjumeokSplashEffect.png',
-  }
+  // static weaponEffect = {
+  //   missile: './image/weapon/missileEffect.png',
+  //   parapo: './image/weapon/parapoEffect.png'
+  // }
+
+  // static skillEffect = {
+  //   missile: './image/weapon/skillMissileEffect.png',
+  //   parapo: './image/weapon/skillParapoEffect.png',
+  //   pileBunker: './image/weapon/skillPileBunkerEffect.png',
+  //   swordHit: './image/weapon/skillSwordHitEffect.png',
+  //   criticalChaser: './image/weapon/skillCriticalChaserEffect.png',
+  //   santansu: './image/weapon/skillSantansuEffect.png',
+  //   seondanil: './image/weapon/skillSeondanilEffect.png',
+  //   whiteflash: './image/weapon/skillWhiteflashEffect.png',
+  //   hanjumoekSplash: './image/weapon/skillHanjumeokSplashEffect.png',
+  // }
 
   static enemy = {
     spaceEnemy: './image/enemy/spaceEnemy.png',
@@ -801,7 +799,27 @@ export class imageDataInfo {
     selected: { x: 450, y: 128, width: 120, height: 32 },
     unchecked: { x: 420, y: 0, width: 30, height: 32 },
     checked: { x: 420, y: 32, width: 30, height: 32 },
-    arrow: { x: 420, y: 64, width: 30, height: 32 }
+    arrow: { x: 420, y: 64, width: 30, height: 32 },
+
+    //
+    player: new ImageDataObject(0, 200, 40, 20),
+    playerDamageEffect: new ImageDataObject(0, 200, 40, 20, 3),
+    playerDieEffect: new ImageDataObject(0, 221, 20, 20, 10),
+    playerLevelupEffect: new ImageDataObject(200, 200, 70, 15, 4),
+  }
+
+  static mainSystem = {
+    playerStat: new ImageDataObject(0, 0, 340, 80),
+    optionUnChecked: new ImageDataObject(350, 0, 30, 30),
+    optionChecked: new ImageDataObject(350, 30, 30, 30),
+    skillSlot1Available: new ImageDataObject(0, 100, 20, 20),
+    skillSlot2Available: new ImageDataObject(20, 100, 20, 20),
+    skillSlot3Available: new ImageDataObject(40, 100, 20, 20),
+    skillSlot4Available: new ImageDataObject(60, 100, 20, 20),
+    skillSlot1Disable: new ImageDataObject(0, 120, 20, 20),
+    skillSlot2Disable: new ImageDataObject(20, 120, 20, 20),
+    skillSlot3Disable: new ImageDataObject(40, 120, 20, 20),
+    skillSlot4Disable: new ImageDataObject(60, 120, 20, 20),
   }
 
   static enemyDieEffectList = {
@@ -946,11 +964,24 @@ export class imageDataInfo {
   }
 
   static weaponEffect = {
-    missile: {x: 0, y: 0, width: 100, height: 100, frame: 10},
-    parapoLeft: {x: 0, y: 0, width: 100, height: 100, frame: 10},
-    parapoRight: {x: 0, y: 100, width: 100, height: 100, frame: 10},
-    parapoUp: {x: 0, y: 200, width: 100, height: 100, frame: 10},
-    parapoDown: {x: 0, y: 300, width: 100, height: 100, frame: 10},
+    skillParapo: new ImageDataObject(0, 0, 240, 240, 10),
+    missile: new ImageDataObject(0, 300, 100, 100, 10),
+    skillMissile: new ImageDataObject(0, 410, 100, 100, 10),
+    skillHanjumeokSplash: new ImageDataObject(0, 520, 100, 100, 10),
+    skillCriticalChaser: new ImageDataObject(0, 630, 50, 50, 12),
+    skillPileBunker1: new ImageDataObject(0, 700, 60, 20, 12),
+    skillPileBunker2: new ImageDataObject(0, 720, 60, 20, 12),
+    skillPileBunker3: new ImageDataObject(0, 740, 60, 20, 12),
+    skillSeondanilHit: new ImageDataObject(0, 770, 180, 100, 6),
+    skillSwordHit: new ImageDataObject(0, 880, 40, 40, 11),
+    parapoLeft: new ImageDataObject(1100, 300, 100, 100, 10),
+    parapoRight: new ImageDataObject(1100, 400, 100, 100, 10),
+    parapoUp: new ImageDataObject(1100, 500, 100, 100, 10),
+    parapoDown: new ImageDataObject(1100, 600, 100, 100, 10),
+    skillWhiteflash: new ImageDataObject(1100, 770, 60, 60, 15),
+    skillSantansuUp: new ImageDataObject(2110, 300, 40, 40, 9),
+    skillSantansuDown: new ImageDataObject(2110, 340, 40, 40, 9),
+    skillSantansuWater: new ImageDataObject(2110, 380, 40, 40, 9),
   }
 
   static skill = {
@@ -974,22 +1005,6 @@ export class imageDataInfo {
     rapid: {x: 0, y: 490, width: 100, height: 30, frame: 6},
     hanjumoek: {x: 0, y: 520, width: 75, height: 40, frame: 8},
     whiteflash: {x: 0, y: 560, width: 60, height: 60, frame: 6}
-  }
-  
-  static skillEffect = {
-    criticalChase: {x: 0, y: 0, width: 50, height: 60, frame: 12},
-    missile: {x: 0, y: 0, width: 200, height: 200, frame: 10},
-    parapo: {x: 0, y: 0, width: 240, height: 240, frame: 10},
-    pileBunker1: {x: 0, y: 0, width: 60, height: 20, frame: 12},
-    pileBunker2: {x: 0, y: 20, width: 60, height: 20, frame: 12},
-    pileBunker3: {x: 0, y: 40, width: 60, height: 20, frame: 12},
-    swordHit: {x: 0, y: 0, width: 20, height: 20, frame: 11},
-    santansuUp: {x: 0, y: 0, width: 40, height: 40, frame: 9},
-    santansuDown: {x: 0, y: 40, width: 40, height: 40, frame: 9},
-    santansuWater: {x: 0, y: 80, width: 40, height: 40, frame: 9},
-    seondanil: {x: 0, y: 0, width: 180, height: 100, frame: 6},
-    whiteflash: {x: 0, y: 0, width: 60, height: 60, frame: 15},
-    hanjumeokSplash: {x: 0, y: 0, width: 100, height: 100, frame: 10},
   }
 
   static menuList = {
