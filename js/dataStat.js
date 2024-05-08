@@ -133,21 +133,48 @@ export class StatRound {
    * @param {number} requireLevel 해당 라운드를 플레이하기 위한 최소 레벨 (해당 레벨 이상만 플레이 가능)
    * @param {number} requireAttack 기준 파워(전투력) 해당 라운드에서 얼마만큼의 전투력을 기준으로 적을 배치했는지에 대한 값
    * @param {number} finishTime 종료 시간(단위: 초), 해당 라운드를 클리어 하기 위해 사용해야 하는 시간 (단, 이것은 기준 시간이며, 일부 라운드는 특정 상황이 되면 강제로 클리어 할 수 있음.)
-   * @param {number} clearBonus 
+   * @param {number} clearBonus 라운드를 클리어했을 때 얻는 점수
+   * @param {number} gold 라운드에 대한 골드의 값 (이 값은 10초당 획득하는 단위로 구성되어있습니다.)
    * @param {string} roundInfo 
    */
-  constructor (iconNumber = -1, roundText = 'NULL', roundName = 'NULL', requireLevel = 0, requireAttack = 0, finishTime = 1, clearBonus = 0, roundInfo = '') {
-    this.iconNumber = iconNumber
-    this.roundText = roundText
-    this.roundName = roundName
-    this.requireLevel = requireLevel
-    this.requireAttack = requireAttack
-    this.finishTime = finishTime
-    this.clearBonus = clearBonus
-    this.roundInfo = roundInfo
+  constructor (iconNumber = -1, roundText = 'NULL', roundName = 'NULL', requireLevel = 0, requireAttack = 0, finishTime = 1, clearBonus = 0, gold = 0, roundInfo = '') {
+    /** 아이콘의 번호 (-1인경우 없음) */ this.iconNumber = iconNumber
+    /** 스탯라인에 표시될 라운드 텍스트값 (예를들어 1-1 같은거) */ this.roundText = roundText
+    /** 라운드의 이름 */ this.roundName = roundName
+    /** 해당 라운드를 플레이하기 위한 최소 레벨 */ this.requireLevel = requireLevel
+    /** 해당 라운드를 진행하기 위해 필요한 공격력값 (이 값의 90% 미만 플레이 불가능) */ this.requireAttack = requireAttack
+    /** 라운드가 클리어되는 기준이 되는 시간 */ this.finishTime = finishTime
+    /** 라운드를 클리어했을 때 얻는 보너스 점수 */ this.clearBonus = clearBonus
+    /** 라운드를 플레이하면서 얻는 골드의 기준값, 10초단위로 계산됨 */ this.gold = gold
+    /** 라운드 설명 또는 정보 */ this.roundInfo = roundInfo
+    /** 총합 골드량 */ this.goldTotal = this.gold * Math.floor(finishTime / 10)
 
     // 추가적인 옵션 자동 설정
-    this.minPower = Math.floor(requireAttack * 0.8)
+    /** 해당 라운드를 진행하기 위해 필요한 최소 공격력값 (이 값 미만은 플레이 불가능) */ this.minAttack = Math.floor(requireAttack * 0.9)
+  }
+
+  /**
+   * 라운드의 밸런스 측정을 위해 만들어둔 요소
+   * @param {number} playTime 
+   * @param {number} balanceScore 
+   */
+  setBalancePosition (playTime, balanceScore) {
+    this.playTime = playTime
+    this.balanceScore = balanceScore
+    this.scoreTimeDiv = Math.floor(balanceScore / playTime)
+  }
+}
+
+export class StatRoundBalance {
+  /**
+   * 라운드의 밸런스 측정을 위해 만들어둔 요소
+   * @param {number} playTime 
+   * @param {number} balanceScore 
+   */
+  constructor (playTime = 180, balanceScore = 90000) {
+    /** 제작자가 정한 해당 라운드에서 얻어야하는 기준에 대한 점수 (밸런스 측정 용도) */ this.playTime = playTime
+    /** 라운드를 클리어하기 위해 사용해야 하는 대략적인 시간 (밸런스 측정 용도) */ this.balanceScore = balanceScore
+    this.timeDivScore = Math.floor(balanceScore / playTime)
   }
 }
 
@@ -345,33 +372,64 @@ dataExportStatPlayerSkill.set(ID.playerSkill.moon, new StatPlayerSkill('moon', 2
 export const dataExportStatRound = new Map()
 dataExportStatRound.set(ID.round.UNUSED, new StatRound())
 // round 1
-dataExportStatRound.set(ID.round.round1_1, new StatRound(2, '1-1', '우주 여행 - 공허', 0, 40000, 150, 30000, ''))
-dataExportStatRound.set(ID.round.round1_2, new StatRound(3, '1-2', '운석 지대', 1, 40000, 180, 36000, ''))
-dataExportStatRound.set(ID.round.round1_3, new StatRound(4, '1-3', '운석 지대 - 무인기 충돌', 1, 40000, 210, 39000, ''))
-dataExportStatRound.set(ID.round.round1_4, new StatRound(5, '1-4', '의식의 공간', 4, 40000, 156, 38000, ''))
-dataExportStatRound.set(ID.round.round1_5, new StatRound(6, '1-5', '운석 지대 - 레드 존', 4, 40000, 210, 41000, ''))
-dataExportStatRound.set(ID.round.round1_6, new StatRound(7, '1-6', '우주 여행 - 파란 행성 가는 길', 6, 40000, 154, 35000, ''))
-dataExportStatRound.set(ID.round.round1_test, new StatRound(8, 'TEST1', 'TEST1', 0, 0, 9900, 0, '테스트 라운드 (디버그 용도)'))
+dataExportStatRound.set(ID.round.round1_1, new StatRound(2, '1-1', '우주 여행 - 공허', 1, 40000, 150, 30000, 10, ''))
+dataExportStatRound.set(ID.round.round1_2, new StatRound(3, '1-2', '운석 지대', 2, 40000, 180, 36000, 11, ''))
+dataExportStatRound.set(ID.round.round1_3, new StatRound(4, '1-3', '운석 지대 - 무인기 충돌', 4, 40000, 210, 39000, 11, ''))
+dataExportStatRound.set(ID.round.round1_4, new StatRound(5, '1-4', '의식의 공간', 5, 40000, 156, 38000, 10, ''))
+dataExportStatRound.set(ID.round.round1_5, new StatRound(6, '1-5', '운석 지대 - 레드 존', 6, 40000, 210, 41000, 11, ''))
+dataExportStatRound.set(ID.round.round1_6, new StatRound(7, '1-6', '우주 여행 - 파란 행성 가는 길', 8, 40000, 154, 35000, 11, ''))
+dataExportStatRound.set(ID.round.round1_test, new StatRound(8, 'TEST1', 'TEST1', 0, 0, 9900, 0, 0, '테스트 라운드 (디버그 용도)'))
 // round 2
-dataExportStatRound.set(ID.round.round2_1, new StatRound(11, '2-1', '파란 행성 - 하늘 300km ~ 250km', 8, 50000, 150, 40000, ''))
-dataExportStatRound.set(ID.round.round2_2, new StatRound(12, '2-2', '동그라미 마을', 8, 50000, 170, 44000, ''))
-dataExportStatRound.set(ID.round.round2_3, new StatRound(13, '2-3', '동그라미 스페이스', 12, 50000, 192, 48000, ''))
-dataExportStatRound.set(ID.round.round2_4, new StatRound(14, '2-4', '동그라미 마을 홀', 12, 60000, 207, 52000, ''))
-dataExportStatRound.set(ID.round.round2_5, new StatRound(15, '2-5', '지하실 전투', 14, 60000, 200, 32000, ''))
-dataExportStatRound.set(ID.round.round2_6, new StatRound(16, '2-6', '폐허가 된 동그라미 마을', 15, 60000, 150, 48000, ''))
-dataExportStatRound.set(ID.round.round2_test, new StatRound(8, 'TEST2', 'TEST2', 0, 0, 9900, 0))
+dataExportStatRound.set(ID.round.round2_1, new StatRound(11, '2-1', '파란 행성 - 하늘 300km ~ 250km', 10, 50000, 150, 40000, 12, ''))
+dataExportStatRound.set(ID.round.round2_2, new StatRound(12, '2-2', '동그라미 마을', 12, 50000, 170, 44000, 12, ''))
+dataExportStatRound.set(ID.round.round2_3, new StatRound(13, '2-3', '동그라미 스페이스', 13, 50000, 192, 48000, 12, ''))
+dataExportStatRound.set(ID.round.round2_4, new StatRound(14, '2-4', '동그라미 마을 홀', 14, 60000, 207, 52000, 14, ''))
+dataExportStatRound.set(ID.round.round2_5, new StatRound(15, '2-5', '지하실 전투', 15, 60000, 200, 32000, 14, ''))
+dataExportStatRound.set(ID.round.round2_6, new StatRound(16, '2-6', '폐허가 된 동그라미 마을', 18, 60000, 150, 48000, 13, ''))
+dataExportStatRound.set(ID.round.round2_test, new StatRound(8, 'TEST2', 'TEST2', 0, 0, 9900, 0, 0))
 // round 3
-dataExportStatRound.set(ID.round.round3_1, new StatRound(21, '3-1', '다운 타워 1', 20, 70000, 200, 71400, ''))
-dataExportStatRound.set(ID.round.round3_2, new StatRound(22, '3-2', '다운 타워 2', 20, 70000, 220, 72800, ''))
-dataExportStatRound.set(ID.round.round3_3, new StatRound(23, '3-3', '다운 타워 3', 20, 70000, 200, 74200, ''))
-dataExportStatRound.set(ID.round.round3_4, new StatRound(24, '3-4', '다운 타워 보이드', 22, 70000, 240, 78000, ''))
-dataExportStatRound.set(ID.round.round3_5, new StatRound(25, '3-5', '안티 제물', 25, 70000, 610, 130000, ''))
-dataExportStatRound.set(ID.round.round3_6, new StatRound(26, '3-6', '다운 타워 코어 1', 25, 77000, 220, 83800, ''))
-dataExportStatRound.set(ID.round.round3_7, new StatRound(27, '3-7', '다운 타워 코어 2', 25, 77000, 220, 84600, ''))
-dataExportStatRound.set(ID.round.round3_8, new StatRound(28, '3-8', '다운 타워 통로 1', 25, 77000, 220, 86600, ''))
-dataExportStatRound.set(ID.round.round3_9, new StatRound(29, '3-9', '다운 타워 통로 2', 25, 77000, 220, 87800, ''))
-dataExportStatRound.set(ID.round.round3_10, new StatRound(19, '3-10', '동그라미 마을로 돌아가는 길', 25, 77000, 447, 160000, ''))
-dataExportStatRound.set(ID.round.round3_test, new StatRound(8, 'TEST3', 'round 3 test mode', 20, 0, 9900, 0, 'round3을 제작하는 과정에서 만들어진 테스트 라운드'))
+dataExportStatRound.set(ID.round.round3_1, new StatRound(21, '3-1', '다운 타워 1', 20, 70000, 200, 71400, 16, ''))
+dataExportStatRound.set(ID.round.round3_2, new StatRound(22, '3-2', '다운 타워 2', 21, 70000, 220, 72800, 15, ''))
+dataExportStatRound.set(ID.round.round3_3, new StatRound(23, '3-3', '다운 타워 3', 21, 70000, 200, 74200, 16, ''))
+dataExportStatRound.set(ID.round.round3_4, new StatRound(24, '3-4', '다운 타워 보이드', 22, 70000, 240, 78000, 16, ''))
+dataExportStatRound.set(ID.round.round3_5, new StatRound(25, '3-5', '안티 제물', 24, 70000, 610, 130000, 18, ''))
+dataExportStatRound.set(ID.round.round3_6, new StatRound(26, '3-6', '다운 타워 코어 1', 25, 77000, 220, 83800, 17, ''))
+dataExportStatRound.set(ID.round.round3_7, new StatRound(27, '3-7', '다운 타워 코어 2', 25, 77000, 220, 84600, 17, ''))
+dataExportStatRound.set(ID.round.round3_8, new StatRound(28, '3-8', '다운 타워 통로 1', 26, 77000, 220, 86600, 17, ''))
+dataExportStatRound.set(ID.round.round3_9, new StatRound(29, '3-9', '다운 타워 통로 2', 26, 77000, 220, 87800, 17, ''))
+dataExportStatRound.set(ID.round.round3_10, new StatRound(19, '3-10', '동그라미 마을로 돌아가는 길', 28, 77000, 447, 160000, 18, ''))
+dataExportStatRound.set(ID.round.round3_test, new StatRound(8, 'TEST3', 'round 3 test mode', 20, 0, 9900, 0, 0, 'round3을 제작하는 과정에서 만들어진 테스트 라운드'))
+
+
+/**
+ * 외부에서 사용하기 위한 라운드 스탯 값
+ * @type {Map<number, StatRoundBalance>}
+ */
+export const dataExportStatRoundBalance = new Map()
+dataExportStatRoundBalance.set(ID.round.round1_1, new StatRoundBalance(150 + 30, 65000))
+dataExportStatRoundBalance.set(ID.round.round1_2, new StatRoundBalance(180 +  0, 80000))
+dataExportStatRoundBalance.set(ID.round.round1_3, new StatRoundBalance(210 +  0, 98000))
+dataExportStatRoundBalance.set(ID.round.round1_4, new StatRoundBalance(156 +  0, 72000))
+dataExportStatRoundBalance.set(ID.round.round1_5, new StatRoundBalance(210 +  0, 98000))
+dataExportStatRoundBalance.set(ID.round.round1_6, new StatRoundBalance(152 +  0, 78000))
+
+dataExportStatRoundBalance.set(ID.round.round2_1, new StatRoundBalance(150 + 20, 90000))
+dataExportStatRoundBalance.set(ID.round.round2_2, new StatRoundBalance(170 +  0, 90000))
+dataExportStatRoundBalance.set(ID.round.round2_3, new StatRoundBalance(192 -  8, 96000))
+dataExportStatRoundBalance.set(ID.round.round2_4, new StatRoundBalance(207 +  0, 110000))
+dataExportStatRoundBalance.set(ID.round.round2_5, new StatRoundBalance(200 +  0, 130000))
+dataExportStatRoundBalance.set(ID.round.round2_6, new StatRoundBalance(150 + 10, 94000))
+
+dataExportStatRoundBalance.set(ID.round.round3_1, new StatRoundBalance(200 + 40, 210000))
+dataExportStatRoundBalance.set(ID.round.round3_2, new StatRoundBalance(220 + 20, 210000))
+dataExportStatRoundBalance.set(ID.round.round3_3, new StatRoundBalance(200 + 40, 210000))
+dataExportStatRoundBalance.set(ID.round.round3_4, new StatRoundBalance(240 +  0, 230000))
+dataExportStatRoundBalance.set(ID.round.round3_5, new StatRoundBalance(610 +  0, 610000))
+dataExportStatRoundBalance.set(ID.round.round3_6, new StatRoundBalance(220 +  0, 220000))
+dataExportStatRoundBalance.set(ID.round.round3_7, new StatRoundBalance(220 +  0, 220000))
+dataExportStatRoundBalance.set(ID.round.round3_8, new StatRoundBalance(220 +  0, 220000))
+dataExportStatRoundBalance.set(ID.round.round3_9, new StatRoundBalance(220 + 30, 240000))
+dataExportStatRoundBalance.set(ID.round.round3_10, new StatRoundBalance(447 +  0, 460000))
 
 
 /**

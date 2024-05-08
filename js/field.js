@@ -12,6 +12,7 @@ import { WeaponData } from './dataWeapon.js'
 import { imageDataInfo, imageSrc } from './imageSrc.js'
 import { soundSrc } from './soundSrc.js'
 import { gameVar, userSystem, game, gameFunction } from './game.js'
+import { dataExportStatItem } from './dataStat.js'
 
 let digitalDisplay = gameFunction.digitalDisplay
 
@@ -427,8 +428,27 @@ class PlayerObject extends FieldData {
   }
 
   /** 플레이어에게 경험치를 추가합니다. */
-  addExp (score = 0) {
+  plusExp (score = 0) {
     userSystem.plusExp(score)
+  }
+
+  /** 플레이어에게 골드를 추가합니다. */
+  plusGold (gold = 0) {
+    userSystem.plusGold(gold)
+  }
+
+  minusGold (gold = 0) {
+    userSystem.minusGold(gold)
+  }
+
+  /** 플레이어에게 아이템을 추가합니다. (fieldSystem에서 간접적으로 사용함) */
+  addItem (id = 0, count = 0) {
+    userSystem.addInventoryItem(id, count)
+  }
+
+  /** 플레이어에게 아이템을 삭제합니다. (fieldSystem에서 간접적으로 사용함)  */
+  removeItem (id = 0, count = 0) {
+    userSystem.removeInventoryItem(id, count)
   }
 
   process () {
@@ -1449,6 +1469,15 @@ export class fieldSystem {
   /** 현재까지 진행된 에니메이션의 총 프레임 */ static scoreEnimationFrame = 0
   /** 총 점수 */ static totalScore = 0
   /** 필드 점수 (필드 내에서 획득한 모든 점수) */ static fieldScore = 0
+  /** 필드 골드 (필드 내에서 획득한 모든 골드) */ static fieldGold = 0
+
+  /** 필드 아이템 id 리스트 (필드 내에서 획득한 모든 아이템 목록) fieldItemCountList랑 같이 사용함 
+   * @type {number[]} */ 
+  static fieldItemIdList = []
+
+  /** 필드 아이템 개수 리스트 (필드 내에서 획득한 모든 아이템 목록) fieldItemIdList랑 같이 사용함
+   * @type {number[]} */ 
+  static fieldItemCountList = []
 
   /** 옵션 설정 값 */
   static option = {
@@ -1496,7 +1525,71 @@ export class fieldSystem {
 
     this.fieldScore += score
     this.totalScore += score
-    fieldState.playerObject.addExp(score)
+    fieldState.playerObject.plusExp(score)
+  }
+
+  /** 플레이어의 골드를 증가시키도록 요청 */
+  static requestAddGold (gold = 0) {
+    this.fieldGold += gold
+    fieldState.playerObject.plusGold(gold)
+  }
+
+  /** 플레이어의 골드를 감소시키도록 요청 */
+  static requestSubtractGold (gold = 0) {
+    this.fieldGold -= gold
+    fieldState.playerObject.plusGold(gold)
+  }
+
+  /**
+   * 플레이어에게 아이템을 추가시키도록 요청
+   * @param {number} id 아이템의 id (id가 0인경우 무효)
+   * @param {number} count 아이템의 개수 (0이하는 무효)
+   */
+  static requestAddItem (id, count) {
+    if (id === 0 || count <= 0) return
+
+    let index = this.fieldItemIdList.indexOf(id)
+    if (index === -1) {
+      this.fieldItemIdList.push(id)
+      this.fieldItemCountList.push(count)
+    } else {
+      this.fieldItemCountList[index] += count
+    }
+    
+    fieldState.playerObject.addItem(id, count)
+  }
+
+  /**
+   * 플레이어에게 아이템을 삭제시키도록 요청
+   * 
+   * 참고: 만약, 삭제만 하고 획득을 하지 않았다면, 삭제된 아이템은 필드리스트에 따로 표시되지는 않습니다.
+   * (사실 코드구현하기 귀찮... 변수를 또 만들고 조사해야하므로...)
+   * 
+   * @param {number} id 아이템의 id (id가 0인경우 무효)
+   * @param {number} count 아이템의 개수 (음수값이면 전부 삭제, 0이면 무효)
+   */
+  static requestRemoveItem (id, count) {
+    if (id === 0 || count === 0) return
+
+    // 필드에서 얻은 아이템이 있는지를 조사
+    for (let i = 0; i < this.fieldItemIdList.length; i++) {
+      if (id === this.fieldItemIdList[i]) {
+        let resultCount = this.fieldItemCountList[i] - count
+        // 아이템을 삭제한 결과값의 예상이 음수인경우, 그 아이템은 제거하는것으로 처리됨
+        // 대신, 카운트가 0보다 커야함 (음수일 수도 있으므로)
+        if (resultCount > 0 && count > 0) {
+          this.fieldItemCountList[i] -= count
+        } else {
+          // 아이템 전면 삭제 (카운트가 0보다 작거나, 결과값이 0보다 작으면)
+          this.fieldItemIdList.splice(i, 1)
+          this.fieldItemCountList.splice(i, 1)
+        }
+
+        break // 아이템을 찾았다면 반복문 종료
+      }
+    }
+
+    fieldState.playerObject.removeItem(id, count)
   }
 
   /**
@@ -1579,6 +1672,18 @@ export class fieldSystem {
   }
 
   /**
+   * 해당 라운드의 골드에 대한 값을 계산합니다.
+   */
+  static getRoundGoldCalculation () {
+    if (this.round == null) return 0
+    if (this.round.time.currentTime < 30) return 0 // 적어도 30초이상 진행해야 골드를 얻을 수 있음.
+
+    let gold = this.round.stat.gold
+    let timeMultiple = Math.floor(this.round.time.currentTime / 10)
+    return gold * timeMultiple
+  }
+
+  /**
    * 점수 사운드 출력
    */
   static scoreSound () {
@@ -1653,6 +1758,7 @@ export class fieldSystem {
     this.scoreSound()
     if (this.exitDelayCount === 0) {
       this.message = this.messageList.REQUEST_SAVE // 강제 저장을 통해 필드 저장 데이터를 삭제하고, 메인화면으로 돌아가게끔 유도
+      this.requestAddGold(this.getRoundGoldCalculation()) // 골드 추가
     }
 
     this.scoreEnimationFrame++
@@ -1672,6 +1778,7 @@ export class fieldSystem {
       userSystem.plusExp(this.round.stat.clearBonus)
       this.totalScore = this.fieldScore + this.round.stat.clearBonus
       this.message = this.messageList.REQUEST_SAVE // 강제 저장을 통해 필드 저장 데이터를 삭제하고, 메인화면으로 돌아가게끔 유도
+      this.requestAddGold(this.getRoundGoldCalculation()) // 골드 추가
     }
 
     this.scoreSound()
@@ -1689,6 +1796,7 @@ export class fieldSystem {
     if (this.exitDelayCount === 0) {
       game.sound.play(soundSrc.system.systemGameOver)
       this.message = this.messageList.REQUEST_SAVE // 강제 저장을 통해 필드 저장 데이터를 삭제하고, 메인화면으로 돌아가게끔 유도
+      this.requestAddGold(this.getRoundGoldCalculation()) // 골드 추가
     }
 
     this.scoreSound()
@@ -1845,8 +1953,27 @@ export class fieldSystem {
     game.graphic.imageDisplay(image, imageDataSoundOn.x, imageDataSoundOn.y, imageDataSoundOn.width, imageDataSoundOn.height, CHECK_X, CHECK_SOUND_Y, imageDataSoundOn.width, imageDataSoundOn.height)
     game.graphic.imageDisplay(image, imageDataMusicOn.x, imageDataMusicOn.y, imageDataMusicOn.width, imageDataMusicOn.height, CHECK_X, CHECK_MUSIC_Y, imageDataMusicOn.width, imageDataMusicOn.height)
     game.graphic.imageDisplay(image, imageDataSelected.x, imageDataSelected.y, imageDataSelected.width, imageDataSelected.height, SELECT_X, SELECT_Y, imageDataSelected.width, imageDataSelected.height)
-    game.graphic.fillRect(SCORE_X, SCORE_Y, 400, 30, '#AEB68F')
+    game.graphic.fillRect(SCORE_X, SCORE_Y, 400, 60, '#AEB68F')
     digitalDisplay('score: ' + this.totalScore, SCORE_X + 5, SCORE_Y + 5)
+    digitalDisplay('gold: ' + this.fieldGold, SCORE_X + 5, SCORE_Y + 35)
+
+    // 아이템 출력?
+    game.graphic.fillRect(SCORE_X, SCORE_Y + 100, 400, 300, 'orange')
+    for (let i = 0; i < this.fieldItemIdList.length; i++) {
+      if (this.fieldItemCountList[i] <= 0) continue
+
+      let targetItem = dataExportStatItem.get(this.fieldItemIdList[i])
+      if (targetItem == null) continue
+
+      let src = imageSrc.system.itemIcon
+      let iconWidth = imageDataInfo.system.itemIcon.width
+      let iconSectionWidth = imageDataInfo.system.itemIcon.height
+      let XLINE = targetItem.iconNumber % 10
+      let YLINE = Math.floor(targetItem.iconNumber / 10)
+
+      game.graphic.imageDisplay(src, iconSectionWidth * XLINE, iconSectionWidth * YLINE, iconWidth, iconWidth, 400 + (iconWidth * i), 300, iconWidth, iconWidth)
+      digitalDisplay('X' + this.fieldItemCountList[i], 400 + (iconWidth * i), 300 + iconWidth + 10)
+    }
   }
 
   /**
@@ -1862,15 +1989,9 @@ export class fieldSystem {
     const TEXT_HEIGHT = 22
 
     switch (this.stateId) {
-      case this.STATE_ROUND_CLEAR:
-        imageData = imageDataInfo.fieldSystem.roundClear
-        break
-      case this.STATE_GAME_OVER:
-        imageData = imageDataInfo.fieldSystem.gameOver
-        break
-      default:
-        imageData = imageDataInfo.fieldSystem.result
-        break
+      case this.STATE_ROUND_CLEAR: imageData = imageDataInfo.fieldSystem.roundClear; break
+      case this.STATE_GAME_OVER: imageData = imageDataInfo.fieldSystem.gameOver; break
+      default: imageData = imageDataInfo.fieldSystem.result; break
     }
 
     titleX = (game.graphic.CANVAS_WIDTH - imageData.width) / 2
@@ -1884,11 +2005,37 @@ export class fieldSystem {
     }
 
     game.graphic.imageDisplay(image, imageData.x, imageData.y, imageData.width, imageData.height, titleX, titleY, imageData.width, imageData.height)
-    game.graphic.fillRect(TEXT_X, TEXT_Y - 4, 400, TEXT_HEIGHT * 4, 'lime')
-    digitalDisplay('field score: ' + this.fieldScore, TEXT_X, TEXT_Y)
-    digitalDisplay('clear bonus: ' + clearBonus, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 1))
-    digitalDisplay('-----------: ' + 0, TEXT_X, TEXT_Y + (TEXT_HEIGHT * 2))
-    digitalDisplay('total score: ' + Math.floor(viewScore), TEXT_X, TEXT_Y + (TEXT_HEIGHT * 3))
+    game.graphic.fillRect(TEXT_X, TEXT_Y - 4, 400, TEXT_HEIGHT * 7, 'lime')
+
+    let resultText = [
+      'field score: ' + this.fieldScore,
+      'clear bonus: ' + clearBonus,
+      '--------------------------------------',
+      'total score: ' + Math.floor(viewScore),
+      'gold       : ' + this.fieldGold,
+    ]
+
+    for (let i = 0; i < resultText.length; i++) {
+      digitalDisplay(resultText[i], TEXT_X, TEXT_Y + (TEXT_HEIGHT * i))
+    }
+
+    // 아이템 출력?
+    game.graphic.fillRect(200, 400, 400, 300, 'orange')
+    for (let i = 0; i < this.fieldItemIdList.length; i++) {
+      if (this.fieldItemCountList[i] <= 0) continue
+
+      let targetItem = dataExportStatItem.get(this.fieldItemIdList[i])
+      if (targetItem == null) continue
+
+      let src = imageSrc.system.itemIcon
+      let iconWidth = imageDataInfo.system.itemIcon.width
+      let iconSectionWidth = imageDataInfo.system.itemIcon.height
+      let XLINE = targetItem.iconNumber % 10
+      let YLINE = Math.floor(targetItem.iconNumber / 10)
+
+      game.graphic.imageDisplay(src, iconSectionWidth * XLINE, iconSectionWidth * YLINE, iconWidth, iconWidth, 400 + (iconWidth * i), 300, iconWidth, iconWidth)
+      digitalDisplay('X' + this.fieldItemCountList[i], 400 + (iconWidth * i), 300 + iconWidth + 10)
+    }
   }
 
   /**
@@ -1964,9 +2111,12 @@ export class fieldSystem {
     let field = {
       stateId: this.stateId,
       fieldScore: this.fieldScore,
+      fieldGold: this.fieldGold,
       totalScore: this.totalScore,
       enimationFrame: this.scoreEnimationFrame,
       exitDelayCount: this.exitDelayCount,
+      fieldItemCountList: this.fieldItemCountList,
+      fieldItemIdList: this.fieldItemIdList,
     }
     
     return {
@@ -2045,12 +2195,15 @@ export class fieldSystem {
     this.round.resetLoadSpriteData() // 스프라이트 데이터 리셋
     this.roundImageSoundLoad() // 라운드 이미지 사운드 로드
     
-    // 필드 불러오기
-    this.stateId = loadData.field.stateId
-    this.fieldScore = loadData.field.fieldScore
-    this.totalScore = loadData.field.totalScore
-    this.enimationFrame = loadData.field.enimationFrame
-    this.exitDelayCount = loadData.field.exitDelayCount
+    // 필드 불러오기 (동시에 널체크)
+    if (loadData.field.stateId !== undefined) this.stateId = loadData.field.stateId
+    if (loadData.field.fieldScore !== undefined) this.fieldScore = loadData.field.fieldScore
+    if (loadData.field.totalScore !== undefined) this.totalScore = loadData.field.totalScore
+    if (loadData.field.enimationFrame !== undefined) this.enimationFrame = loadData.field.enimationFrame
+    if (loadData.field.exitDelayCount !== undefined) this.exitDelayCount = loadData.field.exitDelayCount
+    if (loadData.field.fieldGold !== undefined) this.fieldGold = loadData.field.fieldGold
+    if (loadData.field.fieldItemIdList !== undefined) this.fieldItemIdList = loadData.field.fieldItemIdList
+    if (loadData.field.fieldItemCountList!== undefined) this.fieldItemCountList = loadData.field.fieldItemCountList
     
     // 데이터 표시
     gameVar.statLineText2.setStatLineText(this.getFieldDataString(), this.round.time._currentTime, this.round.stat.finishTime, '#D5F5E3' ,'#33ff8c')

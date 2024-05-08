@@ -162,10 +162,12 @@ export class userSystem {
 
   /** 
    * 인벤토리에 아이템 추가 
-   * @param {number} id 아이템의 id
+   * @param {number} id 아이템의 id (0인경우 무시함)
    * @param {number} [count=1] 추가하는 개수 (참고: 아이템의 최대 개수는 제한이 없으나 2^53보다 높아지면 정밀도가 손실됨)
    */
-  static addInventoryItem (id, count = 1) {
+  static addInventoryItem (id = 0, count = 1) {
+    if (id === 0) return
+
     // 현재 id에 해당하는 아이템 개수를 가져옴
     let targetItemCount = this.inventory.get(id)
     if (targetItemCount == null) {
@@ -177,11 +179,11 @@ export class userSystem {
 
   /** 
    * 인벤토리의 아이템 제거 
-   * @param {number} id 아이템의 id
+   * @param {number} id 아이템의 id (0인경우 무시함)
    * @param {number} [count=1] 제거해야 하는 개수 (참고: 음수값이면 전부 제거됨, 0은 제거되지 않음), 개수를 초과한경우에는 남은 개수를 전부 제거
    */
-  static removeInventoryItem (id, count = 1) {
-    if (count === 0) return
+  static removeInventoryItem (id = 0, count = 1) {
+    if (id === 0 && count === 0) return
     
     let targetItemCount = this.inventory.get(id)
     if (targetItemCount == null) return
@@ -428,6 +430,20 @@ export class userSystem {
     }
   }
 
+  /** 현재 값만큼 유저의 골드를 더합니다. */
+  static plusGold (gold = 0) {
+    if (gold < 0) return
+
+    this.gold += gold
+  }
+
+  /** 현재 값만큼 유저의 골드를 뺍니다. */
+  static minusGold (gold = 0) {
+    if (gold < 0) return
+
+    this.gold -= gold
+  }
+
   /**
    * 데미지를 받으면 정해진 시간 동안 체력과 쉴드 색깔이 깜빡거립니다.
    * @param {number} frameCount 
@@ -613,7 +629,7 @@ export class userSystem {
       shieldMax: this.shieldMax,
       shieldRecovery: this.shieldRecovery,
       lv: this.lv,
-      skillList: this.skillList
+      skillList: this.skillList,
     }
   }
 
@@ -633,14 +649,35 @@ export class userSystem {
    * @retruns 세이브데이터의 문자열
    */
   static getSaveData () {
+    let inventoryData = this.getSaveInventoryData()
     let inputData = {
       lv: this.lv,
       exp: this.exp,
+      gold: this.gold,
+      inventoryIdList: inventoryData.idList,
+      inventoryCountList: inventoryData.countList,
       weapon: this.weaponList,
-      skill: this.skillList
+      skill: this.skillList,
     }
 
     return inputData
+  }
+
+  /** 인벤토리를 저장하기 위해 필요한 배열을 얻어옴 */
+  static getSaveInventoryData () {
+    let idList = []
+    let countList = []
+    for (let target of this.inventory) {
+      if (target[0] != null && target[1] != null) {
+        idList.push(target[0])
+        countList.push(target[1])
+      }
+    }
+
+    return {
+      idList,
+      countList,
+    }
   }
 
   static getSaveData0a36 () {
@@ -668,6 +705,12 @@ export class userSystem {
     if (saveData.exp) this.exp = saveData.exp
     if (saveData.weapon) this.weaponList = saveData.weapon
     if (saveData.skill) this.skillList = saveData.skill
+    if (saveData.gold) this.gold = saveData.gold
+
+    let inventroyId = []
+    let inventoryCount = []
+    if (saveData.inventoryId) inventroyId = saveData.inventoryId
+    if (saveData.inventoryCount) inventoryCount = saveData.inventoryCount
 
     // 데이터 유효성 체크
     if (typeof this.lv !== 'number') {
@@ -690,6 +733,14 @@ export class userSystem {
         console.error(systemText.gameError.LOAD_USERLEVEL_ERROR)
         return false // 데이터를 불러오지 않음
       }
+    }
+
+    // 인벤토리 처리 (id 0은 세이브 관련 버그로 생성되는 더미데이터라 제거됨)
+    for (let i = 0; i < inventroyId.length; i++) {
+      if (inventroyId[i] == null || inventoryCount[i] == null) continue
+      if (inventroyId[i] === 0) continue
+
+      this.inventory.set(inventroyId[i], inventoryCount[i])
     }
 
     // 보여지는 부분 설정을 하기 위해 현재 스킬값을 다시 재설정

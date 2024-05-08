@@ -10,7 +10,7 @@ import { game, gameFunction } from "./game.js";
 import { stringText, systemText } from "./text.js";
 import { dataExportPlayerWeapon } from "./dataPlayer.js";
 
-const versionText = 'created by skz1024 | ver 0.49'
+const versionText = 'created by skz1024 | ver 0.49 | 2024/05'
 let digitalDisplay = gameFunction.digitalDisplay
 let loadComplete = false
 
@@ -1971,9 +1971,19 @@ class LoadErrorSystem extends MenuSystem {
   constructor () {
     super()
     this.message = ''
+    this.buttonPressHit = 0
   }
 
-  process () {}
+  process () {
+    if (game.control.getButtonInput(game.control.buttonIndex.START)) {
+      this.buttonPressHit++
+    }
+
+    if (this.buttonPressHit >= 10) {
+      gameSystem.dataReset()
+      setTimeout(() => { location.reload() }, 1000)
+    }
+  }
 
   display () {
     game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, '#4F4F4F')
@@ -1981,10 +1991,25 @@ class LoadErrorSystem extends MenuSystem {
     digitalDisplay('LOAD DATA ERROR', 0, 20)
     game.graphic.fillText(this.message, 0, 40, '#C2BD90')
 
-    game.graphic.fillText(systemText.gameError.LOAD_ERROR_MESSAGE1, 0, 80, '#B8B8B8')
-    game.graphic.fillText(systemText.gameError.LOAD_ERROR_MESSAGE2, 0, 100, '#B8B8B8')
-    game.graphic.fillText(systemText.gameError.LOAD_ERROR_MESSAGE3, 0, 120, '#B8B8B8')
-    game.graphic.fillText(systemText.gameError.LOAD_ERROR_MESSAGE4, 0, 140, '#B8B8B8')
+    let textList = [
+      systemText.gameError.LOAD_ERROR_MESSAGE1,
+      systemText.gameError.LOAD_ERROR_MESSAGE2,
+      systemText.gameError.LOAD_ERROR_MESSAGE3,
+      systemText.gameError.LOAD_ERROR_MESSAGE4,
+      systemText.gameError.LOAD_ERROR_MESSAGE5,
+      systemText.gameError.LOAD_ERROR_MESSAGE6,
+      systemText.gameError.LOAD_ERROR_MESSAGE7,
+      systemText.gameError.LOAD_ERROR_MESSAGE8
+    ]
+
+    for (let i = 0; i < textList.length; i++) {
+      game.graphic.fillText(textList[i], 0, 100 + (25 * i), '#B8B8B8')
+    }
+
+    if (this.buttonPressHit >= 10) {
+      game.graphic.fillText(systemText.gameError.LOAD_ERROR_DATA_DELETE_COMPLETE1, 0, 350, '#B8B8B8')
+      game.graphic.fillText(systemText.gameError.LOAD_ERROR_DATA_DELETE_COMPLETE2, 0, 375, '#B8B8B8')
+    }
   }
 }
 
@@ -2179,7 +2204,9 @@ export class gameSystem {
 
     // sramData (조작 방지를 위한 추가 정보)
     let sramData = [
-      this.saveNumberEncode(userData.lv, userData.exp)
+      this.saveNumberEncode(userData.lv, userData.exp, userData.gold),
+      this.saveNumberEncode(userData.inventoryIdList),
+      this.saveNumberEncode(userData.inventoryCountList)
     ]
 
     let saveData = {
@@ -2291,7 +2318,7 @@ export class gameSystem {
 
   /**
    * 특정 숫자를 임의의 코드로 암호화합니다. (소수점은 암호화 불가능, 강제로 정수로 변환됩니다.)
-   * @param  {...string | number} saveNumber 
+   * @param  {...string[] | number[] | string | number} saveNumber 
    * @returns {string} JSON문자열
    */
   static saveNumberEncode (...saveNumber) {
@@ -2390,6 +2417,13 @@ export class gameSystem {
       let digit = Number(result.slice(position, position + DIGITLEN))
       let len = Number(result.slice(position + DIGITLEN, position + DIGITLEN + digit))
       let text = Number(result.slice(position + DIGITLEN + digit, position + DIGITLEN + digit + len))
+
+      // 마지막 글자이면서 디지트가 0인경우 리턴
+      if (position === result.length - 1 && digit === 0) {
+        position++
+        continue
+      }
+
       divArray.push(text) // 결과를 새 배열에 추가
       position += DIGITLEN + digit + len // 다음 문자를 읽을 위치를 변경
     }
@@ -2441,11 +2475,14 @@ export class gameSystem {
 
     if (loadData.userData) {
       // sram으로 처리
-      let sram1
+      let sram1, sram2, sram3
       let userLvExp
       if (loadData.sramData) {
         sram1 = loadData.sramData[0]
         userLvExp = this.saveNumberDecode(sram1)
+
+        sram2 = loadData.sramData[1]
+        sram3 = loadData.sramData[2]
       }
 
       if (sram1 == null || userLvExp == null) {
@@ -2455,6 +2492,12 @@ export class gameSystem {
       } else {
         loadData.userData.lv = userLvExp[0]
         loadData.userData.exp = userLvExp[1]
+        loadData.userData.gold = userLvExp[2]
+      }
+
+      if (sram2 != null || sram3 != null) {
+        loadData.userData.inventoryId = this.saveNumberDecode(sram2)
+        loadData.userData.inventoryCount = this.saveNumberDecode(sram3)
       }
 
       let isSuccessUserData = this.userSystem.setLoadData(loadData.userData)
@@ -2497,10 +2540,10 @@ export class gameSystem {
       // 만약 실패했다면, 백업데이터를 통해 다시 시도
       let isBackupSuccess = this.processLoadStorageKey(this.getCurrentSaveKeyBackup())
       if (!isBackupSuccess) {
-        // 이것도 실패했다면, 오류 발생시키고, 데이터 초기화
+        // 이것도 실패했다면, 오류 발생시키고, 다른 메뉴로 이동시킴 (저장 기능은 사용 불가가됨)
         this.stateId = this.STATE_LOAD_ERROR
-        localStorage.removeItem(this.getCurrentSaveKey())
-        localStorage.removeItem(this.getCurrentSaveKeyBackup())
+        // localStorage.removeItem(this.getCurrentSaveKey())
+        // localStorage.removeItem(this.getCurrentSaveKeyBackup())
         localStorage.removeItem(this.saveKey.fieldData)
         return
       }
@@ -2594,7 +2637,10 @@ export class gameSystem {
    * [process 함수 내에서 출력과 관련됨 모든 함수 사용금지]
    */
   static process () {
-    if (this.stateId === this.STATE_LOAD_ERROR) return
+    if (this.stateId === this.STATE_LOAD_ERROR) {
+      this.loadErrorSystem.process()
+      return
+    }
     
     this.userSystem.process()
     if (this.stateId === this.STATE_MAIN) this.userSystem.showUserStat()

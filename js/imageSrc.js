@@ -36,7 +36,8 @@ export class imageSrc {
     skillInfo: './image/system/skillInfo.png',
     weaponIcon: './image/system/weaponIcon.png',
     roundIcon: './image/system/roundIcon.png',
-    tamshooter4Title:'./image/system/title.png'
+    tamshooter4Title:'./image/system/title.png',
+    itemIcon: './image/system/itemIcon.png',
   }
 
   static number = {
@@ -1026,6 +1027,9 @@ export class imageDataInfo {
     skillInfoSkyBlue: {x: 0, y: 60, width: 800, height: 20, frame: 1},
     skillInfoPurpleBlueTitle: {x: 0, y: 80, width: 800, height: 20, frame: 1},
     skillInfoPurpleBlue: {x: 0, y: 100, width: 800, height: 20, frame: 1},
+
+    itemIcon: new ImageDataObject(0, 0, 50, 50),
+    itemIconSection: new ImageDataObject(0, 0, 60, 60),
   }
 
   // : {x: , y: , width: , height: , frame: 1},

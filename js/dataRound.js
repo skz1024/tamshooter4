@@ -1178,7 +1178,6 @@ export class RoundPackLoad {
       soundSrc.enemyAttack.intruderJemuEnergyHigh,
       soundSrc.enemyAttack.intruderJemuEnergyLow,
       soundSrc.enemyAttack.intruderJemuEnergyPurple,
-      soundSrc.enemyAttack.intruderJemuEnergyReflect,
       soundSrc.enemyAttack.intruderJemuThunderBig,
       soundSrc.enemyAttack.intruderJemuThunderNormal,
       soundSrc.enemyAttack.intruderDaseokLaserGreen,
@@ -1187,7 +1186,6 @@ export class RoundPackLoad {
       soundSrc.enemyAttack.intruderHanoiReflect,
       soundSrc.enemyAttack.intruderLeverLaser,
       soundSrc.enemyAttack.intruderRendownMissile,
-      soundSrc.enemyAttack.intruderRendownMissileCreate,
     ]
   }
 
@@ -1347,11 +1345,12 @@ class BaseStat extends StatRound {
     this.id = id
 
     /** (해당 라운드를 플레이 하기 위한) 필요 레벨, 필요 레벨 미만은 입장 불가 */ this.roundName = stat.roundName
-    /** (해당 라운드를 원할하게 플레이 할 수 있는) 권장 공격력, 입장은 상관 없음 */ this.roundText = stat.roundText
-    /** 라운드 값을 텍스트로 표시 (예: 1-1), 영어와 숫자만 사용 가능 */ this.requireLevel = stat.requireLevel
+    /** 라운드 값을 텍스트로 표시 (예: 1-1), 영어와 숫자만 사용 가능 */ this.roundText = stat.roundText
+    /** (해당 라운드를 원할하게 플레이 할 수 있는) 권장 공격력, 입장은 상관 없음 */ this.requireLevel = stat.requireLevel
     /** 라운드 이름, text.js에서 값을 가져와서 입력하세요. */ this.requireAttack = stat.requireAttack
     /** 라운드 종료 시간(이 시간이 되면 클리어), 단위: 초 */ this.finishTime = stat.finishTime
     /** 클리어 보너스 점수 */ this.clearBonus = stat.clearBonus
+    /** 획득 골드의 라운드 기준값 10초 단위로 진행할 때마다 획득 총량은 해당 골드만큼 증가함 */ this.gold = stat.gold
   }
 
   /**
@@ -1369,6 +1368,7 @@ class BaseStat extends StatRound {
     this.requireAttack = stat.requireAttack
     this.finishTime = stat.finishTime
     this.clearBonus = stat.clearBonus
+    this.gold = stat.gold
   }
 }
 
