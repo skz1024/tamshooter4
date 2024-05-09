@@ -1,7 +1,7 @@
 //@ts-check
 
 import { imageSrc, imageDataInfo, ImageDataObject } from "./imageSrc.js";
-import { dataExportStatPlayerSkill, dataExportStatWeapon, dataExportStatPlayerWeapon, dataExportStatRound } from "./dataStat.js";
+import { dataExportStatPlayerSkill, dataExportStatWeapon, dataExportStatPlayerWeapon, dataExportStatRound, StatRound } from "./dataStat.js";
 import { soundSrc } from "./soundSrc.js";
 import { ID } from "./dataId.js";
 import { gameVar, userSystem } from "./game.js";
@@ -10,7 +10,7 @@ import { game, gameFunction } from "./game.js";
 import { stringText, systemText } from "./text.js";
 import { dataExportPlayerWeapon } from "./dataPlayer.js";
 
-const versionText = 'created by skz1024 | ver 0.49 | 2024/05'
+const versionText = 'created by skz1024 | ver 0.50 | 2024/05'
 let digitalDisplay = gameFunction.digitalDisplay
 let loadComplete = false
 
@@ -91,12 +91,14 @@ class BoxObject {
     // focus display
     this.focus = false
     this.focusColor = focusColor
+
+    /** 숨김 옵션. 이 옵션이 켜져있을경우, 출력, 포커스, 클릭이 전부 무효가 됨 */ this.hidden = false
   }
 
   /**
    * 박스가 마우스 위에 있는지 충돌 여부를 검사
-   * @param {*} mouseX
-   * @param {*} mouseY
+   * @param {number} mouseX
+   * @param {number} mouseY
    * @returns
    */
   collision (mouseX, mouseY) {
@@ -139,6 +141,8 @@ class BoxObject {
    * 박스를 출력하는 함수
    */
   display () {
+    if (this.hidden) return
+
     this.displayBackGround()
     this.displayFocus()
     this.displayText()
@@ -146,10 +150,12 @@ class BoxObject {
 
   /**
    * 박스를 클릭한 경우 (참고: 마우스 좌표값을 넣지 않으면 박스 입장에서 박스를 클릭했는지 알 수 없습니다.)
-   * @param {*} mouseX 클릭한 마우스의 x좌표
-   * @param {*} mouseY 클릭한 마우스의 y좌표
+   * @param {number} mouseX 클릭한 마우스의 x좌표
+   * @param {number} mouseY 클릭한 마우스의 y좌표
    */
   click (mouseX, mouseY) {
+    if (this.hidden) return
+
     if (this.collision(mouseX, mouseY)) {
       this.clicked = true
     } else {
@@ -253,10 +259,14 @@ class MenuSystem {
    * 안그러면 마우스가 닿기만 해도 반응할 수 있습니다.
    */
   processMouse () {
+    this.processMouseClick()
+  }
+
+  processMouseClick () {
     if (!game.control.getMouseClick()) return
 
     this.mouseLogicMenuList()
-    this.processMouseExtend()
+    this.processMouseClickExtend()
   }
 
   /**
@@ -264,21 +274,29 @@ class MenuSystem {
    * 이것은 processMouse의 조건 처리때문에 super.processMouse를 사용한 다음, 
    * 마우스 클릭을 못처리하는 상태를 막기 위해 만든 함수입니다.
    */
-  processMouseExtend () {
+  processMouseClickExtend () {
 
   }
 
+  /**
+   * 마우스의 포지션을 기준으로 어느 메뉴가 눌렸는지를 확인합니다.
+   * 
+   * 겹쳐진경우, 가장 마지막에 만들어진것이 선택됨
+   */
   mouseLogicMenuList () {
     const mouseX = game.control.getMousePosition().x
     const mouseY = game.control.getMousePosition().y
 
-    for (let i = 0; i < this.menuList.length; i++) {
+    // 마지막에 만들어진것부터 조사합니다. (이렇게하면 겹쳤을 때 나중에 만들어진게 우선됨)
+    for (let i = this.menuList.length - 1; i >= 0; i--) {
       if (this.menuList[i] == null) continue
+      if (this.menuList[i].hidden) continue
 
       const currentBox = this.menuList[i]
       if (currentBox.collision(mouseX, mouseY)) {
         this.cursorPosition = i
         this.selected = true
+        break
       }
     }
   }
@@ -775,16 +793,16 @@ class OptionSystem extends MenuSystem {
  * 메뉴: 라운드 시스템
  */
 class RoundSelectSystem extends MenuSystem {
-  /** 커서모드: 뒤로가기 이동용도 (커서포지션 범위: 0 ~ 9, 단 이 범위 사이에서는 0번으로만 이동함) */ CURSORMODE_BACK = 3
   /** 커서모드: 메인라운드 선택 (커서포지션 범위: 10 ~ 19) */ CURSORMODE_MAIN = 1
   /** 커서모드: 서브라운드 선택 (예를들어, 1-4면, 1이 메인, 4가 서브라운드임, 커서포지션 범위: 20 ~ 39) */ CURSORMODE_SUB = 2
 
   CURSOR_POSITION_START_BACK = 0
-  /** 커서포지션을 계산할 때 main모드일경우 어느 지점부터 시작하는지에 대한 상수 값 */ CURSOR_POSITION_START_MAIN = 10
-  /** 커서포지션을 계산할 때 sub모드일경우 어느 지점부터 시작하는지에 대한 상수 값 */ CURSOR_POSITION_START_SUB = 20
+  /** 커서포지션을 계산할 때 main모드일경우 어느 지점부터 시작하는지에 대한 상수 값 */ CURSOR_POSITION_START_MAIN = 0
+  /** 커서포지션을 계산할 때 sub모드일경우 어느 지점부터 시작하는지에 대한 상수 값 */ CURSOR_POSITION_START_SUB = 10
 
   /** 커서 라운드 */ cursorRound = 0
   /** 커서 서브 라운드 */ cursorSubRound = 0
+  /** 커서가 마우스를 클릭한 포지션 */ cursorMouseClickPosition = 0
   /** 커서 모드 */ cursorMode = this.CURSORMODE_MAIN
   /** 최소 라운드: 게임은 1라운드부터 시작 */ MIN_ROUND = 1
   /** 최대 라운드: 8 */ MAX_ROUND = 8
@@ -801,40 +819,35 @@ class RoundSelectSystem extends MenuSystem {
     /** @type {object} */
     this.roundIdTable = {
       r1: [r.round1_1, r.round1_2, r.round1_3, r.round1_4, r.round1_5, r.round1_6, unused, unused, r.round1_test, unused],
-      r2: [r.round2_1, r.round2_2, r.round2_3, r.round2_4, r.round2_5, r.round2_6, unused, unused, r.round2_test, unused],
-      r3: [r.round3_1, r.round3_2, r.round3_3, r.round3_4, r.round3_5, r.round3_6, r.round3_7, r.round3_8, r.round3_9, r.round3_10,
-           r.round3_test],
+      r2: [r.round2_1, r.round2_2, r.round2_3, r.round2_4, r.round2_5, r.round2_6, unused, unused, r.round2_test, r.round3_test],
+      r3: [r.round3_1, r.round3_2, r.round3_3, r.round3_4, r.round3_5, r.round3_6, r.round3_7, r.round3_8, r.round3_9, r.round3_10],
     }
 
-    this.roundWorldIconNumber = [1, 10, 20]
+    this.roundWorldIconNumber = StatRound.world.iconList
+    this.roundWorld = StatRound.world
 
     const layerX = 10
     const layer1Y = 10
     const layerWidth = 60
     const layerHeight = 60
-    const layerYSection = 100
+    const layerYSection = 80
 
     // 0: back
     this.menuList.push(new BoxObject(layerX, layer1Y, layerWidth, layerHeight, '<<', 'orange', 'yellow'))
 
-    // 10 ~ 19: worldRound
+    // 1 ~ 9: mainRound
     const layer2Y = layer1Y + layerYSection + 10
     const layerSection = 80
-    for (let i = 0; i <= 9; i++) {
-      this.menuList[i + 10] = new BoxObject(layerX + (i * layerSection), layer2Y, layerWidth, layerHeight, '', 'orange', 'gold')
+    for (let i = 1; i <= 9; i++) {
+      this.menuList[i] = new BoxObject(layerX + (i * layerSection), layer1Y, layerWidth, layerHeight, '', 'orange', 'gold')
     }
 
-    // 20 ~ 29: mainRound 
-    const layer3Y = layer2Y + layerYSection + 10
-    for (let i = 0; i <= 9; i++) {
+    // 10 ~ 19: subRound
+    for (let i = 10; i <= 19; i++) {
       // 맨 끝번부터 추가되기 때문에 push나, this.menuList[i + 20] 이나 똑같이 동작함.
-      this.menuList.push(new BoxObject(layerX + (i * layerSection), layer3Y, layerWidth, layerHeight, '', 'skyblue', 'white'))
-    }
-
-    // 30 ~ 39: subRound
-    const layer4Y = layer3Y + layerYSection + 10
-    for (let i = 0; i <= 9; i++) {
-      this.menuList.push(new BoxObject(layerX + (i * layerSection), layer4Y, layerWidth, layerHeight, '', 'skyblue', 'white'))
+      let XPosition = layerX + ((i - 10) * layerSection)
+      this.menuList[i] = new BoxObject(XPosition, layer2Y, layerWidth, layerHeight, '', 'skyblue', 'white')
+      this.menuList[i].hidden = true 
     }
 
     this.backgroundColor = ['#757F9A', '#D7DDE8']
@@ -851,12 +864,7 @@ class RoundSelectSystem extends MenuSystem {
     const leftEnd = 0
     const rightEnd = 9
 
-    if (this.cursorMode === this.CURSORMODE_BACK) {
-      if (buttonDown) {
-        this.cursorMode = this.CURSORMODE_MAIN
-        game.sound.play(soundSrc.system.systemCursor)
-      }
-    } else if (this.cursorMode === this.CURSORMODE_MAIN) {
+    if (this.cursorMode === this.CURSORMODE_MAIN) {
       if (buttonDown) {
         this.selected = true
       } else if (buttonLeft && this.cursorRound > leftEnd) {
@@ -865,25 +873,15 @@ class RoundSelectSystem extends MenuSystem {
       } else if (buttonRight && this.cursorRound < rightEnd) {
         this.cursorRound++
         game.sound.play(soundSrc.system.systemCursor)
-      } else if (buttonUp) {
-        this.cursorMode = this.CURSORMODE_BACK
-        game.sound.play(soundSrc.system.systemCursor)
       }
     } else if (this.cursorMode === this.CURSORMODE_SUB) {
-      if (buttonLeft && this.cursorSubRound % 10 > leftEnd) {
+      if (buttonUp) {
+        this.canceled = true
+      } else if (buttonLeft && this.cursorSubRound % 10 > leftEnd) {
         this.cursorSubRound--
         game.sound.play(soundSrc.system.systemCursor)
       } else if (buttonRight && this.cursorSubRound % 10 < rightEnd) {
         this.cursorSubRound++
-        game.sound.play(soundSrc.system.systemCursor)
-      } else if (buttonUp && this.cursorSubRound <= rightEnd) {
-        this.canceled = true
-        game.sound.play(soundSrc.system.systemCursor)
-      } else if (buttonUp && this.cursorSubRound > rightEnd) {
-        this.cursorSubRound -= 10
-        game.sound.play(soundSrc.system.systemCursor)
-      } else if (buttonDown && this.cursorSubRound <= rightEnd) {
-        this.cursorSubRound += 10
         game.sound.play(soundSrc.system.systemCursor)
       }
     }
@@ -897,8 +895,56 @@ class RoundSelectSystem extends MenuSystem {
     this.cursorRoundCalcuration()
   }
 
+  processMouseClickExtend () {
+    // 마우스 클릭 1번으로는 라운드 선택이 안되게 변경합니다.
+    // 마우스를 클릭하면, 마우스클릭 포지션이 변경되고, 이 값이 커서포지션과 같다면
+    // 마우스를 두번 연속 같은곳을 눌렀다는 뜻이므로, 해당 기능을 실행합니다.
+    if (this.cursorPosition === this.cursorMouseClickPosition) {
+      // 다른 곳이 클릭되어도 기능이 실행되는 문제가 있어, 해당 메뉴가 클릭했는지도 확인함
+      if (this.menuList[this.cursorPosition].clicked) {
+        this.selected = true
+      }
+    } else {
+      this.selected = false
+      this.cursorMouseClickPosition = this.cursorPosition
+    }
+
+    // 취소를 눌렀을때는 취소 메뉴가 바로 작동
+    if (this.cursorPosition === 0) {
+      if (this.cursorMode === this.CURSORMODE_SUB) {
+        this.cursorMode = this.CURSORMODE_MAIN
+        this.selected = false
+      } else {
+        this.selected = true
+      }
+    }
+  }
+
   process () {
     super.process()
+    this.processMenuHidden()
+  }
+
+  processMenuHidden () {
+    if (this.cursorMode === this.CURSORMODE_MAIN) {
+      // main show
+      for (let i = 1; i <= this.CURSOR_POSITION_START_SUB - 1; i++) {
+        this.menuList[i].hidden = false
+      }
+      // sub hidden
+      for (let i = this.CURSOR_POSITION_START_SUB; i <= this.CURSOR_POSITION_START_SUB + 9; i++) {
+        this.menuList[i].hidden = true
+      }
+    } else if (this.cursorMode === this.CURSORMODE_SUB) {
+      // main hidden
+      for (let i = 1; i <= this.CURSOR_POSITION_START_SUB - 1; i++) {
+        this.menuList[i].hidden = true
+      }
+      // sub show
+      for (let i = this.CURSOR_POSITION_START_SUB; i <= this.CURSOR_POSITION_START_SUB + 9; i++) {
+        this.menuList[i].hidden = false
+      }
+    }
   }
 
   /**
@@ -907,15 +953,12 @@ class RoundSelectSystem extends MenuSystem {
    * 현재 커서 라운드와 모드와 서브라운드를 기준으로 커서포지션을 계산합니다.
    */
   cursorPositionCalcuration () {
-    if (this.cursorMode === this.CURSORMODE_BACK) {
-      // back 은 0번 위치에만 있습니다. (나머지 공간은 사용하지 않음)
-      this.cursorPosition = 0
-    } else if (this.cursorMode === this.CURSORMODE_MAIN) {
-      // 위치: 10 ~ 19
-      this.cursorPosition = this.cursorRound + 10
+    if (this.cursorMode === this.CURSORMODE_MAIN) {
+      // 위치: 0 ~ 9
+      this.cursorPosition = this.cursorRound + 0
     } else if (this.cursorMode === this.CURSORMODE_SUB) {
-      // 위치: 20 ~ 39
-      this.cursorPosition = this.cursorSubRound + 20
+      // 위치: 10 ~ 19
+      this.cursorPosition = this.cursorSubRound + 10
     }
   }
 
@@ -925,13 +968,10 @@ class RoundSelectSystem extends MenuSystem {
    * 현재 커서포지션을 기준으로 커서의 라운드와 서브라운드와 모드를 계산합니다.
    */
   cursorRoundCalcuration () {
-    if (this.cursorPosition <= 9) {
-      this.cursorMode = this.CURSORMODE_BACK
-      this.cursorPosition = 0
-    } else if (this.cursorPosition >= 10 && this.cursorPosition <= 19) {
+    if (this.cursorPosition >= 0 && this.cursorPosition <= 9) {
       this.cursorMode = this.CURSORMODE_MAIN
-      this.cursorRound = this.cursorPosition - this.CURSOR_POSITION_START_MAIN
-    } else if (this.cursorPosition >= 20 && this.cursorPosition <= 39) {
+      this.cursorRound = this.cursorPosition
+    } else if (this.cursorPosition >= 10 && this.cursorPosition <= 19) {
       this.cursorMode = this.CURSORMODE_SUB
       this.cursorSubRound = this.cursorPosition - this.CURSOR_POSITION_START_SUB
     }
@@ -940,7 +980,7 @@ class RoundSelectSystem extends MenuSystem {
   processCancel () {
     if (!this.canceledCheck()) return
 
-    if (this.cursorMode === this.CURSORMODE_BACK || this.cursorMode === this.CURSORMODE_MAIN) {
+    if (this.cursorMode === this.CURSORMODE_MAIN) {
       gameSystem.stateId = gameSystem.STATE_MAIN
       game.sound.play(soundSrc.system.systemBack)
     } else if (this.cursorMode === this.CURSORMODE_SUB) {
@@ -952,11 +992,13 @@ class RoundSelectSystem extends MenuSystem {
   processSelect () {
     if (!this.selectedCheck()) return
 
-    if (this.cursorMode === this.CURSORMODE_BACK) {
-      this.canceled = true // 취소버튼을 누른것으로 처리
-    } if (this.cursorMode === this.CURSORMODE_MAIN) {
-      this.cursorMode = this.CURSORMODE_SUB
-      game.sound.play(soundSrc.system.systemSelect)
+    if (this.cursorMode === this.CURSORMODE_MAIN) {
+      if (this.cursorRound === 0) {
+        this.canceled = true // 취소버튼을 누른것으로 처리
+      } else {
+        this.cursorMode = this.CURSORMODE_SUB
+        game.sound.play(soundSrc.system.systemSelect)
+      }
     } else if (this.cursorMode === this.CURSORMODE_SUB) {
       let roundId = this.getRoundId()
       fieldSystem.roundStart(roundId)
@@ -972,14 +1014,18 @@ class RoundSelectSystem extends MenuSystem {
     super.display()
     this.displayRound()
     this.displaySubRound()
-    // this.displayWorld()
-    this.displayInfo()
+    this.displayWorld()
+    this.displayWorldInfo()
+    this.displaySubRoundInfo()
   }
 
   displayRound () {
+    if (this.cursorMode === this.CURSORMODE_SUB) return
+
     // 10 ~ 19
-    for (let i = this.CURSOR_POSITION_START_MAIN; i < this.CURSOR_POSITION_START_MAIN + 9; i++) {
+    for (let i = this.CURSOR_POSITION_START_MAIN; i <= this.CURSOR_POSITION_START_MAIN + 9; i++) {
       if (this.menuList[i] == null) continue
+      if (i === 0) continue
 
       // 참고: 선택된 라운드를 명확하게 표기하기 위하여, 현재 라운드가 선택되었다면(커서라운드가 서브모드)
       // 선택된 현재라운드와 서브라운드를 모두 표시하게 합니다.
@@ -998,7 +1044,7 @@ class RoundSelectSystem extends MenuSystem {
       // 라운드 아이콘 월드 출력
       let position = -1
       let number = i - this.CURSOR_POSITION_START_MAIN
-      if (number < this.roundWorldIconNumber.length) {
+      if (number < this.roundWorldIconNumber.length && i >= 1) {
         position = this.roundWorldIconNumber[number]
       }
 
@@ -1026,16 +1072,17 @@ class RoundSelectSystem extends MenuSystem {
       }
 
       // 라운드 값 출력
-      let currentRound = i - this.CURSOR_POSITION_START_MAIN + 1
+      let currentRound = i
       digitalDisplay('R: ' + currentRound, this.menuList[i].x, this.menuList[i].y + this.menuList[i].height)
     }
   }
 
   getRoundIdTable () {
     switch (this.cursorRound) {
-      case 0: return this.roundIdTable.r1
-      case 1: return this.roundIdTable.r2
-      case 2: return this.roundIdTable.r3
+      case 0: return undefined
+      case 1: return this.roundIdTable.r1
+      case 2: return this.roundIdTable.r2
+      case 3: return this.roundIdTable.r3
       default: return undefined
     }
   }
@@ -1052,6 +1099,8 @@ class RoundSelectSystem extends MenuSystem {
   }
 
   displaySubRound () {
+    if (this.cursorMode === this.CURSORMODE_MAIN) return
+
     for (let i = this.CURSOR_POSITION_START_SUB; i < this.CURSOR_POSITION_START_SUB + 19; i++) {
       // 라운드 id테이블을 가져와서 현재 라운드의 id가 무엇인지를 확인
       let roundIdTable = this.getRoundIdTable()
@@ -1092,11 +1141,67 @@ class RoundSelectSystem extends MenuSystem {
     }
   }
 
-  displayWorld () {
-    game.graphic.strokeRect(0, 240, 800, 300, 'green')
+  displayWorldInfo () {
+    if (this.cursorMode !== this.CURSORMODE_MAIN) return
+    if (this.cursorPosition === 0) return
+    if (this.cursorPosition >= this.roundWorld.TitleList.length) return
+
+    const levelmin = this.roundWorld.requireLevelMinList
+    const levelmax = this.roundWorld.requireLevelMaxList
+    const number = this.cursorPosition
+    const attackMin = this.roundWorld.requireAttackMinList
+    const attackMax = this.roundWorld.requireAttackMaxList
+
+    const levelRangeText = levelmin[number] + ' ~ ' + levelmax[number]
+    const attackRangeText = attackMin[number] + ' ~ ' + attackMax[number]
+    let titleText = [
+      'ROUND WORLD : ',
+      'INFO TEXT   : ',
+      '     ',
+      'LEVEL RANGE : ' + levelRangeText,
+      'ATTACK RANGE: ' + attackRangeText,
+    ]
+    let textList = [
+      this.roundWorld.TitleList[this.cursorPosition] + '',
+      this.roundWorld.roundWorldInfoText1List[this.cursorPosition] + '',
+      this.roundWorld.roundWorldInfoText2List[this.cursorPosition] + '',
+    ]
+
+    const XLINE1 = 10
+    const XLINE2 = 180
+    const YLINE = 95
+    const YSECTION = 20
+    for (let i = 0; i < titleText.length; i++) {
+      digitalDisplay(titleText[i], XLINE1, YLINE + (i * YSECTION))
+    }
+
+    for (let i = 0; i < textList.length; i++) {
+      game.graphic.fillText(textList[i], XLINE2, YLINE + (i * YSECTION))
+    }
   }
 
-  displayInfo () {
+  displayWorld () {
+    let arrayIndex = this.cursorRound - 1
+    if (arrayIndex < 0) return
+
+    let srcList = [
+      imageSrc.worldmap.round1map,
+      imageSrc.worldmap.round2map,
+      imageSrc.worldmap.round3map,
+    ]
+
+    let pathSrcList = [
+      imageSrc.worldmap.round1mapPath,
+      imageSrc.worldmap.round2mapPath,
+      imageSrc.worldmap.round3mapPath,
+    ]
+
+    const START_Y = 200
+    game.graphic.imageView(srcList[arrayIndex], 0, START_Y)
+    game.graphic.imageView(pathSrcList[arrayIndex], 0, START_Y)
+  }
+
+  displaySubRoundInfo () {
     if (this.cursorMode !== this.CURSORMODE_SUB) return
 
     // 현재 라운드 얻기
@@ -1114,16 +1219,29 @@ class RoundSelectSystem extends MenuSystem {
     if (stat == null) return
 
     const layer1X = 120
-    const layer1Y = 20
-    const layer2X = 400
-    const layer2Y = 40
-    const layer3Y = 60
-    digitalDisplay('ROUND: ' + stat.roundText, layer1X, layer1Y)
-    digitalDisplay('FINISH TIME: ' + stat.finishTime, layer2X, layer1Y)
-    digitalDisplay('REQUIRE LEVEL: ' + stat.requireLevel, layer1X, layer2Y)
-    digitalDisplay('REQUIRE ATTACK: ' + stat.requireAttack, layer2X, layer2Y)
-    digitalDisplay('TITLE: ', layer1X, layer3Y)
-    game.graphic.fillText(stat.roundName, layer1X + 90, layer3Y)
+    const layer1Y = 10
+    const text1 = 'ROUND|FINISH|REQUIRE'
+    const text2 = '     |TIME  |LEVEL|ATTACK'
+    const roundText = stat.roundText.padEnd(5, ' ') + '|'
+    const finishTimeText = ('' + stat.finishTime).padEnd(6, ' ') + '|'
+    const requireLevelText = ('' + stat.requireLevel).padEnd(5, ' ') + '|'
+    const requireAttackText = ('' + stat.requireAttack).padEnd(6, ' ')
+    const tilteText = 'TITLE: ' // 타이틀은 다른 폰트로 표현함 (한글때문에)
+    const textList = [
+      text1,
+      text2,
+      roundText + finishTimeText + requireLevelText + requireAttackText,
+      tilteText
+    ]
+
+    for (let i = 0; i < textList.length; i++) {
+      digitalDisplay(textList[i], layer1X, layer1Y + (i * 20))
+
+      // 마지막은 일반 폰트로 출력
+      if (i === textList.length - 1) {
+        game.graphic.fillText(stat.roundName, layer1X + 70, layer1Y + (i * 20))
+      }
+    }
   }
 }
 
@@ -1258,7 +1376,7 @@ class DataSettingSystem extends MenuSystem {
     }
   }
 
-  processMouseExtend () {
+  processMouseClickExtend () {
     const mouseX =  game.control.getMousePosition().x
     const mouseY =  game.control.getMousePosition().y
     if (this.isQuestionResetWindow) {
@@ -1395,7 +1513,7 @@ class WeaponSelectSystem extends MenuSystem {
     }
   }
 
-  processMouseExtend () {
+  processMouseClickExtend () {
     // 마우스가 눌려진 후에 기능을 수행하기 위해, processMouseExtend 함수를 사용했습니다.
     this.processMouseCursorCalculation()
   }
@@ -1836,7 +1954,7 @@ class UpgradeSystem extends MenuSystem {
     this.canceled = true
   }
 
-  processMouseExtend () {
+  processMouseClickExtend () {
     this.canceled = true
   }
 
@@ -1856,7 +1974,7 @@ class InventorySystem extends MenuSystem {
     this.canceled = true
   }
 
-  processMouseExtend () {
+  processMouseClickExtend () {
     this.canceled = true
   }
 
@@ -1876,7 +1994,7 @@ class StorySystem extends MenuSystem {
     this.canceled = true
   }
 
-  processMouseExtend () {
+  processMouseClickExtend () {
     this.canceled = true
   }
 
@@ -1896,7 +2014,7 @@ class EtcSystem extends MenuSystem {
     this.canceled = true
   }
 
-  processMouseExtend () {
+  processMouseClickExtend () {
     this.canceled = true
   }
 
@@ -2748,8 +2866,10 @@ export class gameSystem {
       case this.STATE_ETC: this.etcSystem.display(); break
     }
 
-    this.userSystem.display()
-    this.displayStatLine()
+    if (this.stateId === this.STATE_MAIN || this.stateId === this.STATE_FIELD) {
+      this.userSystem.display()
+      this.displayStatLine()
+    }
   }
 
   static displayStatLine () {

@@ -1630,6 +1630,9 @@ export class fieldSystem {
     this.exitDelayCount = 0
     this.totalScore = 0
     this.fieldScore = 0
+    this.fieldGold = 0
+    this.fieldItemCountList = []
+    this.fieldItemIdList = []
 
     // 참고: 배경음악 재생 및 처리는 라운드 내부에서 처리합니다. 필드에서 처리하지 않습니다.
     if (this.getRoundImageSoundLoadComplete()) {

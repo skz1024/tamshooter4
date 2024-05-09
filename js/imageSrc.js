@@ -40,6 +40,15 @@ export class imageSrc {
     itemIcon: './image/system/itemIcon.png',
   }
 
+  static worldmap = {
+    round1map: './image/worldmap/round1map.jpg',
+    round1mapPath: './image/worldmap/round1mapPath.png',
+    round2map: './image/worldmap/round2map.png',
+    round2mapPath: './image/worldmap/round2mapPath.png',
+    round3map: './image/worldmap/round3map.png',
+    round3mapPath: './image/worldmap/round3mapPath.png',
+  }
+
   static number = {
     round2_3_number: './image/round/round2_3_number.png'
   }

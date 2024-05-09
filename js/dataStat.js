@@ -163,6 +163,39 @@ export class StatRound {
     this.balanceScore = balanceScore
     this.scoreTimeDiv = Math.floor(balanceScore / playTime)
   }
+
+  /** 라운드 월드에 대한 정보 (전부 static) */
+  static world = class {
+    /** 라운드 아이콘 리스트 (0번 라운드는 없기 때문에 -1임) */
+    static iconList = [-1, 1, 10, 20]
+
+    /** 각 라운드를 대표하는 제목 */
+    static TitleList = [
+      '',
+      '우주 여행 ~ 운석 지대',
+      '동그라미 마을',
+      '다운 타워'
+    ]
+
+    static roundWorldInfoText1List = [
+      '',
+      '파란 행성으로 빠르게 이동하기 위해 운석지대를 지나가는 중',
+      '동그라미 마을을 둘러보면서 무슨 일이 벌어졌는지를 찾아본다.',
+      '다운 타워 내부에 있는 수많은 적들을 처치해야 한다.'
+    ]
+
+    static roundWorldInfoText2List = [
+      '',
+      '이상한 일들이 벌어졌다.',
+      '',
+      '',
+    ]
+
+    static requireLevelMinList = [0, 1, 10, 20]
+    static requireLevelMaxList = [0, 9, 19, 29]
+    static requireAttackMinList = [0, 40000, 50000, 70000]
+    static requireAttackMaxList = [0, 45000, 60000, 77000]
+  }
 }
 
 export class StatRoundBalance {
