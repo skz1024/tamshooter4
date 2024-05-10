@@ -1411,7 +1411,6 @@ class DataSettingSystem extends MenuSystem {
 class WeaponSelectSystem extends MenuSystem {
   constructor () {
     super()
-    /** 커서페이지 */ this.cursorPage = 0
     /** 커서가 가리키는 메뉴 번호 (0 ~ max 9) */ this.cursorMenu = 0
     /** 커서가 가리키는 아이콘 번호 (0 ~ 49) */ this.cursorIcon = 0
     /** 커서가 가리키는 리스트 번호 (무기: 0 ~ 3, 스킬: 0 ~ 7) */ this.cursorList = 0
@@ -1422,21 +1421,46 @@ class WeaponSelectSystem extends MenuSystem {
 
     /** 해당 목록에서 사용할 타겟(무기 또는 스킬)의 id List */
     this.targetIdList = Array.from(dataExportStatPlayerWeapon.keys())
-    
-    this.targetIdList = Array.from(dataExportStatPlayerWeapon.keys())
-    this.weaponMax = this.targetIdList.length - 1 // 최대 무기 개수: 참고로 서브 웨폰은 맨 마지막에 배치, 서브웨폰은 메인무기로 사용 불가능
 
     this.backgroundColor = ['#B993D6', '#8CA6DB']
+    /** 스킬의 번호 시작값 (스킬 버호는 0 ~ 49, 총 50개) */ this.NUM_START_SKILLICON = 0
+    /** 스킬의 번호 끝값 (스킬 버호는 0 ~ 49, 총 50개)  */ this.NUM_END_SKILLICON = 49
+    /** 리스트의 번호 시작값 (참고: 리스트번호는 50 ~ 53, 총 4개) */ this.NUM_START_LIST = 50
+    /** 리스트의 번호 끝값 (참고: 리스트번호는 50 ~ 53, 총 4개) */ this.NUM_END_LIST = 50 + 3
+    /** 메뉴의 번호 시작값 (메뉴 개수만큼) */ this.NUM_START_MENU = 54
+    /** 메뉴의 번호 끝값 (메뉴 개수만큼) */ this.NUM_END_MENU = 54 + 7
 
-    this.menuList[0] = new BoxObject(0, 0, 80, 40, '< back', 'yellow')
-    this.menuList[1] = new BoxObject(80, 0, 80, 40, 'help', 'yellow')
+    this.outputY1CurrentWeapon = 40
+    this.outputY2MenuList = 120
+    this.outputY3WeaponList = 160
+    this.outputY4CursorWeapon = 180
 
-    /** 메뉴의 번호 시작값 (메뉴 개수만큼(최대 9번까지 허용)) */ this.NUM_START_MENU = 0
-    /** 메뉴의 번호 끝값 (메뉴 개수만큼(최대 9번까지 허용)) */ this.NUM_END_MENU = this.menuList.length
-    /** 스킬의 번호 시작값 (스킬 버호는 10 ~ 59, 총 50개) */ this.NUM_START_ICON = 10
-    /** 스킬의 번호 끝값 (스킬 버호는 10 ~ 59, 총 50개)  */ this.NUM_END_ICON = 59
-    /** 리스트의 번호 시작값 (참고: 리스트번호는 60 ~ 67, 총 8개) */ this.NUM_START_LIST = 60
-    /** 리스트의 번호 끝값 (참고: 리스트번호는 60 ~ 67, 총 8개) */ this.NUM_END_LIST = 67
+    // weapon list
+    for (let i = 0; i < 50; i++) {
+      // 만약 나중에 무기 개수가 50종류를 초과하여 index변수를 업데이트 해야 할 일이 있다면
+      // 코드를 수정해야 할 수도 있음.
+      const index = i
+      const src = imageSrc.system.weaponIcon
+      const boxWidth = 80
+      const boxHeight = 40
+      let imgD = {x: (index % 10) * 40, y: Math.floor(index / 10) * 20, width: 40, height: 20, frame: 1}
+      const x = (index % 10) * boxWidth
+      const y = Math.floor(index / 10) * boxHeight + boxHeight + this.outputY3WeaponList
+      this.menuList[i] = new BoxImageObject(x, y, boxWidth, boxHeight, '', src, imgD)
+    }
+
+    // current weapon
+    for (let i = 0; i < 4; i++) {
+      const index = i + 50
+      this.menuList[index] = new BoxObject(0, (i * 20) + this.outputY1CurrentWeapon, 800, 20, '', 'whitesmoke', '', 'grey')
+    }
+
+    // menuList
+    let menuTextList = ['<< back', 'preset0', 'preset1', 'preset2', 'preset3', 'preset4', 'help', 'test']
+    for (let i = 0; i < menuTextList.length; i++) {
+      const index = i + 54
+      this.menuList[index] = new BoxObject(0 + (80 * i), this.outputY2MenuList, 80, 40, menuTextList[i], '#fcffd6', '', '#ff7e00')
+    }
 
     this.STATE_MENU = 'menu'
     this.STATE_ICON = 'icon'
@@ -1445,15 +1469,6 @@ class WeaponSelectSystem extends MenuSystem {
     this.state = this.STATE_MENU
 
     /** 리스트 포지션의 최대 */ this.LIST_POSITION_MAX = 4
-
-    for (let i = 10, index = 0; index < 50; i++, index++) {
-      this.menuList[i] = new BoxImageObject((index % 10) * 80, Math.floor(index / 10) * 40 + 40, 80, 40, '', imageSrc.system.weaponIcon, {x: (index % 10) * 40, y: Math.floor(index / 10) * 20, width: 40, height: 20, frame: 1})
-    }
-
-    for (let i = 60, index = 0; index < 4; i++, index++) {
-      let outputY = 420 + (index * 20)
-      this.menuList[i] = new BoxObject(0, outputY, 800, 20, '', 'whitesmoke')
-    }
   }
 
   /** 어떤 버튼이 눌렸는지를 오브젝트로 확인합니다. 버튼이 눌린것은 boolean값으로 확인해야합니다. */
@@ -1467,14 +1482,7 @@ class WeaponSelectSystem extends MenuSystem {
     const buttonSkill2 = game.control.getButtonInput(game.control.buttonIndex.R1)
     const buttonSkill3 = game.control.getButtonInput(game.control.buttonIndex.R2)
     return  {
-      buttonUp,
-      buttonDown,
-      buttonLeft,
-      buttonRight,
-      buttonSkill0,
-      buttonSkill1,
-      buttonSkill2,
-      buttonSkill3
+      buttonUp, buttonDown, buttonLeft, buttonRight, buttonSkill0, buttonSkill1, buttonSkill2, buttonSkill3
     }
   }
 
@@ -1490,9 +1498,9 @@ class WeaponSelectSystem extends MenuSystem {
    */
   processCursorPosition () {
     if (this.state === this.STATE_MENU) {
-      this.cursorPosition = this.cursorMenu
+      this.cursorPosition = this.NUM_START_MENU + this.cursorMenu
     } else if (this.state === this.STATE_ICON) {
-      this.cursorPosition = this.NUM_START_ICON + this.cursorIcon
+      this.cursorPosition = this.NUM_START_SKILLICON + this.cursorIcon
     } else if (this.state === this.STATE_LIST) {
       this.cursorPosition = this.NUM_START_LIST + this.cursorList
     }
@@ -1503,10 +1511,10 @@ class WeaponSelectSystem extends MenuSystem {
     // 커서 포지션이 특정 범위라면, 현재 상태를 임의로 변경합니다.
     if (this.cursorPosition >= this.NUM_START_MENU && this.cursorPosition <= this.NUM_END_MENU) {
       this.state = this.STATE_MENU
-      this.cursorMenu = this.cursorPosition
-    } else if (this.cursorPosition >= this.NUM_START_ICON && this.cursorPosition <= this.NUM_END_ICON) {
+      this.cursorMenu = this.cursorPosition - this.NUM_START_MENU
+    } else if (this.cursorPosition >= this.NUM_START_SKILLICON && this.cursorPosition <= this.NUM_END_SKILLICON) {
       this.state = this.STATE_ICON
-      this.cursorIcon = this.cursorPosition - this.NUM_START_ICON
+      this.cursorIcon = this.cursorPosition - this.NUM_START_SKILLICON
     } else if (this.cursorPosition >= this.NUM_START_LIST && this.cursorPosition <= this.NUM_END_LIST) {
       this.state = this.STATE_LIST
       this.cursorList = this.cursorPosition - this.NUM_START_LIST
@@ -1532,14 +1540,21 @@ class WeaponSelectSystem extends MenuSystem {
 
   processButtonMenu () {
     let button = this.getButtonObject()
-    if (button.buttonLeft && this.cursorMenu >= 0) {
+    const maxMenuCount = this.NUM_END_MENU - this.NUM_START_MENU
+    const lastCursorList = this.NUM_END_LIST - this.NUM_START_LIST
+
+    if (button.buttonLeft && this.cursorMenu > 0) {
       this.cursorMenu--
       game.sound.play(soundSrc.system.systemCursor)
-    } else if (button.buttonRight && this.cursorMenu < 1) {
+    } else if (button.buttonRight && this.cursorMenu < maxMenuCount) {
       this.cursorMenu++
       game.sound.play(soundSrc.system.systemCursor)
     } else if (button.buttonDown) {
       this.state = this.STATE_ICON
+      game.sound.play(soundSrc.system.systemCursor)
+    } else if (button.buttonUp) {
+      this.state = this.STATE_LIST
+      this.cursorList = lastCursorList
       game.sound.play(soundSrc.system.systemCursor)
     }
   }
@@ -1549,7 +1564,7 @@ class WeaponSelectSystem extends MenuSystem {
     let cursorX = this.cursorIcon % 10
     let cursorY = Math.floor(this.cursorIcon / 10)
 
-    // 간단히 말해, 좌우 루프형태 (현재는 아이콘 개수가 50개를 초과하지 않아 페이지 이동 기능은 없음)
+    // 간단히 말해, 좌우 루프형태
     if (button.buttonLeft) {
       // 커서아이콘이 X축 0의 위치에 있다면, 맨 오른쪽으로 이동시킴 그게 아닐경우 왼쪽으로 한칸 이동
       cursorX === 0 ? this.cursorIcon += 9 : this.cursorIcon--
@@ -1558,9 +1573,9 @@ class WeaponSelectSystem extends MenuSystem {
       // 커서아이콘이 X축 9의 위치에 있다면, 커서를 맨 왼쪽으로 이동시킴 그게 아닐경우 오른쪽으로 한칸 이동
       cursorX === 9 ? this.cursorIcon -= 9 : this.cursorIcon++
       game.sound.play(soundSrc.system.systemCursor)
-    } else if (button.buttonDown) {
-      // 맨 마지막줄일경우 상태를 변경하고 아닐경우 아래쪽으로 한줄 이동
-      cursorY === 4 ? this.state = this.STATE_LIST : this.cursorIcon += 10
+    } else if (button.buttonDown && cursorY !== 4) {
+      // 맨 마지막줄이 아니면 아래쪽으로 한줄 이동
+      this.cursorIcon += 10
       game.sound.play(soundSrc.system.systemCursor)
     } else if (button.buttonUp) {
       // 맨 처음 줄일경우 상태를 변경하고 아닐경우 위쪽으로 한줄 이동
@@ -1571,22 +1586,30 @@ class WeaponSelectSystem extends MenuSystem {
 
   processButtonList () {
     let button = this.getButtonObject()
-    if (button.buttonDown && this.cursorList < 3) {
-      this.cursorList++
+    if (button.buttonDown) {
+      const lastCursorList = this.NUM_END_LIST - this.NUM_START_LIST
+      if (this.cursorList >= lastCursorList) {
+        this.state = this.STATE_MENU
+      } else {
+        this.cursorList++
+      }
       game.sound.play(soundSrc.system.systemCursor)
-    } else if (button.buttonUp) {
-      this.cursorList === 0 ? this.state = this.STATE_ICON : this.cursorList--
+    } else if (button.buttonUp && this.cursorList > 0) {
+      this.cursorList--
       game.sound.play(soundSrc.system.systemCursor)
     }
   }
 
-  setWeapon (weaponId) {
-    if (weaponId == null || weaponId === ID.playerWeapon.unused) return
+  /** 유저의 무기를 설정합니다. (id가 0인경우 지울 수 있지만, 내부적으로 1개의 무기가 있어야함.) */
+  setWeapon (weaponId = 0) {
+    if (weaponId == null) return
+    if (weaponId === ID.playerWeapon.subMultyshot) return
 
-    let playerWeapon = userSystem.getWeaponList()
-    playerWeapon[this.listPosition] = weaponId
-    userSystem.setWeaponList(playerWeapon)
+    // 무기 교체
+    let success = userSystem.setWeapon(this.listPosition, weaponId)
+    if (!success) return // 무기 교체를 못했다면, 아무 효과 없음
 
+    // 다음 리스트로 이동
     this.listPosition++
     if (this.listPosition > 3) this.listPosition = 0
 
@@ -1598,7 +1621,16 @@ class WeaponSelectSystem extends MenuSystem {
 
     if (this.state === this.STATE_MENU) {
       switch (this.cursorMenu) {
-        case 0: this.canceled = true
+        case 0: this.canceled = true; break
+        case 1: userSystem.changePresetWeapon(0); break
+        case 2: userSystem.changePresetWeapon(1); break
+        case 3: userSystem.changePresetWeapon(2); break
+        case 4: userSystem.changePresetWeapon(3); break
+        case 5: userSystem.changePresetWeapon(4); break
+        case 6: this.state = this.STATE_HELP; break
+      }
+      if (this.cursorMenu >= 1) {
+        game.sound.play(soundSrc.system.systemSelect)
       }
     } else if (this.state === this.STATE_ICON) {
       this.setWeapon(this.targetIdList[this.cursorIcon])
@@ -1606,6 +1638,8 @@ class WeaponSelectSystem extends MenuSystem {
       this.listPosition = this.cursorList
       this.state = this.STATE_ICON
       game.sound.play(soundSrc.system.systemSelect)
+    } else if (this.state === this.STATE_HELP) {
+      this.canceled = true
     }
   }
 
@@ -1618,34 +1652,39 @@ class WeaponSelectSystem extends MenuSystem {
       this.state = this.STATE_MENU
     } else if (this.state === this.STATE_LIST) {
       this.state = this.STATE_ICON
+    } else if (this.state === this.STATE_HELP) {
+      this.state = this.STATE_MENU
     }
     game.sound.play(soundSrc.system.systemBack)
   }
 
   displayUserWeapon () {
-    let outputY = 400
-    digitalDisplay('icon/name           |delay|shot|repeat|multiple|value|attack', 0, 400)
+    let outputY1 = 0
+    let outputY2 = 40
+    digitalDisplay('current user weapon ' + '(preset: ' + userSystem.weaponPresetNumber + ')', 0, outputY1)
+    digitalDisplay('icon/name           |delay|shot|repeat|multiple|value|attack', 0, outputY1 + 20)
 
     let userWeapon = userSystem.getWeaponList()
     let weaponIcon = imageSrc.system.weaponIcon
-    let iconWidth = 40
-    let iconHeight = 20
+    let iconWidth = imageDataInfo.system.weaponIcon.width
+    let iconHeight = imageDataInfo.system.weaponIcon.height
+    const lineHeight = 20
     for (let i = 0; i < userWeapon.length; i++) {
       let getString = this.getIconString(userWeapon[i])
-      digitalDisplay(getString, 0, outputY + iconHeight + (i * iconHeight))
+      digitalDisplay(getString, 0, outputY1 + iconHeight + lineHeight + (i * iconHeight))
       
       let weaponNumber = userWeapon[i] - ID.playerWeapon.weaponNumberStart
       let weaponX = weaponNumber % 10
       let weaponY = Math.floor(weaponNumber / 10)
-      game.graphic.imageDisplay(weaponIcon, (weaponX * iconWidth), weaponY * iconHeight, iconWidth, iconHeight, 0, outputY + iconHeight + (i * iconHeight), iconWidth, iconHeight)
+      game.graphic.imageDisplay(weaponIcon, (weaponX * iconWidth), weaponY * iconHeight, iconWidth, iconHeight, 0, outputY1 + lineHeight + iconHeight + (i * iconHeight), iconWidth, iconHeight)
     }
 
     // 하이라이트 표시
-    game.graphic.fillRect(0, outputY + iconHeight + (this.listPosition  * iconHeight), game.graphic.CANVAS_WIDTH, iconHeight, 'orange', 0.5)
+    game.graphic.fillRect(0, outputY2 + (this.listPosition * iconHeight), game.graphic.CANVAS_WIDTH, iconHeight, 'yellow', 0.5)
   }
 
   /** 해당 아이콘 위치에 있는 무기 또는 스킬의 정보를 얻어옵니다. */
-  getIconString (weaponId) {
+  getIconString (weaponId = 0) {
     let getData = dataExportPlayerWeapon.get(weaponId)
     if (getData == null) return ''
     if (getData.weapon == null) return ''
@@ -1663,10 +1702,56 @@ class WeaponSelectSystem extends MenuSystem {
     return icon + name + delay + shotCount + repeatCount + attackMultiple + valueAttack + currentAttack
   }
 
+  /** 커서가 가리키는 무기의 정보 출력 */
+  displayCursorWeapon () {
+    let weaponId = this.cursorIcon + ID.playerWeapon.weaponNumberStart
+    let infoString = this.getIconString(weaponId)
+
+    digitalDisplay(infoString, 0, this.outputY4CursorWeapon)
+  }
+
+  /** 무기 선택 도움말 */
+  displayHelp () {
+    let textList = [
+      '무기 선택 도움말',
+      '밑에 있는 무기 아이콘들을 선택하면 해당 무기를 사용합니다.',
+      '무기는 최대 4종류까지 사용할 수 있습니다. (중복 선택 불가)',
+      '리스트에 있는 무기를 누르면 해당 무기와 다른 무기를 빠르게 교체할 수 있습니다.',
+      '',
+      '무기의 스탯 설명',
+      'delay: 다음 발사까지 대기시간 (1초 = 60프레임 -> 딜레이 60 = 1초)',
+      'shot : 한번 발사할 때 발사되는 개체 수',
+      'repeat: 발사된 개체가 적을 공격하는 횟수',
+      'multiple: 무기의 공격력 배율 (높을수록 데미지가 높아짐)',
+      'value: 공격력 10000을 기준으로 해당 무기가 가지는 데미지',
+      'attack: 유저의 공격력을 기준으로 해당 무기가 가지는 데미지',
+      '',
+      'test 메뉴를 사용하면 무기를 테스트 할 수 있는 라운드를 플레이합니다.',
+      '',
+      'preset은 5종류가 있습니다.',
+      'NULL 무기를 선택하면 해당 슬롯의 무기를 지울 수 있습니다.',
+      '그러나, 한개의 프리셋당 최소 1개의 무기가 있어야 합니다.' 
+    ]
+
+    // 화면 전체 영역중 10만큼의 영역을 제외하고 전부 칠함
+    const borderSize = 10
+    const WIDTH = game.graphic.CANVAS_WIDTH - (borderSize * 2)
+    const HEIGHT = game.graphic.CANVAS_HEIGHT - (borderSize * 2)
+    game.graphic.fillRect(borderSize, borderSize, WIDTH, HEIGHT, 'white', 0.9)
+
+    const textSize = 20
+    for (let i = 0; i < textList.length; i++) {
+      game.graphic.fillText(textList[i], textSize, textSize + (i * textSize), 'black')
+    }
+  }
+
   display () {
     super.display()
-    // digitalFontDisplay('icon/name           /delay/shot/hit/multiple/attack/damage', 0, 0)
     this.displayUserWeapon()
+    this.displayCursorWeapon()
+
+    // 도움말 표시
+    if (this.state === this.STATE_HELP) this.displayHelp()
   }
 }
 

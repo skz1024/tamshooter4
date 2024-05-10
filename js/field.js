@@ -687,6 +687,15 @@ class PlayerObject extends FieldData {
       if (this.weaponSlotNumber >= this.weaponSlot.length) {
         this.weaponSlotNumber = 0
       }
+
+      // 만약 다음 무기를 선택했을 때, 다음 무기의 id가 0(무기가 없는경우)이면 다음 무기로 자동으로 건너뜁니다. 
+      // 이것을 반복하면 최종적으로 무기가 있는곳 또는 무기를 사용하지 않는 4번슬롯까지 자동으로 넘어갑니다.
+      // 루프가 반드시 4번슬롯에서 종료되므로, 무한루프는 없습니다.
+      const MAX_WEAPON = this.weaponSlot.length - 1
+      while (this.weaponSlotNumber >= 0 && this.weaponSlotNumber < MAX_WEAPON) {
+        if (this.weaponSlot[this.weaponSlotNumber].id !== 0) break
+        this.weaponSlotNumber++
+      }
     }
 
     // 스킬 슬롯 변경 버튼

@@ -1039,6 +1039,9 @@ export class imageDataInfo {
 
     itemIcon: new ImageDataObject(0, 0, 50, 50),
     itemIconSection: new ImageDataObject(0, 0, 60, 60),
+
+    /** 무기의 아이콘 기본 사이즈 */ weaponIcon: new ImageDataObject(0, 0, 40, 20),
+    /** 무기의 아이콘의 사이즈 2배값 */ weaponIconDoubleSize: new ImageDataObject(0, 0, 80, 40),
   }
 
   // : {x: , y: , width: , height: , frame: 1},
