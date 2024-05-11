@@ -144,8 +144,8 @@ export class userSystem {
   
   /** 스킬 리스트(기본값) (총 8개, 이중 0 ~ 3번은 A슬롯, 4 ~ 7번은 B슬롯) */ 
   static skillList = [
-    ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.sidewave, ID.playerSkill.critcalChaser,
-    ID.playerSkill.hyperBall, ID.playerSkill.sword, ID.playerSkill.santansu, ID.playerSkill.hanjumoek,
+    ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.arrow, ID.playerSkill.critcalChaser,
+    ID.playerSkill.laser, ID.playerSkill.sapia, ID.playerSkill.parapo, ID.playerSkill.seondanil,
   ]
 
   /** 현재 스킬의 프리셋 번호 */
@@ -154,18 +154,21 @@ export class userSystem {
   /** 스킬 1세트의 개수 */
   static SKILL_LIST_COUNT = 8
 
+  /** 프리셋의 최대 번호 */
+  static PRESET_MAX_NUMBER = 4
+
   /** 스킬 리스트의 프리셋 (모든 스킬번호는 연결되어있음. 각각 4개는 A/B슬롯을 나타냄. 8개가 1세트) */
   static skillPresetList = [
-    ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.sidewave, ID.playerSkill.critcalChaser, // preset 1A
-    ID.playerSkill.hyperBall, ID.playerSkill.sword, ID.playerSkill.santansu, ID.playerSkill.hanjumoek, // preset 1B
-    ID.playerSkill.hyperBall, ID.playerSkill.rapid, ID.playerSkill.whiteflash, ID.playerSkill.moon, // preset 2A
-    ID.playerSkill.ring, ID.playerSkill.boomerang, ID.playerSkill.arrow, ID.playerSkill.pileBunker, // preset 2B
-    ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.sidewave, ID.playerSkill.critcalChaser, // preset 3A
-    ID.playerSkill.hyperBall, ID.playerSkill.sword, ID.playerSkill.santansu, ID.playerSkill.hanjumoek, // preset 3B
-    ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.sidewave, ID.playerSkill.critcalChaser, // preset 4A
-    ID.playerSkill.hyperBall, ID.playerSkill.sword, ID.playerSkill.santansu, ID.playerSkill.hanjumoek, // preset 4B
-    ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.sidewave, ID.playerSkill.critcalChaser, // preset 5A
-    ID.playerSkill.hyperBall, ID.playerSkill.sword, ID.playerSkill.santansu, ID.playerSkill.hanjumoek, // preset 5B
+    ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.arrow, ID.playerSkill.critcalChaser, // preset 1A
+    ID.playerSkill.laser, ID.playerSkill.sapia, ID.playerSkill.parapo, ID.playerSkill.seondanil, // preset 1B
+    ID.playerSkill.hyperBall, ID.playerSkill.whiteflash, ID.playerSkill.sword, ID.playerSkill.hanjumoek, // preset 2A
+    ID.playerSkill.rapid, ID.playerSkill.santansu, ID.playerSkill.ring, ID.playerSkill.pileBunker, // preset 2B
+    ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.arrow, ID.playerSkill.critcalChaser, // preset 3A
+    ID.playerSkill.unused, ID.playerSkill.unused, ID.playerSkill.unused,ID.playerSkill.unused, // preset 3B
+    ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.arrow, ID.playerSkill.critcalChaser, // preset 4A
+    ID.playerSkill.unused, ID.playerSkill.unused, ID.playerSkill.unused, ID.playerSkill.unused, // preset 4B
+    ID.playerSkill.multyshot, ID.playerSkill.missile, ID.playerSkill.arrow, ID.playerSkill.critcalChaser, // preset 5A
+    ID.playerSkill.unused, ID.playerSkill.unused, ID.playerSkill.unused, ID.playerSkill.unused, // preset 5B
   ]
 
   static equipment = {
@@ -217,7 +220,7 @@ export class userSystem {
 
   /** 무기 리스트(기본값), 0 ~ 3번까지만 있음. 4번은 무기를 사용하기 싫을 때 사용 따라서 무기가 지정되지 않음. */
   static weaponList = [
-    ID.playerWeapon.multyshot, ID.playerWeapon.missile, ID.playerWeapon.laser, ID.playerWeapon.sidewave
+    ID.playerWeapon.multyshot, ID.playerWeapon.missile, ID.playerWeapon.arrow, ID.playerWeapon.laser
   ]
 
   /** 현재 무기의 프리셋 번호 */
@@ -228,9 +231,9 @@ export class userSystem {
 
   /** 무기가 가진 프리셋 리스트, 5개가 연속적으로 연결되어있음. */
   static weaponPresetList = [
-    ID.playerWeapon.multyshot, ID.playerWeapon.missile, ID.playerWeapon.laser, ID.playerWeapon.sidewave,
-    ID.playerWeapon.multyshot, ID.playerWeapon.sapia, ID.playerWeapon.parapo, ID.playerWeapon.blaster,
-    ID.playerWeapon.multyshot, ID.playerWeapon.rapid, ID.playerWeapon.ring, ID.playerWeapon.seondanil,
+    ID.playerWeapon.multyshot, ID.playerWeapon.missile, ID.playerWeapon.arrow, ID.playerWeapon.laser,
+    ID.playerWeapon.blaster, ID.playerWeapon.parapo, ID.playerWeapon.sapia, ID.playerWeapon.ring,
+    ID.playerWeapon.multyshot, ID.playerWeapon.rapid, ID.playerWeapon.parapo, ID.playerWeapon.unused,
     ID.playerWeapon.multyshot, ID.playerWeapon.unused, ID.playerWeapon.unused, ID.playerWeapon.unused,
     ID.playerWeapon.multyshot, ID.playerWeapon.unused, ID.playerWeapon.unused, ID.playerWeapon.unused,
   ]
@@ -427,6 +430,58 @@ export class userSystem {
       }
     }
   }
+  
+  /**
+   * 스킬을 설정합니다. 중복은 허용되지 않습니다. unused값을 넣으면 해당 스킬을 삭제합니다.
+   * A슬롯에 있는 스킬은 제거할 수 없습니다. (왜냐하면, 스킬을 사용하지 않으면 게임 진행이 매우 어렵습니다.)
+   * @param {number} skillSlotNumber (0 ~ 7 번 선택 가능), 0 ~ 3: A슬롯, 4 ~ 7: B슬롯
+   * @param {number} skillId 스킬의 아이디
+   * @returns {boolean}
+   */
+  static setSkill (skillSlotNumber = 0, skillId = 0) {
+    if (skillSlotNumber < 0 && skillSlotNumber > this.SKILL_LIST_COUNT) return false
+    if (skillId === 0) {
+      // A슬롯(0 ~ 3번) 은 스킬을 제거할 수 없음
+      if (skillSlotNumber <= 3) return false
+
+      this.skillList[skillSlotNumber] = skillId
+      return true
+    }
+
+    // 중복 불가능
+    if (this.skillList.includes(skillId)) return false
+
+    // 스킬 교체
+    this.skillList[skillSlotNumber] = skillId
+    return true
+  }
+
+  /**
+   * 스킬의 프리셋을 변경합니다. (무기랑 원리가 동일)
+   * @param {number} presetNumber 프리셋 번호 (0 ~ 4)
+   */
+  static changePresetSkill (presetNumber = 0) {
+    if (presetNumber < 0 && presetNumber > this.PRESET_MAX_NUMBER) return
+    if (presetNumber === this.skillPresetNumber) return
+
+    // 현재 값을 이전 프리셋에 저장합니다.
+    let prevArrayNumber = this.skillPresetNumber * this.SKILL_LIST_COUNT
+    for (let i = 0; i < this.SKILL_LIST_COUNT; i++) {
+      let index = prevArrayNumber + i
+      this.skillPresetList[index] = this.skillList[i]
+    }
+
+    // 그리고 다른 프리셋의 무기를 현재 무기로 재설정합니다.
+    let nextArrayNumber = presetNumber * this.SKILL_LIST_COUNT
+    for (let i = 0; i < this.SKILL_LIST_COUNT; i++) {
+      // 참고: 프리셋을 변경하는 과정에서 중복되는 무기는 삭제되거나 변형될 수 있음.
+      let index = nextArrayNumber + i
+      this.skillList[i] = this.skillPresetList[index]
+    }
+
+    // 프리셋 번호 변경
+    this.skillPresetNumber = presetNumber
+  }
 
   static getSkillList () {
     return this.skillList
@@ -537,9 +592,8 @@ export class userSystem {
     // 그리고 다른 프리셋의 무기를 현재 무기로 재설정합니다.
     let nextArrayNumber = presetNumber * this.WEAPON_LIST_COUNT
     for (let i = 0; i < this.WEAPON_LIST_COUNT; i++) {
-      // 참고: 프리셋을 변경하는 과정에서 중복되는 무기는 삭제되거나 변형될 수 있음.
       let index = nextArrayNumber + i
-      this.setWeapon(i, this.weaponPresetList[index])
+      this.weaponList[i] = this.weaponPresetList[index]
     }
 
     // 프리셋 번호 변경

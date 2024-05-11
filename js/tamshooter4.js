@@ -218,6 +218,21 @@ class MenuSystem {
     this.backgroundColor = []
   }
 
+  /** 어떤 버튼이 눌렸는지를 오브젝트로 확인합니다. 버튼이 눌린것은 boolean값으로 확인해야합니다. */
+  getButtonObject () {
+    const buttonUp = game.control.getButtonInput(game.control.buttonIndex.UP)
+    const buttonDown = game.control.getButtonInput(game.control.buttonIndex.DOWN)
+    const buttonLeft = game.control.getButtonInput(game.control.buttonIndex.LEFT)
+    const buttonRight = game.control.getButtonInput(game.control.buttonIndex.RIGHT)
+    const buttonSkill0 = game.control.getButtonInput(game.control.buttonIndex.L1)
+    const buttonSkill1 = game.control.getButtonInput(game.control.buttonIndex.L2)
+    const buttonSkill2 = game.control.getButtonInput(game.control.buttonIndex.R1)
+    const buttonSkill3 = game.control.getButtonInput(game.control.buttonIndex.R2)
+    return  {
+      buttonUp, buttonDown, buttonLeft, buttonRight, buttonSkill0, buttonSkill1, buttonSkill2, buttonSkill3
+    }
+  }
+
   /**
    * 로직 처리 함수 (화면 출력을 여기에 출력하면 안됩니다.)
    * 특별한 일이 없는 경우 process() 함수를 재정의할 필요는 없습니다.
@@ -1430,10 +1445,10 @@ class WeaponSelectSystem extends MenuSystem {
     /** 메뉴의 번호 시작값 (메뉴 개수만큼) */ this.NUM_START_MENU = 54
     /** 메뉴의 번호 끝값 (메뉴 개수만큼) */ this.NUM_END_MENU = 54 + 7
 
-    this.outputY1CurrentWeapon = 40
+    this.outputY1_LIST = 40
     this.outputY2MenuList = 120
-    this.outputY3WeaponList = 160
-    this.outputY4CursorWeapon = 180
+    this.outputY3IconList = 160
+    this.outputY4CursorTargetInfo = 180
 
     // weapon list
     for (let i = 0; i < 50; i++) {
@@ -1445,14 +1460,14 @@ class WeaponSelectSystem extends MenuSystem {
       const boxHeight = 40
       let imgD = {x: (index % 10) * 40, y: Math.floor(index / 10) * 20, width: 40, height: 20, frame: 1}
       const x = (index % 10) * boxWidth
-      const y = Math.floor(index / 10) * boxHeight + boxHeight + this.outputY3WeaponList
+      const y = Math.floor(index / 10) * boxHeight + boxHeight + this.outputY3IconList
       this.menuList[i] = new BoxImageObject(x, y, boxWidth, boxHeight, '', src, imgD)
     }
 
     // current weapon
     for (let i = 0; i < 4; i++) {
       const index = i + 50
-      this.menuList[index] = new BoxObject(0, (i * 20) + this.outputY1CurrentWeapon, 800, 20, '', 'whitesmoke', '', 'grey')
+      this.menuList[index] = new BoxObject(0, (i * 20) + this.outputY1_LIST, 800, 20, '', 'whitesmoke', '', 'grey')
     }
 
     // menuList
@@ -1469,21 +1484,6 @@ class WeaponSelectSystem extends MenuSystem {
     this.state = this.STATE_MENU
 
     /** 리스트 포지션의 최대 */ this.LIST_POSITION_MAX = 4
-  }
-
-  /** 어떤 버튼이 눌렸는지를 오브젝트로 확인합니다. 버튼이 눌린것은 boolean값으로 확인해야합니다. */
-  getButtonObject () {
-    const buttonUp = game.control.getButtonInput(game.control.buttonIndex.UP)
-    const buttonDown = game.control.getButtonInput(game.control.buttonIndex.DOWN)
-    const buttonLeft = game.control.getButtonInput(game.control.buttonIndex.LEFT)
-    const buttonRight = game.control.getButtonInput(game.control.buttonIndex.RIGHT)
-    const buttonSkill0 = game.control.getButtonInput(game.control.buttonIndex.L1)
-    const buttonSkill1 = game.control.getButtonInput(game.control.buttonIndex.L2)
-    const buttonSkill2 = game.control.getButtonInput(game.control.buttonIndex.R1)
-    const buttonSkill3 = game.control.getButtonInput(game.control.buttonIndex.R2)
-    return  {
-      buttonUp, buttonDown, buttonLeft, buttonRight, buttonSkill0, buttonSkill1, buttonSkill2, buttonSkill3
-    }
   }
 
   process () {
@@ -1541,7 +1541,6 @@ class WeaponSelectSystem extends MenuSystem {
   processButtonMenu () {
     let button = this.getButtonObject()
     const maxMenuCount = this.NUM_END_MENU - this.NUM_START_MENU
-    const lastCursorList = this.NUM_END_LIST - this.NUM_START_LIST
 
     if (button.buttonLeft && this.cursorMenu > 0) {
       this.cursorMenu--
@@ -1554,7 +1553,7 @@ class WeaponSelectSystem extends MenuSystem {
       game.sound.play(soundSrc.system.systemCursor)
     } else if (button.buttonUp) {
       this.state = this.STATE_LIST
-      this.cursorList = lastCursorList
+      this.cursorList = this.LIST_POSITION_MAX - 1
       game.sound.play(soundSrc.system.systemCursor)
     }
   }
@@ -1707,7 +1706,7 @@ class WeaponSelectSystem extends MenuSystem {
     let weaponId = this.cursorIcon + ID.playerWeapon.weaponNumberStart
     let infoString = this.getIconString(weaponId)
 
-    digitalDisplay(infoString, 0, this.outputY4CursorWeapon)
+    digitalDisplay(infoString, 0, this.outputY4CursorTargetInfo)
   }
 
   /** 무기 선택 도움말 */
@@ -1730,7 +1729,8 @@ class WeaponSelectSystem extends MenuSystem {
       '',
       'preset은 5종류가 있습니다.',
       'NULL 무기를 선택하면 해당 슬롯의 무기를 지울 수 있습니다.',
-      '그러나, 한개의 프리셋당 최소 1개의 무기가 있어야 합니다.' 
+      '그러나, 한개의 프리셋당 최소 1개의 무기가 있어야 합니다.',
+      '',
     ]
 
     // 화면 전체 영역중 10만큼의 영역을 제외하고 전부 칠함
@@ -1755,54 +1755,80 @@ class WeaponSelectSystem extends MenuSystem {
   }
 }
 
-class SkillSelectSystem extends WeaponSelectSystem {
+class SkillSelectSystem extends MenuSystem {
   constructor () {
     super()
     this.backgroundColor = ['#6190E8', '#A7BFE8']
-    
     /** 모든 스킬의 슬롯 리스트 */ this.targetIdList = Array.from(dataExportStatPlayerSkill.keys())
-    let menuText = ['<- back', 'prevPage', 'nextPage', 'help', 'slot1', 'slot2', 'slot3', 'slot4', 'slot5', 'preview']
-    for (let i = 0; i < menuText.length; i++) {
-      this.menuList[i] = new BoxObject(80 * i, 0, 80, 40, menuText[i], 'yellow', '', 'darkblue')
-    }
-
-    /** 메뉴의 번호 끝값 (메뉴 개수만큼(최대 9번까지 허용)) */ this.NUM_END_MENU = menuText.length - 1
-
-    this.STATE_PREVIEW = 'preview'
-    this.state = this.STATE_MENU
-
+    this.NUM_START_SKILLICON = 0
+    this.NUM_END_SKILLICON = 49
+    this.NUM_START_LIST = 50
+    this.NUM_END_LIST = 57
+    this.NUM_START_MENU = 58
+    this.NUM_END_MENU = 65
     /** 리스트 포지션의 최대 */ this.LIST_POSITION_MAX = 8
 
-    // menuList 10 ~ 59 스킬 선택 메뉴:
-    let iconWidth = 40
-    let iconHeight = 20
-    let iconOutputWidth = 80
-    let sectionArea = 100
-    for (let i = 10, index = 0; index < 50; i++, index++) {
-      let xNumber = index % 10
-      let yNumber = Math.floor(index / 10)
-      let imageData = {x: xNumber * iconWidth, y: yNumber * iconHeight, width: iconWidth, height: iconHeight, frame: 1}
-      this.menuList[i] = new BoxImageObject(xNumber * iconOutputWidth, yNumber * iconWidth + sectionArea, iconOutputWidth, iconWidth, '', imageSrc.system.skillIcon, imageData)
+    this.outputY1List = 20
+    this.outputY1ListLine1Start = 40
+    this.outputY1ListLine2Start = 140
+    this.outputY2MenuList = 40 + 180
+    this.outputY3IconInfoView = 300
+    this.outputY3IconListStart = 280
+
+    this.cursorMenu = 0
+    this.cursorIcon = 0
+    this.cursorList = 0
+    this.listPosition = 0
+
+    // skillIcon
+    let iconWidth = imageDataInfo.system.weaponIcon.width
+    let iconHeight = imageDataInfo.system.weaponIcon.height
+    let iconOutputWidth = imageDataInfo.system.weaponIconDoubleSize.width
+    let iconOutputHeight = imageDataInfo.system.weaponIconDoubleSize.height
+    let iconTitleHeight = imageDataInfo.system.skillInfoYellowTitle.height + imageDataInfo.system.skillInfoYellow.height 
+    for (let i = 0; i < 50; i++) {
+      const xNumber = i % 10
+      const yNumber = Math.floor(i / 10)
+      const imageData = {x: xNumber * iconWidth, y: yNumber * iconHeight, width: iconWidth, height: iconHeight, frame: 1}
+      const x = xNumber * iconOutputWidth
+      const y = yNumber * iconWidth + this.outputY3IconListStart + iconTitleHeight
+      this.menuList[i] = new BoxImageObject(x, y, iconOutputWidth, iconOutputHeight, '', imageSrc.system.skillIcon, imageData)
       this.menuList[i].borderColor = 'black'
       this.menuList[i].color = ''
     }
 
-    // menuList 60 ~ 67 스킬 장착 메뉴
+    // user skill list
     let image = imageSrc.system.skillInfo
-    let slotBNumber = 64
-    let slotALayerY = 320
-    let slotBLayerY = 420
-    for (let i = 60, index = 0; index < this.LIST_POSITION_MAX; i++, index++) {
-      let yLine = index % 4
-      // 60 ~ 63이 A슬롯, 64 ~ 67이 B슬롯입니다.
-      let imageData = i < slotBNumber ? imageDataInfo.system.skillInfoSkyBlue : imageDataInfo.system.skillInfoPurpleBlue
-      let positionY = i < slotBNumber ? slotALayerY + (yLine * iconHeight) : slotBLayerY + (yLine * iconHeight)
-      this.menuList[i] = new BoxImageObject(0, positionY, game.graphic.CANVAS_WIDTH, iconHeight, '', image, imageData)
+    let slotBNumber = this.NUM_START_LIST + (this.LIST_POSITION_MAX / 2)
+    let slotALayerY = this.outputY1ListLine1Start + 0
+    let slotBLayerY = this.outputY1ListLine1Start + 100
+    for (let i = 0; i < this.LIST_POSITION_MAX; i++) {
+      let index = i + this.NUM_START_LIST
+      let yLine = i % 4
+      let imageData = index < slotBNumber ? imageDataInfo.system.skillInfoSkyBlue : imageDataInfo.system.skillInfoPurpleBlue
+      let positionY = index < slotBNumber ? slotALayerY + (yLine * iconHeight) : slotBLayerY + (yLine * iconHeight)
+      this.menuList[index] = new BoxImageObject(0, positionY, game.graphic.CANVAS_WIDTH, iconHeight, '', image, imageData)
+      this.menuList[index].focusColor = '#333333'
     }
+
+    // menu
+    let menuText = ['<< back', 'preset0', 'preset1', 'preset2', 'preset3', 'preset4', 'help', 'test']
+    for (let i = 0; i < menuText.length; i++) {
+      let index = this.NUM_START_MENU + i
+      this.menuList[index] = new BoxObject(iconOutputWidth * i, this.outputY2MenuList, iconOutputWidth, iconOutputHeight, menuText[i], '#fcffd6', '', '#ff7e00')
+    }
+
+    this.STATE_MENU = 'menu'
+    this.STATE_ICON = 'icon'
+    this.STATE_LIST = 'list'
+    this.STATE_HELP = 'help'
+    this.STATE_PREVIEW = 'preview'
+    this.state = this.STATE_MENU
   }
 
   processButtonMenu () {
     let button = this.getButtonObject()
+    const menuCount = this.NUM_END_MENU - this.NUM_START_MENU
     // 메뉴 모드 (아직 완성 안됨)
     // 좌우 방향키로 이동, 아래 방향키를 누를경우, 스킬을 고를 수 있음.
     // 스킬셋을 바꾸면 현재 스킬셋이 다른걸로 교체됨
@@ -1811,11 +1837,16 @@ class SkillSelectSystem extends WeaponSelectSystem {
     if (button.buttonLeft && this.cursorMenu > 0) {
       game.sound.play(soundSrc.system.systemCursor)
       this.cursorMenu--
-    } else if (button.buttonRight && this.cursorMenu < this.NUM_END_MENU - 1) {
+    } else if (button.buttonRight && this.cursorMenu < menuCount) {
       game.sound.play(soundSrc.system.systemCursor)
       this.cursorMenu++
     } else if (button.buttonDown) {
       this.state = this.STATE_ICON
+      game.sound.play(soundSrc.system.systemCursor)
+    } else if (button.buttonUp) {
+      this.cursorList = this.LIST_POSITION_MAX - 1
+      this.state = this.STATE_LIST
+      game.sound.play(soundSrc.system.systemCursor)
     }
   }
 
@@ -1837,8 +1868,8 @@ class SkillSelectSystem extends WeaponSelectSystem {
       cursorY === 0 ? this.state = this.STATE_MENU : this.cursorIcon -= 10
       game.sound.play(soundSrc.system.systemCursor)
     } else if (button.buttonDown) {
-      // 커서 Y축이 맨 아래에 있다면, 리스트 상태로 변경합니다. 아닐경우, 한 줄 아래로 내려갑니다.
-      cursorY === 4 ? this.state = this.STATE_LIST : this.cursorIcon += 10
+      // 커서 Y축이 마지막 줄이 아니라면 한 줄 아래로 내려갑니다.
+      cursorY === 4 ? 0 : this.cursorIcon += 10
       game.sound.play(soundSrc.system.systemCursor)
     }
 
@@ -1847,7 +1878,6 @@ class SkillSelectSystem extends WeaponSelectSystem {
     if (button.buttonSkill1) this.setSkill(1, this.targetIdList[this.cursorIcon])
     if (button.buttonSkill2) this.setSkill(2, this.targetIdList[this.cursorIcon])
     if (button.buttonSkill3) this.setSkill(3, this.targetIdList[this.cursorIcon])
-
   }
 
   /**
@@ -1856,24 +1886,29 @@ class SkillSelectSystem extends WeaponSelectSystem {
    * @param {number} skillId 스킬의 id
    */
   setSkill (slotNumber, skillId) {
-    // 없는 스킬은 등록 불가능 (unused 스킬도 마찬가지)
+    // 없는 스킬은 등록 불가능 (unused는 해당 스킬을 제거함)
     let getSkill = dataExportStatPlayerSkill.get(skillId)
-    if (getSkill == null || skillId === ID.playerSkill.unused) return
-
-    let getUserSkill = userSystem.getPlayerObjectData().skillList
-    getUserSkill[slotNumber] = skillId
-    userSystem.setSkillList(getUserSkill)
-    game.sound.play(soundSrc.system.systemSkillSelect)
+    if (getSkill == null) return
+    
+    // 스킬을 변경하고 스킬을 변경하는데 성공하면, 사운드 출력 후 다음 리스트로 이동
+    let success = userSystem.setSkill(slotNumber, skillId)
+    if (success) {
+      game.sound.play(soundSrc.system.systemSkillSelect)
+      this.listPosition++
+      if (this.listPosition >= this.LIST_POSITION_MAX) {
+        this.listPosition = 0
+      }
+    } else {
+      game.sound.play(soundSrc.system.systemBuzzer)
+    }
   }
 
   processButtonList () {
     let button = this.getButtonObject()
-
-    if (button.buttonUp) {
-      // 리스트번호가 0인 상태라면, 상태를 스킬로 변경하고, 아니면 리스트번호를 1감소합니다.
-      this.cursorList === 0 ? this.state = this.STATE_ICON : this.cursorList--
+    if (button.buttonUp && this.cursorList > 0) {
+      this.cursorList--
       game.sound.play(soundSrc.system.systemCursor)
-    } else if (button.buttonDown && this.cursorList < 7) {
+    } else if (button.buttonDown && this.cursorList < this.LIST_POSITION_MAX - 1) {
       this.cursorList++
       game.sound.play(soundSrc.system.systemCursor)
     }
@@ -1896,19 +1931,27 @@ class SkillSelectSystem extends WeaponSelectSystem {
     if (this.state === this.STATE_MENU) {
       switch (this.cursorMenu) {
         case 0: this.canceled = true; break
+        case 1: userSystem.changePresetSkill(0); break
+        case 2: userSystem.changePresetSkill(1); break
+        case 3: userSystem.changePresetSkill(2); break
+        case 4: userSystem.changePresetSkill(3); break
+        case 5: userSystem.changePresetSkill(4); break
+        case 6: this.state = this.STATE_HELP; break
+        case 7: ; break
       }
-    } else if (this.state === this.STATE_ICON) {
-      // 스킬을 설정하고 다음 리스트로 이동
-      this.setSkill(this.listPosition, this.targetIdList[this.cursorIcon])
-      this.listPosition++
 
-      if (this.listPosition >= 8) {
-        this.listPosition = 0
-      }
+      if (this.cursorMenu > 0) game.sound.play(soundSrc.system.systemSelect)
+    } else if (this.state === this.STATE_ICON) {
+      // 스킬을 설정함 (스킬을 설정하면 자동으로 다음 리스트로 이동함)
+      this.setSkill(this.listPosition, this.targetIdList[this.cursorIcon])
     } else if (this.state === this.STATE_LIST) {
       // 커서 위치를 그대로 두고, 스킬 선택으로 이동
       this.state = this.STATE_ICON
       this.listPosition = this.cursorList
+      game.sound.play(soundSrc.system.systemCursor)
+    } else if (this.state === this.STATE_HELP) {
+      this.state = this.STATE_MENU
+      game.sound.play(soundSrc.system.systemCursor)
     }
   }
 
@@ -1922,6 +1965,8 @@ class SkillSelectSystem extends WeaponSelectSystem {
       this.state = this.STATE_MENU
     } else if (this.state === this.STATE_LIST) {
       this.state = this.STATE_ICON
+    } else if (this.state === this.STATE_HELP) {
+      this.state = this.STATE_MENU
     }
     
     game.sound.play(soundSrc.system.systemBack)
@@ -1931,69 +1976,73 @@ class SkillSelectSystem extends WeaponSelectSystem {
   /** 스킬에 대한 정보 이미지를 표시(정보는 이 함수 말고 다른곳에서 출력됨) */
   displayTitle () {
     const image = imageSrc.system.skillInfo
-    const MENU_LAYER = 40
-    const SKILL_LAYER1 = 300
-    const SKILL_LAYER2 = 400
+    const SKILL_LIST_LAYER1 = this.outputY1List
+    const SKILL_LIST_LAYER2 = this.outputY1ListLine2Start - 20
+    const SKILL_CURSOR_INFO_LAYER = this.outputY3IconListStart
     const HEIGHT = 20
     const WIDTH = 800
 
+    digitalDisplay('CURRENT SKILL LIST (PRESET: ' + userSystem.skillPresetNumber + ')', 0, 0)
     let yellowTitle = imageDataInfo.system.skillInfoYellowTitle
-    game.graphic.imageDisplay(image, yellowTitle.x, yellowTitle.y, yellowTitle.width, yellowTitle.height, 0, MENU_LAYER, WIDTH, HEIGHT)
+    game.graphic.imageDisplay(image, yellowTitle.x, yellowTitle.y, yellowTitle.width, yellowTitle.height, 0, SKILL_CURSOR_INFO_LAYER, WIDTH, HEIGHT)
     let yellowData = imageDataInfo.system.skillInfoYellow
-    game.graphic.imageDisplay(image, yellowData.x, yellowData.y, yellowData.width, yellowData.height, 0, MENU_LAYER + HEIGHT, WIDTH, HEIGHT)
+    game.graphic.imageDisplay(image, yellowData.x, yellowData.y, yellowData.width, yellowData.height, 0, SKILL_CURSOR_INFO_LAYER + HEIGHT, WIDTH, HEIGHT)
 
     let blueTitle = imageDataInfo.system.skillInfoSkyBlueTitle
-    game.graphic.imageDisplay(image, blueTitle.x, blueTitle.y, blueTitle.width, blueTitle.height, 0, SKILL_LAYER1, WIDTH, HEIGHT)
-    let blueData = imageDataInfo.system.skillInfoSkyBlue
-    game.graphic.imageDisplay(image, blueData.x, blueData.y, blueData.width, blueData.height, 0, SKILL_LAYER1 + HEIGHT, WIDTH, HEIGHT)
-
+    game.graphic.imageDisplay(image, blueTitle.x, blueTitle.y, blueTitle.width, blueTitle.height, 0, SKILL_LIST_LAYER1, WIDTH, HEIGHT)
     let purpleTitle = imageDataInfo.system.skillInfoPurpleBlueTitle
-    game.graphic.imageDisplay(image, purpleTitle.x, purpleTitle.y, purpleTitle.width, purpleTitle.height, 0, SKILL_LAYER2, WIDTH, HEIGHT)
-    let purpleData =imageDataInfo.system.skillInfoPurpleBlue
-    game.graphic.imageDisplay(image, purpleData.x, purpleData.y, purpleData.width, purpleData.height, 0, SKILL_LAYER2 + HEIGHT, WIDTH, HEIGHT)
+    game.graphic.imageDisplay(image, purpleTitle.x, purpleTitle.y, purpleTitle.width, purpleTitle.height, 0, SKILL_LIST_LAYER2, WIDTH, HEIGHT)
   }
 
   display () {
     // super.display()
     this.displayBackground()
-    this.displayTitle()
     this.displayMenu() // 메뉴가 다른 이미지에 가려지는걸 막기 위해서, 이 함수를 임의로 호출함.
+    this.displayTitle()
     this.displaySkillSelectData()
-    this.displaySKillList()
+    this.displaySkillList()
     this.displaySkillHighlight()
+
+    if (this.state === this.STATE_HELP) this.displayHelp()
   }
 
   displaySkillHighlight () {
     if (this.state === this.STATE_LIST) return
 
-    let lineY = this.listPosition < 4 ? 320 : 420
-    lineY += (this.listPosition % 4) * 20
-    game.graphic.fillRect(0, lineY, 800, 20, 'orange', 0.4)
+    const LINEHEIGHT = 20
+    let lineY = this.listPosition < 4 ? this.outputY1ListLine1Start : this.outputY1ListLine2Start
+    lineY += (this.listPosition % 4) * LINEHEIGHT
+    game.graphic.fillRect(0, lineY, game.graphic.CANVAS_WIDTH, LINEHEIGHT, 'orange', 0.4)
   }
 
-  displaySKillList () {
+  displaySkillList () {
     let userSkillList = userSystem.getSkillList()
-    for (let i = 0; i < 4; i++) {
+    const skillCount = this.LIST_POSITION_MAX / 2
+    const MARGIN = 3
+
+    for (let i = 0; i < skillCount; i++) {
       let outputText1 = this.getSkillInfoString(userSkillList[i])
       let outputText2 = this.getSkillInfoString(userSkillList[i + 4])
-      let outputY1 = 300
-      let outputY2 = 400
+      let outputY1 = this.outputY1List + 0
+      let outputY2 = this.outputY1List + 100
       let skillNum1 = userSkillList[i] - ID.playerSkill.skillNumberStart
       let skillNum2 = userSkillList[i + 4] - ID.playerSkill.skillNumberStart
 
-      digitalDisplay(outputText1, 3, (i + 1) * 20 + outputY1)
-      digitalDisplay(outputText2, 3, (i + 1) * 20 + outputY2)
+      digitalDisplay(outputText1, MARGIN, (i + 1) * 20 + outputY1)
+      digitalDisplay(outputText2, MARGIN, (i + 1) * 20 + outputY2)
       game.graphic.imageDisplay(imageSrc.system.skillIcon, (skillNum1 % 10) * 40, Math.floor(skillNum1 / 10) * 20, 40, 20, 0, (i + 1) * 20 + outputY1, 40, 20)
       game.graphic.imageDisplay(imageSrc.system.skillIcon, (skillNum2 % 10) * 40, Math.floor(skillNum2 / 10) * 20, 40, 20, 0, (i + 1) * 20 + outputY2, 40, 20)
     }
   }
 
   displaySkillSelectData () {
-    if (this.cursorPosition >= 10 && this.cursorPosition < 60) {
-      let position = this.cursorPosition - 10
+    if (this.cursorPosition >= this.NUM_START_SKILLICON && this.cursorPosition < this.NUM_END_SKILLICON) {
+      let position = this.cursorPosition - this.NUM_START_SKILLICON
       let inputString = this.getSkillInfoString(this.targetIdList[position])
-      game.graphic.imageDisplay(imageSrc.system.skillIcon, (position % 10) * 40, Math.floor(position / 10) * 20, 40, 20, 0, 60, 40, 20)
-      digitalDisplay(inputString, 3, 60)
+      const MARGIN = 3
+      const Y = this.outputY3IconInfoView
+      game.graphic.imageDisplay(imageSrc.system.skillIcon, (position % 10) * 40, Math.floor(position / 10) * 20, 40, 20, 0, Y, 40, 20)
+      digitalDisplay(inputString, MARGIN, Y)
     }
   }
 
@@ -2025,6 +2074,85 @@ class SkillSelectSystem extends WeaponSelectSystem {
 
     let finalString = icon + name + coolTime + attackMultiple + shotCount + repeatCount + delay + attackCount + weaponAttack + currentAttack
     return finalString
+  }
+
+  displayHelp () {
+    let textList = [
+      '스킬 선택 도움말',
+      '밑에 있는 스킬 아이콘을 선택하면 해당 스킬을 장착합니다.',
+      '스킬은 2개의 슬롯으로 나뉘며 각각 4종류의 스킬을 사용할 수 있습니다.',
+      '스킬은 중복할 수 없습니다. (다른 프리셋은 상관없음)',
+      'L1, R1, L2, R2 또는 스킬 사용 버튼을 누르면, 빠르게 스킬을 교체할 수 있습니다.',
+      '',
+      '스킬의 스탯 설명',
+      'cooltime: 스킬 재사용 대기시간, 초 단위(20 = 20초)',
+      'multiple: 스킬 자체의 공격력 배율',
+      'shot: 스킬을 사용할 때, 한번에 발사되는 개체 수',
+      'repeat: 스킬을 사용할 때, 해당 스킬의 발사를 반복하는 횟수',
+      'delay: 해당 스킬의 발사가 여러번일 때 대기하는 시간(프레임)',
+      'hit: 해당 스킬의 발사된 개체가 적을 타격하는 횟수',
+      'attack: 유저 공격력 10000을 기준으로, 스킬 발사 개체에 대한 데미지',
+      'damage: 현재 유저 공격력을 기준으로, 스킬 발사 개체에 대한 데미지',
+      '',
+      'preset은 5종류가 있습니다.',
+      'NULL를 선택하면 B 슬롯의 스킬을 지울 수 있습니다.',
+      '스킬은 반드시 4개 이상이여야 하기 때문에',
+      'A슬롯의 스킬은 지울 수 없습니다.',
+      'A슬롯과 B슬롯의 쿨타임은 서로 공유합니다.',
+      '',
+      '이 게임은 스킬 4종류를 사용하여 게임을 플레이해야합니다.',
+    ]
+
+    // 화면 전체 영역중 10만큼의 영역을 제외하고 전부 칠함
+    const borderSize = 10
+    const WIDTH = game.graphic.CANVAS_WIDTH - (borderSize * 2)
+    const HEIGHT = game.graphic.CANVAS_HEIGHT - (borderSize * 2)
+    game.graphic.fillRect(borderSize, borderSize, WIDTH, HEIGHT, 'white', 0.9)
+
+    const textSize = 20
+    for (let i = 0; i < textList.length; i++) {
+      game.graphic.fillText(textList[i], textSize, textSize + (i * textSize), 'black')
+    }
+  }
+
+  /** 
+   * 커서 포지션을 현재 설정값에 맞게 강제 이동  (이 함수는 키보드 기준)
+   * 
+   * 마우스로 이동하는 경우, 기존에 있는 상태를 무시하고 커서를 이동시킴
+   */
+  processCursorPosition () {
+    if (this.state === this.STATE_MENU) {
+      this.cursorPosition = this.NUM_START_MENU + this.cursorMenu
+    } else if (this.state === this.STATE_ICON) {
+      this.cursorPosition = this.NUM_START_SKILLICON + this.cursorIcon
+    } else if (this.state === this.STATE_LIST) {
+      this.cursorPosition = this.NUM_START_LIST + this.cursorList
+    }
+  }
+
+  /** 마우스를 클릭했을 때 커서 포지션의 값을 계산해서 메뉴 상태를 변경합니다. */
+  processMouseCursorCalculation () {
+    // 커서 포지션이 특정 범위라면, 현재 상태를 임의로 변경합니다.
+    if (this.cursorPosition >= this.NUM_START_MENU && this.cursorPosition <= this.NUM_END_MENU) {
+      this.state = this.STATE_MENU
+      this.cursorMenu = this.cursorPosition - this.NUM_START_MENU
+    } else if (this.cursorPosition >= this.NUM_START_SKILLICON && this.cursorPosition <= this.NUM_END_SKILLICON) {
+      this.state = this.STATE_ICON
+      this.cursorIcon = this.cursorPosition - this.NUM_START_SKILLICON
+    } else if (this.cursorPosition >= this.NUM_START_LIST && this.cursorPosition <= this.NUM_END_LIST) {
+      this.state = this.STATE_LIST
+      this.cursorList = this.cursorPosition - this.NUM_START_LIST
+    }
+  }
+
+  processMouseClickExtend () {
+    // 마우스가 눌려진 후에 기능을 수행하기 위해, processMouseExtend 함수를 사용했습니다.
+    this.processMouseCursorCalculation()
+  }
+
+  process () {
+    super.process()
+    this.processCursorPosition()
   }
 }
 
