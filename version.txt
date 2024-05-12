@@ -1728,3 +1728,8 @@ setInterval도 내부 간격이 넓은데다가, offScreenCanvas를 너무 크�
 4. 스킬 스탯 설명에서 이미지 파일에 있는 오타 수정 (atttack -> attack)
 5. 스킬, 무기 기본값과 기본 프리셋을 제대로 정의함
 6. test 메뉴는 나중에 구현할 예정
+
+
+2024/05/12 v0.50.3 - tamshooter4 html fix
+tamshooter4 게임이 웹에 올라왔을 때 상대경로를 잘못 지정하여 게임이 실행되지 않는 문제 수정
+noscript 태그 추가
