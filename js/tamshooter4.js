@@ -1,7 +1,7 @@
 //@ts-check
 
 import { imageSrc, imageDataInfo, ImageDataObject } from "./imageSrc.js";
-import { dataExportStatPlayerSkill, dataExportStatWeapon, dataExportStatPlayerWeapon, dataExportStatRound, StatRound } from "./dataStat.js";
+import { dataExportStatItem, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, StatItem, StatRound } from "./dataStat.js";
 import { soundSrc } from "./soundSrc.js";
 import { ID } from "./dataId.js";
 import { gameVar, userSystem } from "./game.js";
@@ -178,6 +178,9 @@ class BoxImageObject extends BoxObject {
     this.imageSrc = imageSrc
 
     /** @type {ImageDataObject} */ this.imageData = imageData
+
+    if (width === 0) this.width = imageData.width
+    if (height === 0) this.height = imageData.height 
   }
 
   displayBackGround () {
@@ -559,18 +562,18 @@ class OptionSystem extends MenuSystem {
     super()
     const MENU_X = 0
     const MENU_Y = 0
-    const MENU_HEIGHT = 38
-    const MENU_LINE_Y = 40
+    const MENU_HEIGHT = 28
+    const MENU_LINE_Y = 30
     const MENU_WIDTH = 390
-    const startColor = '#FCCF31'
-    const endColor = '#F55555'
-    const focusColor = '#763E14'
+    const startColor = '#ffcd75'
+    const endColor = '#ffcd75'
+    const focusColor = '#432e0a'
 
     for (let i = 0; i < this.boxText.length; i++) {
       this.menuList[i] = new BoxObject(MENU_X, MENU_Y + (MENU_LINE_Y * i), MENU_WIDTH, MENU_HEIGHT, this.boxText[i], startColor, endColor, focusColor)
     }
 
-    this.backgroundColor = ['#f9d423', '#ff4e50']
+    this.backgroundColor = ['#ffc494', '#ffd2a8']
   }
 
   getSaveData () {
@@ -641,9 +644,11 @@ class OptionSystem extends MenuSystem {
     // 주의: 사운드 게인은 0 ~ 1 사이의 범위입니다.
     let soundValue = this.optionValue.soundOn ? this.optionValue.soundVolume / 100 : 0
     game.sound.setGain(soundValue)
+    game.sound.soundOn = this.optionValue.soundOn
 
     let musicValue = this.optionValue.musicOn ? this.optionValue.musicVolume / 100 : 0
     game.sound.setMusicGain(musicValue)
+    game.sound.musicOn = this.optionValue.musicOn
   }
   
   process () {
@@ -1270,7 +1275,7 @@ class DataSettingSystem extends MenuSystem {
     const LAYER_X = 0
     const LAYER_Y = 0
     const LAYER_WIDTH = 400
-    const LAYER_HEIGHT = 50
+    const LAYER_HEIGHT = 30
 
     // 그라디언트 컬러
     const color1 = '#E0AC00'
@@ -1301,7 +1306,7 @@ class DataSettingSystem extends MenuSystem {
     this.questionResetNo = new BoxObject(200, 300, 200, 50, '아니오 (NO)', 'white', 'white', 'blue')
     this.questionResetYes = new BoxObject(200, 400, 200, 50, '예 (YES)', 'white', 'white', 'blue')
 
-    this.backgroundColor = ['#52c234', '#061700']
+    this.backgroundColor = ['#7d8d7c', '#6e8771']
   }
 
   process () {
@@ -1508,6 +1513,12 @@ class WeaponSelectSystem extends MenuSystem {
 
   /** 마우스를 클릭했을 때 커서 포지션의 값을 계산해서 메뉴 상태를 변경합니다. */
   processMouseCursorCalculation () {
+    if (this.state === this.STATE_HELP) {
+      this.selected = false // 다른 메뉴박스를 눌렀을 때, 이 값이 true가 되기 때문에 강제로 해제함
+      this.canceled = true
+      return
+    }
+
     // 커서 포지션이 특정 범위라면, 현재 상태를 임의로 변경합니다.
     if (this.cursorPosition >= this.NUM_START_MENU && this.cursorPosition <= this.NUM_END_MENU) {
       this.state = this.STATE_MENU
@@ -1603,16 +1614,18 @@ class WeaponSelectSystem extends MenuSystem {
   setWeapon (weaponId = 0) {
     if (weaponId == null) return
     if (weaponId === ID.playerWeapon.subMultyshot) return
+    if (this.cursorIcon >= dataExportPlayerWeapon.size) return
 
     // 무기 교체
     let success = userSystem.setWeapon(this.listPosition, weaponId)
-    if (!success) return // 무기 교체를 못했다면, 아무 효과 없음
-
-    // 다음 리스트로 이동
-    this.listPosition++
-    if (this.listPosition > 3) this.listPosition = 0
-
-    game.sound.play(soundSrc.system.systemSkillSelect)
+    if (success) {
+      // 다음 리스트로 이동
+      this.listPosition++
+      if (this.listPosition > 3) this.listPosition = 0
+      game.sound.play(soundSrc.system.systemSkillSelect)
+    } else {
+      game.sound.play(soundSrc.system.systemBuzzer)
+    }
   }
 
   processSelect () {
@@ -1704,9 +1717,22 @@ class WeaponSelectSystem extends MenuSystem {
   /** 커서가 가리키는 무기의 정보 출력 */
   displayCursorWeapon () {
     let weaponId = this.cursorIcon + ID.playerWeapon.weaponNumberStart
-    let infoString = this.getIconString(weaponId)
+    if (weaponId < ID.playerWeapon.weaponNumberStart) return
 
+    const infoString = this.getIconString(weaponId)
+    const weaponIconSrc = imageSrc.system.weaponIcon
+    const weaponNumber = this.cursorIcon
+    const iconWidth = imageDataInfo.system.weaponIcon.width
+    const iconHeight = imageDataInfo.system.weaponIcon.height
+    const weaponX = weaponNumber % 10
+    const weaponY = Math.floor(weaponNumber / 10)
+    const outputY3 = this.outputY3IconList
+
+    game.graphic.fillRect(0, outputY3, game.graphic.CANVAS_WIDTH, iconHeight * 2, 'white')
+    digitalDisplay('icon/name           |delay|shot|repeat|multiple|value|attack', 0, outputY3)
     digitalDisplay(infoString, 0, this.outputY4CursorTargetInfo)
+    game.graphic.imageDisplay(weaponIconSrc, weaponX * iconWidth, weaponY * iconHeight, iconWidth, iconHeight, 0, outputY3 + 20, iconWidth, iconHeight)
+
   }
 
   /** 무기 선택 도움말 */
@@ -1722,8 +1748,8 @@ class WeaponSelectSystem extends MenuSystem {
       'shot : 한번 발사할 때 발사되는 개체 수',
       'repeat: 발사된 개체가 적을 공격하는 횟수',
       'multiple: 무기의 공격력 배율 (높을수록 데미지가 높아짐)',
-      'value: 공격력 10000을 기준으로 해당 무기가 가지는 데미지',
-      'attack: 유저의 공격력을 기준으로 해당 무기가 가지는 데미지',
+      'value: 무기 공격력 10000을 기준으로 해당 무기가 가지는 데미지',
+      'attack: 유저의 무기 공격력(공격력의 28%)을 기준으로 해당 무기가 가지는 데미지',
       '',
       'test 메뉴를 사용하면 무기를 테스트 할 수 있는 라운드를 플레이합니다.',
       '',
@@ -1748,7 +1774,9 @@ class WeaponSelectSystem extends MenuSystem {
   display () {
     super.display()
     this.displayUserWeapon()
-    this.displayCursorWeapon()
+    
+    // 커서가 가리키는 웨폰 표시
+    if (this.state === this.STATE_ICON) this.displayCursorWeapon()
 
     // 도움말 표시
     if (this.state === this.STATE_HELP) this.displayHelp()
@@ -1908,8 +1936,12 @@ class SkillSelectSystem extends MenuSystem {
     if (button.buttonUp && this.cursorList > 0) {
       this.cursorList--
       game.sound.play(soundSrc.system.systemCursor)
-    } else if (button.buttonDown && this.cursorList < this.LIST_POSITION_MAX - 1) {
-      this.cursorList++
+    } else if (button.buttonDown) {
+      if (this.cursorList < this.LIST_POSITION_MAX - 1) {
+        this.cursorList++
+      } else {
+        this.state = this.STATE_MENU
+      }
       game.sound.play(soundSrc.system.systemCursor)
     }
   }
@@ -2091,8 +2123,8 @@ class SkillSelectSystem extends MenuSystem {
       'repeat: 스킬을 사용할 때, 해당 스킬의 발사를 반복하는 횟수',
       'delay: 해당 스킬의 발사가 여러번일 때 대기하는 시간(프레임)',
       'hit: 해당 스킬의 발사된 개체가 적을 타격하는 횟수',
-      'attack: 유저 공격력 10000을 기준으로, 스킬 발사 개체에 대한 데미지',
-      'damage: 현재 유저 공격력을 기준으로, 스킬 발사 개체에 대한 데미지',
+      'value: 스킬 공격력 10000을 기준으로, 스킬 발사 개체에 대한 데미지',
+      'attack: 스킬 공격력(공격력의 18%)을 기준으로, 스킬 발사 개체에 대한 데미지',
       '',
       'preset은 5종류가 있습니다.',
       'NULL를 선택하면 B 슬롯의 스킬을 지울 수 있습니다.',
@@ -2132,6 +2164,12 @@ class SkillSelectSystem extends MenuSystem {
 
   /** 마우스를 클릭했을 때 커서 포지션의 값을 계산해서 메뉴 상태를 변경합니다. */
   processMouseCursorCalculation () {
+    if (this.state === this.STATE_HELP) {
+      this.selected = false // 다른 메뉴박스를 눌렀을 때, 이 값이 true가 되기 때문에 강제로 해제함
+      this.canceled = true
+      return
+    }
+
     // 커서 포지션이 특정 범위라면, 현재 상태를 임의로 변경합니다.
     if (this.cursorPosition >= this.NUM_START_MENU && this.cursorPosition <= this.NUM_END_MENU) {
       this.state = this.STATE_MENU
@@ -2156,49 +2194,674 @@ class SkillSelectSystem extends MenuSystem {
   }
 }
 
-class UpgradeSystem extends MenuSystem {
+class StatUpgradeSystem extends MenuSystem {
   constructor () {
     super()
+    this.backgroundColor = ['#b7ffad', '#d9ffd6']
+
+    /** 각 줄의 간격 크기 */ this.SIZEY = 20
+    this.outputY1Attack = 40
+    this.outputY2HpShield = this.outputY1Attack + 180
+    this.outputY3Level = this.outputY2HpShield + 100
+    this.outputY4Equipment = this.outputY3Level + 60
+    this.outputY5Slot = this.outputY4Equipment + 100
+    this.outputY6Menu = 500
+
+    this.MENU_BACK = 0
+    this.MENU_EQUIPMENT_UPGRADE = 1
+    this.MENU_HELP = 2
+
+    this.upgradeEnimationFrame = 0
+
+    this.isHelp = false
+
+    let imgD = [
+      imageDataInfo.mainSystem.statBack,
+      imageDataInfo.mainSystem.statEquipmentUpgrade,
+      imageDataInfo.mainSystem.statHelp,
+    ]
+    const imgDWidth = imageDataInfo.mainSystem.statBack.width
+    for (let i = 0; i < 3; i++) {
+      this.menuList[i] = new BoxImageObject(imgDWidth * i, 0, 0, 0, '', imageSrc.system.mainSystem, imgD[i])
+    }
+  }
+
+  processButton () {
+    super.processButton()
+    this.processButtonMenu()
+
+    if (this.upgradeEnimationFrame > 0) {
+      this.upgradeEnimationFrame--
+    }
+  }
+
+  processButtonMenu () {
+    let button = this.getButtonObject()
+    if (button.buttonLeft && this.cursorPosition > 0) {
+      this.cursorPosition--
+      game.sound.play(soundSrc.system.systemCursor)
+    } else if (button.buttonRight && this.cursorPosition < this.menuList.length - 1) {
+      this.cursorPosition++
+      game.sound.play(soundSrc.system.systemCursor)
+    }
   }
 
   processSelect () {
     if (!this.selectedCheck()) return
+    if (this.isHelp) {
+      this.canceled = true
+      return
+    }
 
-    this.canceled = true
+    if (this.cursorPosition === 0) {
+      this.canceled = true
+    } else if (this.cursorPosition === 1) {
+      if (userSystem.equipment.id === ID.equipment.unused) return
+      let success = userSystem.inventoryItemUpgrade(userSystem.equipment.itemIndex)
+      if (success) {
+        game.sound.play(soundSrc.system.systemEquipmentUpgrade)
+        this.upgradeEnimationFrame = 90
+      }
+    } else if (this.cursorPosition === 2) {
+      this.isHelp = true
+      game.sound.play(soundSrc.system.systemSelect)
+    }
+  }
+
+  processCancel () {
+    if (!this.canceledCheck()) return
+    if (this.isHelp) this.isHelp = false
+    else gameSystem.stateId = gameSystem.STATE_MAIN
+
+    game.sound.play(soundSrc.system.systemBack)
   }
 
   processMouseClickExtend () {
-    this.canceled = true
+    // 도움말 상태에서는, 다른 메뉴 선택을 무효화하고, 취소명령을 사용
+    if (this.isHelp) {
+      this.selected = false
+      this.canceled = true
+    }
   }
 
+  displayUserAttack () {
+    // 한글이 왜 조금 더 위에 출력되는지 모르겠음. 이건 어쩔 수 없이 강제로 Y좌표를 2 추가함
+    game.graphic.fillText('공격력     = 베이스  + 레벨  + 장비  + 슬롯', 0, this.outputY1Attack + (this.SIZEY * 0) + 2)
+
+    digitalDisplay('ATTACK  = BASE  + LEVEL + EQUIPMENT + SLOT    ', 0, this.outputY1Attack + (this.SIZEY * 1))
+    const userAttack = userSystem.attack
+    const userAttackValue = userSystem.getAttackValue()
+    const attack = ('' + userAttack).padEnd(8, ' ') + '= '
+    const base = ('' + userAttackValue.base).padEnd(6, ' ') + '+ '
+    const level = ('' + userAttackValue.level).padEnd(6, ' ') + '+ '
+    const equipment = ('' + userAttackValue.equipment).padEnd(10, ' ') + '+ '
+    const slot = ('' + userAttackValue.slot).padEnd(8, ' ')
+    digitalDisplay(attack + base + level + equipment + slot, 0, this.outputY1Attack + (this.SIZEY * 2))
+
+    const userWeaponAttack = userSystem.getAttackWeaponValue()
+    const userSkillAttack = userSystem.getAttackSkillValue()
+    game.graphic.fillText('무기 공격력(28% 공격력), 스킬 공격력(18% 공격력)', 0, this.outputY1Attack + (this.SIZEY * 4))
+    game.graphic.fillText('28%p + (14%p x 4) = 100%p', 0, this.outputY1Attack + (this.SIZEY * 5))
+    digitalDisplay('WEAPON ATTACK (28% ATTACK): ' + userWeaponAttack, 0, this.outputY1Attack + (this.SIZEY * 6))
+    digitalDisplay('SKILL  ATTACK (18% ATTACK): ' + userSkillAttack, 0, this.outputY1Attack + (this.SIZEY * 7))
+  }
+
+  displayUserStat () {
+    game.graphic.fillText('체력, 쉴드, 쉴드 회복, 골드', 0, this.outputY2HpShield + (this.SIZEY * 0))
+    let hpText = 'HP + SHIELD: ' + userSystem.hp + ' + ' + userSystem.shield
+    let recoveryText = 'SHIELD RECOVERY: ' + userSystem.shieldRecovery + '/' + userSystem.SHIELD_RECOVERY_BASE_VALUE
+    digitalDisplay(hpText, 0, this.outputY2HpShield + (this.SIZEY * 1))
+    digitalDisplay(recoveryText, 0, this.outputY2HpShield + (this.SIZEY * 2))
+    digitalDisplay('GOLD: ' + userSystem.gold, 0, this.outputY2HpShield + (this.SIZEY * 3))
+  }
+
+  displayUserLevel () {
+    game.graphic.fillText(`레벨, 경험치, max level(최대 레벨): ${userSystem.expTable.length - 1})`, 0, this.outputY3Level + (this.SIZEY * 0))
+    let percent = userSystem.exp / userSystem.getExpMax() * 100
+    digitalDisplay('LV. ' + userSystem.lv + ', EXP: ' + userSystem.exp + '/' + userSystem.getExpMax() + '(' + percent.toFixed(2) + '%)',  0, this.outputY3Level + (this.SIZEY * 1))
+  }
+
+  displayUserEquipment () {
+    digitalDisplay('EQUIPMENT ', 0, this.outputY4Equipment + (this.SIZEY * 0))
+    game.graphic.fillText('(장비)', 122, this.outputY4Equipment + (this.SIZEY * 0))
+
+    const equipment = userSystem.equipment
+    const equipmentData = userSystem.getEquipmentItemInfo()
+    const equipmentInventory = userSystem.getInventoryEquipmentStatus(equipment.itemIndex)
+    if (equipmentData == null || equipmentInventory == null) return
+    
+    digitalDisplay('ITEM INDEX: ' + equipment.itemIndex, 200, this.outputY4Equipment + (this.SIZEY * 0))
+    const src = imageSrc.system.itemIcon
+    const iconSectionWidth = imageDataInfo.system.itemIconSection.width
+    const sliceX = (equipmentData.iconNumber % 10) * imageDataInfo.system.itemIconSection.width
+    const sliceY = Math.floor(equipmentData.iconNumber / 10) * imageDataInfo.system.itemIconSection.height
+    const iconWidth = imageDataInfo.system.itemIcon.width
+    const iconHeight = imageDataInfo.system.itemIcon.height
+    const TEXT_X = 64
+    game.graphic.fillRect(0, this.outputY4Equipment + (this.SIZEY * 1), iconSectionWidth, iconSectionWidth, '#CCCCCC', 0.8)
+    game.graphic.imageDisplay(src, sliceX, sliceY, iconWidth, iconHeight, 0 + 5, this.outputY4Equipment + (this.SIZEY * 1) + 5, iconWidth, iconHeight)
+
+    // 업그레이드 성공하면 글자가 깜빡이는것 처리 (밑에있는 글자가 출력이 안되어서 깜빡여짐)
+    if (this.upgradeEnimationFrame % 3 === 2) return
+
+    game.graphic.fillText('' + equipmentData.name + ' +' + equipment.upgradeLevel, TEXT_X, this.outputY4Equipment + (this.SIZEY * 1))
+    digitalDisplay('ATTACK: ' + equipment.attack, TEXT_X, this.outputY4Equipment + (this.SIZEY * 2))
+
+    // 업그레이드 레벨 초과시 업그레이드에 관한 정보는 표시되지 않음.
+    if (equipment.upgradeLevel >= userSystem.UPGRADE_LEVEL_MAX) return
+
+    const TEXT_RIGHTX = 400
+    const upgradeText = `       upgrade +${equipment.upgradeLevel} -> upgrade +${equipment.upgradeLevel + 1}`
+    const attackDiff = equipmentInventory.nextLevelAttack - equipmentInventory.attack
+    digitalDisplay(upgradeText, TEXT_RIGHTX, this.outputY4Equipment + (this.SIZEY * 1))
+    digitalDisplay('ATTACK: ' + equipment.attack + ' -> ' + equipmentInventory.nextLevelAttack + ' (+' + attackDiff + ')', TEXT_RIGHTX, this.outputY4Equipment + (this.SIZEY * 2))
+    digitalDisplay('cost: ' + equipment.upgradeCost, TEXT_RIGHTX, this.outputY4Equipment + (this.SIZEY * 3))
+  }
+
+  displaySlot () {
+    digitalDisplay('SLOT', 0, this.outputY5Slot)
+    game.graphic.fillText('(슬롯)', 60, this.outputY5Slot)
+    for (let i = 0; i < 4; i++) {
+      game.graphic.fillRect(0+ (i * 200), this.outputY5Slot + (this.SIZEY * 1), 60, 60, '#FFFFFF', 0.9)
+    }
+
+  }
+
+  displayHelp () {
+    let textList = [
+      '스탯 도움말',
+      '현재 스탯에 관한 정보를 표시합니다.',
+      '장비가 장착된 경우, 골드가 있다면 장비를 업그레이드 할 수 있습니다.',
+      '',
+      '업데이트로 새로운 기능이 추가될 수 있습니다.',
+      '',
+    ]
+
+    // 화면 전체 영역중 10만큼의 영역을 제외하고 전부 칠함
+    const borderSize = 10
+    const WIDTH = game.graphic.CANVAS_WIDTH - (borderSize * 2)
+    const HEIGHT = game.graphic.CANVAS_HEIGHT - (borderSize * 2)
+    game.graphic.fillRect(borderSize, borderSize, WIDTH, HEIGHT, '#f7fff1', 0.9)
+
+    const textSize = 20
+    for (let i = 0; i < textList.length; i++) {
+      game.graphic.fillText(textList[i], textSize, textSize + (i * textSize), '#121e00')
+    }
+  }
+  
   display () {
-    game.graphic.fillText('해당 기능은 나중에 구현될 예정', 0, 40)
+    super.display()
+    this.displayUserAttack()
+    this.displayUserStat()
+    this.displayUserEquipment()
+    this.displayUserLevel()
+    this.displaySlot()
+
+    // userSystem.inventory.add(ID.item.standardPlusC1Blue)
+
+    if (this.isHelp) this.displayHelp()
   }
 }
 
 class InventorySystem extends MenuSystem {
   constructor () {
     super()
+    this.backgroundColor = ['#93b4b3', '#b6ece6']
+
+    this.NUM_START_ICON = 0
+    this.NUM_END_ICON = 49
+    this.NUM_START_MENU = 50
+    this.NUM_END_MENU = 54
+
+    this.outputX3Icon = 100
+    this.outputY1Menu = 180
+    this.outputY2Info = 20
+    this.outputY3Icon = 240
+
+    this.ICON_COUNT = 50
+
+    this.STATE_MENU = 'menu'
+    this.STATE_ICON = 'icon'
+    this.STATE_HELP = 'help'
+    this.STATE_DELETE = 'delete'
+    this.state = this.STATE_MENU
+    this.cursorIcon = 0
+    this.cursorMenu = 0
+    this.cursorPage = 0
+    this.cursorDelete = false
+
+    this.upgradeTextEnimationFrame = 0
+
+    const iconX = this.outputX3Icon
+    const slotSize = imageDataInfo.system.itemIconSection.width
+    for (let i = 0; i < 50; i++) {
+      this.menuList[i] = new BoxObject(iconX + ((i % 10) * slotSize), this.outputY3Icon + (slotSize * Math.floor(i / 10)), slotSize, slotSize, '', '#989898', '#989898', 'cyan')
+    }
+
+    const src = imageSrc.system.mainSystem
+    const imgDList = [
+      imageDataInfo.mainSystem.inventoryBack, 
+      imageDataInfo.mainSystem.inventoryEquip,
+      imageDataInfo.mainSystem.inventoryUpgrade,
+      imageDataInfo.mainSystem.inventoryHelp, 
+      imageDataInfo.mainSystem.inventoryDelete,
+    ]
+    const menuWidth = imageDataInfo.mainSystem.inventoryBack.width
+    const menuHeight = imageDataInfo.mainSystem.inventoryBack.height
+    for (let i = 0; i < imgDList.length; i++) {
+      let index = this.NUM_START_MENU + i
+      this.menuList[index] = new BoxImageObject(iconX + (i * menuWidth), this.outputY1Menu, menuWidth, menuHeight, '', src, imgDList[i])
+    }
+
+    this.NUM_PREVPAGE_INDEX = 58
+    this.NUM_NEXTPAGE_INDEX = 59
+    this.menuList[this.NUM_PREVPAGE_INDEX] = new BoxImageObject(this.outputX3Icon - menuWidth, this.outputY3Icon, menuWidth, menuHeight, '', src, imageDataInfo.mainSystem.inventoryPrevPage)
+    this.menuList[this.NUM_NEXTPAGE_INDEX] = new BoxImageObject(this.outputX3Icon + (slotSize * 10), this.outputY3Icon, menuWidth, menuHeight, '', src, imageDataInfo.mainSystem.inventoryNextPage)
+
+    this.NUM_DELETE_YES_INDEX = 60
+    this.NUM_DELETE_NO_INDEX = 61
+    const MENU_ENDX = 700
+    this.menuList[this.NUM_DELETE_YES_INDEX] = new BoxObject(MENU_ENDX - 240, this.outputY2Info + 100, 120, 40, 'YES(예)', '#feffbe', '#feffbe', 'blue') 
+    this.menuList[this.NUM_DELETE_NO_INDEX] = new BoxObject(MENU_ENDX - 120, this.outputY2Info + 100, 120, 40, 'NO(아니오)', '#feffbe', '#feffbe', 'blue')
+    this.menuList[this.NUM_DELETE_YES_INDEX].hidden = true
+    this.menuList[this.NUM_DELETE_NO_INDEX].hidden = true
+
+  }
+
+  process () {
+    super.process()
+    this.processCursorPosition()
+    this.processAdvanceMenu()
+    this.processUpgradeTextEnimationFrame()
+  }
+  
+  processAdvanceMenu () {
+    this.menuList[this.cursorIcon].focus = true // 강제 포커스 조정
+    if (this.state === this.STATE_DELETE) { // 삭제 메뉴 표시 및 제거
+      this.menuList[this.NUM_DELETE_YES_INDEX].hidden = false
+      this.menuList[this.NUM_DELETE_NO_INDEX].hidden = false
+      if (this.cursorDelete) {
+        this.menuList[this.NUM_DELETE_YES_INDEX].focus = true
+      } else {
+        this.menuList[this.NUM_DELETE_NO_INDEX].focus = true
+      }
+    } else {
+      this.menuList[this.NUM_DELETE_YES_INDEX].hidden = true
+      this.menuList[this.NUM_DELETE_NO_INDEX].hidden = true
+    }
+  }
+
+  processButton () {
+    super.processButton()
+    if (this.state === this.STATE_ICON) {
+      this.processButtonIcon()
+    } else if (this.state === this.STATE_MENU) {
+      this.processButtonMenu()
+    } else if (this.state === this.STATE_DELETE) {
+      this.processButtonDelete()
+    }
+  }
+
+  processButtonDelete () {
+    let button = this.getButtonObject()
+    if (button.buttonLeft) {
+      this.cursorDelete = true
+      game.sound.play(soundSrc.system.systemCursor)
+    } else if (button.buttonRight) {
+      this.cursorDelete = false
+      game.sound.play(soundSrc.system.systemCursor)
+    }
+  }
+
+  processCursorPosition () {
+    if (this.state === this.STATE_MENU) {
+      this.cursorPosition = this.NUM_START_MENU + this.cursorMenu
+    } else if (this.state === this.STATE_ICON) {
+      this.cursorPosition = this.NUM_START_ICON + this.cursorIcon
+    }
+  }
+
+  processMouseCursorCalcuration () {
+    if (this.state === this.STATE_HELP) {
+      this.selected = false
+      this.canceled = true
+      return
+    }
+
+    if (this.cursorPosition >= this.NUM_START_MENU && this.cursorPosition <= this.NUM_END_MENU) {
+      this.state = this.STATE_MENU
+      this.cursorMenu = this.cursorPosition - this.NUM_START_MENU
+    } else if (this.cursorPosition >= this.NUM_START_ICON && this.cursorPosition <= this.NUM_END_ICON) {
+      this.state = this.STATE_ICON
+      this.cursorIcon = this.cursorPosition - this.NUM_START_ICON
+    }
+
+    if (this.cursorPosition === this.NUM_PREVPAGE_INDEX) {
+      if (this.cursorPage > 0) {
+        this.cursorPage--
+        game.sound.play(soundSrc.system.systemCursor)
+      }
+      this.selected = false // (다른) 메뉴가 추가 선택되는걸 막음
+    } else if (this.cursorPosition === this.NUM_NEXTPAGE_INDEX) {
+      if (this.cursorPage < this.getCursorPageMax()) {
+        this.cursorPage++
+        game.sound.play(soundSrc.system.systemCursor)
+      }
+      this.selected = false // (다른) 메뉴가 추가 선택되는걸 막음
+    }
+  }
+
+  getCursorPageMax () {
+    return Math.floor(userSystem.inventory.itemList.length / this.ICON_COUNT)
+  }
+
+  processButtonIcon () {
+    let button = this.getButtonObject()
+    const cursorX = this.cursorIcon % 10
+    const cursorY = Math.floor(this.cursorIcon / 10)
+    const cursorMaxPage = Math.floor(userSystem.inventory.itemList.length / this.ICON_COUNT)
+
+    if (button.buttonLeft) {
+      if (cursorX === 0 && this.cursorPage > 0) {
+        this.cursorPage--
+        this.cursorIcon += 9
+        game.sound.play(soundSrc.system.systemCursor)
+      } else if (cursorX > 0) {
+        this.cursorIcon--
+        game.sound.play(soundSrc.system.systemCursor)
+      }
+    } else if (button.buttonRight) {
+      if (cursorX === 9 && this.cursorPage < this.getCursorPageMax()) {
+        if (this.cursorPage < cursorMaxPage) {
+          this.cursorPage++
+          this.cursorIcon -= 9
+          game.sound.play(soundSrc.system.systemCursor)
+        }
+      } else if (cursorX < 9) {
+        this.cursorIcon++
+        game.sound.play(soundSrc.system.systemCursor)
+      }
+    } else if (button.buttonDown && cursorY < 4) {
+      this.cursorIcon += 10
+      game.sound.play(soundSrc.system.systemCursor)
+    } else if (button.buttonUp) {
+      cursorY === 0 ? this.state = this.STATE_MENU : this.cursorIcon -= 10
+      game.sound.play(soundSrc.system.systemCursor)
+    }
+  }
+
+  processButtonMenu () {
+    let button = this.getButtonObject()
+    const menuCount = this.NUM_END_MENU - this.NUM_START_MENU
+    if (button.buttonLeft && this.cursorMenu > 0) {
+      this.cursorMenu--
+      game.sound.play(soundSrc.system.systemCursor)
+    } else if (button.buttonRight && this.cursorMenu < menuCount) {
+      this.cursorMenu++
+      game.sound.play(soundSrc.system.systemCursor)
+    } else if (button.buttonDown) {
+      this.state = this.STATE_ICON
+      game.sound.play(soundSrc.system.systemCursor)
+    }
   }
 
   processSelect () {
     if (!this.selectedCheck()) return
+    
+    if (this.state === this.STATE_MENU) {
+      this.processSelectMenu()
+    } else if (this.state === this.STATE_DELETE) {
+      if (this.cursorDelete) {
+        userSystem.inventoryItemDelete(this.getCursorItemIndex())
+        this.processCursorPosition()
+        this.state = this.STATE_MENU
+        game.sound.play(soundSrc.system.systemItemDelete)
+      } else {
+        this.state = this.STATE_MENU
+        game.sound.play(soundSrc.system.systemBack)
+      }
+    } else if (this.state === this.STATE_ICON) {
+      this.state = this.STATE_MENU
+      game.sound.play(soundSrc.system.systemCursor)
+    } else if (this.state === this.STATE_HELP) {
+      this.canceled = true
+    }
+  }
 
-    this.canceled = true
+  processSelectMenu () {
+    if (this.cursorMenu === 0) {
+      this.canceled = true
+    } else if (this.cursorMenu === 1) {
+      // equip
+      let success = userSystem.setEquipment(this.getCursorItemIndex())
+      if (success)  game.sound.play(soundSrc.system.systemEquip)
+    } else if (this.cursorMenu === 2) {
+      // upgarde
+      let success = userSystem.inventoryItemUpgrade(this.getCursorItemIndex())
+      if (success) {
+        game.sound.play(soundSrc.system.systemEquipmentUpgrade)
+        this.upgradeTextEnimationFrame = 66
+      }
+    } else if (this.cursorMenu === 3) {
+      // help
+      this.state = this.STATE_HELP
+      game.sound.play(soundSrc.system.systemSelect)
+    } else if (this.cursorMenu === 4) {
+      // delete
+      let cursorItem = userSystem.inventory.get(this.getCursorItemIndex())
+      if (cursorItem != null && cursorItem.id !== 0) {
+        this.state = this.STATE_DELETE
+        this.cursorDelete = false
+        game.sound.play(soundSrc.system.systemSelect)
+      }
+    }
+  }
+
+  processCancel () {
+    if (!this.canceledCheck()) return
+
+    if (this.state === this.STATE_ICON || this.state === this.STATE_MENU) {
+      gameSystem.stateId = gameSystem.STATE_MAIN
+    } else if (this.state === this.STATE_DELETE || this.state === this.STATE_HELP) {
+      this.state = this.STATE_MENU
+    }
+    game.sound.play(soundSrc.system.systemBack)
   }
 
   processMouseClickExtend () {
-    this.canceled = true
+    this.processMouseCursorCalcuration()
+    this.processMouseCursorDeleteCheck()
+  }
+
+  processMouseCursorDeleteCheck () {
+    if (this.state === this.STATE_DELETE) {
+      if (this.cursorPosition === this.NUM_DELETE_YES_INDEX) {
+        this.cursorDelete = true
+      } else if (this.cursorPosition === this.NUM_DELETE_NO_INDEX) {
+        this.cursorDelete = false
+      }
+    }
+  }
+
+  processUpgradeTextEnimationFrame () {
+    if (this.upgradeTextEnimationFrame > 0) {
+      this.upgradeTextEnimationFrame--
+    }
+  }
+
+  displayIcon () {
+    for (let i = 0; i < 50; i++) {
+      let index = i + (this.cursorPage * this.ICON_COUNT)
+      let inven = userSystem.inventory.get(index)
+      if (inven == null) continue
+
+      let itemData = dataExportStatItem.get(inven.id)
+      if (itemData == null) continue
+      if (itemData.iconNumber === -1) continue
+
+      const src = imageSrc.system.itemIcon
+      const iconSize = imageDataInfo.system.itemIcon.width
+      const iconSectionSize = imageDataInfo.system.itemIconSection.width
+      const border = (iconSectionSize - iconSize) / 2
+      const sliceX = iconSectionSize * (itemData.iconNumber % 10)
+      const sliceY = iconSectionSize * Math.floor(itemData.iconNumber / 10)
+      const outputX = iconSectionSize * (i % 10) + this.outputX3Icon + border
+      const outputY = iconSectionSize * Math.floor(i / 10) + this.outputY3Icon + border
+      game.graphic.imageDisplay(src, sliceX, sliceY, iconSize, iconSize, outputX, outputY, iconSize, iconSize)
+
+      if (itemData.type === userSystem.inventory.itemType.ITEM) {
+        const itemCount = inven.count < 999 ? inven.count : 999
+        digitalDisplay('X' + itemCount, outputX, outputY + iconSize - 20)
+      }
+    }
+  }
+
+  displayInfo () {
+    let index = this.getCursorItemIndex()
+    let item = userSystem.inventory.get(index)
+    if (item == null) return
+
+    let data = dataExportStatItem.get(item.id)
+    if (data == null) return
+
+    // info display
+    let typeText = data.type === userSystem.inventory.itemType.EQUIPMENT ? 'EQUIPMENT' : 'ITEM'
+    let firstLineText = data.type === userSystem.inventory.itemType.ITEM ? ', count:' + item.count : ', require Level: ' + data.equipmentRequireLevel
+
+    digitalDisplay('INDEX: ' + this.getCursorItemIndex() + ', type: ' + typeText + firstLineText, this.outputX3Icon, this.outputY2Info + 0)
+    digitalDisplay('NAME: ', this.outputX3Icon, this.outputY2Info + 20)
+    game.graphic.fillText(data.name, this.outputX3Icon + 60, this.outputY2Info + 20)
+    game.graphic.fillText(data.info, this.outputX3Icon + 20, this.outputY2Info + 40)
+
+    if (data.type === userSystem.inventory.itemType.EQUIPMENT) {
+      let statusData = userSystem.getInventoryEquipmentStatus(index)
+      if (statusData == null) return
+      let upgradeText = `       upgrade +${item.upgradeLevel} -> upgrade +${item.upgradeLevel + 1}`
+      let attackDiff = statusData.nextLevelAttack - statusData.attack
+      let attackText = 'attack: ' + statusData.attack + ' -> ' + statusData.nextLevelAttack + ' (+' + attackDiff + ')'
+      let costText = 'cost: ' + statusData.cost + '  [user gold: ' + userSystem.gold + ']'
+      if (item.upgradeLevel === userSystem.UPGRADE_LEVEL_MAX) {
+        upgradeText = 'upgrade +' + userSystem.UPGRADE_LEVEL_MAX
+        attackText = 'attack: ' + statusData.attack
+        costText = 'cost: ' + statusData.cost
+      }
+
+      if (this.upgradeTextEnimationFrame % 3 !== 2) {
+        digitalDisplay(upgradeText, this.outputX3Icon, this.outputY2Info + 100)
+        digitalDisplay(attackText, this.outputX3Icon, this.outputY2Info + 120)
+        digitalDisplay(costText, this.outputX3Icon, this.outputY2Info + 140)
+      }
+
+      // digitalDisplay('UPGRADE COST: ' + statusData.cost, this.outputX3Icon, this.outputY2Info + 100)
+      // digitalDisplay('USER GOLD: ' + userSystem.gold, this.outputX3Icon, this.outputY2Info + 120)
+    }
+  }
+
+  displayItemDeleteWarning () {
+    let textList = [
+      '이 아이템을 삭제하시겠습니까?',
+      '삭제된 아이템은 복구할 수 없습니다.',
+      'Are you sure you want to delete the item?',
+      'Deleted items cannot be recovered.',
+    ]
+
+    const borderY = this.outputY2Info
+    const borderX = 100
+    const WIDTH = game.graphic.CANVAS_WIDTH - (borderX * 2)
+    const HEIGHT = 100
+    
+    game.graphic.fillRect(borderX, borderY, WIDTH, HEIGHT, 'white')
+    for (let i = 0; i < textList.length; i++) {
+      game.graphic.fillText(textList[i], borderX + 10, borderY + 10 + (i * 20))
+    }
   }
 
   display () {
-    game.graphic.fillText('해당 기능은 나중에 구현될 예정', 0, 40)
+    super.display()
+    if (this.state === this.STATE_DELETE) {
+      this.displayItemDeleteWarning()
+    } else {
+      this.displayInfo()
+    }
+    
+    this.displayUpgradeBlock()
+    this.displayIcon()
+    this.displayPage()
+    this.displayPlayerEquip()
+
+    if (this.state === this.STATE_HELP) this.displayHelp()
+  }
+
+  displayHelp () {
+    let textList = [
+      '인벤토리 도움말',
+      '아이템을 선택하면, 메뉴를 선택하여 해당 아이템을 처리할 수 있습니다.',
+      '아이템은, 아이템과 장비 2종류가 있습니다.',
+      '장비 아이템은 장착, 강화가 가능합니다.',
+      '아이템들은 사용할 수 없습니다. 특정한 상황에서 자동으로 사용됩니다.',
+      'index: 색인(인벤토리 번호)',
+      'page: 페이지(아이템의 개수가 50개를 초과해야 이동 가능)',
+      '',
+      '장비 아이템 관련 정보',
+      'require level: 해당 장비를 장착하기 위한 최소레벨',
+      'upgarde +x: 현재 업그레이드 레벨 및, 다음 업그레이드 레벨 표시',
+      'attack: 현재 장비의 공격력, 다음 업그레이드 레벨의 장비 공격력 표시',
+      'cost: 업그레이드 비용',
+      'user gold: 현재 유저가 가지고 있는 골드',
+      '',
+      'delete 메뉴는 해당 아이템을 삭제합니다.',
+      '삭제된 아이템은 되돌릴 수 없으며, 남은 개수에 상관없이 전부 삭제됩니다.',
+    ]
+
+    // 화면 전체 영역중 10만큼의 영역을 제외하고 전부 칠함
+    const borderSize = 10
+    const WIDTH = game.graphic.CANVAS_WIDTH - (borderSize * 2)
+    const HEIGHT = game.graphic.CANVAS_HEIGHT - (borderSize * 2)
+    game.graphic.fillRect(borderSize, borderSize, WIDTH, HEIGHT, '#ddfffb', 0.9)
+
+    const textSize = 20
+    for (let i = 0; i < textList.length; i++) {
+      game.graphic.fillText(textList[i], textSize, textSize + (i * textSize), '#011916')
+    }
+  }
+
+  displayPlayerEquip () {
+    if (userSystem.equipment.id === 0) return
+    const INDEX = userSystem.equipment.itemIndex
+    if (INDEX < 0) return
+    const targetPage = Math.floor(INDEX / this.ICON_COUNT)
+    if (this.cursorPage !== targetPage) return
+
+    const slotSize = imageDataInfo.system.itemIconSection.width
+    const X = this.outputX3Icon + (slotSize * (INDEX % 10))
+    const Y = this.outputY3Icon + (slotSize * Math.floor(INDEX / 10))
+    gameFunction.imageObjectDisplay(imageSrc.system.mainSystem, imageDataInfo.mainSystem.inventoryUserEquipIcon, X, Y)
+  }
+
+  displayPage () {
+    digitalDisplay('-INDEX-', 0, this.outputY1Menu)
+    digitalDisplay((this.getCursorItemIndex() + '/' + userSystem.inventory.itemList.length).padStart(8, ' '), 0, this.outputY1Menu + 20)
+    digitalDisplay('PAGE:' + this.cursorPage + '/' + this.getCursorPageMax(), 0, this.outputY1Menu + 40)
+  }
+
+  displayUpgradeBlock () {
+    let item = userSystem.inventory.get(this.getCursorItemIndex())
+    if (item == null || item.itemType !== userSystem.inventory.itemType.EQUIPMENT) {
+      let target = this.menuList[this.NUM_START_MENU + 1]
+      game.graphic.fillRect(target.x, target.y, target.width, target.height, 'black', 0.7)
+      game.graphic.fillRect(target.x + target.width, target.y, target.width, target.height, 'black', 0.7)
+    }
+  }
+
+  getCursorItemIndex () {
+    return this.cursorIcon + (this.cursorPage * this.ICON_COUNT)
   }
 }
 
 class StorySystem extends MenuSystem {
   constructor () {
     super()
+    this.backgroundColor = ['#ffccef', '#ffdbe4']
   }
 
   processSelect () {
@@ -2212,6 +2875,7 @@ class StorySystem extends MenuSystem {
   }
 
   display () {
+    super.display()
     game.graphic.fillText('해당 기능은 나중에 구현될 예정', 0, 40)
   }
 }
@@ -2219,20 +2883,46 @@ class StorySystem extends MenuSystem {
 class EtcSystem extends MenuSystem {
   constructor () {
     super()
+    this.backgroundColor = ['#bbb695', '#cbcd7a']
+
+    const MENUWIDTH = 400
+    const MENUHEIGHT = 30
+    let textList = ['<< back(뒤로)', 'BIOS menu (바이오스 메뉴)']
+
+    for (let i = 0; i < textList.length; i++) {
+      this.menuList[i] = new BoxObject(0, 0 + (MENUHEIGHT * i), MENUWIDTH, MENUHEIGHT, textList[i], '#e9d7be', '#e9d7be', '#4e4841')
+    }
+  }
+
+  processButton () {
+    super.processButton()
+
+    let button = this.getButtonObject()
+    if (button.buttonUp && this.cursorPosition > 0) {
+      this.cursorPosition--
+      game.sound.play(soundSrc.system.systemCursor)
+    } else if (button.buttonDown && this.cursorPosition < this.menuList.length - 1) {
+      this.cursorPosition++
+      game.sound.play(soundSrc.system.systemCursor)
+    }
   }
 
   processSelect () {
     if (!this.selectedCheck()) return
 
-    this.canceled = true
+    if (this.cursorPosition === 0) {
+      this.canceled = true
+    } else if (this.cursorPosition === 1) {
+      game.runBiosMode()
+    }
   }
 
   processMouseClickExtend () {
-    this.canceled = true
+    
   }
 
   display () {
-    game.graphic.fillText('해당 기능은 나중에 구현될 예정', 0, 40)
+    super.display()
   }
 }
 
@@ -2379,7 +3069,7 @@ export class gameSystem {
   /** 스텟(게임, 필드 스탯) 표시 시스템 */ static statSystem = new StatSystem()
   /** 무기 선택 시스템 */ static weaponSelectSystem = new WeaponSelectSystem()
   /** 스킬 선택 시스템 */ static skillSelectSystem = new SkillSelectSystem()
-  /** 업그레이드 시스템 */ static upgradeSystem = new UpgradeSystem()
+  /** 업그레이드 시스템 */ static upgradeSystem = new StatUpgradeSystem()
   /** 인벤토리 시스템 */ static inventorySystem = new InventorySystem()
   /** 스토리 시스템 */ static storySystem = new StorySystem()
   /** etc... 시스템 */ static etcSystem = new EtcSystem()

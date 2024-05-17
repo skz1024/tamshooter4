@@ -17,6 +17,9 @@ export class soundSrc {
     systemPlayerDamageDanger: './sound/systemPlayerDamageDanger.wav',
     systemPlayerDie: './sound/systemPlayerDie.ogg',
     systemSkillSelect: './sound/systemSkillSelect.wav',
+    systemEquip: './sound/systemEquip.ogg',
+    systemEquipmentUpgrade: './sound/systemEquipmentUpgrade.ogg',
+    systemItemDelete: './sound/systemItemDelete.ogg',
   }
 
   static skill = {

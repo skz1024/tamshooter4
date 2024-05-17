@@ -524,7 +524,7 @@ export class WeaponData extends FieldData {
    * 원칙은, isLineChase의 값을 true로 바꾸는것이지만, 즉시 이동위치를 바꾸고 싶다면 이 함수를 사용하세요.
    * (isLineChase는 함수 후반에 평가하기 때문에 거의 모든 로직 처리가 끝난 후 실행됩니다.)
    */
-  lineChase (minSpeed = 10) {
+  lineChase (minSpeed = 20) {
     let targetEnemy = fieldState.getRandomEnemyObject()
     if (targetEnemy != null) {
       this.setMoveDirection() // 이동 방향 삭제

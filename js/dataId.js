@@ -385,16 +385,21 @@ export class ID {
   }
 
   static equipment = {
-    standardPlusC1Blue: 33500,
-    donggramiMugi: 33501,
-    hellgiJangbi: 33502,
+    unused: 33500,
+    standardPlusC1Blue: 33501,
+    donggramiMugi: 33502,
+    hellgiJangbi: 33503,
   }
 
   static item = {
-    donggramiTicket: 35000,
-    donggramiUSB: 35001,
-    hellgiComponent: 35002,
-    upgradeStone: 35003,
+    standardPlusC1Blue: 35000,
+    donggramiMugi: 35001,
+    hellgiJangbi: 35002,
+    donggramiTicket: 36000,
+    donggramiUSB: 36001,
+    hellgiComponent: 36002,
+    upgradeStone: 36003,
+    boseokTest: 36004,
   }
 }
 Object.freeze(ID)

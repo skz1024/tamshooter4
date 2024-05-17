@@ -188,6 +188,14 @@ class BiosSystem {
 
     /** 바이오스에서 나가달라는 리퀘스트 요청 */
     this.isRequestExit = false
+
+    /** 이전 게임 옵션에 대한 설정 (바이오스에서는 원할한 테스트를 위해서 정해진 설정값으로만 동작함) */
+    this.prevGameOption = {
+      musicOn: true,
+      soundOn: true,
+      musicGain: 1,
+      soundGain: 1,
+    }
   }
 
   /** 바이오스에서 나가기 명령에 대한 요청을 받습니다. */
@@ -349,6 +357,12 @@ class BiosSystem {
     const MUSIC_PLAY_MIN_SECOND = 4
     const SOUND_PLAY_MAX_SECOND = 8
 
+    // 음악, 사운드 on 설정 및 게인이 최대로 되도록 변경
+    this.sound.setGain(1)
+    this.sound.setMusicGain(1)
+    this.sound.soundOn = true
+    this.sound.musicOn = true
+
     // 오디오 파일을 가져옵니다. (아무것도 없다면 가져오지 않음)
     let getFile = soundList.length >= 1 ? this.sound.getCacheAudio(soundList[this.bios.soundTestNumber]) : null
     if (getFile != null) {
@@ -439,7 +453,14 @@ class BiosSystem {
 
     // 메뉴 선택
     switch (this.bios.soundTest.getSelectMenu()) {
-      case menuList.SOUND_LIST_CHANGE: // soundplay를 한 것으로 처리
+      case menuList.SOUND_LIST_CHANGE:
+        if (soundAvailable) {
+          this.sound.play(soundList[this.bios.soundTestNumber]) 
+        } else if (musicAvailable) {
+          this.sound.musicPlay(soundList[this.bios.soundTestNumber])
+          this.bios.soundTestMusicNumber = this.bios.soundTestNumber
+        }
+        break
       case menuList.SOUND_PLAY:
         if (soundAvailable) {
           this.sound.play(soundList[this.bios.soundTestNumber]) 
@@ -824,7 +845,7 @@ export class TamsaEngine {
     this.isBiosDisplayPossible = true
 
     /** 바이오스 */
-    this.bios = null
+    this.bios = new BiosSystem(this.gameTitle, this.currentDevice, this.graphic, this.control, this.sound)
 
     /** 바이오스에서 나갈 수 있는지에 대한 여부 */
     this.isBiosPossibleExit = true
@@ -863,9 +884,7 @@ export class TamsaEngine {
     }
 
     if (!this.isBiosMode && this.biosButtonDownCount >= PRESS_COUNT) {
-      this.isBiosMode = true
-      this.biosButtonWaitFrame = 0
-      this.biosButtonDownCount = 0
+      this.runBiosMode()
     }
   }
 
@@ -874,6 +893,14 @@ export class TamsaEngine {
     this.isBiosMode = true
     this.biosButtonWaitFrame = 0
     this.biosButtonDownCount = 0
+
+    if (this.bios != null) {
+      // 이전 사운드 설정값 저장
+      this.bios.prevGameOption.musicOn = this.sound.musicOn
+      this.bios.prevGameOption.soundOn = this.sound.soundOn
+      this.bios.prevGameOption.musicGain = this.sound.audioNode.musicFirstGain.gain.value
+      this.bios.prevGameOption.soundGain = this.sound.audioNode.firstGain.gain.value
+    }
   }
 
   /** 
@@ -888,16 +915,18 @@ export class TamsaEngine {
 
   /** 바이오스 상태에 있는 경우 */
   biosMenu () {
-    if (this.bios === null) {
-      this.bios = new BiosSystem(this.gameTitle, this.currentDevice, this.graphic, this.control, this.sound)
-    } else {
-      this.bios.biosProcess()
-      this.bios.insertFps(this.currentFps, this.refreshFps, this.FPS, this.graphicFps)
-      if (this.bios.bios != null) this.bios.bios.isBiosPossibleClose = this.isBiosPossibleExit
-    }
+    this.bios.biosProcess()
+    this.bios.insertFps(this.currentFps, this.refreshFps, this.FPS, this.graphicFps)
+    this.bios.bios.isBiosPossibleClose = this.isBiosPossibleExit
 
     if (this.bios.getExitRequest()) {
       this.isBiosMode = false
+
+      // 설정 복원
+      this.sound.musicOn = this.bios.prevGameOption.musicOn
+      this.sound.soundOn = this.bios.prevGameOption.soundOn
+      this.sound.setMusicGain(this.bios.prevGameOption.musicGain)
+      this.sound.setGain(this.bios.prevGameOption.soundGain)
     }
   }
 

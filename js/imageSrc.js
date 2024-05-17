@@ -830,6 +830,17 @@ export class imageDataInfo {
     skillSlot2Disable: new ImageDataObject(20, 120, 20, 20),
     skillSlot3Disable: new ImageDataObject(40, 120, 20, 20),
     skillSlot4Disable: new ImageDataObject(60, 120, 20, 20),
+    inventoryPrevPage: new ImageDataObject(0, 150, 100, 60),
+    inventoryNextPage: new ImageDataObject(100, 150, 100, 60),
+    inventoryBack: new ImageDataObject(200, 150, 100, 60),
+    inventoryUpgrade: new ImageDataObject(300, 150, 100, 60),
+    inventoryEquip: new ImageDataObject(0, 210, 100, 60),
+    inventoryDelete: new ImageDataObject(100, 210, 100, 60),
+    inventoryUserEquipIcon: new ImageDataObject(300, 90, 60, 60),
+    inventoryHelp: new ImageDataObject(200, 210, 100, 60),
+    statBack: new ImageDataObject(0, 270, 100, 40),
+    statEquipmentUpgrade: new ImageDataObject(100, 270, 100, 40),
+    statHelp: new ImageDataObject(200, 270, 100, 40),
   }
 
   static enemyDieEffectList = {
