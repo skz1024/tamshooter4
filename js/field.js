@@ -202,6 +202,14 @@ class PlayerObject extends FieldData {
     /** 이동 가능 여부 (false일경우 조작 불가 - 적이나 라운드에서 사용할 수도 있음) 
      * 하지만 해제하지 못하면 영원히 이동할 수 없으므로 주의 바람.*/ 
     this.isMoveEnable = true
+
+    /** 
+     * 플레이어 자체 기능을 사용 불가상태로 처리
+     * 
+     * 이 경우, display/process도 되지 않으며, 다른 종류의 개체에서 플레이어를 인식하여도
+     * 플레이어 개체는 영향을 받지 않음.
+     */
+    this.disable = false
   }
 
   /** 
@@ -365,7 +373,7 @@ class PlayerObject extends FieldData {
    * @param {number} damage 
    */
   addDamage (damage = 0) {
-    if (this.isDied || damage === 0) return
+    if (this.isDied || damage === 0 || this.disable) return
     let result = this.damageCalcuration(damage)
 
     this.damageSoundPlay(result.shield, result.hp)
@@ -378,7 +386,7 @@ class PlayerObject extends FieldData {
    * @param {string} soundSrc 사운드 경로
    */
   addDamageWithSound (damage, soundSrc) {
-    if (this.isDied || damage === 0) return
+    if (this.isDied || damage === 0 || this.disable) return
     let result = this.damageCalcuration(damage)
 
     this.damageSoundPlay(result.shield, result.hp, soundSrc)
@@ -443,17 +451,18 @@ class PlayerObject extends FieldData {
 
   /** 플레이어에게 아이템을 추가합니다. (fieldSystem에서 간접적으로 사용함) */
   addItem (id = 0, count = 0) {
-    userSystem.addInventoryItem(id, count)
+    userSystem.inventory.add(id, count)
   }
 
   /** 플레이어에게 아이템을 삭제합니다. (fieldSystem에서 간접적으로 사용함)  */
   removeItem (id = 0, count = 0) {
-    userSystem.removeInventoryItem(id, count)
+    userSystem.inventoryItemDelete(id, count)
   }
 
   process () {
-    this.processSendUserStat()
+    if (this.disable) return 
 
+    this.processSendUserStat()
     if (!this.isDied) {
       this.processButton()
       this.processAttack()
@@ -736,6 +745,8 @@ class PlayerObject extends FieldData {
   }
 
   display () {
+    if (this.disable) return
+
     // 죽은 경우에는, 60프레임을 넘기기 전까지 죽음 애니메이션 재생
     if (this.isDied && this.dieAfterDelayCount >= 61) return
     if (this.isDied) {
@@ -784,6 +795,9 @@ class PlayerObject extends FieldData {
       // 스킬
       skill: this.getSaveSkillData(),
       usingSkillSlotA: this.usingSkillSlotA,
+
+      // 기타
+      disable: this.disable
     }
   }
 
@@ -1823,6 +1837,7 @@ export class fieldSystem {
 
   static processNormal () {
     const buttonPause = game.control.getButtonInput(game.control.buttonIndex.START)
+      || game.control.getButtonInput(game.control.buttonIndex.ESC)
     if (this.round == null) return
 
     // 음악 시간 로딩 변수값이 존재할 때, 해당 음악을 강제로 재생합니다.

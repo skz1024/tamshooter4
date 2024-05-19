@@ -107,7 +107,8 @@ export class ID {
    * 따라서 unused는 ID.enemy.unused로 사용해야 합니다.
    */
   static enemy = {
-    unused: 20000,
+    START_ID: 20100,
+    unused: 20100,
     test: 20001,
     testAttack: 20002,
     testShowDamageEnemy: 20003,
@@ -348,14 +349,19 @@ export class ID {
   }
 
   static round = {
+    UNUSED: 0,
+    test1Enemy: 70001,
+    test2Background: 70002,
+    test3Round3DownTower: 70003,
+    testWeaponSkill: 70004,
+    test4Sound: 70005,
+    //
     round1_1: 70011,
     round1_2: 70012,
     round1_3: 70013,
     round1_4: 70014,
     round1_5: 70015,
     round1_6: 70016,
-    round1_test: 70009,
-    UNUSED: 0,
     //
     round2_1: 70021,
     round2_2: 70022,
@@ -363,7 +369,6 @@ export class ID {
     round2_4: 70024,
     round2_5: 70025,
     round2_6: 70026,
-    round2_test: 70029,
     //
     round3_1: 70031,
     round3_2: 70032,
@@ -375,13 +380,8 @@ export class ID {
     round3_8: 70038,
     round3_9: 70039,
     round3_10: 70040,
-    round3_A1: 70041,
-    round3_A2: 70042,
-    round3_A3: 70043,
-    round3_A4: 70044,
-    round3_test: 70045,
     //
-    round4_1: 70101,
+    round4_1: 70041,
   }
 
   static equipment = {

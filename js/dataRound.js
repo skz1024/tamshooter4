@@ -986,6 +986,11 @@ class BaseField {
     return fieldState.getEnemyObject().length
   }
 
+  /** 필드의 모든 적 제거 */
+  static allEnemyDelete () {
+    fieldState.allEnemyDelete()
+  }
+
   /**
    * 적 오브젝트를 Id 기준으로 한마리만 얻습니다. (다중 리턴은 지원되지 않음.)
    * @param {number} enemyId 적의 ID
@@ -1200,7 +1205,7 @@ export class RoundPackLoad {
   }
 
   /** 다운타워 특성상 불러오는 데이터가 많을 수 있음 */
-  static getRound3Part1ShareSound () {
+  static getRound3ShareSound () {
     return [
       soundSrc.round.r3_playerOption,
       soundSrc.round.r3_bossWarning,
@@ -3722,50 +3727,356 @@ class Round1_6 extends RoundData {
   }
 }
 
-class Round1_test extends RoundData {
+class RTestStatic {
+  static getButtonInput () {
+    const up = game.control.getButtonInput(game.control.buttonIndex.UP)
+    const down = game.control.getButtonInput(game.control.buttonIndex.DOWN)
+    const left = game.control.getButtonInput(game.control.buttonIndex.LEFT)
+    const right = game.control.getButtonInput(game.control.buttonIndex.RIGHT)
+    const L1 = game.control.getButtonInput(game.control.buttonIndex.L1)
+    const L2 = game.control.getButtonInput(game.control.buttonIndex.L2)
+    const R1 = game.control.getButtonInput(game.control.buttonIndex.R1)
+    const R2 = game.control.getButtonInput(game.control.buttonIndex.R2)
+    const A = game.control.getButtonInput(game.control.buttonIndex.A)
+    const B = game.control.getButtonInput(game.control.buttonIndex.B)
+    const X = game.control.getButtonInput(game.control.buttonIndex.X)
+    const Y = game.control.getButtonInput(game.control.buttonIndex.Y)
+    const select = game.control.getButtonInput(game.control.buttonIndex.SELECT)
+    return  {
+      up, down, left, right, L1, L2, R1, R2, A, B, X, Y, select
+    }
+  }
+
+  static getButtonInputSelect () {
+    return game.control.getButtonInput(game.control.buttonIndex.SELECT)
+  }
+
+  static getButtonDown () {
+    const up = game.control.getButtonDown(game.control.buttonIndex.UP)
+    const down = game.control.getButtonDown(game.control.buttonIndex.DOWN)
+    const left = game.control.getButtonDown(game.control.buttonIndex.LEFT)
+    const right = game.control.getButtonDown(game.control.buttonIndex.RIGHT)
+    return  {
+      up, down, left, right,
+    }
+  }
+}
+
+class RTestEnemy extends RoundData {
   constructor () {
     super()
-    this.stat.setStat(ID.round.round1_test)
-    this.bgLegacy.backgroundSpeedY = 0
-    this.bgLegacy.backgroundSpeedX = 0
-    this.bgLegacy.x = 0
-    this.bgLegacy.imageSrc = imageSrc.round.round1_1_space
+    this.stat.setStat(ID.round.test1Enemy)
+    this.bgLayer.setColor(['#999999', '#BBBBBB'])
+    this.load.addImageList(RoundPackLoad.getRound1ShareImage())
+    this.load.addImageList(RoundPackLoad.getRound2ShareImage())
+    this.load.addImageList(RoundPackLoad.getRound3ShareImage())
+    this.load.addSoundList(RoundPackLoad.getRound1ShareSound())
+    this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
+    this.load.addSoundList(RoundPackLoad.getRound3ShareSound())
+    this.saveList = {
+      targetId: ID.enemy.START_ID,
+      isIDSelectMode: true,
+      isCollisionView: false,
+      targetPrevId: 0,
+    }
 
-    this.load.addSoundList(RoundPackLoad.getRound3Part1ShareSound())
+    this.phase.addRoundPhase(this, this.roundPhase00, 0, 9999)
+  }
 
-    this.phase.addRoundPhase(this, () => {
-      if (this.timeCheckInterval(1, 999, 60)) {
-        if (this.field.getEnemyCount() === 0) {
-          // this.field.createEnemy(ID.enemy.towerEnemyGroup5.gabudan, 300, 100)
-          // this.field.createEnemy(ID.enemy.towerEnemyGroup5.radio)
-          // this.field.createEnemy(ID.enemy.towerEnemyGroup5.radio)
-          this.field.createEnemy(ID.enemy.towerEnemyGroup2.octaLight, 300, 300)
-          // this.field.createEnemy(ID.enemy.towerEnemyGroup5.vacuumCleaner, 600, 100)
-          // this.field.createEnemy(ID.enemy.towerEnemyGroup5.trash1, 400, 400)
-        }
+  roundPhase00 () {
+    this.time.setCurrentTimePause(true, 'TEST')
+    this.processButton()
 
-        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeCore, 600, 200)
-        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeHell, 600, 200)
-        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeMove, 600, 200)
-        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeShip, 600, 200)
-        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.coreMetal, 600)
-        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.coreBrown, 600)
-        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeCore, 600)
-        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.corePotion, 600)
-        // this.field.createEnemy(ID.enemy.towerEnemyGroup3.core8, 600)
+    let enemy = this.field.getEnemyObject()
+    for (let i = 0; i < enemy.length; i++) {
+      enemy[i].score = 0 // 적 점수 전부 0점처리
+    }
+
+    let player = this.field.getPlayerObject()
+    player.disable = this.saveList.isIDSelectMode
+  }
+
+  processButton () {
+    if (RTestStatic.getButtonInputSelect()) this.saveList.isIDSelectMode = !this.saveList.isIDSelectMode
+      
+      // 선택모드가 아닌경우, ID 관련 커서 조작을 하지 않음.
+    if (!this.saveList.isIDSelectMode) return
+    const button = RTestStatic.getButtonInput()
+
+    if (button.left&& this.saveList.targetId > ID.enemy.START_ID) {
+      this.saveList.targetId--
+    } else if (button.right) {
+      this.saveList.targetId++
+    } else if (button.up) {
+      this.saveList.targetId += 10
+    } else if (button.down) {
+      this.saveList.targetId -= 10
+      if (this.saveList.targetId < ID.enemy.START_ID) {
+        this.saveList.targetId = ID.enemy.START_ID
       }
+    } else if (button.a) {
+      this.field.createEnemy(this.saveList.targetId, 600, 300)
+    } else if (button.b) {
+      this.field.allEnemyDelete()
+    }
 
-      // let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup5.gabudan)
-      // if (enemy) {
-      //   if (enemy.message === 'start') {
-      //     enemy.message = ''
-      //     this.sound.musicFadeIn(soundSrc.music.music17_down_tower_boss)
-      //   } else if (enemy.message === 'end') {
-      //     enemy.message = ''
-      //     this.sound.musicStop()
-      //   }
-      // }
-    }, 0, 999)
+    if (this.saveList.targetPrevId !== this.saveList.targetId) {
+      this.saveList.targetPrevId = this.saveList.targetId
+      this.field.allEnemyDelete()
+      this.field.createEnemy(this.saveList.targetId, 600, 300)
+    }
+  }
+
+  display () {
+    super.display()
+    this.displayEnemyInfo()
+  }
+
+  displayEnemyInfo () {
+    let textListA = [
+      'ENEMY TEST MENU. NOT ADD SCORE.',
+      'SELECT BUTTON (SHIFT KEY) TO CHANGE MODE.',
+      'A BUTTON TO CREATE, B BUTTON TO ALL DELETE',
+      'TARGET ENEMY ID: ' + this.saveList.targetId
+    ]
+    for (let i = 0; i < textListA.length; i++) {
+      digitalDisplay(textListA[i], 0, i * 20)
+    }
+
+    // get enemy data
+    let dataClass = dataExportEnemy.get(this.saveList.targetId)
+    if (dataClass == null) return
+    let data = new dataClass()
+
+    game.graphic.fillText('className: ' + dataClass.name, 0, 100)
+    let textListB = [
+      'HP: ' + data.hpMax + ', BASEDPS: ' + data._baseDps + '(' + Math.floor(data.hpMax / data._baseDps * 100) + '%)',
+      'ATTACK(COLLISION): ' + data.attack,
+      'SCORE: ' + data.score,
+      'WIDTH: ' + data.width + ', HEIGHT: ' + data.height
+    ]
+
+    for (let i = 0; i < textListB.length; i++) {
+      digitalDisplay(textListB[i], 0, 120 + (i * 20))
+    }
+  }
+}
+
+class RTestBackground extends RoundData {
+  constructor () {
+    super()
+    this.stat.setStat(ID.round.test2Background)
+    this.bgLayer.setColor('#999999')
+    this.bgLayer.setBackgroundImage(imageSrc.round.round1_3_meteoriteDeep, 0, 0)
+    this.bgLayer.addLayerImage(imageSrc.round.round1_4_meteoriteDark, 0)
+    this.bgLayer.addLayerImage(imageSrc.round.round1_5_meteoriteRed, 0)
+    this.phase.addRoundPhase(this, this.roundPhase00, 0, 9999)
+    this.scrollMode = 0
+  }
+
+  roundPhase00 () {
+    let player = this.field.getPlayerObject()
+    player.disable = true
+
+    this.time.setCurrentTimePause(true, 'TEST')
+    let buttonInput = RTestStatic.getButtonInput()
+    let buttonDown = RTestStatic.getButtonDown()
+
+    let speed = 2
+    let getPositon = this.bgLayer.getBackgroundPosition.bind(this.bgLayer)
+    if (buttonDown.left) this.bgLayer.setBackgroundPosition(getPositon().x - speed, getPositon().y)
+    if (buttonDown.right) this.bgLayer.setBackgroundPosition(getPositon().x + speed,getPositon().y)
+    if (buttonDown.up) this.bgLayer.setBackgroundPosition(getPositon().x, getPositon().y - speed)
+    if (buttonDown.down) this.bgLayer.setBackgroundPosition(getPositon().x, getPositon().y + speed)
+
+    if (buttonInput.L1) this.bgLayer.setLayerAlphaFade(0, 0, 120)
+    else if (buttonInput.L2) this.bgLayer.setLayerAlphaFade(0, 1, 120)
+    else if (buttonInput.R1) this.bgLayer.setLayerAlphaFade(1, 0, 120)
+    else if (buttonInput.R2) this.bgLayer.setLayerAlphaFade(1, 1, 120)
+
+    if (buttonInput.A) {
+      this.scrollMode++
+      if (this.scrollMode > 3) this.scrollMode = 0 
+
+      if (this.scrollMode === 0) this.bgLayer.setBackgroundSpeed(0, 0)
+      else if (this.scrollMode === 1) this.bgLayer.setBackgroundSpeed(1, 0)
+      else if (this.scrollMode === 2) this.bgLayer.setBackgroundSpeed(0, 1)
+      else if (this.scrollMode === 3) this.bgLayer.setBackgroundSpeed(1, 1)
+    }
+  }
+
+  display () {
+    this.bgLayer.display()
+    game.graphic.fillRect(0, 0, 400, 300, '#88888', 0.3)
+    this.displayHelp()
+    this.displayInfo()
+  }
+
+  displayHelp () {
+    let textList = [
+      'L1, L2: layer 0 alpha fade',
+      'R1, R2: layer 1 alpha fade',
+      'arrow button: background move',
+      'A BUTTON: scrool change',
+    ]
+    for (let i = 0; i < textList.length; i++) {
+      digitalDisplay(textList[i], 0, i * 20)
+    }
+  }
+
+  displayInfo () {
+    let position = this.bgLayer.getBackgroundPosition()
+    let speed = this.bgLayer.getBackgroundSpeed()
+    let layer = this.bgLayer.getLayer()
+    let textList = [
+      'BACKGROUND',
+      'X: ' + position.x + ', Y: ' + position.y,
+      'speedX: ' + speed.speedX + ', speedY: ' + speed.speedY,
+      '',
+      'LAYER LIST',
+      '0: alpha: ' + layer[0].alpha.toFixed(2),
+      '1: alpha: ' + layer[1].alpha.toFixed(2),
+    ]
+    for (let i = 0; i < textList.length; i++) {
+      digitalDisplay(textList[i], 0, 140 + (i * 20))
+    }
+  }
+}
+
+class RTestSound extends RoundData {
+  constructor () {
+    super()
+    this.stat.setStat(ID.round.test4Sound)
+    this.bgLayer.setColor(['#EAE1B7', '#F2F5B4'])
+
+    this.saveList = {
+      soundNumber: 0,
+      musicNumber: 0,
+      isSoundMode: true,
+    }
+
+    this.soundSrcList = []
+    for (let target in soundSrc) {
+      if (target === 'music') continue
+
+      for (let subTarget in soundSrc[target]) {
+        this.soundSrcList.push(soundSrc[target][subTarget])
+      }
+    }
+
+    this.musicSrcList = []
+    for (let music in soundSrc.music) {
+      this.musicSrcList.push(soundSrc.music[music])
+    }
+  }
+
+  process () {
+    super.process()
+    this.time.setCurrentTimePause(true, 'TEST')
+
+    let player = this.field.getPlayerObject()
+    player.disable = true
+    
+    let button = RTestStatic.getButtonInput()
+    if (button.A) {
+      if (this.saveList.isSoundMode) {
+        soundSystem.play(this.soundSrcList[this.saveList.soundNumber])
+      } else {
+        soundSystem.musicPlay(this.musicSrcList[this.saveList.musicNumber])
+      }
+    } else if (button.B) {
+      soundSystem.stop(this.soundSrcList[this.saveList.soundNumber])
+      soundSystem.musicStop()
+    } else if (button.L1) {
+      this.saveList.isSoundMode ? this.changeSoundNumber(-10) : this.changeMusicNumber(-10)
+    } else if (button.L2) {
+      this.saveList.isSoundMode ? this.changeSoundNumber(10) : this.changeMusicNumber(10)
+    } else if (button.R1) {
+      soundSystem.setMusicCurrentTime(soundSystem.getMusicCurrentTime() - 5)
+    } else if (button.R2) {
+      soundSystem.setMusicCurrentTime(soundSystem.getMusicCurrentTime() + 5)
+    }
+
+    if (button.up && !this.saveList.isSoundMode) {
+      this.saveList.isSoundMode = true
+    } else if (button.down && this.saveList.isSoundMode) {
+      this.saveList.isSoundMode = false
+    }
+
+    if (button.left) {
+      this.saveList.isSoundMode ? this.changeSoundNumber(-1) : this.changeMusicNumber(-1)
+    } else if (button.right) {
+      this.saveList.isSoundMode ? this.changeSoundNumber(1) : this.changeMusicNumber(1)
+    }
+  }
+
+  /** 사운드 번호를 얼마만큼 변경합니다. (상대적으로) */
+  changeSoundNumber (changeValue = 1) {
+    this.saveList.soundNumber += changeValue
+    if (this.saveList.soundNumber < 0) {
+      this.saveList.soundNumber = 0
+    } else if (this.saveList.soundNumber > this.soundSrcList.length) {
+      this.saveList.soundNumber = this.soundSrcList.length
+    }
+  }
+
+  /** 음악 번호를 얼마만큼 변경합니다. 상대적으로 */
+  changeMusicNumber (changeValue = 1) {
+    this.saveList.musicNumber += changeValue
+    if (this.saveList.musicNumber < 0) {
+      this.saveList.musicNumber = 0
+    } else if (this.saveList.musicNumber > this.musicSrcList.length) {
+      this.saveList.musicNumber = this.musicSrcList.length
+    }
+  }
+
+  display () {
+    super.display()
+    this.displayInfo()
+  }
+
+  displayInfo () {
+    const soundNumberText = this.saveList.soundNumber + '/' + this.soundSrcList.length
+    const cacheAudio = soundSystem.getCacheAudio(this.soundSrcList[this.saveList.soundNumber])
+    const playTime = cacheAudio != null ? cacheAudio.currentTime : 0
+    const duration = cacheAudio != null ? cacheAudio.duration : 0
+    const musicNumberText = this.saveList.musicNumber + '/' + this.musicSrcList.length
+    const musicCacheAudio = soundSystem.getCacheAudio(this.musicSrcList[this.saveList.musicNumber])
+    const musicPlayTime = musicCacheAudio != null ? musicCacheAudio.currentTime : 0
+    const musicDuration = musicCacheAudio != null ? musicCacheAudio.duration : 0
+    let textList = [
+      'WARNING: The sound is loaded with user gestures.',
+      'WARNING: If you turn off music or sound, it won\'t play.',
+      '',
+      'SOUND TEST MENU',
+      'A BUTTON TO PLAY, B BUTTON TO STOP',
+      'L1/L2 BUTTON TO CHANGE NUMBER +-10',
+      'R1/R2 BUTTON TO CHANGE MUSIC CURRENT TIME +-5',
+      '',
+      'SOUND: ' + soundNumberText,
+      'SRC: ' + this.soundSrcList[this.saveList.soundNumber],
+      'DURATION: ' + playTime.toFixed(2) + '/' + duration.toFixed(2),
+      '',
+      'MUSIC: ' + musicNumberText,
+      'SRC: ' + this.musicSrcList[this.saveList.musicNumber],
+      'DURATION: ' + musicPlayTime.toFixed(2) + '/' + musicDuration.toFixed(2),
+    ]
+
+    const RECTY1 = 20 * 8
+    const RECTY2 = RECTY1 + (20 * 4)
+    if (this.saveList.isSoundMode) {
+      game.graphic.fillRect(0, RECTY1, 600, 60, 'white', 0.8)
+    } else {
+      game.graphic.fillRect(0, RECTY2, 600, 60, 'white', 0.8)
+    }
+
+    for (let i = 0; i < textList.length; i++) {
+      if (i === 9 || i === 13) {
+        game.graphic.fillText(textList[i], 0, 20 * i)
+      } else {
+        digitalDisplay(textList[i], 0, 20 * i)
+      }
+    }
   }
 }
 
@@ -7385,7 +7696,7 @@ class Round2_5 extends RoundData {
     this.bgLegacy.imageSrc = imageSrc.round.round2_5_floorB1Light
     this.bgLegacy.backgroundSpeedX = 0
     this.bgLegacy.color = Round2_1.getMaeulGradientColor()
-    this.clearSoundSrc = soundSrc.round.r2_5Clear // 클리어 사운드 변경
+    this.clearSoundSrc = soundSrc.round.r2_5_clear // 클리어 사운드 변경
 
     // 타입 지정용 임시 클래스 (자동완성 목적)
     class SpriteDonggrami extends this.SpriteDonggrami {}
@@ -7412,7 +7723,7 @@ class Round2_5 extends RoundData {
       soundSrc.music.music14_intruder_battle,
       soundSrc.round.r2_4_message1,
       soundSrc.round.r2_3_a1_toyHammer,
-      soundSrc.round.r2_5Clear
+      soundSrc.round.r2_5_clear
     ])
 
     this.load.addImageList(RoundPackLoad.getRound2ShareImage())
@@ -8231,37 +8542,6 @@ class Round2_OS95 extends RoundData {
   // windows 95??
 }
 
-class Round2_test extends RoundData {
-  constructor () {
-    super()
-    this.stat.setStat(ID.round.round2_test)
-    this.bgLayer.addLayerImage(imageSrc.round.round1_1_space, 1)
-    this.bgLayer.addLayerImage(imageSrc.round.round1_2_meteorite, 0)
-    this.phase.addRoundPhase(this, this.roundPhase00, 0, 200)
-  }
-
-  processPhase () {
-    this.phase.process(this.time.currentTime)
-  }
-
-  roundPhase00 () {
-    if (this.timeCheckFrame(3)) {
-      let getLayer = this.bgLayer.getLayer()
-      getLayer[0].fadeAlpha(0, 300)
-      getLayer[1].fadeAlpha(1, 300)
-      console.log('!!!')
-    }
-  }
-
-  display () {
-    this.bgLayer.display()
-
-    let layer = this.bgLayer.getLayer()
-    graphicSystem.fillText(layer[0].alpha + ', ' + layer[0].alpha, 0, 20, 'yellow')
-    graphicSystem.fillText(layer[0].alphaDelayCount + ', ' + layer[0].alphaDelayCount, 0, 0, 'white')
-  }
-}
-
 /** 라운드 3에서 사용하는 플레이어 옵션에 대한 클래스 */
 class Round3TempletePlayerOption extends FieldData {
   static colorList = {
@@ -8291,6 +8571,11 @@ class Round3TempletePlayerOption extends FieldData {
     this.imageSrc = imageSrc.round.round3_playerOption
     /** 옵션을 가지고 있는 여부 @type {boolean} */ this._hasOption = false
     /** 옵션의 무기 발사에 대한 지연시간 카운터 */ this._delayCount = 0
+
+    /** 옵션의 레벨이 게임 진행상황에 따라 자동으로 변경됨 (단 구현로직은 상속받은 하위클래스에 구현되어있어, 
+     * 이 옵션 클래스 자체적으로 옵션 내부의 레벨이 변경되지 않습니다.) */ 
+    this.isAutoLevel = true
+
     /** 옵션이 가지고 있는 기본적인 공격력 (다운타워의 cp랑 관련되어있음. 다만 값은 수동으로 설정해야함) 
      * 만약 다운타워의 baseCp(기본전투력)가 수정되었을 때 이 값을 수정하지 않으면 밸런스적으로 문제가 발생할 수 있음. */ 
     this.BASE_ATTACK = 70000
@@ -8392,6 +8677,7 @@ class Round3TempletePlayerOption extends FieldData {
       this.optionObject.push(option)
     }
     
+    this.setColor(this._color)
     this.processMove() // 옵션 위치가 플레이어 근처로 이동하도록 조정
   }
 
@@ -8422,11 +8708,12 @@ class Round3TempletePlayerOption extends FieldData {
   }
 
   /** 
-   * 옵션의 레벨을 설정 (참고: 옵션의 최대 레벨을 넘길경우 최대 레벨로 고정됨) 
+   * 옵션의 레벨을 설정 (이 설정을 사용하면, 옵션의 레벨이 자동으로 변경되지 않습니다.)
    * @param {number} level 설정할 레벨
    * */
   setLevel (level) {
     this._hasOption = true
+    this.isAutoLevel = false
 
     if (level >= 0 && level <= this.LEVEL_MAX) {
       this._level = level
@@ -8435,6 +8722,11 @@ class Round3TempletePlayerOption extends FieldData {
     } else {
       this._level = 0
     }
+  }
+
+  /** 레벨을 자동으로 변환하도록 수정 */
+  setAutoLevel () {
+    this.isAutoLevel = true
   }
 
   /** 현재 옵션의 공격력을 색의 정보와 레벨에 맞추어 얻어옵니다. (참고: 옵션의 기본 공격력은 BASE_ATTACK에 정의되어있습니다.) */
@@ -8946,9 +9238,9 @@ class Round3TempleteBossSprite extends FieldData {
   }
 
   createSpriteBossRobot () {
+    this.baseInit()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.crazyRobot)
     this.setWidthHeight(this.width / 2, this.height / 2)
-    this.elapsedFrame = 0
     this.subType = this.TYPE_ROBOT
     this.x = 900
     this.setMoveSpeed(-10, 0)
@@ -8958,37 +9250,36 @@ class Round3TempleteBossSprite extends FieldData {
   }
 
   createSpriteBossDasu () {
+    this.baseInit()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.bossDasu)
-    this.elapsedFrame = 0
     this.subType = this.TYPE_DASU
     this.x = graphicSystem.CANVAS_WIDTH - this.width
     this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
   }
 
   createSpriteAntiPhase2 () {
+    this.baseInit()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 4)
-    this.elapsedFrame = 0
     this.subType = this.TYPE_ANTI_PHASE2
     this.x = graphicSystem.CANVAS_WIDTH_HALF - (imageDataInfo.towerEnemyGroup4.anti.width / 2)
     this.y = graphicSystem.CANVAS_HEIGHT_HALF - (imageDataInfo.towerEnemyGroup4.anti.height / 2)
-    this.setMoveSpeed(0, 0)
+    soundSystem.play(soundSrc.round.r3_5_message1)
   }
 
   createSpriteAntiPhase3 () {
+    this.baseInit()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 4)
-    this.elapsedFrame = 0
     this.subType = this.TYPE_ANTI_PHASE3
-    this.setMoveSpeed(0, 0)
+    soundSystem.play(soundSrc.round.r3_5_message2)
   }
 
   createSpriteAntiPhase4 () {
+    this.baseInit()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 4)
     this.setWidthHeight(this.width * 2, this.height * 2)
-    this.elapsedFrame = 0
     this.subType = this.TYPE_ANTI_PHASE4
     this.x = graphicSystem.CANVAS_WIDTH_HALF - (this.width / 2)
     this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
-    this.setMoveSpeed(0, 0)
   }
 
   /**
@@ -8997,13 +9288,20 @@ class Round3TempleteBossSprite extends FieldData {
    * @param {number} targetY 
    */
   createSpriteAntiClear (targetX, targetY) {
+    this.baseInit()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 1800)
     this.setWidthHeight(this.width * 2, this.height * 2)
-    this.elapsedFrame = 0
     this.subType = this.TYPE_ANTI_PHASECLEAR
     this.x = targetX
     this.y = targetY
+  }
+
+  /** 일부 값들을 기본값으로 초기화 */
+  baseInit () {
+    this.elapsedFrame = 0
     this.setMoveSpeed(0, 0)
+    this.alpha = 1
+    this.degree = 0
   }
 
   getSaveString () {
@@ -9125,6 +9423,10 @@ class Round3TempleteBossSprite extends FieldData {
 
   processMoveAntiPhase2 () {
     if (this.elapsedFrame >= 360 && this.elapsedFrame <= 540) {
+      if (this.elapsedFrame === 360) {
+        soundSystem.play(soundSrc.round.r3_5_phase2Start)
+      }
+
       this.alpha -= 0.005
       if (this.alpha < 0) this.alpha = 0
 
@@ -9181,6 +9483,12 @@ class Round3TempleteBossSprite extends FieldData {
   }
 
   processMoveAntiPhase4 () {
+    if (this.elapsedFrame === 120) {
+      soundSystem.play(soundSrc.round.r3_5_message3)
+    } else if (this.elapsedFrame === 420) {
+      soundSystem.play(soundSrc.round.r3_5_phase4Start)
+    }
+
     if (this.elapsedFrame >= 780) {
       // 적 생성, 스프라이트 처리 종료
       fieldState.createEnemyObject(ID.enemy.towerEnemyGroup4.antijemulP4_1, this.x, this.y)
@@ -9189,6 +9497,18 @@ class Round3TempleteBossSprite extends FieldData {
   }
 
   processMoveAntiPhaseClear () {
+    if (this.elapsedFrame === 120) {
+      soundSystem.play(soundSrc.round.r3_5_antijemulDie)
+    }
+
+    if (this.elapsedFrame >= 120 && this.elapsedFrame <= 480 && this.elapsedFrame % 4 === 0) {
+      let effect = new Round3TempleteBossSprite.antijemulDieEffect()
+      effect.x = this.x + (Math.random() * this.width) - (effect.width / 2)
+      effect.y = this.y + (Math.random() * this.height) - (effect.height / 2)
+      effect.setWidthHeight(effect.width * 2, effect.height * 2)
+      fieldState.createEffectObject(effect)
+    }
+
     // 서서히 투명해지게 하기 (그러나 완전히 사라지진 않습니다.)
     let alphaCount = (this.elapsedFrame - 240)
     if (alphaCount < 0) alphaCount = 0
@@ -9366,6 +9686,12 @@ class Round3TempleteBossSprite extends FieldData {
       super.display()
     }
   }
+
+  static antijemulDieEffect = class extends CustomEffect {
+    constructor () {
+      super(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiDieEffect, undefined, undefined, 2)
+    }
+  }
 }
 
 class Round3Templete extends RoundData {
@@ -9388,7 +9714,7 @@ class Round3Templete extends RoundData {
     }
 
     this.load.addImageList(RoundPackLoad.getRound3ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound3Part1ShareSound())
+    this.load.addSoundList(RoundPackLoad.getRound3ShareSound())
   }
 
   /** 
@@ -9465,6 +9791,7 @@ class Round3Templete extends RoundData {
 
   /** 진행된 시간에 따라서 옵션의 레벨이 자동으로 상승합니다. */
   processAutoSetOptionLevel () {
+    if (!this.playerOption.isAutoLevel) return
     if (this.time.currentTimeFrame % 60 !== 0) return
 
     // 플레이어 옵션 레벨은 10초당 1씩 증가하여, 90초가 되는 시점에 최대레벨이 됩니다.
@@ -10777,10 +11104,10 @@ class Round3_5 extends Round3Templete {
       this.bossWarning.createWarning(this.bossTextList.bossAnti)
     } else if (this.timeCheckFrame(pTime + 8)) {
       this.bossSprite.createSpriteAntiPhase2()
-      this.sound.play(soundSrc.round.r3_5_message1)
+      // this.sound.play(soundSrc.round.r3_5_message1)
     } else if (this.timeCheckFrame(pTime + 14)) {
       this.bgLayer.setLayerAlphaFade(0, 0, 120)
-      this.sound.play(soundSrc.round.r3_5_phase2Start)
+      // this.sound.play(soundSrc.round.r3_5_phase2Start)
     } else if (this.timeCheckFrame(pTime + 17)) {
       this.bgLayer.setBackgroundPosition(0, 0)
       this.bgLayer.setBackgroundSpeed(0, 0)
@@ -11320,10 +11647,10 @@ class Round3_5 extends Round3Templete {
       this.bgLayer.setBackgroundSpeed(0, 0)
     } else if (this.timeCheckFrame(pTime + 3)) {
       // 메세지 2 발생, 스프라이트 생성
-      soundSystem.play(soundSrc.round.r3_5_message2)
       this.bossSprite.createSpriteAntiPhase3()
+      // soundSystem.play(soundSrc.round.r3_5_message2)
     } else if (this.timeCheckFrame(pTime + 21)) {
-      // 보스전 시작 및 사운드 재생
+      // 보스전 시작 및 음악 재생
       this.sound.currentMusicSrc = soundSrc.music.music21_round3_5_antijemulNormal
       this.sound.musicPlay()
     }
@@ -11365,11 +11692,11 @@ class Round3_5 extends Round3Templete {
     const pEnd = this.phase.getCurrentPhaseEndTime()
     if (this.timeCheckFrame(pTime + 2)) {
       this.sound.musicStop()
-      this.sound.play(soundSrc.round.r3_5_message3)
+      // this.sound.play(soundSrc.round.r3_5_message3)
     } else if (this.timeCheckFrame(pTime + 7)) {
       this.bgLayer.setLayerAlphaFade(this.layerList.DOWNTOWER, 0, 120)
       this.bgLayer.setLayerAlphaFade(this.layerList.REDZONE, 1, 300)
-      this.sound.play(soundSrc.round.r3_5_phase4Start)
+      // this.sound.play(soundSrc.round.r3_5_phase4Start)
     } else if (this.timeCheckFrame(pTime + 12)) {
       this.sound.musicFadeIn(soundSrc.music.music22_round3_5_antijemulHyper, 0)
     }
@@ -11427,21 +11754,12 @@ class Round3_5 extends Round3Templete {
   roundPhase04_F () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     this.bgLayer.setBackgroundSpeed(0, 0)
-    if (this.timeCheckFrame(pTime + 0)) {
-      
-    } else if (this.timeCheckFrame(pTime + 1)) {
+    
+    if (this.timeCheckFrame(pTime + 1)) {
       this.bgLayer.setLayerAlphaFade(this.layerList.DOWNTOWER, 1, 60)
       this.bgLayer.setLayerAlphaFade(this.layerList.REDZONE, 0, 120)
     } else if (this.timeCheckFrame(pTime + 2)) {
-      soundSystem.play(soundSrc.round.r3_5_antijemulDie)
-    }
-
-    if (this.timeCheckInterval(pTime + 2, pTime + 8, 4)) {
-      let effect = new Round3_5.antijemulDieEffect()
-      effect.x = this.bossSprite.x + (Math.random() * this.bossSprite.width)
-      effect.y = this.bossSprite.y + (Math.random() * this.bossSprite.height)
-      effect.setWidthHeight(effect.width * 2, effect.height * 2)
-      fieldState.createEffectObject(effect)
+      // soundSystem.play(soundSrc.round.r3_5_antijemulDie)
     }
   }
 
@@ -11733,12 +12051,6 @@ class Round3_5 extends Round3Templete {
         this.moveSpeedX += this.moveSpeedX > 0 ? Math.random() * 1 : Math.random() * -1
         this.moveSpeedY += this.moveSpeedY > 0 ? Math.random() * 1 : Math.random() * -1
       }
-    }
-  }
-
-  static antijemulDieEffect = class extends CustomEffect {
-    constructor () {
-      super(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiDieEffect, undefined, undefined, 2)
     }
   }
 }
@@ -13703,56 +14015,191 @@ class Round3_10 extends Round3Templete {
   }
 }
 
-class Round3_test extends Round3Templete {
+class RTestRound3DownTower extends Round3Templete {
   constructor () {
     super()
-    this.stat.setStat(ID.round.round3_test)
+    this.stat.setStat(ID.round.test3Round3DownTower)
     this.playerOption.setColor(this.playerOption.colorList.green)
-    // this.playerOption.setLevel(3)
-    // this.bgLayer.setColor('black')
-    // this.sound.roundStartMusicSrc = soundSrc.music.music16_down_tower
+    this.bgLayer.addLayerImage(imageSrc.round.round3_1_level1, 1)
+    this.saveList = {
+      testNumber: 0,
+      bossSpriteNumber: 0,
+      pOptionColorNumber: 0,
+      pOptionLevel: 0,
+      isPlayMode: false,
+    }
 
-    // 배경 테스트
-    this.bgLayer.addLayerImage(imageSrc.round.round3_3_level1, 0.2)
-    this.bgLayer.addLayerImage(imageSrc.round.round3_3_level2, 0)
-    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_ruin1, 0, 0)
-    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_ruin1, 1200, 0)
-    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_ruin1, 2400, 0)
-    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_ruin2, 0, 600)
-    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_ruin2, 1200, 600)
-    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_ruin2, 2400, 600)
-    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_downtowerEntrance, 0, 1200)
-    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_downtowerEntrance, 1200, 1200)
-    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_downtowerEntrance, 2400, 1200)
-    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_quiteRoad, 0, 1800)
-    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_quiteRoad, 1200, 1800)
-    this.bgLayer.setBackgroundImage(imageSrc.round.round2_6_quiteRoad, 2400, 1800)
-    this.bgLayer.setBackgroundSpeed(1, 1)
+    this.MAX_TEST_NUMBER = 5
 
-    this.phase.addRoundPhase(this, () => {
-      if (this.timeCheckFrame(75)) {
-        this.bgLayer.setLayerAlphaFade(0, 0, 600)
-      }
-    }, 0, 999)
+    this.bossSpriteList = [
+      this.bossSprite.TYPE_ROBOT,
+      this.bossSprite.TYPE_DASU,
+      this.bossSprite.TYPE_ANTI_PHASE2,
+      this.bossSprite.TYPE_ANTI_PHASE3,
+      this.bossSprite.TYPE_ANTI_PHASE4,
+      this.bossSprite.TYPE_ANTI_PHASECLEAR,
+    ]
+
+    this.playerOptionColorList = [
+      this.playerOption.colorList.black,
+      this.playerOption.colorList.green,
+      this.playerOption.colorList.khaki,
+      this.playerOption.colorList.orange,
+      this.playerOption.colorList.pink,
+      this.playerOption.colorList.purple,
+      this.playerOption.colorList.skyblue,
+    ]
+
+    this.playerOption.setColor(this.playerOptionColorList[0])
+    this.playerOption.setLevel(0)
+
+    this.load.addSoundList([
+      soundSrc.round.r3_5_message1,
+      soundSrc.round.r3_5_message2,
+      soundSrc.round.r3_5_message3,
+      soundSrc.round.r3_5_phase2Start,
+      soundSrc.round.r3_5_phase4Start,
+      soundSrc.round.r3_5_antijemulDie,
+      soundSrc.round.r3_5_clear,
+      soundSrc.round.r3_5_blackSpaceAreaDie,
+      soundSrc.round.r3_5_blackSpaceGreen,
+      soundSrc.round.r3_5_blackSpaceCatch,
+      soundSrc.round.r3_5_blackSpaceFind,
+      soundSrc.round.r3_5_blackSpaceRed,
+      soundSrc.round.r3_5_blackSpaceTornado,
+      soundSrc.round.r3_5_blackSpaceWarp,
+      soundSrc.round.r3_5_blackSpaceYellow,
+      soundSrc.round.r3_5_blackSpaceYellowPre,
+      soundSrc.enemyAttack.towerAntijemulGravityBall,
+      soundSrc.enemyAttack.towerAntijemulGravityBallEffect,
+      soundSrc.enemyAttack.towerAntijemulRing,
+      soundSrc.enemyAttack.towerAntijemulRingBomb,
+      soundSrc.enemyAttack.towerAntijemulRingBombEffect,
+      soundSrc.enemyAttack.towerAntijemulRingRolling,
+    ])
   }
 
   process () {
     super.process()
-    // this.playerOption.process()
+    this.processButton()
+    this.time.setCurrentTimePause(true, 'TEST')
+
+    // 플레이 모드가 아니면 플레이어 사용 중지
+    let player = this.field.getPlayerObject()
+    player.disable = !this.saveList.isPlayMode
+
+    // 적은 무조건 점수가 0
+    let enemy = this.field.getEnemyObject()
+    for (let i = 0; i < enemy.length; i++) {
+      enemy[i].score = 0
+    }
+  }
+
+  processButton () {
+    if (RTestStatic.getButtonInputSelect()) {
+      this.saveList.isPlayMode = !this.saveList.isPlayMode
+    }
+
+    if (this.saveList.isPlayMode) return
+    let button = RTestStatic.getButtonInput()
+
+    if (button.A) {
+      if (this.saveList.testNumber === 0) {
+        this.createBossSprite()
+      } else if (this.saveList.testNumber === 1) {
+        this.bossWarning.createWarning('BOSS WARNING TEST')
+      } else if (this.saveList.testNumber === 2) {
+        let color = this.playerOptionColorList[this.saveList.pOptionColorNumber]
+        this.playerOption.createOptionItem(color)
+      } else if (this.saveList.testNumber === 5) {
+        this.field.allEnemyDelete()
+      }
+    }
+
+    if (button.left) this.processButtonLeft()
+    else if (button.right) this.processButtonRight()
+    else if (button.up && this.saveList.testNumber > 0) this.saveList.testNumber--
+    else if (button.down && this.saveList.testNumber < this.MAX_TEST_NUMBER) this.saveList.testNumber++
+  }
+
+  processButtonLeft () {
+    if (this.saveList.testNumber === 0) {
+      this.saveList.bossSpriteNumber--
+      if (this.saveList.bossSpriteNumber < 0) {
+        this.saveList.bossSpriteNumber = this.bossSpriteList.length - 1
+      }
+    } else if (this.saveList.testNumber === 3) {
+      this.saveList.pOptionColorNumber--
+      if (this.saveList.pOptionColorNumber < 0) {
+        this.saveList.pOptionColorNumber = this.playerOptionColorList.length - 1
+      }
+      this.playerOption.setColor(this.playerOptionColorList[this.saveList.pOptionColorNumber])
+    } else if (this.saveList.testNumber === 4) {
+      this.saveList.pOptionLevel--
+      if (this.saveList.pOptionLevel < 0) {
+        this.saveList.pOptionLevel = this.playerOption.LEVEL_MAX
+      }
+      this.playerOption.setLevel(this.saveList.pOptionLevel)
+    }
+  }
+
+  processButtonRight () {
+    if (this.saveList.testNumber === 0) {
+      this.saveList.bossSpriteNumber++
+      if (this.saveList.bossSpriteNumber >= this.bossSpriteList.length) {
+        this.saveList.bossSpriteNumber = 0
+      }
+    } else if (this.saveList.testNumber === 3) {
+      this.saveList.pOptionColorNumber++
+      if (this.saveList.pOptionColorNumber >= this.playerOptionColorList.length) {
+        this.saveList.pOptionColorNumber = 0
+      }
+      this.playerOption.setColor(this.playerOptionColorList[this.saveList.pOptionColorNumber])
+    } else if (this.saveList.testNumber === 4) {
+      this.saveList.pOptionLevel++
+      if (this.saveList.pOptionLevel > this.playerOption.LEVEL_MAX) {
+        this.saveList.pOptionLevel = 0
+      }
+      this.playerOption.setLevel(this.saveList.pOptionLevel)
+    }
+  }
+
+  createBossSprite () {
+    switch (this.bossSpriteList[this.saveList.bossSpriteNumber]) {
+      case this.bossSprite.TYPE_ROBOT: this.bossSprite.createSpriteBossRobot(); break
+      case this.bossSprite.TYPE_DASU: this.bossSprite.createSpriteBossDasu(); break 
+      case this.bossSprite.TYPE_ANTI_PHASE2: this.bossSprite.createSpriteAntiPhase2(); break 
+      case this.bossSprite.TYPE_ANTI_PHASE3: this.bossSprite.createSpriteAntiPhase3(); break 
+      case this.bossSprite.TYPE_ANTI_PHASE4: this.bossSprite.createSpriteAntiPhase4(); break 
+      case this.bossSprite.TYPE_ANTI_PHASECLEAR: this.bossSprite.createSpriteAntiClear(300, 200); break 
+    }
   }
 
   display () {
     super.display()
+    this.displayInfo()
+    this.bossHpMeter(0, 'BOSS HP: ')
+  }
 
-    graphicSystem.fillText(this.bgLayer.getBackgroundPosition().x + ', ' + this.bgLayer.getBackgroundPosition().y, 0, 0, 'yellow')
-
-    let layer1 = this.bgLayer.getLayerNumber(0)
-    let layer2 = this.bgLayer.getLayerNumber(1)
-    graphicSystem.fillText(layer1.x + ', ' + layer1.y + ', L1', 0, 20, 'orange')
-    graphicSystem.fillText(layer2.x + ', ' + layer2.y + ', L2', 0, 40, 'orange')
-    this.bossHpMeter()
-
-   
+  displayInfo () {
+    const STARTY = 60
+    const HEIGHT = 20
+    const MENUSTARTY = STARTY + 40
+    let textList = [
+      'TEST LIST',
+      'SELECT BUTTON (SHIFT KEY) TO PLAY',
+      'BOSS SPRITE SELECT: ' + this.bossSpriteList[this.saveList.bossSpriteNumber],
+      'BOSS WARNING TEST',
+      'CREATE PLAYER OPTION (CURRENT PLAYER COLOR)',
+      'PLAYER OPTION COLOR: ' + this.playerOptionColorList[this.saveList.pOptionColorNumber],
+      'PLAYER OPTION LEVEL: ' + this.saveList.pOptionLevel,
+      'ENEMY DELETE',
+    ]
+    game.graphic.fillRect(0, STARTY, 600, HEIGHT * 8, 'white', 0.4)
+    game.graphic.fillRect(0, MENUSTARTY + (HEIGHT * this.saveList.testNumber), 600, 20, 'grey', 0.7)
+    for (let i = 0; i < textList.length; i++) {
+      digitalDisplay(textList[i], 0, STARTY + (i * HEIGHT))
+    }
   }
 }
 
@@ -13761,20 +14208,24 @@ class Round3_test extends Round3Templete {
  * export 할 라운드 데이터의 변수, tam4변수에 대입하는 용도
  */
 export const dataExportRound = new Map()
+dataExportRound.set(ID.round.test1Enemy, RTestEnemy)
+dataExportRound.set(ID.round.test2Background, RTestBackground)
+dataExportRound.set(ID.round.test4Sound, RTestSound)
+//
 dataExportRound.set(ID.round.round1_1, Round1_1)
 dataExportRound.set(ID.round.round1_2, Round1_2)
 dataExportRound.set(ID.round.round1_3, Round1_3)
 dataExportRound.set(ID.round.round1_4, Round1_4)
 dataExportRound.set(ID.round.round1_5, Round1_5)
 dataExportRound.set(ID.round.round1_6, Round1_6)
-dataExportRound.set(ID.round.round1_test, Round1_test)
+//
 dataExportRound.set(ID.round.round2_1, Round2_1)
 dataExportRound.set(ID.round.round2_2, Round2_2)
 dataExportRound.set(ID.round.round2_3, Round2_3)
 dataExportRound.set(ID.round.round2_4, Round2_4)
 dataExportRound.set(ID.round.round2_5, Round2_5)
 dataExportRound.set(ID.round.round2_6, Round2_6)
-dataExportRound.set(ID.round.round2_test, Round2_test)
+//
 dataExportRound.set(ID.round.round3_1, Round3_1)
 dataExportRound.set(ID.round.round3_2, Round3_2)
 dataExportRound.set(ID.round.round3_3, Round3_3)
@@ -13785,5 +14236,5 @@ dataExportRound.set(ID.round.round3_7, Round3_7)
 dataExportRound.set(ID.round.round3_8, Round3_8)
 dataExportRound.set(ID.round.round3_9, Round3_9)
 dataExportRound.set(ID.round.round3_10, Round3_10)
-dataExportRound.set(ID.round.round3_test, Round3_test)
+dataExportRound.set(ID.round.test3Round3DownTower, RTestRound3DownTower)
 

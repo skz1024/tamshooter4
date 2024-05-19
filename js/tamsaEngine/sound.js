@@ -444,7 +444,7 @@ export class SoundSystem {
     getMusic.loop = true // 음악 자동 루프 처리
     if (getMusic.paused) { // 음악이 일시정지 된 경우에 재생합니다.
       getMusic.play()
-      this.setCurrentMusicCurrentTime(start)
+      this.setMusicCurrentTime(start)
       this.currentMusicState = this.musicStateList.PLAYING
     }
 
@@ -463,7 +463,7 @@ export class SoundSystem {
   }
 
   /** 현재 음악의 재생 시간 강제 조정 */
-  setCurrentMusicCurrentTime (start = -1) {
+  setMusicCurrentTime (start = -1) {
     if (this.currentMusic instanceof HTMLMediaElement && start >= 0) {
       this.currentMusic.currentTime = start
     } else {

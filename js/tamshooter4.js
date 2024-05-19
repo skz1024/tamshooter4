@@ -2885,9 +2885,15 @@ class EtcSystem extends MenuSystem {
     super()
     this.backgroundColor = ['#bbb695', '#cbcd7a']
 
-    const MENUWIDTH = 400
+    const MENUWIDTH = 600
     const MENUHEIGHT = 30
-    let textList = ['<< back(뒤로)', 'BIOS menu (바이오스 메뉴)']
+    let textList = [
+      '<< back(뒤로)', 
+      'enemy test (적 테스트)', 
+      'background test (배경 테스트)', 
+      'down tower test (다운 타워 테스트), LV 20',
+      'sound test (사운드 테스트)',
+      'BIOS menu (바이오스 메뉴)']
 
     for (let i = 0; i < textList.length; i++) {
       this.menuList[i] = new BoxObject(0, 0 + (MENUHEIGHT * i), MENUWIDTH, MENUHEIGHT, textList[i], '#e9d7be', '#e9d7be', '#4e4841')
@@ -2913,7 +2919,35 @@ class EtcSystem extends MenuSystem {
     if (this.cursorPosition === 0) {
       this.canceled = true
     } else if (this.cursorPosition === 1) {
+      this.roundStart(ID.round.test1Enemy)
+    } else if (this.cursorPosition === 2) {
+      this.roundStart(ID.round.test2Background)
+    } else if (this.cursorPosition === 3) {
+      let roundData = dataExportStatRound.get(ID.round.test3Round3DownTower)
+      if (roundData != null && userSystem.lv >= roundData.requireLevel) {
+        this.roundStart(ID.round.test3Round3DownTower)
+      } else {
+        game.sound.play(soundSrc.system.systemBuzzer)
+      }
+    } else if (this.cursorPosition === 4) {
+      this.roundStart(ID.round.test4Sound)
+    } else if (this.cursorPosition === 5) {
       game.runBiosMode()
+
+      // 바이오스를 빠져나가면 메인화면으로 이동
+      gameSystem.stateId = gameSystem.STATE_MAIN 
+    }
+  }
+
+  /**
+   * 라운드를 시작시킴
+   * @param {number} roundId
+   */
+  roundStart (roundId) {
+    fieldSystem.roundStart(roundId)
+
+    if (fieldSystem.message === fieldSystem.messageList.STATE_FIELD) {
+      gameSystem.stateId = gameSystem.STATE_FIELD
     }
   }
 
@@ -3579,11 +3613,13 @@ export class gameSystem {
         // 참고로 필드 데이터는 JSON으로 저장되므로, 이걸 JSON.parse 해야합니다.
         this.stateId = this.STATE_FIELD
         fieldSystem.fieldSystemLoadData(JSON.parse(fieldSaveData))
+        game.setBiosDisplayPossible(false)
       }
     } catch (e) {
       alert(systemText.gameError.FILED_LOAD_ERROR)
       localStorage.removeItem(this.saveKey.fieldData)
       this.stateId = this.STATE_MAIN
+      game.setBiosDisplayPossible(true)
     }
   }
 

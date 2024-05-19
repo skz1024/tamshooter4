@@ -841,7 +841,7 @@ export class TamsaEngine {
     /** 바이오스 모드 사용 여부 (사용자가 실행하거나 게임이 없는 경우에 바이오스가 자동으로 실행됨) */
     this.isBiosMode = false
 
-    /** 바이오스에 진입이 가능한 여부 (이 값이 false면 무슨짓을 해도 진입 불가능) */
+    /** 바이오스에 진입이 가능한 여부 (이 값이 false면 runbiosmode를 사용하지 않으면 진입 불가능) */
     this.isBiosDisplayPossible = true
 
     /** 바이오스 */
