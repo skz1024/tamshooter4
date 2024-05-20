@@ -1,6 +1,6 @@
 //@ts-check
 
-import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, dataExportStatRoundBalance, dataExportStatWeapon, StatEquipMent } from "./js/dataStat.js"
+import { StatItem, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, dataExportStatRoundBalance, dataExportStatWeapon } from "./js/dataStat.js"
 
 let pre = document.getElementById('pre')
 let element = document.createElement('pre')
@@ -103,18 +103,18 @@ element4.textContent = '-upgradeCost-\n'
 + '     |percent|plus|percent|percent  |percent|refund   |diff |prev |\n'
 pre?.appendChild(element4)
 
-for (let i = 0; i <= StatEquipMent.UPGRADE_LEVEL_MAX; i++) {
+for (let i = 0; i <= StatItem.UPGRADE_LEVEL_MAX; i++) {
   let level = ('' + i).padEnd(5, ' ') + '|'
-  let attackPercent = ('' + StatEquipMent.upgradeAttackPercentTable[i]).padEnd(7, ' ') + '|'
-  let attackDiffValue = i === 0 ? 0 : StatEquipMent.upgradeAttackPercentTable[i] - StatEquipMent.upgradeAttackPercentTable[i - 1]
+  let attackPercent = ('' + StatItem.upgradeAttackPercentTable[i]).padEnd(7, ' ') + '|'
+  let attackDiffValue = i === 0 ? 0 : StatItem.upgradeAttackPercentTable[i] - StatItem.upgradeAttackPercentTable[i - 1]
   let attackDifferent = ('' + attackDiffValue).padEnd(4, ' ') + '|'
-  let costPercent = ('' + StatEquipMent.upgradeCostPercentTable[i]).padEnd(7, ' ') + '|'
-  let totalCostPercentString = ('' + StatEquipMent.upgradeCostTotalPercentTable[i]).padEnd(9, ' ') + '|'
-  let refundPercent = ('' + StatEquipMent.upgradeRefundPercentTable[i]).padEnd(7, ' ') + '|'
-  let totalCostRefund = ('' + StatEquipMent.upgradeCostTotalRefundTable[i]).padEnd(9, ' ') + '|'
+  let costPercent = ('' + StatItem.upgradeCostPercentTable[i]).padEnd(7, ' ') + '|'
+  let totalCostPercentString = ('' + StatItem.upgradeCostTotalPercentTable[i]).padEnd(9, ' ') + '|'
+  let refundPercent = ('' + StatItem.upgradeRefundPercentTable[i]).padEnd(7, ' ') + '|'
+  let totalCostRefund = ('' + StatItem.upgradeCostTotalRefundTable[i]).padEnd(9, ' ') + '|'
 
-  let totalCostDiffValue = i === 0 ? 0 : StatEquipMent.upgradeCostTotalPercentTable[i] - StatEquipMent.upgradeCostTotalRefundTable[i]
-  let totalCostPrevValue = i === 0 ? 0 : StatEquipMent.upgradeCostTotalPercentTable[i - 1] - StatEquipMent.upgradeCostTotalRefundTable[i - 1]
+  let totalCostDiffValue = i === 0 ? 0 : StatItem.upgradeCostTotalPercentTable[i] - StatItem.upgradeCostTotalRefundTable[i]
+  let totalCostPrevValue = i === 0 ? 0 : StatItem.upgradeCostTotalPercentTable[i - 1] - StatItem.upgradeCostTotalRefundTable[i - 1]
   let totalCostDifferent = ('' + (totalCostDiffValue)).padEnd(5, ' ') + '|'
   let totalCostPrevDiff = ('' + (totalCostDiffValue - totalCostPrevValue)).padEnd(5, ' ') + '|'
 

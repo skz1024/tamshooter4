@@ -2893,6 +2893,7 @@ class EtcSystem extends MenuSystem {
       'background test (배경 테스트)', 
       'down tower test (다운 타워 테스트), LV 20',
       'sound test (사운드 테스트)',
+      'statView.html file open (statView.html 파일 열기)',
       'BIOS menu (바이오스 메뉴)']
 
     for (let i = 0; i < textList.length; i++) {
@@ -2932,6 +2933,10 @@ class EtcSystem extends MenuSystem {
     } else if (this.cursorPosition === 4) {
       this.roundStart(ID.round.test4Sound)
     } else if (this.cursorPosition === 5) {
+      let a = document.createElement('a')
+      a.href = './statView.html'
+      a.click() // 다른 html 파일로 이동
+    } else if (this.cursorPosition === 6) {
       game.runBiosMode()
 
       // 바이오스를 빠져나가면 메인화면으로 이동
