@@ -3030,11 +3030,42 @@ class StatSystem {
 class LoadErrorSystem extends MenuSystem {
   constructor () {
     super()
-    this.message = ''
-    this.buttonPressHit = 0
+    /** 오류 메세지 텍스트 */ this.message = ''
+    /** 버튼을 누른 횟수 */ this.buttonPressHit = 0
+    /** 에러의 종류 (errorTypeList 참고), 공백인경우 기본오류로 간주함 */ this.errorType = ''
+    this.errorStack = ''
+
+    this.errorTypeList = {
+      LOADERROR: 'loadError',
+      FIELDERROR: 'FieldError',
+      NORMALERROR: '',
+    }
+  }
+
+  /** 
+   * 에러를 처리하고, 강제로 오류 화면을 생성함 (게임 시스템의 상태도 같이 변경됩니다.) 
+   * 
+   * @param {Error | null | undefined} error 에러 객체
+   * @param {string} errorType 에러의 종류 (errorTypeList 참고)
+   * @param {string} message 출력할 메세지 (1번째 문장)
+   */
+  setErrorCatch (error, errorType, message = '') {
+    // 에러 객체가 존재하고 stack이 있으면 이를 출력할 수 있게 하기 위해 값을 추가
+    if (error != null && error.stack != null) this.errorStack = error.stack
+
+    this.errorType = errorType
+    this.message = message
+    gameSystem.stateId = gameSystem.STATE_ERROR
+    game.sound.musicStop() // 음악 정지
   }
 
   process () {
+    if (this.errorType === this.errorTypeList.LOADERROR) this.processLoadError()
+    else if (this.errorType === this.errorTypeList.FIELDERROR) this.processFieldError()
+    else this.processNormalError()
+  }
+
+  processLoadError () {
     if (game.control.getButtonInput(game.control.buttonIndex.START)) {
       this.buttonPressHit++
     }
@@ -3045,8 +3076,19 @@ class LoadErrorSystem extends MenuSystem {
     }
   }
 
-  display () {
-    game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, '#4F4F4F')
+  processFieldError () {
+    if (game.control.getButtonInput(game.control.buttonIndex.START)) {
+      gameSystem.stateId = gameSystem.STATE_MAIN
+    }
+  }
+
+  processNormalError () {
+    if (game.control.getButtonInput(game.control.buttonIndex.START)) {
+      gameSystem.stateId = gameSystem.STATE_MAIN
+    }
+  }
+
+  displayLoadError () {
     digitalDisplay('TAMSHOOTER4 SYSTEM ERROR', 0, 0)
     digitalDisplay('LOAD DATA ERROR', 0, 20)
     game.graphic.fillText(this.message, 0, 40, '#C2BD90')
@@ -3069,6 +3111,48 @@ class LoadErrorSystem extends MenuSystem {
     if (this.buttonPressHit >= 10) {
       game.graphic.fillText(systemText.gameError.LOAD_ERROR_DATA_DELETE_COMPLETE1, 0, 350, '#B8B8B8')
       game.graphic.fillText(systemText.gameError.LOAD_ERROR_DATA_DELETE_COMPLETE2, 0, 375, '#B8B8B8')
+    }
+  }
+
+  displayFieldError () {
+    digitalDisplay('TAMSHOOTER4 SYSTEM ERROR', 0, 0)
+    digitalDisplay('FILED ERROR', 0, 20)
+    game.graphic.fillText(this.message, 0, 40, '#C28D90')
+
+    let textList = [
+      systemText.gameError.FIELD_ERROR1,
+      systemText.gameError.FIELD_ERROR2,
+      systemText.gameError.FIELD_ERROR3,
+      systemText.gameError.FIELD_ERROR4,
+    ]
+
+    for (let i = 0; i < textList.length; i++) {
+      game.graphic.fillText(textList[i], 0, 100 + (25 * i), '#B8B8B8')
+    }
+
+    let stackTraceText = this.errorStack.split('\n')
+    for (let i = 0; i < stackTraceText.length; i++) {
+      game.graphic.fillText(stackTraceText[i], 0, 220 + (25 * i), '#0c2782')
+    }
+  }
+
+  displayErrorNormal () {
+    digitalDisplay('TAMSHOOTER4 SYSTEM ERROR', 0, 0)
+    digitalDisplay('NORMAL ERROR', 0, 20)
+    game.graphic.fillText(this.message, 0, 40, '#C28D90')
+
+    let stackTraceText = this.errorStack.split('\n')
+    for (let i = 0; i < stackTraceText.length; i++) {
+      game.graphic.fillText(stackTraceText[i], 0, 100 + (25 * i), '#0c2782')
+    } 
+  }
+
+  display () {
+    game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, game.graphic.CANVAS_HEIGHT, '#4F4F4F')
+    switch (this.errorType) {
+      case this.errorTypeList.LOADERROR: this.displayLoadError(); break
+      case this.errorTypeList.FIELDERROR: this.displayFieldError(); break
+      default: this.displayErrorNormal(); break
     }
   }
 }
@@ -3094,7 +3178,7 @@ export class gameSystem {
   /** 상태: 인벤토리 */ static STATE_INVENTORY = 8
   /** 상태: 스토리 */ static STATE_STORY = 9
   /** 상태: 필드(게임 진행중) */ static STATE_FIELD = 12
-  /** 상태: 오류 발생 */ static STATE_LOAD_ERROR = 13
+  /** 상태: 오류 발생 */ static STATE_ERROR = 13
   /** 게임 첫 실행시 로드를 하기 위한 초기화 확인 변수 */ static isLoad = false
   /** 게임에서 저장된 데이터가 있는지 확인하는 localStorage 키 이름 */ static SAVE_FLAG = 'saveFlag'
 
@@ -3112,7 +3196,7 @@ export class gameSystem {
   /** 인벤토리 시스템 */ static inventorySystem = new InventorySystem()
   /** 스토리 시스템 */ static storySystem = new StorySystem()
   /** etc... 시스템 */ static etcSystem = new EtcSystem()
-  /** loadError 시스템 */ static loadErrorSystem = new LoadErrorSystem()
+  /** loadError 시스템 */ static errorSystem = new LoadErrorSystem()
 
 
   /** 현재 게임의 옵션 데이터를 가져옵니다. */
@@ -3506,8 +3590,8 @@ export class gameSystem {
 
     try {
       loadData = JSON.parse(tamshooter4LoadData)
-    } catch {
-      this.loadErrorSystem.message = systemText.gameError.LOAD_JSON_ERROR
+    } catch (e) {
+      this.errorSystem.setErrorCatch(e, this.errorSystem.errorTypeList.LOADERROR, systemText.gameError.LOAD_JSON_ERROR)
       console.error(systemText.gameError.LOAD_JSON_ERROR)
       return false
     }
@@ -3546,8 +3630,7 @@ export class gameSystem {
       }
 
       if (sram1 == null || userLvExp == null) {
-        console.error(systemText.gameError.USER_SRAM_ERROR)
-        this.loadErrorSystem.message = systemText.gameError.USER_SRAM_ERROR
+        this.errorSystem.setErrorCatch(null, this.errorSystem.errorTypeList.LOADERROR, systemText.gameError.USER_SRAM_ERROR)
         return false
       } else {
         loadData.userData.lv = userLvExp[0]
@@ -3601,7 +3684,7 @@ export class gameSystem {
       let isBackupSuccess = this.processLoadStorageKey(this.getCurrentSaveKeyBackup())
       if (!isBackupSuccess) {
         // 이것도 실패했다면, 오류 발생시키고, 다른 메뉴로 이동시킴 (저장 기능은 사용 불가가됨)
-        this.stateId = this.STATE_LOAD_ERROR
+        this.stateId = this.STATE_ERROR
         // localStorage.removeItem(this.getCurrentSaveKey())
         // localStorage.removeItem(this.getCurrentSaveKeyBackup())
         localStorage.removeItem(this.saveKey.fieldData)
@@ -3699,8 +3782,8 @@ export class gameSystem {
    * [process 함수 내에서 출력과 관련됨 모든 함수 사용금지]
    */
   static process () {
-    if (this.stateId === this.STATE_LOAD_ERROR) {
-      this.loadErrorSystem.process()
+    if (this.stateId === this.STATE_ERROR) {
+      this.errorSystem.process()
       return
     }
     
@@ -3730,7 +3813,7 @@ export class gameSystem {
     try {
       this.fieldSystem.process()
     } catch (e) {
-      console.error('콘솔에서 에러 발생')
+      this.errorSystem.setErrorCatch(e, this.errorSystem.errorTypeList.FIELDERROR, systemText.gameError.FIELD_ERROR1)
       console.error(e)
     }
 
@@ -3790,8 +3873,8 @@ export class gameSystem {
     // 화면 지우기
     game.graphic.clearCanvas()
 
-    if (this.stateId === this.STATE_LOAD_ERROR) {
-      this.loadErrorSystem.display()
+    if (this.stateId === this.STATE_ERROR) {
+      this.errorSystem.display()
       return
     }
 
@@ -3800,7 +3883,6 @@ export class gameSystem {
       case this.STATE_MAIN: this.mainSystem.display(); break
       case this.STATE_OPTION: this.optionSystem.display(); break
       case this.STATE_ROUND_SELECT: this.roundSelectSystem.display(); break
-      case this.STATE_FIELD: this.fieldSystem.display(); break
       case this.STATE_DATA_SETTING: this.dataSettingSystem.display(); break
       case this.STATE_WEAPON_SELECT: this.weaponSelectSystem.display(); break
       case this.STATE_SKILL_SELECT: this.skillSelectSystem.display(); break
@@ -3810,10 +3892,20 @@ export class gameSystem {
       case this.STATE_ETC: this.etcSystem.display(); break
     }
 
+    if (this.stateId === this.STATE_FIELD) {
+      try {
+        this.fieldSystem.display()
+      } catch (e) {
+        this.errorSystem.setErrorCatch(e, this.errorSystem.errorTypeList.FIELDERROR, e.message)
+        console.error(e)
+      }
+    }
+
     if (this.stateId === this.STATE_MAIN || this.stateId === this.STATE_FIELD) {
       this.userSystem.display()
       this.displayStatLine()
     }
+    
   }
 
   static displayStatLine () {

@@ -83,6 +83,10 @@ export class systemText {
     LOAD_USERLEVEL_ERROR: 'incorrect user level or exp, this data not used.',
     LOAD_PLAYTIME_ERROR: 'play time is NaN, not correct number type',
     LOAD_STARTDATE_ERROR: 'start date is Nan, not correct number type',
+    FIELD_ERROR1: '필드에서 오류가 발생했습니다. 게임 진행이 불가능합니다.',
+    FIELD_ERROR2: 'START 버튼을 눌러 메인 화면으로 이동하세요.',
+    FIELD_ERROR3: 'An error has occurred in the field. The game cannot proceed.',
+    FIELD_ERROR4: 'Press the START button to move to the main screen.',
   }
 
   static fieldError = {

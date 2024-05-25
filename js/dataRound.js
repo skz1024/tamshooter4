@@ -643,10 +643,8 @@ class BgLayer {
     if (this._isRenderComplete) return
     if (this._isRenderRunning) return
 
-    // 로딩이 완료되지 않으면 다시 한번 렌더함수를 호출합니다.
-    // 재귀 호출하는 방식이지만, 함수를 호출 후 return문을 통해 로딩이 완료되었을 때 함수가 반복호출되지 않습니다.
+    // 로딩이 완료되지 않으면 렌더를 종료합니다. (display에서 함수를 다시 호출함)
     if (!this.backgroundLoadCheck()) {
-      setTimeout(() => this.BackgroundRender(), 100)
       return
     }
 
@@ -768,8 +766,11 @@ class BgLayer {
     // 아무 배경도 없으면 출력하지 않음
     if (this._color === '' && !this._hasBackgroundImage && this._layer.length === 0) return
 
-    // 렌더링이 완료되지 않은경우 렌더 함수를 불러옵니다.
-    if (!this._isRenderComplete) this.BackgroundRender()
+    // 렌더링이 완료되지 않은경우 렌더 함수를 불러오고 출력을 취소합니다.
+    if (!this._isRenderComplete) {
+      this.BackgroundRender()
+      return
+    }
 
     // 그라디언트 레이어 출력
     if (typeof this._color === 'string' && this._color !== '') {
@@ -779,6 +780,7 @@ class BgLayer {
     }
 
     // 캔버스의 크기가 커도 이미지는 잘려서 표현되므로 성능 걱정은 할 필요가 없습니다.
+    // 주의: 파이어폭스는 이것을 제대로 처리하지 못함
     if (this._hasBackgroundImage) {
       graphicSystem.backgroundDisplay(this._offCanvas, this._x, this._y)
     }
@@ -12361,7 +12363,7 @@ class Round3_7 extends Round3Templete {
     this.bgLayer.setBackgroundImage(imageSrc.round.round3_7_computerRoom, BGWIDTH * 6, BGHEIGHT * 4)
     this.bgLayer.setBackgroundImage(imageSrc.round.round3_7_floor2, BGWIDTH * 7, BGHEIGHT * 4)
     this.bgLayer.setBackgroundImage(imageSrc.round.round3_7_floor2, BGWIDTH * 8, BGHEIGHT * 4)
-    this.bgLayer.setBackgroundImage(imageSrc.round.round3_7_PassageInfo, BGWIDTH * 9, BGHEIGHT * 4)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_7_passageInfo, BGWIDTH * 9, BGHEIGHT * 4)
 
     this.bgLayer.setBackgroundScroolLoop(false, false)
     this.bgLayer.setBackgroundSpeed(1, 0)
@@ -12595,7 +12597,7 @@ class Round3_8 extends Round3Templete {
     const BGWIDTH = graphicSystem.CANVAS_WIDTH
     const BGHEIGHT = graphicSystem.CANVAS_HEIGHT
     // preBg
-    this.bgLayer.setBackgroundImage(imageSrc.round.round3_7_PassageInfo, BGWIDTH * 0, BGHEIGHT * 0)
+    this.bgLayer.setBackgroundImage(imageSrc.round.round3_7_passageInfo, BGWIDTH * 0, BGHEIGHT * 0)
     // bg1
     this.bgLayer.setBackgroundImage(imageSrc.round.round3_8_level1, BGWIDTH * 1, BGHEIGHT * 0)
     this.bgLayer.setBackgroundImage(imageSrc.round.round3_8_level1, BGWIDTH * 1, BGHEIGHT * 1)

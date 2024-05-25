@@ -59,23 +59,6 @@ export class imageSrc {
     weaponEffect: './image/weapon/weaponEffect.png'
   }
 
-  // static weaponEffect = {
-  //   missile: './image/weapon/missileEffect.png',
-  //   parapo: './image/weapon/parapoEffect.png'
-  // }
-
-  // static skillEffect = {
-  //   missile: './image/weapon/skillMissileEffect.png',
-  //   parapo: './image/weapon/skillParapoEffect.png',
-  //   pileBunker: './image/weapon/skillPileBunkerEffect.png',
-  //   swordHit: './image/weapon/skillSwordHitEffect.png',
-  //   criticalChaser: './image/weapon/skillCriticalChaserEffect.png',
-  //   santansu: './image/weapon/skillSantansuEffect.png',
-  //   seondanil: './image/weapon/skillSeondanilEffect.png',
-  //   whiteflash: './image/weapon/skillWhiteflashEffect.png',
-  //   hanjumoekSplash: './image/weapon/skillHanjumeokSplashEffect.png',
-  // }
-
   static enemy = {
     spaceEnemy: './image/enemy/spaceEnemy.png',
     meteoriteEnemy: './image/enemy/meteoriteEnemy.png',
@@ -195,7 +178,7 @@ export class imageSrc {
     round3_7_floor2: './image/round/round3_7_floor2.png',
     round3_7_light1: './image/round/round3_7_light1.png',
     round3_7_light2: './image/round/round3_7_light2.png',
-    round3_7_PassageInfo: './image/round/round3_7_PassageInfo.png',
+    round3_7_passageInfo: './image/round/round3_7_passageInfo.png',
     round3_7_stair: './image/round/round3_7_stair.png',
     round3_7_stairIn: './image/round/round3_7_stairIn.png',
     round3_7_stairOut: './image/round/round3_7_stairOut.png',
