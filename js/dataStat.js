@@ -38,14 +38,18 @@ export class StatWeapon {
 export class StatPlayerWeapon {
   /**
    * 플레이어가 사용하는 무기에 대한 스탯 정보
+   * @param {string} group 그룹 타입
    * @param {string} name 무기의 이름
+   * @param {string} balance 밸런스 타입
    * @param {number} delay 무기가 각 발사되기 까지의 지연시간
    * @param {number} attackMultiple 공격 배율 (기본값 1, 1보다 높으면 )
    * @param {number} shotCount 무기가 발사될 때 동시에 발사되는 개수
    * @param {number[]} weaponIdList 플레이어무기에서 사용하는 실제 무기 idList (여러개가 있으면 여러개의 무기를 사용)
    */
-  constructor (name, delay, attackMultiple, shotCount, weaponIdList = [ID.weapon.unused]) {
+  constructor (group, name, balance, delay, attackMultiple, shotCount, weaponIdList = [ID.weapon.unused]) {
+    this.group = group
     this.name = name
+    this.balance = balance
     this.delay = delay
     this.attackMultiple = attackMultiple
     this.shotCount = shotCount
@@ -71,6 +75,25 @@ export class StatPlayerWeapon {
     /** 무기 공격력 (기준값 10000 기준으로 무기의 예상 공격력 계산) */
     return divide !== 0 ? Math.floor(totalDamage / divide) : 0
   }
+
+  static balanceTypeList = {
+    /** 유니크/고유 (다른 무기와 달리 고유한 특징을 가지고 있음) */ UNIQUE: 'unique',
+    /** 멀티샷 (무기 발사 개체가 혼합형태, 단 스플래시는 아님) */ MULTYSHOT: 'multyshot',
+    /** 스플래시 (무기 1회 공격시에, 동시에 여러 적을 공격할 수 있는 경우, 다른 그룹보다 우선순위 높음) */ SPLASH: 'splash',
+    /** 리플렉트/반사 (무기가 벽에게 튕겨나갈 수 있는 경우, 적도 튕길 수 있으나 해당하는 무기는 거의 없음) */ REFLECT: 'reflect',
+    /** 페네트레이션/관통 (무기가 공격횟수가 남았을 때, 지속적으로 남은 적을 추가 공격할 수 있음.) */ PENETRATION: 'penetration',
+    /** 체이스/추적 (무기가 적을 무조건 추적만 하는 경우, 단 스플래시는 해당하지 않음.) */ CHASE: 'chase',
+    /** 프론트/전방 (무기는 반드시 플레이어의 기준 방향 으로만 발사됨, 따라서 위,아래만 발사하면 front가 아님) */ FRONT: 'front',
+    /** 사이드웨이브 (무기 발사체는 여러방향을 띔, 멀티샷과는 다르게 성향은 1개, 방향은 여러개임) */ SIDEWAVE: 'sidewave',
+  }
+
+  static groupTypeList = {
+    GROUP1: 'group1',
+    GROUP2: 'group2',
+    DONGGRAMI: 'donggrami',
+    TOWEROPTION: 'toweroption',
+    TOWERHELL: 'towerhell'
+  }
 }
 
 /**
@@ -79,7 +102,9 @@ export class StatPlayerWeapon {
 export class StatPlayerSkill {
   /**
    * 플레이어가 사용하는 스킬에 대한 스탯 정보
+   * @param {string} group 그룹 타입
    * @param {string} name 스킬의 이름
+   * @param {string} balance 밸런스 타입
    * @param {number} coolTime 스킬의 쿨타임 (초)
    * @param {number} delay 스킬의 각 무기가 한번 반복할 때 발사 당 지연 시간
    * @param {number} attackMultiple 무기의 공격 배율(기본값 1) 이 숫자가 높으면 공격력 증가
@@ -88,7 +113,9 @@ export class StatPlayerSkill {
    * @param {number} attackCount 무기가 가지고 있는 repeatCount
    * @param {number[]} weaponIdList 플레이어스킬에서 실제 사용하는 무기의 idList
    */
-  constructor (name = 'nothing', coolTime = 20, delay = 0, attackMultiple = 1, shotCount = 1, repeatCount = 1, attackCount = 1, weaponIdList = [ID.weapon.unused]) {
+  constructor (group = '', name = 'unused', balance = '', coolTime = 20, delay = 0, attackMultiple = 1, shotCount = 1, repeatCount = 1, attackCount = 1, weaponIdList = [ID.weapon.unused]) {
+    this.group = group
+    this.balance = balance
     this.name = name
     this.coolTime = coolTime
     this.delay = delay
@@ -110,6 +137,15 @@ export class StatPlayerSkill {
 
     // 0으로 나누기될경우, 강제로 0을 리턴
     return divide !== 0 ? Math.floor(totalDamage / divide) : 0
+  }
+
+  static groupTypeList = StatPlayerWeapon.groupTypeList
+
+  static balanceTypeList = {
+    SPLASH: 'splash',
+    AREA: 'area',
+    CHASE: 'chase',
+    SHOT: 'shot'
   }
 }
 
@@ -350,47 +386,56 @@ dataExportStatWeapon.set(ID.weapon.skillMoon, new StatWeapon('skill', 'moon', 18
  * @type {Map<number, StatPlayerWeapon>}
  */
 export const dataExportStatPlayerWeapon = new Map()
-dataExportStatPlayerWeapon.set(ID.playerWeapon.unused, new StatPlayerWeapon('unuesd', 0, 0, 0, [ID.weapon.unused]))
-dataExportStatPlayerWeapon.set(ID.playerWeapon.multyshot, new StatPlayerWeapon('multyshot', 10, 1, 6, [ID.weapon.multyshot]))
-dataExportStatPlayerWeapon.set(ID.playerWeapon.missile, new StatPlayerWeapon('missile', 30, 0.8, 4, [ID.weapon.missile, ID.weapon.missileRocket]))
-dataExportStatPlayerWeapon.set(ID.playerWeapon.arrow, new StatPlayerWeapon('arrow', 10, 1.04, 2, [ID.weapon.arrow]))
-dataExportStatPlayerWeapon.set(ID.playerWeapon.laser, new StatPlayerWeapon('laser', 12, 1, 4, [ID.weapon.laser, ID.weapon.laserBlue]))
-dataExportStatPlayerWeapon.set(ID.playerWeapon.sapia, new StatPlayerWeapon('sapia', 10, 1, 1, [ID.weapon.sapia]))
-dataExportStatPlayerWeapon.set(ID.playerWeapon.parapo, new StatPlayerWeapon('parapo', 30, 0.75, 3, [ID.weapon.parapo]))
-dataExportStatPlayerWeapon.set(ID.playerWeapon.blaster, new StatPlayerWeapon('blaster', 6, 1.15, 2, [ID.weapon.blaster, ID.weapon.blasterMini]))
-dataExportStatPlayerWeapon.set(ID.playerWeapon.sidewave, new StatPlayerWeapon('sidewave', 15, 1.1, 8, [ID.weapon.sidewave]))
-dataExportStatPlayerWeapon.set(ID.playerWeapon.ring, new StatPlayerWeapon('ring', 30, 1.12, 8, [ID.weapon.ring]))
-dataExportStatPlayerWeapon.set(ID.playerWeapon.rapid, new StatPlayerWeapon('rapid', 4, 1.2, 3, [ID.weapon.rapid]))
-dataExportStatPlayerWeapon.set(ID.playerWeapon.seondanil, new StatPlayerWeapon('seondanil', 60, 1.1, 5, [ID.weapon.seondanil]))
-dataExportStatPlayerWeapon.set(ID.playerWeapon.boomerang, new StatPlayerWeapon('boomerang', 20, 1.06, 3, [ID.weapon.boomerang]))
-dataExportStatPlayerWeapon.set(ID.playerWeapon.subMultyshot, new StatPlayerWeapon('subMultyshot', 12, 0.2, 2, [ID.weapon.subMultyshot]))
+const DXweapon = dataExportStatPlayerWeapon
+const IDweapon = ID.playerWeapon
+const wGroup = StatPlayerWeapon.groupTypeList
+const wBalance = StatPlayerWeapon.balanceTypeList
+const pWeapon = StatPlayerWeapon
+DXweapon.set(IDweapon.unused, new pWeapon(wGroup.GROUP1, 'unused', wBalance.UNIQUE, 0, 0, 0, [ID.weapon.unused]))
+DXweapon.set(IDweapon.multyshot, new pWeapon(wGroup.GROUP1, 'multyshot', wBalance.MULTYSHOT, 10, 1, 6, [ID.weapon.multyshot]))
+DXweapon.set(IDweapon.missile, new pWeapon(wGroup.GROUP1, 'missile', wBalance.SPLASH, 30, 0.8, 4, [ID.weapon.missile, ID.weapon.missileRocket]))
+DXweapon.set(IDweapon.arrow, new pWeapon(wGroup.GROUP1, 'arrow', wBalance.REFLECT, 10, 1.04, 2, [ID.weapon.arrow]))
+DXweapon.set(IDweapon.laser, new pWeapon(wGroup.GROUP1, 'laser', wBalance.PENETRATION, 12, 1, 4, [ID.weapon.laser, ID.weapon.laserBlue]))
+DXweapon.set(IDweapon.sapia, new pWeapon(wGroup.GROUP1, 'sapia', wBalance.CHASE, 10, 1, 1, [ID.weapon.sapia]))
+DXweapon.set(IDweapon.parapo, new pWeapon(wGroup.GROUP1, 'parapo', wBalance.SPLASH, 30, 0.75, 3, [ID.weapon.parapo]))
+DXweapon.set(IDweapon.blaster, new pWeapon(wGroup.GROUP1, 'blaster', wBalance.MULTYSHOT, 6, 1.15, 2, [ID.weapon.blaster, ID.weapon.blasterMini]))
+DXweapon.set(IDweapon.sidewave, new pWeapon(wGroup.GROUP1, 'sidewave', wBalance.SIDEWAVE, 15, 1.1, 8, [ID.weapon.sidewave]))
+DXweapon.set(IDweapon.ring, new pWeapon(wGroup.GROUP1, 'ring', wBalance.SIDEWAVE, 30, 1.12, 8, [ID.weapon.ring]))
+DXweapon.set(IDweapon.rapid, new pWeapon(wGroup.GROUP1, 'rapid', wBalance.FRONT, 4, 1.2, 3, [ID.weapon.rapid]))
+DXweapon.set(IDweapon.seondanil, new pWeapon(wGroup.GROUP1, 'seondanil', wBalance.UNIQUE, 60, 1.1, 5, [ID.weapon.seondanil]))
+DXweapon.set(IDweapon.boomerang, new pWeapon(wGroup.GROUP1, 'boomerang', wBalance.UNIQUE, 20, 1.06, 3, [ID.weapon.boomerang]))
 
 /**
  * 외부에서 사용하기 위한 플레이어 스킬 스탯
  * @type {Map<number, StatPlayerSkill>}
  */
 export const dataExportStatPlayerSkill = new Map()
-dataExportStatPlayerSkill.set(ID.playerSkill.unused, new StatPlayerSkill('unused', 0, 0, 0, 0, 0, 0, [ID.weapon.unused]))
-dataExportStatPlayerSkill.set(ID.playerSkill.multyshot, new StatPlayerSkill('multyshot', 20, 6, 1, 5, 30, 1, [ID.weapon.skillMultyshot]))
-dataExportStatPlayerSkill.set(ID.playerSkill.missile, new StatPlayerSkill('missile', 20, 20, 0.7, 2, 4, dataExportStatWeapon.get(ID.weapon.skillMissile)?.repeatCount, [ID.weapon.skillMissile]))
-dataExportStatPlayerSkill.set(ID.playerSkill.arrow, new StatPlayerSkill('arrow', 20, 9, 1, 2, 20, dataExportStatWeapon.get(ID.weapon.skillArrow)?.repeatCount, [ID.weapon.skillArrow]))
-dataExportStatPlayerSkill.set(ID.playerSkill.laser, new StatPlayerSkill('laser', 20, 0, 0.64, 1, 1, dataExportStatWeapon.get(ID.weapon.skillLaser)?.repeatCount, [ID.weapon.skillLaser]))
-dataExportStatPlayerSkill.set(ID.playerSkill.sapia, new StatPlayerSkill('sapia', 24, 0, 1, 6, 1, dataExportStatWeapon.get(ID.weapon.skillSapia)?.repeatCount, [ID.weapon.skillSapia]))
-dataExportStatPlayerSkill.set(ID.playerSkill.parapo, new StatPlayerSkill('parapo', 24, 10, 0.55, 1, 24, 1, [ID.weapon.skillParapo]))
-dataExportStatPlayerSkill.set(ID.playerSkill.blaster, new StatPlayerSkill('blaster', 24, 4, 1.24, 2, 40, 1, [ID.weapon.skillBlaster]))
-dataExportStatPlayerSkill.set(ID.playerSkill.sidewave, new StatPlayerSkill('sidewave', 20, 7, 1.08, 3, 24, 1, [ID.weapon.skillSidewave]))
-dataExportStatPlayerSkill.set(ID.playerSkill.sword, new StatPlayerSkill('sword', 24, 0, 1, 1, 1, dataExportStatWeapon.get(ID.weapon.skillSword)?.repeatCount, [ID.weapon.skillSword]))
-dataExportStatPlayerSkill.set(ID.playerSkill.hyperBall, new StatPlayerSkill('hyperball', 20, 15, 1, 2, 12, dataExportStatWeapon.get(ID.weapon.skillHyperBall)?.repeatCount, [ID.weapon.skillHyperBall]))
-dataExportStatPlayerSkill.set(ID.playerSkill.critcalChaser, new StatPlayerSkill('criticalchaser', 28, 10, 0.96, 2, 12, dataExportStatWeapon.get(ID.weapon.skillCriticalChaser)?.repeatCount, [ID.weapon.skillCriticalChaser]))
-dataExportStatPlayerSkill.set(ID.playerSkill.pileBunker, new StatPlayerSkill('pilebunker', 28, 60, 1.5, 1, 1, dataExportStatWeapon.get(ID.weapon.skillPileBunker)?.repeatCount, [ID.weapon.skillPileBunker]))
-dataExportStatPlayerSkill.set(ID.playerSkill.santansu, new StatPlayerSkill('santansu', 24, 30, 0.95, 5, 5, dataExportStatWeapon.get(ID.weapon.skillSantansu)?.repeatCount, [ID.weapon.skillSantansu]))
-dataExportStatPlayerSkill.set(ID.playerSkill.whiteflash, new StatPlayerSkill('whiteflash', 24, 0, 0.9, 1, 1, dataExportStatWeapon.get(ID.weapon.skillWhiteflash)?.repeatCount, [ID.weapon.skillWhiteflash]))
-dataExportStatPlayerSkill.set(ID.playerSkill.ring, new StatPlayerSkill('ring', 20, 6, 1.04, 8, 25, 1, [ID.weapon.skillRing]))
-dataExportStatPlayerSkill.set(ID.playerSkill.rapid, new StatPlayerSkill('rapid', 20, 4, 1.15, 4, 40, 1, [ID.weapon.skillRapid]))
-dataExportStatPlayerSkill.set(ID.playerSkill.seondanil, new StatPlayerSkill('seondanil', 28, 0, 1.2, 1, 1, dataExportStatWeapon.get(ID.weapon.skillSeondanil)?.repeatCount, [ID.weapon.skillSeondanil]))
-dataExportStatPlayerSkill.set(ID.playerSkill.hanjumoek, new StatPlayerSkill('hanjumeok', 28, 0, 1.2, 1, 1, dataExportStatWeapon.get(ID.weapon.skillHanjumoek)?.repeatCount, [ID.weapon.skillHanjumoek]))
-dataExportStatPlayerSkill.set(ID.playerSkill.boomerang, new StatPlayerSkill('boomerang', 20, 0, 1.0, 3, 1, dataExportStatWeapon.get(ID.weapon.skillBoomerang)?.repeatCount, [ID.weapon.skillBoomerang]))
-dataExportStatPlayerSkill.set(ID.playerSkill.moon, new StatPlayerSkill('moon', 28, 1, 0.5, 1, 1, dataExportStatWeapon.get(ID.weapon.skillMoon)?.repeatCount, [ID.weapon.skillMoon]))
+const DXskill = dataExportStatPlayerSkill
+const IDskill = ID.playerSkill
+const sGroup = StatPlayerSkill.groupTypeList
+const sBalance = StatPlayerSkill.balanceTypeList
+const pSkill = StatPlayerSkill
+DXskill.set(IDskill.unused, new pSkill(sGroup.GROUP1, 'unused', sBalance.SHOT, 0, 0, 0, 0, 0, 0, [ID.weapon.unused]))
+DXskill.set(IDskill.multyshot, new pSkill(sGroup.GROUP1, 'multyshot', sBalance.CHASE, 20, 6, 1, 5, 30, 1, [ID.weapon.skillMultyshot]))
+DXskill.set(IDskill.missile, new pSkill(sGroup.GROUP1, 'missile', sBalance.SPLASH, 20, 20, 0.7, 2, 4, dataExportStatWeapon.get(ID.weapon.skillMissile)?.repeatCount, [ID.weapon.skillMissile]))
+DXskill.set(IDskill.arrow, new pSkill(sGroup.GROUP1, 'arrow', sBalance.SHOT, 20, 9, 1, 2, 20, dataExportStatWeapon.get(ID.weapon.skillArrow)?.repeatCount, [ID.weapon.skillArrow]))
+DXskill.set(IDskill.laser, new pSkill(sGroup.GROUP1, 'laser', sBalance.AREA, 20, 0, 0.64, 1, 1, dataExportStatWeapon.get(ID.weapon.skillLaser)?.repeatCount, [ID.weapon.skillLaser]))
+DXskill.set(IDskill.sapia, new pSkill(sGroup.GROUP1, 'sapia', sBalance.CHASE, 24, 0, 1, 6, 1, dataExportStatWeapon.get(ID.weapon.skillSapia)?.repeatCount, [ID.weapon.skillSapia]))
+DXskill.set(IDskill.parapo, new pSkill(sGroup.GROUP1, 'parapo', sBalance.SPLASH, 24, 10, 0.55, 1, 24, 1, [ID.weapon.skillParapo]))
+DXskill.set(IDskill.blaster, new pSkill(sGroup.GROUP1, 'blaster', sBalance.SHOT, 24, 1.24, 2, 40, 1, 1, [ID.weapon.skillBlaster]))
+DXskill.set(IDskill.sidewave, new pSkill(sGroup.GROUP1, 'sidewave', sBalance.SHOT, 20, 7, 1.08, 3, 24, 1, [ID.weapon.skillSidewave]))
+DXskill.set(IDskill.sword, new pSkill(sGroup.GROUP1, 'sword', sBalance.CHASE, 24, 0, 1, 1, 1, dataExportStatWeapon.get(ID.weapon.skillSword)?.repeatCount, [ID.weapon.skillSword]))
+DXskill.set(IDskill.hyperBall, new pSkill(sGroup.GROUP1, 'hyperball', sBalance.CHASE, 20, 15, 1, 2, 12, dataExportStatWeapon.get(ID.weapon.skillHyperBall)?.repeatCount, [ID.weapon.skillHyperBall]))
+DXskill.set(IDskill.critcalChaser, new pSkill(sGroup.GROUP1, 'criticalchaser', sBalance.SPLASH, 28, 10, 0.96, 2, 12, dataExportStatWeapon.get(ID.weapon.skillCriticalChaser)?.repeatCount, [ID.weapon.skillCriticalChaser]))
+DXskill.set(IDskill.pileBunker, new pSkill(sGroup.GROUP1, 'pilebunker', sBalance.AREA, 28, 60, 1.5, 1, 1, dataExportStatWeapon.get(ID.weapon.skillPileBunker)?.repeatCount, [ID.weapon.skillPileBunker]))
+DXskill.set(IDskill.santansu, new pSkill(sGroup.GROUP1, 'santansu', sBalance.AREA, 24, 30, 0.95, 5, 5, dataExportStatWeapon.get(ID.weapon.skillSantansu)?.repeatCount, [ID.weapon.skillSantansu]))
+DXskill.set(IDskill.whiteflash, new pSkill(sGroup.GROUP1, 'whiteflash', sBalance.AREA, 24, 0, 0.9, 1, 1, dataExportStatWeapon.get(ID.weapon.skillWhiteflash)?.repeatCount, [ID.weapon.skillWhiteflash]))
+DXskill.set(IDskill.ring, new pSkill(sGroup.GROUP1, 'ring', sBalance.SHOT, 20, 6, 1.04, 8, 25, 1, [ID.weapon.skillRing]))
+DXskill.set(IDskill.rapid, new pSkill(sGroup.GROUP1, 'rapid', sBalance.SHOT, 20, 4, 1.15, 4, 40, 1, [ID.weapon.skillRapid]))
+DXskill.set(IDskill.seondanil, new pSkill(sGroup.GROUP1, 'seondanil', sBalance.SHOT, 28, 0, 1.2, 1, 1, dataExportStatWeapon.get(ID.weapon.skillSeondanil)?.repeatCount, [ID.weapon.skillSeondanil]))
+DXskill.set(IDskill.hanjumoek, new pSkill(sGroup.GROUP1, 'hanjumeok', sBalance.SPLASH, 28, 0, 1.2, 1, 1, dataExportStatWeapon.get(ID.weapon.skillHanjumoek)?.repeatCount, [ID.weapon.skillHanjumoek]))
+DXskill.set(IDskill.boomerang, new pSkill(sGroup.GROUP1, 'boomerang', sBalance.AREA, 20, 0, 1.0, 3, 1, dataExportStatWeapon.get(ID.weapon.skillBoomerang)?.repeatCount, [ID.weapon.skillBoomerang]))
+DXskill.set(IDskill.moon, new pSkill(sGroup.GROUP1, 'moon', sBalance.AREA, 28, 1, 0.5, 1, 1, dataExportStatWeapon.get(ID.weapon.skillMoon)?.repeatCount, [ID.weapon.skillMoon]))
 
 
 /**

@@ -8633,10 +8633,11 @@ class Round3TempletePlayerOption extends FieldData {
   }
 
   /**
-   * 옵션의 현재 색을 설정합니다.
+   * 옵션의 현재 색을 설정합니다. (이 함수로 색을 설정하면, 자동으로 옵션을 장착한 것으로 처리)
    * @param {string} color 
    */
   setColor (color) {
+    this._hasOption = true
     this._color = color
     switch (color) {
       case this.colorList.orange: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.orange, 3); break
@@ -8713,7 +8714,7 @@ class Round3TempletePlayerOption extends FieldData {
    * 옵션의 레벨을 설정 (이 설정을 사용하면, 옵션의 레벨이 자동으로 변경되지 않습니다.)
    * @param {number} level 설정할 레벨
    * */
-  setLevel (level) {
+  setMenualLevel (level) {
     this._hasOption = true
     this.isAutoLevel = false
 
@@ -8726,9 +8727,13 @@ class Round3TempletePlayerOption extends FieldData {
     }
   }
 
-  /** 레벨을 자동으로 변환하도록 수정 */
-  setAutoLevel () {
+  /** 레벨을 자동으로 변환하도록 수정, 단 현재 시간을 입력해야함 */
+  setAutoLevel (currentTime = 0) {
     this.isAutoLevel = true
+    this._level = Math.floor(currentTime / 10)
+
+    if (this._level < 0) this._level = 0
+    else if (this._level > this.LEVEL_MAX) this._level = this.LEVEL_MAX
   }
 
   /** 현재 옵션의 공격력을 색의 정보와 레벨에 맞추어 얻어옵니다. (참고: 옵션의 기본 공격력은 BASE_ATTACK에 정의되어있습니다.) */
@@ -9797,9 +9802,7 @@ class Round3Templete extends RoundData {
     if (this.time.currentTimeFrame % 60 !== 0) return
 
     // 플레이어 옵션 레벨은 10초당 1씩 증가하여, 90초가 되는 시점에 최대레벨이 됩니다.
-    let cTime = this.time.currentTime
-    let level = Math.floor(cTime / 10)
-    this.playerOption.setLevel(level)
+    this.playerOption.setAutoLevel(this.time.currentTime)
   }
 }
 
@@ -14053,7 +14056,7 @@ class RTestRound3DownTower extends Round3Templete {
     ]
 
     this.playerOption.setColor(this.playerOptionColorList[0])
-    this.playerOption.setLevel(0)
+    this.playerOption.setMenualLevel(0)
 
     this.load.addSoundList([
       soundSrc.round.r3_5_message1,
@@ -14141,7 +14144,7 @@ class RTestRound3DownTower extends Round3Templete {
       if (this.saveList.pOptionLevel < 0) {
         this.saveList.pOptionLevel = this.playerOption.LEVEL_MAX
       }
-      this.playerOption.setLevel(this.saveList.pOptionLevel)
+      this.playerOption.setMenualLevel(this.saveList.pOptionLevel)
     }
   }
 
@@ -14162,7 +14165,7 @@ class RTestRound3DownTower extends Round3Templete {
       if (this.saveList.pOptionLevel > this.playerOption.LEVEL_MAX) {
         this.saveList.pOptionLevel = 0
       }
-      this.playerOption.setLevel(this.saveList.pOptionLevel)
+      this.playerOption.setMenualLevel(this.saveList.pOptionLevel)
     }
   }
 
