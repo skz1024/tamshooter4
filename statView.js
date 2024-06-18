@@ -2,13 +2,6 @@
 
 import { StatItem, StatPlayerSkill, StatPlayerWeapon, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, dataExportStatRoundBalance, dataExportStatWeapon } from "./js/dataStat.js"
 
-let pre = document.getElementById('pre')
-let element = document.createElement('pre')
-element.textContent = '-player skillList-\n' 
-+ 'name      |group   |balance |cool|delay|attack  |shot |repeat|attack|weapon\n' 
-+ '          |        |type    |Time|     |Multiple|Count|Count |Count |Attack\n'
-pre?.appendChild(element)
-
 /** 현재에 해당하는 스킬 값을 얻어옴 */
 const getSkillColor = (balance = '', coolTime = 20) => {
   const balanceType = StatPlayerSkill.balanceTypeList
@@ -39,13 +32,23 @@ const getSkillColor = (balance = '', coolTime = 20) => {
   return color
 }
 
+let pre = document.getElementById('pre')
+let element = document.createElement('pre')
+element.textContent = '-player skillList-\n' 
++ 'name      |group   |balance |cool|delay|attack  |max   |shot |repeat|attack|weapon\n' 
++ '          |        |type    |time|     |multiple|target|count|count |count |attack\n'
+pre?.appendChild(element)
+
 dataExportStatPlayerSkill.forEach((value) => {
+  const weaponData = dataExportStatWeapon.get(value.weaponIdList[0])
   let name = '' + value.name.padEnd(10, ' ').slice(0, 10) + '|'
   let group = '' + value.group.padEnd(8, ' ').slice(0, 8) + '|'
   let balance = '' + value.balance.padEnd(8, ' ').slice(0, 8) + '|'
   let coolTime = ('' + value.coolTime).padEnd(4, ' ') + '|'
   let delay = ('' + value.delay).padEnd(5, ' ') + '|'
   let attackMultiple = ('' + value.multiple).padEnd(8, ' ') + '|'
+  const maxTargetNumber = (weaponData != null && weaponData.isMultiTarget) ? weaponData.maxTarget : 1
+  let maxTarget = ('' + maxTargetNumber).padEnd(6, ' ') + '|'
   let shotCount = ('' + value.shot).padEnd(5, ' ') + '|'
   let repeatCount = ('' + value.repeat).padEnd(6, ' ') + '|'
   let attackCount = ('' + value.hit).padEnd(6, ' ') + '|'
@@ -57,16 +60,10 @@ dataExportStatPlayerSkill.forEach((value) => {
   element.style.margin = '0'
   element.style.background = color
   element.style.color = 'black'
-  element.textContent = name + group + balance + coolTime + delay + attackMultiple + shotCount + repeatCount + attackCount + weaponAttack
+  element.style.width = '800px'
+  element.textContent = name + group + balance + coolTime + delay + attackMultiple + maxTarget + shotCount + repeatCount + attackCount + weaponAttack
   pre?.appendChild(element)
 })
-
-let element2 = document.createElement('pre')
-element2.textContent = '-player weaponList- (60frame = 1second), (delay = frame)\n'
-+ 'name      |group   |balance    |delay|shot |repeat|attack  |weapon|\n'
-+ '          |        |type       |     |Count|count |Multiple|Attack|'
-pre?.appendChild(element2)
-
 
 /** 무기의 색을 얻습니다. 밸런스 타입에 따라 다름 */
 const getWeaponColor = (balance = '') => {
@@ -86,6 +83,12 @@ const getWeaponColor = (balance = '') => {
   return color
 }
 
+let element2 = document.createElement('pre')
+element2.textContent = '-player weaponList- (60frame = 1second), (delay = frame)\n'
++ 'name      |group   |balance    |delay|shot |repeat|attack  |weapon|\n'
++ '          |        |type       |     |count|count |multiple|attack|'
+pre?.appendChild(element2)
+
 dataExportStatPlayerWeapon.forEach((value) => {
   let name = '' + value.name.padEnd(10, ' ').slice(0, 10) + '|'
   let group = '' + value.group.padEnd(8, ' ').slice(0, 8) + '|'
@@ -96,16 +99,20 @@ dataExportStatPlayerWeapon.forEach((value) => {
   
   let weaponData = dataExportStatWeapon.get(value.weaponIdList[0])
   if (weaponData == null) return
-  let repeatCount = weaponData.repeatCount
-  let weaponAttack = ('' + value.getCurrentAttack(10000, repeatCount)).padEnd(6, ' ') + '|'
+  let repeatCount = ('' + weaponData.repeatCount).padEnd(6, ' ') + '|'
+  let weaponAttack = ('' + value.getCurrentAttack(10000, Number(weaponData.repeatCount))).padEnd(6, ' ') + '|'
+
+  // let splashTarget = weaponData.isMultiTarget ? ('' + weaponData.maxTarget).padEnd(6, ' ') + '|' : '1'.padEnd(6, ' ') + '|'
+  let splashTarget = ''
 
   let color = getWeaponColor(value.balance)
 
   let element = document.createElement('pre')
   element.style.margin = '0'
   element.style.background = color
+  element.style.width = '800px'
   element.style.color = 'black'
-  element.textContent = name + group + balance + delay + shotCount + attackMultiple + weaponAttack
+  element.textContent = name + group + balance + delay + shotCount + repeatCount + attackMultiple + splashTarget + weaponAttack
   pre?.appendChild(element)
 })
 
@@ -134,12 +141,13 @@ dataExportStatRound.forEach((value, keyId) => {
   let textA = roundText + requireLevel + requireAttack + finishTime + clearBonus + goldValue + goldTotal
   let textB = balanceScore + playTime + timeDivScore + roundName + roundInfo
 
-  let color = 'darkbrown'
+  let color = keyId % 2 === 0 ? '#F3F3F3' : '#E0E0E0'
 
   let element = document.createElement('pre')
   element.style.margin = '0'
   element.style.background = color
   element.style.color = 'black'
+  element.style.width = '800px'
   element.textContent = textA + textB
   pre?.appendChild(element)
 })
@@ -169,12 +177,15 @@ for (let i = 0; i <= StatItem.UPGRADE_LEVEL_MAX; i++) {
   if (i === 14) color = 'GreenYellow'
   else if (i === 23) color = 'LimeGreen'
   else if (i === 30) color = 'YellowGreen'
+  else if (i % 2 === 0) color = '#F5FFF1'
+  else color = '#DDE8D9'
 
 
   let element = document.createElement('pre')
   element.style.margin = '0'
   element.style.background = color
   element.style.color = 'black'
+  element.style.width = '800px'
   element.textContent = level + attackPercent + attackDifferent + costPercent + totalCostPercentString + refundPercent + totalCostRefund + totalCostDifferent + totalCostPrevDiff
   pre?.appendChild(element)
 }

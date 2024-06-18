@@ -1452,9 +1452,6 @@ class SkillParapo extends Parapo {
     // 충격파 이펙트
     fieldState.createEffectObject(this.parapoEffect, shockwaveArea.x, shockwaveArea.y)
     this.processHitObject(shockwaveArea) // 적 충돌 처리
-    if (fieldState.getEnemyObjectCount() <= 1) {
-      this.processHitObject(shockwaveArea) // 더블어택
-    }
   }
 
   display () {
@@ -1596,7 +1593,7 @@ class SkillCriticalChaser extends WeaponData {
     super()
     this.mainType = 'skill'
     this.subType = 'criticalchaser'
-    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.criticalChase)
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.criticalChaser)
     this.splashEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillCriticalChaser)
     this.repeatCount = 4
     this.repeatDelay = new DelayData(6)
@@ -1796,7 +1793,7 @@ class SkillSantansu extends WeaponData {
     if (this.state === SkillSantansu.STATE_MOVE_UP || this.state === SkillSantansu.STATE_SANTANSU) {
       // 화면 위까지 닿았을 때 공격 상태로 전환
       if (this.y <= 0) {
-        soundSystem.play(soundSrc.skill.skillSantansu)
+        soundSystem.play(soundSrc.skill.skillSantansuHit)
         fieldState.createEffectObject(this.santansuEffectUp, this.x, 0)
         this.y = 0
         this.state = SkillSantansu.STATE_ATTACK
@@ -2173,9 +2170,6 @@ class SkillMoon extends WeaponData {
       soundSystem.play(soundSrc.skill.skillMoonAttack)
     } else if (this.state === SkillMoon.STATE_ATTACK && this.repeatDelay.check()) {
       this.processHitObject(this.getSplashArea())
-      if (fieldState.getEnemyObjectCount() <= 1) {
-        this.processHitObject() // 더블 어택...
-      }
 
       this.degree = Math.floor(Math.random() * 360)
       let size = Math.floor(Math.random() * 40) + 180
