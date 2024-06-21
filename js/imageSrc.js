@@ -991,9 +991,9 @@ export class imageDataInfo {
     skillSantansuDown: new ImageDataObject(2110, 340, 40, 40, 9),
     skillSantansuWater: new ImageDataObject(2110, 380, 40, 40, 9),
     sabangtan: new ImageDataObject(0, 950, 100, 100, 10),
-    kalnal: new ImageDataObject(570, 611, 0, 0, 10),
+    kalnal: new ImageDataObject(610, 630, 40, 40, 10),
     iceChaser: new ImageDataObject(0, 1060, 100, 400, 11),
-    speaker: new ImageDataObject(1100, 840, 80, 100),
+    speaker: new ImageDataObject(1100, 840, 80, 100, 6),
   }
 
   static skill = {
@@ -1011,7 +1011,7 @@ export class imageDataInfo {
     arrow: {x: 0, y: 372, width: 70, height: 70, frame: 7},
     santansu: {x: 90, y: 150, width: 30, height: 80, frame: 1},
     boomerang: {x: 121, y: 150, width: 80, height: 80, frame: 1},
-    ring: {x: 1000, y: 110, width: 100, height: 100, frame: 1},
+    ring: {x: 1001, y: 110, width: 100, height: 100, frame: 1},
     moon: {x: 1101, y: 110, width: 200, height: 200, frame: 1},
     seondanil: {x: 810, y: 110, width: 180, height: 100, frame: 1},
     rapid: {x: 0, y: 443, width: 100, height: 30, frame: 6},
@@ -1023,9 +1023,9 @@ export class imageDataInfo {
     sabangtan: new ImageDataObject(810, 240, 160, 110, 1),
     habirant: new ImageDataObject(600, 321, 40, 40, 1),
     iceChaser: new ImageDataObject(600, 363, 40, 60, 8),
-    calibur: new ImageDataObject(691, 424, 210, 40, 1),
+    calibur: new ImageDataObject(601, 424, 210, 40, 1),
     sujikpa: new ImageDataObject(1001, 240, 100, 100, 1),
-    speaker: new ImageDataObject(0, 580, 200, 180, 1),
+    speaker: new ImageDataObject(0, 580, 200, 180, 6),
     eomukggochiStick: new ImageDataObject(601, 474, 300, 6, 1),
     eomukggochi1: new ImageDataObject(601, 481, 40, 40, 1),
     eomukggochi2: new ImageDataObject(641, 481, 40, 40, 1),

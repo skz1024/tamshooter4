@@ -22,7 +22,12 @@ export class ID {
     rapid: 10010,
     seondanil: 10011,
     boomerang: 10012,
-    subMultyshot: 10767,
+    kalnal: 10013,
+    cogwheel: 10014,
+    yeonsai: 10015,
+    sabangtan: 10016,
+
+    /** @deprecated */ subMultyshot: 10767,
   }
 
   static playerSkill = {
@@ -48,7 +53,17 @@ export class ID {
     seondanil: 15017,
     hanjumoek: 15018,
     boomerang: 15019,
-    moon: 15020
+    moon: 15020,
+    kalnal: 15021,
+    cogwheel: 15022,
+    yeonsai: 15023,
+    sabangtan: 15024,
+    habirant: 15025,
+    icechaser: 15026,
+    calibur: 15027,
+    sujikpa: 15028,
+    speaker: 15029,
+    eomukggochi: 15030,
   }
 
   static weapon = {
@@ -71,6 +86,10 @@ export class ID {
     ring: 11025,
     seondanil: 11026,
     boomerang: 11027,
+    kalnal: 11028,
+    cogwheel: 11029,
+    yeonsai: 11030,
+    sabangtan: 11031,
 
     // skill
     skillMultyshot: 16001,
@@ -94,7 +113,20 @@ export class ID {
     skillSeondanilMini: 16019,
     skillHanjumoek: 16020,
     skillBoomerang: 16021,
-    skillMoon: 16022
+    skillMoon: 16022,
+    skillKalnal: 16023,
+    skillCogwheel: 16024,
+    skillYeonsai: 16025,
+    skillSabangtan: 16026,
+    skillHabirant: 16027,
+    skillHabirantSub: 16028,
+    skillIcechaser: 16029,
+    skillCalibur: 16030,
+    skillCaliburSub: 16031,
+    skillSujikpa: 16032,
+    skillSpeaker: 16033,
+    skillEomukggochi: 16034,
+    skillEomukggochiSub: 16035,
   }
 
   /**

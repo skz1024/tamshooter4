@@ -104,6 +104,15 @@ export class WeaponData extends FieldData {
      * @type {number}
      */
     this.maxTarget = 20
+
+    /** 타격 사운드의 경로 (참고: 이것은 여러명을 때려도 1번만 사운드가 출력됨) */
+    this.hitSoundSrc = ''
+
+    /**
+     * 적을 타격 성공했을 때, 나오는 이펙트 (여러개의 적을 때리면, 여러개의 이펙트가 생성될 수 있음.)
+     * @type {CustomEffect | null}
+     */
+    this.hitEffect = null
   }
 
   afterInitDefault () {
@@ -206,12 +215,29 @@ export class WeaponData extends FieldData {
    * 이 함수에서 공격횟수를 소모하고, 적을 공격하기 위해서는 이 함수 내부에서 hitObjectProgress를 사용해야 합니다.
    */
   processAttack () {
-    // 공격 딜레이가 있으며, 공격딜레이 값을 채우지 못했다면 공격을 시도하지 않습니다.
-    // 공격 딜레이는 적을 공격했을시에만 리셋됩니다.
-    if (this.attackDelay != null && !this.attackDelay.check(false)) return
+    // 반복딜레이거 처리되지 않으면 공격처리를 하지 않음
+    // 공격에 성공했을 때에만, 반복딜레이 카운트가 리셋됨
+    if (!this.repeatDelay.check(false, true)) return
 
     this.processHitObject()
   }
+
+  /**
+   * @typedef AttackArea 공격 범위
+   * @property {number} x
+   * @property {number} y
+   * @property {number} width
+   * @property {number} height
+   */
+
+  /**
+   * @typedef AttackAreaDegree 공격 범위 (+각도 포함)
+   * @property {number} x
+   * @property {number} y
+   * @property {number} width
+   * @property {number} height
+   * @property {number} degree
+   */
 
   /**
    * 해당 무기 판정에 따른, 정해진 공격 범위를 기준으로 공격된 적들을 확인하는 함수입니다.
@@ -224,62 +250,119 @@ export class WeaponData extends FieldData {
    * 
    * 모든 반복횟수를 소모하였다면, 무기는 process함수에서 자동으로 삭제됩니다.
    * 참고로 공격범위가 지정되지 않으면, 현재 무기의 객체 범위를 그대로 사용합니다.
-   * @param {{x: number, y: number, width: number, height: number}} attackArea 공격 범위
+   * @param {AttackArea} attackArea 공격 범위
    */
   processHitObject (attackArea = { x: this.x, y: this.y, width: this.width, height: this.height }) {
-    const enemyObject = fieldState.getEnemyObject() // 적 오브젝트
     let hitCount = 0 // 적을 총 때린 횟수
 
     if (this.isMultiTarget) {
-      // 멀티타겟인 경우, 한번 공격당 무기의 repeatCount 1회 감소
-      this.repeatCount--
-
-      // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-      for (let i = 0; i < enemyObject.length; i++) {
-        const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
-        if (currentEnemy.isDied) continue // 적이 죽은경우 무시
-
-        // 각각의 적마다 충돌 검사
-        if (collision(attackArea, currentEnemy)) {
-          // 충돌한 경우, 충돌한 상태에서의 로직을 처리
-          this.damageProcess(currentEnemy)
-          hitCount++ // 적을 때린 횟수 1회 증가
-
-          // 만약 적을 때린 횟수가 최대 제한을 초과하면 함수 종료
-          if (hitCount >= this.maxTarget) {
-            return
-          }
-        }
-      }
+      hitCount = this.#processHitObjectMultiTarget(attackArea)
     } else {
-      // 멀티타겟이 아닌 경우, 기본적으로 무기는 1개체당 1대를 때릴 수 있음. (repeatCount가 있다면 그 횟수만큼 적을 때림)
-      // 만약 무기의 maxHitCount가 1이라면, 적을 한대 때리고 즉시 루프를 탈출함. 그게 아닐경우 루프를 돌 때까지 나머지 적을 추가로 공격
-      // maxHitCount와 상관없이 한번 적을 때릴때마다 repeatCount 1 감소, repeatCount가 0이면 무기 즉시 제거
+      hitCount = this.#processHitObjectNormalTarget(attackArea)
+    }
 
-      // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-      for (let i = 0; i < enemyObject.length; i++) {
-        const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
-        if (currentEnemy.isDied) continue // 적이 죽은경우 무시
+    if (hitCount >= 1) this.#processHitObjectHitAfter()
+  }
 
-        // 각각의 적마다 충돌 검사
-        if (collision(attackArea, currentEnemy)) {
-          // 충돌한 경우, 충돌한 상태에서의 로직을 처리
-          this.damageProcess(currentEnemy)
-          hitCount++ // 적을 때린 횟수 1회 증가
-          this.repeatCount-- // 만약 적을 때렸다면, 무기의 반복 횟수를 감소시킵니다.
+  /**
+   * 적 공격에 성공했을 때 사용하는 추가적인 함수
+   * 
+   * 지금은, 타격 사운드 출력, 반복 카운트 리셋을 적용
+   */
+  #processHitObjectHitAfter () {
+    this.repeatDelay.countReset()
 
-          // 만약 적을 때린 횟수가 최대 제한을 초과하면 또는 repeatCount가 0이면 함수 종료
-          if (hitCount >= this.maxHitCount || this.repeatCount <= 0) {
-            return
-          }
+    if (this.hitSoundSrc !== '') {
+      soundSystem.play(this.hitSoundSrc)
+    }
+  }
+
+
+  /**
+   * 멀티 타겟 기능을 가진 무기에 대한 공격 처리
+   * @param {AttackArea | AttackAreaDegree} attackArea
+   * @param {boolean} [isCollisionOBBCheck=false] 충돌 체크를 OBB형식으로 하는가의 여부 (OBB형식으로 할 경우, 각도에 따른 영향을 받을 수 있음.)
+   */
+  #processHitObjectMultiTarget (attackArea, isCollisionOBBCheck = false) {
+    let hitCount = 0
+    const enemyObject = fieldState.getEnemyObject() // 적 오브젝트
+
+    // 멀티타겟인 경우, 한번 공격당 무기의 repeatCount 1회 감소
+    this.repeatCount--
+
+    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
+    for (let i = 0; i < enemyObject.length; i++) {
+      const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
+      if (currentEnemy.isDied) continue // 적이 죽은경우 무시
+
+      // 충돌 조건에 따른 충돌 검사
+      let isCollision = (isCollisionOBBCheck && collisionClass.collisionOBB(attackArea, currentEnemy))
+        || (!isCollisionOBBCheck && collision(attackArea, currentEnemy))
+
+      // 충돌한 경우, 충돌한 상태에서의 로직을 처리
+      if (isCollision) {
+        this.damageProcess(currentEnemy)
+        hitCount++ // 적을 때린 횟수 1회 증가
+
+        // 이펙트 출력
+        if (this.hitEffect != null) {
+          let createEffect = this.hitEffect.getObject()
+          createEffect.setWidthHeight(currentEnemy.width, currentEnemy.height)
+          fieldState.createEffectObject(createEffect, currentEnemy.x, currentEnemy.y)
+        }
+
+        // 만약 적을 때린 횟수가 최대 제한을 초과하면 루프 종료
+        if (hitCount >= this.maxTarget) {
+          break
         }
       }
     }
 
-    // 공격딜레이가 있는경우, 카운터를 리셋시킵니다.
-    if (this.attackDelay != null) {
-      this.attackDelay.countReset()
+    return hitCount
+  }
+
+  /**
+   * 일반 타겟 기능을 가진 무기에 대한 공격 처리
+   * @param {AttackArea} attackArea 
+   * @param {boolean} [isCollisionOBBCheck=false] 충돌 체크를 OBB형식으로 하는가의 여부 (OBB형식으로 할 경우, 각도에 따른 영향을 받을 수 있음.)
+   */
+  #processHitObjectNormalTarget (attackArea, isCollisionOBBCheck = false) {
+    const enemyObject = fieldState.getEnemyObject() // 적 오브젝트
+    let hitCount = 0 // 적을 총 때린 횟수
+
+    // 멀티타겟이 아닌 경우, 기본적으로 무기는 1개체당 1대를 때릴 수 있음. (repeatCount가 있다면 그 횟수만큼 적을 때림)
+    // 만약 무기의 maxHitCount가 1이라면, 적을 한대 때리고 즉시 루프를 탈출함. 그게 아닐경우 루프를 돌 때까지 나머지 적을 추가로 공격
+    // maxHitCount와 상관없이 한번 적을 때릴때마다 repeatCount 1 감소, repeatCount가 0이면 무기 즉시 제거
+
+    // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
+    for (let i = 0; i < enemyObject.length; i++) {
+      const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
+      if (currentEnemy.isDied) continue // 적이 죽은경우 무시
+
+      let isCollision = (isCollisionOBBCheck && collisionClass.collisionOBB(attackArea, currentEnemy))
+        || (!isCollisionOBBCheck && collision(attackArea, currentEnemy))
+
+      if (isCollision) {
+        // 충돌한 경우, 충돌한 상태에서의 로직을 처리
+        this.damageProcess(currentEnemy)
+        hitCount++ // 적을 때린 횟수 1회 증가
+        this.repeatCount-- // 만약 적을 때렸다면, 무기의 반복 횟수를 감소시킵니다.
+
+        // 이펙트 출력
+        if (this.hitEffect != null) {
+          let createEffect = this.hitEffect.getObject()
+          createEffect.setWidthHeight(currentEnemy.width, currentEnemy.height)
+          fieldState.createEffectObject(createEffect, currentEnemy.x, currentEnemy.y)
+        }
+
+        // 만약 적을 때린 횟수가 최대 제한을 초과하면 또는 repeatCount가 0이면 루프 종료
+        if (hitCount >= this.maxHitCount || this.repeatCount <= 0) {
+          break
+        }
+      }
     }
+
+    return hitCount
   }
 
   /**
@@ -356,56 +439,18 @@ export class WeaponData extends FieldData {
   /**
    * 이 함수는, OBB 충돌 감지를 할 때 사용하는 함수입니다.
    * hitObject가 두 종류로 나뉘어진건, OBB충돌범위에 몇가지 정보가 더 필요하기 때문입니다.
-   * @param {{x: number, y: number, width: number, height: number, degree: number}} attackArea 공격 범위
+   * @param {AttackAreaDegree} attackArea 공격 범위
    */
   processHitObjectOBBCollision (attackArea) {
-    const enemyObject = fieldState.getEnemyObject() // 적 오브젝트
     let hitCount = 0 // 적을 총 때린 횟수
-    if (attackArea == null) return
 
     if (this.isMultiTarget) {
-      // 멀티타겟인 경우, 한번 공격당 무기의 repeatCount 1회 감소
-      this.repeatCount--
-
-      // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-      for (let i = 0; i < enemyObject.length; i++) {
-        const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
-        if (currentEnemy.isDied) continue // 적이 죽은경우 무시
-
-        // 각각의 적마다 충돌 검사
-        if (collisionClass.collisionOBB(attackArea, currentEnemy)) {
-          // 충돌한 경우, 충돌한 상태에서의 로직을 처리
-          this.damageProcess(currentEnemy)
-          hitCount++ // 적을 때린 횟수 1회 증가
-
-          // 만약 적을 때린 횟수가 최대 제한을 초과하면 함수 종료
-          if (hitCount >= this.maxTarget) {
-            return
-          }
-        }
-      }
+      hitCount = this.#processHitObjectMultiTarget(attackArea, true)
     } else {
-      // 멀티타겟이 아닌 경우, 기본적으로 무기는 1개체당 1대를 때릴 수 있음. (repeatCount가 있다면 그 횟수만큼 적을 때림)
-
-      // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
-      for (let i = 0; i < enemyObject.length; i++) {
-        const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
-        if (currentEnemy.isDied) continue // 적이 죽은경우 무시
-
-        // 각각의 적마다 충돌 검사
-        if (collisionClass.collisionOBB(attackArea, currentEnemy)) {
-          // 충돌한 경우, 충돌한 상태에서의 로직을 처리
-          this.damageProcess(currentEnemy)
-          hitCount++ // 적을 때린 횟수 1회 증가
-          this.repeatCount-- // 만약 적을 때렸다면, 무기의 반복 횟수를 감소시킵니다.
-
-          // 만약 적을 때린 횟수가 최대 제한을 초과하면 또는 repeatCount가 0이면 함수 종료
-          if (hitCount >= this.maxHitCount || this.repeatCount <= 0) {
-            return
-          }
-        }
-      }
+      hitCount = this.#processHitObjectNormalTarget(attackArea, true)
     }
+
+    if (hitCount >= 1) this.#processHitObjectHitAfter()
   }
 
   /**
@@ -640,9 +685,14 @@ class MissileData extends WeaponData {
   }
 
   display () {
-    // 스플래시 상태에서는 무기의 이미지가 출력되지 않습니다.
-    if (this.state === MissileData.STATE_NORMAL && this.enimation != null) {
-      this.enimation.display(this.x, this.y)
+    if (this.state === MissileData.STATE_NORMAL) {
+      if (this.enimation != null) {
+        this.enimation.display(this.x, this.y)
+      } else {
+        super.display()
+      }
+    } else if (this.state === MissileData.STATE_SPLASH) {
+      // 스플래시 상태에서는 무기의 이미지가 출력되지 않습니다. 
     }
   }
 
@@ -719,7 +769,44 @@ class MissileRocket extends MissileData {
   }
 }
 
-class Arrow extends WeaponData {
+/** 벽에 반사되는 무기에 대한 함수 정보 */
+class ReflectWeaponData extends WeaponData {
+  constructor () {
+    super()
+    this.reflectCount = 1
+  }
+
+  processMove () {
+    super.processMove()
+    this.processReflect()
+  }
+
+  processReflect () {
+    if (this.reflectCount <= 0) return
+
+    if (this.x < 0) {
+      this.x = 1
+      this.setMoveSpeed(Math.abs(this.moveSpeedX), this.moveSpeedY)
+      this.reflectCount--
+    } else if (this.x + this.width > graphicSystem.CANVAS_WIDTH) {
+      this.x = graphicSystem.CANVAS_WIDTH - this.width - 1
+      this.setMoveSpeed(-Math.abs(this.moveSpeedX), this.moveSpeedY)
+      this.reflectCount--
+    }
+
+    if (this.y < 0) {
+      this.y = 1
+      this.setMoveSpeed(this.moveSpeedX, Math.abs(this.moveSpeedY))
+      this.reflectCount--
+    } else if (this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
+      this.y = graphicSystem.CANVAS_HEIGHT - this.height - 1
+      this.setMoveSpeed(this.moveSpeedX, -Math.abs(this.moveSpeedY))
+      this.reflectCount--
+    }
+  }
+}
+
+class Arrow extends ReflectWeaponData {
   /**
    * option list
    * 0. moveSpeedY (참고: 이 값이 음수면 갈색이고, 양수면 초록색입니다.)
@@ -734,47 +821,8 @@ class Arrow extends WeaponData {
     let imageDataNumber = this.moveSpeedY >= 0 ? 0 : 1
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataList[imageDataNumber])
     this.moveSpeedX = 17
-    this.bounceMaxCount = 6
-    this.bounceCount = 0
+    this.reflectCount = 6
     this.color = 'brown'
-  }
-
-  processMove () {
-    // 이동 방식만 다르므로, processMove 함수만 수정합니다. (나머지 부분은 multyshot과 동일)
-    // 화살표는 벽에 6번 정도 튕깁니다.
-    // 총 4번이상 튕기면 더이상 튕기지 않고, 해당 무기는 사라집니다.
-
-    // 이동 처리
-    super.processMove()
-
-    // 왼쪽 또는 오른쪽 벽에 튕긴다면, x축의 속도가 반전됩니다.
-    // 좀 더 정확한 방향값(-는 왼쪽, +는 오른쪽)을 설장하기 위해 Math.abs 함수를 사용했습니다.
-    // 벽에 튕길경우, bounceCount가 1증가합니다.
-    if (this.x < 0) {
-      this.x = 0
-      this.moveSpeedX = Math.abs(this.moveSpeedX)
-      this.bounceCount++
-    } else if (this.x > graphicSystem.CANVAS_WIDTH) {
-      this.x = graphicSystem.CANVAS_WIDTH
-      this.moveSpeedX = -Math.abs(this.moveSpeedX)
-      this.bounceCount++
-    }
-
-    if (this.y < 0) {
-      this.y = 0
-      this.moveSpeedY = Math.abs(this.moveSpeedY)
-      this.bounceCount++
-    } else if (this.y > graphicSystem.CANVAS_HEIGHT) {
-      this.y = graphicSystem.CANVAS_HEIGHT
-      this.moveSpeedY = -Math.abs(this.moveSpeedY)
-      this.bounceCount++
-    }
-
-    // 바운스 횟수가 바운스 최대 횟수 이상이라면 해당 무기는 삭제됩니다.
-    // 다만, 로직 처리상 즉시 삭제는 안되고, 프로세스가 모두 끝나야 삭제할 수 있습니다.
-    if (this.bounceCount > this.bounceMaxCount) {
-      this.isDeleted = true
-    }
   }
 }
 
@@ -836,18 +884,12 @@ class Sapia extends WeaponData {
   }
 
   processMove () {
-    // subType이 sapia일경우만 다른 로직을 쓰므로, 이를 구분합니다.
-    // sapiaShot은 일반 로직 사용
-    if (this.subType === 'sapia') {
-      if (this.targetObject) {
-        this.x = this.targetObject.centerX
-        this.y = this.targetObject.centerY
-      } else {
-        this.x = fieldState.getPlayerObject().x + 200
-        this.y = fieldState.getPlayerObject().y
-      }
+    if (this.targetObject) {
+      this.x = this.targetObject.centerX
+      this.y = this.targetObject.centerY
     } else {
-      super.processMove()
+      this.x = fieldState.getPlayerObject().x + 200
+      this.y = fieldState.getPlayerObject().y
     }
   }
 
@@ -900,13 +942,10 @@ class Sapia extends WeaponData {
    * 엄청난 수의 사피아샷이 증가합니다. (공포의 렉)
    */
   processAttack () {
-    if (this.subType === 'sapia') {
-      this.processAttackSapia()
-    } else {
-      super.processAttack()
-    }
+    super.processAttack()
   }
 
+  /** 무기 반복 횟수에 따른 공격시스템 변경으로 더이상 이 방식은 사용하지 않음. @deprecated */
   processAttackSapia () {
     // 반복딜레이가 넘지 않았다면 함수 강제 종료
     if (!this.repeatDelay.check()) return
@@ -1238,6 +1277,93 @@ class Boomerang extends WeaponData {
   }
 }
 
+class Kalnal extends ReflectWeaponData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.kalnal)
+    this.reflectCount = 2
+    this.isLineChase = true
+  }
+
+  processMove () {
+    super.processMove()
+    this.degree += 45
+  }
+}
+
+class Cogwheel extends WeaponData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.cogwheel)
+    this.setMoveSpeed(9, 0)
+  }
+
+  processMove () {
+    super.processMove()
+
+    let hit = this.getEnemyHitObject()
+    if (hit != null && hit.length >= 1) {
+      this.setMoveSpeed(2, 0)
+      this.degree += 10
+    } else {
+      this.setMoveSpeed(9, 0)
+      this.degree += 2
+    }
+  }
+}
+
+class Yeonsai extends WeaponData {
+  /**
+   * 옵션 목록
+   * 0 ~ 5: 발사 번호 (0 ~ 2: 왼쪽, 3 ~ 5: 오른쪽)
+   */
+  constructor (option = [0]) {
+    super()
+    this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.yeonsai)
+
+    let speedX = option[0] < 3 ? -20 : 20
+    let speedY = Math.floor(Math.random() * 4) - 2
+    this.setMoveSpeed(speedX, speedY)
+  }
+}
+
+class Sabangtan extends MissileData {
+  /**
+   * 옵션 목록
+   * 0 ~ 3: 발사 번호
+   */
+  constructor (option = [0]) {
+    super()
+    this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.sabangtan)
+
+    this.splashEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.sabangtan, this.getSplashArea().width, this.getSplashArea().height)
+    const speedX = 2
+    const speedY = 6
+
+    switch (option[0]) {
+      case 0: this.setMoveSpeed(-speedX, -speedY); break
+      case 1: this.setMoveSpeed(-speedX, speedY); break
+      case 2: this.setMoveSpeed(speedX, -speedY); break
+      case 3: this.setMoveSpeed(speedX, speedY); break
+    }
+  }
+
+  processMove () {
+    super.processMove()
+    this.degree += 3
+  }
+
+  getSplashArea () {
+    return {
+      x: this.x - 90,
+      y: this.y - 90,
+      width: 180,
+      height: 180
+    }
+  }
+}
+
+
 class SubMultyshot extends WeaponData {
   constructor () {
     super()
@@ -1293,7 +1419,7 @@ class SkillArrow extends Arrow {
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.arrow, 3)
     this.color = 'purple'
     this.moveSpeedX = 16
-    this.bounceMaxCount = 12
+    this.reflectCount = 12
   }
 }
 
@@ -1352,6 +1478,28 @@ class SkillSapia extends Sapia {
   }
 
   /**
+   * 사피아와 스킬사피아는 추적 방식이 다름
+   */
+  processChase () {
+    // chaseType이 아닐경우, 함수 강제 종료
+    if (!this.isChaseType) return
+
+    // targetObject가 null이 아닐 경우, 정상적으로 적을 추적
+    if (this.targetObject != null) {
+      // 중간에 적이 죽었거나 삭제되었는지를 확인
+      if (this.targetObject.isDeleted || this.targetObject.isDied) {
+        this.targetObject = null
+      }
+    } else {
+      // targetObject가 없다면, 새로운 적을 찾음
+      const enemyObject = fieldState.getRandomEnemyObject()
+      if (enemyObject == null) return
+      
+      this.targetObject = enemyObject
+    }
+  }
+
+  /**
    * 감지 범위 얻기
    */
   getDetectArea () {
@@ -1361,15 +1509,6 @@ class SkillSapia extends Sapia {
       width: 1200,
       height: 600
     }
-  }
-
-  processAttack () {
-    // 6프레임당 한번만 공격함. 따라서 반복 대기시간이 넘어가지 않는다면, 함수 강제 종료.
-    if (!this.repeatDelay.check()) return
-
-    this.processHitObject()
-    this.useCount++
-    this.repeatCount = this.useMaxCount - this.useCount // 반복횟수 강제 재조정
   }
 
   processEnimation () {
@@ -1591,18 +1730,10 @@ class SkillCriticalChaser extends WeaponData {
 
   constructor () {
     super()
-    this.mainType = 'skill'
-    this.subType = 'criticalchaser'
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.criticalChaser)
     this.splashEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillCriticalChaser)
-    this.repeatCount = 4
-    this.repeatDelay = new DelayData(6)
-    this.attackDelay = new DelayData(2)
     this.moveDelay = new DelayData(60)
-    this.soundDelay = new DelayData(60)
-    this.soundDelay.count = this.soundDelay.delay
     this.state = SkillCriticalChaser.STATE_NORMAL
-    this.setMultiTarget(8)
   }
 
   processMove () {
@@ -1634,12 +1765,8 @@ class SkillCriticalChaser extends WeaponData {
     }
 
     if (this.state === SkillCriticalChaser.STATE_SPLASH) {
-      if (this.soundDelay.check()) {
-        
-      }
-
       // 공격딜레이가 채워지지 않았다면 함수 종료
-      if (!this.attackDelay.check()) return
+      if (!this.repeatDelay.check()) return
   
       const splashArea = this.getSplashArea()
       this.processHitObject(splashArea)
@@ -1913,14 +2040,17 @@ class SkillRing extends Ring {
   constructor (option = ['right']) {
     super()
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.ring)
-    this.repeatCount = 1
-    this.maxHitCount = 4
 
     let moveDirection = option[0]
     this.setRingDirection(moveDirection, 36)
 
     this.bounceCount = 0
     this.bounceMaxCount = 4
+  }
+
+  display () {
+    console.log('?')
+    super.display()
   }
 }
 
@@ -2138,10 +2268,10 @@ class SkillMoon extends WeaponData {
      * 
      * 이 값은, 일시 정지 상태일 때, 화면이 깜빡거리는걸 막기 위해 추가된 값입니다.
      */
-    this.ALPHA_BASE = 0.5
+    this.ALPHA_BASE = 0.1
 
     /** 이 스킬이 공격 상태일 때, 배경색을 바꾸는 실제 알파 값(기준값을 기준으로 이 값이 변화) */
-    this.alpha = 0.5
+    this.alpha = 0.1
   }
 
   getSplashArea () {
@@ -2179,8 +2309,11 @@ class SkillMoon extends WeaponData {
   }
 
   display () {
+    let tempAlpha = this.alpha
+    this.alpha = 0.8
     super.display()
 
+    this.alpha = tempAlpha
     // 검은색 배경 화면 추가 출력
     if (this.state === SkillMoon.STATE_ATTACK) {
       graphicSystem.setAlpha(this.alpha)
@@ -2189,6 +2322,551 @@ class SkillMoon extends WeaponData {
     }
   }
 }
+
+class SkillKalnal extends ReflectWeaponData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.kalnal)
+    this.isLineChase = true
+    this.reflectCount = 8
+    this.hitEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.kalnal)
+    this.hitSoundSrc = soundSrc.skill.skillKalnalHit
+  }
+
+  processMove () {
+    super.processMove()
+    this.degree += 15
+  }
+}
+
+class SkillCogwheel extends WeaponData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.cogwheel)
+    this.setMoveSpeed(0, 0)
+
+    this.hitEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.kalnal)
+
+    this.maxElapsedFrame = 1
+    let weapon = dataExportStatWeapon.get(ID.weapon.skillCogwheel)
+    if (weapon) {
+      this.maxElapsedFrame = weapon.repeatDelay * weapon.repeatCount
+    }
+  }
+
+  processMove () {
+    super.processMove()
+    
+    const leftElapsedFrame = this.maxElapsedFrame - this.elapsedFrame - 36
+    if (leftElapsedFrame >= 48) {
+      this.degree += 24
+    } else if (leftElapsedFrame >= 1) {
+      this.degree += Math.floor(leftElapsedFrame / 2)
+    }
+  }
+
+  processAttack () {
+    // 일정시간 단위로 판단해, 적을 타격할 수 있는 오브젝트가 있으면, 히트사운드 출력
+    if (this.repeatDelay.check()) {
+      this.processHitObject()
+      if (this.enemyHitedCheck()) {
+        soundSystem.play(soundSrc.skill.skillCogwheelHit)
+      }
+    }
+  }
+}
+
+class SkillYeonsai extends WeaponData {
+  // 옵션: 연사 번호 (0 ~ 9번까지)
+  constructor (option = [0]) {
+    super()
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.yeonsai)
+
+    const number = option[0]
+    const speedX = 20
+    switch (number) {
+      case 0: this.setMoveSpeed(speedX, -8); break
+      case 1: this.setMoveSpeed(speedX, -4); break
+      case 2: this.setMoveSpeed(speedX, -0); break
+      case 3: this.setMoveSpeed(speedX, 4); break
+      case 4: this.setMoveSpeed(speedX, 8); break
+    }
+
+    if (number >= 5 && number <= 10) {
+      this.isLineChase = true
+    }
+  }
+}
+
+class SkillSabangtan extends Sabangtan {
+  // 옵션: 무기 번호 (0 ~ 3번까지)
+  constructor (option = [0]) {
+    super()
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.sabangtan)
+    this.numberSabangtan = option[0]
+  }
+
+  getSplashArea () {
+    return {
+      x: this.x - 240,
+      y: this.y - 240,
+      width: 480,
+      height: 480,
+    }
+  }
+
+  afterInit () {
+    // 강제 중앙 배치
+    this.x = graphicSystem.CANVAS_WIDTH_HALF - (this.width / 2)
+    this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
+
+    // 기본 위치에 따른 속도 재조정
+    const PDIV8 = Math.floor(graphicSystem.CANVAS_WIDTH / 8)
+    const P0 = PDIV8 * 2
+    const P1 = PDIV8 * 6
+    const YF = graphicSystem.CANVAS_HEIGHT
+    let moveX = 0
+    let moveY = 0
+    switch(this.numberSabangtan) {
+      case 0: moveX = P0 - this.x; moveY = 0 - this.y; break
+      case 1: moveX = P1 - this.x; moveY = 0 - this.y; break
+      case 2: moveX = P0 - this.x; moveY = YF - this.y; break
+      case 3: moveX = P1 - this.x; moveY = YF - this.y; break
+    }
+
+    let divide = 22
+    this.setMoveSpeed(moveX / divide, moveY / divide)
+  }
+
+  processMove () {
+    super.processMove()
+
+    // Y축 벽에 닿으면 무조건 터지도록 처리함.
+    if (this.y <= 0 || this.y + this.height >= graphicSystem.CANVAS_HEIGHT) {
+      this.state = MissileData.STATE_SPLASH
+    }
+
+    // 강제 위치 조정
+    if (this.y <= 0) {
+      this.y = 0
+    } else if (this.y >= graphicSystem.CANVAS_HEIGHT) {
+      this.y = graphicSystem.CANVAS_HEIGHT - this.height 
+    }
+  }
+}
+
+class SkillHabirant extends WeaponData {
+  constructor () {
+    super()
+    this.STATE_NORMAL = 'normal'
+    this.STATE_HABIRANT = 'habirnat'
+    this.state = this.STATE_NORMAL
+    this.chaseMissCount = 480
+    this.hitSoundSrc = soundSrc.skill.skillHabirantHit
+    this.downDelay = new DelayData(16)
+    this.hitEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.kalnal)
+    this.ONESHOT_COUNT = 4
+  }
+
+  afterInit () {
+    // 공격력을 1/5로 정의
+    // 이것은, 적을 타격할 때 1번, 그리고 서브웨폰이 4번, 총 5번을 공격하기 때문
+    // 즉, 1회 공격당 최종적으로 5번을 타격함.
+    // 20% x 5 = 100%
+    this.attack = Math.floor(this.attack / 5)
+  }
+
+  processState () {
+    if (this.state === this.STATE_NORMAL && this.elapsedFrame >= 30) {
+      this.state = this.STATE_HABIRANT
+    }
+
+    // 5초동안만 지속됨 (적을 오래 못찾는다면, sword랑 다르게 손해임)
+    if (this.elapsedFrame >= 330) {
+      this.isDeleted = true
+    }
+  }
+
+  processAttack () {
+    if (this.state !== this.STATE_HABIRANT) return
+
+    this.downDelay.check(false, true) // 다운딜레이 추가
+
+    if (this.repeatDelay.check(false, true)) {
+      this.targetObject = fieldState.getRandomEnemyObject()
+      if (this.targetObject == null) return
+
+      this.repeatDelay.countReset() // 카운트 리셋 (적이 있는경우 한정)
+      this.x = this.targetObject.centerX
+      this.y = this.targetObject.centerY
+
+      // 타겟이 잡힌 적은 일단 데미지를 무조건 받음
+      this.processHitObject()
+
+      this.repeatCount -= this.ONESHOT_COUNT // 반복 횟수 4 감소
+      // 그후, 서브웨폰을 다시 재생성
+      for (let i = 0; i < this.ONESHOT_COUNT; i++) {
+        fieldState.createWeaponObject(ID.weapon.skillHabirantSub, this.x, this.y, this.attack)
+      }
+    }
+  }
+}
+
+class SkillHabirantSub extends WeaponData {
+  constructor () {
+    super()
+    this.STATE_NORMAL = 'normal'
+    this.STATE_HABIRANT = 'habirnat'
+    this.state = this.STATE_NORMAL
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.habirant)
+  }
+
+  processState () {
+    if (this.state === this.STATE_NORMAL && this.elapsedFrame >= 5) {
+      this.state = this.STATE_HABIRANT
+      this.isChaseType = true
+    }
+  }
+
+  processMove () {
+    if (this.state !== this.STATE_HABIRANT) return
+
+    super.processMove()
+    this.degree += 10
+  }
+
+  processAttack () {
+    if (this.state !== this.STATE_HABIRANT || this.elapsedFrame <= 18) return
+
+    super.processAttack()
+  }
+}
+
+class SkillIceChaser extends SkillCriticalChaser {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.iceChaser)
+    this.splashEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.iceChaser)
+    this.state = SkillCriticalChaser.STATE_NORMAL
+  }
+
+  processMove () {
+    if (this.state === SkillCriticalChaser.STATE_NORMAL && this.moveDelay.check()) {
+      this.state = SkillCriticalChaser.STATE_CHASE
+      this.lineChase(9) // 라인체이스 강제실행
+      this.isChaseType = false // 추적 금지
+    }
+
+    if (this.state === SkillCriticalChaser.STATE_CHASE) {
+      // Y축으로만 이동하도록 Y축 속도 조정
+      this.setMoveSpeed(this.moveSpeedX, (graphicSystem.CANVAS_HEIGHT - this.y) / 12)
+      if (this.moveSpeedY < 3) this.moveSpeedY = 3
+
+      super.processMove()
+    }
+
+    // 추적 상태에서 Y축이 맨 밑에 닿으면, 스플래시 공격 (그 외는 스플래시 공격처리되지 않음.)
+    if (this.state === SkillCriticalChaser.STATE_CHASE && this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
+      this.setMoveSpeed(0, 0)
+      this.state = SkillCriticalChaser.STATE_SPLASH
+      soundSystem.play(soundSrc.skill.skillIceChaserHit)
+    }  
+  }
+
+  processAttack () {
+    if (this.state === SkillCriticalChaser.STATE_SPLASH) {
+      // 공격딜레이가 채워지지 않았다면 함수 종료
+      if (!this.repeatDelay.check()) return
+  
+      const splashArea = this.getSplashArea()
+      this.processHitObject(splashArea)
+      this.splashEffect.width = splashArea.width
+      this.splashEffect.height = splashArea.height
+      fieldState.createEffectObject(this.splashEffect, splashArea.x, splashArea.y)
+    }
+  }
+
+  getSplashArea () {
+    return {
+      x: this.x - 50,
+      y: this.y - 700,
+      width: 100,
+      height: 800
+    }
+  }
+}
+
+class SkillCalibur extends WeaponData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.calibur)
+    this.setWidthHeight(this.width * 2, this.height * 2)
+
+    this.STATE_UP = 'up'
+    this.STATE_DOWN = 'down'
+    this.STATE_CALIBUR = 'calibur'
+    this.state = this.STATE_UP
+
+    this.stateDelay = new DelayData(75)
+  }
+
+  afterInit () {
+    // x축은 가운데, y축인 맨 밑에 배치
+    this.x = graphicSystem.CANVAS_WIDTH_HALF - (this.width / 2)
+    this.y = graphicSystem.CANVAS_HEIGHT
+    this.setMoveSpeed(0, -(this.y / this.stateDelay.delay))
+  }
+
+  processMove () {
+    if (this.state === this.STATE_UP) {
+      // 검이 회전하면서 위로 올라옴
+      // 검은 밑을 바라보는 방향이여야 하므로, 최종적으로 90도가 되어야 함
+      // y축이 일정값 이하일 때, 90도가 되도록 변경
+      this.degree += 18
+      if (this.y <= 120 && this.degree % 360 >= 90 && this.degree % 360 <= 108) {
+        this.degree = 90
+      }
+
+      if (this.stateDelay.check()) {
+        this.state = this.STATE_DOWN
+        this.degree = 90
+        this.setMoveSpeed(0, 1)
+      }
+    } else if (this.state === this.STATE_DOWN) {
+      this.stateDelay.check(false, true)
+      this.setMoveSpeed(0, 1 + this.stateDelay.count)
+
+      // 검의 높이 중 절반이 화면 바깥으로 나간 경우 상태를 변경
+      if (this.y + (this.height / 2) >= graphicSystem.CANVAS_HEIGHT) {
+        this.state = this.STATE_CALIBUR
+        soundSystem.play(soundSrc.skill.skillCaliburDown)
+      }
+    } else if (this.state === this.STATE_CALIBUR) {
+      this.setMoveSpeed(0, 12)
+      if (this.y + (this.height / 4) >= graphicSystem.CANVAS_HEIGHT) {
+        this.y = graphicSystem.CANVAS_HEIGHT - (this.height / 5 * 4)
+      }
+    }
+
+    super.processMove()
+  }
+
+  processAttack () {
+    if (this.state !== this.STATE_CALIBUR) return
+    
+    // 칼리버 상태인경우, 서브검을 계속 소환함
+    if (this.repeatDelay.check()) {
+      this.repeatCount--
+      soundSystem.play(soundSrc.skill.skillCaliburHit)
+      for (let i = 0; i < 5; i++) {
+        fieldState.createWeaponObject(ID.weapon.skillCaliburSub, this.x, this.y, Math.floor(this.attack / 5))
+      }
+    }
+  }
+}
+
+class SkillCaliburSub extends WeaponData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.calibur)
+    this.setWidthHeight(Math.floor(this.width / 2), Math.floor(this.height / 2))
+    this.hitEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.kalnal)
+  }
+
+  afterInit () {
+    // 참고: x축의 크기와 y축의 크기는 반전되어있음.
+    // 이것은 검은 위로 솟아있는 형태로 나와야 하지만, 실제 이미지는 가로형이기 때문
+    this.x = Math.random() * (graphicSystem.CANVAS_WIDTH - this.height)
+    this.y = graphicSystem.CANVAS_HEIGHT + this.width
+    this.degree = 270 // 위를 바라보는 방향으로 설정
+    this.isLineChase = true // 라인 체이스 설정
+  }
+}
+
+class SkillSujikpa extends WeaponData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.sujikpa)
+    this.setWidthHeight(this.width, 800)
+  }
+
+  afterInit () {
+    let randomEnemy = fieldState.getRandomEnemyObject()
+    if (randomEnemy != null) {
+      this.x = randomEnemy.x
+    }
+
+    this.y = 0 - this.height
+    this.setMoveSpeed(0, 40)
+  }
+
+  processAttack () {
+    if (this.repeatDelay.check()) {
+      let splashArea = {x: this.x - 50, y: -100, width: this.width, height: 800}
+      this.processHitObject(splashArea)
+    }
+  }
+}
+
+class SkillSpeaker extends WeaponData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.speaker, 2)
+    this.effectWave = EnimationData.createEnimation(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.speaker, 0, 3)
+    this.effectWave.setOutputSize(this.width * 3, this.height * 3)
+    this.STATE_DOWN = 'down'
+    this.STATE_ATTACK = 'attack'
+    this.STATE_EXIT = 'exit'
+    this.state = this.STATE_DOWN
+    this.exitSpeed = 0
+    this.exitDelay = 0
+  }
+
+  afterInit () {
+    this.x = 200
+    this.y = 0 - this.height
+  }
+
+  processMove () {
+    if (this.state === this.STATE_DOWN) {
+      this.setMoveSpeed(0, 10)
+      if (this.y + this.height >= 500) {
+        this.y = 500 - this.height
+        this.state = this.STATE_ATTACK
+        soundSystem.play(soundSrc.skill.skillSpeakerDown)
+        this.effectWave.finished = true // 에니메이션 강제 정지
+      }
+    } else if (this.state === this.STATE_ATTACK) {
+      this.setMoveSpeed(0, 0)
+    } else if (this.state === this.STATE_EXIT) {
+      this.exitSpeed++
+      this.setMoveSpeed(0, -this.exitSpeed)
+    }
+
+    super.processMove()
+  }
+
+  processAttack () {
+    if (this.state !== this.STATE_ATTACK) return
+
+    if (this.repeatDelay.check()) {
+      this.processHitObject({x: -100, y: -100, width: 1200, height: 1200})
+      soundSystem.play(soundSrc.skill.skillSpeakerAttack)
+      this.effectWave.reset()
+    }
+
+    // 공격 횟수를 전부 소모시, 바깥으로 나감
+    if (this.repeatCount <= 0) {
+      this.state = this.STATE_EXIT
+    }
+  }
+
+  processEnimation () {
+    // 공격 시에만 에니메이션 재생
+    if (this.state === this.STATE_ATTACK || this.state === this.STATE_EXIT) {
+      super.processEnimation()
+      this.effectWave.process()
+    }
+  }
+
+  // 삭제 기준이 다름. (무기는 반복횟수가 0이면 삭제되는데, 이 함수를 상속받아서 기존 조건을 무효화함)
+  // 대신, exit상태에서 화면 바깥으로 나간다면 삭제처리
+  processDeleteCheck () {
+    if (this.state === this.STATE_EXIT && this.y + this.height < 0) {
+      this.isDeleted = true
+    }
+  }
+
+  display () {
+    super.display()
+    if ((this.state === this.STATE_ATTACK || this.state === this.STATE_EXIT) && !this.effectWave.finished) {
+      this.effectWave.display(this.x - (this.effectWave.outputWidth / 4), this.centerY - (this.effectWave.outputHeight / 2))
+    }
+  }
+}
+
+class SkillEomukggochi extends WeaponData {
+  constructor () {
+    super()
+    this.setWidthHeight(imageDataInfo.skill.eomukggochiStick.width, 50)
+    // 이미지는 여러 조합에 따른 수동 출력임, 따라서 setAutoImageData를 하지 않음.
+
+    // 이 좌표는 어묵의 위치를 뜻함 (0번은 어묵꼬치)
+    this.plusXPoisiton = [0, 20, 60, 100, 160, 200, 240]
+    this.plusYDistance = -20
+
+    this.ONESHOT_COUNT = 10
+
+    this.EXIT_DELAY = 40
+    this.exitDelay = 0
+  }
+
+  processAttack () {
+    if (this.elapsedFrame >= 18 && this.repeatCount >= 1 && this.repeatDelay.check()) {
+      const leftShot = Math.floor(this.repeatCount / this.ONESHOT_COUNT)
+      const positionX = this.x + this.plusXPoisiton[leftShot]
+      const positionY = this.y + this.plusYDistance
+
+      // 참고: 한번 공격할 때마다 반복횟수 10개씩 감소함
+      // 2를 더하고 3의 나머지를 계산하는 이유는 어묵을 반복횟수 1부터 [0, 1, 2, 0, 1, 2] 순서를 유지하기 위해서
+      const eomukNumber = (leftShot + 2) % 3
+      this.repeatCount -= this.ONESHOT_COUNT // 한번 공격할 때마다 반복횟수 10 감소 (총 6회 공격)
+      soundSystem.play(soundSrc.skill.skillEomukggochiShot)
+
+      for (let i = 0; i < 10; i++) {
+        fieldState.createWeaponObject(ID.weapon.skillEomukggochiSub, positionX, positionY, this.attack, eomukNumber)
+      }
+    }
+
+    if (this.repeatCount <= 0) {
+      this.exitDelay++
+    }
+  }
+
+  processDeleteCheck () {
+    if (this.exitDelay >= this.EXIT_DELAY) {
+      this.isDeleted = true
+    }
+  }
+
+  display () {
+    // 1번 이미지 (스틱 부분)
+    this.imageObjectDisplay(imageSrc.weapon.skill, imageDataInfo.skill.eomukggochiStick, this.x, this.y)
+
+    // 어묵의 추가적인 x좌표 (y축은 동일)
+    const plusX = this.plusXPoisiton
+    const targetY = this.y - 20
+
+    const imgSrc = imageSrc.weapon.skill
+    const imgD1F = imageDataInfo.skill.eomukggochi1
+    const imgD2F = imageDataInfo.skill.eomukggochi2
+    const imgD3F = imageDataInfo.skill.eomukggochi3
+    const number = Math.floor(this.repeatCount / this.ONESHOT_COUNT)
+
+    // 어묵 부분, 남은 반복 횟수에 맞춰 표시됨
+    if (number >= 1) this.imageObjectDisplay(imgSrc, imgD1F, this.x + plusX[1], targetY)
+    if (number >= 2) this.imageObjectDisplay(imgSrc, imgD2F, this.x + plusX[2], targetY)
+    if (number >= 3) this.imageObjectDisplay(imgSrc, imgD3F, this.x + plusX[3], targetY)
+    if (number >= 4) this.imageObjectDisplay(imgSrc, imgD1F, this.x + plusX[4], targetY)
+    if (number >= 5) this.imageObjectDisplay(imgSrc, imgD2F, this.x + plusX[5], targetY)
+    if (number >= 6) this.imageObjectDisplay(imgSrc, imgD3F, this.x + plusX[6], targetY)
+  }
+}
+
+class SkillEomukggochiSub extends WeaponData {
+  constructor (option = [0]) {
+    super()
+    const number = option[0]
+    switch (number) {
+      case 0: this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.eomukggochi1); break
+      case 1: this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.eomukggochi2); break
+      case 2: this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.eomukggochi3); break
+    }
+
+    this.isLineChase = true
+  }
+}
+
 
 /**
  * @type {Map<number, WeaponData | any>}
@@ -2212,6 +2890,10 @@ dataExportWeapon.set(ID.weapon.rapid, Rapid)
 dataExportWeapon.set(ID.weapon.ring, Ring)
 dataExportWeapon.set(ID.weapon.seondanil, Seondanil)
 dataExportWeapon.set(ID.weapon.boomerang, Boomerang)
+dataExportWeapon.set(ID.weapon.kalnal, Kalnal)
+dataExportWeapon.set(ID.weapon.cogwheel, Cogwheel)
+dataExportWeapon.set(ID.weapon.yeonsai, Yeonsai)
+dataExportWeapon.set(ID.weapon.sabangtan, Sabangtan)
 
 // skill
 dataExportWeapon.set(ID.weapon.skillArrow, SkillArrow)
@@ -2236,3 +2918,16 @@ dataExportWeapon.set(ID.weapon.skillSeondanilMini, SkillSeondanilMini)
 dataExportWeapon.set(ID.weapon.skillHanjumoek, SkillHanjumeok)
 dataExportWeapon.set(ID.weapon.skillBoomerang, SkillBoomerang)
 dataExportWeapon.set(ID.weapon.skillMoon, SkillMoon)
+dataExportWeapon.set(ID.weapon.skillKalnal, SkillKalnal)
+dataExportWeapon.set(ID.weapon.skillCogwheel, SkillCogwheel)
+dataExportWeapon.set(ID.weapon.skillYeonsai, SkillYeonsai)
+dataExportWeapon.set(ID.weapon.skillSabangtan, SkillSabangtan)
+dataExportWeapon.set(ID.weapon.skillHabirant, SkillHabirant)
+dataExportWeapon.set(ID.weapon.skillHabirantSub, SkillHabirantSub)
+dataExportWeapon.set(ID.weapon.skillIcechaser, SkillIceChaser)
+dataExportWeapon.set(ID.weapon.skillCalibur, SkillCalibur)
+dataExportWeapon.set(ID.weapon.skillCaliburSub, SkillCaliburSub)
+dataExportWeapon.set(ID.weapon.skillSujikpa, SkillSujikpa)
+dataExportWeapon.set(ID.weapon.skillSpeaker, SkillSpeaker)
+dataExportWeapon.set(ID.weapon.skillEomukggochi, SkillEomukggochi)
+dataExportWeapon.set(ID.weapon.skillEomukggochiSub, SkillEomukggochiSub)

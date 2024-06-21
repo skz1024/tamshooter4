@@ -225,6 +225,13 @@ export class DelayData {
   }
 
   /**
+   * 지연시간 확인 함수지만, 카운트 상승, 리셋을 처리하지 않고, 현재 delay와 count가 일치하는지만 살펴봅니다.
+   */
+  checkCurrentFrame () {
+    return this.count === this.delay
+  }
+
+  /**
    * 현재 지연시간을 임의의 숫자로 나누었을 때 나머지가 0인지를 확인합니다.
    * delay값과 count값을 직접 수정하지 않아도, 
    * 이 함수를 사용하면 중간 타이머 용도로 사용할 수 있습니다. (딜레이 최대치 중간마다 일정시간 간격으로 효과 발동 등...) 
@@ -1199,6 +1206,7 @@ export class FieldData {
 
       // 시스템 값
       elapsedFrame: this.elapsedFrame,
+      isAfterInited: this.isAfterInited,
 
       // 추가 확장 저장 값
       saveString: this.saveString,

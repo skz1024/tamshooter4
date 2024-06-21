@@ -1799,3 +1799,11 @@ statView.html의 파일 오류 수정
 2. 무기, 스킬 밸런스 변경 (더블어택 삭제)
 3. statView.html에서 playerWeaponList - weapon attack이 0으로 출력된 버그 수정
 4. group 2 weapon sound/image 추가 (아직 무기는 완성되지 않음.)
+
+
+2024/06/22 v0.51.2 - group 2 weapon/skill complete
+1. 그룹 2에 해당하는 스킬, 무기 구현 완료
+2. 무기, 스킬 밸런스 수정
+3. 무기, 스킬은 repeatCount와 repeatDelay를 활용하도록 변경하고
+이에 따라 일부 무기들의 알고리즘 수정
+4. 일부 무기, 스킬에 대한 버그 수정
