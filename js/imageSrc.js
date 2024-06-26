@@ -969,6 +969,10 @@ export class imageDataInfo {
     cogwheel: new ImageDataObject(81, 101, 100, 100),
     yeonsai: new ImageDataObject(0, 122, 60, 10),
     sabangtan: new ImageDataObject(0, 133, 50, 56),
+    r3TowerPink: new ImageDataObject(0, 210, 80, 80, 10),
+    r3TowerPurple: new ImageDataObject(690, 40, 8, 40, 10),
+    r3TowerHelljeonNormal: new ImageDataObject(500, 50, 70, 10),
+    r3TowerHelljeonChase: new ImageDataObject(500, 61, 70, 10),
   }
 
   static weaponEffect = {
@@ -994,6 +998,11 @@ export class imageDataInfo {
     kalnal: new ImageDataObject(610, 630, 40, 40, 10),
     iceChaser: new ImageDataObject(0, 1060, 100, 400, 11),
     speaker: new ImageDataObject(1100, 840, 80, 100, 6),
+    r2Firecraker: new ImageDataObject(1000, 950, 100, 100, 10),
+    r3Xkill: new ImageDataObject(0, 1500, 90, 90, 18),
+    r3Xshot: new ImageDataObject(0, 1600, 90, 90, 14),
+    r3Xbeam: new ImageDataObject(0, 1700, 90, 90, 10),
+    r3Xboom: new ImageDataObject(0, 1800, 90, 90, 10),
   }
 
   static skill = {
@@ -1023,13 +1032,18 @@ export class imageDataInfo {
     sabangtan: new ImageDataObject(810, 240, 160, 110, 1),
     habirant: new ImageDataObject(600, 321, 40, 40, 1),
     iceChaser: new ImageDataObject(600, 363, 40, 60, 8),
-    calibur: new ImageDataObject(601, 424, 210, 40, 1),
+    calibur: new ImageDataObject(1061, 376, 210, 40, 1),
     sujikpa: new ImageDataObject(1001, 240, 100, 100, 1),
     speaker: new ImageDataObject(0, 580, 200, 180, 6),
-    eomukggochiStick: new ImageDataObject(601, 474, 300, 6, 1),
-    eomukggochi1: new ImageDataObject(601, 481, 40, 40, 1),
-    eomukggochi2: new ImageDataObject(641, 481, 40, 40, 1),
-    eomukggochi3: new ImageDataObject(681, 481, 50, 40, 1)
+    eomukggochiStick: new ImageDataObject(930, 368, 300, 6, 1),
+    eomukggochi1: new ImageDataObject(930, 375, 40, 40, 1),
+    eomukggochi2: new ImageDataObject(970, 375, 40, 40, 1),
+    eomukggochi3: new ImageDataObject(1010, 375, 50, 40, 1),
+    r2Firecracker: new ImageDataObject(601, 430, 50, 80, 8),
+    r2Toyhammer: new ImageDataObject(202, 150, 60, 60, 1),
+    r3Helljeon: new ImageDataObject(1102, 320, 140, 20, 1),
+    r3Xseries: new ImageDataObject(500, 300, 90, 90, 1),
+    r3Xboom: new ImageDataObject(1010, 420, 90, 90, 1),
   }
 
   static menuList = {

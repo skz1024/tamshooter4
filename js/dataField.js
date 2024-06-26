@@ -225,10 +225,11 @@ export class DelayData {
   }
 
   /**
-   * 지연시간 확인 함수지만, 카운트 상승, 리셋을 처리하지 않고, 현재 delay와 count가 일치하는지만 살펴봅니다.
+   * 지연시간 확인 함수지만, 카운트 상승, 리셋을 처리하지 않고, 제시된 delay와 count가 일치하는지만 살펴봅니다.
+   * @param {number} [delay=this.delay] 카운트와 일치하는지 확인할 프레임 값, 지정되지 않으면, 딜레이 값
    */
-  checkCurrentFrame () {
-    return this.count === this.delay
+  checkCurrentFrame (delay = this.delay) {
+    return this.count === delay
   }
 
   /**

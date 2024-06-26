@@ -367,6 +367,29 @@ class PlayerSabangtan extends PlayerWeaponData {
   }
 }
 
+class PlayerR3_towerPink extends PlayerWeaponData {
+  constructor () {
+    super()
+    this.setAutoPlayerWeapon(ID.playerWeapon.r3TowerPink)
+  }
+}
+
+class PlayerR3_towerPurple extends PlayerWeaponData {
+  constructor () {
+    super()
+    this.setAutoPlayerWeapon(ID.playerWeapon.r3TowerPurple)
+  }
+}
+
+class PlayerR3_towerHelljeon extends PlayerWeaponData {
+  constructor () {
+    super()
+    this.setAutoPlayerWeapon(ID.playerWeapon.r3Helljeon)
+    this.option = [1, 0, 0, 1] // 0번 노멀, 1번 유도
+  }
+}
+
+/** @deprecated */
 class PlayerSubMultyshot extends PlayerWeaponData {
   constructor () {
     super()
@@ -389,10 +412,19 @@ export class PlayerSkillData {
 
     /**
      * 스킬의 기준 공격력 배율 값 (값 변경 불가능)
+     * 
+     * 이 내용은 v0.49.4에서 변경되었으므로, 이 수치는 더이상 사용되지 않습니다.
+     * 
+     * 최종적으로 이 값은 1로 교체되었습니다.
+     * 
+     * // v0.49.3 이전의 내용
+     * 
      * 이 게임에서는 shotDamage(1) + subShotDamage(0.2) + skillDamage(0.8 * 4) = Total(4.4)의 구성이 기본입니다.
      * 대략적인 데미지 비율은, shot(약 23%) + skill(약 76%) 입니다.
+     * 
+     * @deprecated
      */
-    this.BASE_MULTIPLE = 0.8
+    this.BASE_MULTIPLE = 1
 
     /**
      * 스킬을 사용하고 스킬에 대한 무기 발사를 1회 반복할 때, 동시에 발사되는 개수
@@ -852,6 +884,57 @@ class PlayerSkillEomukggochi extends PlayerSkillData {
   }
 }
 
+class PlayerSkillR2Firecracker extends PlayerSkillData {
+  constructor () {
+    super()
+    this.setAutoPlayerSkill(ID.playerSkill.r2Firecracker)
+  }
+}
+
+class PlayerSkillR2Toyhammer extends PlayerSkillData {
+  constructor () {
+    super()
+    this.setAutoPlayerSkill(ID.playerSkill.r2Toyhammer)
+  }
+}
+
+class PlayerSkillR3Xkill extends PlayerSkillData {
+  constructor () {
+    super()
+    this.setAutoPlayerSkill(ID.playerSkill.r3Xkill)
+  }
+}
+
+class PlayerSkillR3Xshot extends PlayerSkillData {
+  constructor () {
+    super()
+    this.setAutoPlayerSkill(ID.playerSkill.r3Xshot)
+  }
+}
+
+class PlayerSkillR3Xbeam extends PlayerSkillData {
+  constructor () {
+    super()
+    this.setAutoPlayerSkill(ID.playerSkill.r3Xbeam)
+  }
+}
+
+class PlayerSkillR3Xboom extends PlayerSkillData {
+  constructor () {
+    super()
+    this.setAutoPlayerSkill(ID.playerSkill.r3Xboom)
+  }
+}
+
+class PlayerSkillR3Helljeon extends PlayerSkillData {
+  constructor () {
+    super()
+    this.setAutoPlayerSkill(ID.playerSkill.r3Helljeon)
+    this.setSound('', soundSrc.skill.skillHelljeonShot)
+    this.position = [{x: 0, y: -20}, {x: 0, y: 20}]
+  }
+}
+
 /**
  * 플레이어 무기 엑스포트 (data.js에서 사용)
  * @type {Map<number, PlayerWeaponData>}
@@ -874,6 +957,9 @@ dataExportPlayerWeapon.set(ID.playerWeapon.kalnal, new PlayerKalnal)
 dataExportPlayerWeapon.set(ID.playerWeapon.cogwheel, new PlayerCogwheel)
 dataExportPlayerWeapon.set(ID.playerWeapon.yeonsai, new PlayerYeonsai)
 dataExportPlayerWeapon.set(ID.playerWeapon.sabangtan, new PlayerSabangtan)
+dataExportPlayerWeapon.set(ID.playerWeapon.r3TowerPink, new PlayerR3_towerPink)
+dataExportPlayerWeapon.set(ID.playerWeapon.r3TowerPurple, new PlayerR3_towerPurple)
+dataExportPlayerWeapon.set(ID.playerWeapon.r3Helljeon, new PlayerR3_towerHelljeon)
 
 /**
  * 플레이어 스킬 엑스포트 (data.js에서 사용)
@@ -910,3 +996,10 @@ dataExportPlayerSkill.set(ID.playerSkill.calibur, new PlayerSkillCalibur)
 dataExportPlayerSkill.set(ID.playerSkill.sujikpa, new PlayerSkillSujikpa)
 dataExportPlayerSkill.set(ID.playerSkill.speaker, new PlayerSkillSpeaker)
 dataExportPlayerSkill.set(ID.playerSkill.eomukggochi, new PlayerSkillEomukggochi)
+dataExportPlayerSkill.set(ID.playerSkill.r2Firecracker, new PlayerSkillR2Firecracker)
+dataExportPlayerSkill.set(ID.playerSkill.r2Toyhammer, new PlayerSkillR2Toyhammer)
+dataExportPlayerSkill.set(ID.playerSkill.r3Xkill, new PlayerSkillR3Xkill)
+dataExportPlayerSkill.set(ID.playerSkill.r3Xshot, new PlayerSkillR3Xshot)
+dataExportPlayerSkill.set(ID.playerSkill.r3Xbeam, new PlayerSkillR3Xbeam)
+dataExportPlayerSkill.set(ID.playerSkill.r3Xboom, new PlayerSkillR3Xboom)
+dataExportPlayerSkill.set(ID.playerSkill.r3Helljeon, new PlayerSkillR3Helljeon)

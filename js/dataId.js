@@ -26,6 +26,9 @@ export class ID {
     cogwheel: 10014,
     yeonsai: 10015,
     sabangtan: 10016,
+    r3TowerPink: 10017,
+    r3TowerPurple: 10018,
+    r3Helljeon: 10019,
 
     /** @deprecated */ subMultyshot: 10767,
   }
@@ -64,10 +67,19 @@ export class ID {
     sujikpa: 15028,
     speaker: 15029,
     eomukggochi: 15030,
+    r2Firecracker: 15031,
+    r2Toyhammer: 15032,
+    r3Xkill: 15033,
+    r3Xshot: 15034,
+    r3Xbeam: 15035,
+    r3Xboom: 15036,
+    r3Helljeon: 15037,
   }
 
   static weapon = {
     unused: 0,
+
+    // group 1
     multyshot: 11010,
     missile: 11011,
     missileRocket: 11012,
@@ -86,12 +98,20 @@ export class ID {
     ring: 11025,
     seondanil: 11026,
     boomerang: 11027,
+
+    // group 2
     kalnal: 11028,
     cogwheel: 11029,
     yeonsai: 11030,
     sabangtan: 11031,
 
-    // skill
+    // extend r3
+    r3TowerPink: 11032,
+    r3TowerPurple: 11033,
+    r3Helljeon: 11034,
+
+    // skill list
+    // group 1 skill
     skillMultyshot: 16001,
     skillMissile: 16002,
     skillArrow: 16003,
@@ -114,6 +134,8 @@ export class ID {
     skillHanjumoek: 16020,
     skillBoomerang: 16021,
     skillMoon: 16022,
+
+    // group 2 skill
     skillKalnal: 16023,
     skillCogwheel: 16024,
     skillYeonsai: 16025,
@@ -127,6 +149,20 @@ export class ID {
     skillSpeaker: 16033,
     skillEomukggochi: 16034,
     skillEomukggochiSub: 16035,
+
+    // round 2 donggrami skill
+    skillR2Firecraker: 16036,
+    skillR2Toyhammer: 16037,
+
+    // round 3 X series skill, helljeon
+    skillR3Xkill: 16038,
+    skillR3Xshot: 16039,
+    skillR3XshotSub: 16040,
+    skillR3Xbeam: 16041,
+    skillR3XbeamSub: 16042,
+    skillR3Xboom: 16043,
+    skillR3XboomSub: 16044,
+    skillR3Helljeon: 16045,
   }
 
   /**

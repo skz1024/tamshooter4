@@ -43,7 +43,7 @@ export class StatPlayerWeapon {
    * @param {string} name 무기의 이름
    * @param {string} balance 밸런스 타입
    * @param {number} delay 무기가 각 발사되기 까지의 지연시간
-   * @param {number} attackMultiple 공격 배율 (기본값 1, 1보다 높으면 )
+   * @param {number} attackMultiple 공격 배율 (기본값 1, 1보다 높으면 해당 무기의 공격력이 더 높아짐)
    * @param {number} shotCount 무기가 발사될 때 동시에 발사되는 개수
    * @param {number[]} weaponIdList 플레이어무기에서 사용하는 실제 무기 idList (여러개가 있으면 여러개의 무기를 사용)
    */
@@ -92,8 +92,7 @@ export class StatPlayerWeapon {
     GROUP1: 'group1',
     GROUP2: 'group2',
     DONGGRAMI: 'donggrami',
-    TOWEROPTION: 'toweroption',
-    TOWERHELL: 'towerhell'
+    R3_TOWER: 'r3_tower',
   }
 }
 
@@ -363,6 +362,9 @@ dataExportStatWeapon.set(ID.weapon.cogwheel, new StatWeapon('cogwheel', 'cogwhee
 dataExportStatWeapon.set(ID.weapon.yeonsai, new StatWeapon('yeonsai', 'yeonsai'))
 dataExportStatWeapon.set(ID.weapon.sabangtan, new StatWeapon('sabangtan', 'sabangtan', 2, 6, false, true, 10))
 dataExportStatWeapon.set(ID.weapon.subMultyshot, new StatWeapon('subweapon', 'subweapon'))
+dataExportStatWeapon.set(ID.weapon.r3TowerPink, new StatWeapon('towerpink', 'towerpink', 5, 0, false, false, 5))
+dataExportStatWeapon.set(ID.weapon.r3TowerPurple, new StatWeapon('towerpurple', 'towerpurple'))
+dataExportStatWeapon.set(ID.weapon.r3Helljeon, new StatWeapon('towerhelljeon', 'towerhelljeon'))
 
 const Tskill = 'skill' // 스킬 타입
 const TskillSub = 'skillSub' // 스킬 서브 타입
@@ -401,6 +403,17 @@ dataExportStatWeapon.set(ID.weapon.skillSujikpa, new StatWeapon(Tskill, 'sujikpa
 dataExportStatWeapon.set(ID.weapon.skillSpeaker, new StatWeapon(Tskill, 'speaker', 6, 30, false, true, 5))
 dataExportStatWeapon.set(ID.weapon.skillEomukggochi, new StatWeapon(Tskill, 'eomukggochi', 60, 30))
 dataExportStatWeapon.set(ID.weapon.skillEomukggochiSub, new StatWeapon(TskillSub, 'emoukggochi'))
+dataExportStatWeapon.set(ID.weapon.skillR2Firecraker, new StatWeapon(Tskill, 'firecracker', 1, 0, false, true, 20))
+dataExportStatWeapon.set(ID.weapon.skillR2Toyhammer, new StatWeapon(Tskill, 'toyhammer', 45, 6, true, false, 1))
+dataExportStatWeapon.set(ID.weapon.skillR3Xkill, new StatWeapon(Tskill, 'Xkill', 150, 10, false, false, 1))
+dataExportStatWeapon.set(ID.weapon.skillR3Xshot, new StatWeapon(Tskill, 'Xshot', 150, 10, false, false, 1))
+dataExportStatWeapon.set(ID.weapon.skillR3XshotSub, new StatWeapon(TskillSub, 'XshotSub', 1, 1, false, false, 1))
+dataExportStatWeapon.set(ID.weapon.skillR3Xbeam, new StatWeapon(Tskill, 'Xbeam', 80, 20, false, true, 1))
+dataExportStatWeapon.set(ID.weapon.skillR3XbeamSub, new StatWeapon(TskillSub, 'XbeamSub', 5, 4, false, true, 33))
+dataExportStatWeapon.set(ID.weapon.skillR3Xboom, new StatWeapon(Tskill, 'Xboom', 18, 9, false, true, 28))
+dataExportStatWeapon.set(ID.weapon.skillR3XboomSub, new StatWeapon(TskillSub, 'XboomSub', 1, 1, false, true, 28))
+dataExportStatWeapon.set(ID.weapon.skillR3Helljeon, new StatWeapon(Tskill, 'helljeon', 1, 1, false, false, 1))
+
 /**
  * 외부에서 사용하기 위한 플레이어 웨폰 스탯
  * @type {Map<number, StatPlayerWeapon>}
@@ -428,6 +441,9 @@ DXweapon.set(IDweapon.kalnal, new pWeapon(wGroup.GROUP2, 'kalnal', wBalance.REFL
 DXweapon.set(IDweapon.cogwheel, new pWeapon(wGroup.GROUP2, 'cogwheel', wBalance.PENETRATION, 40, 1.15, 1, [ID.weapon.cogwheel]))
 DXweapon.set(IDweapon.yeonsai, new pWeapon(wGroup.GROUP2, 'yeonsai', wBalance.SIDEWAVE, 6, 1.09, 6, [ID.weapon.yeonsai]))
 DXweapon.set(IDweapon.sabangtan, new pWeapon(wGroup.GROUP2, 'sabangtan', wBalance.SPLASH, 30, 0.88, 4, [ID.weapon.sabangtan]))
+DXweapon.set(IDweapon.r3TowerPink, new pWeapon(wGroup.R3_TOWER, 'towerpink', wBalance.CHASE, 15, 1, 1, [ID.weapon.r3TowerPink]))
+DXweapon.set(IDweapon.r3TowerPurple, new pWeapon(wGroup.R3_TOWER, 'towerpurple', wBalance.REFLECT, 10, 1.04, 2, [ID.weapon.r3TowerPurple]))
+DXweapon.set(IDweapon.r3Helljeon, new pWeapon(wGroup.R3_TOWER, 'helljeon', wBalance.MULTYSHOT, 10, 1.04, 4, [ID.weapon.r3Helljeon]))
 
 /**
  * 외부에서 사용하기 위한 플레이어 스킬 스탯
@@ -470,6 +486,13 @@ DXskill.set(IDskill.calibur, new pSkill(sGroup.GROUP2, 'calibur', sBalance.SHOT,
 DXskill.set(IDskill.sujikpa, new pSkill(sGroup.GROUP2, 'sujikpa', sBalance.AREA, 20, 20, 0.82, 1, 8, [ID.weapon.skillSujikpa]))
 DXskill.set(IDskill.speaker, new pSkill(sGroup.GROUP2, 'speaker', sBalance.AREA, 24, 1, 0.85, 1, 1, [ID.weapon.skillSpeaker]))
 DXskill.set(IDskill.eomukggochi, new pSkill(sGroup.GROUP2, 'eomukggochi', sBalance.SHOT, 24, 0, 1.05, 1, 1, [ID.weapon.skillEomukggochi]))
+DXskill.set(IDskill.r2Firecracker, new pSkill(sGroup.DONGGRAMI, 'firecracker', sBalance.SPLASH, 24, 12, 0.86, 1, 15, [ID.weapon.skillR2Firecraker]))
+DXskill.set(IDskill.r2Toyhammer, new pSkill(sGroup.GROUP2, 'toyhammer', sBalance.CHASE, 24, 1, 1, 1, 1, [ID.weapon.skillR2Toyhammer]))
+DXskill.set(IDskill.r3Xkill, new pSkill(sGroup.R3_TOWER, 'Xkill', sBalance.CHASE, 24, 0, 1, 1, 1, [ID.weapon.skillR3Xkill]))
+DXskill.set(IDskill.r3Xshot, new pSkill(sGroup.R3_TOWER, 'Xshot', sBalance.SHOT, 24, 0, 1.05, 1, 1, [ID.weapon.skillR3Xshot]))
+DXskill.set(IDskill.r3Xbeam, new pSkill(sGroup.R3_TOWER, 'Xbeam', sBalance.AREA, 24, 0, 0.91, 1, 1, [ID.weapon.skillR3Xbeam]))
+DXskill.set(IDskill.r3Xboom, new pSkill(sGroup.R3_TOWER, 'Xboom', sBalance.SPLASH, 24, 0, 0.86, 1, 1, [ID.weapon.skillR3Xboom]))
+DXskill.set(IDskill.r3Helljeon, new pSkill(sGroup.R3_TOWER, 'helljeon', sBalance.CHASE, 20, 5, 1, 2, 30, [ID.weapon.skillR3Helljeon]))
 
 /**
  * 외부에서 사용하기 위한 라운드 스탯 값

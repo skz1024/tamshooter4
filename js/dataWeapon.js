@@ -42,7 +42,7 @@ export class WeaponData extends FieldData {
      * 
      * 이 변수는 렉 방지용(과도학 추적 로직 사용)도로 만들어졌습니다.
      */
-    this.chaseLimit = 20
+    this.chaseMissLimit = 20
 
     /** 선 형태로 이동하는 것처럼 움직이게 하기. 
      * 
@@ -208,6 +208,12 @@ export class WeaponData extends FieldData {
 
     hitedTarget.hp -= damage
     fieldState.createDamageObject(hitedTarget.x, hitedTarget.y, damage)
+
+    if (this.hitEffect) {
+      let hitEffect = this.hitEffect.getObject()
+      hitEffect.setWidthHeight(hitedTarget.width, hitedTarget.height)
+      fieldState.createEffectObject(hitEffect, hitedTarget.x, hitedTarget.y, 1)
+    }
   }
 
   /**
@@ -304,13 +310,6 @@ export class WeaponData extends FieldData {
         this.damageProcess(currentEnemy)
         hitCount++ // 적을 때린 횟수 1회 증가
 
-        // 이펙트 출력
-        if (this.hitEffect != null) {
-          let createEffect = this.hitEffect.getObject()
-          createEffect.setWidthHeight(currentEnemy.width, currentEnemy.height)
-          fieldState.createEffectObject(createEffect, currentEnemy.x, currentEnemy.y)
-        }
-
         // 만약 적을 때린 횟수가 최대 제한을 초과하면 루프 종료
         if (hitCount >= this.maxTarget) {
           break
@@ -347,13 +346,6 @@ export class WeaponData extends FieldData {
         this.damageProcess(currentEnemy)
         hitCount++ // 적을 때린 횟수 1회 증가
         this.repeatCount-- // 만약 적을 때렸다면, 무기의 반복 횟수를 감소시킵니다.
-
-        // 이펙트 출력
-        if (this.hitEffect != null) {
-          let createEffect = this.hitEffect.getObject()
-          createEffect.setWidthHeight(currentEnemy.width, currentEnemy.height)
-          fieldState.createEffectObject(createEffect, currentEnemy.x, currentEnemy.y)
-        }
 
         // 만약 적을 때린 횟수가 최대 제한을 초과하면 또는 repeatCount가 0이면 루프 종료
         if (hitCount >= this.maxHitCount || this.repeatCount <= 0) {
@@ -496,14 +488,19 @@ export class WeaponData extends FieldData {
       this.isChasing = true
       this.chaseMissCount++ // 추적 미스카운트를 1추가
 
-      // 참고로, chaseMissCount 숫자가 10이상일경우 해당 객체는 적을 더이상 추적하지 않습니다.
-      if (this.chaseMissCount >= 10) {
+      // 참고로, chaseMissCount 숫자가 일정 값 이상일경우 해당 객체는 적을 더이상 추적하지 않습니다.
+      // 무기의 이동속도 변화는 없음
+      if (this.chaseMissCount >= this.chaseMissLimit) {
         this.isChaseType = false
         this.isChasing = false
-        this.moveSpeedX = 20
-        this.moveSpeedY = 0
+        // this.moveSpeedX = 20 // 속도 재조정 (지금은 제거됨)
+        // this.moveSpeedY = 0
       }
     }
+  }
+
+  processChaseFail () {
+    
   }
 
   /**
@@ -601,7 +598,7 @@ export class WeaponData extends FieldData {
     let addData = {
       // 추적 여부
       chaseMissCount: this.chaseMissCount,
-      chaseLimit: this.chaseLimit,
+      chaseLimit: this.chaseMissLimit,
       isChaseType: this.isChaseType,
       isLineChase: this.isLineChase,
 
@@ -844,7 +841,7 @@ class LaserBlue extends Laser {
     this.subType = 'laserBlue'
     this.id = ID.weapon.laserBlue
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.laserBlue)
-    this.chaseLimit = 1 // 적 1번만 추적 가능
+    this.chaseMissLimit = 1 // 적 1번만 추적 가능
     this.moveSpeedX = 0
     this.targetY = 0
   }
@@ -1019,6 +1016,7 @@ class Parapo extends WeaponData {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.parapo)
+    this.setMoveSpeed(8, 0)
   }
 
   processAttack () {
@@ -1363,6 +1361,181 @@ class Sabangtan extends MissileData {
   }
 }
 
+class R3TowerPink extends WeaponData {
+  // 이 무기는 Round3 에서 사용하는 무기와 거의 동일함 (이미지만 약간 다름)
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.r3TowerPink, 4)
+    this.setMoveSpeed(10, 0)
+  }
+
+  afterInit () {
+    /** 적 추적 시작을 위한 함수 (참고: 생성자에서는 현재 좌표값이 0이라 현재위치에서 시작하지 않을 수 있음) */
+    let enemy = fieldState.getRandomEnemyObject()
+    if (enemy != null) {
+      this.setMoveSpeedChaseLine(enemy.centerX, enemy.centerY, 50, 6)
+    }
+  }
+}
+
+class R3TowerPurple extends WeaponData {
+  // 이 무기는 Round3 에서 사용하는 무기와 거의 동일함 (이미지만 약간 다름)
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.r3TowerPurple, 4)
+    this.STATE_FRONT = 'front'
+    this.STATE_CHASE = 'chase'
+    this.state = this.STATE_FRONT
+    this.setMoveSpeed(10, 0)
+  }
+
+  processMove () {
+    super.processMove()
+    if (this.state === this.STATE_FRONT && this.x > graphicSystem.CANVAS_WIDTH) {
+      this.state = this.STATE_CHASE
+      let randomEnemy = fieldState.getRandomEnemyObject()
+      if (randomEnemy != null) {
+        this.setMoveSpeedChaseLine(randomEnemy.centerX, randomEnemy.centerY, 20, 10)
+      }
+    }
+  }
+}
+
+class R3Helljeon extends WeaponData {
+  // 옵션: 0번을 선택하면 노멀타입, 1번을 선택하면 체이스 타입
+  constructor (option = [0]) {
+    super()
+    this.TYPE_CHASE = 'chase'
+    this.TYPE_NORMAL = 'normal'
+    this.ANGLE_SPEED = 10
+    this.BASE_SPEED = 11
+
+    // 지정된 옵션에 따라 무기 타입 결정
+    const currentType = option[0] === 0 ? this.TYPE_NORMAL : this.TYPE_CHASE
+
+    // 이미지 설정
+    if (currentType === this.TYPE_NORMAL) {
+      this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.r3TowerHelljeonNormal)
+    } else {
+      this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.r3TowerHelljeonChase)
+    }
+
+    this.setMoveSpeed(this.BASE_SPEED, 0)
+    this.saveList = {
+      type: currentType,
+      angleDegree: 0,
+      isAngleMove: false,
+      targetSpeedX: this.moveSpeedX,
+      targetSpeedY: this.moveSpeedY,
+    }
+  }
+
+  processState () {
+    this.processHelljeonTypeChase()
+  }
+
+  processHelljeonTypeChase () {
+    if (this.saveList.type !== this.TYPE_CHASE) return
+
+    // 15프레임부터 적을 추적 시작함
+    if (this.elapsedFrame === 15) this.isChaseType = true
+
+    // 실시간 각도 변경
+    this.processChangeAngle()
+
+    // 목표하는 오브젝트가 없다면, 속도와 각도를 특정값으로 되돌림 (서서히)
+    if (this.targetObject == null) this.processMoveNonTarget()
+  }
+
+  processChaseEnemy () {
+    // 이 함수를 상속받아서 구현하는 이유는, 추적 무기의 기본 이동방식과 다른 방식으로 이동시키기 위해서
+    // 아니면, 이 함수의 코드를 공백으로 만들고, 다른 함수로 추가하는 방법도 있지만, 그건 사용하지 않음
+    if (this.targetObject instanceof FieldData) {
+      this.saveList.isAngleMove = true
+      const distanceSpeedX = (this.targetObject.x - this.x)
+      const distanceSpeedY = (this.targetObject.y - this.y)
+      if (this.saveList.targetSpeedX < distanceSpeedX) {
+        this.saveList.targetSpeedX++
+      } else {
+        this.saveList.targetSpeedX--
+      }
+
+      if (this.saveList.targetSpeedY < distanceSpeedY) {
+        this.saveList.targetSpeedY++
+      } else {
+        this.saveList.targetSpeedY--
+      }
+
+      this.setMoveSpeed(this.saveList.targetSpeedX, this.saveList.targetSpeedY)
+    }
+  }
+
+  processMoveNonTarget () {
+    // 목표하는 오브젝트가 없다면, 속도와 각도를 특정값으로 되돌림
+    // X축 강제 보정
+    if (this.saveList.targetSpeedX < this.BASE_SPEED - 1) {
+      this.saveList.targetSpeedX++
+    } else if (this.saveList.targetSpeedX > this.BASE_SPEED + 1) {
+      this.saveList.targetSpeedX--
+    } else {
+      this.saveList.targetSpeedX = this.BASE_SPEED
+    }
+
+    // Y축 강제 보정
+    if (this.saveList.targetSpeedY < -1) {
+      this.saveList.targetSpeedY++
+    } else if (this.saveList.targetSpeedY > 1) {
+      this.saveList.targetSpeedY--
+    } else {
+      this.saveList.targetSpeedY = 0
+    }
+
+    this.setMoveSpeed(this.saveList.targetSpeedX, this.saveList.targetSpeedY)
+  }
+
+  processChangeAngle () {
+    let targetAngle = 0
+
+    // 추적하는 적이 존재할 때 무기의 이동하는 각도 조정
+    if (this.targetObject instanceof FieldData) {
+      const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
+      targetAngle = atangent * (180 / Math.PI) // 각도 변경
+    }
+
+    // 각도를 한 방향으로 이동했을 때, 이동하는 각의 양만큼을 변수로 저장함
+    const ALLANGLE = 360
+    const distanceA = Math.abs(targetAngle - this.degree) // 목표값 - 현재값
+    const distanceB = ALLANGLE - distanceA // 360도에선 distanceA를 남은 만큼 뺌 (A 아니면 B이므로)
+
+    // 만약, 거리의 차이가 10보다 작으면, 강제로 해당 각도로 지정하고, 각도를 변화시키지 않음
+    if (Math.min(distanceA, distanceB) < 10) {
+      this.degree = targetAngle
+    } else if (distanceA <= distanceB) {
+      // distanceA가 최단거리일경우, 
+      // 목표각도 - 현재각도가 양수인지 음수인지 살펴봄
+      if (targetAngle - this.degree >= 0) {
+        // 이 값이 양수라면, 각도는 증가하는 방향이 됨
+        this.degree += this.ANGLE_SPEED
+      } else {
+        // 이 값이 음수라면, 각도는 감소하는 방향이 됨
+        this.degree -= this.ANGLE_SPEED
+      }
+    } else if (distanceA > distanceB) {
+      // distanceB가 최단거리일경우,
+      // 목표각도 - 현재각도가 양수라면, 각도는 감소하는 방향이 됨
+      if (targetAngle - this.degree >= 0) {
+        this.degree -= this.ANGLE_SPEED
+      } else {
+        // 이 값이 음수라면, 각도는 증가하는 방향이 됨
+        this.degree += this.ANGLE_SPEED
+      }
+    }
+
+    // 만약 각도가 기준값을 초과하거나 음수일경우, 이 값을 보정함
+    if (this.degree < 0) this.degree += ALLANGLE
+    if (this.degree > ALLANGLE) this.degree -= ALLANGLE
+  }
+}
 
 class SubMultyshot extends WeaponData {
   constructor () {
@@ -1406,6 +1579,7 @@ class SkillMissile extends MissileData {
 
     // 스킬 무기는 적을 타격한 순간 폭발음을 사용한다. 그렇다고, attackNormal을 재작성하는것은 귀찮으므로
     // 대신 여기서 스플래시로 스테이트가 변경된 경우 적을 타격하여 스테이트가 변경된 것이므로 스킬 사운드를 출력한다.
+    // 상태가 변경되면, 이 함수가 재사용되지 않으므로, 이 사운드는 중복 출력되지 않습니다.
     if (this.state === MissileData.STATE_SPLASH) {
       soundSystem.play(soundSrc.skill.skillMissileHit)
     }
@@ -1970,7 +2144,7 @@ class SkillWhiteflash extends WeaponData {
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.whiteflash, 6)
     this.setWidthHeight(120, 120)
     this.moveSpeedX = 30
-    this.chaseLimit = 360
+    this.chaseMissLimit = 360
   }
 
   processMove () {
@@ -2867,6 +3041,386 @@ class SkillEomukggochiSub extends WeaponData {
   }
 }
 
+class SkillR2Firecracker extends MissileData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.r2Firecracker, 2)
+    this.state = MissileData.STATE_NORMAL
+    this.splashEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r2Firecraker)
+
+    this.saveList = {
+      /** 무기가 도착하는 위치 */ finishX: 0,
+      /** 무기가 도착하는 위치 */ finishY: 0,
+    }
+  }
+  
+  getSplashArea () {
+    return {
+      x: this.centerX - 200,
+      y: this.centerY - 200,
+      width: 400,
+      height: 400,
+    }
+  }
+
+  afterInit () {
+    // 무기 도착지점 설정
+    this.saveList.finishX = this.x + (Math.random() * 600) - 300
+    this.saveList.finishY = this.y + (Math.random() * 600) - 300
+  }
+
+  processMove () {
+    const speedX = (this.saveList.finishX - this.x) / 3
+    const speedY = (this.saveList.finishY - this.y) / 3
+    this.setMoveSpeed(speedX, speedY)
+
+    // 일정 속도 이상인 경우만 움직일 수 있음.
+    if (Math.abs(speedX) > 1 && Math.abs(speedY) > 1) {
+      super.processMove()
+    }
+  }
+
+  processAttack () {
+    // 일정시간 후 스플래시 공격
+    if (this.elapsedFrame === 60) {
+      this.state = MissileData.STATE_SPLASH
+
+      // 참고: 이 무기는 동그라미 마을에서 사용하는 폭죽을 가져와 만든거라서,
+      // 사운드도 동그라미의 폭죽 사운드를 사용합니다. (파일 이름만 다를뿐...)
+      soundSystem.play(soundSrc.skill.skillFirecrackerHit)
+    }
+
+    if (this.state === MissileData.STATE_SPLASH) {
+      super.processAttackSplash()
+    }
+  }
+}
+
+class SkillR2Toyhammer extends WeaponData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.r2Toyhammer)
+    this.setWidthHeight(this.width, this.height)
+    this.hammerDelay = new DelayData(12) // 해머딜레이는, 각도 조절 용도로 사용됨
+    this.hammerDelay.setCountMax() // 카운트를 최대로 채워서, 처리하지 못하게함
+    this.MAXANGLE = 90
+  }
+
+  processState () {
+    if (this.hammerDelay.checkCurrentFrame()) {
+      this.degree = 0
+    } else {
+      this.hammerDelay.count++
+      // 해머 딜레이 카운트 값이 0 ~ 10범위에서는 0 ~ 90도
+      // 11 ~ 20범위에서는 90 ~ 0도로 변경됨
+      if (this.hammerDelay.count <= this.hammerDelay.delay / 2) { // 정방향
+        const lineDelay = this.hammerDelay.delay / 2
+        const currentCount = this.hammerDelay.count
+        this.degree = this.MAXANGLE / lineDelay * currentCount
+      } else { // 역방향
+        const lineDelay = this.hammerDelay.delay / 2
+        const currentCount = this.hammerDelay.count - lineDelay
+        this.degree = this.MAXANGLE / lineDelay * (lineDelay - currentCount)
+      }
+    }
+  }
+
+  processAttack () {
+    if (!this.repeatDelay.check(false, true)) return
+
+    if (this.enemyHitedCheck()) {
+      // 반복 딜레이가 위에서 리셋되지 않으므로, 공격에 성공했을 때, 반복 딜레이를 리셋시켜야함
+      this.repeatDelay.countReset()
+      this.processHitObject()
+      
+      // 해머 딜레이 카운트가 딜레이값을 넘어가면, 망치 애니메이션을 리셋시킴
+      // 공격 딜레이와 해머 딜레이가 서로 다른값을 가지고 있기 때문에 따로 처리해야함
+      if (this.hammerDelay.checkCurrentFrame()) {
+        this.hammerDelay.countReset()
+        soundSystem.play(soundSrc.skill.skillToyhammerHit) // 동그라미 마을에서 사용하는것과 동일... (파일 이름만 다를뿐...)
+      }
+    }
+  }
+}
+
+class SkillR3XSeries extends WeaponData {
+  constructor () {
+    super()
+    this.changeFrame = 48
+    this.voiceSrc = ''
+    this.STATE_WAIT = 'wait'
+    this.STATE_ATTACK = 'attack'
+    this.state = this.STATE_WAIT
+    this.WAIT_FRAME_1 = 42
+    this.WAIT_FRAME_2 = 30
+  }
+
+  processState () {
+    if (this.elapsedFrame === this.changeFrame) {
+      this.state = this.STATE_ATTACK
+      if (this.voiceSrc) {
+        soundSystem.play(this.voiceSrc)
+      }
+    }
+  }
+
+  /** 
+   * 스킬 생성시 사운드 재생용도
+   * @param {string} [soundSrcA=''] 사운드 경로
+   * @param {string} [soundSrcB=''] 사운드 경로
+   */
+  startSoundPlay (soundSrcA = '', soundSrcB = '') {
+    if (soundSrcA) soundSystem.play(soundSrcA)
+    if (soundSrcB) soundSystem.play(soundSrcB)
+  }
+
+  /** 
+   * 상태를 변경하는 시점의 진행 프레임 값 
+   * 
+   * Xseries 스킬들은, 일정 시간이 지난 후에 공격을 합니다.
+  */
+  setChangeFrame (changeFrame = 48, voiceSrc = '') {
+    this.changeFrame = changeFrame
+    this.voiceSrc = voiceSrc
+  }
+
+  /** 
+   * 중앙에 이펙트를 출력하기 위한 용도
+   * 
+   * 이 함수는 이펙트의 크기를 자동으로 3배 증가시키고 생성합니다. (X시리즈 스킬 공통 특징)
+   * @param {CustomEffect} customEffect 
+   */
+  createCenterEffect (customEffect) {
+    customEffect.setWidthHeight(customEffect.width * 3, customEffect.height * 3)
+    const canvasCenterX = graphicSystem.CANVAS_WIDTH_HALF - (customEffect.width / 2)
+    const canvasCenterY = graphicSystem.CANVAS_HEIGHT_HALF - (customEffect.height / 2)
+    fieldState.createEffectObject(customEffect.getObject(), canvasCenterX, canvasCenterY)
+  }
+}
+
+class SkillR3Xkill extends SkillR3XSeries {
+  constructor () {
+    super()
+    const centerEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xkill, undefined, undefined, 2)
+    this.startSoundPlay(soundSrc.skill.skillXSound1, soundSrc.skill.skillXVoice1)
+    this.createCenterEffect(centerEffect)
+    this.setChangeFrame(this.WAIT_FRAME_1, soundSrc.skill.skillXkillVoice)
+    this.hitEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xkill)
+  }
+
+  processAttack () {
+    if (this.state !== this.STATE_ATTACK) return
+    if (!this.repeatDelay.check()) return
+
+    // 공격 방식은 임의 적을 여러개 지정하고 (같은 적을 여러번 선택할 수도 있음.)
+    // 타겟된 적에게 전부 데미지
+    let isSuccess = false
+    for (let i = 0; i < 10; i++) {
+      let randomEnemy = fieldState.getRandomEnemyObject()
+      if (randomEnemy == null) { // 만약 랜덤한 적이 null이면, 임의의 무작위 적을 다시 공격함
+        // 여기서는 processHitObject가 반복횟수 1 소모하므로, 추가로 소모하지 않음
+        this.processHitObject({x: this.x - 10000, y: this.y - 10000, width: 20000, height: 20000})
+        isSuccess = this.enemyHitedCheck({x: this.x - 10000, y: this.y - 10000, width: 20000, height: 20000})
+
+        // 적을 타격하지 못했다면, 반복횟수를 감소시킴 (왜냐하면 적을 타격하지 못하면, 반복횟수가 유지됨)
+        if (!isSuccess) this.repeatCount--
+      } else {
+        isSuccess = true
+        this.repeatCount-- // 반복횟수 1 소모 (수동으로 감소시켜야함)
+        this.damageProcess(randomEnemy)
+      }
+
+      // 한번 공격할 때 결과적으로 10번의 반복횟수가 감소함
+    }
+
+    // 사운드는 한번만 출력 (적을 타격하는데 성공했다면)
+    if (isSuccess) soundSystem.play(soundSrc.skill.skillXkillHit)
+  }
+}
+
+class SkillR3Xshot extends SkillR3XSeries {
+  constructor () {
+    super()
+    const centerEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xshot, undefined, undefined, 3)
+    this.startSoundPlay(soundSrc.skill.skillXSound2, soundSrc.skill.skillXVoice2)
+    this.createCenterEffect(centerEffect)
+    this.setChangeFrame(this.WAIT_FRAME_2, soundSrc.skill.skillXshotVoice)
+  }
+
+  processAttack () {
+    if (this.state !== this.STATE_ATTACK) return
+    if (!this.repeatDelay.check()) return
+
+    soundSystem.play(soundSrc.skill.skillXshotShot)
+    for (let i = 0; i < 10; i++) {
+      this.repeatCount-- // 반복횟수 1 감소, 한번 공격할 때마다 10개씩 감소함
+      fieldState.createWeaponObject(ID.weapon.skillR3XshotSub, this.x, this.y, this.attack)
+    }
+  }
+}
+
+class SkillR3XshotSub extends WeaponData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xshot)
+    this.isLineChase = true
+  }
+
+  afterInit () {
+    const Arandom = Math.random() < 0.5
+    const Brandom = Math.random() < 0.5
+
+    // a랜덤은 한개의 축 방향을 랜덤 지정하고, - 완전 랜덤
+    // b랜덤은 남은 한개의 축 위치(양 끝 지점)을 랜덤 지정함 - 둘 중 하나의 위치
+    if (Arandom) {
+      this.x = Math.random() * graphicSystem.CANVAS_WIDTH
+      this.y = Brandom ? 0 - this.width : graphicSystem.CANVAS_HEIGHT
+    } else {
+      this.x = Brandom ? 0 - this.width : graphicSystem.CANVAS_WIDTH
+      this.y = Math.random() * graphicSystem.CANVAS_HEIGHT
+    }
+  }
+}
+
+class SkillR3Xbeam extends SkillR3XSeries {
+  constructor () {
+    super()
+    const centerEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xbeam, undefined, undefined, 3)
+    this.startSoundPlay(soundSrc.skill.skillXSound1, soundSrc.skill.skillXVoice1)
+    this.createCenterEffect(centerEffect)
+    this.setChangeFrame(this.WAIT_FRAME_1, soundSrc.skill.skillXbeamVoice)
+  }
+
+  processAttack () {
+    if (this.state !== this.STATE_ATTACK) return
+    if (!this.repeatDelay.check()) return
+
+    this.repeatCount -= 10 // 반복횟수 10 감소 (이것은 1회 공격이 10번 공격한것과 같은 효과를 가지기 위해서임)
+    soundSystem.play(soundSrc.skill.skillXbeamShot)
+    fieldState.createWeaponObject(ID.weapon.skillR3XbeamSub, this.x, this.y, this.attack)
+  }
+}
+
+class SkillR3XbeamSub extends WeaponData {
+  constructor () {
+    super()
+    // 공격 범위 2배
+    this.setAutoImageData(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xbeam)
+    this.setWidthHeight(this.width * 2, this.height * 2)
+    this.effect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xbeam)
+    this.effect.setWidthHeight(this.effect.width * 2, this.effect.height * 2)
+    this.effectDelay = new DelayData(imageDataInfo.weaponEffect.r3Xbeam.frame)
+  }
+
+  afterInit () {
+    const Arandom = Math.random() < 0.5
+    const Brandom = Math.random() < 0.5
+
+    // a랜덤은 한개의 축 방향을 랜덤 지정하고, - 완전 랜덤
+    // b랜덤은 남은 한개의 축 위치(양 끝 지점)을 랜덤 지정함 - 둘 중 하나의 위치
+    if (Arandom) {
+      this.x = Math.random() * graphicSystem.CANVAS_WIDTH
+      this.y = Brandom ? 0 - this.width : graphicSystem.CANVAS_HEIGHT
+    } else {
+      this.x = Brandom ? 0 - this.width : graphicSystem.CANVAS_WIDTH
+      this.y = Math.random() * graphicSystem.CANVAS_HEIGHT
+    }
+
+    let randomEnemy = fieldState.getRandomEnemyObject()
+    if (randomEnemy == null) {
+      let randomX = Math.random() * graphicSystem.CANVAS_WIDTH
+      let randomY = Math.random() * graphicSystem.CANVAS_HEIGHT
+      this.setMoveSpeedChaseLine(randomX, randomY, 30, 20)
+    } else {
+      this.setMoveSpeedChaseLine(randomEnemy.x, randomEnemy.y, 30, 20)
+    }
+  }
+
+  processMove () {
+    super.processMove()
+    if (this.effectDelay.check()) {
+      fieldState.createEffectObject(this.effect.getObject(), this.x, this.y)
+    }
+  }
+
+  processAttack () {
+    // 적에 닿았을 때만, 공격횟수 소모
+    if (this.enemyHitedCheck()) {
+      super.processAttack()
+    }
+  }
+}
+
+class SkillR3Xboom extends SkillR3XSeries {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.r3Xboom)
+    const centerEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xboom, undefined, undefined, 2)
+    this.startSoundPlay(soundSrc.skill.skillXSound2, soundSrc.skill.skillXVoice2) // 보이스 1만 재생됨
+    this.createCenterEffect(centerEffect)
+    this.setChangeFrame(this.WAIT_FRAME_2, soundSrc.skill.skillXboomVoice)
+  }
+
+  processMove () {
+    this.x = graphicSystem.CANVAS_WIDTH_HALF - (this.width / 2)
+    this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
+  }
+
+  processAttack () {
+    if (this.state !== this.STATE_ATTACK) return
+    if (!this.repeatDelay.check()) return
+
+    this.repeatCount--
+    fieldState.createWeaponObject(ID.weapon.skillR3XboomSub, this.x, this.y, this.attack)
+  }
+
+  display () {
+    // 공격상태일때만 폭탄이 출력됨
+    if (this.state === this.STATE_ATTACK) {
+      super.display()
+    }
+  }
+}
+
+class SkillR3XboomSub extends MissileData {
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.r3Xboom) // 출력 이미지는 에니메이션 없음
+    this.splashEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xboom)
+    this.isLineChase = true
+    this.state = MissileData.STATE_NORMAL
+  }
+
+  getSplashArea () {
+    return {
+      x: this.centerX - 100,
+      y: this.centerY - 100,
+      width: 200,
+      height: 200,
+    }
+  }
+
+  processAttackNormal () {
+    super.processAttackNormal()
+
+    if (this.state === MissileData.STATE_SPLASH) {
+      soundSystem.play(soundSrc.skill.skillXboomHit)
+    }
+  }
+
+  afterInit () {
+    this.x = graphicSystem.CANVAS_WIDTH_HALF - (this.width / 2)
+    this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
+  }
+}
+
+class SkillR3Helljeon extends R3Helljeon {
+  constructor () {
+    super([1]) // 추적 옵션을 부여하도록 처리
+    this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.r3Helljeon)
+    // 이 이외에 차이는 없음
+  }
+}
 
 /**
  * @type {Map<number, WeaponData | any>}
@@ -2894,6 +3448,9 @@ dataExportWeapon.set(ID.weapon.kalnal, Kalnal)
 dataExportWeapon.set(ID.weapon.cogwheel, Cogwheel)
 dataExportWeapon.set(ID.weapon.yeonsai, Yeonsai)
 dataExportWeapon.set(ID.weapon.sabangtan, Sabangtan)
+dataExportWeapon.set(ID.weapon.r3TowerPink, R3TowerPink)
+dataExportWeapon.set(ID.weapon.r3TowerPurple, R3TowerPurple)
+dataExportWeapon.set(ID.weapon.r3Helljeon, R3Helljeon)
 
 // skill
 dataExportWeapon.set(ID.weapon.skillArrow, SkillArrow)
@@ -2931,3 +3488,13 @@ dataExportWeapon.set(ID.weapon.skillSujikpa, SkillSujikpa)
 dataExportWeapon.set(ID.weapon.skillSpeaker, SkillSpeaker)
 dataExportWeapon.set(ID.weapon.skillEomukggochi, SkillEomukggochi)
 dataExportWeapon.set(ID.weapon.skillEomukggochiSub, SkillEomukggochiSub)
+dataExportWeapon.set(ID.weapon.skillR2Firecraker, SkillR2Firecracker)
+dataExportWeapon.set(ID.weapon.skillR2Toyhammer, SkillR2Toyhammer)
+dataExportWeapon.set(ID.weapon.skillR3Xkill, SkillR3Xkill)
+dataExportWeapon.set(ID.weapon.skillR3Xshot, SkillR3Xshot)
+dataExportWeapon.set(ID.weapon.skillR3XshotSub, SkillR3XshotSub)
+dataExportWeapon.set(ID.weapon.skillR3Xbeam, SkillR3Xbeam)
+dataExportWeapon.set(ID.weapon.skillR3XbeamSub, SkillR3XbeamSub)
+dataExportWeapon.set(ID.weapon.skillR3Xboom, SkillR3Xboom)
+dataExportWeapon.set(ID.weapon.skillR3XboomSub, SkillR3XboomSub)
+dataExportWeapon.set(ID.weapon.skillR3Helljeon, SkillR3Helljeon)
