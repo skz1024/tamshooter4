@@ -713,8 +713,18 @@ export class userSystem {
       return true
     }
 
-    // 중복 불가능
-    if (this.skillList.includes(skillId)) return false
+    // 스킬이 중복되어있으면 그 스킬이 같은 슬롯에 있는지를 먼저 조사함
+    // 같은 슬롯에 있다면 교체되지 않고 취소
+    let swapNumber = this.skillList.indexOf(skillId)
+
+    // 변경할 번호와 지정된 슬롯번호가 같다면 취소됨
+    if (swapNumber === skillSlotNumber) {
+      return false
+    } else if (swapNumber !== -1) {
+      // 이 경우는 서로의 위치가 교체됨 (여기서는 위치가 변경될 무기만 저장해둠)
+      let prevId = this.skillList[skillSlotNumber]
+      this.skillList[swapNumber] = prevId
+    }
 
     // 스킬 교체
     this.skillList[skillSlotNumber] = skillId
@@ -789,8 +799,18 @@ export class userSystem {
       }
     }
 
-    // 무기가 중복되어있으면, 설정 무시
-    if (this.weaponList.includes(weaponId)) return false
+    // 무기가 중복되어있으면 그 무기가 같은 슬롯에 있는지를 먼저 조사함
+    // 같은 슬롯에 있다면 교체되지 않고 취소
+    let swapNumber = this.weaponList.indexOf(weaponId)
+
+    // 변경할 번호와 지정된 슬롯번호가 같다면 취소됨
+    if (swapNumber === slotNumber) {
+      return false
+    } else if (swapNumber !== -1) {
+      // 이 경우는 서로의 위치가 교체됨 (여기서는 위치가 변경될 무기만 저장해둠)
+      let prevId = this.weaponList[slotNumber]
+      this.weaponList[swapNumber] = prevId
+    }
 
     this.weaponList[slotNumber] = weaponId
     return true // 무기 변경 성공

@@ -3027,7 +3027,7 @@ class StatSystem {
   }
 }
 
-class LoadErrorSystem extends MenuSystem {
+class ErrorSystem extends MenuSystem {
   constructor () {
     super()
     /** 오류 메세지 텍스트 */ this.message = ''
@@ -3196,7 +3196,7 @@ export class gameSystem {
   /** 인벤토리 시스템 */ static inventorySystem = new InventorySystem()
   /** 스토리 시스템 */ static storySystem = new StorySystem()
   /** etc... 시스템 */ static etcSystem = new EtcSystem()
-  /** loadError 시스템 */ static errorSystem = new LoadErrorSystem()
+  /** error 시스템 */ static errorSystem = new ErrorSystem()
 
 
   /** 현재 게임의 옵션 데이터를 가져옵니다. */
