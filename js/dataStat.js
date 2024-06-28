@@ -2,6 +2,32 @@
 
 import { ID } from "./dataId.js"
 
+/** 유저의 스탯을 StatView.html에서 볼 수 있도록 만든것... */
+export class StatUser {
+  /** 최대 레벨 */
+  static MAX_LEVEL = 31
+
+  /** 경험치 테이블 */
+  static expTable = [
+    0, 30000, 33000, 36000, 39000, 42000, 45000, 48000, 51000, 54000, // lv 0 ~ 9
+    60000, 62000, 64000, 66000, 68000, 70000, 72000, 74000, 76000, 78000, // lv 10 ~ 19
+    255500, 256000, 256500, 257000, 257500, 258000, 258500, 259000, 259500, 260000, // lv 20 ~ 29
+    606600, 607200, 608400, 609000, 609600, 636600, 637200, 638400, 639000, 639600, // lv 30 ~ 39
+    916000, 919000, 922000, 925000, 928000, 944000, 947000, 951000, 954000, 957000, // lv 40 ~ 49
+    1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, // lv 50 ~ 59
+  ]
+
+  /** 공격력 보너스 테이블 */
+  static attackLevelTable = [0, // lv 0
+    0, 1000, 2000, 3000, 4000, 5000, 6200, 7400, 8600, 10000, // lv 1 ~ 10 (40000 ~ 50000)
+    12500, 15000, 17500, 20000, 22000, 24000, 26000, 28000, 29000, 30000, // lv 11 ~ 20 (50000 ~ 70000)
+    31500, 33000, 34500, 37000, 37600, 38200, 38800, 39400, 39100, 40000, // lv 21 ~ 30 (70000 ~ 80000)
+    40500, 41000, 41500, 42000, 42500, 43000, 43500, 44000, 44500, 45000, // lv 31 ~ 40 (80000 ~ 85000)
+    45500, 46000, 46500, 47000, 47500, 48000, 48500, 49000, 49500, 50000, // lv 41 ~ 50 (85000 ~ 90000)
+    50400, 50800, 51200, 51600, 52000, 52800, 53600, 54400, 55200, 56000, // lv 51 ~ 55, 56 ~ 60 (90000 ~ 92000, 93000 ~ 96000)
+  ]
+}
+
 /**
  * 무기의 기본 스탯 정보 (무기의 로직 구현은 weaponData에서 진행합니다.)
  */
@@ -536,15 +562,15 @@ dataExportStatRound.set(ID.round.test4Sound, new StatRound(-1, ID.round.PREVNULL
 // round 1
 dataExportStatRound.set(ID.round.round1_1, new StatRound(2, ID.round.PREVNULL, '1-1', '우주 여행 - 공허', 1, 40000, 150, 30000, 10, ''))
 dataExportStatRound.set(ID.round.round1_2, new StatRound(3, ID.round.PREVNULL, '1-2', '운석 지대', 2, 40000, 180, 36000, 11, ''))
-dataExportStatRound.set(ID.round.round1_3, new StatRound(4, ID.round.PREVNULL, '1-3', '운석 지대 - 무인기 충돌', 4, 40000, 210, 39000, 11, ''))
+dataExportStatRound.set(ID.round.round1_3, new StatRound(4, ID.round.PREVNULL, '1-3', '운석 지대 - 무인기 충돌', 3, 40000, 210, 39000, 11, ''))
 dataExportStatRound.set(ID.round.round1_4, new StatRound(5, ID.round.PREVNULL, '1-4', '의식의 공간', 5, 40000, 156, 38000, 10, ''))
 dataExportStatRound.set(ID.round.round1_5, new StatRound(6, ID.round.PREVNULL, '1-5', '운석 지대 - 레드 존', 6, 40000, 210, 41000, 11, ''))
-dataExportStatRound.set(ID.round.round1_6, new StatRound(7, ID.round.PREVNULL, '1-6', '우주 여행 - 파란 행성 가는 길', 8, 40000, 154, 35000, 11, ''))
+dataExportStatRound.set(ID.round.round1_6, new StatRound(7, ID.round.PREVNULL, '1-6', '우주 여행 - 파란 행성 가는 길', 7, 40000, 154, 35000, 11, ''))
 // round 2
 dataExportStatRound.set(ID.round.round2_1, new StatRound(11, ID.round.PREVNULL, '2-1', '파란 행성 - 하늘 300km ~ 250km', 10, 50000, 150, 40000, 12, ''))
-dataExportStatRound.set(ID.round.round2_2, new StatRound(12, ID.round.round2_1, '2-2', '동그라미 마을', 12, 50000, 170, 44000, 12, ''))
-dataExportStatRound.set(ID.round.round2_3, new StatRound(13, ID.round.round2_1, '2-3', '동그라미 스페이스', 13, 50000, 192, 48000, 12, ''))
-dataExportStatRound.set(ID.round.round2_4, new StatRound(14, ID.round.round2_1, '2-4', '동그라미 마을 홀', 14, 60000, 207, 52000, 14, ''))
+dataExportStatRound.set(ID.round.round2_2, new StatRound(12, ID.round.round2_1, '2-2', '동그라미 마을', 11, 50000, 170, 44000, 12, ''))
+dataExportStatRound.set(ID.round.round2_3, new StatRound(13, ID.round.round2_1, '2-3', '동그라미 스페이스', 12, 50000, 192, 48000, 12, ''))
+dataExportStatRound.set(ID.round.round2_4, new StatRound(14, ID.round.round2_1, '2-4', '동그라미 마을 홀', 13, 60000, 207, 52000, 14, ''))
 dataExportStatRound.set(ID.round.round2_5, new StatRound(15, ID.round.round2_4, '2-5', '지하실 전투', 15, 60000, 200, 32000, 14, ''))
 dataExportStatRound.set(ID.round.round2_6, new StatRound(16, ID.round.round2_4, '2-6', '폐허가 된 동그라미 마을', 16, 60000, 150, 48000, 13, ''))
 // round 3
@@ -552,7 +578,7 @@ dataExportStatRound.set(ID.round.round3_1, new StatRound(21, ID.round.PREVNULL, 
 dataExportStatRound.set(ID.round.round3_2, new StatRound(22, ID.round.PREVNULL, '3-2', '다운 타워 2', 21, 70000, 220, 72800, 15, ''))
 dataExportStatRound.set(ID.round.round3_3, new StatRound(23, ID.round.PREVNULL, '3-3', '다운 타워 3', 21, 70000, 200, 74200, 16, ''))
 dataExportStatRound.set(ID.round.round3_4, new StatRound(24, ID.round.PREVNULL, '3-4', '다운 타워 보이드', 22, 70000, 240, 78000, 16, ''))
-dataExportStatRound.set(ID.round.round3_5, new StatRound(25, ID.round.PREVNULL, '3-5', '안티 제물', 24, 70000, 610, 130000, 18, ''))
+dataExportStatRound.set(ID.round.round3_5, new StatRound(25, ID.round.PREVNULL, '3-5', '안티 제물', 23, 70000, 610, 130000, 18, ''))
 dataExportStatRound.set(ID.round.round3_6, new StatRound(26, ID.round.round3_5, '3-6', '다운 타워 코어 1', 25, 77000, 220, 83800, 17, ''))
 dataExportStatRound.set(ID.round.round3_7, new StatRound(27, ID.round.round3_5, '3-7', '다운 타워 코어 2', 25, 77000, 220, 84600, 17, ''))
 dataExportStatRound.set(ID.round.round3_8, new StatRound(28, ID.round.round3_5, '3-8', '다운 타워 통로 1', 26, 77000, 220, 86600, 17, ''))

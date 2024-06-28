@@ -1,6 +1,6 @@
 //@ts-check
 
-import { StatItem, StatPlayerSkill, StatPlayerWeapon, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, dataExportStatRoundBalance, dataExportStatWeapon } from "./js/dataStat.js"
+import { StatItem, StatPlayerSkill, StatPlayerWeapon, StatUser, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, dataExportStatRoundBalance, dataExportStatWeapon } from "./js/dataStat.js"
 
 /** 현재에 해당하는 스킬 값을 얻어옴 */
 const getSkillColor = (balance = '', coolTime = 20) => {
@@ -34,6 +34,7 @@ const getSkillColor = (balance = '', coolTime = 20) => {
 
 let pre = document.getElementById('pre')
 let element = document.createElement('pre')
+element.id = 'playerSkillList'
 element.textContent = '-player skillList-\n' 
 + 'name      |group   |balance |cool|delay|attack  |max   |shot |repeat|attack|weapon\n' 
 + '          |        |type    |time|     |multiple|target|count|count |count |attack\n'
@@ -84,6 +85,7 @@ const getWeaponColor = (balance = '') => {
 }
 
 let element2 = document.createElement('pre')
+element2.id = 'playerWeaponList'
 element2.textContent = '-player weaponList- (60frame = 1second), (delay = frame)\n'
 + 'name      |group   |balance    |delay|shot |repeat|attack  |weapon|\n'
 + '          |        |type       |     |count|count |multiple|attack|'
@@ -117,6 +119,7 @@ dataExportStatPlayerWeapon.forEach((value) => {
 })
 
 let element3 = document.createElement('pre')
+element3.id = 'roundList'
 element3.textContent = '-roundList-\n'
 + 'round|require|standard|finish|clear  |gold |gold |balance|play|timediv|round name|round info |\n'
 + 'text |level  |power   |time  |bonus  |value|total|score  |time|score  |          |           |\n'
@@ -153,6 +156,7 @@ dataExportStatRound.forEach((value, keyId) => {
 })
 
 let element4 = document.createElement('pre')
+element4.id = 'upgradeCostList'
 element4.textContent = '-upgradeCost-\n'
 + 'level|attack      |cost   |totalcost|refund |totalcost            |\n'
 + '     |percent|plus|percent|percent  |percent|refund   |diff |prev |\n'
@@ -187,5 +191,26 @@ for (let i = 0; i <= StatItem.UPGRADE_LEVEL_MAX; i++) {
   element.style.color = 'black'
   element.style.width = '800px'
   element.textContent = level + attackPercent + attackDifferent + costPercent + totalCostPercentString + refundPercent + totalCostRefund + totalCostDifferent + totalCostPrevDiff
+  pre?.appendChild(element)
+}
+
+let element5 = document.createElement('pre')
+element5.id = 'playerLvData'
+element5.textContent = '-player level data / max level: ' + StatUser.MAX_LEVEL + '-\n'
++ 'level|exp     |attack|\n'
+pre?.appendChild(element5)
+
+for (let i = 0; i <= StatUser.MAX_LEVEL; i++) {
+  let level = (i + '').padEnd(5, ' ') + '|'
+  let exp = (StatUser.expTable[i] + '').padEnd(8, ' ') + '|'
+  let attack = (StatUser.attackLevelTable[i] + '').padEnd(6, ' ') + '|'
+
+  let color = i % 2 === 0 ? '#F5FFF1' : '#DDE8D9'
+  let element = document.createElement('pre')
+  element.style.margin = '0'
+  element.style.background = color
+  element.style.width = '800px'
+  element.style.color = 'black'
+  element.textContent = level + exp + attack
   pre?.appendChild(element)
 }

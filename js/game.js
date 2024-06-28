@@ -1,7 +1,7 @@
 //@ts-check
 
 import { ID } from "./dataId.js"
-import { StatItem, dataExportStatItem } from "./dataStat.js"
+import { StatItem, StatUser, dataExportStatItem } from "./dataStat.js"
 import { ImageDataObject, imageDataInfo, imageSrc } from "./imageSrc.js"
 import { soundSrc } from "./soundSrc.js"
 import { TamsaEngine } from "./tamsaEngine/tamsaEngine.js"
@@ -623,20 +623,12 @@ export class userSystem {
   /**
    * 경험치 테이블
    */
-  static expTable = [0, // lv 0
-    30000, 33000, 36000, 39000, 42000, 45000, 48000, 51000, 54000, 57000, // lv 1 ~ 10
-    255500, 256000, 256500, 257000, 257500, 258000, 258500, 259000, 259500, 260000, // lv 11 ~ 20
-    333300, 346600, 359900, 373300, 386600, 399900, 413300, 426600, 439900, 450000, // lv 21 ~ 30
-  ]
+  static expTable = StatUser.expTable
 
   /**
    * 공격력 보너스 테이블
    */
-  static attackLevelTable = [0, // lv 0
-    0, 900, 1800, 2700, 3600, 4500, 5600, 6700, 7800, 10000, // lv 1 ~ 10
-    11500, 13000, 14500, 16000, 17500, 20000, 22500, 25000, 27500, 30000, // lv 11 ~ 20
-    31100, 32200, 33300, 34400, 35500, 37000, 37700, 38400, 39100, 40000, // lv 21 ~ 30
-  ]
+  static attackLevelTable = StatUser.attackLevelTable
 
   /** 총 플레이 타임 에 관한 정보 */
   static playTime = {
@@ -1000,7 +992,7 @@ export class userSystem {
    */
   static plusExp (value) {
     this.exp += value
-    const maxLevel = this.expTable.length - 1 // 최대 배열길이 - 1이 최대 레벨
+    const maxLevel = StatUser.MAX_LEVEL
 
     // 레벨업 체크
     if (this.lv < maxLevel) {
