@@ -55,9 +55,16 @@ export class StatPlayerWeapon {
     this.attackMultiple = attackMultiple
     this.shotCount = shotCount
     this.weaponIdList = weaponIdList
+    /** 잠금상태: 이 값이 있다면, 해당 무기는 특정 조건을 맞아야만 사용할 수 있음. @type {boolean} */ this.lock = true
   
     /** 무기 공격력 (기준값 10000 기준으로 무기의 예상 공격력 계산, 단 정확하지 않음. 왜냐하면 아직 무기의 repeatCount를 모름) */
     this.weaponAttack = this.getCurrentAttack()
+
+    // 무기 그룹의 지정에 따라 조건 잠금 설정
+    const PGroup = StatPlayerWeapon.groupTypeList
+    if (this.group === PGroup.GROUP1 || this.group === PGroup.GROUP2 || this.group === '') {
+      this.lock = false // 기본 무기는 자동 잠금 해제 (해당 요소를 조사할 필요가 없음)
+    }
   }
 
   /** 
@@ -88,11 +95,22 @@ export class StatPlayerWeapon {
     /** 사이드웨이브 (무기 발사체는 여러방향을 띔, 멀티샷과는 다르게 성향은 1개, 방향은 여러개임) */ SIDEWAVE: 'sidewave',
   }
 
+  /** 무기의 그룹 타입, 이 타입들은 해당 무기 잠금에 영향을 줄 수 있음. (스킬하고도 그룹 타입은 공유) */
   static groupTypeList = {
-    GROUP1: 'group1',
-    GROUP2: 'group2',
-    DONGGRAMI: 'donggrami',
-    R3_TOWER: 'r3_tower',
+    /** 그룹 1, 기본으로 열림, 라운드 1 신규 무기 */ GROUP1: 'group1',
+    /** 그룹 2, 기본으로 열림, 라운드 3 완성 이후 만들어진 신규 무기 */ GROUP2: 'group2',
+    /** 동그라미 그룹, 라운드 2와 연관이 있음. 라운드 2-4에서 구매 가능 */ DONGGRAMI: 'donggrami',
+    /** 타워 그룹, 라운드 3과 연관이 있음. 라운드 2-4에서 구매 가능 하지만, 라운드 3-7을 클리어해야함 */ R3_TOWER: 'r3_tower',
+  }
+
+  /** (아직 이 함수는 임시 함수임) 언락 조건을 얻어옵니다. (string으로 리턴됨) */
+  static getUnlockCondition (groupType = '') {
+    let G = StatPlayerWeapon.groupTypeList
+    if (groupType === G.DONGGRAMI) {
+      return '동그라미 마을 상점(라운드 2-4) 에서 구매 가능'
+    } else if (groupType === G.R3_TOWER) {
+      return '동그라미 마을 상점(라운드 2-4) 에서 구매 가능 (단, 3-7을 클리어해야함)'
+    }
   }
 }
 
@@ -122,6 +140,7 @@ export class StatPlayerSkill {
     this.shot = shotCount
     this.repeat = repeatCount
     this.weaponIdList = weaponIdList
+    this.lock = true
 
     this.currentWeapon = dataExportStatWeapon.get(weaponIdList[0])
     this.hit = this.currentWeapon?.repeatCount || 1
@@ -129,6 +148,12 @@ export class StatPlayerSkill {
     // 0으로 나누기 금지
     /** 무기 공격력 (기준값 10000 기준으로 무기의 예상 공격력 계산) */
     this.weaponAttack = this.getCurrentAttack()
+
+    // 스킬 그룹의 지정에 따라 조건 잠금 설정
+    const PGroup = StatPlayerSkill.groupTypeList
+    if (this.group === PGroup.GROUP1 || this.group === PGroup.GROUP2 || this.group === '') {
+      this.lock = false // 기본 무기는 자동 잠금 해제 (해당 요소를 조사할 필요가 없음)
+    }
   }
 
   /** 자신의 현재 공격력과 관련된 무기 공격력을 얻습니다. */
@@ -141,6 +166,7 @@ export class StatPlayerSkill {
   }
 
   static groupTypeList = StatPlayerWeapon.groupTypeList
+  static getUnlockCondition = StatPlayerWeapon.getUnlockCondition
 
   static balanceTypeList = {
     SPLASH: 'splash',
@@ -165,6 +191,7 @@ export class StatRound {
    * 
    * (참고: 입력될 내용의 문자열이 길 수 있기 때문에 roundInfo는 맨 마지막 매개변수로 지정되었습니다.)
    * @param {number} [iconNumber=-1] 라운드 아이콘의 번호 (roundIcon.png에 있는 여러 아이콘들중에 어떤것을 선택할건지에 대한 값), -1은 아이콘 없음
+   * @param {number} [prevRoundId=0] 이전 라운드의 id, 이 값이 0이 아닌경우 해당 라운드를 클리어 해야 오픈됨
    * @param {string} roundText 라운드 값을 표시할 텍스트, 예시: 1-1, 한글 사용 금지, 일부 기호와 알파벳만 사용가능, 최대 5글자까지 지원(검사하진 않음...)
    * @param {string} roundName 라운드의 이름
    * @param {number} requireLevel 해당 라운드를 플레이하기 위한 최소 레벨 (해당 레벨 이상만 플레이 가능)
@@ -174,8 +201,9 @@ export class StatRound {
    * @param {number} gold 라운드에 대한 골드의 값 (이 값은 10초당 획득하는 단위로 구성되어있습니다.)
    * @param {string} roundInfo 
    */
-  constructor (iconNumber = -1, roundText = 'NULL', roundName = 'NULL', requireLevel = 0, requireAttack = 0, finishTime = 1, clearBonus = 0, gold = 0, roundInfo = '') {
+  constructor (iconNumber = -1, prevRoundId = 0, roundText = 'NULL', roundName = 'NULL', requireLevel = 0, requireAttack = 0, finishTime = 1, clearBonus = 0, gold = 0, roundInfo = '') {
     /** 아이콘의 번호 (-1인경우 없음) */ this.iconNumber = iconNumber
+    /** 이전 라운드의 id (이 값이 0이 아니면 해당 라운드를 클리어 해야 오픈됨) */ this.prevRoundId = prevRoundId
     /** 스탯라인에 표시될 라운드 텍스트값 (예를들어 1-1 같은거) */ this.roundText = roundText
     /** 라운드의 이름 */ this.roundName = roundName
     /** 해당 라운드를 플레이하기 위한 최소 레벨 */ this.requireLevel = requireLevel
@@ -187,7 +215,7 @@ export class StatRound {
     /** 총합 골드량 */ this.goldTotal = this.gold * Math.floor(finishTime / 10)
 
     // 추가적인 옵션 자동 설정
-    /** 해당 라운드를 진행하기 위해 필요한 최소 공격력값 (이 값 미만은 플레이 불가능) */ this.minAttack = Math.floor(requireAttack * 0.9)
+    /** 해당 라운드를 진행하기 위해 필요한 최소 공격력값 (이 값 미만은 플레이 불가능) */ this.minAttack = Math.floor(requireAttack * 1)
   }
 
   /**
@@ -487,7 +515,7 @@ DXskill.set(IDskill.sujikpa, new pSkill(sGroup.GROUP2, 'sujikpa', sBalance.AREA,
 DXskill.set(IDskill.speaker, new pSkill(sGroup.GROUP2, 'speaker', sBalance.AREA, 24, 1, 0.85, 1, 1, [ID.weapon.skillSpeaker]))
 DXskill.set(IDskill.eomukggochi, new pSkill(sGroup.GROUP2, 'eomukggochi', sBalance.SHOT, 24, 0, 1.05, 1, 1, [ID.weapon.skillEomukggochi]))
 DXskill.set(IDskill.r2Firecracker, new pSkill(sGroup.DONGGRAMI, 'firecracker', sBalance.SPLASH, 24, 12, 0.86, 1, 15, [ID.weapon.skillR2Firecraker]))
-DXskill.set(IDskill.r2Toyhammer, new pSkill(sGroup.GROUP2, 'toyhammer', sBalance.CHASE, 24, 1, 1, 1, 1, [ID.weapon.skillR2Toyhammer]))
+DXskill.set(IDskill.r2Toyhammer, new pSkill(sGroup.DONGGRAMI, 'toyhammer', sBalance.CHASE, 24, 1, 1, 1, 1, [ID.weapon.skillR2Toyhammer]))
 DXskill.set(IDskill.r3Xkill, new pSkill(sGroup.R3_TOWER, 'Xkill', sBalance.CHASE, 24, 0, 1, 1, 1, [ID.weapon.skillR3Xkill]))
 DXskill.set(IDskill.r3Xshot, new pSkill(sGroup.R3_TOWER, 'Xshot', sBalance.SHOT, 24, 0, 1.05, 1, 1, [ID.weapon.skillR3Xshot]))
 DXskill.set(IDskill.r3Xbeam, new pSkill(sGroup.R3_TOWER, 'Xbeam', sBalance.AREA, 24, 0, 0.91, 1, 1, [ID.weapon.skillR3Xbeam]))
@@ -501,35 +529,35 @@ DXskill.set(IDskill.r3Helljeon, new pSkill(sGroup.R3_TOWER, 'helljeon', sBalance
 export const dataExportStatRound = new Map()
 dataExportStatRound.set(ID.round.UNUSED, new StatRound())
 // test
-dataExportStatRound.set(ID.round.test1Enemy, new StatRound(8, 'TEST1', 'enemy test', 0, 0, 9900, 0, 0, '테스트 라운드 (디버그 용도)'))
-dataExportStatRound.set(ID.round.test2Background, new StatRound(8, 'TEST2', 'background test', 0, 0, 9900, 0, 0))
-dataExportStatRound.set(ID.round.test3Round3DownTower, new StatRound(8, 'R3-TEST', 'downtower test', 20, 0, 9900, 0, 0, 'round3을 제작하는 과정에서 만들어진 테스트 라운드'))
-dataExportStatRound.set(ID.round.test4Sound, new StatRound(-1, 'TEST4', '사운드 테스트', 0, 0, 9999, 0, 0, '사운드 테스트'))
+dataExportStatRound.set(ID.round.test1Enemy, new StatRound(8, ID.round.PREVNULL, 'TEST1', 'enemy test', 0, 0, 9900, 0, 0, '테스트 라운드 (디버그 용도)'))
+dataExportStatRound.set(ID.round.test2Background, new StatRound(8, ID.round.PREVNULL, 'TEST2', 'background test', 0, 0, 9900, 0, 0))
+dataExportStatRound.set(ID.round.test3Round3DownTower, new StatRound(8, ID.round.PREVNULL, 'R3-TEST', 'downtower test', 20, 0, 9900, 0, 0, 'round3을 제작하는 과정에서 만들어진 테스트 라운드'))
+dataExportStatRound.set(ID.round.test4Sound, new StatRound(-1, ID.round.PREVNULL, 'TEST4', '사운드 테스트', 0, 0, 9999, 0, 0, '사운드 테스트'))
 // round 1
-dataExportStatRound.set(ID.round.round1_1, new StatRound(2, '1-1', '우주 여행 - 공허', 1, 40000, 150, 30000, 10, ''))
-dataExportStatRound.set(ID.round.round1_2, new StatRound(3, '1-2', '운석 지대', 2, 40000, 180, 36000, 11, ''))
-dataExportStatRound.set(ID.round.round1_3, new StatRound(4, '1-3', '운석 지대 - 무인기 충돌', 4, 40000, 210, 39000, 11, ''))
-dataExportStatRound.set(ID.round.round1_4, new StatRound(5, '1-4', '의식의 공간', 5, 40000, 156, 38000, 10, ''))
-dataExportStatRound.set(ID.round.round1_5, new StatRound(6, '1-5', '운석 지대 - 레드 존', 6, 40000, 210, 41000, 11, ''))
-dataExportStatRound.set(ID.round.round1_6, new StatRound(7, '1-6', '우주 여행 - 파란 행성 가는 길', 8, 40000, 154, 35000, 11, ''))
+dataExportStatRound.set(ID.round.round1_1, new StatRound(2, ID.round.PREVNULL, '1-1', '우주 여행 - 공허', 1, 40000, 150, 30000, 10, ''))
+dataExportStatRound.set(ID.round.round1_2, new StatRound(3, ID.round.PREVNULL, '1-2', '운석 지대', 2, 40000, 180, 36000, 11, ''))
+dataExportStatRound.set(ID.round.round1_3, new StatRound(4, ID.round.PREVNULL, '1-3', '운석 지대 - 무인기 충돌', 4, 40000, 210, 39000, 11, ''))
+dataExportStatRound.set(ID.round.round1_4, new StatRound(5, ID.round.PREVNULL, '1-4', '의식의 공간', 5, 40000, 156, 38000, 10, ''))
+dataExportStatRound.set(ID.round.round1_5, new StatRound(6, ID.round.PREVNULL, '1-5', '운석 지대 - 레드 존', 6, 40000, 210, 41000, 11, ''))
+dataExportStatRound.set(ID.round.round1_6, new StatRound(7, ID.round.PREVNULL, '1-6', '우주 여행 - 파란 행성 가는 길', 8, 40000, 154, 35000, 11, ''))
 // round 2
-dataExportStatRound.set(ID.round.round2_1, new StatRound(11, '2-1', '파란 행성 - 하늘 300km ~ 250km', 10, 50000, 150, 40000, 12, ''))
-dataExportStatRound.set(ID.round.round2_2, new StatRound(12, '2-2', '동그라미 마을', 12, 50000, 170, 44000, 12, ''))
-dataExportStatRound.set(ID.round.round2_3, new StatRound(13, '2-3', '동그라미 스페이스', 13, 50000, 192, 48000, 12, ''))
-dataExportStatRound.set(ID.round.round2_4, new StatRound(14, '2-4', '동그라미 마을 홀', 14, 60000, 207, 52000, 14, ''))
-dataExportStatRound.set(ID.round.round2_5, new StatRound(15, '2-5', '지하실 전투', 15, 60000, 200, 32000, 14, ''))
-dataExportStatRound.set(ID.round.round2_6, new StatRound(16, '2-6', '폐허가 된 동그라미 마을', 18, 60000, 150, 48000, 13, ''))
+dataExportStatRound.set(ID.round.round2_1, new StatRound(11, ID.round.PREVNULL, '2-1', '파란 행성 - 하늘 300km ~ 250km', 10, 50000, 150, 40000, 12, ''))
+dataExportStatRound.set(ID.round.round2_2, new StatRound(12, ID.round.round2_1, '2-2', '동그라미 마을', 12, 50000, 170, 44000, 12, ''))
+dataExportStatRound.set(ID.round.round2_3, new StatRound(13, ID.round.round2_1, '2-3', '동그라미 스페이스', 13, 50000, 192, 48000, 12, ''))
+dataExportStatRound.set(ID.round.round2_4, new StatRound(14, ID.round.round2_1, '2-4', '동그라미 마을 홀', 14, 60000, 207, 52000, 14, ''))
+dataExportStatRound.set(ID.round.round2_5, new StatRound(15, ID.round.round2_4, '2-5', '지하실 전투', 15, 60000, 200, 32000, 14, ''))
+dataExportStatRound.set(ID.round.round2_6, new StatRound(16, ID.round.round2_4, '2-6', '폐허가 된 동그라미 마을', 16, 60000, 150, 48000, 13, ''))
 // round 3
-dataExportStatRound.set(ID.round.round3_1, new StatRound(21, '3-1', '다운 타워 1', 20, 70000, 200, 71400, 16, ''))
-dataExportStatRound.set(ID.round.round3_2, new StatRound(22, '3-2', '다운 타워 2', 21, 70000, 220, 72800, 15, ''))
-dataExportStatRound.set(ID.round.round3_3, new StatRound(23, '3-3', '다운 타워 3', 21, 70000, 200, 74200, 16, ''))
-dataExportStatRound.set(ID.round.round3_4, new StatRound(24, '3-4', '다운 타워 보이드', 22, 70000, 240, 78000, 16, ''))
-dataExportStatRound.set(ID.round.round3_5, new StatRound(25, '3-5', '안티 제물', 24, 70000, 610, 130000, 18, ''))
-dataExportStatRound.set(ID.round.round3_6, new StatRound(26, '3-6', '다운 타워 코어 1', 25, 77000, 220, 83800, 17, ''))
-dataExportStatRound.set(ID.round.round3_7, new StatRound(27, '3-7', '다운 타워 코어 2', 25, 77000, 220, 84600, 17, ''))
-dataExportStatRound.set(ID.round.round3_8, new StatRound(28, '3-8', '다운 타워 통로 1', 26, 77000, 220, 86600, 17, ''))
-dataExportStatRound.set(ID.round.round3_9, new StatRound(29, '3-9', '다운 타워 통로 2', 26, 77000, 220, 87800, 17, ''))
-dataExportStatRound.set(ID.round.round3_10, new StatRound(19, '3-10', '동그라미 마을로 돌아가는 길', 28, 77000, 447, 160000, 18, ''))
+dataExportStatRound.set(ID.round.round3_1, new StatRound(21, ID.round.PREVNULL, '3-1', '다운 타워 1', 20, 70000, 200, 71400, 16, ''))
+dataExportStatRound.set(ID.round.round3_2, new StatRound(22, ID.round.PREVNULL, '3-2', '다운 타워 2', 21, 70000, 220, 72800, 15, ''))
+dataExportStatRound.set(ID.round.round3_3, new StatRound(23, ID.round.PREVNULL, '3-3', '다운 타워 3', 21, 70000, 200, 74200, 16, ''))
+dataExportStatRound.set(ID.round.round3_4, new StatRound(24, ID.round.PREVNULL, '3-4', '다운 타워 보이드', 22, 70000, 240, 78000, 16, ''))
+dataExportStatRound.set(ID.round.round3_5, new StatRound(25, ID.round.PREVNULL, '3-5', '안티 제물', 24, 70000, 610, 130000, 18, ''))
+dataExportStatRound.set(ID.round.round3_6, new StatRound(26, ID.round.round3_5, '3-6', '다운 타워 코어 1', 25, 77000, 220, 83800, 17, ''))
+dataExportStatRound.set(ID.round.round3_7, new StatRound(27, ID.round.round3_5, '3-7', '다운 타워 코어 2', 25, 77000, 220, 84600, 17, ''))
+dataExportStatRound.set(ID.round.round3_8, new StatRound(28, ID.round.round3_5, '3-8', '다운 타워 통로 1', 26, 77000, 220, 86600, 17, ''))
+dataExportStatRound.set(ID.round.round3_9, new StatRound(29, ID.round.round3_5, '3-9', '다운 타워 통로 2', 26, 77000, 220, 87800, 17, ''))
+dataExportStatRound.set(ID.round.round3_10, new StatRound(19, ID.round.round3_5, '3-10', '동그라미 마을로 돌아가는 길', 28, 77000, 447, 160000, 18, ''))
 
 
 /**

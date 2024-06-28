@@ -1645,6 +1645,7 @@ export class fieldSystem {
     // 이 과정에서 필드 데이터에 대해 초기화가 진행됩니다.
     this.roundImageSoundLoad() // 라운드 데이터 로드
 
+    this.roundId = roundId
     this.message = this.messageList.STATE_FIELD
     fieldState.allObjectReset()
     this.stateId = this.STATE_LOADING // 로딩 먼저 시작하고, 이것이 완료되면 로딩 과정을 생략
@@ -1805,6 +1806,7 @@ export class fieldSystem {
       this.totalScore = this.fieldScore + this.round.stat.clearBonus
       this.message = this.messageList.REQUEST_SAVE // 강제 저장을 통해 필드 저장 데이터를 삭제하고, 메인화면으로 돌아가게끔 유도
       this.requestAddGold(this.getRoundGoldCalculation()) // 골드 추가
+      userSystem.addRoundClear(this.roundId) // 라운드 클리어 ID 추가
     }
 
     this.scoreSound()

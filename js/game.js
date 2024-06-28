@@ -125,9 +125,6 @@ for (let key in soundSrc.music) {
 for (let key in soundSrc.skill) {
   game.sound.createAudio(soundSrc.skill[key])
 }
-for (let key in soundSrc.enemyDie) {
-  game.sound.createAudio(soundSrc.enemyDie[key])
-}
 
 
 class InventoryItem {
@@ -211,8 +208,10 @@ class userInventorySystem {
       isDeleted = true
     } else if (target.itemType === this.itemType.ITEM) {
       // 아이템의 개수가 삭제 개수보다 많으면 그 개수만큼 삭제, 적으면 전부 삭제
+      if (target.count > deleteCount) target.count -= deleteCount
+
       // 삭제 개수가 0이하이면 전부 삭제
-      target.count > deleteCount || deleteCount <= 0 ? target.count -= deleteCount : isDeleted = true
+      if (deleteCount <= 0) isDeleted = true
     }
 
     // 아이템 삭제 작업
@@ -270,7 +269,59 @@ class userInventorySystem {
   static get (index) {
     return this.itemList[index]
   }
+
+  static getSaveData () {
+    let idList = []
+    let countList = []
+    let upgradeLevel = []
+
+    for (let i = 0; i < this.itemList.length; i++) {
+      let current = this.itemList[i]
+      idList.push(current.id)
+      countList.push(current.count)
+      upgradeLevel.push(current.upgradeLevel)
+    }
+
+    return {
+      idList,
+      countList,
+      upgradeLevel
+    }
+  }
 }
+
+/** 
+ * 장비 데이터
+ * @typedef UserEquipment
+ * @property {number} itemIndex
+ * @property {number} attack
+ * @property {number} baseCost
+ * @property {number} upgradeCost
+ * @property {number} id
+ * @property {number} upgradeLevel
+ */
+
+/**
+ * 유저 세이브 데이터 타입
+ * @typedef UserSaveData
+ * @property {number} lv
+ * @property {number} exp
+ * @property {number} gold
+ * @property {number[]} weaponList
+ * @property {number[]} skillList
+ * @property {number[]} weaponPreset
+ * @property {number[]} skillPreset
+ * @property {number} weaponPresetNumber
+ * @property {number} skillPresetNumber
+ * @property {number[]} inventoryItemIdList
+ * @property {number[]} inventoryItemCountList
+ * @property {number[]} inventoryItemUpgardeLevel
+ * @property {UserEquipment} equipment
+ * @property {number[]} weaponUnlockList
+ * @property {number[]} skillUnlockList
+ * @property {number[]} roundClearList
+ * @property {number[]} specialFlagList
+ */
 
 /** 유저 정보 (static 클래스) */
 export class userSystem {
@@ -286,7 +337,27 @@ export class userSystem {
   /** 레벨업 이펙트 프레임 */ static levelUpEffectFrame = 0
   /** 골드 (플레이어의 자원) */ static gold = 0
 
+  /** 스페셜 플래그 (특수한 용도로 사용됨) */ static specialFlagList = [0]
+
   /** 아이템의 강화 최대 레벨 */ static UPGRADE_LEVEL_MAX = StatItem.UPGRADE_LEVEL_MAX
+
+  /** 라운드 클리어 id 리스트 @type {number[]} */
+  static roundClearList = []
+
+  /** 해당 라운드가 클리어되어있는지 살펴봅니다. */
+  static getRoundClear (roundId = 0) {
+    return this.roundClearList.includes(roundId)
+  }
+
+  /** 클리어한 라운드의 id 추가 (중복으로 처리되지 않음) */
+  static addRoundClear (roundId = 0) {
+    if (!this.roundClearList.includes(roundId)) {
+      this.roundClearList.push(roundId)
+
+      // 라운드 id를 오름차순 정렬
+      this.roundClearList.sort((a, b) => a - b)
+    }
+  }
   
   /** 스킬 리스트(기본값) (총 8개, 이중 0 ~ 3번은 A슬롯, 4 ~ 7번은 B슬롯) */ 
   static skillList = [
@@ -317,6 +388,25 @@ export class userSystem {
     ID.playerSkill.unused, ID.playerSkill.unused, ID.playerSkill.unused, ID.playerSkill.unused, // preset 5B
   ]
 
+  /** 스킬의 언락된 리스트 @type {number[]} */
+  static skillUnlockList = []
+
+  /** 해당 스킬이 언락되어있는지를 살펴봄 */
+  static getSkillUnlock (skillId = 0) {
+    return this.skillUnlockList.includes(skillId)
+  }
+
+  /** 특정 skill의 unlock 추가 (중복으로 처리되지 않음) */
+  static addSkillUnlock (skillId = 0) {
+    if (!this.skillUnlockList.includes(skillId)) {
+      this.skillUnlockList.push(skillId)
+
+      // 스킬 id를 오름차순 정렬
+      this.skillUnlockList.sort((a, b) => a - b)
+    }
+  }
+
+  /** 유저가 장착한 장비의 데이터 (캐시용도로 사용됨) @type {UserEquipment} */
   static equipment = {
     itemIndex: -1,
 
@@ -502,6 +592,24 @@ export class userSystem {
     ID.playerWeapon.multyshot, ID.playerWeapon.unused, ID.playerWeapon.unused, ID.playerWeapon.unused,
     ID.playerWeapon.multyshot, ID.playerWeapon.unused, ID.playerWeapon.unused, ID.playerWeapon.unused,
   ]
+
+  /** 무기의 언락된 리스트 @type {number[]} */
+  static weaponUnlockList = []
+
+  /** 해당 무기가 언락되어있는지를 살펴봄 */
+  static getWeaponUnlock (weaponId = 0) {
+    return this.weaponUnlockList.includes(weaponId)
+  }
+
+  /** 특정 weapon의 unlock 추가 (중복으로 처리되지 않음) */
+  static addWeaponUnlock (weaponId = 0) {
+    if (!this.weaponUnlockList.includes(weaponId)) {
+      this.weaponUnlockList.push(weaponId)
+
+      // 무기 id를 오름차순 정렬
+      this.weaponUnlockList.sort((a, b) => a - b)
+    }
+  }
   
   /** 플레이어가 기본적으로 가지는 공격력 */
   static BASE_ATTACK = 40000
@@ -660,7 +768,7 @@ export class userSystem {
   ]
 
   /** 유저에게 보여지는 스킬을 설정하는 함수 */
-  static setSkillDisplayStat (slotNumber, coolTime, id) {
+  static setSkillDisplayStat (slotNumber = 0, coolTime = 0, id = 0) {
     this.skillDisplayStat[slotNumber].coolTime = coolTime
     this.skillDisplayStat[slotNumber].id = id
   }
@@ -1136,24 +1244,28 @@ export class userSystem {
   /**
    * 저장 형식 (버전에 따라 변경될 수 있음.)
    * 
-   * @retruns 세이브데이터의 문자열
+   * @returns {UserSaveData} 세이브데이터의 문자열
    */
   static getSaveData () {
-    let inputData = {
+    return {
       lv: this.lv,
       exp: this.exp,
       gold: this.gold,
-      weapon: this.weaponList,
-      skill: this.skillList,
+      weaponList: this.weaponList,
+      skillList: this.skillList,
       weaponPreset: this.weaponPresetList,
       weaponPresetNumber: this.weaponPresetNumber,
       skillPreset: this.skillPresetList,
       skillPresetNumber: this.skillPresetNumber,
-      inventoryItemList: this.inventory.itemList,
+      inventoryItemIdList: this.inventory.getSaveData().idList,
+      inventoryItemCountList: this.inventory.getSaveData().countList,
+      inventoryItemUpgardeLevel: this.inventory.getSaveData().upgradeLevel,
       equipment: this.equipment,
+      weaponUnlockList: this.weaponUnlockList,
+      skillUnlockList: this.skillUnlockList,
+      roundClearList: this.roundClearList,
+      specialFlagList: this.specialFlagList,
     }
-
-    return inputData
   }
 
   static getSaveData0a36 () {
@@ -1170,7 +1282,7 @@ export class userSystem {
 
   /**
    * 현재 버전에 대한 유저 데이터 로드
-   * @param {any} saveData 저장 성공 여부
+   * @param {UserSaveData} saveData 저장 성공 여부
    * @returns {boolean}
    */
   static setLoadData (saveData) {
@@ -1179,12 +1291,34 @@ export class userSystem {
     // 해당 속성이 있을때에만 값을 추가합니다. (없으면 추가 안함)
     if (saveData.lv) this.lv = saveData.lv
     if (saveData.exp) this.exp = saveData.exp
-    if (saveData.weapon) this.weaponList = saveData.weapon
-    if (saveData.skill) this.skillList = saveData.skill
     if (saveData.gold) this.gold = saveData.gold
     if (saveData.equipment) this.equipment = saveData.equipment
 
-    if (saveData.inventoryItemList) this.inventory.itemList = saveData.inventoryItemList
+    // 무기 설정
+    if (saveData.weaponList) {
+      for (let i = 0; i < saveData.weaponList.length; i++) {
+        this.setWeapon(i, saveData.weaponList[i])
+      }
+    }
+
+    // 스킬 설정
+    if (saveData.skillList) {
+      for (let i = 0; i < saveData.skillList.length; i++) {
+        this.setSkill(i, saveData.skillList[i])
+      }
+    }
+
+    // 인벤토리 확인 (3개의 데이터 전부 존재해야함)
+    if (saveData.inventoryItemIdList && saveData.inventoryItemCountList && saveData.inventoryItemUpgardeLevel) {
+      let itemList = saveData.inventoryItemIdList
+      let countList = saveData.inventoryItemCountList
+      let upgardeLevelList = saveData.inventoryItemUpgardeLevel
+
+      // 아이템 추가 (만약 문제가 발생하면, 해당 아이템은 소멸될 수 있음.)
+      for (let i = 0; i < itemList.length; i++) {
+        this.inventory.add(itemList[i], countList[i], upgardeLevelList[i])
+      }
+    }
 
     let weaponPreset = []
     let skillPreset = []
@@ -1227,6 +1361,10 @@ export class userSystem {
     if (skillPreset != null && skillPreset.length === presetCount * this.SKILL_LIST_COUNT) {
       this.skillPresetList = skillPreset
     }
+
+    if (saveData.roundClearList) this.roundClearList = saveData.roundClearList
+    if (saveData.weaponUnlockList) this.weaponUnlockList = saveData.weaponUnlockList
+    if (saveData.skillUnlockList) this.skillUnlockList = saveData.skillUnlockList
 
     return true
   }

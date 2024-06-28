@@ -490,11 +490,16 @@ export class WeaponData extends FieldData {
 
       // 참고로, chaseMissCount 숫자가 일정 값 이상일경우 해당 객체는 적을 더이상 추적하지 않습니다.
       // 무기의 이동속도 변화는 없음
-      if (this.chaseMissCount >= this.chaseMissLimit) {
+      if (this.chaseMissCount > this.chaseMissLimit) {
         this.isChaseType = false
         this.isChasing = false
         // this.moveSpeedX = 20 // 속도 재조정 (지금은 제거됨)
         // this.moveSpeedY = 0
+
+        // 만약, 이동속도가 0이라면, 임의로 속도 재조정함
+        if (this.moveSpeedX === 0 && this.moveSpeedY === 0) {
+          this.setMoveSpeed(20, 0)
+        }
       }
     }
   }
@@ -846,6 +851,14 @@ class LaserBlue extends Laser {
     this.targetY = 0
   }
 
+  processMove () {
+    super.processMove()
+
+    if (!this.isChaseType && this.moveSpeedX === 0 && this.moveSpeedY === 0) {
+      this.setMoveSpeed(20, 0)
+    }
+  }
+
   processChaseEnemy () {
     const laserHalfSize = this.height / 2
 
@@ -1092,8 +1105,7 @@ class Blaster extends WeaponData {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.blaster)
-    this.moveSpeedX = 24
-    this.moveSpeedY = 0
+    this.setMoveSpeed(24, 0)
   }
 }
 

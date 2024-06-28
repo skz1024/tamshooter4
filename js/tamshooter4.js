@@ -1,7 +1,7 @@
 //@ts-check
 
 import { imageSrc, imageDataInfo, ImageDataObject } from "./imageSrc.js";
-import { dataExportStatItem, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, StatItem, StatRound } from "./dataStat.js";
+import { dataExportStatItem, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, StatItem, StatPlayerWeapon, StatRound } from "./dataStat.js";
 import { soundSrc } from "./soundSrc.js";
 import { ID } from "./dataId.js";
 import { gameVar, userSystem } from "./game.js";
@@ -473,6 +473,9 @@ class MainSystem extends MenuSystem {
 
   processSelect () {
     if (!this.selectedCheck()) return
+
+    // 유저 스탯 강제 재조정
+    userSystem.processStat()
 
     switch (this.cursorPosition) {
       case this.MENU_ROUND_SELECT: gameSystem.stateId = gameSystem.STATE_ROUND_SELECT; break
@@ -1016,18 +1019,88 @@ class RoundSelectSystem extends MenuSystem {
       if (this.cursorRound === 0) {
         this.canceled = true // 취소버튼을 누른것으로 처리
       } else {
-        this.cursorMode = this.CURSORMODE_SUB
-        game.sound.play(soundSrc.system.systemSelect)
+        if (userSystem.lv < this.roundWorld.requireLevelMinList[this.cursorPosition]) {
+          game.sound.play(soundSrc.system.systemBuzzer)
+        } else {
+          this.cursorMode = this.CURSORMODE_SUB
+          game.sound.play(soundSrc.system.systemSelect)
+        }
       }
     } else if (this.cursorMode === this.CURSORMODE_SUB) {
       let roundId = this.getRoundId()
-      fieldSystem.roundStart(roundId)
+      if (this.roundConditionCheck(roundId)) {
+        // 정상적인 라운드 입장
+        fieldSystem.roundStart(roundId)
 
-      if (fieldSystem.message === fieldSystem.messageList.STATE_FIELD) {
-        game.sound.play(soundSrc.system.systemEnter)
-        gameSystem.stateId = gameSystem.STATE_FIELD
+        if (fieldSystem.message === fieldSystem.messageList.STATE_FIELD) {
+          game.sound.play(soundSrc.system.systemEnter)
+          gameSystem.stateId = gameSystem.STATE_FIELD
+        }
+      } else {
+        game.sound.play(soundSrc.system.systemBuzzer)
       }
     }
+  }
+
+  roundConditionCheck (roundId = 0) {
+    let data = dataExportStatRound.get(roundId)
+    if (data == null) return true
+
+    // 레벨, 공격력이 부족할경우 라운드 입장 불가능
+    if (userSystem.lv < data.requireLevel || userSystem.attack < data.requireAttack) return false
+
+    // 이전 라운드 클리어가 필요한 라운드에서는, 이전 라운드를 클리어해야함
+    if (data.prevRoundId !== 0 && !userSystem.getRoundClear(data.prevRoundId)) return false
+
+    return true
+  }
+
+  roundConditionCheckRequire (roundId = 0) {
+    let data = dataExportStatRound.get(roundId)
+    if (data == null) return true
+
+    // 레벨, 공격력이 부족할경우 라운드 입장 불가능
+    if (userSystem.lv < data.requireLevel || userSystem.attack < data.requireAttack) return false
+
+    return true
+  }
+
+  roundConditionCheckPrevRound (roundId = 0) {
+    let data = dataExportStatRound.get(roundId)
+    if (data == null) return true
+
+    // 이전 라운드 클리어가 필요한 라운드에서는, 이전 라운드를 클리어해야함
+    if (data.prevRoundId !== 0 && !userSystem.getRoundClear(data.prevRoundId)) return false
+
+    return true
+  }
+
+  roundConditionCheckPrevRoundText (roundId = 0) {
+    let data = dataExportStatRound.get(roundId)
+    if (data == null) return ''
+
+    let prevData = dataExportStatRound.get(data.prevRoundId)
+    if (prevData == null) return ''
+
+    // 이전 라운드 클리어 텍스트를 가져옴 (ID로 해석할 수는 없으므로)
+    return prevData.roundText
+  }
+
+  roundConditionLevelAttackText (roundId = 0) {
+    let data = dataExportStatRound.get(roundId)
+    if (data == null) return ''
+
+    if (userSystem.lv < data.requireLevel && userSystem.attack < data.requireAttack) {
+      return '레벨, 공격력이 낮습니다.'
+    } else if (userSystem.lv < data.requireLevel) {
+      return '레벨이 낮습니다.'
+    } else if (userSystem.attack < data.requireAttack) {
+      return '공격력이 낮습니다.'
+    }
+  }
+
+  worldLevelMinCheck (worldNumber = 0) {
+    return userSystem.lv < this.roundWorld.requireLevelMinList[worldNumber]
   }
 
   display () {
@@ -1042,7 +1115,6 @@ class RoundSelectSystem extends MenuSystem {
   displayRound () {
     if (this.cursorMode === this.CURSORMODE_SUB) return
 
-    // 10 ~ 19
     for (let i = this.CURSOR_POSITION_START_MAIN; i <= this.CURSOR_POSITION_START_MAIN + 9; i++) {
       if (this.menuList[i] == null) continue
       if (i === 0) continue
@@ -1070,7 +1142,10 @@ class RoundSelectSystem extends MenuSystem {
 
       this.menuList[i].display() // 박스 다시 재출력 (포커스 갱신한 후 출력해야 하기 때문)
 
-      if (position !== -1) {
+      if (this.worldLevelMinCheck(i)) {
+        // 레벨 제한 조건에 맞지 않는 라운드는 ?로 표시됨
+        gameFunction.imageObjectDisplay(imageSrc.system.mainSystem, imageDataInfo.mainSystem.roundDisplayQuestionMark, this.menuList[i].x, this.menuList[i].y)
+      } else if (position !== -1) {
         const imageSize = 60 - 1 // 이미지의 크기
         const imageSection = 60 // 이미지의 공간 (60x60의 공간중 59x59가 이미지 (나머지 공간은 확대/축소할 때 안티에일러싱 방지용))
         const positionX = position % 10
@@ -1107,6 +1182,7 @@ class RoundSelectSystem extends MenuSystem {
     }
   }
 
+  /** @return {number} */
   getRoundId () {
     let idTable = this.getRoundIdTable()
     if (idTable == null) return 0
@@ -1133,7 +1209,7 @@ class RoundSelectSystem extends MenuSystem {
       // 해당 라운드의 id에 따른 데이터를 가져옴
       let stat = dataExportStatRound.get(roundId)
       if (stat == null) continue
-      
+
       let iconNumber = stat.iconNumber
       if (iconNumber !== -1) {
         const imageSize = 60 - 1 // 이미지의 크기
@@ -1153,6 +1229,24 @@ class RoundSelectSystem extends MenuSystem {
           this.menuList[i].height + (rectPlusSize * 2), 
           'blue',
           0.4
+        )
+      }
+
+      // 플레이어의 스탯이 해당 라운드의 조건에 맞지 않는 경우 X자 표시
+      if (!this.roundConditionCheckRequire(roundId)) {
+        gameFunction.imageObjectDisplay(
+          imageSrc.system.mainSystem, 
+          imageDataInfo.mainSystem.roundConditionLevelAttackReject,
+          this.menuList[i].x, this.menuList[i].y
+        )
+      }
+
+      // 이전 라운드 클리어 조건에 맞지 않는 경우, 자물쇠 표시
+      if (!this.roundConditionCheckPrevRound(roundId)) {
+        gameFunction.imageObjectDisplay(
+          imageSrc.system.mainSystem, 
+          imageDataInfo.mainSystem.roundConditionLock,
+          this.menuList[i].x, this.menuList[i].y
         )
       }
 
@@ -1182,9 +1276,14 @@ class RoundSelectSystem extends MenuSystem {
       'ATTACK RANGE: ' + attackRangeText,
     ]
     let textList = [
-      this.roundWorld.TitleList[this.cursorPosition] + '',
-      this.roundWorld.roundWorldInfoText1List[this.cursorPosition] + '',
-      this.roundWorld.roundWorldInfoText2List[this.cursorPosition] + '',
+      this.roundWorld.TitleList[number] + '',
+      this.roundWorld.roundWorldInfoText1List[number] + '',
+      this.roundWorld.roundWorldInfoText2List[number] + '',
+    ]
+    let questionList = [
+      '?',
+      '?',
+      '',
     ]
 
     const XLINE1 = 10
@@ -1196,7 +1295,11 @@ class RoundSelectSystem extends MenuSystem {
     }
 
     for (let i = 0; i < textList.length; i++) {
-      game.graphic.fillText(textList[i], XLINE2, YLINE + (i * YSECTION))
+      if (this.worldLevelMinCheck(number)) {
+        game.graphic.fillText(questionList[i], XLINE2, YLINE + (i * YSECTION))
+      } else {
+        game.graphic.fillText(textList[i], XLINE2, YLINE + (i * YSECTION))
+      }
     }
   }
 
@@ -1239,6 +1342,7 @@ class RoundSelectSystem extends MenuSystem {
     if (stat == null) return
 
     const layer1X = 120
+    const layer2X = 440
     const layer1Y = 10
     const text1 = 'ROUND|FINISH|REQUIRE'
     const text2 = '     |TIME  |LEVEL|ATTACK'
@@ -1261,6 +1365,15 @@ class RoundSelectSystem extends MenuSystem {
       if (i === textList.length - 1) {
         game.graphic.fillText(stat.roundName, layer1X + 70, layer1Y + (i * 20))
       }
+    }
+
+    if (!this.roundConditionCheckPrevRound(roundId)) {
+      game.graphic.fillText('이전 라운드 클리어 필요', layer2X, layer1Y)
+      digitalDisplay(this.roundConditionCheckPrevRoundText(roundId), layer2X, layer1Y + 20)
+    }
+
+    if (!this.roundConditionCheckRequire(roundId)) {
+      game.graphic.fillText(this.roundConditionLevelAttackText(roundId), layer2X, layer1Y + 40)
     }
   }
 }
@@ -1614,7 +1727,11 @@ class WeaponSelectSystem extends MenuSystem {
   setWeapon (weaponId = 0) {
     if (weaponId == null) return
     if (weaponId === ID.playerWeapon.subMultyshot) return
-    if (this.cursorIcon >= dataExportPlayerWeapon.size) return
+    if (this.cursorIcon >= dataExportPlayerWeapon.size) return // 커서 범위가 플레이어무기 범위를 초과할 수 없음
+    if (!this.weaponUnlockConditionCheck(weaponId)) {
+      game.sound.play(soundSrc.system.systemBuzzer)
+      return // 무기가 해제되어있지 않으면 사용할 수 없음
+    }
 
     // 무기 교체
     let success = userSystem.setWeapon(this.listPosition, weaponId)
@@ -1733,6 +1850,12 @@ class WeaponSelectSystem extends MenuSystem {
     digitalDisplay(infoString, 0, this.outputY4CursorTargetInfo)
     game.graphic.imageDisplay(weaponIconSrc, weaponX * iconWidth, weaponY * iconHeight, iconWidth, iconHeight, 0, outputY3 + 20, iconWidth, iconHeight)
 
+    if (!this.weaponUnlockConditionCheck(weaponId)) {
+      let weaponData = dataExportStatPlayerWeapon.get(weaponId)
+      if (weaponData == null) return
+      let unlockText = StatPlayerWeapon.getUnlockCondition(weaponData.group)
+      game.graphic.fillText(unlockText, 0, outputY3 + 300)
+    }
   }
 
   /** 무기 선택 도움말 */
@@ -1771,9 +1894,29 @@ class WeaponSelectSystem extends MenuSystem {
     }
   }
 
+  /** 해당 무기가 잠금 해제되어있는지 살펴봅니다. @returns {boolean} */
+  weaponUnlockConditionCheck (weaponId = 0) {
+    let data = dataExportStatPlayerWeapon.get(weaponId)
+    if (data == null) return true // 데이터가 없으면 true
+
+    // 데이터가 잠금상태이면, 해당 무기를 언락했는지 확인하고, 아니라면 true리턴(잠금되어있는게 아니므로)
+    return data.lock ? userSystem.getWeaponUnlock(weaponId) : true
+  }
+
+  displayUnlock () {
+    for (let i = this.NUM_START_SKILLICON; i < this.NUM_END_SKILLICON; i++) {
+      let current = this.menuList[i]
+      let weaponId = this.NUM_START_SKILLICON + i + ID.playerWeapon.weaponNumberStart
+      if (!this.weaponUnlockConditionCheck(weaponId)) {
+        gameFunction.imageObjectDisplay(imageSrc.system.mainSystem, imageDataInfo.mainSystem.weaponSkillLock, current.x, current.y, current.width, current.height)
+      }
+    }
+  }
+
   display () {
     super.display()
     this.displayUserWeapon()
+    this.displayUnlock()
     
     // 커서가 가리키는 웨폰 표시
     if (this.state === this.STATE_ICON) this.displayCursorWeapon()
@@ -1908,6 +2051,15 @@ class SkillSelectSystem extends MenuSystem {
     if (button.buttonSkill3) this.setSkill(3, this.targetIdList[this.cursorIcon])
   }
 
+  /** 스킬이 잠금 해제되어있는지 살펴봅니다. @returns {boolean} */
+  skillUnlockConditionCheck (skillId = 0) {
+    let skill = dataExportStatPlayerSkill.get(skillId)
+    if (skill == null) return true // 스킬이 없으면 잠금 해제로 간주, 왜냐하면 이 함수는 자물쇠 표시 용도로도 사용되므로
+
+    // 스킬이 잠겨져있으면, unlock되어있는지 확인하고, 잠겨지있지 않으면 무조건 true
+    return skill.lock ? userSystem.getSkillUnlock(skillId) : true
+  }
+
   /**
    * 스킬 설정 함수: 유저에게 스킬을 등록
    * @param {number} slotNumber 0 ~ 7 (Aslot 0 ~ 3, Bslot 4 ~ 7) 스킬 슬롯 번호
@@ -1917,7 +2069,11 @@ class SkillSelectSystem extends MenuSystem {
     // 없는 스킬은 등록 불가능 (unused는 해당 스킬을 제거함)
     let getSkill = dataExportStatPlayerSkill.get(skillId)
     if (getSkill == null) return
-    
+    if (!this.skillUnlockConditionCheck(skillId)) {
+      game.sound.play(soundSrc.system.systemBuzzer)
+      return
+    }
+
     // 스킬을 변경하고 스킬을 변경하는데 성공하면, 사운드 출력 후 다음 리스트로 이동
     let success = userSystem.setSkill(slotNumber, skillId)
     if (success) {
@@ -2034,8 +2190,19 @@ class SkillSelectSystem extends MenuSystem {
     this.displaySkillSelectData()
     this.displaySkillList()
     this.displaySkillHighlight()
+    this.displaySkillUnlock()
 
     if (this.state === this.STATE_HELP) this.displayHelp()
+  }
+
+  displaySkillUnlock () {
+    for (let i = this.NUM_START_SKILLICON; i < this.NUM_END_SKILLICON; i++) {
+      let current = this.menuList[i]
+      let skillId = ID.playerSkill.skillNumberStart + i
+      if (!this.skillUnlockConditionCheck(skillId)) {
+        gameFunction.imageObjectDisplay(imageSrc.system.mainSystem, imageDataInfo.mainSystem.weaponSkillLock, current.x, current.y, current.width, current.height)
+      }
+    }
   }
 
   displaySkillHighlight () {
@@ -2075,6 +2242,13 @@ class SkillSelectSystem extends MenuSystem {
       const Y = this.outputY3IconInfoView
       game.graphic.imageDisplay(imageSrc.system.skillIcon, (position % 10) * 40, Math.floor(position / 10) * 20, 40, 20, 0, Y, 40, 20)
       digitalDisplay(inputString, MARGIN, Y)
+
+      if (!this.skillUnlockConditionCheck(this.targetIdList[position])) {
+        let skillData = dataExportStatPlayerSkill.get(this.targetIdList[position])
+        if (skillData == null) return
+        let unlockText = StatPlayerWeapon.getUnlockCondition(skillData.group)
+        game.graphic.fillText(unlockText, 0, Y - 40)
+      }
     }
   }
 
@@ -3346,11 +3520,24 @@ export class gameSystem {
     // 유저의 데이터
     const userData = this.userSystem.getSaveData()
 
-    // sramData (조작 방지를 위한 추가 정보)
+    // sramDataList (간접 저장 정보)
+    // sram0: lv, exp, gold
+    // sram1: inventoryIdList
+    // sram2: inventoryCount
+    // sram3: inventoryUpgradeLevel
+    // sram4: weaponUnlockList
+    // sram5: skillUnlockList
+    // sram6: roundClearList
+    // sram7: specialFlagList
     let sramData = [
       this.saveNumberEncode(userData.lv, userData.exp, userData.gold),
-      this.saveNumberEncode(userData.inventoryIdList),
-      this.saveNumberEncode(userData.inventoryCountList)
+      this.saveNumberEncode(...userData.inventoryItemIdList),
+      this.saveNumberEncode(...userData.inventoryItemCountList),
+      this.saveNumberEncode(...userData.inventoryItemUpgardeLevel),
+      this.saveNumberEncode(...userData.weaponUnlockList),
+      this.saveNumberEncode(...userData.skillUnlockList),
+      this.saveNumberEncode(...userData.roundClearList),
+      this.saveNumberEncode(...userData.specialFlagList)
     ]
 
     let saveData = {
@@ -3462,7 +3649,11 @@ export class gameSystem {
 
   /**
    * 특정 숫자를 임의의 코드로 암호화합니다. (소수점은 암호화 불가능, 강제로 정수로 변환됩니다.)
-   * @param  {...string[] | number[] | string | number} saveNumber 
+   * 
+   * 이 함수는 레스터 매개변수를 통해 데이터를 받으므로, 배열을 자료로 전달할 것이라면, ...Array 형태의 문법을 사용해주세요.
+   * 
+   * 주의: 15자리를 초과하는 숫자를 넣으면, 해당 결과는 정상적으로 보존되지 않고 망가질 수 있음.
+   * @param  {string[] | number[]} saveNumber 
    * @returns {string} JSON문자열
    */
   static saveNumberEncode (...saveNumber) {
@@ -3540,13 +3731,15 @@ export class gameSystem {
     let getKeyTarget = getKeyFirst % 2 === 1 ? getKeyFirst : getKeyLast
 
     /** @type {string} 결과 문자열 */ let result = ''
-    /** @type {number[]} 키값의 암호화 해제한 디코드 배열 */ let decodeArray = []
+    /** @type {string[]} 키값의 암호화 해제한 디코드 배열 */ let decodeArray = []
 
     // 디코드 진행
     for (let i = 0; i < arrayNumber.length; i++) {
       // 첫번째와 마지막 키는 기준 키이므로 이를 디코드 하지 않습니다.
       if (i === 0 || i === arrayNumber.length - 1) continue
-      decodeArray.push(arrayNumber[i] ^ getKeyTarget)
+      let decode = String(arrayNumber[i] ^ getKeyTarget) // 숫자 디코드
+      decode = decode.padStart(8, '0') // 그 다음 8글자 미만인경우 자리수를 채움
+      decodeArray.push(decode)
     }
 
     // 디코드 된 배열을 하나로 합침
@@ -3562,8 +3755,8 @@ export class gameSystem {
       let len = Number(result.slice(position + DIGITLEN, position + DIGITLEN + digit))
       let text = Number(result.slice(position + DIGITLEN + digit, position + DIGITLEN + digit + len))
 
-      // 마지막 글자이면서 디지트가 0인경우 리턴
-      if (position === result.length - 1 && digit === 0) {
+      // 디지트가 0인경우, 0이 아닌숫자가 나올때까지 계속 다음글자로 넘어감
+      if (digit === 0) {
         position++
         continue
       }
@@ -3618,32 +3811,73 @@ export class gameSystem {
     }
 
     if (loadData.userData) {
+      // 데이터형 받아오기용도
+      let insertUserData = userSystem.getSaveData()
+
       // sram으로 처리
-      let sram1, sram2, sram3
+      // sramList
+      // sram0: lv, exp, gold
+      // sram1: inventoryList
+      // sram2: inventoryCount
+      // sram3: inventoryUpgradeLevel
+      // sram4: weaponUnlockList
+      // sram5: skillUnlockList
+      // sram6: roundClearList
+      // sram7: specialFlagList
+      let sram0, sram1, sram2, sram3, sram4, sram5, sram6, sram7
       let userLvExp
       if (loadData.sramData) {
-        sram1 = loadData.sramData[0]
-        userLvExp = this.saveNumberDecode(sram1)
-
-        sram2 = loadData.sramData[1]
-        sram3 = loadData.sramData[2]
+        sram0 = loadData.sramData[0]
+        userLvExp = this.saveNumberDecode(sram0)
+        sram1 = loadData.sramData[1]
+        sram2 = loadData.sramData[2]
+        sram3 = loadData.sramData[3]
+        sram4 = loadData.sramData[4]
+        sram5 = loadData.sramData[5]
+        sram6 = loadData.sramData[6]
+        sram7 = loadData.sramData[7]
       }
 
-      if (sram1 == null || userLvExp == null) {
+      // sram0이 없거나, userLvExp가 없으면 오류 발생
+      if (sram0 == null || userLvExp == null) {
         this.errorSystem.setErrorCatch(null, this.errorSystem.errorTypeList.LOADERROR, systemText.gameError.USER_SRAM_ERROR)
         return false
       } else {
-        loadData.userData.lv = userLvExp[0]
-        loadData.userData.exp = userLvExp[1]
-        loadData.userData.gold = userLvExp[2]
+        insertUserData.lv = userLvExp[0]
+        insertUserData.exp = userLvExp[1]
+        insertUserData.gold = userLvExp[2]
       }
 
-      if (sram2 != null || sram3 != null) {
-        loadData.userData.inventoryId = this.saveNumberDecode(sram2)
-        loadData.userData.inventoryCount = this.saveNumberDecode(sram3)
+      if (sram1 != null || sram2 != null || sram3 != null) {
+        let decode1 = this.saveNumberDecode(sram1)
+        let decode2 = this.saveNumberDecode(sram2)
+        let decode3 = this.saveNumberDecode(sram3)
+        if (decode1) insertUserData.inventoryItemIdList = decode1
+        if (decode2) insertUserData.inventoryItemCountList = decode2
+        if (decode3) insertUserData.inventoryItemUpgardeLevel = decode3
       }
 
-      let isSuccessUserData = this.userSystem.setLoadData(loadData.userData)
+      if (sram4 != null) {
+        let decode4 = this.saveNumberDecode(sram4)
+        if (decode4) insertUserData.weaponUnlockList = decode4
+      }
+
+      if (sram5 != null) {
+        let decode5 = this.saveNumberDecode(sram5)
+        if (decode5) insertUserData.skillUnlockList = decode5
+      }
+
+      if (sram6 != null) {
+        let decode6 = this.saveNumberDecode(sram6)
+        if (decode6) insertUserData.roundClearList = decode6
+      }
+
+      if (sram7 != null) {
+        let decode7 = this.saveNumberDecode(sram7)
+        if (decode7) insertUserData.specialFlagList = decode7
+      }
+
+      let isSuccessUserData = this.userSystem.setLoadData(insertUserData)
       if (!isSuccessUserData) {
         return false
       }

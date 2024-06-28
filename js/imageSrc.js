@@ -819,11 +819,17 @@ export class imageDataInfo {
     inventoryUpgrade: new ImageDataObject(300, 150, 100, 60),
     inventoryEquip: new ImageDataObject(0, 210, 100, 60),
     inventoryDelete: new ImageDataObject(100, 210, 100, 60),
-    inventoryUserEquipIcon: new ImageDataObject(300, 90, 60, 60),
+    inventoryUserEquipIcon: new ImageDataObject(320, 90, 60, 60),
     inventoryHelp: new ImageDataObject(200, 210, 100, 60),
     statBack: new ImageDataObject(0, 270, 100, 40),
     statEquipmentUpgrade: new ImageDataObject(100, 270, 100, 40),
     statHelp: new ImageDataObject(200, 270, 100, 40),
+
+    /** 무기 또는 스킬이 잠금되어있는경우 */ weaponSkillLock: new ImageDataObject(350, 60, 40, 20),
+    /** 라운드 레벨, 공격력 조건이 맞지 않음 */ roundConditionLevelAttackReject: new ImageDataObject(80, 90, 60, 60),
+    /** 라운드 요구 조건의 일부가 맞지 않음 (클리어 등등...) */ roundConditionLock: new ImageDataObject(140, 90, 60, 60),
+    /** 라운드를 플레이 하고 클리어한경우 */ roundPlayAfterClear: new ImageDataObject(200, 90, 60, 60),
+    /** 라운드가 아직 표시되지 않은 상태 */ roundDisplayQuestionMark: new ImageDataObject(260, 90, 60, 60),
   }
 
   static enemyDieEffectList = {

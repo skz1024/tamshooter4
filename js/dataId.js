@@ -417,7 +417,8 @@ export class ID {
   }
 
   static round = {
-    UNUSED: 0,
+    /** 사용 안함 */ UNUSED: 0,
+    /** 이전 라운드 없음 */ PREVNULL: 0,
     test1Enemy: 70001,
     test2Background: 70002,
     test3Round3DownTower: 70003,
