@@ -1042,22 +1042,22 @@ class BaseField {
     }
   }
 
+  /** 아이템을 가진 적을 생성합니다. (해당 적은 아이템을 소유하고 있으며 죽인다면, 해당 아이템을 얻습니다.) */
+  static createEnemyInsertItem (enemyId = 0, itemId = 0, itemCount = 1, x = graphicSystem.CANVAS_WIDTH + 50, y = Math.random() * graphicSystem.CANVAS_HEIGHT) {
+    if (enemyId != 0 && itemId != 0) {
+      let enemy = fieldState.createEnemyObject(enemyId, x, y)
+      
+    }
+  }
+
   /**
-   * 이펙트를 생성합니다.
-   * @param {CustomEffect} typeId 
-   * CustomEffect 인스턴스(CustomEffect.getObject() 를 사용해주세요.)
-   * 
-   * 또는 CustomEditEffect 클래스 또는 생성된 인스턴스
-   * @returns {EffectData | null | undefined} 리턴된 이펙트를 이용해서 일시적으로 객체를 조작할 수 있음.
-   * 
-   * 이 함수는 id 기반으로 이펙트를 생성하고 있어, 현재상황과는 맞지 않습니다.
-   * 라운드 내에서 이펙트를 생성하고 처리하는 로직과 이 로직은 일치하지 않으므로, 이 함수는 다른 기능으로 교체될 예정입니다.
-   * 
-   * @deprecated
+   * 이펙트를 생성합니다. (fieldState의 간접 함수)
+   * @param {CustomEffect | CustomEditEffect} customEffect 커스텀 이펙트
+   * @param {number | undefined} x x좌표, 지정하지 않으면, 커스텀 이펙트 내부의 좌표
+   * @param {number | undefined} y y좌표, 지정하지 않으면, 커스텀 이펙트 내부의 좌표
    */
-  static createEffect (typeId, x = 0, y = 0, repeatCount = 0, beforeDelay = 0,) {
-    let effect = fieldState.createEffectObject(typeId, x, y, repeatCount, beforeDelay)
-    return effect
+  static createEffect (customEffect, x = undefined, y = undefined) {
+    fieldState.createEffectObject(customEffect, x, y)
   }
 
   /**
@@ -3036,7 +3036,7 @@ class Round1_4 extends RoundData {
       }
 
       if (this.timeCheckInterval(phase2Time + 20, phase2Time + 23, 30)) {
-        fieldState.createEffectObject(this.effectJemulstar, boss.x - 50, boss.y - 50, 20)
+        fieldState.createEffectObject(this.effectJemulstar.getObject(), boss.x - 50, boss.y - 50)
       }
 
       if (this.timeCheckFrame(phase2Time + 25)) {
@@ -5658,20 +5658,20 @@ class Round2_3 extends RoundData {
 
     // 각 시간마다 다른 종류의 총알 등장
     if (this.timeCheckInterval(phase1Start + 5, phase1Start + 11, 6)) {
-      fieldState.createEnemyBulletObject(BulletBase)
+      fieldState.createEnemyBulletObject(new BulletBase)
     } else if (this.timeCheckInterval(phase1Start + 12, phase1Start + 17, 6)) {
-      fieldState.createEnemyBulletObject(BulletPlayer)
+      fieldState.createEnemyBulletObject(new BulletPlayer)
     } else if (this.timeCheckInterval(phase1Start + 18, phase1Start + 23, 4)) {
-      fieldState.createEnemyBulletObject(BulletRain)
+      fieldState.createEnemyBulletObject(new BulletRain)
     } else if (this.timeCheckInterval(phase1Start + 24, phase1Start + 29, 4)) {
-      fieldState.createEnemyBulletObject(BulletLeft)
+      fieldState.createEnemyBulletObject(new BulletLeft)
     } else if (this.timeCheckInterval(phase1Start + 30, phase1Start + 50, 3)) {
       let random = Math.floor(Math.random() * 4)
       switch (random) {
-        case 0: fieldState.createEnemyBulletObject(BulletBase); break
-        case 1: fieldState.createEnemyBulletObject(BulletPlayer); break
-        case 2: fieldState.createEnemyBulletObject(BulletRain); break
-        case 3: fieldState.createEnemyBulletObject(BulletLeft); break
+        case 0: fieldState.createEnemyBulletObject(new BulletBase); break
+        case 1: fieldState.createEnemyBulletObject(new BulletPlayer); break
+        case 2: fieldState.createEnemyBulletObject(new BulletRain); break
+        case 3: fieldState.createEnemyBulletObject(new BulletLeft); break
       }
     }
 
@@ -5902,7 +5902,7 @@ class Round2_3 extends RoundData {
     if (sprite.length < 24 && this.timeCheckInterval(0, 999, 6)) {
       let randomX = Math.random() * (graphicSystem.CANVAS_WIDTH - 50)
       let randomY = Math.random() * (graphicSystem.CANVAS_HEIGHT - 50)
-      fieldState.createSpriteObject(PowerObject, randomX, randomY)
+      fieldState.createSpriteObject(new PowerObject, randomX, randomY)
     }
 
     // 1 vs 1 승부이므로, 적은 한마리만 존재, 그래서 0번 배열에 있는 적 데이터를 직접 가져옴
@@ -6092,7 +6092,7 @@ class Round2_3 extends RoundData {
 
     // 오브젝트를 다시 생성합니다. // 좌표는 자동으로 설정되므로 지정할 필요가 없음
     for (let i = 0; i < 2; i++) {
-      fieldState.createSpriteObject(WarpObject)
+      fieldState.createSpriteObject(new WarpObject)
     }
   }
 
@@ -6223,10 +6223,10 @@ class Round2_3 extends RoundData {
     if (sprite.length === 0) {
       // 무작위 스프라이트 생성
       for (let i = 0; i < 16; i++) {
-        fieldState.createSpriteObject(ArrowObject, Math.random() * graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
+        fieldState.createSpriteObject(new ArrowObject, Math.random() * graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
       }
       for (let i = 0; i < 4; i++) {
-        fieldState.createSpriteObject(CubeObject, Math.random() * graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
+        fieldState.createSpriteObject(new CubeObject, Math.random() * graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
       }
     }
 
@@ -6461,10 +6461,10 @@ class Round2_3 extends RoundData {
       }
   
       if (squareBlackCount < this.areaStat.squareBlackMax) {
-        fieldState.createSpriteObject(BlackSquare)
+        fieldState.createSpriteObject(new BlackSquare)
       }
       if (squareRedCount < 4) {
-        fieldState.createSpriteObject(RedSquare)
+        fieldState.createSpriteObject(new RedSquare)
       }
     }
 
@@ -6472,14 +6472,14 @@ class Round2_3 extends RoundData {
     if (this.time.currentTimeTotalFrame % 180 === 0) {
       let random = Math.floor(Math.random() * 2)
       switch (random) {
-        case 0: fieldState.createSpriteObject(CyanSquare); break
-        case 1: fieldState.createSpriteObject(LimeSquare); break
+        case 0: fieldState.createSpriteObject(new CyanSquare); break
+        case 1: fieldState.createSpriteObject(new LimeSquare); break
       }
     }
 
     // 특수 사각형 생성
     if (this.time.currentTimeTotalFrame % 359 === 0) {
-      fieldState.createSpriteObject(PinkSquare)
+      fieldState.createSpriteObject(new PinkSquare)
     }
   }
 
@@ -6699,8 +6699,8 @@ class Round2_3 extends RoundData {
     let roomNumber = this.areaStat.goal % 4
     
     // 공통 길막용 벽
-    fieldState.createSpriteObject(trap.TrapWallUp)
-    fieldState.createSpriteObject(trap.TrapWallDown)
+    fieldState.createSpriteObject(new trap.TrapWallUp)
+    fieldState.createSpriteObject(new trap.TrapWallDown)
     switch (roomNumber) {
       case 0:
         // 참고사항: 좌표값이 뭔가 이상하지만 양해 부탁
@@ -6709,14 +6709,14 @@ class Round2_3 extends RoundData {
         //   |  |  |  |  |
         //   |  |  |  |  |
         //      |     |
-        fieldState.createSpriteObject(trap.TrapGreen, 700, 100)
+        fieldState.createSpriteObject(new trap.TrapGreen, 700, 100)
         // 0번 룸, 빨간 색 사각형이 길을 막고만 있다.
         for (let i = 0; i < 7; i++) {
           for (let j = 0; j < 8; j++) {
             if (i % 2 === 1 && j >= 2) {
-              fieldState.createSpriteObject(trap.TrapRed, (i * 140) + 100, 100 + j * 50)
+              fieldState.createSpriteObject(new trap.TrapRed, (i * 140) + 100, 100 + j * 50)
             } else if (i % 2 === 0 && j <= 5) {
-              fieldState.createSpriteObject(trap.TrapRed, (i * 140) + 100, 100 + j * 50)
+              fieldState.createSpriteObject(new trap.TrapRed, (i * 140) + 100, 100 + j * 50)
             }
           }
         }
@@ -6728,18 +6728,18 @@ class Round2_3 extends RoundData {
         //      R    R    |
         //  --------------|
         //
-        fieldState.createSpriteObject(trap.TrapGreen, 700, 100)
+        fieldState.createSpriteObject(new trap.TrapGreen, 700, 100)
         for (let i = 0; i < 11; i++) {
-          fieldState.createSpriteObject(trap.TrapRed, (i * 50), 160)
-          fieldState.createSpriteObject(trap.TrapRed, (i * 50) + 100, 280)
-          fieldState.createSpriteObject(trap.TrapRed, (i * 50), 450)
+          fieldState.createSpriteObject(new trap.TrapRed, (i * 50), 160)
+          fieldState.createSpriteObject(new trap.TrapRed, (i * 50) + 100, 280)
+          fieldState.createSpriteObject(new trap.TrapRed, (i * 50), 450)
         }
         for (let i = 0; i < 7; i++) {
-          fieldState.createSpriteObject(trap.TrapRed, 650, i * 50 + 100)
+          fieldState.createSpriteObject(new trap.TrapRed, 650, i * 50 + 100)
         }
         for (let i = 0; i < 3; i++) {
-          fieldState.createSpriteObject(trap.TrapRedUpDown, (i * 140) + 140, 100)
-          fieldState.createSpriteObject(trap.TrapRedUpDown, (i * 140) + 140, 300)
+          fieldState.createSpriteObject(new trap.TrapRedUpDown, (i * 140) + 140, 100)
+          fieldState.createSpriteObject(new trap.TrapRedUpDown, (i * 140) + 140, 300)
         }
         break
       case 2:
@@ -6749,56 +6749,56 @@ class Round2_3 extends RoundData {
         //   |   
         //   |  R  R  R |
         //              |
-        fieldState.createSpriteObject(trap.TrapGreen, 700, 100)
+        fieldState.createSpriteObject(new trap.TrapGreen, 700, 100)
         for (let i = 0; i < 7; i++) {
-          fieldState.createSpriteObject(trap.TrapRed, 150, i * 50 + 100)
-          fieldState.createSpriteObject(trap.TrapRed, 650, i * 50 + 100)
+          fieldState.createSpriteObject(new trap.TrapRed, 150, i * 50 + 100)
+          fieldState.createSpriteObject(new trap.TrapRed, 650, i * 50 + 100)
         }
         for (let i = 0; i < 4; i++) {
-          fieldState.createSpriteObject(trap.TrapRed, 450, i * 50 + 300)
+          fieldState.createSpriteObject(new trap.TrapRed, 450, i * 50 + 300)
         }
         for (let i = 0; i < 3; i++) {
-          fieldState.createSpriteObject(trap.TrapRedUpDown, (i * 150) + 150, 100)
-          fieldState.createSpriteObject(trap.TrapRedUpDown, (i * 150) + 150, 300)
-          fieldState.createSpriteObject(trap.TrapRedLeftRight, (i * 150) + 150, 100)
-          fieldState.createSpriteObject(trap.TrapRedLeftRight, (i * 150) + 150, 300)
+          fieldState.createSpriteObject(new trap.TrapRedUpDown, (i * 150) + 150, 100)
+          fieldState.createSpriteObject(new trap.TrapRedUpDown, (i * 150) + 150, 300)
+          fieldState.createSpriteObject(new trap.TrapRedLeftRight, (i * 150) + 150, 100)
+          fieldState.createSpriteObject(new trap.TrapRedLeftRight, (i * 150) + 150, 300)
         }
         break
       case 3:
-        fieldState.createSpriteObject(trap.TrapGreen, 700, 100)
+        fieldState.createSpriteObject(new trap.TrapGreen, 700, 100)
         // 구성 (아무렇게나 막 배치한것임. - 랜덤은 아님)
         // #1
-        fieldState.createSpriteObject(trap.TrapRed, 100, 100)
-        fieldState.createSpriteObject(trap.TrapRed, 20, 220)
-        fieldState.createSpriteObject(trap.TrapRed, 80, 240)
-        fieldState.createSpriteObject(trap.TrapRed, 140, 270)
-        fieldState.createSpriteObject(trap.TrapRed, 160, 300)
-        fieldState.createSpriteObject(trap.TrapRed, 160, 350)
-        fieldState.createSpriteObject(trap.TrapRed, 210, 400)
-        fieldState.createSpriteObject(trap.TrapRed, 220, 460)
-        fieldState.createSpriteObject(trap.TrapRed, 280, 480)
-        fieldState.createSpriteObject(trap.TrapRed, 330, 440)
-        fieldState.createSpriteObject(trap.TrapRed, 390, 420)
-        fieldState.createSpriteObject(trap.TrapRed, 450, 400)
-        fieldState.createSpriteObject(trap.TrapRed, 500, 380)
-        fieldState.createSpriteObject(trap.TrapRed, 550, 360)
-        fieldState.createSpriteObject(trap.TrapRed, 600, 340)
-        fieldState.createSpriteObject(trap.TrapRed, 620, 310)
-        fieldState.createSpriteObject(trap.TrapRed, 690, 250)
-        fieldState.createSpriteObject(trap.TrapRed, 720, 200)
+        fieldState.createSpriteObject(new trap.TrapRed, 100, 100)
+        fieldState.createSpriteObject(new trap.TrapRed, 20, 220)
+        fieldState.createSpriteObject(new trap.TrapRed, 80, 240)
+        fieldState.createSpriteObject(new trap.TrapRed, 140, 270)
+        fieldState.createSpriteObject(new trap.TrapRed, 160, 300)
+        fieldState.createSpriteObject(new trap.TrapRed, 160, 350)
+        fieldState.createSpriteObject(new trap.TrapRed, 210, 400)
+        fieldState.createSpriteObject(new trap.TrapRed, 220, 460)
+        fieldState.createSpriteObject(new trap.TrapRed, 280, 480)
+        fieldState.createSpriteObject(new trap.TrapRed, 330, 440)
+        fieldState.createSpriteObject(new trap.TrapRed, 390, 420)
+        fieldState.createSpriteObject(new trap.TrapRed, 450, 400)
+        fieldState.createSpriteObject(new trap.TrapRed, 500, 380)
+        fieldState.createSpriteObject(new trap.TrapRed, 550, 360)
+        fieldState.createSpriteObject(new trap.TrapRed, 600, 340)
+        fieldState.createSpriteObject(new trap.TrapRed, 620, 310)
+        fieldState.createSpriteObject(new trap.TrapRed, 690, 250)
+        fieldState.createSpriteObject(new trap.TrapRed, 720, 200)
 
         // #2
-        fieldState.createSpriteObject(trap.TrapRed, 200, 130)
-        fieldState.createSpriteObject(trap.TrapRed, 250, 150)
-        fieldState.createSpriteObject(trap.TrapRed, 300, 190)
-        fieldState.createSpriteObject(trap.TrapRed, 300, 260)
-        fieldState.createSpriteObject(trap.TrapRed, 300, 260)
-        fieldState.createSpriteObject(trap.TrapRed, 350, 290)
-        fieldState.createSpriteObject(trap.TrapRed, 410, 270)
-        fieldState.createSpriteObject(trap.TrapRed, 450, 230)
-        fieldState.createSpriteObject(trap.TrapRed, 480, 210)
-        fieldState.createSpriteObject(trap.TrapRed, 540, 160)
-        fieldState.createSpriteObject(trap.TrapRed, 550, 110)
+        fieldState.createSpriteObject(new trap.TrapRed, 200, 130)
+        fieldState.createSpriteObject(new trap.TrapRed, 250, 150)
+        fieldState.createSpriteObject(new trap.TrapRed, 300, 190)
+        fieldState.createSpriteObject(new trap.TrapRed, 300, 260)
+        fieldState.createSpriteObject(new trap.TrapRed, 300, 260)
+        fieldState.createSpriteObject(new trap.TrapRed, 350, 290)
+        fieldState.createSpriteObject(new trap.TrapRed, 410, 270)
+        fieldState.createSpriteObject(new trap.TrapRed, 450, 230)
+        fieldState.createSpriteObject(new trap.TrapRed, 480, 210)
+        fieldState.createSpriteObject(new trap.TrapRed, 540, 160)
+        fieldState.createSpriteObject(new trap.TrapRed, 550, 110)
         break
     }
   }

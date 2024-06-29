@@ -14,34 +14,38 @@ const versionText = 'created by skz1024 | ver 0.50 | 2024/05'
 let digitalDisplay = gameFunction.digitalDisplay
 let loadComplete = false
 
-/** 시스템에서 가장 먼저 로드될 이미지 목록 */
-let systemImageList = []
-for (let target in imageSrc.system) {
-  let src = imageSrc.system[target]
-  systemImageList.push(src)
-}
-systemImageList.push(imageSrc.weapon.weapon) // 무기 이미지
-systemImageList.push(imageSrc.system.roundIcon) // 라운드 아이콘 이미지
+/** 시스템에서 가장 먼저 로드될 이미지 목록 */ let systemImageList = []
+/** 시스템에서 가장 먼저 로드될 사운드 목록 */ let systemSoundList = []
 
-// 이미지 생성 시작
-for (let i = 0; i < systemImageList.length; i++) {
-  game.graphic.createImage(systemImageList[i])
+/** 첫번째로 불러올 함수 사용 */
+let firstLoadFunction = () => {
+  for (let target in imageSrc.system) {
+    let src = imageSrc.system[target]
+    systemImageList.push(src)
+  }
+  systemImageList.push(imageSrc.weapon.weapon) // 무기 이미지
+  systemImageList.push(imageSrc.system.roundIcon) // 라운드 아이콘 이미지
+  
+  // 이미지 생성 시작
+  for (let i = 0; i < systemImageList.length; i++) {
+    game.graphic.createImage(systemImageList[i])
+  }
+  
+  // 사운드 생성 시작
+  for (let target in soundSrc.system) {
+    let src = soundSrc.system[target]
+    systemSoundList.push(src)
+  }
+  for (let target in soundSrc.skill) {
+    let src = soundSrc.skill[target]
+    systemSoundList.push(src)
+  }
+  
+  for (let i = 0; i < systemSoundList.length; i++) {
+    game.sound.createAudio(systemSoundList[i])
+  }
 }
-
-// 사운드 생성 시작
-let systemSoundList = []
-for (let target in soundSrc.system) {
-  let src = soundSrc.system[target]
-  systemSoundList.push(src)
-}
-for (let target in soundSrc.skill) {
-  let src = soundSrc.skill[target]
-  systemSoundList.push(src)
-}
-
-for (let i = 0; i < systemSoundList.length; i++) {
-  game.sound.createAudio(systemSoundList[i])
-}
+firstLoadFunction() // 해당 함수 바로 실행
 
 game.process = () => {
   gameSystem.process()
@@ -63,7 +67,6 @@ game.display = () => {
     }
   }
 }
-
 
 class BoxObject {
   /**
@@ -131,15 +134,12 @@ class BoxObject {
   }
 
   displayText () {
-    // 텍스트
-    if (this.text) {
+    if (this.text) { // 텍스트
       game.graphic.fillText(this.text, this.x + this.borderWidth + 2, this.y + this.borderWidth)
     }
   }
 
-  /**
-   * 박스를 출력하는 함수
-   */
+  /** 박스를 출력하는 함수 */
   display () {
     if (this.hidden) return
 
@@ -487,35 +487,10 @@ class MainSystem extends MenuSystem {
       case this.MENU_ETC: gameSystem.stateId = gameSystem.STATE_ETC; break
       case this.MENU_INVENTORY: gameSystem.stateId = gameSystem.STATE_INVENTORY; break
       case this.MENU_STORY: gameSystem.stateId = gameSystem.STATE_STORY; break
-      case this.MENU_FULLSCREEN: this.requestFullScreen(); break
     }
 
     // 사운드 출력
     game.sound.play(soundSrc.system.systemSelect)
-  }
-
-  /**
-   * 풀스크린을 요청합니다.
-   * [일부 브라우저는 기능을 지원하지 않을 수 있음.]
-   * 
-   * pc에서는 F11을 통해 풀스크린 전환이 가능하므로, 게임 내에선 제거됨
-   * 
-   * @deprecated
-   */
-  requestFullScreen () {
-    if (document.fullscreenElement) {
-      document.exitFullscreen()
-    } else {
-      try {
-        if (game.currentDevice === game.device.PC) {
-          game.graphic.canvas.requestFullscreen()
-        } else {
-          // gameSystem.setStatLineText(1, 'MOBILE NOT USING THIS')
-        }
-      } catch {
-        // gameSystem.setStatLineText(1, 'NOT SUPPORTED FULL SCREEN')
-      }
-    }
   }
 
   process () {
@@ -583,39 +558,20 @@ class OptionSystem extends MenuSystem {
     return this.optionValue
   }
 
-  /** 
-   * 옵션의 값을 설정하거나 해제합니다. (미완성된 함수) 
-   * @deprecated
-   * */
-  setOption (optionIndex = 0) {
+  /** 옵션을 선택했을 때, 해당 인덱스에 맞춰서 설정값을 적용합니다. */
+  setSelectOption (optionIndex = 0) {
     let option = this.optionValue
 
     switch (optionIndex) {
-      case this.MENU_SOUND:
-        option.soundOn = !option.soundOn
-        break
+      case this.MENU_SOUND: option.soundOn = !option.soundOn; break
       case this.MENU_SOUND_VOLUME:
-        // 현재 사운드 볼륨을 가져오고 10을 증가시킵니다.
-        let currentSoundVolume = option.soundVolume
-        currentSoundVolume += 10
-        if (currentSoundVolume > 100) currentSoundVolume = 0
-
-        // 사운드 볼륨 값을 저장한 후, 실제 엔진의 게인을 조정하여 사운드 볼륨을 조정합니다.
-        option.soundVolume = currentSoundVolume
-        game.sound.setGain(currentSoundVolume / 100)
+        option.soundVolume += 10 // 사운드 볼륨 10 증가
+        if (option.soundVolume > 100) option.soundVolume = 0 // 초과하면 0으로 리셋
         break
-      case this.MENU_MUSIC:
-        option.musicOn = !option.musicOn
-        break
+      case this.MENU_MUSIC: option.musicOn = !option.musicOn; break
       case this.MENU_MUSIC_VOLUME:
-        // 현재 음악 볼륨을 가져오고 10을 증가시킵니다.
-        let currentMusicVolume = option.musicVolume
-        currentMusicVolume += 10
-        if (currentMusicVolume > 100) currentMusicVolume = 0
-
-        // 음악 볼륨 값을 저장한 훟, 실제 엔진의 게인을 조정하여 음악 볼륨을 조정합니다.
-        option.musicVolume = currentMusicVolume
-        game.sound.setMusicGain(currentMusicVolume / 100)
+        option.musicVolume += 10
+        if (option.musicVolume > 100) option.musicVolume = 0
         break
       case this.MENU_RESULT_AUTO_SKIP:
         // 이 옵션은 6초 후 자동으로 메인화면으로 이동하게 해주는 기능
@@ -623,12 +579,8 @@ class OptionSystem extends MenuSystem {
         // 이 기능을 끄면 여러분이 직접 ENTER를 눌러야 나갈 수 있습니다.
         option.resultAutoSkip = !option.resultAutoSkip
         break
-      case this.MENU_SHOW_ENEMY_HP:
-        option.showEnemyHp = !option.showEnemyHp
-        break
-      case this.MENU_SHOW_DAMAGE:
-        option.showDamage = !option.showDamage
-        break
+      case this.MENU_SHOW_ENEMY_HP: option.showEnemyHp = !option.showEnemyHp; break
+      case this.MENU_SHOW_DAMAGE: option.showDamage = !option.showDamage; break
     }
 
     this.optionEnable() // 설정된 옵션값을 적용
@@ -642,6 +594,12 @@ class OptionSystem extends MenuSystem {
     fieldSystem.option.showDamage = this.optionValue.showDamage
     fieldSystem.option.musicOn = this.optionValue.musicOn
     fieldSystem.option.soundOn = this.optionValue.soundOn
+
+    // 최대 최소 제한
+    if (this.optionValue.soundVolume < 0) this.optionValue.soundVolume = 0
+    if (this.optionValue.soundVolume > 100) this.optionValue.soundVolume = 100
+    if (this.optionValue.musicVolume < 0) this.optionValue.musicVolume = 0
+    if (this.optionValue.musicVolume > 100) this.optionValue.musicVolume = 100
 
     // 사운드가 켜져있으면, 현재 볼륨값으로 설정하고 아닐경우 0으로 설정
     // 주의: 사운드 게인은 0 ~ 1 사이의 범위입니다.
@@ -674,51 +632,15 @@ class OptionSystem extends MenuSystem {
       this.cursorPosition++
     }
 
-    // if (buttonInputLeft || buttonInputRight) {
-    //   switch (this.cursorPosition) {
-    //     case this.MENU_SOUND_VOLUME:
-    //       game.sound.setOption(this.MENU_SOUND_VOLUME)
-    //       break
-    //     case this.MENU_MUSIC_VOLUME:
-    //       game.sound.setOption(this.MENU_MUSIC_VOLUME)
-    //       break
-    //     case this.MENU_MASTER_VOLUME:
-    //       game.sound.setOption(this.MENU_MASTER_VOLUME)
-    //       break
-    //     case this.MENU_BACK:
-    //       break
-    //     default:
-    //       this.selected = true
-    //       break
-    //   }
-    // }
-
-    // if (buttonInputRight) {
-    //   switch (this.cursorPosition) {
-    //     case this.MENU_SOUND_VOLUME:
-    //       game.sound.setOption(game.sound.TYPE_SOUND_VOLUME, game.sound.getOption().soundVolume + 10)
-    //       break
-    //     case this.MENU_MUSIC_VOLUME:
-    //       game.sound.setOption(game.sound.TYPE_MUSIC_VOLUME, game.sound.getOption().musicVolume + 10)
-    //       break
-    //     case this.MENU_MASTER_VOLUME:
-    //       game.sound.setOption(game.sound.TYPE_MASTER_VOLUME, game.sound.getOption().masterVolume + 10)
-    //       break
-    //     case this.MENU_BACK:
-    //       break
-    //     default:
-    //       this.selected = true
-    //       break
-    //   }
-    // }
-
-    // 사운드 출력
     if (buttonInputLeft || buttonInputRight) {
       switch (this.cursorPosition) {
-        case this.MENU_SOUND_VOLUME:
-          game.sound.play(soundSrc.system.systemCursor)
-          break
+        // 사운드 볼륨: 좌우 화살표키로 +10씩 증가하거나 감소
+        case this.MENU_SOUND_VOLUME: this.optionValue.soundVolume += buttonInputLeft ? -10 : +10; break
+        case this.MENU_MUSIC_VOLUME: this.optionValue.musicVolume += buttonInputLeft ? -10 : +10; break
       }
+  
+      game.sound.play(soundSrc.system.systemCursor)
+      this.optionEnable()
     }
   }
 
@@ -728,10 +650,10 @@ class OptionSystem extends MenuSystem {
     if (this.cursorPosition === this.MENU_BACK) {
       this.canceled = true
     } else {
-      this.setOption(this.cursorPosition)
+      this.setSelectOption(this.cursorPosition)
     }
 
-    // 사운드 출력
+    // 사운드 볼륨을 선택 버튼으로 조절할 때, 효과음이 재생되도록 처리
     switch (this.cursorPosition) {
       case this.MENU_SOUND_VOLUME:
         game.sound.play(soundSrc.system.systemCursor)
@@ -758,9 +680,6 @@ class OptionSystem extends MenuSystem {
       this.optionValue.showDamage,
     ]
 
-    const imageOptionCheckHeight = 64
-    const imageOptionCheckWidth = 30
-
     for (let i = 0; i < this.menuList.length; i++) {
       this.menuList[i].display()
       let optionImageSrc = imageSrc.system.mainSystem
@@ -772,43 +691,22 @@ class OptionSystem extends MenuSystem {
         game.graphic.fillRect(this.menuList[i].x + this.menuList[i].width, this.menuList[i].y, 100, this.menuList[i].height, 'white')
       }
 
-      if (i >= 1) { // 첫번째 줄부터 옵션 값이 있으므로 여기서부터 옵션 값 출력
-        // 옵션 값 종류에 따라 결과값 표시
-        switch (typeof optionArray[i]) {
-          case 'boolean':
-            if (optionArray[i] === true) {
-              gameFunction.imageObjectDisplay(optionImageSrc, imageOptionCheckedData, this.menuList[i].x + this.menuList[i].width, this.menuList[i].y)
-            } else {
-              gameFunction.imageObjectDisplay(optionImageSrc, imageOptionUnCheckedData, this.menuList[i].x + this.menuList[i].width, this.menuList[i].y)
-            }
-            break
-          case 'number':
-            digitalDisplay(optionArray[i] + '', this.menuList[i].x + this.menuList[i].width, this.menuList[i].y)
-            break
-        }
+      if (i < 1) continue // 0번줄은 밑의 코드를 실행하지 않음
+      // 1번째 줄부터 옵션 값이 있으므로 여기서부터 옵션 값 출력
+      // 옵션 값 종류에 따라 결과값 표시
+      switch (typeof optionArray[i]) {
+        case 'boolean':
+          if (optionArray[i] === true) {
+            gameFunction.imageObjectDisplay(optionImageSrc, imageOptionCheckedData, this.menuList[i].x + this.menuList[i].width, this.menuList[i].y)
+          } else {
+            gameFunction.imageObjectDisplay(optionImageSrc, imageOptionUnCheckedData, this.menuList[i].x + this.menuList[i].width, this.menuList[i].y)
+          }
+          break
+        case 'number':
+          digitalDisplay(optionArray[i] + '', this.menuList[i].x + this.menuList[i].width, this.menuList[i].y)
+          break
       }
-
     }
-  }
-
-  /**
-   * 사용불가능
-   * @deprecated
-   */
-  getOptionObject () {
-    return {
-      sound: this.optionValue[this.MENU_SOUND],
-      music: this.optionValue[this.MENU_MUSIC],
-      resultAutoSkip: this.optionValue[this.MENU_RESULT_AUTO_SKIP],
-      showEnemyHp: this.optionValue[this.MENU_SHOW_DAMAGE],
-      showDamage: this.optionValue[this.MENU_SHOW_DAMAGE]
-    }
-  }
-
-  /** 사용불가능 @deprecated */
-  setOptionMusicSound (music, sound) {
-    // this.optionValue[this.MENU_MUSIC] = music
-    // this.optionValue[this.MENU_SOUND] = sound
   }
 }
 
@@ -831,7 +729,6 @@ class RoundSelectSystem extends MenuSystem {
   /** 최대 라운드: 8 */ MAX_ROUND = 8
   roundIconSrc = imageSrc.system.roundIcon
   roundIconSize = { width: 59, height: 59 }
-
 
   constructor () {
     super()
@@ -2460,17 +2357,16 @@ class StatUpgradeSystem extends MenuSystem {
 
   displayUserAttack () {
     // 한글이 왜 조금 더 위에 출력되는지 모르겠음. 이건 어쩔 수 없이 강제로 Y좌표를 2 추가함
-    game.graphic.fillText('공격력     = 베이스  + 레벨  + 장비  + 슬롯', 0, this.outputY1Attack + (this.SIZEY * 0) + 2)
+    game.graphic.fillText('공격력     = 레벨  + 장비  + 슬롯', 0, this.outputY1Attack + (this.SIZEY * 0) + 2)
 
-    digitalDisplay('ATTACK  = BASE  + LEVEL + EQUIPMENT + SLOT    ', 0, this.outputY1Attack + (this.SIZEY * 1))
+    digitalDisplay('ATTACK  = LEVEL  + EQUIPMENT + SLOT    ', 0, this.outputY1Attack + (this.SIZEY * 1))
     const userAttack = userSystem.attack
     const userAttackValue = userSystem.getAttackValue()
     const attack = ('' + userAttack).padEnd(8, ' ') + '= '
-    const base = ('' + userAttackValue.base).padEnd(6, ' ') + '+ '
-    const level = ('' + userAttackValue.level).padEnd(6, ' ') + '+ '
+    const level = ('' + userAttackValue.level).padEnd(7, ' ') + '+ '
     const equipment = ('' + userAttackValue.equipment).padEnd(10, ' ') + '+ '
     const slot = ('' + userAttackValue.slot).padEnd(8, ' ')
-    digitalDisplay(attack + base + level + equipment + slot, 0, this.outputY1Attack + (this.SIZEY * 2))
+    digitalDisplay(attack + level + equipment + slot, 0, this.outputY1Attack + (this.SIZEY * 2))
 
     const userWeaponAttack = userSystem.getAttackWeaponValue()
     const userSkillAttack = userSystem.getAttackSkillValue()
@@ -3379,80 +3275,12 @@ export class gameSystem {
   }
 
   /** 
-   * 임시 함수 (현재는 사용할지 잘 모르겠음)
-   * 
-   * 게임 메인 화면에서는 에코를 사용하지 않습니다.
-   * 라운드에서는 에코 효과를 사용할 수 있지만 해제하지 않으므로, 메인 화면에서 해제합니다.
-   * 
-   * @deprecated
-   */
-  static echoCancle () {
-    game.sound.setEchoDisable()
-    game.sound.setMusicEchoDisable()
-  }
-
-  /**
-   * 세이브 데이터의 규칙이 변경됨 (0.43.0) - 하위호환을 위해 이 값들은 유지됩니다. (다만 이후엔 삭제할 가능성이 높음)
-   * 
-   * 저장하거나 불러올 때 localStorage 에서 사용하는 키 이름 (임의로 변경 금지)
-   * 각 키 별로, 저장 데이터 형식과 저장 목적에 대해 자세히 설명되어있습니다.
-   * 대부분의 저장 형식에서 구분자를 ,(쉼표) 로 사용합니다.
-   * 
-   * @deprecated
-   */
-  static saveKey = {
-    /**
-     * 게임에서 저장된 데이터가 있는지 확인
-     * 주의: localStoarge를 통해서 받아오는 값은 string입니다. 그래서 'false'값을 저장해도 Boolean('false')를 해서
-     * 값을 불러와봐야 어차피 true값이 됩니다.(자바스크립트는 문자열에 값이 있으면 true입니다.)
-     */
-    saveFlag: 'saveFlag',
-
-    /**
-     * 플레이 시간
-     * 저장 형식: hour,minute,second,frame 의 문자열 (구분자: ,(쉼표))
-     * 예시: 14,23,7,56 -> 14:23:7 56frame
-     */
-    playTime: 'playTime',
-
-    /**
-     * (게임 첫 시작)시작 날짜 및 시간
-     * 저장 형식: year,month,date,hour,minute,second 의 문자열 (구분자: ,(쉼표))
-     * 예시: 2022,03,11,16,26,33 -> 2022/03/11 16:26:33
-     */
-    startDate: 'startDate',
-
-    /**
-     * 저장 시점의 날짜 및 시간
-     * 저장 형식은 startDate랑 동일
-     * 저장 형식: year,month,date,hour,minute,second 의 문자열 (구분자: ,(쉼표))
-     * 예시: 2022,03,11,16,26,33 -> 2022/03/11 16:26:33
-     */
-    saveDate: 'saveDate',
-
-    /** 모든 옵션 값들을 저장합니다. */
-    optionValue: 'optionValue',
-
-    /** 유저가 가지고 있는 정보 (레벨, 경험치 등...) */
-    userData: 'userData',
-
-    /** 필드 데이터 (필드 상태가 아닐경우 이 데이터는 없음) */
-    fieldData: 'tamshooter4FieldData',
-
-    /** 무기의 리스트 */
-    weaponList: 'weaponList',
-
-    /** 스킬의 리스트 (0 ~ 3번 A슬롯, 4 ~ 7번 B슬롯) */
-    skillList: 'skillList'
-  }
-
-  /** 
    * 이 값 대신 getCurrentSaveKey를 사용해주세요. 왜냐하면 숫자키도 같이 사용해야합니다.
    * 
    * 다만 이 키 값은 내부 상수로 사용되야 하므로 이 코드를 삭제하지 마세요.
    * 
    * tamshooter4에서 사용하는 lcoalStoarge save key 
-   * @deprecated
+   * @private
    */
   static saveKeyTamshooter4Data = 'tamshooter4SaveData'
 
@@ -3462,7 +3290,7 @@ export class gameSystem {
    * 다만 이 키 값은 내부 상수로 사용되야 하므로 이 코드를 삭제하지 마세요.
    * 
    * tamshooter4에서 사용하는 saveKey에 추가적으로 붙는 번호 (다만 이 게임에서 다중 세이브를 사용할 생각이 없음) 
-   * @deprecated
+   * @private
    */
   static saveKeyTamshooter4DataNumber = 0
 
@@ -3479,6 +3307,10 @@ export class gameSystem {
   /** tamshooter4에서 사용하는 백업용 세이브 키 (오류가 났을 때 복구하는 용도) */
   static getCurrentSaveKeyBackup () {
     return this.saveKeyTamshooter4Data + this.saveKeyTamshooter4DataNumber + 'backup'
+  }
+
+  static getCurrentSaveKeyField () {
+    return 'tamshooter4FieldData'
   }
 
   /** 저장 지연 시간을 카운트 하는 변수 */ static saveDelayCount = 0
@@ -3557,10 +3389,10 @@ export class gameSystem {
     // 필드 저장 데이터는, 필드 상태에서, 게임이 진행 중일 때에만 저장됩니다. 클리어, 게임오버, 탈출상태가 되면 저장하지 않습니다.
     if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
       const fieldSaveData = fieldSystem.fieldSystemSaveData()
-      localStorage.setItem(this.saveKey.fieldData, JSON.stringify(fieldSaveData))
+      localStorage.setItem(this.getCurrentSaveKeyField(), JSON.stringify(fieldSaveData))
     } else {
       // 필드 상태가 아니면, 필드 저장 데이터는 삭제
-      localStorage.removeItem(this.saveKey.fieldData)
+      localStorage.removeItem(this.getCurrentSaveKeyField())
     }
   }
 
@@ -3585,66 +3417,6 @@ export class gameSystem {
     this.saveDelayCount = 0
 
     return true
-  }
-
-  /**
-   * 이 함수는 더이상 사용되지 않습니다. (하위호환을 위한 참고용으로 남겨두었으며 이 함수를 실행하면 오류가 발생될 수 있습니다.)
-   * 
-   * 저장 기능은, 1초에 한번씩 진행됩니다. 달래아 - 지연(프레임)
-   * 이 게임 내에서는, 지연 시간을 딜레이란 단어로 표기합니다.
-   * 
-   * @deprecated
-   * 
-   * @param {boolean} [forceSave=false] 강제 세이브 여부 (딜레이를 무시함) 특정 상황에서만 이 변수의 값을 true로 설정해주세요.
-   */
-  static processSaveOldV0a36 (forceSave = false) {
-    // 데이터 리셋이 되었다면, 게임을 자동 새로고침하므로 저장 함수를 실행하지 않음.
-    if (this.isDataReset) return
-
-    /** 저장 딜레이 시간 */ const SAVE_DELAY = this.SAVE_DELAY
-
-    // 세이브 지연시간보다 세이브 지연 시간을 카운트 한 값이 낮으면 함수는 실행되지 않습니다.
-    // 즉, 60frame을 채울때까지 저장 기능은 미루어집니다. 따라서 1초에 1번씩 저장합니다.
-    this.saveDelayCount++ // 세이브 딜레이에 카운트 증가
-    // 강제세이브의 경우, 저장딜레이를 무시하고 강제로 저장함
-    if (!forceSave && this.saveDelayCount < SAVE_DELAY) return
-
-    // 세이브 딜레이 초기화
-    this.saveDelayCount = 0
-
-    // 한번이라도 저장을 할 경우, saveFlag의 값이 true가 됩니다.
-    localStorage.setItem(this.saveKey.saveFlag, 'true')
-
-    // 저장 시간
-    const saveDate = new Date()
-    const saveDateString = saveDate.getFullYear() + ',' + saveDate.getMonth() + ',' + saveDate.getDay() + ',' + saveDate.getHours() + ',' + saveDate.getMinutes() + ',' + saveDate.getSeconds()
-    localStorage.setItem(this.saveKey.saveDate, saveDateString)
-
-    // 유저의 첫 시작 시간
-    const startDate = this.userSystem.startDate
-    const startDateString = startDate.year + ',' + startDate.month + ',' + startDate.day + ',' + startDate.hour + ',' + startDate.minute + ',' + startDate.second
-    localStorage.setItem(this.saveKey.startDate, startDateString)
-
-    // 플레이 타임 저장
-    const playTime = this.userSystem.playTime
-    const playTimeString = playTime.hour + ',' + playTime.minute + ',' + playTime.second
-    localStorage.setItem(this.saveKey.playTime, playTimeString)
-
-    // 모든 옵션 값들 저장
-    const optionValue = JSON.stringify(this.optionSystem.optionValue)
-    localStorage.setItem(this.saveKey.optionValue, optionValue)
-
-    const userData = this.userSystem.getSaveData0a36()
-    localStorage.setItem(this.saveKey.userData, userData)
-
-    // 필드 저장 데이터는, 필드 상태에서, 게임이 진행 중일 때에만 저장됩니다. 클리어, 게임오버, 탈출상태가 되면 저장하지 않습니다.
-    if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
-      const fieldSaveData = fieldSystem.fieldSystemSaveData()
-      localStorage.setItem(this.saveKey.fieldData, JSON.stringify(fieldSaveData))
-    } else {
-      // 필드 상태가 아니면, 필드 저장 데이터는 삭제
-      localStorage.removeItem(this.saveKey.fieldData)
-    }
   }
 
   /**
@@ -3898,16 +3670,10 @@ export class gameSystem {
     // 유저의 스킬을 강제로 표시하기 위해 해당 함수를 사용
     userSystem.setSkillDisplayStatDefaultFunction()
 
-    // 불러오기 작업 진행
-    // 0.36.0 ~ 0.42.6 까지의 세이브 파일은 자동으로 0.43.0으로 변환됩니다.
-    // 단, 이미 0.43.0 이후의 데이터가 존재한다면, 0.36.0 ~ 0.42.6 데이터가 있어도 그 데이터는 유지되고 반영되지 않습니다.
+    // 불러오기 작업 진행, 아무것도 없으면 로드 작업 취소
     let tamshooter4LoadData = localStorage.getItem(this.getCurrentSaveKey())
     let tamshooter4BackupData = localStorage.getItem(this.getCurrentSaveKeyBackup())
     if (tamshooter4LoadData == null && tamshooter4BackupData == null) {
-      this.processLoadOldV0a36() // 참고: 이 버전에서조차 불러온 데이터가 없다면 저장된 데이터는 없는것으로 처리합니다.
-      if (localStorage.getItem(this.saveKey.saveFlag) == null) {
-        userSystem.setStartDateReset()
-      }
       return
     }
 
@@ -3919,16 +3685,14 @@ export class gameSystem {
       if (!isBackupSuccess) {
         // 이것도 실패했다면, 오류 발생시키고, 다른 메뉴로 이동시킴 (저장 기능은 사용 불가가됨)
         this.stateId = this.STATE_ERROR
-        // localStorage.removeItem(this.getCurrentSaveKey())
-        // localStorage.removeItem(this.getCurrentSaveKeyBackup())
-        localStorage.removeItem(this.saveKey.fieldData)
+        localStorage.removeItem(this.getCurrentSaveKeyField())
         return
       }
     }
     
     // 모든 데이터를 불러온 후 필드 데이터가 있으면 필드 데이터를 불러옴
     try {
-      const fieldSaveData = localStorage.getItem(this.saveKey.fieldData)
+      const fieldSaveData = localStorage.getItem(this.getCurrentSaveKeyField())
       if (fieldSaveData != null) {
         // 경고: localStoarge 특성상 string값으로 비교해야 합니다.
         // 필드 저장 데이터가 있다면, state를 필드 데이터로 이동
@@ -3939,49 +3703,9 @@ export class gameSystem {
       }
     } catch (e) {
       alert(systemText.gameError.FILED_LOAD_ERROR)
-      localStorage.removeItem(this.saveKey.fieldData)
+      localStorage.removeItem(this.getCurrentSaveKeyField())
       this.stateId = this.STATE_MAIN
       game.setBiosDisplayPossible(true)
-    }
-  }
-
-  /**
-   * 과거 버전을 불러오는 함수 (이 함수는 하위호환을 위해 남겨놓았습니다.)
-   * @deprecated
-   */
-  static processLoadOldV0a36 () {
-    // saveFlag의 값을 불러오고, 만약 아무것도 없다면 이 버전의 데이터를 불러오지 않습니다.
-    const saveFlag = localStorage.getItem(this.saveKey.saveFlag)
-    if (!saveFlag) {
-      // 첫번째로 게임이 실행되었을 때 추가적인 실행 코드 (초기화)
-      userSystem.setSkillDisplayStatDefaultFunction()
-      return
-    }
-    
-    // 플레이 타임 불러오기: 저장 규칙을 모르겠으면, saveKey 객체 내에 있는 변수들의 설명을 참고
-    const playTimeArray = localStorage.getItem(this.saveKey.playTime)
-    if (playTimeArray != null) {
-      const playTime = playTimeArray.split(',')
-      this.userSystem.setPlayTime(playTime[0], playTime[1], playTime[2])
-    }
-    
-    // 시작 날짜 및 시간 불러오기
-    const startDateArray = localStorage.getItem(this.saveKey.startDate)
-    if (startDateArray != null) {
-      const startDate = startDateArray.split(',')
-      this.userSystem.setStartDate(Number(startDate[0]), startDate[1], startDate[2], startDate[3], startDate[4], startDate[5])
-    }
-    
-    // 옵션 값 불러오기
-    const optionValue = localStorage.getItem(this.saveKey.optionValue)
-    if (optionValue != null) {
-      this.optionSystem.optionValue = JSON.parse(optionValue)
-      this.optionSystem.optionEnable() // 불러온 옵션값을 적용
-    }
-    
-    const userData = localStorage.getItem(this.saveKey.userData)
-    if (userData != null) {
-      this.userSystem.setLoadData0a36(userData)
     }
   }
 
@@ -4054,10 +3778,10 @@ export class gameSystem {
     const messageList = this.fieldSystem.messageList
     switch (this.fieldSystem.message) {
       case messageList.CHANGE_MUSICON:
-        this.optionSystem.setOption(this.optionSystem.MENU_MUSIC)
+        this.optionSystem.setSelectOption(this.optionSystem.MENU_MUSIC)
         break
       case messageList.CHANGE_SOUNDON:
-        this.optionSystem.setOption(this.optionSystem.MENU_SOUND)
+        this.optionSystem.setSelectOption(this.optionSystem.MENU_SOUND)
         break
       case messageList.STATE_MAIN:
         this.stateId = this.STATE_MAIN

@@ -610,12 +610,9 @@ export class userSystem {
       this.weaponUnlockList.sort((a, b) => a - b)
     }
   }
-  
-  /** 플레이어가 기본적으로 가지는 공격력 */
-  static BASE_ATTACK = 40000
 
   /** 공격력(초당), 참고: 이 값은 processStat함수를 실행하지 않으면 값이 갱신되지 않습니다. */ 
-  static attack = userSystem.BASE_ATTACK
+  static attack = 0
 
   /** 유저 스탯 숨기기 */ static isHideUserStat = false
   /** 숨기기를 사용할 때, 적용되는 알파값, 완전히 숨겨지면 0.2로 취급 */ static hideUserStatAlpha = 1
@@ -1190,7 +1187,7 @@ export class userSystem {
     let value = this.getAttackValue()
 
     // 공격력 결정
-    this.attack = this.BASE_ATTACK + this.attackLevelTable[this.lv] + value.equipment + value.slot + value.stat
+    this.attack = this.attackLevelTable[this.lv] + value.equipment + value.slot + value.stat
 
     // 체력 결정 (아직 해당 코드는 없음, 추후 추가될 수 있음)
     // 쉴드 결정 (아직 해당 코드는 없음, 추후 추가될 수 있음)
@@ -1200,7 +1197,6 @@ export class userSystem {
   static getAttackValue () {
     const equipment = this.getInventoryEquipmentStatus(this.equipment.itemIndex)
     return {
-      base: this.BASE_ATTACK,
       level: this.attackLevelTable[this.lv],
       equipment: equipment != null ? equipment.attack : 0,
       slot: 0,

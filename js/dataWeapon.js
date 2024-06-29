@@ -212,7 +212,7 @@ export class WeaponData extends FieldData {
     if (this.hitEffect) {
       let hitEffect = this.hitEffect.getObject()
       hitEffect.setWidthHeight(hitedTarget.width, hitedTarget.height)
-      fieldState.createEffectObject(hitEffect, hitedTarget.x, hitedTarget.y, 1)
+      fieldState.createEffectObject(hitEffect, hitedTarget.x, hitedTarget.y)
     }
   }
 
@@ -1093,7 +1093,7 @@ class ParapoShockwave extends Parapo {
   processAttack () {
     this.repeatCount--
     this.processHitObject()
-    fieldState.createEffectObject(this.parapoEffect, this.x, this.y, 0, 0)
+    fieldState.createEffectObject(this.parapoEffect, this.x, this.y)
   }
 
   display () {
@@ -3435,7 +3435,7 @@ class SkillR3Helljeon extends R3Helljeon {
 }
 
 /**
- * @type {Map<number, WeaponData | any>}
+ * @type {Map<number, typeof WeaponData>}
  */
 export const dataExportWeapon = new Map()
 dataExportWeapon.set(ID.weapon.arrow, Arrow)

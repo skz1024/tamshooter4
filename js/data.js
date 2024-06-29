@@ -75,10 +75,9 @@ export class tamshooter4Data {
     this.playerSkill.set(id, value)
   }
 
-
   /**
    * 무기 객체를 얻어옵니다.
-   * @type {Map<number, WeaponData>}
+   * @type {Map<number, typeof WeaponData>}
    */
   static weapon = dataExportWeapon
 
@@ -99,13 +98,13 @@ export class tamshooter4Data {
 
   /**
    * 적 객체
-   * @type {Map<number, EnemyData>}
+   * @type {Map<number, typeof EnemyData>}
    */
   static enemy = dataExportEnemy
 
   /**
    * @param {number} id ID 클래스가 가지고 있는 id 함수
-   * @param {EnemyData} value 적 객체
+   * @param {typeof EnemyData} value 적 객체
    */
   static setEnemy (id, value) {
     this.enemy.set(id, value)
@@ -113,51 +112,9 @@ export class tamshooter4Data {
 
   /**
    * @param {number} id ID 클래스가 가지고 있는 id 함수
-   * @returns {EnemyData} 적 객체
+   * @returns {typeof EnemyData} 적 객체
    */
   static getEnemy = (id) => this.enemy.get(id)
-
-
-  /**
-   * 이펙트 객체 (CustomEffect 객체랑 관련 없음.)
-   */
-  static effect = new Map()
-  
-  /**
-   * @param {number} id ID 클래스가 가지고 있는 id 함수
-   * @param {EffectData} value 이펙트 데이터
-   */
-  static setEffect (id, value) {
-    this.effect.set(id, value)
-  }
-
-  /**
-   * @param {number} id ID 클래스가 가지고 있는 id 함수
-   * @returns {EffectData} 이펙트 데이터
-   */
-  static getEffect = (id) => this.effect.get(id)
-
-
-  /**
-   * 적이 총알을 사용할 때 사용하는 객체 (적 데이터와 별개)
-   */
-  static enemyBullet = new Map()
-  
-  /**
-   * @param {number} id ID 클래스가 가지고 있는 id 함수
-   * @param {EnemyBulletData} value 적 총알의 데이터 (적 데이터와는 별개)
-   */
-  static setEnemyBullet (id, value) {
-    this.enemyBullet.set(id, value)
-  }
-
-  /**
-   * @deprecated
-   * @param {number} id ID 클래스가 가지고 있는 id 함수
-   * @returns {EnemyBulletData} value 적 총알의 데이터 (적 데이터와는 별개)
-   */
-  static getEnemyBullet = (id) => this.effect.get(id)
-
 
   /**
    * 라운드 객체
@@ -166,7 +123,7 @@ export class tamshooter4Data {
 
   /**
    * @param {number} id ID 클래스가 가지고 있는 id 함수
-   * @param {RoundData} value 라운드 데이터
+   * @param {typeof RoundData} value 라운드 데이터
    */
   static setRound (id, value) {
     this.round.set(id, value)
@@ -174,7 +131,7 @@ export class tamshooter4Data {
 
   /**
    * @param {number} id ID 클래스가 가지고 있는 id 함수
-   * @returns {RoundData} 라운드 데이터
+   * @returns {typeof RoundData} 라운드 데이터
    */
   static getRound = (id) => this.round.get(id)
 }

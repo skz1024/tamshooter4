@@ -29,8 +29,6 @@ export class ID {
     r3TowerPink: 10017,
     r3TowerPurple: 10018,
     r3Helljeon: 10019,
-
-    /** @deprecated */ subMultyshot: 10767,
   }
 
   static playerSkill = {
@@ -93,7 +91,6 @@ export class ID {
     blaster: 11020,
     blasterMini: 11021,
     sidewave: 11022,
-    subMultyshot: 11023,
     rapid: 11024,
     ring: 11025,
     seondanil: 11026,
@@ -390,30 +387,6 @@ export class ID {
       vacuumCleaner: 20352,
       gamokBangpae: 20353,
     }
-  }
-
-  /** 더이상 사용하지 않을 수 있음. @deprecated */
-  static enemyBullet = {
-    meteoriteBomb: 30140,
-    jemulEnemySpike: 30145,
-    jemulEnemyShip: 30146,
-    jemulEnemyAir: 30147
-  }
-
-  /** 더이상 사용하지 않을 수 있음. @deprecated */
-  static effect = {
-    missile: 40000,
-    parapo: 40001,
-    skillMissile: 40002,
-    skillParapo: 40003,
-    enemyBulletMeteoriteBomb: 40004,
-    jemulEnemyEnergyBoltAttack: 40005,
-    jemulstar: 40006,
-    jemulCreate: 40007
-  }
-
-  static sprite = {
-
   }
 
   static round = {

@@ -450,12 +450,12 @@ class PlayerObject extends FieldData {
   }
 
   /** 플레이어에게 아이템을 추가합니다. (fieldSystem에서 간접적으로 사용함) */
-  addItem (id = 0, count = 0) {
+  _addItem (id = 0, count = 0) {
     userSystem.inventory.add(id, count)
   }
 
   /** 플레이어에게 아이템을 삭제합니다. (fieldSystem에서 간접적으로 사용함)  */
-  removeItem (id = 0, count = 0) {
+  _removeItem (id = 0, count = 0) {
     userSystem.inventoryItemDelete(id, count)
   }
 
@@ -1085,8 +1085,7 @@ export class fieldState {
     if (GetClass == null) return
 
     /** @type {EnemyData} */
-    //@ts-expect-error
-    const inputData = new GetClass(option)
+    const inputData = new GetClass()
     inputData.createId = this.getNextCreateId()
     inputData.id = typeId
     inputData.setPosition(x, y)
@@ -1118,74 +1117,48 @@ export class fieldState {
 
   /**
    * 이펙트를 생성합니다.
-   * @param {number | CustomEffect | CustomEditEffect} typeId 
-   * CustomEffect 인스턴스(CustomEffect.getObject() 를 사용해주세요.)
    * 
-   * 또는 CustomEditEffect 클래스 또는 생성된 인스턴스
+   * 이펙트에 상세한 요소를 넣고싶다면, 아예 CustomEffect 또는 CustomEditEffect를 상속받아서 구현하세요.
    * 
-   * number는 더이상 사용하지 않습니다.
-   *  
+   * CustomEffect의 경우, 내부적으로 getObject를 통해 새 인스턴스를 생성합니다.
+   * 
+   * @param {CustomEffect | CustomEditEffect} customEffect 
    * @param {number | undefined} x
    * @param {number | undefined} y
-   * @param {any[]} option
-   * @returns {EffectData | null | undefined} 리턴된 이펙트를 이용해서 일시적으로 객체를 조작할 수 있음.
+   * @returns {EffectData | undefined} 리턴된 이펙트를 이용해서 일시적으로 객체를 조작할 수 있음.
    */
-  static createEffectObject (typeId, x = undefined, y = undefined, repeatCount = 0, beforeDelay = 0, ...option) {
-    if (typeof typeId === 'number') {
-      const GetClass = tamshooter4Data.getEffect(typeId)
-      if (GetClass == null) return
-  
+  static createEffectObject (customEffect, x = undefined, y = undefined) {
+    if (customEffect == null) return undefined
+
+    let customEffectObject
+    if (customEffect instanceof CustomEffect) {
+      // 변수 이름 변경... 및 타입Id에 입력된 CustomEffectData에서 새 오브젝트를 얻어옴.
       /** @type {EffectData} */
-      //@ts-expect-error
-      const inputData = new GetClass(option)
-      inputData.createId = this.getNextCreateId()
-      inputData.id = typeId
-      if (x == null) x = 0
-      if (y == null) y = 0
-      inputData.setPosition(x, y)
-      // inputData.setOption(width, height)
-      this.effectObject.push(inputData)
-      return inputData
+      customEffectObject = customEffect.getObject()
+      if (x == null) x = customEffect.x
+      if (y == null) y = customEffect.y
+    } else if (customEffect instanceof CustomEditEffect) {
+      /** @type {EffectData} */
+      customEffectObject = customEffect // 새로 생성된 인스턴스
+      if (x == null) x = customEffect.x
+      if (y == null) y = customEffect.y
     } else {
-      if (typeId == null) return null
-
-      // 만약 생성자(클래스)가 들어왔다면, 해당 클래스의 인스턴스를 생성합니다.
-      // 클래스가 들어올경우 함수 타입으로 들어옵니다. 그래서 타입이 함수인지를 구분합니다.
-      if (typeof typeId === 'function') {
-        //@ts-expect-error
-        typeId = new typeId()
-      }
-
-      let customEffectObject
-      if (typeId instanceof CustomEffect) {
-        // 변수 이름 변경... 및 타입Id에 입력된 CustomEffectData에서 새 오브젝트를 얻어옴.
-        /** @type {EffectData} */
-        customEffectObject = typeId.getObject()
-        if (x == null) x = typeId.x
-        if (y == null) y = typeId.y
-      } else if (typeId instanceof CustomEditEffect) {
-        /** @type {EffectData} */
-        customEffectObject = typeId // 새로 생성된 인스턴스
-        if (x == null) x = typeId.x
-        if (y == null) y = typeId.y
-      } else {
-        customEffectObject = null
-      }
-
-      // 좌표 기본값 설정 (이미 만들어진 객체는 typeId에 있는 객체의 값을 그대로 사용)
-      if (x == null) x = 0
-      if (y == null) y = 0
-
-      // 커스텀 이펙트가 없으면 아무것도 하지 않습니다.
-      if (customEffectObject == null) return null
-      
-      // 커스텀 이펙트의 객체가 들어올경우, 해당 객체를 곧바로 새로운 데이터에 넣습니다.
-      // (구조 상 인스턴스만 변수로 넣을 수 있어서, 클래스 할당 과정을 거치지 않습니다.)
-      customEffectObject.createId = this.getNextCreateId()
-      customEffectObject.setPosition(x, y)
-      this.effectObject.push(customEffectObject)
-      return customEffectObject
+      customEffectObject = undefined
     }
+
+    // 좌표 기본값 설정 (이미 만들어진 객체는 typeId에 있는 객체의 값을 그대로 사용)
+    if (x == null) x = 0
+    if (y == null) y = 0
+
+    // 커스텀 이펙트가 없으면 아무것도 하지 않습니다.
+    if (customEffectObject == null) return undefined
+    
+    // 커스텀 이펙트의 객체가 들어올경우, 해당 객체를 곧바로 새로운 데이터에 넣습니다.
+    // (구조 상 인스턴스만 변수로 넣을 수 있어서, 클래스 할당 과정을 거치지 않습니다.)
+    customEffectObject.createId = this.getNextCreateId()
+    customEffectObject.setPosition(x, y)
+    this.effectObject.push(customEffectObject)
+    return customEffectObject
   }
 
   static damageObjectNumber = 0
@@ -1208,16 +1181,14 @@ export class fieldState {
 
   /**
    * 적 총알을 생성합니다.
-   * @param {EnemyBulletData | FieldData | any} targetClass 
+   * @param {EnemyBulletData} targetClass 
    * @param {number | undefined} x x좌표
    * @param {number | undefined} y y좌표
    * @returns 
    */
   static createEnemyBulletObject (targetClass, x = undefined, y = undefined) {
     // 함수(클래스)가 들어온경우, 클래스의 인스턴스를 생성함.
-    if (typeof targetClass === 'function') {
-      targetClass = new targetClass()
-    } else if (targetClass instanceof FieldData || typeof targetClass === 'object') {
+    if (targetClass instanceof FieldData || typeof targetClass === 'object') {
       // 오브젝트 타입은 변수를 그대로 사용, 그리고 좌표값을 지정하지 않았다면, 자동으로 객체가 가진 좌표값을 사용합니다.
       if (x == null) x = targetClass.x
       if (y == null) y = targetClass.y
@@ -1241,20 +1212,17 @@ export class fieldState {
 
   /**
    * 스프라이트 오브젝트를 생성합니다. (다만, 스프라이트는 FieldData와 동일한)
-   * @param {FieldData | any} targetClass FieldData를 상속받아 만든 클래스
+   * 
+   * 주의: 클래스를 내보낼경우, 오류를 발생시키므로, 반드시 생성된 인스턴스를 사용해야 합니다.
+   * @param {FieldData} targetClass FieldData를 상속받아 만든 클래스
    * @param {number | undefined} x x좌표
    * @param {number | undefined} y y좌표
    */
   static createSpriteObject (targetClass, x = undefined, y = undefined)  {
-    // 함수(클래스)가 들어온경우, 클래스의 인스턴스를 생성함.
-    if (typeof targetClass === 'function') {
-      targetClass = new targetClass()
-      if (x == null) x = 0
-      if (y == null) y = 0
-    } else if (targetClass instanceof FieldData) {
+    if (targetClass instanceof FieldData) {
       // 오브젝트 타입은 변수를 그대로 씀
-      if (x == null) x = targetClass.x
-      if (y == null) y = targetClass.y
+      if (x == undefined) x = targetClass.x
+      if (y == undefined) y = targetClass.y
     } else {
       // 그 외 타입은 무시
       return
@@ -1469,9 +1437,9 @@ export class fieldState {
 export class fieldSystem {
   /**
    * 현재 진행되고 있는 라운드
-   * @type {RoundData | null}
+   * @type {RoundData | undefined}
    */
-  static round = null
+  static round = undefined
 
   /** 현재 상태값을 표시하는 ID */ static stateId = 0
   /** 일반적인 게임 진행 상태 */ static STATE_NORMAL = 0
@@ -1579,7 +1547,7 @@ export class fieldSystem {
       this.fieldItemCountList[index] += count
     }
     
-    fieldState.playerObject.addItem(id, count)
+    fieldState.playerObject._addItem(id, count)
   }
 
   /**
@@ -1612,21 +1580,16 @@ export class fieldSystem {
       }
     }
 
-    fieldState.playerObject.removeItem(id, count)
+    fieldState.playerObject._removeItem(id, count)
   }
 
-  /**
-   * 라운드 오브젝트를 생성하고 이 객체을 리턴합니다.
-   */
+  /** 라운드 오브젝트를 생성하고 이 객체을 리턴합니다. */
   static createRound (roundId = 0) {
     const RoundClass = tamshooter4Data.getRound(roundId)
     if (RoundClass == null) return
 
-    //@ts-expect-error
     // 라운드 데이터
     let getObject = new RoundClass()
-    getObject.id = roundId // 라운드의 id를 입력해야 합니다. (다른곳에서는 입력하지 않음.)
-
     return getObject
   }
 
@@ -1698,9 +1661,7 @@ export class fieldSystem {
     }
   }
 
-  /**
-   * 해당 라운드의 골드에 대한 값을 계산합니다.
-   */
+  /** 해당 라운드의 골드에 대한 값을 계산합니다. */
   static getRoundGoldCalculation () {
     if (this.round == null) return 0
     if (this.round.time.currentTime < 30) return 0 // 적어도 30초이상 진행해야 골드를 얻을 수 있음.
@@ -1710,9 +1671,7 @@ export class fieldSystem {
     return gold * timeMultiple
   }
 
-  /**
-   * 점수 사운드 출력
-   */
+  /** 점수 사운드 출력 */
   static scoreSound () {
     if (this.exitDelayCount < this.SCORE_ENIMATION_MAX_FRAME 
       && this.exitDelayCount % this.SCORE_ENIMATION_INTERVAL === 0
@@ -1721,9 +1680,7 @@ export class fieldSystem {
     }
   }
 
-  /**
-   * 일시 정지 상태에서의 처리
-   */
+  /** 일시 정지 상태에서의 처리 */
   static processPause () {
     const buttonDown = game.control.getButtonInput(game.control.buttonIndex.DOWN)
     const buttonUp = game.control.getButtonInput(game.control.buttonIndex.UP)
@@ -1863,9 +1820,7 @@ export class fieldSystem {
     gameVar.statLineText2.setStatLineText(this.getFieldDataString(), this.round.time._currentTime, this.round.stat.finishTime, '#D5F5E3' ,'#33ff8c')
   }
 
-  /**
-   * 라운드 시간이 일시정지 되었을 때에 대한 메세지 출력 함수
-   */
+  /** 라운드 시간이 일시정지 되었을 때에 대한 메세지 출력 함수 */
   static processRoundTimePaused () {
     if (this.round == null) return
 
@@ -1924,7 +1879,6 @@ export class fieldSystem {
     // 라운드, 필드스테이트, 필드데이터는 항상 출력됩니다.
     if (this.round) this.round.display()
     fieldState.display()
-    // this.displayFieldData()
 
     switch (this.stateId) {
       case this.STATE_PAUSE:
@@ -2005,9 +1959,7 @@ export class fieldSystem {
     }
   }
 
-  /**
-   * 결과 화면을 출력합니다. roundClear, gameOver, processExit 상태 모두 동일한 display 함수 사용
-   */
+  /** 결과 화면을 출력합니다. roundClear, gameOver, processExit 상태 모두 동일한 display 함수 사용 */
   static displayResult () {
     const image = imageSrc.system.fieldSystem
     let imageData
@@ -2049,7 +2001,7 @@ export class fieldSystem {
     }
 
     // 아이템 출력?
-    game.graphic.fillRect(200, 400, 400, 300, 'orange')
+    game.graphic.fillRect(200, 400, 400, 100, 'orange')
     for (let i = 0; i < this.fieldItemIdList.length; i++) {
       if (this.fieldItemCountList[i] <= 0) continue
 
@@ -2065,27 +2017,6 @@ export class fieldSystem {
       game.graphic.imageDisplay(src, iconSectionWidth * XLINE, iconSectionWidth * YLINE, iconWidth, iconWidth, 400 + (iconWidth * i), 300, iconWidth, iconWidth)
       digitalDisplay('X' + this.fieldItemCountList[i], 400 + (iconWidth * i), 300 + iconWidth + 10)
     }
-  }
-
-  /**
-   * 이 함수는 더이상 사용되지 않습니다.
-   * processNormal에서 필드 스탯이 출력되도록 변경되었습니다.
-   * @deprecated
-   */
-  static displayFieldData () {
-    const LAYER_X = game.graphic.CANVAS_WIDTH_HALF
-    const LAYER_Y = 570
-    const LAYER_DIGITAL_Y = 570 + 5
-    const HEIGHT = 30
-    const roundText = this.round != null ? this.round.stat.roundText : 'NULL'
-    const currentTime = this.round != null ? this.round.time._currentTime : '999'
-    const finishTime = this.round != null ? this.round.stat.finishTime : '999'
-    const plusTime = this.round != null ? this.round.time.plusTime : '0'
-    const meterMultiple = Number(currentTime) / Number(finishTime)
-    game.graphic.fillRect(LAYER_X, LAYER_Y, game.graphic.CANVAS_WIDTH_HALF, HEIGHT, 'silver')
-    game.graphic.fillRect(LAYER_X, LAYER_Y, game.graphic.CANVAS_WIDTH_HALF * meterMultiple, HEIGHT, '#D5F5E3')
-    digitalDisplay(`R:${roundText}, T:${currentTime}/${finishTime} + ${plusTime}`, LAYER_X + 5, LAYER_DIGITAL_Y)
-
   }
 
   static getFieldDataString () {
@@ -2107,9 +2038,6 @@ export class fieldSystem {
    * 저장할 데이터를 얻습니다.
    */
   static fieldSystemSaveData () {
-    // let weapon = fieldState.weaponObject.map((data) => {
-    //   return data.fieldBaseSaveData()
-    // })
     // 무기는 저장 용량을 줄이기 위하여 스킬만 저장하도록 변경됩니다.
     // 일반 무기는 불러왔을 때 모두 삭제됩니다.
     let weaponObject = fieldState.weaponObject
@@ -2158,9 +2086,7 @@ export class fieldSystem {
     }
   }
 
-  /**
-   * 널 체크 문제 때문에 이 함수를 만듬...
-   */
+  /** 널 체크 문제 때문에 이 함수를 만듬... */
   static getRoundSaveData () {
     if (this.round != null) {
       return this.round.baseRoundSaveData()

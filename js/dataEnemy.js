@@ -2814,7 +2814,7 @@ class JemulEnemyBossEye extends JemulEnemyData {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.jemulEnemy.jemulBossEye, 5)
     this.setWidthHeight(400, 240) // 크기 3배
-    this.setEnemyStat(100000 * 60, 8000, 0) // 100000(dps) x 60초 = 6000000
+    this.setEnemyStat(100000 * 60, 16000, 0) // 100000(dps) x 60초 = 6000000, 점수 16000점
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieJemulBossEye, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.noiseRed, this.width, this.height, 10))
     this.attackDelay = new DelayData(6)
     this.isPossibleExit = false
@@ -4996,7 +4996,7 @@ class DonggramiEnemyA3Collector extends DonggramiEnemy {
       this.hp = this.hpMax
       this.stunFrame = 120
       this.state = this.STATE_STUN
-      fieldState.createEffectObject(DonggramiEnemy.exclamationMarkEffect, this.x, this.y - 40, 4)
+      fieldState.createEffectObject(DonggramiEnemy.exclamationMarkEffect, this.x, this.y - 40)
     }
   }
 
@@ -8121,7 +8121,7 @@ class TowerEnemyGroup1X extends TowerEnemy {
 
   processDieAfterLogic () {
     super.processDieAfterLogic()
-    fieldState.createEnemyBulletObject(TowerEnemyGroup1X.bullet, this.x, this.y)
+    fieldState.createEnemyBulletObject(new TowerEnemyGroup1X.bullet, this.x, this.y)
   }
 }
 
@@ -15053,8 +15053,8 @@ dataExportEnemy.set(ID.enemy.spaceEnemy.comet, SpaceEnemyComet)
 dataExportEnemy.set(ID.enemy.spaceEnemy.donggrami, SpaceEnemyDonggrami)
 dataExportEnemy.set(ID.enemy.spaceEnemy.energy, SpaceEnemyEnergy)
 dataExportEnemy.set(ID.enemy.spaceEnemy.gamjigi, SpaceEnemyGamjigi)
-dataExportEnemy.set(ID.enemy.spaceEnemy.light, SpaceEnemyLight)
 dataExportEnemy.set(ID.enemy.spaceEnemy.meteorite, SpaceEnemyMeteorite)
+dataExportEnemy.set(ID.enemy.spaceEnemy.light, SpaceEnemyLight)
 dataExportEnemy.set(ID.enemy.spaceEnemy.rocket, SpaceEnemyRocket)
 dataExportEnemy.set(ID.enemy.spaceEnemy.square, SpaceEnemySquare)
 dataExportEnemy.set(ID.enemy.spaceEnemy.susong, SpaceEnemySusong)

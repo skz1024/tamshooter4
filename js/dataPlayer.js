@@ -150,13 +150,13 @@ let graphicSystem = game.graphic
     this.weaponIdList = stat.weaponIdList
 
     const wepaonData = dataExportWeapon.get(stat.weaponIdList[0])
+    if (wepaonData == null) return
+
     /** 
      * 첫번째 무기는 무기의 기본 객체로 지정됩니다.
      * @type {WeaponData} 
      */
     this.weapon = new wepaonData()
-    if (this.weapon == null) return
-
     this.weapon.id = stat.weaponIdList[0] // 무기의 id 입력
     this.weapon.inputStat() // 무기에 해당하는 스탯 입력
   }
@@ -186,17 +186,6 @@ let graphicSystem = game.graphic
     const totalMultiple = this.attackMultiple * multiple
     const resultAttack = (baseAttack * totalMultiple) / (secondPerCount * totalDivied)
     return Math.floor(resultAttack)
-  }
-
-  /**
-   * 무기 데이터를 얻습니다. export된 데이터는 기본적으로 클래스형이기 때문에, 
-   * 인스턴스를 생성시키기 위해서 이런 함수를 사용했습니다.
-   * @param {number} id ID 클래스가 가진 상수 번호 
-   * @returns {WeaponData}
-   */
-  static getWeaponData (id) {
-    let getClass = dataExportWeapon.get(id)
-    return new getClass()
   }
 }
 
@@ -389,16 +378,6 @@ class PlayerR3_towerHelljeon extends PlayerWeaponData {
   }
 }
 
-/** @deprecated */
-class PlayerSubMultyshot extends PlayerWeaponData {
-  constructor () {
-    super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.subMultyshot)
-    this.position = [{x: 0, y: 10}, {x: 0, y: -10}]
-  }
-}
-
-
 /**
  * 플레이어 스킬 데이터
  */
@@ -409,22 +388,6 @@ export class PlayerSkillData {
      * 이 배율이 높을수록 해당 스킬은 더 높은 데미지를 줄 수 있음.
      */
     this.attackMultiple = 1
-
-    /**
-     * 스킬의 기준 공격력 배율 값 (값 변경 불가능)
-     * 
-     * 이 내용은 v0.49.4에서 변경되었으므로, 이 수치는 더이상 사용되지 않습니다.
-     * 
-     * 최종적으로 이 값은 1로 교체되었습니다.
-     * 
-     * // v0.49.3 이전의 내용
-     * 
-     * 이 게임에서는 shotDamage(1) + subShotDamage(0.2) + skillDamage(0.8 * 4) = Total(4.4)의 구성이 기본입니다.
-     * 대략적인 데미지 비율은, shot(약 23%) + skill(약 76%) 입니다.
-     * 
-     * @deprecated
-     */
-    this.BASE_MULTIPLE = 1
 
     /**
      * 스킬을 사용하고 스킬에 대한 무기 발사를 1회 반복할 때, 동시에 발사되는 개수
@@ -576,7 +539,7 @@ export class PlayerSkillData {
     // resultAttack = (유저 공격력 * 총 배율) / 나누는 값
 
     const totalDivied = this.shotCount * this.repeatCount * this.attackCount
-    const totalMultiple = this.attackMultiple * multiple * this.BASE_MULTIPLE * this.coolTime
+    const totalMultiple = this.attackMultiple * multiple * this.coolTime
     const resultAttack = (baseAttack * totalMultiple) / totalDivied
     return Math.floor(resultAttack)
   }
@@ -604,17 +567,6 @@ export class PlayerSkillData {
    */
   getCoolTimeFrame () {
     return this.coolTime * 60
-  }
-
-  /**
-   * 무기 데이터를 가져옵니다. 
-   * 이것은 export된 스킬 데이터가 클래스형이기 때문에, 인스턴스를 간편하게 만들기 위해 사용하는 함수입니다.
-   * @param {number} id ID 클래스가 가지고 있는 상수
-   * @returns {WeaponData}
-   */
-  static getWeaponData (id) {
-    let getClass = dataExportWeapon.get(id)
-    return new getClass()
   }
 }
 
@@ -948,7 +900,6 @@ dataExportPlayerWeapon.set(ID.playerWeapon.laser, new PlayerLaser)
 dataExportPlayerWeapon.set(ID.playerWeapon.blaster, new PlayerBlaster)
 dataExportPlayerWeapon.set(ID.playerWeapon.parapo, new PlayerParapo)
 dataExportPlayerWeapon.set(ID.playerWeapon.sidewave, new PlayerSidewave)
-dataExportPlayerWeapon.set(ID.playerWeapon.subMultyshot, new PlayerSubMultyshot)
 dataExportPlayerWeapon.set(ID.playerWeapon.rapid, new PlayerRapid)
 dataExportPlayerWeapon.set(ID.playerWeapon.ring, new PlayerRing)
 dataExportPlayerWeapon.set(ID.playerWeapon.seondanil, new PlayerSeondanil)

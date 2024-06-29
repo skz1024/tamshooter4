@@ -200,12 +200,16 @@ element5.textContent = '-player level data / max level: ' + StatUser.MAX_LEVEL +
 + 'level|exp     |attack|\n'
 pre?.appendChild(element5)
 
-for (let i = 0; i <= StatUser.MAX_LEVEL; i++) {
+for (let i = 0; i < StatUser.expTable.length; i++) {
   let level = (i + '').padEnd(5, ' ') + '|'
   let exp = (StatUser.expTable[i] + '').padEnd(8, ' ') + '|'
   let attack = (StatUser.attackLevelTable[i] + '').padEnd(6, ' ') + '|'
 
   let color = i % 2 === 0 ? '#F5FFF1' : '#DDE8D9'
+  if (i > StatUser.MAX_LEVEL) {
+    color = i % 2 === 0 ? '#FFA98F' : '#CAA296'
+  }
+
   let element = document.createElement('pre')
   element.style.margin = '0'
   element.style.background = color
