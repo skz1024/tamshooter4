@@ -4960,8 +4960,8 @@ class Round2_3 extends RoundData {
     this.processCourse()
     this.processAreaTime()
 
-    let layer = this.bgLayer.getLayer()
-    console.log(layer[0].alpha, layer[1].alpha, layer[2].alpha)
+    // let layer = this.bgLayer.getLayer()
+    // console.log(layer[0].alpha, layer[1].alpha, layer[2].alpha)
   }
 
   /** 
@@ -5288,7 +5288,21 @@ class Round2_3 extends RoundData {
       // 적이 한마리 밖에 없으므로, 0번 적을 가져옴
       let enemy = this.field.getEnemyObject()[0]
       if (enemy != null) {
-        enemy.state = 'end' // 적 상태 임의로 변경해서 전투 종료를 느껴지게끔 처리(적은 더이상 패턴을 사용하지 않음.)
+        const DONGGRAMI_WIN = 'donggramiWin'
+        const DONGGRAMI_LOSE = 'donggramiLose'
+        const DONGGRAMI_DRAW = 'donggramiDraw'
+        const END = 'end'
+        // 적에게 메세지를 보내는 방식으로
+        // 간접적으로 상태를 변경해서 전투 종료를 처리(저 메세지를 받으면 적은 더이상 패턴을 사용하지 않음.)
+        if (this.result === this.resultList.WIN) { // 플레이어의 승리일경우
+          enemy.message = DONGGRAMI_LOSE // 동그라미는 패배
+        } else if (this.result === this.resultList.LOSE) { // 플레이어의 패배일경우
+          enemy.message = DONGGRAMI_WIN // 동그라미는 승리
+        } else if (this.result === this.resultList.DRAW) { // 무승부
+          enemy.message = DONGGRAMI_DRAW
+        } else {
+          enemy.message = END // 이 이외의 결과는 적의 행동을 강제 종료 처리
+        }
       }
     }
   }
@@ -5962,6 +5976,22 @@ class Round2_3 extends RoundData {
 
       this.time.setCurrentTime(phase3Start + cTime.COMPLETE + 1)
       fieldState.allSpriteDelete()
+
+      const DONGGRAMI_WIN = 'donggramiWin'
+      const DONGGRAMI_LOSE = 'donggramiLose'
+      const DONGGRAMI_DRAW = 'donggramiDraw'
+      const END = 'end'
+      // 적에게 메세지를 보내는 방식으로
+      // 간접적으로 상태를 변경해서 전투 종료를 처리(저 메세지를 받으면 적은 더이상 패턴을 사용하지 않음.)
+      if (this.result === this.resultList.WIN) { // 플레이어의 승리일경우
+        enemy.message = DONGGRAMI_LOSE // 동그라미는 패배
+      } else if (this.result === this.resultList.LOSE) { // 플레이어의 패배일경우
+        enemy.message = DONGGRAMI_WIN // 동그라미는 승리
+      } else if (this.result === this.resultList.DRAW) { // 무승부
+        enemy.message = DONGGRAMI_DRAW
+      } else {
+        enemy.message = END // 이 이외의 결과는 적의 행동을 강제 종료 처리
+      }
     }
   }
 

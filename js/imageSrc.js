@@ -64,6 +64,7 @@ export class imageSrc {
     meteoriteEnemy: './image/enemy/meteoriteEnemy.png',
     jemulEnemy: './image/enemy/jemulEnemy.png',
     donggramiEnemy: './image/enemy/donggramiEnemy.png',
+    donggramiEnemyTalkList: './image/enemy/donggramiEnemyTalkList.png',
     intruderEnemy: './image/enemy/intruderEnemy.png',
     towerEnemyGroup1: './image/enemy/towerEnemyGroup1.png',
     towerEnemyGroup2: './image/enemy/towerEnemyGroup2.png',
@@ -429,6 +430,8 @@ export class imageDataInfo {
     /** 접시 던지기 */ plateThrow: {x: 600, y: 520, width: 50, height: 30, frame: 9},
     /** 접시 깨지기 */ plateBreak: {x: 600, y: 550, width: 50, height: 20, frame: 10},
     /** 캔들 + 불 이펙트 */ candleFire: {x: 900, y: 280, width: 30, height: 60, frame: 10},
+
+    /** 대화 크기 */ textArea: new ImageDataObject(0, 0, 200, 40)
   }
 
   static intruderEnemy = {

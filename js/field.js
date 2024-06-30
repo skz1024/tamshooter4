@@ -2140,6 +2140,7 @@ export class fieldSystem {
 
     // 라운드는 단일 객체, 다만 라운드 데이터 입력 전에 라운드 객체를 생성해야 합니다.
     this.round = this.createRound(loadData.round.id)
+    this.roundId = loadData.round.id // 라운드의 id 재등록
     if (this.round == null) {
       throw new Error('round id error. game load fail')
     }
