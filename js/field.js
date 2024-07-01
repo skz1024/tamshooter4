@@ -647,16 +647,16 @@ class PlayerObject extends FieldData {
   }
 
   processMove () {
-    // 이동 가능하거나, autoMoveFrame이 없을 때만 이동 가능합니다.
-    if (!this.isMoveEnable || this.autoMoveFrame > 0) return
-
-    super.processMove()
-
     // 화면 영역에서 벗어나는거 금지
     if (this.x < 0) this.x = 0
     if (this.x > game.graphic.CANVAS_WIDTH - this.width) this.x = game.graphic.CANVAS_WIDTH - this.width
     if (this.y < 0) this.y = 0
     if (this.y > game.graphic.CANVAS_HEIGHT - this.height) this.y = game.graphic.CANVAS_HEIGHT - this.height
+
+    // 이동 가능하거나, autoMoveFrame이 없을 때만 이동 가능합니다.
+    if (!this.isMoveEnable || this.autoMoveFrame > 0) return
+
+    super.processMove()
   }
 
   processButton () {
@@ -1181,17 +1181,17 @@ export class fieldState {
 
   /**
    * 적 총알을 생성합니다.
-   * @param {EnemyBulletData} targetClass 
+   * @param {EnemyBulletData} enemyBullet 
    * @param {number | undefined} x x좌표
    * @param {number | undefined} y y좌표
    * @returns 
    */
-  static createEnemyBulletObject (targetClass, x = undefined, y = undefined) {
+  static createEnemyBulletObject (enemyBullet, x = undefined, y = undefined) {
     // 함수(클래스)가 들어온경우, 클래스의 인스턴스를 생성함.
-    if (targetClass instanceof FieldData || typeof targetClass === 'object') {
+    if (enemyBullet instanceof FieldData || typeof enemyBullet === 'object') {
       // 오브젝트 타입은 변수를 그대로 사용, 그리고 좌표값을 지정하지 않았다면, 자동으로 객체가 가진 좌표값을 사용합니다.
-      if (x == null) x = targetClass.x
-      if (y == null) y = targetClass.y
+      if (x == null) x = enemyBullet.x
+      if (y == null) y = enemyBullet.y
     } else {
       // 그 외 타입은 무시
       return
@@ -1202,7 +1202,7 @@ export class fieldState {
     if (y == null) y = 0
 
     /** @type {EnemyBulletData} */
-    const inputData = targetClass
+    const inputData = enemyBullet
     inputData.createId = this.getNextCreateId()
     inputData.setPosition(x, y)
     this.enemyBulletObject.push(inputData)

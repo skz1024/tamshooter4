@@ -4564,8 +4564,6 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
     if (this.talkDelay.check()) {
       this.talkState = ''
     }
-
-    console.log(this.talkState)
   }
 
   processDie () {

@@ -599,8 +599,8 @@ dataExportStatRoundBalance.set(ID.round.round1_5, new StatRoundBalance(210 +  0,
 dataExportStatRoundBalance.set(ID.round.round1_6, new StatRoundBalance(152 +  0, 78000))
 
 dataExportStatRoundBalance.set(ID.round.round2_1, new StatRoundBalance(150 + 20, 90000))
-dataExportStatRoundBalance.set(ID.round.round2_2, new StatRoundBalance(170 +  0, 90000))
-dataExportStatRoundBalance.set(ID.round.round2_3, new StatRoundBalance(192 -  8, 96000))
+dataExportStatRoundBalance.set(ID.round.round2_2, new StatRoundBalance(170 +  0, 98000))
+dataExportStatRoundBalance.set(ID.round.round2_3, new StatRoundBalance(192 -  8, 104000))
 dataExportStatRoundBalance.set(ID.round.round2_4, new StatRoundBalance(207 +  0, 110000))
 dataExportStatRoundBalance.set(ID.round.round2_5, new StatRoundBalance(200 +  0, 130000))
 dataExportStatRoundBalance.set(ID.round.round2_6, new StatRoundBalance(150 + 10, 94000))
