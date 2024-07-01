@@ -118,16 +118,6 @@ class PlayerObject extends FieldData {
     this.debug = false
     this.dieAfterDelayCount = 0
 
-    /** hp를 100배로 하여 다시 계산하기 위한 특수값, hp 자체는 정수로 처리되므로, 
-     * 데미지 감소에 의한 소수점 단위를 처리하기 위함 */ 
-    this.hpCalcValue = 0
-   
-    /** shield를 100배로 하여 다시 계산하기 위한 특수갑 (hpClacValue랑 같은 개념) */
-    this.shieldCalcValue = 0
-
-    /** hpClacValue, shieldCalcValue의 기준 배율 */
-    this.CALCVALUE_MULTIPLE = 100
-
     /** 플레이어가 해당 라운드를 플레이할 때 사용하는 기준 공격력 (이 값은 내부적인 연산이 포함되어 있으므로, set함수를 사용해서 수정해야함) */
     this.attack = 0
 
@@ -191,10 +181,6 @@ class PlayerObject extends FieldData {
     this.shield = getData.shield
     this.shieldMax = getData.shieldMax
     this.shieldRecovery = getData.shieldRecovery
-
-    // 쉴드, 체력 설정
-    this.hpCalcValue = this.hpMax * this.CALCVALUE_MULTIPLE
-    this.shieldCalcValue = this.shieldMax * this.CALCVALUE_MULTIPLE
     
     this.initSkill()
     this.initWeapon()
@@ -326,10 +312,10 @@ class PlayerObject extends FieldData {
     // 체력이 같이 감소한경우,
     // 4% 이하, 8% 이하 (8 ~ 16데미지), 8% 초과(17데미지) 으로만 구분됨
 
-    const LOW_DAMAGE = (this.shieldMax * this.CALCVALUE_MULTIPLE) * 0.06
-    const MIDDLE_DAMAGE = (this.shieldMax * this.CALCVALUE_MULTIPLE) * 0.12
-    const HP_LOW_DAMAGE = (this.shieldMax * this.CALCVALUE_MULTIPLE) * 0.04
-    const HP_MIDDLE_DAMAGE = (this.shieldMax * this.CALCVALUE_MULTIPLE) * 0.08
+    const LOW_DAMAGE = Math.floor(this.shieldMax * 0.06)
+    const MIDDLE_DAMAGE = Math.floor(this.shieldMax * 0.12)
+    const HP_LOW_DAMAGE = Math.floor(this.shieldMax * 0.04)
+    const HP_MIDDLE_DAMAGE = Math.floor(this.shieldMax * 0.08)
 
     if (hpDamageCalc >= 1) {
       if (hpDamageCalc <= HP_LOW_DAMAGE) {
@@ -356,7 +342,7 @@ class PlayerObject extends FieldData {
    * @param {number} hpDamage 체력 데미지
    */
   damageEnimationSet (shieldDamage = 0, hpDamage = 0) {
-    let damagePercent = (shieldDamage + hpDamage) / ((this.hpMax + this.shieldMax) * this.CALCVALUE_MULTIPLE) * 100
+    let damagePercent = (shieldDamage + hpDamage) / (this.hpMax + this.shieldMax) * 100
     let damageFrame = Math.floor(damagePercent * 12)
     if (damageFrame > 180) {
       damageFrame = 180
@@ -402,36 +388,32 @@ class PlayerObject extends FieldData {
    * @param {number} damage 
    */
   damageCalcuration (damage) {
-    let damageCalcValue = damage * this.CALCVALUE_MULTIPLE
-    let hpClacDamage = 0
-    let shieldClacDamage = 0
+    let shieldDamage = 0
+    let hpDamage = 0
 
-    if (this.shieldCalcValue > damageCalcValue) {
+    if (this.shield > damage) {
       // 쉴드가 데미지보다 많을 때
-      this.shieldCalcValue -= damageCalcValue
-      shieldClacDamage = damageCalcValue
-    } else if (this.shieldCalcValue < damageCalcValue) {
+      shieldDamage = damage
+      this.shield -= damage
+    } else if (this.shield < damage) {
       // 쉴드가 데미지보다 적을 때
-      if (this.shieldCalcValue > 0) {
+      if (this.shield > 0) {
         // 쉴드가 0 초과인 경우
-        shieldClacDamage = this.shieldCalcValue
-        hpClacDamage = damageCalcValue - shieldClacDamage
-        this.shieldCalcValue = 0
-        this.hpCalcValue -= hpClacDamage
+        shieldDamage = this.shield
+        hpDamage = damage - this.shield
+        this.shield = 0
+        this.hp -= hpDamage
       } else {
         // 쉴드가 0인경우
-        hpClacDamage = damageCalcValue
-        this.hpCalcValue -= damageCalcValue
+        hpDamage = damage
+        this.hp -= hpDamage
       }
     }
 
-    // hpClac가 100미만일때, hp가 1로 표시되도록 처리
-    if (this.hp <= 0 && this.hpCalcValue >= 1) this.hp = 1
-
     // 총 데미지값 리턴
     return {
-      hp: hpClacDamage,
-      shield: shieldClacDamage
+      hp: hpDamage,
+      shield: shieldDamage
     }
   }
 
@@ -554,26 +536,18 @@ class PlayerObject extends FieldData {
 
   /** hp와 쉴드를 처리함 (쉴드 회복도 여기서 처리) */
   processHpShield () {
-    // hp, shield 재설정
-    this.hp = Math.floor(this.hpCalcValue / 100)
-    this.shield = Math.floor(this.shieldCalcValue / 100)
-
     const SHIELD_RECOVERY_BASE_VALUE = 6000
     this.shieldRecoveryCurrentValue += this.shieldRecovery
 
     // 쉴드 회복 처리
     if (this.shieldRecoveryCurrentValue >= SHIELD_RECOVERY_BASE_VALUE) {
-      this.shieldCalcValue += this.CALCVALUE_MULTIPLE
+      this.shield++
       this.shieldRecoveryCurrentValue -= SHIELD_RECOVERY_BASE_VALUE
     }
 
     // 쉴드 최대치 초과 금지
     if (this.shield > this.shieldMax) {
       this.shield = this.shieldMax
-    }
-
-    if (this.shieldCalcValue > this.shieldMax * this.CALCVALUE_MULTIPLE) {
-      this.shieldCalcValue = this.shieldMax * this.CALCVALUE_MULTIPLE
     }
   }
 
@@ -781,8 +755,6 @@ class PlayerObject extends FieldData {
       hp: this.hp,
       shield: this.shield,
       shieldMax: this.shieldMax,
-      hpCalcValue: this.hpCalcValue,
-      shieldCalcValue: this.shieldCalcValue,
 
       // 딜레이
       attackDelayCount: this.attackDelayCount,
