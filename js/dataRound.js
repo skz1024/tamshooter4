@@ -1079,6 +1079,23 @@ class BaseField {
   static allSpriteDelete () {
     fieldState.allSpriteDelete()
   }
+
+  /** 
+   * 플레이어에게 아이템을 추가합니다. 
+   * @param {number} id 아이템의 id
+   * @param {number} [count=1] 아이템의 개수
+   */
+  static addPlayerItem (id, count = 1) {
+    fieldSystem.requestAddItem(id, count)
+  }
+
+  /** 플레이어에게 아이템을 삭제합니다. 
+   * @param {number} id 아이템의 id
+   * @param {number} [count=1] 삭제할 아이템의 개수
+   */
+  static removePlayerItem (id, count = 1) {
+    fieldSystem.requestRemoveItem(id, count)
+  }
 }
 
 

@@ -336,6 +336,7 @@ export class userSystem {
   /** 데미지 경고 프레임 */ static damageWarningFrame = 0
   /** 레벨업 이펙트 프레임 */ static levelUpEffectFrame = 0
   /** 골드 (플레이어의 자원) */ static gold = 0
+  /** 최대 레벨 */ static MAX_LEVEL = StatUser.MAX_LEVEL
 
   /** 스페셜 플래그 (특수한 용도로 사용됨) */ static specialFlagList = [0]
 

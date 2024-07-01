@@ -787,21 +787,24 @@ export class imageDataInfo {
   }
 
   static fieldSystem = {
-    roundClear: { x: 0, y: 0, width: 400, height: 60 },
-    gameOver: { x: 0, y: 60, width: 320, height: 60 },
-    pause: { x: 0, y: 120, width: 200, height: 60 },
-    result: { x: 200, y: 120, width: 240, height: 60 },
-    menu: { x: 450, y: 0, width: 120, height: 128 },
-    selected: { x: 450, y: 128, width: 120, height: 32 },
-    unchecked: { x: 420, y: 0, width: 30, height: 32 },
-    checked: { x: 420, y: 32, width: 30, height: 32 },
-    arrow: { x: 420, y: 64, width: 30, height: 32 },
+    roundClear: { x: 0, y: 0, width: 400, height: 60, frame: 1 },
+    gameOver: { x: 0, y: 60, width: 320, height: 60, frame: 1 },
+    pause: { x: 0, y: 120, width: 200, height: 60, frame: 1 },
+    result: { x: 200, y: 120, width: 240, height: 60, frame: 1 },
+    menu: { x: 450, y: 0, width: 120, height: 128, frame: 1 },
+    selected: { x: 450, y: 128, width: 120, height: 32, frame: 1 },
+    unchecked: { x: 420, y: 0, width: 30, height: 32, frame: 1 },
+    checked: { x: 420, y: 32, width: 30, height: 32, frame: 1 },
+    arrow: { x: 420, y: 64, width: 30, height: 32 , frame: 1},
 
     //
     player: new ImageDataObject(0, 200, 40, 20),
     playerDamageEffect: new ImageDataObject(0, 200, 40, 20, 3),
     playerDieEffect: new ImageDataObject(0, 221, 20, 20, 10),
     playerLevelupEffect: new ImageDataObject(200, 200, 70, 15, 4),
+
+    /** 필드 결과값 보여주기 용도 */ fieldResultData: new ImageDataObject(0, 250, 420, 200),
+    /** 필드 일시정지 시 보여주기 용도 */ fieldPauseData: new ImageDataObject(0, 450, 420, 150),
   }
 
   static mainSystem = {

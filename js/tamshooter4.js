@@ -1841,7 +1841,8 @@ class SkillSelectSystem extends MenuSystem {
     this.outputY1ListLine2Start = 140
     this.outputY2MenuList = 40 + 180
     this.outputY3IconInfoView = 300
-    this.outputY3IconListStart = 280
+    this.outputY3IconListStart = 260
+    this.outputY4 = 540
 
     this.cursorMenu = 0
     this.cursorIcon = 0
@@ -2136,7 +2137,7 @@ class SkillSelectSystem extends MenuSystem {
       let position = this.cursorPosition - this.NUM_START_SKILLICON
       let inputString = this.getSkillInfoString(this.targetIdList[position])
       const MARGIN = 3
-      const Y = this.outputY3IconInfoView
+      const Y = this.outputY3IconInfoView - 20
       game.graphic.imageDisplay(imageSrc.system.skillIcon, (position % 10) * 40, Math.floor(position / 10) * 20, 40, 20, 0, Y, 40, 20)
       digitalDisplay(inputString, MARGIN, Y)
 
@@ -2144,7 +2145,7 @@ class SkillSelectSystem extends MenuSystem {
         let skillData = dataExportStatPlayerSkill.get(this.targetIdList[position])
         if (skillData == null) return
         let unlockText = StatPlayerWeapon.getUnlockCondition(skillData.group)
-        game.graphic.fillText(unlockText, 0, Y - 40)
+        game.graphic.fillText(unlockText, 0, this.outputY4)
       }
     }
   }
@@ -2386,7 +2387,7 @@ class StatUpgradeSystem extends MenuSystem {
   }
 
   displayUserLevel () {
-    game.graphic.fillText(`레벨, 경험치, max level(최대 레벨): ${userSystem.expTable.length - 1})`, 0, this.outputY3Level + (this.SIZEY * 0))
+    game.graphic.fillText(`레벨, 경험치, max level(최대 레벨): ${userSystem.MAX_LEVEL})`, 0, this.outputY3Level + (this.SIZEY * 0))
     let percent = userSystem.exp / userSystem.getExpMax() * 100
     digitalDisplay('LV. ' + userSystem.lv + ', EXP: ' + userSystem.exp + '/' + userSystem.getExpMax() + '(' + percent.toFixed(2) + '%)',  0, this.outputY3Level + (this.SIZEY * 1))
   }
@@ -2775,13 +2776,15 @@ class InventorySystem extends MenuSystem {
       const border = (iconSectionSize - iconSize) / 2
       const sliceX = iconSectionSize * (itemData.iconNumber % 10)
       const sliceY = iconSectionSize * Math.floor(itemData.iconNumber / 10)
-      const outputX = iconSectionSize * (i % 10) + this.outputX3Icon + border
+      const outputX = iconSectionSize * (i % 10) + this.outputX3Icon + border - 2
       const outputY = iconSectionSize * Math.floor(i / 10) + this.outputY3Icon + border
       game.graphic.imageDisplay(src, sliceX, sliceY, iconSize, iconSize, outputX, outputY, iconSize, iconSize)
 
       if (itemData.type === userSystem.inventory.itemType.ITEM) {
-        const itemCount = inven.count < 999 ? inven.count : 999
-        digitalDisplay('X' + itemCount, outputX, outputY + iconSize - 20)
+        let countText = 'X' + inven.count
+        if (inven.count >= 1000 && inven.count <= 9999) countText = (inven.count / 1000).toFixed(1) + 'K'
+        else if (inven.count >= 10000) countText = '9K+'
+        digitalDisplay(countText, outputX, outputY + iconSize - 20)
       }
     }
   }

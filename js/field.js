@@ -1552,6 +1552,7 @@ export class fieldSystem {
       }
     }
 
+    // 필드에서 아이템을 얻었는지와 관계없이 해당 아이템은 삭제함
     fieldState.playerObject._removeItem(id, count)
   }
 
@@ -1720,8 +1721,11 @@ export class fieldSystem {
     this.scoreEnimationFrame++
     this.exitDelayCount++
 
-    // 참고로 필드 점수가 0이면, 결과 계산 없이 바로 나갈 수 있습니다.
-    if (this.exitDelayCount >= this.EXIT_FAST_DELAY || this.fieldScore === 0) {
+    // 빠른 탈출 조건: 점수가 0이고, 아무런 아이템도 획득하지 못한 경우
+    let fastExitCondition = this.fieldScore === 0 && this.fieldItemIdList.length === 0
+
+    // 딜레이가 일정 값을 넘어가거나 빠른 탈출 조건에 해당하면, 나갈 수 있습니다.
+    if (this.exitDelayCount >= this.EXIT_FAST_DELAY || fastExitCondition) {
       this.roundExit()
     }
   }
@@ -1879,101 +1883,85 @@ export class fieldSystem {
   }
 
   static displayPause () {
-    const image = imageSrc.system.fieldSystem
-    const imageDataPause = imageDataInfo.fieldSystem.pause
-    const imageDataMenu = imageDataInfo.fieldSystem.menu
-    const imageDataArrow = imageDataInfo.fieldSystem.arrow
-    const imageDataChecked = imageDataInfo.fieldSystem.checked
-    const imageDataUnchecked = imageDataInfo.fieldSystem.unchecked
-    const imageDataSelected = imageDataInfo.fieldSystem.selected
-    const MID_X = (game.graphic.CANVAS_WIDTH / 2) - (imageDataPause.width / 2)
+    const src = imageSrc.system.fieldSystem
+    const imgD = imageDataInfo.fieldSystem
+    const imageObjectDisplay = gameFunction.imageObjectDisplay
+
+    const MID_X = (game.graphic.CANVAS_WIDTH / 2) - (imgD.pause.width / 2)
     const MID_Y = 100
-    const MENU_X = (game.graphic.CANVAS_WIDTH / 2) - (imageDataMenu.width / 2)
-    const MENU_Y = 100 + imageDataInfo.fieldSystem.pause.height
-    const ARROW_X = MENU_X - imageDataArrow.width
-    const ARROW_Y = MENU_Y + (this.cursor * imageDataArrow.height)
-    const CHECK_X = MENU_X + imageDataMenu.width
-    const CHECK_SOUND_Y = MENU_Y + imageDataChecked.height
-    const CHECK_MUSIC_Y = MENU_Y + imageDataChecked.height * 2
+    const MENU_X = (game.graphic.CANVAS_WIDTH / 2) - (imgD.menu.width / 2)
+    const MENU_Y = 100 + imgD.pause.height
+    const ARROW_X = MENU_X - imgD.arrow.width
+    const ARROW_Y = MENU_Y + (this.cursor * imgD.arrow.height)
+    const CHECK_X = MENU_X + imgD.menu.width
+    const CHECK_SOUND_Y = MENU_Y + imgD.checked.height
+    const CHECK_MUSIC_Y = MENU_Y + imgD.checked.height * 2
     const SELECT_X = MENU_X
     const SELECT_Y = ARROW_Y
-    const SCORE_X = (game.graphic.CANVAS_WIDTH / 2) - 200
-    const SCORE_Y = MENU_Y + imageDataMenu.height
-    const imageDataSoundOn = this.option.soundOn ? imageDataChecked : imageDataUnchecked // 사운드의 이미지데이터는 코드 길이를 줄이기 위해 체크/언체크에 따른 이미지 데이터를 대신 입력함
-    const imageDataMusicOn = this.option.musicOn ? imageDataChecked : imageDataUnchecked
 
-    game.graphic.imageDisplay(image, imageDataPause.x, imageDataPause.y, imageDataPause.width, imageDataPause.height, MID_X, MID_Y, imageDataPause.width, imageDataPause.height)
-    game.graphic.imageDisplay(image, imageDataMenu.x, imageDataMenu.y, imageDataMenu.width, imageDataMenu.height, MENU_X, MENU_Y, imageDataMenu.width, imageDataMenu.height)
-    game.graphic.imageDisplay(image, imageDataArrow.x, imageDataArrow.y, imageDataArrow.width, imageDataArrow.height, ARROW_X, ARROW_Y, imageDataArrow.width, imageDataArrow.height)
-    game.graphic.imageDisplay(image, imageDataSoundOn.x, imageDataSoundOn.y, imageDataSoundOn.width, imageDataSoundOn.height, CHECK_X, CHECK_SOUND_Y, imageDataSoundOn.width, imageDataSoundOn.height)
-    game.graphic.imageDisplay(image, imageDataMusicOn.x, imageDataMusicOn.y, imageDataMusicOn.width, imageDataMusicOn.height, CHECK_X, CHECK_MUSIC_Y, imageDataMusicOn.width, imageDataMusicOn.height)
-    game.graphic.imageDisplay(image, imageDataSelected.x, imageDataSelected.y, imageDataSelected.width, imageDataSelected.height, SELECT_X, SELECT_Y, imageDataSelected.width, imageDataSelected.height)
-    game.graphic.fillRect(SCORE_X, SCORE_Y, 400, 60, '#AEB68F')
-    digitalDisplay('score: ' + this.totalScore, SCORE_X + 5, SCORE_Y + 5)
-    digitalDisplay('gold: ' + this.fieldGold, SCORE_X + 5, SCORE_Y + 35)
+    imageObjectDisplay(src, imgD.pause, MID_X, MID_Y)
+    imageObjectDisplay(src, imgD.menu, MENU_X, MENU_Y)
+    imageObjectDisplay(src, imgD.arrow, ARROW_X, ARROW_Y)
+    imageObjectDisplay(src, this.option.soundOn ? imgD.checked : imgD.unchecked, CHECK_X, CHECK_SOUND_Y)
+    imageObjectDisplay(src, this.option.musicOn ? imgD.checked : imgD.unchecked, CHECK_X, CHECK_MUSIC_Y)
+    imageObjectDisplay(src, imgD.selected, SELECT_X, SELECT_Y)
+    this.displayPauseData()
 
-    // 아이템 출력?
-    game.graphic.fillRect(SCORE_X, SCORE_Y + 100, 400, 300, 'orange')
-    for (let i = 0; i < this.fieldItemIdList.length; i++) {
-      if (this.fieldItemCountList[i] <= 0) continue
+    const ITEM_X = game.graphic.CANVAS_WIDTH_HALF - (imageDataInfo.fieldSystem.fieldPauseData.width / 2) + 10
+    const ITEM_Y = 300 + 60
+    this.displayPlayerItem(ITEM_X, ITEM_Y)
+  }
 
-      let targetItem = dataExportStatItem.get(this.fieldItemIdList[i])
-      if (targetItem == null) continue
+  static displayPauseData () {
+    const IMAGE_X = game.graphic.CANVAS_WIDTH_HALF - (imageDataInfo.fieldSystem.fieldPauseData.width / 2)
+    const IMAGE_Y = 300
+    gameFunction.imageObjectDisplay(imageSrc.system.fieldSystem, imageDataInfo.fieldSystem.fieldPauseData, IMAGE_X, IMAGE_Y)
 
-      let src = imageSrc.system.itemIcon
-      let iconWidth = imageDataInfo.system.itemIcon.width
-      let iconSectionWidth = imageDataInfo.system.itemIcon.height
-      let XLINE = targetItem.iconNumber % 10
-      let YLINE = Math.floor(targetItem.iconNumber / 10)
-
-      game.graphic.imageDisplay(src, iconSectionWidth * XLINE, iconSectionWidth * YLINE, iconWidth, iconWidth, 400 + (iconWidth * i), 300, iconWidth, iconWidth)
-      digitalDisplay('X' + this.fieldItemCountList[i], 400 + (iconWidth * i), 300 + iconWidth + 10)
+    const pauseText = ['score: ' + this.fieldScore, 'gold: ' + this.fieldGold]
+    const TEXT_X = IMAGE_X + 10
+    const TEXT_Y = IMAGE_Y + 10
+    const TEXT_HEIGHT = 20
+    for (let i = 0; i < pauseText.length; i++) {
+      digitalDisplay(pauseText[i], TEXT_X, TEXT_Y + (TEXT_HEIGHT * i))
     }
   }
 
-  /** 결과 화면을 출력합니다. roundClear, gameOver, processExit 상태 모두 동일한 display 함수 사용 */
-  static displayResult () {
-    const image = imageSrc.system.fieldSystem
-    let imageData
-    let titleX = 0
-    const titleY = 100
-    const TEXT_X = 200
-    const TEXT_Y = 200
-    const TEXT_HEIGHT = 22
-
-    switch (this.stateId) {
-      case this.STATE_ROUND_CLEAR: imageData = imageDataInfo.fieldSystem.roundClear; break
-      case this.STATE_GAME_OVER: imageData = imageDataInfo.fieldSystem.gameOver; break
-      default: imageData = imageDataInfo.fieldSystem.result; break
+  static getResultText () {
+    let clearBonus = 0
+    if (this.stateId === this.STATE_ROUND_CLEAR && this.round != null) {
+      clearBonus = this.round.stat.clearBonus
     }
-
-    titleX = (game.graphic.CANVAS_WIDTH - imageData.width) / 2
 
     let viewScore = this.totalScore * (this.exitDelayCount / this.SCORE_ENIMATION_MAX_FRAME)
     if (viewScore >= this.totalScore) viewScore = this.totalScore
+
+    return [
+      'field score: ' + this.fieldScore,
+      'clear bonus: ' + clearBonus,
+      '--------------------',
+      'total score: ' + Math.floor(viewScore),
+      'gold       : ' + this.fieldGold,
+    ]
+  }
+
+  static displayResultData (positionX = 200, positionY = 200) {
+    gameFunction.imageObjectDisplay(imageSrc.system.fieldSystem, imageDataInfo.fieldSystem.fieldResultData, positionX, positionY)
 
     let clearBonus = 0
     if (this.stateId === this.STATE_ROUND_CLEAR && this.round != null) {
       clearBonus = this.round.stat.clearBonus
     }
 
-    game.graphic.imageDisplay(image, imageData.x, imageData.y, imageData.width, imageData.height, titleX, titleY, imageData.width, imageData.height)
-    game.graphic.fillRect(TEXT_X, TEXT_Y - 4, 400, TEXT_HEIGHT * 7, 'lime')
-
-    let resultText = [
-      'field score: ' + this.fieldScore,
-      'clear bonus: ' + clearBonus,
-      '--------------------------------------',
-      'total score: ' + Math.floor(viewScore),
-      'gold       : ' + this.fieldGold,
-    ]
-
+    let resultText = this.getResultText()
+    const TEXT_X = positionX + 10
+    const TEXT_Y = positionY + 10
+    const TEXT_HEIGHT = 20
     for (let i = 0; i < resultText.length; i++) {
       digitalDisplay(resultText[i], TEXT_X, TEXT_Y + (TEXT_HEIGHT * i))
     }
+  }
 
-    // 아이템 출력?
-    game.graphic.fillRect(200, 400, 400, 100, 'orange')
+  static displayPlayerItem (positionX = 200, positionY = 300) {
     for (let i = 0; i < this.fieldItemIdList.length; i++) {
       if (this.fieldItemCountList[i] <= 0) continue
 
@@ -1982,13 +1970,31 @@ export class fieldSystem {
 
       let src = imageSrc.system.itemIcon
       let iconWidth = imageDataInfo.system.itemIcon.width
-      let iconSectionWidth = imageDataInfo.system.itemIcon.height
+      let iconSectionWidth = imageDataInfo.system.itemIconSection.height
       let XLINE = targetItem.iconNumber % 10
       let YLINE = Math.floor(targetItem.iconNumber / 10)
 
-      game.graphic.imageDisplay(src, iconSectionWidth * XLINE, iconSectionWidth * YLINE, iconWidth, iconWidth, 400 + (iconWidth * i), 300, iconWidth, iconWidth)
-      digitalDisplay('X' + this.fieldItemCountList[i], 400 + (iconWidth * i), 300 + iconWidth + 10)
+      const outputX = positionX + ((iconWidth + 10) * i)
+      game.graphic.imageDisplay(src, iconSectionWidth * XLINE, iconSectionWidth * YLINE, iconWidth, iconWidth, outputX, positionY, iconWidth, iconWidth)
+      digitalDisplay('X' + this.fieldItemCountList[i], outputX, positionY + iconWidth)
     }
+  }
+
+  /** 결과 화면을 출력합니다. roundClear, gameOver, processExit 상태 모두 동일한 display 함수 사용 */
+  static displayResult () {
+    let imageData = imageDataInfo.fieldSystem.result
+    const titleX = (game.graphic.CANVAS_WIDTH - imageData.width) / 2
+    const titleY = 100
+    if (this.stateId === this.STATE_ROUND_CLEAR) imageData = imageDataInfo.fieldSystem.roundClear
+    else if (this.stateId === this.STATE_GAME_OVER) imageData = imageDataInfo.fieldSystem.gameOver
+    gameFunction.imageObjectDisplay(imageSrc.system.fieldSystem, imageData, titleX, titleY)
+
+    const DATA_X = game.graphic.CANVAS_WIDTH_HALF - (imageDataInfo.fieldSystem.fieldResultData.width / 2)
+    const DATA_Y = titleY + imageDataInfo.fieldSystem.result.height + 20
+    const ITEM_X = DATA_X + 10
+    const ITEM_Y = DATA_Y + 120
+    this.displayResultData(DATA_X, DATA_Y)
+    this.displayPlayerItem(ITEM_X, ITEM_Y)
   }
 
   static getFieldDataString () {
@@ -2004,7 +2010,6 @@ export class fieldSystem {
       return `NO DATA`
     }
   }
-
 
   /**
    * 저장할 데이터를 얻습니다.
