@@ -9,7 +9,7 @@ import { fieldState, fieldSystem } from "./field.js"
 import { soundSrc } from "./soundSrc.js"
 import { game, gameFunction, gameVar } from "./game.js"
 import { StatRound, dataExportStatRound } from "./dataStat.js"
-import { CustomEnemyBullet, EnemyBulletData, EnemyData, dataExportEnemy } from "./dataEnemy.js"
+import { CustomEnemyBullet, DonggramiEnemy, EnemyBulletData, EnemyData, dataExportEnemy } from "./dataEnemy.js"
 import { WeaponData } from "./dataWeapon.js"
 
 let graphicSystem = game.graphic
@@ -8114,12 +8114,13 @@ class Round2_5 extends RoundData {
     /** @type {SpriteDonggrami[]} */ this.spriteDonggrami = []
     /** @type {SpriteIntruder[]} */ this.spriteIntruder = []
 
-    this.phase.addRoundPhase(this, this.roundPhase00, 0, 60)
-    this.phase.addRoundPhase(this, this.roundPhase01, 61, 90)
-    this.phase.addRoundPhase(this, this.roundPhase02, 91, 120)
-    this.phase.addRoundPhase(this, this.roundPhase03, 121, 150)
+    this.phase.addRoundPhase(this, this.roundPhase00, 0, 40)
+    this.phase.addRoundPhase(this, this.roundPhase01, 41, 80)
+    this.phase.addRoundPhase(this, this.roundPhase02, 81, 100)
+    this.phase.addRoundPhase(this, this.roundPhase03, 101, 150)
     this.phase.addRoundPhase(this, this.roundPhase04, 151, 190)
     this.phase.addRoundPhase(this, this.roundPhase05, 191, 200)
+    this.phase.addRoundPhase(this, this.roundPhase06, 201, 204)
 
     this.load.addImageList([
       imageSrc.round.round2_5_floorB1Light,
@@ -8140,192 +8141,6 @@ class Round2_5 extends RoundData {
     this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
 
     this.customRoomBreakEffect = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareRed, 400, 400, 2, 3)
-  }
-
-  SpriteDonggrami = class extends FieldData {
-    constructor () {
-      super()
-      this.BASEDPS = 5000
-      this.color = 'red'
-      this.setRandomColor()
-      this.setDonggramiColor()
-      this.setRandomMoveSpeed(6, 6)
-      this.moveDelay = new DelayData(60)
-      this.attackDelay = new DelayData(30)
-      this.hpMax = this.BASEDPS * 12
-      this.hp = this.hpMax
-      this.attack = this.BASEDPS
-      this.dieAfterDelay = new DelayData(60)
-      this.x = 0
-      this.y = Math.random() * graphicSystem.CANVAS_HEIGHT
-
-      this.getTargetAndSetSpeed()
-    }
-
-    getTargetAndSetSpeed () {
-      let enemy = fieldState.getRandomEnemyObject()
-      if (enemy != null) {
-        let distanceX = enemy.x - this.x
-        let distanceY = enemy.y - this.y
-
-        this.setMoveSpeed(distanceX / 55, distanceY / 55)
-      }
-    }
-
-    setRandomColor () {
-      let random = Math.floor(Math.random() * 6)
-      switch (random) {
-        case 0: this.color = 'green'; break
-        case 1: this.color = 'blue'; break
-        case 2: this.color = 'orange'; break
-        case 3: this.color = 'yellow'; break
-        case 4: this.color = 'purple'; break
-        default: this.color = 'red'; break
-      }
-    }
-
-    /** 동그라미의 색에 따른 이미지 데이터 설정*/
-    setDonggramiColor () {
-      switch (this.color) {
-        case 'red': this.setAutoImageData(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.red); break
-        case 'blue': this.setAutoImageData(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.blue); break
-        case 'green': this.setAutoImageData(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.green); break
-        case 'orange': this.setAutoImageData(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.orange); break
-        case 'purple': this.setAutoImageData(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.purple); break
-        case 'yellow': this.setAutoImageData(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.yellow); break
-      }
-    }
-
-    /** 동그라미의 스탯을 설정 (이것은 자동 저장된 데이터를 불러올때만 사용합니다.) */
-    setLoadDonggramiStat (color = '', x = 0, y = 0, moveSpeedX = 0, moveSpeedY = 0, hp = 0) {
-      this.color = color
-      this.x = x
-      this.y = y
-      this.moveSpeedX = moveSpeedX
-      this.moveSpeedY = moveSpeedY
-      this.hp = hp
-      this.setDonggramiColor()
-    }
-
-    /** 동그라미가 가지고 있는 스탯값을 저장 */
-    getSaveDonggramiData () {
-      return {x: this.x, y: this.y, color: this.color, hp: this.hp, moveSpeedX: this.moveSpeedX, moveSpeedY: this.moveSpeedY}
-    }
-
-    processState () {
-      if (this.isDied) {
-        this.y += 10
-        if (this.dieAfterDelay.check()) {
-          this.isDeleted = true
-        }
-      }
-    }
-
-    processMove () {
-      if (this.isDied) return
-
-      super.processMove()
-
-      if (this.moveDelay.check()) {
-        this.getTargetAndSetSpeed()
-      }
-
-      // 화면 바깥 이동 금지
-      if (this.outAreaCheck(0)) {
-        if (this.x + this.width <= 0) this.x = 1
-        if (this.x >= graphicSystem.CANVAS_WIDTH) this.x = graphicSystem.CANVAS_WIDTH - 1
-        if (this.y + this.height <= 0) this.y = 1
-        if (this.y >= graphicSystem.CANVAS_HEIGHT) this.y = graphicSystem.CANVAS_HEIGHT - 1
-
-        this.moveSpeedX *= -1
-        this.moveSpeedY *= -1
-      }
-
-      // 충돌 처리 (딜레이카운트는 적에게 충돌했을때에만 0으로 리셋됩니다.)
-      if (this.attackDelay.check(false, true)) {
-        let enemyObject = fieldState.getEnemyObject()
-        for (let i = 0; i < enemyObject.length; i++) {
-          let enemy = enemyObject[i]
-          if (!enemy.isDied && collision(this, enemy)) {
-            enemy.hp -= this.attack
-            this.hp -= this.attack
-            this.attackDelay.count = 0
-            this.moveSpeedX *= -1
-            this.moveSpeedY *= -1
-            this.moveDelay.count = this.moveDelay.delay / 2
-            soundSystem.play(soundSrc.round.r2_3_a1_toyHammer)
-            fieldState.createDamageObject(enemy.x, enemy.y, this.attack)
-            break // 반복문 종료 (1회 공격에 1마리만 공격 가능)
-          }
-        }
-      }
-
-      // 적의 총알 대신 맞기 처리
-      let enemyBulletObject = fieldState.getEnemyBulletObject()
-      for (let i = 0; i < enemyBulletObject.length; i++) {
-        let enemyBullet = enemyBulletObject[i]
-        if (collision(this, enemyBullet)) {
-          this.hp -= (this.attack / 10)
-          enemyBullet.isDeleted = true
-        }
-      }
-
-      // 죽음 처리
-      if (this.hp <= 0) {
-        soundSystem.play(soundSrc.enemyDie.enemyDieDonggrami)
-        this.isDied = true
-      }
-    }
-
-    display () {
-      super.display()
-      // 동그라미의 체력 표시
-      graphicSystem.meterRect(this.x, this.y + this.height, this.width, 1, 'darkblue', this.hp, this.hpMax, true, 'skyblue')
-    }
-  }
-
-  SpriteIntruder = class {
-    constructor (id = 0, x = 200, y = 100, z = -120) {
-      this.id = id
-      this.x = x
-      this.y = y
-      this.z = z
-      this.ZBASE = -120
-      switch (this.id) {
-        case ID.enemy.intruder.diacore: this.imageData = imageDataInfo.intruderEnemy.diacore; break
-        case ID.enemy.intruder.rendown: this.imageData = imageDataInfo.intruderEnemy.rendownGreen; break
-        case ID.enemy.intruder.lever: this.imageData = imageDataInfo.intruderEnemy.leverImage; break
-        case ID.enemy.intruder.flying1: this.imageData = imageDataInfo.intruderEnemy.flying1; break
-        case ID.enemy.intruder.flying2: this.imageData = imageDataInfo.intruderEnemy.flying2; break
-        default: this.imageData = imageDataInfo.intruderEnemy.metal; break
-      }
-    }
-
-    process () {
-      if (this.z >= 0) return
-
-      this.z++
-      this.x -= (this.imageData.width / Math.abs(this.ZBASE) / 2)
-      this.y -= (this.imageData.height / Math.abs(this.ZBASE) / 2)
-
-      if (this.z === 0) {
-        fieldState.createEnemyObject(this.id, this.x, this.y)
-      }
-    }
-
-    getSaveIntruderData () {
-      return {id: this.id, x: this.x, y: this.y, z: this.z}
-    }
-    
-    display () {
-      let imgSrc = imageSrc.enemy.intruderEnemy
-      let imgD = this.imageData
-      let outputMultiple = Math.abs((1 / this.ZBASE) * (this.z + Math.abs(this.ZBASE)))
-      let outputWidth = imgD.width * outputMultiple
-      let outputHeight= imgD.height * outputMultiple
-      let alpha = outputMultiple
-      graphicSystem.imageDisplay(imgSrc, imgD.x, imgD.y, imgD.width, imgD.height, this.x, this.y, outputWidth, outputHeight, 0, 0, alpha)
-    }
   }
 
   process () {
@@ -8379,8 +8194,40 @@ class Round2_5 extends RoundData {
       }
     }
 
+    const player = this.field.getPlayerObject()
+    const currentPhase = this.phase.getCurrentPhase()
     for (let i = 0; i < this.spriteDonggrami.length; i++) {
       let sprite = this.spriteDonggrami[i]
+      // process를 진행하기 전에, 라운드 진행 상황에 따라 해당 동그라미의 라운드 타입을 변경함
+      if (currentPhase === 1 || currentPhase === 2 || currentPhase === 3 || currentPhase === 5) {
+        sprite.roundState = sprite.ROUND_MID
+      } else if (currentPhase === 4) {
+        sprite.roundState = sprite.ROUND_BOSS
+      } else if (currentPhase === 6) {
+        // 마지막 페이즈에 도착하면 동그라미가 승리 대화를 함
+        // 또는 33% 확률로 이모지를 날림 (동그라미 talk타입중 b타입은 제외)
+        if (sprite.roundState !== sprite.ROUND_WIN) {
+          sprite.roundState = sprite.ROUND_WIN
+          sprite.setTalkIndex()
+          sprite.talkDelay.countReset()
+          let random = Math.random() * 100
+          if (random < 33 && sprite.talkType === sprite.TALKTYPE_A) {
+            sprite.talkType = sprite.TALKTYPE_EMOJI
+            sprite.talkDelay.setDelay(Math.floor(Math.random() * 40) + 10)
+          } else {
+            sprite.talkState = sprite.TALKSTATE_TALK
+          }
+        }
+      }
+
+      // 플레이어가 죽은경우 곧바로 안돼를 왜침
+      if (player.isDied) {
+        sprite.roundState = sprite.ROUND_LOSE
+        sprite.setTalkIndex()
+        sprite.talkDelay.countReset()
+        sprite.talkState = sprite.TALKSTATE_TALK
+      }
+
       sprite.process()
     }
 
@@ -8400,8 +8247,13 @@ class Round2_5 extends RoundData {
    * @param {number} x 적의 x좌표 (범위: 200 ~ 600)
    * @param {number} y 적의 y좌표 (범위: 100 ~ 500)
    */
-  createSpriteIntruder (id, x = 200, y = 100) {
+  createSpriteIntruder (id, x = 200 + Math.floor(Math.random() * 400), y = 100 + Math.floor(Math.random() * 400)) {
     this.spriteIntruder.push(new this.SpriteIntruder(id, x, y))
+  }
+
+  /** 동그라미 (현재 스프라이트 수) 개수를 얻습니다. */
+  getDonggramiCount () {
+    return this.spriteDonggrami.length
   }
 
   /** 동그라미를 생성합니다. */
@@ -8429,177 +8281,273 @@ class Round2_5 extends RoundData {
       this.sound.musicPlay()
     }
 
-    // 각각의 적들이 차례대로 출현 (해당 페이즈에서만 진입하는 형태로 출연합니다.)
+    // 각각의 적들이 차례대로 출현
     if (this.timeCheckFrame(pTime + 7)) {
-      for (let i = 0; i < 9; i++) {
+      for (let i = 0; i < 9; i++) { // 180%dps / 4s
         this.createSpriteIntruder(ID.enemy.intruder.metal, 300 + ((i % 3) * 100), 200 + (Math.floor(i / 3) * 100))
       }
-    } else if (this.timeCheckFrame(pTime + 12)) {
-      for (let i = 0; i < 9; i++) {
+    } else if (this.timeCheckFrame(pTime + 11)) {
+      for (let i = 0; i < 9; i++) { // 180%dps / 4s
         this.createSpriteIntruder(ID.enemy.intruder.diacore, 300 + ((i % 3) * 100), 200 + (Math.floor(i / 3) * 100))
       }
-    } else if (this.timeCheckFrame(pTime + 18)) {
-      for (let i = 0; i < 4; i++) {
+    } else if (this.timeCheckFrame(pTime + 15)) {
+      for (let i = 0; i < 4; i++) { // 400%dps / 5s
         this.createSpriteIntruder(ID.enemy.intruder.rendown, 300 + ((i % 2) * 200), 200 + (Math.floor(i / 2) * 200))
       }
-    } else if (this.timeCheckFrame(pTime + 24)) {
-      for (let i = 0; i < 6; i++) {
+    } else if (this.timeCheckFrame(pTime + 20)) {
+      for (let i = 0; i < 6; i++) { // 300%dps / 5s
         this.createSpriteIntruder(ID.enemy.intruder.lever, 200 + ((i % 3) * 200), 200 + (Math.floor(i / 3) * 150))
       }
-    } else if (this.timeCheckFrame(pTime + 30)) {
-      for (let i = 0; i < 4; i++) {
+    } else if (this.timeCheckFrame(pTime + 25)) {
+      for (let i = 0; i < 4; i++) {  // 160% + 160% = 320%dps / 5s
         this.createSpriteIntruder(ID.enemy.intruder.flying1, 250 + ((i % 2) * 300), 200 + (Math.floor(i / 2) * 200))
       }
       for (let i = 0; i < 2; i++) {
         this.createSpriteIntruder(ID.enemy.intruder.flying2, 400, 200 + (Math.floor(i / 1) * 200))
       }
-    } else if (this.timeCheckFrame(pTime + 38)) {
-      for (let i = 0; i < 3; i++) {
+    } else if (this.timeCheckFrame(pTime + 30)) { // 200% + 80% = 280%dps / 4s
+      for (let i = 0; i < 2; i++) {
         this.field.createEnemy(ID.enemy.intruder.gami, 700)
       }
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 2; i++) {
         this.field.createEnemy(ID.enemy.intruder.momi, 700)
       }
     }
 
-    this.timePauseWithEnemyCount(pTime + 44)
-    if (this.timeCheckInterval(pTime + 45, pTime + 57, 10)) {
+    if (this.timeCheckInterval(pTime + 34, pTime + 37, 12)) { // locket 50%dps / 4s
       this.field.createEnemy(ID.enemy.intruder.flyingRocket)
     }
-    this.timePauseWithEnemyCount(pTime + 59)
+    this.timePauseWithEnemyCount(pTime + 38)
   }
 
   roundPhase01 () {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-
+    const pEnd = this.phase.phaseTime[this.phase.getCurrentPhase()].endTime
     // total phase dps: 240% (first 6 seconds 100%) (main dps 120%, donggrami dps: 120%)
 
-    // group 1 (dps 60%), (first 6 seconds 100%)
-    if (this.timeCheckInterval(pTime + 0, pTime + 6, 12) || this.timeCheckInterval(pTime + 7, pTime + 28, 20)) {
+    // 메인 패턴
+    this.roundPhase01_1()
+    this.roundPhase01_2()
+
+    // 추가로 나오는 적들 (3초동안 dps 80% 추가)
+    if (this.timeCheckInterval(pTime + 16, pTime + 18, 15) || this.timeCheckInterval(pTime + 26, pTime + 28, 15)) {
+      this.field.createEnemy(ID.enemy.intruder.flyingRocket)
+      this.field.createEnemy(ID.enemy.intruder.flyingRocket)
+    }
+
+    // 추가로 나오는 적들 (5초동안 dps 100% 추가)
+    if (this.timeCheckInterval(pTime + 29, pTime + 34, 90)) {
+      this.field.createEnemy(ID.enemy.intruder.momi)
+      this.field.createEnemy(ID.enemy.intruder.gami)
+    }
+    
+    this.roundPhase01_donggrami() // 동그라미 생성
+    this.timePauseWithEnemyCount(pEnd - 1) // 적이 다 죽어야 다음페이즈로 진행
+  }
+
+  roundPhase01_1 () {
+    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+    // 0s ~ 10s 120% dps
+    if (this.timeCheckInterval(pTime + 0, pTime + 10, 10)) {
       let random = Math.floor(Math.random() * 3)
       switch (random) {
         case 0: this.field.createEnemy(ID.enemy.intruder.metal); break
         case 1: this.field.createEnemy(ID.enemy.intruder.diacore); break
         default: this.field.createEnemy(ID.enemy.intruder.square); break
       }
-    }
+    } 
+  }
 
-    // group 2 (dps 100%)
-    if (this.timeCheckInterval(pTime + 7, pTime + 28, 60)) {
-      if (Math.floor(Math.random() * 2) === 0) {
-        this.field.createEnemy(ID.enemy.intruder.rendown, 839, 100)
+  roundPhase01_2 () {
+    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+    // 11s ~ 37s, total dps 240%
+    // 해당 페이즈 시간이 32초를 넘어가면, 서서히 등장하진 않음.
+
+    // dps 60%
+    if (this.timeCheckInterval(pTime + 11, pTime + 37, 20)) {
+      let inputList = [ID.enemy.intruder.square, ID.enemy.intruder.diacore, ID.enemy.intruder.metal]
+      let random = Math.floor(Math.random() * inputList.length)
+      if (Math.random() < 0.5 || this.timeCheckInterval(pTime + 32, pTime + 37)) {
+        this.field.createEnemy(inputList[random])
       } else {
-        this.field.createEnemy(ID.enemy.intruder.lever, 839, 200)
-        this.field.createEnemy(ID.enemy.intruder.lever, 839, 400)
+        this.createSpriteIntruder(inputList[random])
       }
     }
 
-    // group 3 (dps 80%)
-    if (this.timeCheckInterval(pTime + 7, pTime + 28, 90)) {
-      this.field.createEnemy(ID.enemy.intruder.flying1) // 40%
-      this.field.createEnemy(ID.enemy.intruder.flying2) // 80%
+    // dps 100%
+    if (this.timeCheckInterval(pTime + 11, pTime + 37, 120)) {
+      let inputList = [ID.enemy.intruder.lever, ID.enemy.intruder.rendown, ID.enemy.intruder.lever]
+      for (let i = 0; i < inputList.length; i++) {
+        if (Math.random() < 0.4 || this.timeCheckInterval(pTime + 32, pTime + 37)) {
+          this.field.createEnemy(inputList[i])
+        } else {
+          this.createSpriteIntruder(inputList[i])
+        }
+      }
     }
 
+    // dps 80%
+    if (this.timeCheckInterval(pTime + 11, pTime + 37, 60)) {
+      let inputList = [ID.enemy.intruder.flying1, ID.enemy.intruder.flying2]
+      for (let i = 0; i < inputList.length; i++) {
+        if (Math.random() < 0.4 || this.timeCheckInterval(pTime + 32, pTime + 37)) {
+          this.field.createEnemy(inputList[i])
+        } else {
+          this.createSpriteIntruder(inputList[i])
+        }
+      }
+    }
+  }
+
+  roundPhase01_donggrami () {
+    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+    // 페이즈 시작 7초가 지난 시점에서 한꺼번에 10마리의 동그라미가 등장함
     if (this.timeCheckFrame(pTime + 7)) {
       for (let i = 0; i < 10; i++) {
         this.createSpriteDonggrami()
       }
     }
 
-    if (this.timeCheckInterval(pTime + 10, pTime + 28, 60)) {
+    // 페이즈 진행 중 계속 동그라미가 등장 (최대 10마리까지)
+    if (this.timeCheckInterval(pTime + 10, pTime + 39, 40) && this.getDonggramiCount() < 10) {
       this.createSpriteDonggrami()
     }
-
-    this.timePauseWithEnemyCount(pTime + 29, 6)
   }
 
   roundPhase02 () {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
 
     // tower
-    if (this.timeCheckInterval(pTime + 0, pTime + 10, 180)) {
+    if (this.timeCheckInterval(pTime + 0, pTime + 12, 180)) {
       this.field.createEnemy(ID.enemy.intruder.hanoi, Math.random() * 400, 400) 
+      this.field.createEnemy(ID.enemy.intruder.hanoi, Math.random() * 400, 400)
       this.field.createEnemy(ID.enemy.intruder.hanoi, Math.random() * 400, 400) 
-      this.createSpriteDonggrami()
-    } else if (this.timeCheckFrame(pTime + 10)) {
+    } else if (this.timeCheckFrame(pTime + 12)) {
       for (let i = 0; i < 5; i++) {
         this.field.createEnemy(ID.enemy.intruder.daseok, i * 160, 400)
       }
     }
 
     // donggrami
-    if (this.timeCheckInterval(pTime + 12, pTime + 18, 120)) {
-      for (let i = 0; i < 3; i++) {
-        this.createSpriteDonggrami()
-      }
-    }
-
-    this.timePauseWithEnemyCount(pTime + 19, 3)
-
-    // monster + flying
-    if (this.timeCheckInterval(pTime + 20, pTime + 28, 60)) {
-      this.field.createEnemy(ID.enemy.intruder.flyingRocket)
-      this.field.createEnemy(ID.enemy.intruder.flying1)
-      this.field.createEnemy(ID.enemy.intruder.flying2)
-      this.field.createEnemy(ID.enemy.intruder.gami)
-      this.field.createEnemy(ID.enemy.intruder.momi)
-    }
-
-    // donggrami
-    if (this.timeCheckInterval(pTime + 20, pTime + 28, 90)) {
-      this.createSpriteDonggrami()
+    if (this.timeCheckInterval(pTime + 0, pTime + 19, 50) && this.getDonggramiCount() < 10) {
       this.createSpriteDonggrami()
     }
 
-    this.timePauseWithEnemyCount(pTime + 29, 10)
+    this.timePauseWithEnemyCount(pTime + 19)
   }
 
   roundPhase03 () {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
     // phase dps: 360% (player 120%, donggrami 240%)
     // 참고: dps에 오차가 있을 수 있음
+    // phase 50 seconds
+    // 엄청나게 많은 적이 나옴
 
-    // group 1 part 1 (dps ~150%) (+0 ~ +5)
-    if (this.timeCheckInterval(pTime + 0, pTime + 15, 16)) {
-      this.field.createEnemy(ID.enemy.intruder.metal)
-      this.field.createEnemy(ID.enemy.intruder.diacore)
+    this.roundPhase03_1()
+    this.roundPhase03_2()
+    this.roundPhase03_3()
+
+    // donggrami (1 second per 2)
+    if (this.timeCheckInterval(pTime + 0, pTime + 49, 30) && this.getDonggramiCount() < 20) {
+      this.createSpriteDonggrami()
     }
 
-    // group 2 part 1 (dps ~130% x 1.8)
-    if (this.timeCheckInterval(pTime + 0, pTime + 15, 24)) {
-      this.field.createEnemy(ID.enemy.intruder.flying1)
-      this.field.createEnemy(ID.enemy.intruder.flying2)
+    this.timePauseWithEnemyCount(pTime + 49)
+  }
+
+  roundPhase03_1 () {
+    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+    let inputListA = [ID.enemy.intruder.square, ID.enemy.intruder.metal, ID.enemy.intruder.diacore]
+    let inputListB = [ID.enemy.intruder.rendown, ID.enemy.intruder.lever, ID.enemy.intruder.lever]
+
+    // 3-1-1 dps ListA = 240% (20x12), ListB = 100%, total 340%
+    // 3-1-2 dps ListA = 120% (20x6), ListB = 250%(200 + 50), total 370%
+    if (this.timeCheckInterval(pTime + 0, pTime + 7, 5) || this.timeCheckInterval(pTime + 8, pTime + 15, 10)) {
+      let random = Math.floor(Math.random() * inputListA.length)
+      if (Math.random() < 0.5) {
+        this.field.createEnemy(inputListA[random])
+      } else {
+        this.createSpriteIntruder(inputListA[random])
+      }
+    }
+
+    if (this.timeCheckInterval(pTime + 0, pTime + 7, 120) || this.timeCheckInterval(pTime + 8, pTime + 15, 60)) {
+      for (let i = 0; i < inputListB.length; i++) {
+        if (Math.random() < 0.5) {
+          this.field.createEnemy(inputListB[i])
+        } else {
+          this.createSpriteIntruder(inputListB[i])
+        }
+      }
+
+      // 레버 하나 추가 (dps를 맞추기 위해서)
+      if (this.timeCheckInterval(pTime + 8, pTime + 15, 60)) {
+        this.field.createEnemy(ID.enemy.intruder.lever)
+      }
+    }
+  }
+
+  roundPhase03_2 () {
+    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+    // 3-2-1 dps: flying 240%, square 40%, lever 50%, total 330%
+    // 3-2-2 dps: flying 80%, rocket 80%, monster 180% (momi 80%, gami 100%), total 340%
+    if (this.timeCheckInterval(pTime + 16, pTime + 23, 10) || this.timeCheckInterval(pTime + 24, pTime + 31, 30)) {
+      let targetEnemyId = Math.random() < 0.5 ? ID.enemy.intruder.flying1 : ID.enemy.intruder.flying2
+      if (Math.random() < 0.5) {
+        this.field.createEnemy(targetEnemyId)
+      } else {
+        this.createSpriteIntruder(targetEnemyId)
+      }
+    }
+
+    if (this.timeCheckInterval(pTime + 16, pTime + 23, 30)) {
+      let inputList = [ID.enemy.intruder.square, ID.enemy.intruder.diacore, ID.enemy.intruder.metal]
+      let random = Math.floor(Math.random() * inputList.length)
+      if (Math.random() < 0.5 || this.timeCheckInterval(pTime + 32, pTime + 37)) {
+        this.field.createEnemy(inputList[random])
+      } else {
+        this.createSpriteIntruder(inputList[random])
+      }
+    }
+
+    if (this.timeCheckInterval(pTime + 16, pTime + 23, 60)) {
+      this.field.createEnemy(ID.enemy.intruder.lever)
+    } else if (this.timeCheckInterval(pTime + 24, pTime + 31, 15)) {
       this.field.createEnemy(ID.enemy.intruder.flyingRocket)
     }
-
-    // group 1 part 2 (dps ~240%)
-    if (this.timeCheckInterval(pTime + 16, pTime + 28, 54)) {
-      this.field.createEnemy(ID.enemy.intruder.lever)
-      this.field.createEnemy(ID.enemy.intruder.lever)
-      this.field.createEnemy(ID.enemy.intruder.rendown)
-    }
-
-    // group 2 part 2 (dps ~130%)
-    if (this.timeCheckInterval(pTime + 16, pTime + 28, 60)) {
+    
+    if (this.timeCheckInterval(pTime + 24, pTime + 31, 60)) {
       this.field.createEnemy(ID.enemy.intruder.gami)
       this.field.createEnemy(ID.enemy.intruder.momi)
-      this.field.createEnemy(ID.enemy.intruder.flyingRocket)
+      this.field.createEnemy(ID.enemy.intruder.momi)
+    }
+  }
+
+  roundPhase03_3 () {
+    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+    // 3-2-1 dps: square 40%, flying 40%, gami 50%, tower 225%, total 355%
+    // 3-2-2 dps: tower 350% (daseok 250%, hanoi 100%)
+
+    if (this.timeCheckInterval(pTime + 32, pTime + 36, 60)) {
+      this.field.createEnemy(ID.enemy.intruder.square)
+      this.field.createEnemy(ID.enemy.intruder.metal)
     }
 
-    // group 3 (9 seconds 1 time // total 3)
-    if (this.timeCheckFrame(pTime + 3) || this.timeCheckFrame(pTime + 13), this.timeCheckFrame(pTime + 23)) {
-      this.field.createEnemy(ID.enemy.intruder.hanoi, Math.random() * 600)
-      this.field.createEnemy(ID.enemy.intruder.daseok, Math.random() * 600)
+    if (this.timeCheckInterval(pTime + 32, pTime + 36, 120)) {
+      this.field.createEnemy(ID.enemy.intruder.flying1)
+      this.field.createEnemy(ID.enemy.intruder.flying2)
+      this.field.createEnemy(ID.enemy.intruder.gami)
     }
 
-    // donggrami (1 second per 4)
-    if (this.timeCheckInterval(pTime + 0, pTime + 28, 30)) {
-      this.createSpriteDonggrami()
-    } else if (this.timeCheckInterval(pTime + 29, pTime + 29, 60) && this.spriteDonggrami.length <= 2) {
-      this.createSpriteDonggrami()
+    if (this.timeCheckFrame(pTime + 32)) {
+      this.field.createEnemy(ID.enemy.intruder.hanoi)
+      this.field.createEnemy(ID.enemy.intruder.daseok)
     }
 
-    this.timePauseWithEnemyCount(pTime + 29, 10)
+    if (this.timeCheckInterval(pTime + 36, pTime + 48, 120)) {
+      this.field.createEnemy(ID.enemy.intruder.hanoi)
+      this.field.createEnemy(ID.enemy.intruder.daseok)
+    }
   }
 
   roundPhase04 () {
@@ -8607,23 +8555,18 @@ class Round2_5 extends RoundData {
     // boss
     if (this.timeCheckFrame(pTime + 1)) {
       this.sound.soundPlay(soundSrc.round.r2_4_message1)
-      this.field.createEnemy(ID.enemy.intruder.jemuBoss)
+      this.field.createEnemy(ID.enemy.intruder.jemuBossUltra) // 공포의 보스 등장
     }
 
-    // avg dps 100%
-    if (this.timeCheckInterval(pTime + 4, pTime + 10, 12)) {
-      this.field.createEnemy(ID.enemy.intruder.square)
-    } else if (this.timeCheckInterval(pTime + 11, pTime + 20, 12)) {
-      this.field.createEnemy(ID.enemy.intruder.metal)
-    } else if (this.timeCheckInterval(pTime + 21, pTime + 28, 12)) {
-      this.field.createEnemy(ID.enemy.intruder.diacore)
+    // 동그라미들의 반격, 4초에 한번씩 나옴 (최대 30마리 제한)
+    if (this.timeCheckInterval(pTime + 0, pTime + 40, 120) && this.getDonggramiCount() < 15) {
+      for (let i = 0; i < 3; i++) {
+        this.createSpriteDonggrami()
+      }
     }
 
-    if (this.spriteDonggrami.length <= 10 && this.timeCheckInterval(pTime + 5, pTime + 39, 60) && this.field.getEnemyCount() >= 3) {
-      this.createSpriteDonggrami()
-    }
-
-    if (this.timeCheckInterval(pTime + 29, pTime + 38) && this.field.enemyNothingCheck()) {
+    // 적이 죽은경우, 빠르게 진행되도록 처리 (단, 일정시간이 지나야만 함)
+    if (this.timeCheckInterval(pTime + 19, pTime + 38) && this.field.enemyNothingCheck()) {
       this.time.setCurrentTime(pTime + 39)
     }
 
@@ -8632,23 +8575,27 @@ class Round2_5 extends RoundData {
 
   roundPhase05 () {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    if (this.timeCheckInterval(pTime + 0, pTime + 6, 10)) {
+    if (this.timeCheckInterval(pTime + 0, pTime + 7, 5)) {
       this.field.createEnemy(ID.enemy.intruder.flyingRocket)
     }
-    if (this.timeCheckInterval(pTime + 0, pTime + 6, 60)) {
+    if (this.timeCheckInterval(pTime + 0, pTime + 7, 30)) {
       this.field.createEnemy(ID.enemy.intruder.momi)
     }
 
-    if (this.timeCheckFrame(pTime + 4)) {
-      this.createSpriteDonggrami()
+    if (this.timeCheckInterval(pTime + 0, pTime + 10, 30) && this.getDonggramiCount() < 10) {
       this.createSpriteDonggrami()
     }
 
-    if (this.timeCheckFrame(pTime + 4)) {
-      this.sound.musicFadeOut(180)
+    this.timePauseWithEnemyCount(pTime + 9)
+  }
+  
+  roundPhase06 () {
+    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+    if (this.timeCheckFrame(pTime)) {
+      this.sound.musicFadeOut(1)
     }
 
-    this.timePauseWithEnemyCount(pTime + 8)
+    // 비어있는 페이즈 (이 페이즈의 목적은 동그라미가 승리 대사를 하도록 만들기 위한것)
   }
 
   display () {
@@ -8656,7 +8603,7 @@ class Round2_5 extends RoundData {
     this.displaySprite()
 
     if (this.phase.getCurrentPhase() === 4) {
-      this.meter.bossHpUserStyle(ID.enemy.intruder.jemuBoss, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 25, 'ONGSIMI JEMUL GARDIAN HP: ', ['#7D7D7D', '#7B84A4'])
+      this.meter.bossHpUserStyle(ID.enemy.intruder.jemuBossUltra, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 25, 'ONGSIMI JEMUL GARDIAN HP: ', ['#7D7D7D', '#7B84A4'])
     }
   }
 
@@ -8667,6 +8614,297 @@ class Round2_5 extends RoundData {
 
     for (let i = 0; i < this.spriteDonggrami.length; i++) {
       this.spriteDonggrami[i].display()
+    }
+  }
+
+  /** 라운드 2-5 전용 동그라미 (친구임...) (... 이걸 상속으로 구현하다니...)
+   * 하지만 동그라미가 가진 복잡한 기능을 이 스프라이트에 다시 구현하기는
+   * 너무 복잡해서 어쩔 수 없었음.
+   */
+  SpriteDonggrami = class extends DonggramiEnemy {
+    constructor () {
+      super()
+      /** 동그라미 1회 타격당 주는 데미지 */ this.BASEDPS = 5000
+      this.setDonggramiColor(this.myStatic.colorGroup.ALL)
+
+      // 방향 제거 (적은 반대방향 (오른쪽에서 왼쪽)을 기준으로 행동함 그래서 이 부분을 제거해야함)
+      this.setMoveDirection()
+
+      this.setRandomMoveSpeed(6, 6)
+      this.moveDelay = new DelayData(60)
+      this.attackDelay = new DelayData(30)
+      this.hpMax = this.BASEDPS * 12 // 실질적으로 최대 dps는 120%로 간주되지만, 총알에 맞는 경우가 있어서 100%전후로 계산됨
+      this.hp = this.hpMax
+      this.attack = this.BASEDPS
+      this.x = 0
+      this.y = Math.random() * graphicSystem.CANVAS_HEIGHT
+      this.getTargetAndSetSpeed()
+      this.emojiType = Math.random() < 0.5 ? this.myStatic.EmojiList.HAPPY : this.myStatic.EmojiList.SMILE
+      this.emojiDelay = new DelayData(60)
+      
+      this.TALKTYPE_A = 'aa'
+      this.TALKTYPE_B = 'bb'
+      this.TALKTYPE_EMOJI = 'emoji'
+      this.TALKTYPE_EASTEREGG = 'easteregg'
+
+      // 87%확률 A타입, 13%확률 B타입
+      this.talkType = Math.random() < 0.87 ? this.TALKTYPE_A : this.TALKTYPE_B
+
+      this.ROUND_MID = 'fieldMid'
+      this.ROUND_BOSS = 'fieldBoss'
+      this.ROUND_WIN = 'fieldWin'
+      this.ROUND_LOSE = 'fieldLose'
+      this.ROUND_EASTEREGG = 'fieldEasteregg'
+      
+      /** 라운드 상태: 이것은 라운드 2-5의 진행상태에 따라 대사를 다르게 하기 위한것 */
+      this.roundState = this.ROUND_MID
+
+      this.autoMovePositionX = 0
+      this.autoMovePositionY = 0
+      this.autoMoveFrame = 0
+    }
+
+    setTalkIndex () {
+      const INDEX_X = 6
+      const INDEX_TALKMID_AY = 0
+      const INDEX_TALKMID_AYLENGTH = 6
+      const INDEX_TALKMID_BY = 6
+      const INDEX_TALKBOSS_AY = 8
+      const INDEX_TALKBOSS_AYLENGTH = 3
+      const INDEX_TALKBOSS_BY = 11
+      const INDEX_TALKWIN_AY = 13
+      const INDEX_TALKWIN_AYLENGTH = 2
+      const INDEX_TALKWIN_BY = 15
+      const INDEX_TALKLOSE_Y = 17
+
+      this.talkIndex.x = INDEX_X
+      if (this.roundState === this.ROUND_LOSE) { // 패배한 경우
+        this.talkIndex.y = INDEX_TALKLOSE_Y // 모두가 같은 말을 함
+        return
+      }
+      
+      if (this.talkType === this.TALKTYPE_A) {
+        if (this.roundState === this.ROUND_MID) {
+          this.talkIndex.y = INDEX_TALKMID_AY + Math.floor(Math.random() * INDEX_TALKMID_AYLENGTH)
+        } else if (this.roundState === this.ROUND_BOSS) {
+          this.talkIndex.y = INDEX_TALKBOSS_AY + Math.floor(Math.random() * INDEX_TALKBOSS_AYLENGTH)
+        } else if (this.roundState === this.ROUND_WIN) {
+          this.talkIndex.y = INDEX_TALKWIN_AY + Math.floor(Math.random() * INDEX_TALKWIN_AYLENGTH)
+        }
+      } else if (this.talkType === this.TALKTYPE_B) {
+        if (this.roundState === this.ROUND_MID) {
+          this.talkIndex.y = INDEX_TALKMID_BY
+        } else if (this.roundState === this.ROUND_BOSS) {
+          this.talkIndex.y = INDEX_TALKBOSS_BY
+        } else if (this.roundState === this.ROUND_WIN) {
+          this.talkIndex.y = INDEX_TALKWIN_BY
+        }
+      }
+    }
+
+    getTargetAndSetSpeed () {
+      let enemy = fieldState.getRandomEnemyObject()
+      if (enemy != null) {
+        let distanceX = enemy.centerX - this.x
+        let distanceY = enemy.centerY - this.y
+
+        this.setMoveSpeed(distanceX / 40, distanceY / 40)
+      }
+    }
+
+    /** 동그라미의 스탯을 설정 (이것은 자동 저장된 데이터를 불러올때만 사용합니다.) */
+    setLoadDonggramiStat (color = '', x = 0, y = 0, moveSpeedX = 0, moveSpeedY = 0, hp = 0) {
+      this.color = color
+      this.x = x
+      this.y = y
+      this.moveSpeedX = moveSpeedX
+      this.moveSpeedY = moveSpeedY
+      this.hp = hp
+      this.setDonggramiColor()
+    }
+
+    /** 동그라미가 가지고 있는 스탯값을 저장 */
+    getSaveDonggramiData () {
+      return {x: this.x, y: this.y, color: this.color, hp: this.hp, moveSpeedX: this.moveSpeedX, moveSpeedY: this.moveSpeedY}
+    }
+
+    /** 플레이어와의 충돌 없음 (원본 클래스가 적이기 때문에 이 기능을 냅두면 스프라이트가 플레이어를 죽임) */
+    processPlayerCollision () {}
+
+    processTalk () {
+      if (this.talkType === this.TALKSTATE_EMOJI) {
+        if (this.talkDelay.check()) { // 일정 딜레이 후 이모지 출력
+          this.talkState = this.TALKSTATE_EMOJI
+          soundSystem.play(soundSrc.donggrami.emoji)
+          this.talkDelay.setDelay(480) // 딜레이 재설정으로 이모지를 중복해서 출력하지 못하게 함
+        }
+        return
+      }
+
+      if (this.talkDelay.check()) {
+        // 대화 딜레이에 도달하면, 대화중인 상태에서는 대화를 끝내고, 아니라면 대화를 함
+        this.talkDelay.setDelay(this.getTalkRandomDelay())
+        if (this.talkState === '') {
+          this.talkState = this.TALKSTATE_TALK
+          this.setTalkIndex()
+        } else if (this.talkState === this.TALKSTATE_TALK) {
+          this.talkState = ''
+        }
+      }
+    }
+
+    /** 동그라미 강제 자동 이동  */
+    setDonggramiAutomove () {
+      // 이동거리는 부딪힌 방향의 반대방향쪽으로 이동됨 (랜덤하게)
+      let moveX = 0
+      let moveY = 0
+
+      let random = Math.floor(Math.random() * 100)
+      if (random < 33) { // x축 반사이동, y축 랜덤
+        moveX = this.moveSpeedX < 0 ? Math.floor(Math.random() * 120) + 120 : Math.floor(Math.random() * 120) + 120
+        moveY = Math.floor(Math.random() * 360) - 180
+      } else if (random < 66) { // y축 반사이동, x축 랜덤
+        moveX = Math.floor(Math.random() * 360) - 180
+        moveY = this.moveSpeedX < 0 ? Math.floor(Math.random() * 120) + 120 : Math.floor(Math.random() * 120) + 120
+      } else { // x축, y축 반사이동
+        moveX = this.moveSpeedX < 0 ? Math.floor(Math.random() * 120) + 120 : Math.floor(Math.random() * 120) + 120
+        moveY = this.moveSpeedY < 0 ? Math.floor(Math.random() * 120) + 120 : Math.floor(Math.random() * 120) + 120
+      }
+
+      this.autoMovePositionX = this.x - moveX
+      this.autoMovePositionY = this.y - moveY
+      this.autoMoveFrame = 30
+    }
+
+    processMove () {
+      if (this.isDied) return
+      if (this.autoMoveFrame >= 1) {
+        let speedX = (this.autoMovePositionX - this.x) / this.autoMoveFrame
+        let speedY = (this.autoMovePositionY - this.y) / this.autoMoveFrame
+        this.setMoveSpeed(speedX, speedY)
+        this.autoMoveFrame--
+      }
+
+      super.processMove()
+
+      if (this.moveDelay.check()) {
+        this.getTargetAndSetSpeed()
+      }
+
+      // 화면 바깥 이동 금지
+      if (this.outAreaCheck(40)) {
+        if (this.x + this.width <= 0) this.x = 1
+        if (this.x >= graphicSystem.CANVAS_WIDTH) this.x = graphicSystem.CANVAS_WIDTH - 1
+        if (this.y + this.height <= 0) this.y = 1
+        if (this.y >= graphicSystem.CANVAS_HEIGHT) this.y = graphicSystem.CANVAS_HEIGHT - 1
+
+        // 벽에 한번이라도 부딪히면 이동속도가 감소하고 반대방향으로 이동
+        this.moveSpeedX = (this.moveSpeedX / 2) * -1
+        this.moveSpeedY = (this.moveSpeedY / 2) * -1
+        this.autoMoveFrame = 0 // 자동 이동도 해제 (가끔 이상한대로 날라가서 해제해야할듯)
+      }
+
+      // 충돌 처리 (딜레이카운트는 적에게 충돌했을때에만 0으로 리셋됩니다.)
+      if (this.attackDelay.check(false, true)) {
+        let enemyObject = fieldState.getEnemyObject()
+        for (let i = 0; i < enemyObject.length; i++) {
+          let enemy = enemyObject[i]
+          if (!enemy.isDied && collision(this, enemy)) {
+            enemy.hp -= this.attack
+            this.hp -= this.attack
+            this.attackDelay.countReset()
+            this.setDonggramiAutomove()
+            // this.moveSpeedX = (this.moveSpeedX / 2) * -1 // 적과 충돌하면 이동속도 감소
+            // this.moveSpeedY = (this.moveSpeedY / 2) * -1 // 적과 충돌하면 이동속도 감소
+            this.moveDelay.count = this.moveDelay.delay / 2
+            soundSystem.play(soundSrc.round.r2_3_a1_toyHammer)
+            fieldState.createDamageObject(enemy.x, enemy.y, this.attack)
+            break // 반복문 종료 (1회 공격에 1마리만 공격 가능)
+          }
+        }
+      }
+
+      // 적의 총알 대신 맞기 처리
+      let enemyBulletObject = fieldState.getEnemyBulletObject()
+      for (let i = 0; i < enemyBulletObject.length; i++) {
+        let enemyBullet = enemyBulletObject[i]
+        if (collision(this, enemyBullet)) {
+          this.hp -= (this.attack / 10)
+          enemyBullet.isDeleted = true
+        }
+      }
+
+      // 죽음 처리
+      if (this.hp <= 0) {
+        soundSystem.play(soundSrc.enemyDie.enemyDieDonggrami)
+        this.isDied = true
+      }
+    }
+
+    display () {
+      super.display()
+      // 동그라미의 체력 표시
+      graphicSystem.meterRect(this.x, this.y + this.height, this.width, 1, 'darkblue', this.hp, this.hpMax, true, 'skyblue')
+    }
+  }
+
+  /** 이스터에그용 동그라미 */
+  SpriteDonggramiEasterEgg = class extends this.SpriteDonggrami {
+    constructor () {
+      super()
+      this.talkType = this.TALKTYPE_EASTEREGG
+    }
+
+    setTalkIndex () {
+      const INDEX_TALKEGG_Y = 18
+      const INDEX_TALKEGG_FUNNY_Y = 19
+    }
+  }
+
+  SpriteIntruder = class {
+    constructor (id = 0, x = 200, y = 100, z = -120) {
+      this.id = id
+      this.x = x
+      this.y = y
+      this.z = z
+      this.ZBASE = -120
+      switch (this.id) {
+        case ID.enemy.intruder.diacore: this.imageData = imageDataInfo.intruderEnemy.diacore; break
+        case ID.enemy.intruder.rendown: this.imageData = imageDataInfo.intruderEnemy.rendownGreen; break
+        case ID.enemy.intruder.lever: this.imageData = imageDataInfo.intruderEnemy.leverImage; break
+        case ID.enemy.intruder.flying1: this.imageData = imageDataInfo.intruderEnemy.flying1; break
+        case ID.enemy.intruder.flying2: this.imageData = imageDataInfo.intruderEnemy.flying2; break
+        case ID.enemy.intruder.gami: this.imageData = imageDataInfo.intruderEnemy.gami; break
+        case ID.enemy.intruder.momi: this.imageData = imageDataInfo.intruderEnemy.momi; break
+        case ID.enemy.intruder.square: this.imageData = imageDataInfo.intruderEnemy.square; break
+        default: this.imageData = imageDataInfo.intruderEnemy.metal; break
+      }
+    }
+
+    process () {
+      if (this.z > 0) return
+
+      this.z++
+      this.x -= (this.imageData.width / Math.abs(this.ZBASE) / 2)
+      this.y -= (this.imageData.height / Math.abs(this.ZBASE) / 2)
+
+      if (this.z === 0) {
+        fieldState.createEnemyObject(this.id, this.x, this.y)
+      }
+    }
+
+    getSaveIntruderData () {
+      return {id: this.id, x: this.x, y: this.y, z: this.z}
+    }
+    
+    display () {
+      let imgSrc = imageSrc.enemy.intruderEnemy
+      let imgD = this.imageData
+      let outputMultiple = Math.abs((1 / this.ZBASE) * (this.z + Math.abs(this.ZBASE)))
+      let outputWidth = imgD.width * outputMultiple
+      let outputHeight= imgD.height * outputMultiple
+      let alpha = outputMultiple
+      graphicSystem.imageDisplay(imgSrc, imgD.x, imgD.y, imgD.width, imgD.height, this.x, this.y, outputWidth, outputHeight, 0, 0, alpha)
     }
   }
 }

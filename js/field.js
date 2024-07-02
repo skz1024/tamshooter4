@@ -1983,10 +1983,10 @@ export class fieldSystem {
   /** 결과 화면을 출력합니다. roundClear, gameOver, processExit 상태 모두 동일한 display 함수 사용 */
   static displayResult () {
     let imageData = imageDataInfo.fieldSystem.result
-    const titleX = (game.graphic.CANVAS_WIDTH - imageData.width) / 2
-    const titleY = 100
     if (this.stateId === this.STATE_ROUND_CLEAR) imageData = imageDataInfo.fieldSystem.roundClear
     else if (this.stateId === this.STATE_GAME_OVER) imageData = imageDataInfo.fieldSystem.gameOver
+    const titleY = 100
+    const titleX = (game.graphic.CANVAS_WIDTH - imageData.width) / 2
     gameFunction.imageObjectDisplay(imageSrc.system.fieldSystem, imageData, titleX, titleY)
 
     const DATA_X = game.graphic.CANVAS_WIDTH_HALF - (imageDataInfo.fieldSystem.fieldResultData.width / 2)

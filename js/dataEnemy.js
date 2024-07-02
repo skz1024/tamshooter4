@@ -3463,9 +3463,10 @@ class jemulEnemyBlackSpaceRing extends JemulEnemyData {
 }
 
 /** 동그라미 적 (라운드 2, 3에서 출현) */
-class DonggramiEnemy extends EnemyData {
+export class DonggramiEnemy extends EnemyData {
   constructor () {
     super()
+    this.myStatic = DonggramiEnemy
     this._baseDps = 50000
     this.imageSrc = imageSrc.enemy.donggramiEnemy
     this.color = ''
@@ -6187,6 +6188,13 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
     this.eyeEffect = EnimationData.createEnimation(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.jemuEye, 4, -1)
     this.eyeEffect.setOutputSize(imageDataInfo.intruderEnemy.jemuEye.width * 2, imageDataInfo.intruderEnemy.jemuEye.height * 2)
 
+    this.patternDelayList = {
+      ENERGY12: 30,
+      ENERGYP3: 15,
+      ENERGYRE: 15,
+      THUNDERLR: 60,
+    }
+
     this.finishX = 0
     this.finishY = 0
     this.setIntruderDelay(120, 180)
@@ -6201,12 +6209,12 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
     /** 에너지를 발사하는데 그 에너지는 벽에 반사됨 */ this.STATE_ENERGYRE = 'energyre'
     /** 좌우 양옆으로 번개 발사 */ this.STATE_THUNDERLR = 'thunderlr'
     /** 번개를 생성시키고 크기를 커지게 함 */ this.STATE_THUNDERBIG = 'thunderbig'
-    /** 번개를 4방향으로 생성시키고 회전시킴 */ this.STATE_THUNDERLINE = 'thunderline'
+    /** 번개를 4방향으로 생성 (회전 제거) */ this.STATE_THUNDERLINE = 'thunderline'
     this.STATE_NORMAL = 'normal'
 
     this.attackObjectThunder = {baseX: 0, baseY: 0, x: 0, y: 0, width: 0, height: 0}
-    this.attackObject1 = {x: 0, y: 0, width: 1600, height: 60, degree: 0}
     this.attackObject2 = {x: 0, y: 0, width: 1600, height: 60, degree: 90}
+    this.attackObject1 = {x: 0, y: 0, width: 1600, height: 60, degree: 0}
     this.bigThunderEnimation = EnimationData.createEnimation(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.energyThunder, 2, -1)
 
     this.attackNumberIndex = 0
@@ -6361,8 +6369,9 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
   processAttack () {
     // 공격 지연시간 카운트가 음수이면 공격을 처리하지 않도록 함
     if (this.attackDelay.count < 0) return
+    const pDelay = this.patternDelayList
 
-    if (this.state === this.STATE_ENERGY12 && this.attackDelay.divCheck(20)) {
+    if (this.state === this.STATE_ENERGY12 && this.attackDelay.divCheck(pDelay.ENERGY12)) {
       // 원 위방향(0, 1) 부터 시계방향으로 360도 회전)
       for (let i = 0; i < 12; i++) {
         const x = 0
@@ -6376,7 +6385,7 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
         fieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2))
       }
       this.soundEnergy()
-    } else if (this.state === this.STATE_ENERGYP3 && this.attackDelay.divCheck(15)) {
+    } else if (this.state === this.STATE_ENERGYP3 && this.attackDelay.divCheck(pDelay.ENERGYP3)) {
       let player = fieldState.getPlayerObject()
       let speedX = (player.centerX - this.centerX) / 120
       let speedY = (player.centerY - this.centerY) / 120
@@ -6395,12 +6404,12 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
       }
 
       this.soundEnergy()
-    } else if (this.state === this.STATE_ENERGYRE && this.attackDelay.divCheck(15)) {
+    } else if (this.state === this.STATE_ENERGYRE && this.attackDelay.divCheck(pDelay.ENERGYRE)) {
       let bullet = new IntruderEnemyJemuBoss.EnergyReflectBullet()
       bullet.setRandomMoveSpeed(8, 8, true)
       fieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2))
       soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergyPurple)
-    } else if (this.state === this.STATE_THUNDERLR && this.attackDelay.divCheck(60)) {
+    } else if (this.state === this.STATE_THUNDERLR && this.attackDelay.divCheck(pDelay.THUNDERLR)) {
       for (let i = 0; i < 6; i++) {
         let bullet = new IntruderEnemyJemuBoss.ThunderLRBullet()
         fieldState.createEnemyBulletObject(bullet)
@@ -6415,17 +6424,27 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
         this.attackObjectThunder.height = 1
         soundSystem.play(soundSrc.enemyAttack.intruderJemuThunderBig)
       } else {
-        this.attackObjectThunder.width = count * 4
-        this.attackObjectThunder.height = Math.floor(count / 2)
+        this.attackObjectThunder.width = count * 8
+        this.attackObjectThunder.height = Math.floor(count / 4)
       }
 
       this.attackObjectThunder.x = this.attackObjectThunder.baseX - (this.attackObjectThunder.width / 2)
       this.attackObjectThunder.y = this.attackObjectThunder.baseY - (this.attackObjectThunder.height / 2)
 
-      // 플레이어 데미지 처리
       let player = fieldState.getPlayerObject()
-      if (this.attackDelay.count >= 30 && this.attackDelay.divCheck(6) && collision(player, this.attackObjectThunder)) {
-        player.addDamage(this.ATTACK_THUNDER)
+      let sprite = fieldState.getSpriteObject()
+      if (this.attackDelay.count >= 30 && this.attackDelay.divCheck(6)) {
+        // 플레이어 데미지 처리
+        if (collision(player, this.attackObjectThunder)) {
+          player.addDamage(this.ATTACK_THUNDER)
+        }
+
+        // 스프라이트 데미지 처리
+        for (let i = 0; i < sprite.length; i++) {
+          if (sprite[i] instanceof DonggramiEnemy && collision(sprite[i], this.attackObjectThunder)) {
+            sprite[i].hp -= 5000
+          }
+        }
       }
 
       this.bigThunderEnimation.process()
@@ -6434,8 +6453,9 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
         soundSystem.play(soundSrc.enemyAttack.intruderJemuThunderBig)
       }
 
-      this.attackObject1.degree += 1.2
-      this.attackObject2.degree += 1.2
+      // 해당 레이저를 피하기 어렵기 때문에 회전기능은 제거되었습니다.
+      // this.attackObject1.degree += 1.2
+      // this.attackObject2.degree += 1.2
       this.attackObject1.x = this.centerX - (this.attackObject1.width / 2)
       this.attackObject1.y = this.centerY - (this.attackObject1.height / 2)
       this.attackObject2.x = this.centerX - (this.attackObject1.width / 2)
@@ -6445,9 +6465,18 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
 
       // 플레이어 데미지 처리
       let player = fieldState.getPlayerObject()
+      let sprite = fieldState.getSpriteObject()
       if (this.attackDelay.count >= 60 && this.attackDelay.divCheck(6)) {
         if (collisionClass.collisionOBB(player, this.attackObject1) || collisionClass.collisionOBB(player, this.attackObject2)) {
           player.addDamage(this.ATTACK_THUNDER)
+        }
+
+        // 스프라이트 데미지 처리
+        for (let i = 0; i < sprite.length; i++) {
+          if (!(sprite[i] instanceof DonggramiEnemy)) continue // 동그라미 클래스를 상속받은 개체가 아니라면 무시
+          if (collisionClass.collisionOBB(sprite[i], this.attackObject1) || collisionClass.collisionOBB(sprite[i], this.attackObject2)) {
+            sprite[i].hp -= 5000
+          }
         }
       }
     }
@@ -6500,6 +6529,19 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
       this.bigThunderEnimation.display(this.attackObject2.x, this.attackObject2.y)
       graphicSystem.setAlpha(1)
     }
+  }
+}
+
+/** 2-5 전용 보스 (울트라 모드) */
+class IntruderEnemyJemuBossUltra extends IntruderEnemyJemuBoss {
+  constructor () {
+    super()
+    // 점수는 의도적으로 낮게 설정함
+    this.setEnemyByCpStat(15120, 0, 400) // 360% x 42s!!! (초당 360%dps를 42초동안 때려야한다!!!)
+    this.patternDelayList.ENERGY12 = 15
+    this.patternDelayList.ENERGYP3 = 9
+    this.patternDelayList.ENERGYRE = 9
+    this.patternDelayList.THUNDERLR = 20
   }
 }
 
@@ -7018,7 +7060,7 @@ class IntruderEnemyFlying2 extends IntruderEnemy {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.flying2)
-    this.setEnemyByCpStat(80, 6)
+    this.setEnemyByCpStat(40, 6)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderFlying2, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleGreenStroke, this.width, this.height, 2))
   }
 
@@ -15499,6 +15541,7 @@ dataExportEnemy.set(ID.enemy.donggramiEnemy.talkRuinR2_6, DonggramiEnemyTalkRuin
 
 // intruderEnemy / round 2-5 ~ 2-6, boss 2-4 ~ 2-5
 dataExportEnemy.set(ID.enemy.intruder.jemuBoss, IntruderEnemyJemuBoss)
+dataExportEnemy.set(ID.enemy.intruder.jemuBossUltra, IntruderEnemyJemuBossUltra)
 dataExportEnemy.set(ID.enemy.intruder.square, IntruderEnemySquare)
 dataExportEnemy.set(ID.enemy.intruder.metal, IntruderEnemyMetal)
 dataExportEnemy.set(ID.enemy.intruder.diacore, IntruderEnemyDiacore)
