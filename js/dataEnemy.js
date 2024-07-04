@@ -99,6 +99,67 @@ export class EnemyData extends FieldData {
 
     /** 데미지 sound (이 값이 있을경우, 적이 플레이어랑 충돌했을 때 다른 사운드를 재생할 수 있음.) */
     this.collisionSoundSrc = ''
+
+    /** 
+     * 아이템의 id 리스트, 해당 아이템을 가지고 있다면, 적을 죽였을 때 해당 아이템이 추가됨 
+     * 단, 아이템의 추가는 EnemyData에서 관리하지않고, fieldState에서 처리함
+     * @type {number[]} 
+     */ 
+    this.itemIdList = []
+
+    /** 
+     * 아이템의 개수 리스트, 해당 아이템을 가지고 있다면, 적을 죽였을 때 해당 아이템이 추가됨
+     * 단, 아이템의 추가는 EnemyData에서 관리하지않고, fieldState에서 처리함
+     * @type {number[]} 
+     */ 
+    this.itemCountList = []
+  }
+
+  /** 
+   * 적이 아이템을 가지도록 추가합니다. 참고: 아이템의 유효성 검사를 EnemyData에서 하지 않습니다.
+   * 
+   * 아이템이 추가될경우, 죽었는지 아닌지 판단하고, 삭제되었다면 아이템은 드랍되지 않습니다.
+   */
+  addItem (id = 0, count = 1) {
+    if (id === 0 || count <= 0) return // 아이템의 id가 0(아이템 없음)이거나 아이템의 개수가 없으면 무효
+
+    let index = this.itemIdList.indexOf(id) 
+    if (index === -1) { // 아이템의 인덱스가 없다면
+      this.itemIdList.push(id) // 새로 추가
+      this.itemCountList.push(count)
+    } else {
+      this.itemCountList[index] += count // 아니면 아이템의 개수를 증가
+    }
+  }
+
+  /** 적이 아이템을 가지고 있는것을 삭제하도록 추가합니다. */
+  removeItem (id = 0, count = 0) {
+    if (id === 0 || count <= 0) return // 아이템의 id가 0(아이템 없음)이거나 아이템의 개수가 없으면 무효
+
+    let index = this.itemIdList.indexOf(id)
+    if (index !== -1) { // 아이템의 인덱스가 있다면, 없다면 무효
+      let itemCount = this.itemCountList[index]
+      if (itemCount > count) { // 아이템의 개수가 삭제할 개수보다 많으면
+        this.itemCountList[index] -= count // 그만큼의 아이템을 삭제
+      } else { // 아이템이 삭제
+        this.itemIdList.splice(index, 1)
+        this.itemCountList.splice(index, 1)
+      }
+    }
+  }
+
+  /** 적이 아이템을 가지고 있는것을 전부 삭제합니다. */
+  removeItemAll () {
+    this.itemIdList = [] // 새 배열을 할당하여 기존 배열 제거
+    this.itemCountList = []  // 새 배열을 할당하여 기존 배열 제거
+  }
+
+  /** 적이 가지고 있는 아이템의 정보를 가져옵니다. */
+  getItem () {
+    return {
+      /** 아이템의 id */ id: this.itemIdList,
+      /** 아이템의 개수 */ count: this.itemCountList,
+    }
   }
 
   /**
@@ -539,7 +600,9 @@ export class EnemyData extends FieldData {
       collisionDelay: this.collisionDelay,
       outAreaDeleteDelay: this.outAreaDeleteDelay,
       isPossibleExit: this.isPossibleExit,
-      isExitToReset: this.isExitToReset
+      isExitToReset: this.isExitToReset,
+      itemIdList: this.itemIdList,
+      itemCountList: this.itemCountList,
     }
 
     return Object.assign(saveData, addData)

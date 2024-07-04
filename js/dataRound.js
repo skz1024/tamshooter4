@@ -1042,11 +1042,17 @@ class BaseField {
     }
   }
 
-  /** 아이템을 가진 적을 생성합니다. (해당 적은 아이템을 소유하고 있으며 죽인다면, 해당 아이템을 얻습니다.) */
-  static createEnemyInsertItem (enemyId = 0, itemId = 0, itemCount = 1, x = graphicSystem.CANVAS_WIDTH + 50, y = Math.random() * graphicSystem.CANVAS_HEIGHT) {
-    if (enemyId != 0 && itemId != 0) {
-      let enemy = fieldState.createEnemyObject(enemyId, x, y)
-      
+  /** 
+   * 아이템을 가진 적을 생성합니다. (해당 적은 아이템을 소유하고 있으며 죽인다면, 해당 아이템을 얻습니다.) 
+   * 
+   * 주의: 아이템이 잘못되었거나 아이템 개수가 잘못되었으면 적이 추가되지 않거나,
+   * 아이템을 가지지 못한 적이 생성될 수 있습니다. 또는 아이템 획득이 무효가 될 수 있습니다.
+   * 
+   * 아이템에 관한 검사는 아이템을 획득할 때 이루어지고, 이 시점에서는 아이템이 올바른지 검사하지는 않습니다.
+   */
+  static createEnemyInsertItem (enemyId = 0, itemId = [0], itemCount = [1], x = graphicSystem.CANVAS_WIDTH + 50, y = Math.random() * graphicSystem.CANVAS_HEIGHT) {
+    if (enemyId != 0 && itemId.length !== 0 && itemCount.length !== 0) {
+      fieldState.createEnemyObjectInsertItem(enemyId, itemId, itemCount, x, y)
     }
   }
 
@@ -1084,9 +1090,19 @@ class BaseField {
    * 플레이어에게 아이템을 추가합니다. 
    * @param {number} id 아이템의 id
    * @param {number} [count=1] 아이템의 개수
+   * @param {boolean} [isEffect=false] 이펙트 있음?
+   * @param {number | undefined} [x=0] 생성 위치에 대한 x좌표 (단, isEffect가 true여야만 적용됨)
+   * @param {number | undefined} [y=0] 생성 위치에 대한 y좌표 (단, isEffect가 true여야만 적용됨)
    */
-  static addPlayerItem (id, count = 1) {
+  static addPlayerItem (id, count = 1, isEffect = false, x = undefined, y = undefined) {
     fieldSystem.requestAddItem(id, count)
+    if (isEffect) {
+      let effect = fieldState.createEffectItem(id) // 이펙트 추가 (이펙트가 있다면)
+      if (effect != null) { // 이펙트가 null이 아니고, x와 y좌표가 존재할때만 해당 좌표 입력
+        if (x) effect.x = x
+        if (y) effect.y = y
+      }
+    }
   }
 
   /** 플레이어에게 아이템을 삭제합니다. 
@@ -4202,6 +4218,11 @@ class Round2_1 extends RoundData {
       this.field.createEnemy(ID.enemy.donggramiEnemy.miniRed)
       this.field.createEnemy(ID.enemy.donggramiEnemy.miniPurple)
     }
+
+    // 아이템을 가진 적 추가 (동그라미 티켓)
+    if (this.timeCheckFrame(28)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.miniBlue, [ID.item.donggramiTicket], [1])
+    }
   }
 
   roundPhase02 () {
@@ -4220,8 +4241,13 @@ class Round2_1 extends RoundData {
     }
 
     // 이모지 동그라미 dps 60%
-    if (this.timeCheckInterval(50, 55, 20)) {
+    if (this.timeCheckInterval(50, 56, 20)) {
       this.field.createEnemy(ID.enemy.donggramiEnemy.emoji)
+    }
+
+    // 아이템을 가진 적 추가 (동그라미 티켓)
+    if (this.timeCheckFrame(58)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.emoji, [ID.item.donggramiTicket], [1])
     }
   }
 
@@ -4243,6 +4269,11 @@ class Round2_1 extends RoundData {
         case 1: this.field.createEnemy(ID.enemy.donggramiEnemy.questionMark); break
         case 2: this.field.createEnemy(ID.enemy.donggramiEnemy.emoji); break
       }
+    }
+
+    // 아이템을 가진 적 추가 (동그라미 티켓)
+    if (this.timeCheckFrame(88)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.mini, [ID.item.donggramiTicket], [1])
     }
   }
 
@@ -4269,6 +4300,11 @@ class Round2_1 extends RoundData {
     if (this.timeCheckInterval(110, 117, 6)) {
       this.field.createEnemy(ID.enemy.donggramiEnemy.mini)
     }
+
+    // 아이템을 가진 적 추가 (동그라미 티켓)
+    if (this.timeCheckFrame(118)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.mini, [ID.item.donggramiTicket], [1])
+    }
   }
 
   roundPhase05 () {
@@ -4289,6 +4325,11 @@ class Round2_1 extends RoundData {
       }
     }
 
+    // 아이템을 가진 적 추가 (동그라미 티켓)
+    if (this.timeCheckFrame(this.BOSSTIME - 7)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.mini, [ID.item.donggramiTicket], [1])
+    }
+
     this.timePauseWithEnemyCount(this.BOSSTIME - 2)
 
     // 145초 보스전
@@ -4301,6 +4342,7 @@ class Round2_1 extends RoundData {
 
     if (this.timeCheckFrame(this.BOSSTIME + 1)) {
       this.sound.musicFadeOut(120)
+      this.field.addPlayerItem(ID.item.donggramiTicket, 1, false) // 이펙트 없이 아이템 추가
     }
   }
 
@@ -4440,6 +4482,11 @@ class Round2_2 extends RoundData {
     if (this.timeCheckInterval(20, 60, 15) && this.field.getEnemyCount() < 40) {
       this.field.createEnemy(ID.enemy.donggramiEnemy.mini)
     }
+
+    // 아이템을 가진 적 추가 (동그라미 티켓)
+    if (this.timeCheckFrame(32)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.mini, [ID.item.donggramiTicket], [1])
+    }
   }
 
   roundPhase02 () {
@@ -4451,6 +4498,11 @@ class Round2_2 extends RoundData {
       this.field.createEnemy(ID.enemy.donggramiEnemy.miniBlue)
       this.field.createEnemy(ID.enemy.donggramiEnemy.miniGreen)
       this.field.createEnemy(ID.enemy.donggramiEnemy.mini)
+    }
+
+    // 아이템을 가진 적 추가 (동그라미 티켓)
+    if (this.timeCheckFrame(64)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.mini, [ID.item.donggramiTicket], [1])
     }
   }
 
@@ -4486,6 +4538,11 @@ class Round2_2 extends RoundData {
     } else if (this.timeCheckInterval(101, 107, 20)) {
       this.createRandomSpecialDonggrami(1)
     }
+
+    // 아이템을 가진 적 추가 (동그라미 티켓)
+    if (this.timeCheckFrame(92)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.mini, [ID.item.donggramiTicket], [1])
+    }
   }
 
   roundPhase04 () {
@@ -4503,6 +4560,11 @@ class Round2_2 extends RoundData {
       this.field.createEnemy(ID.enemy.donggramiEnemy.miniArchomatic)
       this.field.createEnemy(ID.enemy.donggramiEnemy.mini)
     }
+
+    // 아이템을 가진 적 추가 (동그라미 티켓)
+    if (this.timeCheckFrame(122)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.mini, [ID.item.donggramiTicket], [1])
+    }
   }
 
   roundPhase05 () {
@@ -4518,6 +4580,11 @@ class Round2_2 extends RoundData {
     } else if (this.timeCheckInterval(151, 160, 10)) {
       this.createRandomSpecialDonggrami()
     }
+
+    // 아이템을 가진 적 추가 (동그라미 티켓)
+    if (this.timeCheckFrame(142)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.mini, [ID.item.donggramiTicket], [1])
+    }
   }
 
   roundPhase06 () {
@@ -4529,6 +4596,11 @@ class Round2_2 extends RoundData {
 
     if (this.timeCheckFrame(167, 12)) {
       this.sound.musicFadeOut(180)
+    }
+
+    // 아이템을 가진 적 추가 (동그라미 티켓)
+    if (this.timeCheckFrame(162)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.mini, [ID.item.donggramiTicket], [1])
     }
 
     // 적 남아있으면 시간 멈춤
@@ -5051,6 +5123,11 @@ class Round2_3 extends RoundData {
     // console.log(layer[0].alpha, layer[1].alpha, layer[2].alpha)
   }
 
+  /** 플레이어에게 동그라미 티켓 2장을 추가합니다. */
+  addPlayerDonggramiTicket () {
+    this.field.addPlayerItem(ID.item.donggramiTicket, 2, true)
+  }
+
   /** 
    * 현재 구역의 시간이 구역 진행 시간 범위 내에 있는지 확인합니다.
    * 
@@ -5427,6 +5504,7 @@ class Round2_3 extends RoundData {
     this.setResult(result)
     this.sound.musicStop()
     this.playerMoveEnable() // 플레이어 이동 가능하도록 강제로 처리
+    this.addPlayerDonggramiTicket() // 동그라미 티켓 2장 추가
 
     // 결과에 따른 점수 처리
     const bonusDamage = (100 - this.areaStat.enemyHpPercent) * 10 // 적 HP1감소당 10점
@@ -5645,6 +5723,7 @@ class Round2_3 extends RoundData {
       this.setResult(this.resultList.COMPLETE)
       this.playerMoveEnable()
       this.time.setCurrentTime(pTime + cTime.COMPLETE + 1)
+      this.addPlayerDonggramiTicket() // 동그라미 티켓 2장 추가
 
       // 점수 처리
       let bonusFriend = this.scoreList.courseBSub - (this.areaStat.areaBcollisionCount * 20)
@@ -5769,6 +5848,7 @@ class Round2_3 extends RoundData {
     this.setScoreResultDisplay(['field ', 'bullet'], [this.scoreList.courseC, bonusBulletScore])
     this.setResult(result)
     this.field.addScore(totalScore)
+    this.addPlayerDonggramiTicket() // 동그라미 티켓 2장 추가
 
     // 중복 처리 방지를 위한 시간 변경
     this.time.setCurrentTime(pTime + cTime.COMPLETE + 1)
@@ -5990,6 +6070,7 @@ class Round2_3 extends RoundData {
     this.sound.musicStop()
     this.playerMoveEnable() // 플레이어 이동 가능하도록 강제로 처리
     fieldState.allEnemyDie() // 모든 적 제거
+    this.addPlayerDonggramiTicket() // 동그라미 티켓 2장 추가
 
     let bonusWin = result === this.resultList.WIN ? 800 : 100
     let bonusHp = this.areaStat.playerHpPercent * 10
@@ -6123,6 +6204,7 @@ class Round2_3 extends RoundData {
     let totalScore = this.scoreList.courseA + bonusWin + bonusPower
     this.setScoreResultDisplay(['field ', 'battle', 'power '], [this.scoreList.courseA, bonusWin, bonusPower])
     this.field.addScore(totalScore)
+    this.addPlayerDonggramiTicket()
     
     this.time.setCurrentTime(pTime + cTime.COMPLETE + 1)
     fieldState.allSpriteDelete()
@@ -6256,6 +6338,7 @@ class Round2_3 extends RoundData {
     let totalScore = this.scoreList.courseB + bonusWarp + bonusFriend
     this.setScoreResultDisplay(['field ', 'warp  ', 'friend'], [this.scoreList.courseB, bonusWarp, bonusFriend])
     this.field.addScore(totalScore)
+    this.addPlayerDonggramiTicket()
 
     this.field.allSpriteDelete() // 워프 스프라이트 삭제
   }
@@ -6376,6 +6459,7 @@ class Round2_3 extends RoundData {
     let totalScore = this.scoreList.courseB + bonusFriend + bonusObject
     this.setScoreResultDisplay(['field ', 'friend', 'object'], [this.scoreList.courseB, bonusFriend, bonusObject])
     this.field.addScore(totalScore)
+    this.addPlayerDonggramiTicket()
   }
 
   coursePhaseC2 () { // 스퀘어 모으기
@@ -6425,6 +6509,7 @@ class Round2_3 extends RoundData {
     let totalScore = this.scoreList.courseC + bonusSquare
     this.setScoreResultDisplay(['field ', 'square'], [this.scoreList.courseC, bonusSquare])
     this.field.addScore(totalScore)
+    this.addPlayerDonggramiTicket()
 
     this.time.setCurrentTime(pTime + cTime.COMPLETE + 1)
   }
@@ -6616,6 +6701,7 @@ class Round2_3 extends RoundData {
     let totalScore = this.scoreList.courseC + bonusGoal
     this.setScoreResultDisplay(['field ', 'goal  '], [this.scoreList.courseC, bonusGoal])
     this.field.addScore(totalScore)
+    this.addPlayerDonggramiTicket()
 
     fieldState.allSpriteDelete()
     this.time.setCurrentTime(pTime + cTime.COMPLETE + 1)
@@ -6871,7 +6957,7 @@ class Round2_3 extends RoundData {
     // 구성 (아무렇게나 막 배치한것임. - 랜덤은 아님)
     let arrayX = [100, 20, 80, 140, 160, 160, 210, 220, 280, 330, // typaA-1
       390, 450, 500, 550, 600, 620, 690, 720, // typeA-2
-      200, 250, 300, 300, 350, 410, 450, 480, 540, 540] // typeB-1
+      200, 250, 300, 300, 300, 350, 410, 450, 480, 540, 550] // typeB-1
     let arrayY = [100, 220, 240, 270, 300, 350, 400, 460, 480, 440, // typeA-1
       420, 400, 380, 360, 340, 310, 250, 200, // typeA-2
       130, 150, 190, 260, 260, 290, 270, 230, 210, 160, 110] // typeB-1
@@ -7497,6 +7583,11 @@ class Round2_4 extends RoundData {
       this.field.createEnemy(ID.enemy.donggramiEnemy.party)
       this.field.createEnemy(ID.enemy.donggramiEnemy.talkParty)
     }
+
+    // 아이템을 가진 적 추가 (동그라미 티켓)
+    if (this.timeCheckFrame(pTime + 10)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.party, [ID.item.donggramiTicket], [1])
+    }
   }
 
   roundPhase03 () {
@@ -7504,6 +7595,12 @@ class Round2_4 extends RoundData {
       this.roundPhase03Outside()
     } else {
       this.roundPhase03Inside()
+    }
+
+    // 아이템을 가진 적 2번 생성
+    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+    if (this.timeCheckFrame(pTime + 2) || this.timeCheckFrame(pTime + 28)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.party, [ID.item.donggramiTicket], [1])
     }
   }
 
@@ -7659,6 +7756,11 @@ class Round2_4 extends RoundData {
     if (this.timeCheckFrame(pTime + 37)) {
       this.sound.musicFadeOut(1)
     }
+
+    // 아이템을 가진 적 2번 생성 (도망쳐 이벤트 때문에 기준시간 (30초단위)보다 조금 더 빨리 생성됨)
+    if (this.timeCheckFrame(pTime + 1) || this.timeCheckFrame(pTime + 22)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.party, [ID.item.donggramiTicket], [1])
+    }
   }
 
   roundPhase05 () {
@@ -7753,6 +7855,12 @@ class Round2_4 extends RoundData {
       } else if (this.timeCheckFrame(pTime + 24)) {
         this.spriteElevator.setDoorOpen(false)
       }
+    }
+
+    // 아이템을 임의의 시점에 즉시 추가하고, 이를 표시하지 않음
+    // 이 구간에서 총 2장을 획득함
+    if (this.timeCheckFrame(pTime + 4) || this.timeCheckFrame(pTime + 25)) {
+      this.field.addPlayerItem(ID.item.donggramiTicket, 1, true)
     }
   }
 
@@ -8141,11 +8249,65 @@ class Round2_5 extends RoundData {
     this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
 
     this.customRoomBreakEffect = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareRed, 400, 400, 2, 3)
+
+    /** 플레이어가 아무런 조작도 하지 않은 대략적인 시간 (이 값은 저장되지 않음) */
+    this.notPlayerEnableFrame = 0
+
+    /** 현재 이스터 에그 모드가 적용중인지에 대한 값 (이 값은 저장되지 않음) */
+    this.isEnableEasterEggmode = false
   }
 
   process () {
     super.process()
     this.processSprite()
+    this.processPlayerEnable()
+    this.processPlayerEnableCreateEasterEgg()
+  }
+
+  processPlayerEnable () {
+    // 만약 플레이어가 아무런 키 조작을 하지 않는다면 (다만, 화살표키와 스킬 사용만 판단함)
+    // 플레이어가 이동하지 않은 프레임을 증가시킴
+    // 단, 페이즈 1부터 적용함
+    let currentPhase = this.phase.getCurrentPhase()
+    if (currentPhase < 1) return
+
+    const buttonLeft = game.control.getButtonDown(game.control.buttonIndex.LEFT)
+    const buttonRight = game.control.getButtonDown(game.control.buttonIndex.RIGHT)
+    const buttonUp = game.control.getButtonDown(game.control.buttonIndex.UP)
+    const buttonDown = game.control.getButtonDown(game.control.buttonIndex.DOWN)
+    const buttonL1 = game.control.getButtonDown(game.control.buttonIndex.L1)
+    const buttonL2 = game.control.getButtonDown(game.control.buttonIndex.L2)
+    const buttonR1 = game.control.getButtonDown(game.control.buttonIndex.R1)
+    const buttonR2 = game.control.getButtonDown(game.control.buttonIndex.R2)
+
+    // 측정되는 키 중, 단 1개만 누를경우, 플레이어 enableFrame을
+    // 매 프레임당 120씩 감소시킴
+    if (buttonLeft || buttonRight || buttonUp || buttonDown 
+      || buttonL1 || buttonL2 || buttonR1 || buttonR2) {
+      this.notPlayerEnableFrame -= 120
+      if (this.notPlayerEnableFrame < 0) {
+        this.notPlayerEnableFrame = 0
+      }
+    } else {
+      // 아무것도 안한다면, 해당 프레임 증가
+      this.notPlayerEnableFrame++
+    }
+  }
+
+  /** 만약, 페이즈 1 이후 플레이어가 20초동안 아무런 움직임이 없다면 
+   * 이스터 에그 동그라미를 생성한 후, 해당 이 프레임을 제거시킴
+  */
+  processPlayerEnableCreateEasterEgg () {
+    // 이미 이스터에그가 적용중이면, 함수 취소
+    if (this.isEnableEasterEggmode) return
+
+    if (this.notPlayerEnableFrame > 1200) {
+      this.notPlayerEnableFrame = 0
+      this.isEnableEasterEggmode = true
+      // 이스터에그용 동그라미 생성
+      let donggrami = new this.SpriteDonggramiEasterEgg()
+      this.spriteDonggrami.push(donggrami)
+    }
   }
 
   processSaveString () {
@@ -8343,6 +8505,10 @@ class Round2_5 extends RoundData {
     
     this.roundPhase01_donggrami() // 동그라미 생성
     this.timePauseWithEnemyCount(pEnd - 1) // 적이 다 죽어야 다음페이즈로 진행
+
+    if (this.timeCheckFrame(pTime + 15) || this.timeCheckFrame(pTime + 35)) {
+      this.field.createEnemyInsertItem(ID.enemy.intruder.metal, [ID.item.donggramiTicket], [1])
+    }
   }
 
   roundPhase01_1 () {
@@ -8433,6 +8599,10 @@ class Round2_5 extends RoundData {
       this.createSpriteDonggrami()
     }
 
+    if (this.timeCheckFrame(pTime + 5)) {
+      this.field.createEnemyInsertItem(ID.enemy.intruder.hanoi, [ID.item.donggramiTicket], [1])
+    }
+
     this.timePauseWithEnemyCount(pTime + 19)
   }
 
@@ -8450,6 +8620,12 @@ class Round2_5 extends RoundData {
     // donggrami (1 second per 2)
     if (this.timeCheckInterval(pTime + 0, pTime + 49, 30) && this.getDonggramiCount() < 20) {
       this.createSpriteDonggrami()
+    }
+
+    if (this.timeCheckFrame(pTime + 10)) {
+      this.field.createEnemyInsertItem(ID.enemy.intruder.metal, [ID.item.donggramiTicket], [1])
+    } else if (this.timeCheckFrame(pTime + 40)) {
+      this.field.createEnemyInsertItem(ID.enemy.intruder.hanoi, [ID.item.donggramiTicket], [1])
     }
 
     this.timePauseWithEnemyCount(pTime + 49)
@@ -8582,6 +8758,10 @@ class Round2_5 extends RoundData {
       this.field.createEnemy(ID.enemy.intruder.momi)
     }
 
+    if (this.timeCheckFrame(pTime + 2)) {
+      this.field.createEnemyInsertItem(ID.enemy.intruder.flyingRocket, [ID.item.donggramiTicket], [1])
+    }
+
     if (this.timeCheckInterval(pTime + 0, pTime + 10, 30) && this.getDonggramiCount() < 10) {
       this.createSpriteDonggrami()
     }
@@ -8590,12 +8770,22 @@ class Round2_5 extends RoundData {
   }
   
   roundPhase06 () {
+    // (이 페이즈의 목적은 동그라미가 승리 대사를 하도록 만들기 위한것)
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+
     if (this.timeCheckFrame(pTime)) {
       this.sound.musicFadeOut(1)
+      // 클리어 구간에서 아이템을 추가함
+      // 다만, 동그라미가 없어도 아이템은 추가됨 (동그라미가 있으면 무작위의 동그라미가 있는 위치에서 아이템이 생성됨)
+      let random = Math.floor(Math.random() * this.spriteDonggrami.length)
+      let donggrami = this.spriteDonggrami[random]
+      if (donggrami != null) {
+        this.field.addPlayerItem(ID.item.donggramiTicket, 1, true, donggrami.x, donggrami.y)
+      } else {
+        this.field.addPlayerItem(ID.item.donggramiTicket, 1, true)
+      }
     }
 
-    // 비어있는 페이즈 (이 페이즈의 목적은 동그라미가 승리 대사를 하도록 만들기 위한것)
   }
 
   display () {
@@ -8853,11 +9043,130 @@ class Round2_5 extends RoundData {
     constructor () {
       super()
       this.talkType = this.TALKTYPE_EASTEREGG
+      this.hp = this.BASEDPS * 1000 // 안죽게 하기 위한 과도한 체력
+
+      this.STATE_QUSESTION = 'q'
+      this.STATE_AUTOMOVE = 'auto'
+      this.STATE_EXCLMATION = '!'
+      this.STATE_NORMAL = 'normal'
+      this.state = this.STATE_QUSESTION
+
+      this.stateDelay = new DelayData(180)
+      this.finishX = 0
+      this.finishY = 0
+
+      this.exclamationMark = EnimationData.createEnimation(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.exclamationMark, 4, -1)
+      this.exclamationDelay = new DelayData(120)
+
+      this.talkState = this.TALKSTATE_TALK // 강제 대화 상태
+    }
+
+    processEnimation () {
+      super.processEnimation()
+      if (this.state === this.STATE_EXCLMATION) {
+        this.exclamationMark.process()
+      } else {
+        this.exclamationMark.reset()
+      }
+    }
+
+    processMove () {
+      let player = BaseField.getPlayerObject()
+      if (this.state === this.STATE_QUSESTION) {
+        let speedX = (player.x - this.x) / 30
+        let speedY = (player.y - this.y) / 30
+        if (Math.abs(speedX) > 0.1 && Math.abs(speedY) > 0.1) {
+          this.setMoveSpeed(speedX, speedY)
+          this.moveDelay.countReset() // moveDelay로 인한 상태 변화 금지 및 다른 행동 제거
+          super.processMove()
+        }
+
+        if (this.stateDelay.check()) {
+          this.state = this.STATE_AUTOMOVE
+          this.moveDelay.setDelay(60)
+        }
+      }
+
+      this.#processMoveIsPlayerMoved()
+      if (this.state === this.STATE_EXCLMATION) {
+        // 느낌표 상태일경우, 일정시간 후 일반상태로 돌아감
+        // 일반상태에서는 일반적인 동그라미랑 같은 행동을 함
+        if (this.stateDelay.check()) {
+          this.state = this.STATE_NORMAL
+        }
+      } else if (this.state === this.STATE_NORMAL) {
+        super.processMove()
+      } else if (this.state === this.STATE_AUTOMOVE) {
+        // 플레이어 강제 조종 (?!)
+        player.x = this.x
+        player.y = this.y - player.height
+        let speedX = (this.finishX - this.x) / (this.moveDelay.delay - this.moveDelay.count)
+        let speedY = (this.finishY - this.y) / (this.moveDelay.delay - this.moveDelay.count)
+        this.setMoveSpeed(speedX, speedY)
+        super.processMove()
+        if (this.moveDelay.count === 0) {
+          this.finishX = Math.random() * 100
+          this.finishY = Math.random() * 500
+        } 
+      }
+    }
+
+    getTargetAndSetSpeed() {
+      // 일반상태에서만 일반적인 행동을 함
+      if (this.state === this.STATE_NORMAL) {
+        super.getTargetAndSetSpeed()
+      }
+    }
+
+    processTalk () {
+      if (this.state === this.STATE_QUSESTION || this.state === this.STATE_AUTOMOVE) {
+        this.setTalkIndex()
+      } else {
+        this.talkState = '' // 대화 상태 바로 제거
+      }
+    }
+
+    #processMoveIsPlayerMoved () {
+      if (this.state !== this.STATE_AUTOMOVE) return
+
+      // 만약 플레이어가 어떠한 조작이라도 시도한다면
+      // 동그라미의 상태는 강제로 !상태로 변경되고
+      // 이 동그라미는, 일반 동그라미가 했던것처럼 행동하게 됨
+      const buttonLeft = game.control.getButtonDown(game.control.buttonIndex.LEFT)
+      const buttonRight = game.control.getButtonDown(game.control.buttonIndex.RIGHT)
+      const buttonUp = game.control.getButtonDown(game.control.buttonIndex.UP)
+      const buttonDown = game.control.getButtonDown(game.control.buttonIndex.DOWN)
+      const buttonL1 = game.control.getButtonDown(game.control.buttonIndex.L1)
+      const buttonL2 = game.control.getButtonDown(game.control.buttonIndex.L2)
+      const buttonR1 = game.control.getButtonDown(game.control.buttonIndex.R1)
+      const buttonR2 = game.control.getButtonDown(game.control.buttonIndex.R2)
+      if (buttonLeft || buttonRight || buttonUp || buttonDown 
+        || buttonL1 || buttonL2 || buttonR1 || buttonR2) {
+        this.state = this.STATE_EXCLMATION
+        soundSystem.play(soundSrc.donggrami.exclamationMark)
+      }
     }
 
     setTalkIndex () {
+      const INDEX_X = 6
       const INDEX_TALKEGG_Y = 18
       const INDEX_TALKEGG_FUNNY_Y = 19
+
+      if (this.state === this.STATE_QUSESTION) {
+        this.talkIndex.x = INDEX_X
+        this.talkIndex.y = INDEX_TALKEGG_Y
+      } else if (this.state === this.STATE_AUTOMOVE) {
+        this.talkIndex.x = INDEX_X
+        this.talkIndex.y = INDEX_TALKEGG_FUNNY_Y
+      }
+    }
+
+    display () {
+      super.display()
+  
+      if (this.state === this.STATE_EXCLMATION) {
+        this.exclamationMark.display(this.x, this.y - this.exclamationMark.outputHeight)
+      }
     }
   }
 
@@ -9092,6 +9401,10 @@ class Round2_6 extends RoundData {
       this.field.createEnemy(ID.enemy.donggramiEnemy.bounce)
       this.field.createEnemy(ID.enemy.donggramiEnemy.speed)
     }
+
+    if (this.timeCheckFrame(pTime + 5)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.party, [ID.item.donggramiTicket], [1])
+    }
   }
 
   roundPhase02 () {
@@ -9106,6 +9419,10 @@ class Round2_6 extends RoundData {
     if (this.timeCheckInterval(pTime + 1, pTime + 24, 12)) {
       this.field.createEnemy(ID.enemy.donggramiEnemy.talkRuinR2_6)
     }
+
+    if (this.timeCheckFrame(pTime + 5)) {
+      this.field.createEnemyInsertItem(ID.enemy.donggramiEnemy.talkRuinR2_6, [ID.item.donggramiTicket], [1])
+    } 
   }
 
   roundPhase03 () {
@@ -9127,6 +9444,10 @@ class Round2_6 extends RoundData {
     if (this.timeCheckFrame(pTime + 5) || this.timeCheckFrame(pTime + 10) || this.timeCheckFrame(pTime + 15)) {
       this.field.createEnemy(ID.enemy.intruder.hanoi)
     }
+
+    if (this.timeCheckFrame(pTime + 5)) {
+      this.field.createEnemyInsertItem(ID.enemy.intruder.flying1, [ID.item.donggramiTicket], [1])
+    }
   }
 
   roundPhase04 () {
@@ -9144,6 +9465,12 @@ class Round2_6 extends RoundData {
       this.field.createEnemy(ID.enemy.intruder.lever)
     } else if (this.timeCheckInterval(pTime + 18, pTime + 27, 20)) {
       this.field.createEnemy(ID.enemy.intruder.towerLaserMini)
+    }
+
+    if (this.timeCheckFrame(pTime + 2)) {
+      this.field.createEnemyInsertItem(ID.enemy.intruder.square, [ID.item.donggramiTicket], [1])
+    } else if (this.timeCheckFrame(pTime + 25)) {
+      this.field.createEnemyInsertItem(ID.enemy.intruder.towerLaserMini, [ID.item.donggramiTicket], [1])
     }
 
     this.timePauseWithEnemyCount(pTime + 28)

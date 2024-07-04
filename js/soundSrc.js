@@ -20,6 +20,7 @@ export class soundSrc {
     systemEquip: './sound/systemEquip.ogg',
     systemEquipmentUpgrade: './sound/systemEquipmentUpgrade.ogg',
     systemItemDelete: './sound/systemItemDelete.ogg',
+    systemItemGet: './sound/systemItemGet.ogg',
   }
 
   static skill = {

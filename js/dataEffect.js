@@ -79,6 +79,8 @@ import { ImageDataObject } from "./imageSrc.js"
   }
 
   process () {
+    super.process()
+
     // beforeDelay가 남아있으면, 오브젝트는 표시되지만, 에니메이션은 재생되지 않습니다.
     // 그리고 로직 처리도 되지 않고 함수가 종료됩니다.
     if (this.beforeAnimationDelay >= 1) {
@@ -91,8 +93,6 @@ import { ImageDataObject } from "./imageSrc.js"
     if (this.elapsedFrame >= 600) {
       this.isDeleted = true
     }
-
-    this.processEnimation()
   }
 
   processEnimation () {

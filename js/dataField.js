@@ -1243,8 +1243,10 @@ export class FieldData {
             this[key].setDelay(saveData[key].delay)
             this[key].setCount(saveData[key].count)
           }
+        } else {
+          // 직접적인 데이터 추가 (배열 등등...)
+          this[key] = saveData[key]
         }
-
       } else {
         // 각 키가 일반적인 변수이면, 해당 값을 그대로 대입합니다.
         this[key] = saveData[key]

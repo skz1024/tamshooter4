@@ -9,7 +9,7 @@ import { ID } from './dataId.js'
 import { PlayerSkillData, PlayerWeaponData } from './dataPlayer.js'
 import { RoundData } from './dataRound.js'
 import { WeaponData } from './dataWeapon.js'
-import { imageDataInfo, imageSrc } from './imageSrc.js'
+import { imageDataInfo, ImageDataObject, imageSrc } from './imageSrc.js'
 import { soundSrc } from './soundSrc.js'
 import { gameVar, userSystem, game, gameFunction } from './game.js'
 import { dataExportStatItem } from './dataStat.js'
@@ -897,6 +897,65 @@ class PlayerObject extends FieldData {
   }
 }
 
+/** 
+ * 필드에서 아이템이 드랍될 때, 사용되는 이펙트
+ * 
+ * 주의: 아이템은 이펙트와 상관없이 획득합니다. 
+ * (아이템 이펙트가 플레이어에 닿지 않아도 해당 아이템은 획득한것으로 처리됩니다.)
+ */
+export class ItemDropEffect extends CustomEditEffect {
+  constructor () {
+    super()
+    this.iconNumber = 0
+    this.finishX = 0
+    this.finishY = 0
+  }
+
+  /** 해당 아이템의 id를 설정 */
+  setItemId (itemId = 0) {
+    if (itemId === 0) return
+    this.id = itemId
+
+    let data = dataExportStatItem.get(itemId)
+    if (data == null) return
+
+    let iconNumber = data.iconNumber
+    if (iconNumber === -1) return
+
+    let x = iconNumber % 10 
+    let y = Math.floor(iconNumber / 10)
+    let width = imageDataInfo.system.itemIcon.width
+    let height = imageDataInfo.system.itemIcon.height
+    let sectionWidth = imageDataInfo.system.itemIconSection.width
+    let sectionHeight = imageDataInfo.system.itemIconSection.height
+    let imgD = new ImageDataObject(x * sectionWidth, y * sectionHeight, width, height)
+    this.setAutoImageData(imageSrc.system.itemIcon, imgD)
+  }
+
+  processMove () {
+    const MINFRAME = 20 // 20프레임동안 아이템 등장 후 이동 없음
+    const DISPLAYFRAME = 60 // 그리고 60프레임동안 출력됨
+    if (this.elapsedFrame < MINFRAME) return
+
+    // 진행된 시간에 따라 속도 가속
+    let leftFrame = DISPLAYFRAME - this.elapsedFrame
+    if (leftFrame <= 0) leftFrame = 1
+
+    let player = fieldState.getPlayerObject()
+    let speedX = (player.centerX - this.centerX) / leftFrame
+    let speedY = (player.centerY - this.centerY) / leftFrame
+    this.setMoveSpeed(speedX, speedY)
+
+    super.processMove()
+
+    // 아이템은 충돌검사를 하지 않고, 생성된지 40프레임이 지나면 삭제됨
+    if (this.elapsedFrame >= DISPLAYFRAME) {
+      this.isDeleted = true
+      game.sound.play(soundSrc.system.systemItemGet)
+    }
+  }
+}
+
 /**
  * 필드 스테이트 (필드의 상태를 관리하는 static 클래스 - 공용, 인스턴스 없음)
  */
@@ -1066,6 +1125,26 @@ export class fieldState {
   }
 
   /**
+   * 아이템을 가진 적 객체를 생성합니다.
+   * @param {number} typeId 타입의 id
+   * @param {number[]} itemId 아이템의 id
+   * @param {number[]} count 아이템의 개수
+   * @param {number} x x좌표
+   * @param {number} y y좌표
+   */
+  static createEnemyObjectInsertItem (typeId, itemId = [], count = [1], x = 0, y = 0) {
+    const createEnemy = this.createEnemyObject(typeId, x, y) // 적은 이 시점에서 추가됨
+    if (createEnemy == null) return
+
+    // 그리고 그 적의 아이템 추가
+    for (let i = 0; i < itemId.length || i < count.length; i++) {
+      createEnemy.addItem(itemId[i], count[i])
+    }
+
+    return createEnemy
+  }
+
+  /**
    * 해당 함수는 createEnemyObject랑 똑같은 기능을 수행하기 때문에 제외되었습니다.
    * 
    * 더이상 사용하지 마세요.
@@ -1131,6 +1210,21 @@ export class fieldState {
     customEffectObject.setPosition(x, y)
     this.effectObject.push(customEffectObject)
     return customEffectObject
+  }
+
+  /** 아이템 이펙트를 추가합니다. (라운드에서 아이템을 추가할 때 사용) */
+  static createEffectItem (id = 0) {
+    if (id === 0) return
+
+    // 이펙트 추가
+    let itemEffect = new ItemDropEffect()
+    itemEffect.setItemId(id)
+
+    // 아이템 이펙트가 중앙에서 출력되도록 처리
+    const centerX = game.graphic.CANVAS_WIDTH_HALF - (itemEffect.width / 2)
+    const centerY = game.graphic.CANVAS_HEIGHT_HALF - (itemEffect.height / 2)
+    let inputData = fieldState.createEffectObject(itemEffect, centerX, centerY)
+    return inputData
   }
 
   static damageObjectNumber = 0
@@ -1250,6 +1344,12 @@ export class fieldState {
     for (let i = 0; i < this.enemyObject.length; i++) {
       const currentObject = this.enemyObject[i]
       currentObject.process()
+
+      if (currentObject.isDied) {
+        // 아이템은 죽는 순간 지급되며, 그 즉시 적이 가지고 있는 아이템은 삭제됩니다.
+        // 따라서 중복으로 아이템을 획득할 수 없습니다.
+        this.#processEnemyObjectItemCheck(currentObject)
+      }
     }
     
     // 조건에 따른 적 삭제
@@ -1257,9 +1357,34 @@ export class fieldState {
     for (let i = this.enemyObject.length - 1; i >= 0; i--) {
       const currentObject = this.enemyObject[i]
       if (currentObject.isDeleted) {
-        this.enemyObject.splice(i, 1)
+        this.enemyObject.splice(i, 1) // 적 삭제
       }
     }
+  }
+
+  /** 
+   * 적이 아이템을 가지고 있을 때, 아이템을 플레이어에게 추가
+   * 
+   * 아이템이 추가된 그 즉시, 적이 가지고 있는 아이템은 즉시 삭제되므로
+   * 더이상 아이템이 중복적으로 추가되지 않습니다.
+   * @param {EnemyData} targetEnemy
+  */
+  static #processEnemyObjectItemCheck (targetEnemy) {
+    // 만약 아이템이 있다면 그 아이템을 추가함
+    let item = targetEnemy.getItem()
+    if (item.id.length === 0) return
+
+    if (item.id.length >= 1) {
+      for (let j = 0; j < item.id.length; j++) {
+        fieldSystem.requestAddItem(item.id[j], item.count[j]) // 필드시스템에 아이템 추가
+        let newEffect = new ItemDropEffect() // 이펙트 생성
+        newEffect.setItemId(item.id[j])
+        fieldState.createEffectObject(newEffect, targetEnemy.x, targetEnemy.y) // 이펙트 추가
+      }
+    }
+
+    // 남은 아이템 전부 제거 (드랍이 완료되었으므로)
+    targetEnemy.removeItemAll()
   }
 
   static processDamageObject () {
