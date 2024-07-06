@@ -172,7 +172,7 @@ class PlayerObject extends FieldData {
     this.damageEnimationCount = 0
     this.levelupEnimationCount = 0
 
-    const getData = userSystem.getPlayerObjectData()
+    const getData = userSystem.getPlayerObjectStat()
     this.currentLevel = getData.lv
     this.attack = getData.attack
     this.setPlayerAttack(this.attack)
@@ -461,8 +461,8 @@ class PlayerObject extends FieldData {
 
   /** 플레이어가 레벨업을 했는지 확인 */
   processLevelupCheck () {
-    if (this.currentLevel != userSystem.getPlayerObjectData().lv) {
-      this.currentLevel = userSystem.getPlayerObjectData().lv
+    if (this.currentLevel != userSystem.getPlayerObjectStat().lv) {
+      this.currentLevel = userSystem.getPlayerObjectStat().lv
       this.levelupEnimationCount = 120
     }
 

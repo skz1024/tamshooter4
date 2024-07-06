@@ -20,8 +20,8 @@ export class StatUser {
   /** 공격력 보너스 테이블 */
   static attackLevelTable = [40000, // lv 0
     40000, 41000, 42000, 43000, 44000, 45000, 46200, 47400, 48600, 50000, // lv 1 ~ 10 (40000 ~ 50000)
-    52500, 55000, 57500, 60000, 62000, 64000, 66000, 68000, 69000, 70000, // lv 11 ~ 20 (50000 ~ 70000)
-    71500, 73000, 74500, 77000, 77500, 78000, 78500, 79000, 79500, 80000, // lv 21 ~ 30 (70000 ~ 80000)
+    52000, 54000, 56000, 58000, 60000, 62000, 64000, 66000, 68000, 70000, // lv 11 ~ 20 (50000 ~ 70000)
+    71200, 72400, 73600, 74800, 76000, 77200, 78400, 79000, 79500, 80000, // lv 21 ~ 30 (70000 ~ 80000)
     80400, 80800, 81200, 81600, 82000, 82400, 82800, 83200, 83600, 84000, // lv 31 ~ 40 (80000 ~ 84000)
     84400, 84800, 85200, 85600, 86000, 86400, 86800, 87200, 87600, 88000, // lv 41 ~ 50 (84000 ~ 88000)
     88400, 88800, 89200, 89600, 90000, 90200, 90400, 90600, 90800, 91000, // lv 51 ~ 55, 56 ~ 60 (88000 ~ 90000, 90000 ~ 92000)
@@ -241,7 +241,8 @@ export class StatRound {
     /** 총합 골드량 */ this.goldTotal = this.gold * Math.floor(finishTime / 10)
 
     // 추가적인 옵션 자동 설정
-    /** 해당 라운드를 진행하기 위해 필요한 최소 공격력값 (이 값 미만은 플레이 불가능) */ this.minAttack = Math.floor(requireAttack * 1)
+    /** 해당 라운드를 진행하기 위해 필요한 최소 공격력값 (이 값 미만은 플레이 불가능, 이 값은 필요값의 90%로 정의) */ 
+    this.minAttack = Math.floor(requireAttack * 0.9)
   }
 
   /**
@@ -304,7 +305,7 @@ export class StatRoundBalance {
 
 export class StatItem {
   /**
-   * 아이템의 정보를 생성 (아이템의 구현은 다른곳에서 처리해야함)
+   * 아이템의 정보를 생성 (아이템 기능의 구현은 다른곳에서 처리해야함)
    * @param {number} iconNumber 아이콘 번호 (-1인경우, 없음)
    * @param {string} type 아이템 타입 (equipment, item)
    * @param {string} name 이름
@@ -318,9 +319,20 @@ export class StatItem {
     /** 아이템의 기본 가격 */ this.price = price
     /** 아이템의 정보 */ this.info = info
 
-    /** 장비 아이템 착용 제한 레벨 */ this.equipmentRequireLevel = 0
-    /** 공격력 */ this.equipmentAttack = 0
-    /** 장비 아이템의 업그레이드 비용 */ this.equipmentUpgradeCost = 0
+    /** 장비 정보 (참고: plus접두어가 붙은것은 강화 효과를 무시함) */ 
+    this.equipment = {
+      /** 장비 아이템 착용 제한 레벨 */ requireLevel: 0,
+      /** 장비의 공격력 */ attack: 0,
+      /** 장비의 업그레이드 비용 */ upgradeCost: 0,
+      /** 업그레이드 가능 여부 (단, 골드로 강화가 안되는것이지 코드에 따른 임의레벨조정은 가능함) */ isUpgardeBlock: false,
+      /** 장비의 추가 공격력 (강화 효과 무시) */ plusAttack: 0,
+      /** 장비의 추가쉴드 (강화 효과 무시) */ plusShield: 0,
+      /** 장비의 추가체력 (강화 효과 무시) */ plusHp: 0,
+      /** 서브웨폰의 id (이 값이 유효하면, 보조무기를 생성함) */ subWeaponId: 0,
+      /** 장비의 쉴드회복 (강화 효과 무시), (쉴드 회복값은 매 프레임 당 value/6000 으로 증가함, 주의: 나눗셈연산이 아니고 정수연산임) 
+       * 
+       * 이 말을 해석하면 쉴드회복이 200/6000이면, 대략 30프레임당 1회복임 */ plusShieldRecovery: 0,
+    }
   }
 
   /**
@@ -328,39 +340,53 @@ export class StatItem {
    * 
    * @param {number} requireLevel 장비를 장착하기 위해 필요한 레벨
    * @param {number} attack 장비의 공격력
-   * @param {number} upgradeCost 장비의 업그레이드 기본 비용
+   * @param {number} upgradeCost 장비의 업그레이드 기본 비용 (음수값이면 강화불가로 처리함)
+   * @param {number} plusAttack 추가 공격력 (강화 효과 무시)
+   * @param {number} plusHp 추가 체력 (강화 효과 무시)
+   * @param {number} plusShield 추가 쉴드 (강화 효과 무시)
+   * @param {number} plusShieldRecovery 추가 회복(프레임 당 기준) (강화 효과 무시), 주의: 이 값은 x/6000으로 회복함. 그리고 나눗셈연산하지 않음 (정수단위임)
+
    */
-  setEquipmentInfo (requireLevel, attack, upgradeCost) {
-    this.equipmentRequireLevel = requireLevel,
-    this.equipmentAttack = attack,
-    this.equipmentUpgradeCost = upgradeCost
+  setEquipmentInfo (requireLevel, attack, upgradeCost, plusAttack = 0, plusHp = 0, plusShield = 0, plusShieldRecovery = 0) {
+    this.equipment.requireLevel = requireLevel
+    this.equipment.attack = attack
+    this.equipment.upgradeCost = upgradeCost
+    this.equipment.plusAttack = plusAttack
+    this.equipment.plusHp = plusHp
+    this.equipment.plusShield = plusShield
+    this.equipment.plusShieldRecovery = plusShieldRecovery
+  }
+
+  /**
+   * 서브웨폰 id 설정 (참고: dps의 10%로 자동적으로 공격력이 결정됨)
+   * @param {number} subWeaponId 서브웨폰의 id (무기의 id를 입력해야 합니다.)
+   */
+  setSubweaponId (subWeaponId) {
+    this.equipment.subWeaponId = subWeaponId
   }
 
   static TYPE_ITEM = 'item'
   static TYPE_EQUIPMENT = 'equipment'
 
   /** 장비에 대한 업그레이드 최대레벨 */
-  static UPGRADE_LEVEL_MAX = 30
+  static UPGRADE_LEVEL_MAX = 13
 
   /** 장비에 대한 업그레이드 시 공격력의 기준 퍼센트 */
   static upgradeAttackPercentTable = [
-    100, 104, 108, 112, 118,  124, 130, 138, 146, 154,  162, 170, 178, 186, // 0 ~ 13
-    200, 210, 220, 230, 241,  252, 263, 275, 287, // 14 ~ 22
-    300, 314, 328, 342, 356,  370, 384, 400 // 23 ~ 30
+    100, 140, 180, 220, 280, 340, 400, 480, 560, 640,
+    720, 800, 900, 1000
   ]
 
   /** 장비에 대한 업그레이드 시 비용의 기준 퍼센트 */
   static upgradeCostPercentTable = [
-    0, 100, 100, 110, 110,  120, 120, 140, 140, 160,  160, 170, 180, 190, // 0 ~ 13
-    200, 200, 250, 250, 300,  300, 350, 400, 450, // 14 ~ 22
-    500, 550, 600, 650, 700,  700, 800, 1000 // 23 ~ 30
+    0, 100, 120, 140, 180, 220, 280, 340, 420, 500,
+    560, 640, 700, 800
   ]
 
   /** 장비를 판매할 때 환수되는 비용의 비율 */
   static upgradeRefundPercentTable = [
-    20, 20, 20, 20, 20,  20, 20, 20, 20, 20,  20, 20, 20, 20, // 0 ~ 13
-    21, 21, 22, 22, 23,  23, 24, 24, 25, // 14 ~ 22
-    25, 26, 26, 27, 27,  28, 29, 30 // 23 ~ 30
+    20, 20, 20, 20, 20, 22, 24, 26, 28, 30,
+    30, 30, 30, 30,
   ]
 
   static #getUpgradeCostTotalPercentTable () {
@@ -570,20 +596,20 @@ dataExportStatRound.set(ID.round.round1_6, new StatRound(7, ID.round.PREVNULL, '
 dataExportStatRound.set(ID.round.round2_1, new StatRound(11, ID.round.PREVNULL, '2-1', '파란 행성 - 하늘 300km ~ 250km', 10, 50000, 150, 40000, 12, ''))
 dataExportStatRound.set(ID.round.round2_2, new StatRound(12, ID.round.round2_1, '2-2', '동그라미 마을', 11, 50000, 170, 44000, 12, ''))
 dataExportStatRound.set(ID.round.round2_3, new StatRound(13, ID.round.round2_1, '2-3', '동그라미 스페이스', 12, 50000, 192, 48000, 12, ''))
-dataExportStatRound.set(ID.round.round2_4, new StatRound(14, ID.round.round2_1, '2-4', '동그라미 마을 홀', 14, 60000, 207, 52000, 14, ''))
-dataExportStatRound.set(ID.round.round2_5, new StatRound(15, ID.round.round2_4, '2-5', '지하실 전투', 15, 60000, 204, 32000, 14, ''))
-dataExportStatRound.set(ID.round.round2_6, new StatRound(16, ID.round.round2_4, '2-6', '폐허가 된 동그라미 마을', 16, 60000, 150, 48000, 13, ''))
+dataExportStatRound.set(ID.round.round2_4, new StatRound(14, ID.round.round2_1, '2-4', '동그라미 마을 홀', 14, 60000, 207, 52000, 13, ''))
+dataExportStatRound.set(ID.round.round2_5, new StatRound(15, ID.round.round2_4, '2-5', '지하실 전투', 15, 60000, 204, 32000, 13, ''))
+dataExportStatRound.set(ID.round.round2_6, new StatRound(16, ID.round.round2_4, '2-6', '폐허가 된 동그라미 마을', 16, 60000, 150, 48000, 12, ''))
 // round 3
-dataExportStatRound.set(ID.round.round3_1, new StatRound(21, ID.round.PREVNULL, '3-1', '다운 타워 1', 20, 70000, 200, 71400, 16, ''))
-dataExportStatRound.set(ID.round.round3_2, new StatRound(22, ID.round.PREVNULL, '3-2', '다운 타워 2', 21, 70000, 220, 72800, 15, ''))
-dataExportStatRound.set(ID.round.round3_3, new StatRound(23, ID.round.PREVNULL, '3-3', '다운 타워 3', 21, 70000, 200, 74200, 16, ''))
-dataExportStatRound.set(ID.round.round3_4, new StatRound(24, ID.round.PREVNULL, '3-4', '다운 타워 보이드', 22, 70000, 240, 78000, 16, ''))
-dataExportStatRound.set(ID.round.round3_5, new StatRound(25, ID.round.PREVNULL, '3-5', '안티 제물', 23, 70000, 610, 130000, 18, ''))
-dataExportStatRound.set(ID.round.round3_6, new StatRound(26, ID.round.round3_5, '3-6', '다운 타워 코어 1', 25, 77000, 220, 83800, 17, ''))
-dataExportStatRound.set(ID.round.round3_7, new StatRound(27, ID.round.round3_5, '3-7', '다운 타워 코어 2', 25, 77000, 220, 84600, 17, ''))
-dataExportStatRound.set(ID.round.round3_8, new StatRound(28, ID.round.round3_5, '3-8', '다운 타워 통로 1', 26, 77000, 220, 86600, 17, ''))
-dataExportStatRound.set(ID.round.round3_9, new StatRound(29, ID.round.round3_5, '3-9', '다운 타워 통로 2', 26, 77000, 220, 87800, 17, ''))
-dataExportStatRound.set(ID.round.round3_10, new StatRound(19, ID.round.round3_5, '3-10', '동그라미 마을로 돌아가는 길', 28, 77000, 447, 160000, 18, ''))
+dataExportStatRound.set(ID.round.round3_1, new StatRound(21, ID.round.PREVNULL, '3-1', '다운 타워 1', 20, 70000, 200, 71400, 14, ''))
+dataExportStatRound.set(ID.round.round3_2, new StatRound(22, ID.round.PREVNULL, '3-2', '다운 타워 2', 21, 70000, 220, 72800, 14, ''))
+dataExportStatRound.set(ID.round.round3_3, new StatRound(23, ID.round.PREVNULL, '3-3', '다운 타워 3', 21, 70000, 200, 74200, 14, ''))
+dataExportStatRound.set(ID.round.round3_4, new StatRound(24, ID.round.PREVNULL, '3-4', '다운 타워 보이드', 22, 70000, 240, 78000, 14, ''))
+dataExportStatRound.set(ID.round.round3_5, new StatRound(25, ID.round.PREVNULL, '3-5', '안티 제물', 23, 70000, 610, 130000, 14, ''))
+dataExportStatRound.set(ID.round.round3_6, new StatRound(26, ID.round.round3_5, '3-6', '다운 타워 코어 1', 25, 77000, 220, 83800, 15, ''))
+dataExportStatRound.set(ID.round.round3_7, new StatRound(27, ID.round.round3_5, '3-7', '다운 타워 코어 2', 25, 77000, 220, 84600, 15, ''))
+dataExportStatRound.set(ID.round.round3_8, new StatRound(28, ID.round.round3_5, '3-8', '다운 타워 통로 1', 26, 77000, 220, 86600, 15, ''))
+dataExportStatRound.set(ID.round.round3_9, new StatRound(29, ID.round.round3_5, '3-9', '다운 타워 통로 2', 26, 77000, 220, 87800, 15, ''))
+dataExportStatRound.set(ID.round.round3_10, new StatRound(19, ID.round.round3_5, '3-10', '동그라미 마을로 돌아가는 길', 28, 77000, 447, 160000, 15, ''))
 
 
 /**
@@ -621,19 +647,22 @@ dataExportStatRoundBalance.set(ID.round.round3_10, new StatRoundBalance(447 +  0
  * @type {Map<number, StatItem>}
  */
 export const dataExportStatItem = new Map()
-const EQUIP001 = new StatItem(0, StatItem.TYPE_EQUIPMENT, '스탠다드 플러스 C1 블루', 1000, '표준적인 장비. C1모델이며, 파란색이다. \n 공격력을 증가시킨다.')
-EQUIP001.setEquipmentInfo(20, 3000, 130)
-dataExportStatItem.set(ID.item.standardPlusC1Blue, EQUIP001)
-
-const EQUIP002 = new StatItem(1, StatItem.TYPE_EQUIPMENT, '동그라미 무기(mugi)', 400,  '동그라미 마을에서 만든 무기에요.\n이 장비는 동그라미 티켓을 이용해 강화할 수 있습니다.\n동그라미 티켓을 모아보세요! 히힛~\n성능이 약하지만 어쩔 수 없어요 흑흑 ㅠㅠ')
-EQUIP002.setEquipmentInfo(20, 2700, 99999999)
-dataExportStatItem.set(ID.item.donggramiMugi, EQUIP002)
-
-const EQUIP003 = new StatItem(2, StatItem.TYPE_EQUIPMENT, '헬기(hellgi) 장비(jangbi)', 1300, '다운타워에서 돌아다니는 헬기들의 부품을 모아 만든 특수장비. 공격속도가 10% 증가한다.(미구현됨)')
-EQUIP003.setEquipmentInfo(21, 3600, 4100)
+const inputExportStatItemEquipment = () => {
+  const EQUIP001 = new StatItem(0, StatItem.TYPE_EQUIPMENT, '스탠다드 플러스 C1 블루', 1000, '표준적인 장비. \n 공격력을 증가시킨다.')
+  EQUIP001.setEquipmentInfo(0, 3000, 1000)
+  dataExportStatItem.set(ID.item.standardPlusC1Blue, EQUIP001)
+  
+  const EQUIP002 = new StatItem(1, StatItem.TYPE_EQUIPMENT, '동그라미 장난감', 1500, '동그라미 마을에서 만든 장난감이에요.\n성능이 약하지만 어쩔 수 없어요 흑흑 ㅠㅠ\n대신 쉴드 회복과 쉴드량을 늘려준답니다. 히힛~')
+  EQUIP002.setEquipmentInfo(0, 2400, 1120, 600, 0, 50, 50)
+  dataExportStatItem.set(ID.item.donggramiMugi, EQUIP002)
+  
+  const EQUIP003 = new StatItem(2, StatItem.TYPE_EQUIPMENT, '헬기(hellgi) 장비(jangbi)', 1300, '다운타워에서 돌아다니는 헬기들의 부품을 모아 만든 특수장비.\n 서브웨폰 헬전을 사용할 수 있다.')
+  EQUIP003.setEquipmentInfo(0, 2100, 1040, 1100)
+}
+inputExportStatItemEquipment() // 아이템 정보를 등록한 함수 실행
 
 dataExportStatItem.set(ID.item.donggramiTicket, new StatItem(3, StatItem.TYPE_ITEM, '동그라미 마을 티켓', 100, '동그라미 마을에서 여러가지 용도로 사용하는 티켓'))
-dataExportStatItem.set(ID.item.donggramiUSB, new StatItem(4, StatItem.TYPE_ITEM, '동그라미 운영체제 USB', 1024, '동그라미 마을에서 만들어진 재미난 운영체제 파일이 담겨있는 부팅 USB'))
+dataExportStatItem.set(ID.item.donggramiUSB, new StatItem(4, StatItem.TYPE_ITEM, '동그라미 운영체제 USB', 2000, '동그라미 마을에서 만들어진 재미난 운영체제 파일이 담겨있는 부팅 USB'))
 dataExportStatItem.set(ID.item.hellgiComponent, new StatItem(5, StatItem.TYPE_ITEM, '헬기(hellgi) 부품(component)', 60, '다운타워에서 등장하는 헬기들이 부서지고 남은 부품들'))
 dataExportStatItem.set(ID.item.upgradeStone, new StatItem(6, StatItem.TYPE_ITEM, '강화석', 100, '강화할 때 필요한 아이템'))
 dataExportStatItem.set(ID.item.boseokTest, new StatItem(7, StatItem.TYPE_ITEM, '보석 테스트', 0, '보석 테스트 용도 아이템'))

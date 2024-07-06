@@ -944,12 +944,13 @@ class RoundSelectSystem extends MenuSystem {
     if (data == null) return true
 
     // 레벨, 공격력이 부족할경우 라운드 입장 불가능
-    if (userSystem.lv < data.requireLevel || userSystem.attack < data.requireAttack) return false
+    let conditionA = this.roundConditionCheckRequire()
 
     // 이전 라운드 클리어가 필요한 라운드에서는, 이전 라운드를 클리어해야함
-    if (data.prevRoundId !== 0 && !userSystem.getRoundClear(data.prevRoundId)) return false
+    let conditionB = this.roundConditionCheckPrevRound()
 
-    return true
+    // 두개의 조건이 맞아야만 true이고 아니라면 false
+    return conditionA && conditionB
   }
 
   roundConditionCheckRequire (roundId = 0) {
@@ -957,7 +958,7 @@ class RoundSelectSystem extends MenuSystem {
     if (data == null) return true
 
     // 레벨, 공격력이 부족할경우 라운드 입장 불가능
-    if (userSystem.lv < data.requireLevel || userSystem.attack < data.requireAttack) return false
+    if (userSystem.lv < data.requireLevel || userSystem.attack < data.minAttack) return false
 
     return true
   }
@@ -983,16 +984,32 @@ class RoundSelectSystem extends MenuSystem {
     return prevData.roundText
   }
 
-  roundConditionLevelAttackText (roundId = 0) {
+  /** 라운드 조건에 대해 레벨과 공격력을 각각 확인합니다. */
+  roundConditionLevelAttackCheck (roundId = 0) {
+    let levelCondition = true
+    let attackCondition = true
     let data = dataExportStatRound.get(roundId)
-    if (data == null) return ''
+    if (data != null) {
+      levelCondition = userSystem.lv < data.requireLevel
+      attackCondition = userSystem.attack < data.minAttack
+    }
 
-    if (userSystem.lv < data.requireLevel && userSystem.attack < data.requireAttack) {
-      return '레벨, 공격력이 낮습니다.'
-    } else if (userSystem.lv < data.requireLevel) {
-      return '레벨이 낮습니다.'
-    } else if (userSystem.attack < data.requireAttack) {
-      return '공격력이 낮습니다.'
+    return {
+      levelCondition,
+      attackCondition
+    }
+  }
+
+  roundConditionLevelAttackText (roundId = 0) {
+    let result = this.roundConditionLevelAttackCheck()
+    if (!result.levelCondition && !result.attackCondition) {
+      return ['LOW LEVEL, LOW ATTACK', '레벨 낮음, 공격력 낮음']
+    } else if (!result.levelCondition) {
+      return ['LOW LEVEL', '레벨 낮음']
+    } else if (!result.attackCondition) {
+      return ['LOW ATTACK', '공격력 낮음']
+    } else {
+      return ['', '']
     }
   }
 
@@ -1238,20 +1255,21 @@ class RoundSelectSystem extends MenuSystem {
     let stat = dataExportStatRound.get(roundId)
     if (stat == null) return
 
-    const layer1X = 120
-    const layer2X = 440
+    const layer1X = 100
+    const layer2X = 500
     const layer1Y = 10
-    const text1 = 'ROUND|FINISH|REQUIRE'
-    const text2 = '     |TIME  |LEVEL|ATTACK'
+    const text1 = 'ROUND|FINISH|REQUIRE     |MIN   |'
+    const text2 = '     |TIME  |LEVEL|ATTACK|ATTACK|'
     const roundText = stat.roundText.padEnd(5, ' ') + '|'
     const finishTimeText = ('' + stat.finishTime).padEnd(6, ' ') + '|'
     const requireLevelText = ('' + stat.requireLevel).padEnd(5, ' ') + '|'
-    const requireAttackText = ('' + stat.requireAttack).padEnd(6, ' ')
+    const requireAttackText = ('' + stat.requireAttack).padEnd(6, ' ') + '|'
+    const minAttack = ('' + stat.minAttack).padEnd(6, ' ') + '|'
     const tilteText = 'TITLE: ' // 타이틀은 다른 폰트로 표현함 (한글때문에)
     const textList = [
       text1,
       text2,
-      roundText + finishTimeText + requireLevelText + requireAttackText,
+      roundText + finishTimeText + requireLevelText + requireAttackText + minAttack,
       tilteText
     ]
 
@@ -1265,12 +1283,14 @@ class RoundSelectSystem extends MenuSystem {
     }
 
     if (!this.roundConditionCheckPrevRound(roundId)) {
-      game.graphic.fillText('이전 라운드 클리어 필요', layer2X, layer1Y)
-      digitalDisplay(this.roundConditionCheckPrevRoundText(roundId), layer2X, layer1Y + 20)
+      digitalDisplay('NEED ROUND CLEAR: ' + this.roundConditionCheckPrevRoundText(roundId), layer2X, layer1Y + 0)
+      game.graphic.fillText('라운드 클리어 필요: ' + this.roundConditionCheckPrevRoundText(roundId), layer2X, layer1Y + 20)
     }
 
     if (!this.roundConditionCheckRequire(roundId)) {
-      game.graphic.fillText(this.roundConditionLevelAttackText(roundId), layer2X, layer1Y + 40)
+      let inputText = this.roundConditionLevelAttackText(roundId)
+      digitalDisplay(inputText[0], layer2X, layer1Y + 40) // 영어 텍스트
+      game.graphic.fillText(inputText[1], layer2X, layer1Y + 60) // 한글 텍스트
     }
   }
 }
@@ -2380,7 +2400,7 @@ class StatUpgradeSystem extends MenuSystem {
   displayUserStat () {
     game.graphic.fillText('체력, 쉴드, 쉴드 회복, 골드', 0, this.outputY2HpShield + (this.SIZEY * 0))
     let hpText = 'HP + SHIELD: ' + userSystem.hp + ' + ' + userSystem.shield
-    let recoveryText = 'SHIELD RECOVERY: ' + userSystem.shieldRecovery + '/' + userSystem.SHIELD_RECOVERY_BASE_VALUE
+    let recoveryText = 'SHIELD RECOVERY: ' + userSystem.shieldRecovery + '/' + userSystem.SHIELD_RECOVERY_USING
     digitalDisplay(hpText, 0, this.outputY2HpShield + (this.SIZEY * 1))
     digitalDisplay(recoveryText, 0, this.outputY2HpShield + (this.SIZEY * 2))
     digitalDisplay('GOLD: ' + userSystem.gold, 0, this.outputY2HpShield + (this.SIZEY * 3))
@@ -2799,7 +2819,7 @@ class InventorySystem extends MenuSystem {
 
     // info display
     let typeText = data.type === userSystem.inventory.itemType.EQUIPMENT ? 'EQUIPMENT' : 'ITEM'
-    let firstLineText = data.type === userSystem.inventory.itemType.ITEM ? ', count:' + item.count : ', require Level: ' + data.equipmentRequireLevel
+    let firstLineText = data.type === userSystem.inventory.itemType.ITEM ? ', count:' + item.count : ', require Level: ' + data.equipment.requireLevel
 
     digitalDisplay('INDEX: ' + this.getCursorItemIndex() + ', type: ' + typeText + firstLineText, this.outputX3Icon, this.outputY2Info + 0)
     digitalDisplay('NAME: ', this.outputX3Icon, this.outputY2Info + 20)
@@ -3588,6 +3608,11 @@ export class gameSystem {
     if (loadData.userData) {
       // 데이터형 받아오기용도
       let insertUserData = userSystem.getSaveData()
+      for (let currentKey in insertUserData) {
+        if (loadData.userData[currentKey] == null) continue
+
+        insertUserData[currentKey] = loadData.userData[currentKey]
+      }
 
       // sram으로 처리
       // sramList
@@ -3768,6 +3793,7 @@ export class gameSystem {
     this.processStatLine()
     this.processSave()
     this.processLoad()
+    this.processDebug()
   }
 
   static fieldProcess () {
@@ -3803,6 +3829,11 @@ export class gameSystem {
     // 사운드 음악 옵션을 필드에게 전달
     fieldSystem.option.musicOn = this.optionSystem.optionValue.musicOn
     fieldSystem.option.soundOn = this.optionSystem.optionValue.soundOn
+  }
+
+  // 디버그 용도로 사용되는 함수
+  static processDebug () {
+
   }
 
   static processStatLine () {
