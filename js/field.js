@@ -461,8 +461,8 @@ class PlayerObject extends FieldData {
 
   /** 플레이어가 레벨업을 했는지 확인 */
   processLevelupCheck () {
-    if (this.currentLevel != userSystem.getPlayerObjectStat().lv) {
-      this.currentLevel = userSystem.getPlayerObjectStat().lv
+    if (this.currentLevel !== userSystem.lv) {
+      this.currentLevel = userSystem.lv
       this.levelupEnimationCount = 120
     }
 

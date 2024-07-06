@@ -10869,26 +10869,32 @@ class Round3_1 extends Round3Templete {
     }
 
     // 전투기 차례로 동시에 등장 (순간 dps: 160% ~ 200%)
+    // 각 구간마다 헬기 컴포넌트 아이템을 가진 적도 같이 생성됨
     if (this.timeCheckFrame(pTime + 20)) {
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 4; i++) {
         this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgi, undefined, (100 * i) + 100)
       }
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellgi, [ID.item.hellgiComponent], [1])
     } else if (this.timeCheckFrame(pTime + 22)) {
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 7; i++) {
         this.field.createEnemy(ID.enemy.towerEnemyGroup1.helljeon, undefined, (100 * i) + 100)
       }
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.helljeon, [ID.item.hellgiComponent], [1])
     } else if (this.timeCheckFrame(pTime + 24)) {
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 7; i++) {
         this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellcho, undefined, (100 * i) + 100)
       }
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellcho, [ID.item.hellgiComponent], [1])
     } else if (this.timeCheckFrame(pTime + 26)) {
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 7; i++) {
         this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellba, undefined, (100 * i) + 100)
       }
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellba, [ID.item.hellgiComponent], [1])
     } else if (this.timeCheckFrame(pTime + 28)) {
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 7; i++) {
         this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgal, undefined, (100 * i) + 100)
       }
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellgal, [ID.item.hellgiComponent], [1])
     }
   }
 
@@ -10898,7 +10904,7 @@ class Round3_1 extends Round3Templete {
       this.playerOption.createOptionItem(this.playerOption.colorList.skyblue)
     }
 
-    // dps 100% ~ 120%
+    // dps 100% ~ 120%, 다만, 아이템을 가진 적 추가로 120%보다 약간 더 높아질 수도 있음.
     if (this.timeCheckInterval(pTime + 0, pTime + 20, 90)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgi)
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgal)
@@ -10907,14 +10913,20 @@ class Round3_1 extends Round3Templete {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.helljeon)
     }
 
+    if (this.timeCheckInterval(pTime + 0, pTime + 18, 180)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellgi, [ID.item.hellgiComponent], [1])
+    }
+
     // 중간 중간 추가 적들 등장
     if (this.timeCheckInterval(pTime + 4, pTime + 8, 180)) {
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 2; i++) { // 총 4마리
         this.field.createEnemy(ID.enemy.towerEnemyGroup1.helljeon)
+        this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.helljeon, [ID.item.hellgiComponent], [1])
       }
     } else if (this.timeCheckInterval(pTime + 12, pTime + 16, 180)) {
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 2; i++) { // 총 4마리
         this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellcho)
+        this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellcho, [ID.item.hellgiComponent], [1])
       }
     }
 
@@ -11142,14 +11154,29 @@ class Round3_2 extends Round3Templete {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellna)
     }
 
+    // 아이템을 가진 적 추가
+    if (this.timeCheckFrame(pTime + 5)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellla, [ID.item.hellgiComponent], [1])
+    } else if (this.timeCheckFrame(pTime + 8)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellpo, [ID.item.hellgiComponent], [1])
+    } else if (this.timeCheckFrame(pTime + 11)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellpa [ID.item.hellgiComponent], [1])
+    } else if (this.timeCheckFrame(pTime + 15) || this.timeCheckFrame(pTime + 19)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellna, [ID.item.hellgiComponent], [1])
+    }
+
     if (this.timeCheckFrame(pTime + 23)) {
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 6; i++) {
         this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgi, undefined, (100 * i) + 100)
       }
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellgi, [ID.item.hellgiComponent], [1])
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellgi, [ID.item.hellgiComponent], [1])
     } else if (this.timeCheckFrame(pTime + 27)) {
       for (let i = 0; i < 12; i++) {
         this.field.createEnemy(ID.enemy.towerEnemyGroup1.helljeon, undefined, (100 * i) + 100)
       }
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.helljeon, [ID.item.hellgiComponent], [1])
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.helljeon, [ID.item.hellgiComponent], [1])
     }
   }
 
@@ -11228,14 +11255,20 @@ class Round3_2 extends Round3Templete {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellla)
     }
 
-    if (this.timeCheckInterval(pTime + 4, pTime + 5, 10)) {
+    if (this.timeCheckInterval(pTime + 4, pTime + 5, 12)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.helljeon)
-    } else if (this.timeCheckInterval(pTime + 8, pTime + 12, 10)) {
+    } else if (this.timeCheckInterval(pTime + 8, pTime + 12, 12)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellcho)
     } else if (this.timeCheckInterval(pTime + 16, pTime + 20, 20)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellna)
     } else if (this.timeCheckInterval(pTime + 24, pTime + 25, 20)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellpa)
+    }
+
+    if (this.timeCheckInterval(pTime + 0, pTime + 15, 180)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.helljeon, [ID.item.hellgiComponent], [1])
+    } else if (this.timeCheckInterval(pTime + 15, pTime + 27, 180)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellpa, [ID.item.hellgiComponent], [1])
     }
   }
 
@@ -11477,7 +11510,7 @@ class Round3_3 extends Round3Templete {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveViolet)
       this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeMove)
     } else if (this.timeCheckInterval(pTime + 11, pTime + 19, 45)) {
-      this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgi)
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellgi, [ID.item.hellgiComponent], [1])
       this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeHell)
     } else if (this.timeCheckInterval(pTime + 21, pTime + 29, 15)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.barRandom)
@@ -11489,8 +11522,9 @@ class Round3_3 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 4, pTime + 7, 30)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.moveYellowEnergy)
     } else if (this.timeCheckFrame(pTime + 13) || this.timeCheckFrame(pTime + 16)) {
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 4; i++) {
         this.field.createEnemy(ID.enemy.towerEnemyGroup1.helljeon)
+        this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.helljeon, [ID.item.hellgiComponent], [1])
       }
     } else if (this.timeCheckInterval(pTime + 22, pTime + 25, 60)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.magnet) // 그와중에 또 자석 등장
@@ -11885,9 +11919,10 @@ class Round3_4 extends Round3Templete {
     }
 
     if (this.timeCheckInterval(pTime + 2, pTime + 16, 120)) {
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 4; i++) {
         this.field.createEnemy(ID.enemy.towerEnemyGroup1.helljeon);
       }
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.helljeon, [ID.item.hellgiComponent], [3]);
     }
 
     // 적을 모두 죽이기 전까지 진행 불가능
@@ -13194,6 +13229,12 @@ class Round3_6 extends Round3Templete {
     } else if (this.timeCheckInterval(pTime + 34, pTime + 39, 10)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.helltell)
     }
+
+    if (this.timeCheckInterval(pTime + 25, pTime + 33, 180)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup5.hellnet, [ID.item.hellgiComponent], [1])
+    } else if (this.timeCheckInterval(pTime + 34, pTime + 39, 120)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup5.helltell, [ID.item.hellgiComponent], [1])
+    }
   }
 
   roundPhase02 () {
@@ -13252,6 +13293,23 @@ class Round3_6 extends Round3Templete {
       this.field.createEnemy(ID.enemy.towerEnemyGroup3.fakeHell)
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.hellnet)
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.helltell)
+    }
+
+    if (this.timeCheckFrame(pTime + 4, 35)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup5.hellnet, [ID.item.hellgiComponent], [1])
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup5.helltell, [ID.item.hellgiComponent], [1])
+    } else if (this.timeCheckFrame(pTime + 10, 35)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellgi, [ID.item.hellgiComponent], [1])
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.helljeon, [ID.item.hellgiComponent], [1])
+    } else if (this.timeCheckFrame(pTime + 18, 35)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellba, [ID.item.hellgiComponent], [1])
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellpo, [ID.item.hellgiComponent], [1])
+    } else if (this.timeCheckFrame(pTime + 27, 35)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellla, [ID.item.hellgiComponent], [1])
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellna, [ID.item.hellgiComponent], [1])
+    } else if (this.timeCheckFrame(pTime + 36, 35)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup5.hellnet, [ID.item.hellgiComponent], [1])
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup5.helltell, [ID.item.hellgiComponent], [1])
     }
   }
 
@@ -13433,11 +13491,16 @@ class Round3_7 extends Round3Templete {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.laserMini2)
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.tapo)
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.tapo)
-    } else if (this.timeCheckInterval(pTime + 27, pTime + 36, 40)) {
+    } else if (this.timeCheckInterval(pTime + 27, pTime + 36, 50)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.laserMini)
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.laserMini2)
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellcho)
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.helljeon)
+    }
+
+    if (this.timeCheckInterval(pTime + 27, pTime + 36, 180)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellcho, [ID.item.hellgiComponent], [1])
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.helljeon, [ID.item.hellgiComponent], [1])
     }
   }
 
@@ -13449,7 +13512,7 @@ class Round3_7 extends Round3Templete {
     }
 
     // blue zone (dps: maybe 180% ~ 200%)
-    if (this.timeCheckInterval(pTime + 2, pTime + 27, 50)) {
+    if (this.timeCheckInterval(pTime + 2, pTime + 27, 60)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.helljeon)
     }
     if (this.timeCheckInterval(pTime + 2, pTime + 27, 60)) {
@@ -13461,7 +13524,7 @@ class Round3_7 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 2, pTime + 27, 300)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup3.energyBlue)
     }
-    if (this.timeCheckInterval(pTime + 2, pTime + 27, 90)) {
+    if (this.timeCheckInterval(pTime + 2, pTime + 27, 100)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellpa)
     }
     if (this.timeCheckInterval(pTime + 2, pTime + 27, 50)) {
@@ -13469,6 +13532,16 @@ class Round3_7 extends Round3Templete {
     }
     if (this.timeCheckInterval(pTime + 2, pTime + 27, 30)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.sirenBlue)
+    }
+
+    if (this.timeCheckInterval(pTime + 2, pTime + 27, 240)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.helljeon, [ID.item.hellgiComponent], [1])
+    }
+    if (this.timeCheckInterval(pTime + 2, pTime + 27, 300)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellpa, [ID.item.hellgiComponent], [1])
+    }
+    if (this.timeCheckInterval(pTime + 2, pTime + 27, 360)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup5.helltell, [ID.item.hellgiComponent], [1])
     }
 
     this.timePauseWithEnemyCount(pTime + 30)
@@ -13748,6 +13821,17 @@ class Round3_8 extends Round3Templete {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellna)
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellcho)
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.helljeon)
+    }
+
+    // 길을 잃은 아이템을 가진 헬기들...
+    if (this.timeCheckFrame(pTime + 4) || this.timeCheckFrame(pTime + 8)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellgi, [ID.item.hellgiComponent], [2])
+    } else if (this.timeCheckFrame(pTime + 14) || this.timeCheckFrame(pTime + 18) || this.timeCheckFrame(pTime + 22)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellgal, [ID.item.hellgiComponent], [2])
+    } else if (this.timeCheckFrame(pTime + 26) || this.timeCheckFrame(pTime + 32)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellla, [ID.item.hellgiComponent], [2])
+    } else if (this.timeCheckFrame(pTime + 36) || this.timeCheckFrame(pTime + 40) || this.timeCheckFrame(pTime + 44)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellpo, [ID.item.hellgiComponent], [2])
     }
 
     // 길을 잃은 에너지들... (dps 20%)
@@ -14033,19 +14117,27 @@ class Round3_9 extends Round3Templete {
     }
 
     // total dps 180% ~ 220%
-    if (this.timeCheckInterval(pTime + 0, pTime + 12, 60)) {
+    if (this.timeCheckInterval(pTime + 0, pTime + 12, 75)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.radio)
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.hellnet)
-    } else if (this.timeCheckInterval(pTime + 13, pTime + 26, 50)) {
+    } else if (this.timeCheckInterval(pTime + 13, pTime + 26, 60)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.lightning)
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellla)
     } else if (this.timeCheckInterval(pTime + 27, pTime + 41, 60)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.magnet)
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.sandglass)
-    } else if (this.timeCheckInterval(pTime + 42, pTime + 49, 60)) {
+    } else if (this.timeCheckInterval(pTime + 42, pTime + 49, 75)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.hellpa)
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.helltell)
     }
+
+    if (this.timeCheckInterval(pTime + 0, pTime + 12, 180)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup5.hellnet, [ID.item.hellgiComponent], [2])
+    } else if (this.timeCheckInterval(pTime + 13, pTime + 26, 200)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellla, [ID.item.hellgiComponent], [2])
+    } else if (this.timeCheckInterval(pTime + 42, pTime + 49, 180)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup5.helltell, [ID.item.hellgiComponent], [2])
+    } 
 
     if (this.timeCheckInterval(pTime + 0, pTime + 15, 30)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.trash2)
@@ -14485,7 +14577,7 @@ class Round3_10 extends Round3Templete {
       this.sound.musicFadeIn(soundSrc.music.music25_down_tower_outwall, 10)
     }
 
-    // dps 100%
+    // dps 100% ~ 120%
     if (this.timeCheckInterval(pTime + 3, pTime + 10, 60)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgi)
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.helltell)
@@ -14506,6 +14598,16 @@ class Round3_10 extends Round3Templete {
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.helltell)
     }
 
+    if (this.timeCheckInterval(pTime + 3, pTime + 10, 180)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellgi, [ID.item.hellgiComponent], [1])
+    } else if (this.timeCheckInterval(pTime + 11, pTime + 20, 180)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellna, [ID.item.hellgiComponent], [1])
+    } else if (this.timeCheckInterval(pTime + 21, pTime + 30, 180)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup5.hellnet, [ID.item.hellgiComponent], [1])
+    } else if (this.timeCheckInterval(pTime + 31, pTime + 39, 180)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellcho, [ID.item.hellgiComponent], [1])
+    }
+
     this.timePauseWithEnemyCount(pTime + 39)
   }
 
@@ -14514,6 +14616,10 @@ class Round3_10 extends Round3Templete {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckInterval(pTime + 0, pTime + 7, 15)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup1.hellgi, -120)
+    }
+
+    if (this.timeCheckInterval(pTime + 0, pTime + 7, 75)) {
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellgi, [ID.item.hellgiComponent], [1], -120)
     }
 
     this.timePauseWithEnemyCount(pTime + 9)

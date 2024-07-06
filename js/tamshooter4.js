@@ -944,10 +944,10 @@ class RoundSelectSystem extends MenuSystem {
     if (data == null) return true
 
     // 레벨, 공격력이 부족할경우 라운드 입장 불가능
-    let conditionA = this.roundConditionCheckRequire()
+    let conditionA = this.roundConditionCheckRequire(roundId)
 
     // 이전 라운드 클리어가 필요한 라운드에서는, 이전 라운드를 클리어해야함
-    let conditionB = this.roundConditionCheckPrevRound()
+    let conditionB = this.roundConditionCheckPrevRound(roundId)
 
     // 두개의 조건이 맞아야만 true이고 아니라면 false
     return conditionA && conditionB
@@ -2437,6 +2437,8 @@ class StatUpgradeSystem extends MenuSystem {
 
     game.graphic.fillText('' + equipmentData.name + ' +' + equipment.upgradeLevel, TEXT_X, this.outputY4Equipment + (this.SIZEY * 1))
     digitalDisplay('ATTACK: ' + equipment.attack, TEXT_X, this.outputY4Equipment + (this.SIZEY * 2))
+    if (equipmentData.equipment.plusHp !== 0 || equipmentData.equipment.plusShield) digitalDisplay('HP +' + equipmentData.equipment.plusHp + ', SHIELD +' + equipmentData.equipment.plusShield, TEXT_X, this.outputY4Equipment + (this.SIZEY * 3))
+    if (equipmentData.equipment.plusShieldRecovery !== 0) digitalDisplay('SHIELD RECOVERY +' + equipmentData.equipment.plusShieldRecovery, TEXT_X, this.outputY4Equipment + (this.SIZEY * 4) )
 
     // 업그레이드 레벨 초과시 업그레이드에 관한 정보는 표시되지 않음.
     if (equipment.upgradeLevel >= userSystem.UPGRADE_LEVEL_MAX) return
