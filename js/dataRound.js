@@ -4873,7 +4873,7 @@ class Round2_3 extends RoundData {
       soundSrc.round.r2_3_a1_damage,
       soundSrc.round.r2_3_a1_earthquake,
       soundSrc.round.r2_3_a1_earthquakeDamage,
-      soundSrc.round.r2_3_a1_toyHammer,
+      soundSrc.round.r2_3_a1_toyhammer,
       soundSrc.round.r2_3_a2_bomb,
       soundSrc.round.r2_3_a2_break,
       soundSrc.round.r2_3_a3_power1,
@@ -5802,13 +5802,13 @@ class Round2_3 extends RoundData {
 
   coursePhaseC1 () {
     this.coursePhaseC1Prestart() // 준비 및 시작
-    this.coursePhaseC1Result() // 결과 판정
-
+    
     // 구역 진행 (정해진 시간 외의 로직을 처리하지 않습니다.)
     if (!this.areaRunningTimeCheck()) return
-
+    
     this.coursePhaseC1CreateBullet()
     this.coursePhaseC1BulletCollision() // 플레이어와 총알 스프라이트와의 충돌 처리
+    this.coursePhaseC1Result() // 결과 판정
   }
 
   coursePhaseC1Prestart () {
@@ -6890,7 +6890,7 @@ class Round2_3 extends RoundData {
     //      |     |
     fieldState.createSpriteObject(new trap.TrapGreen, 700, 100)
     // 0번 룸, 빨간 색 사각형이 길을 막고만 있다.
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 8; j++) {
         if (i % 2 === 1 && j >= 2) {
           fieldState.createSpriteObject(new trap.TrapRed, (i * 140) + 100, 100 + j * 50)
@@ -8241,7 +8241,7 @@ class Round2_5 extends RoundData {
       soundSrc.round.r2_5_breakRoom,
       soundSrc.music.music14_intruder_battle,
       soundSrc.round.r2_4_message1,
-      soundSrc.round.r2_3_a1_toyHammer,
+      soundSrc.round.r2_3_a1_toyhammer,
       soundSrc.round.r2_5_clear
     ])
 
@@ -9007,7 +9007,7 @@ class Round2_5 extends RoundData {
             // this.moveSpeedX = (this.moveSpeedX / 2) * -1 // 적과 충돌하면 이동속도 감소
             // this.moveSpeedY = (this.moveSpeedY / 2) * -1 // 적과 충돌하면 이동속도 감소
             this.moveDelay.count = this.moveDelay.delay / 2
-            soundSystem.play(soundSrc.round.r2_3_a1_toyHammer)
+            soundSystem.play(soundSrc.round.r2_3_a1_toyhammer)
             fieldState.createDamageObject(enemy.x, enemy.y, this.attack)
             break // 반복문 종료 (1회 공격에 1마리만 공격 가능)
           }

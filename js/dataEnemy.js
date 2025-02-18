@@ -4537,7 +4537,7 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
     /** 빠르게 이동해서 도착할 임시 좌표 */ this.boostPositionX = 0
     /** 빠르게 이동해서 도착할 임시 좌표 */ this.boostPositionY = 0
 
-    this.hammerSound = soundSrc.round.r2_3_a1_toyHammer
+    this.hammerSound = soundSrc.round.r2_3_a1_toyhammer
     this.earthquakeSound = soundSrc.round.r2_3_a1_earthquake
     this.earthquakeSoundDamage = soundSrc.round.r2_3_a1_earthquakeDamage
     this.boostSound = soundSrc.round.r2_3_a1_boost
