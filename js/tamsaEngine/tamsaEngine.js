@@ -1002,9 +1002,4 @@ export class TamsaEngine {
   display () {
     // 아무것도 없음
   }
-
-  /** 엔진에서의 부팅 과정 (파일 로드를 포함합니다.) @deprecated */
-  botting () {
-    // 아무것도 없음
-  }
 }

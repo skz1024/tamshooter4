@@ -14,8 +14,8 @@ const versionText = 'created by skz1024 | ver 0.50 | 2024/05'
 let digitalDisplay = gameFunction.digitalDisplay
 let loadComplete = false
 
-/** 시스템에서 가장 먼저 로드될 이미지 목록 */ let systemImageList = []
-/** 시스템에서 가장 먼저 로드될 사운드 목록 */ let systemSoundList = []
+/** 시스템에서 가장 먼저 로드될 이미지 목록 @type {string[]} */ let systemImageList = []
+/** 시스템에서 가장 먼저 로드될 사운드 목록 @type {string[]} */ let systemSoundList = []
 
 /** 첫번째로 불러올 함수 사용 */
 let firstLoadFunction = () => {
@@ -736,10 +736,9 @@ class RoundSelectSystem extends MenuSystem {
     let r = ID.round
     const unused = ID.round.UNUSED
 
-    /** @type {object} */
     this.roundIdTable = {
-      r1: [r.round1_1, r.round1_2, r.round1_3, r.round1_4, r.round1_5, r.round1_6, unused, unused, r.round1_test, unused],
-      r2: [r.round2_1, r.round2_2, r.round2_3, r.round2_4, r.round2_5, r.round2_6, unused, unused, r.round2_test, r.round3_test],
+      r1: [r.round1_1, r.round1_2, r.round1_3, r.round1_4, r.round1_5, r.round1_6, unused, unused, unused, unused],
+      r2: [r.round2_1, r.round2_2, r.round2_3, r.round2_4, r.round2_5, r.round2_6, unused, unused, unused, unused],
       r3: [r.round3_1, r.round3_2, r.round3_3, r.round3_4, r.round3_5, r.round3_6, r.round3_7, r.round3_8, r.round3_9, r.round3_10],
     }
 
@@ -946,11 +945,7 @@ class RoundSelectSystem extends MenuSystem {
     // 레벨, 공격력이 부족할경우 라운드 입장 불가능
     let conditionA = this.roundConditionCheckRequire(roundId)
 
-    // 이전 라운드 클리어가 필요한 라운드에서는, 이전 라운드를 클리어해야함
-    let conditionB = this.roundConditionCheckPrevRound(roundId)
-
-    // 두개의 조건이 맞아야만 true이고 아니라면 false
-    return conditionA && conditionB
+    return conditionA
   }
 
   roundConditionCheckRequire (roundId = 0) {
@@ -963,6 +958,10 @@ class RoundSelectSystem extends MenuSystem {
     return true
   }
 
+  /**
+   * 게임 규칙 변경으로 더이상 이전 라운드 클리어 여부를 판단하지 않습니다.
+   * @deprecated
+   */
   roundConditionCheckPrevRound (roundId = 0) {
     let data = dataExportStatRound.get(roundId)
     if (data == null) return true
@@ -1002,12 +1001,8 @@ class RoundSelectSystem extends MenuSystem {
 
   roundConditionLevelAttackText (roundId = 0) {
     let result = this.roundConditionLevelAttackCheck()
-    if (!result.levelCondition && !result.attackCondition) {
-      return ['LOW LEVEL, LOW ATTACK', '레벨 낮음, 공격력 낮음']
-    } else if (!result.levelCondition) {
+    if (!result.levelCondition) {
       return ['LOW LEVEL', '레벨 낮음']
-    } else if (!result.attackCondition) {
-      return ['LOW ATTACK', '공격력 낮음']
     } else {
       return ['', '']
     }
@@ -1643,7 +1638,7 @@ class WeaponSelectSystem extends MenuSystem {
   /** 유저의 무기를 설정합니다. (id가 0인경우 지울 수 있지만, 내부적으로 1개의 무기가 있어야함.) */
   setWeapon (weaponId = 0) {
     if (weaponId == null) return
-    if (weaponId === ID.playerWeapon.subMultyshot) return
+    if (weaponId === ID.playerWeapon.multyshot) return
     if (this.cursorIcon >= dataExportPlayerWeapon.size) return // 커서 범위가 플레이어무기 범위를 초과할 수 없음
     if (!this.weaponUnlockConditionCheck(weaponId)) {
       game.sound.play(soundSrc.system.systemBuzzer)
@@ -3581,6 +3576,7 @@ export class gameSystem {
     try {
       loadData = JSON.parse(tamshooter4LoadData)
     } catch (e) {
+      // @ts-ignore
       this.errorSystem.setErrorCatch(e, this.errorSystem.errorTypeList.LOADERROR, systemText.gameError.LOAD_JSON_ERROR)
       console.error(systemText.gameError.LOAD_JSON_ERROR)
       return false
@@ -3802,6 +3798,7 @@ export class gameSystem {
     try {
       this.fieldSystem.process()
     } catch (e) {
+      // @ts-ignore
       this.errorSystem.setErrorCatch(e, this.errorSystem.errorTypeList.FIELDERROR, systemText.gameError.FIELD_ERROR1)
       console.error(e)
     }
@@ -3890,6 +3887,7 @@ export class gameSystem {
       try {
         this.fieldSystem.display()
       } catch (e) {
+        // @ts-ignore
         this.errorSystem.setErrorCatch(e, this.errorSystem.errorTypeList.FIELDERROR, e.message)
         console.error(e)
       }
