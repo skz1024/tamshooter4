@@ -9,24 +9,21 @@ const getSkillColor = (balance = '', coolTime = 20) => {
   // 쿨타임 20초: 밝은색, 24초: 진한색, 28초: 회색계통
   if (balance === balanceType.CHASE) {
     // 체이스타입, 노란색 표시
-    if (coolTime === 20) color = '#FFF3CF'
-    else if (coolTime === 24) color = '#FFE8A3'
-    else if (coolTime === 28) color = '#FFDE7C'
+    color = '#ffe598'
   } else if (balance === balanceType.SPLASH) {
     // 스플래시타입, 파란색 표시
-    if (coolTime === 20) color = '#D7F0FF'
-    else if (coolTime === 24) color = '#A3DCFF'
-    else if (coolTime === 28) color = '#69C6FF'
-  } else if (balance === balanceType.AREA) {
-    // 에리어 타입, 분홍색 표시
-    if (coolTime === 20) color = '#FFE6FE'
-    else if (coolTime === 24) color = '#FFBBFC'
-    else if (coolTime === 28) color = '#FF8AFA'
-  } else if (balance === balanceType.SHOT) {
-    // 샷 타입, 초록색 표시
-    if (coolTime === 20) color = '#D2FFD4'
-    else if (coolTime === 24) color = '#9AFF9F'
-    else if (coolTime === 28) color = '#69FF70'
+    color = '#9cd9ff'
+  } else if (balance === balanceType.AREA_ATTACK) {
+    // 에리어 타입
+    color = '#ffbffc'
+  } else if (balance === balanceType.AREA_SPLASH) {
+    color = '#d4b9ff'
+  } else if (balance === balanceType.SHOT_FRONT) {
+    color = '#baffbe'
+  } else if (balance === balanceType.SHOT_XWAY) {
+    color = '#d9ffb6'
+  } else if (balance === balanceType.SHOT_REFLECT) {
+    color = '#cab7ca'
   }
 
   return color
@@ -36,15 +33,15 @@ let pre = document.getElementById('pre')
 let element = document.createElement('pre')
 element.id = 'playerSkillList'
 element.textContent = '-player skillList-\n' 
-+ 'name      |group   |balance |cool|delay|attack  |max   |shot |repeat|attack|weapon\n' 
-+ '          |        |type    |time|     |multiple|target|count|count |count |attack\n'
++ 'name      |group       |balance       |cool|delay|attack  |max   |shot |repeat|attack|weapon\n' 
++ '          |            |type          |time|     |multiple|target|count|count |count |attack\n'
 pre?.appendChild(element)
 
 dataExportStatPlayerSkill.forEach((value) => {
   const weaponData = dataExportStatWeapon.get(value.weaponIdList[0])
   let name = '' + value.name.padEnd(10, ' ').slice(0, 10) + '|'
-  let group = '' + value.group.padEnd(8, ' ').slice(0, 8) + '|'
-  let balance = '' + value.balance.padEnd(8, ' ').slice(0, 8) + '|'
+  let group = '' + value.group.padEnd(12, ' ').slice(0, 12) + '|'
+  let balance = '' + value.balance.padEnd(14, ' ').slice(0, 14) + '|'
   let coolTime = ('' + value.coolTime).padEnd(4, ' ') + '|'
   let delay = ('' + value.delay).padEnd(5, ' ') + '|'
   let attackMultiple = ('' + value.multiple).padEnd(8, ' ') + '|'
@@ -87,14 +84,14 @@ const getWeaponColor = (balance = '') => {
 let element2 = document.createElement('pre')
 element2.id = 'playerWeaponList'
 element2.textContent = '-player weaponList- (60frame = 1second), (delay = frame)\n'
-+ 'name      |group   |balance    |delay|shot |repeat|attack  |weapon|\n'
-+ '          |        |type       |     |count|count |multiple|attack|'
++ 'name      |group   |balance         |delay|shot |repeat|attack  |weapon|\n'
++ '          |        |type            |     |count|count |multiple|attack|'
 pre?.appendChild(element2)
 
 dataExportStatPlayerWeapon.forEach((value) => {
   let name = '' + value.name.padEnd(10, ' ').slice(0, 10) + '|'
   let group = '' + value.group.padEnd(8, ' ').slice(0, 8) + '|'
-  let balance = '' + value.balance.padEnd(11, ' ').slice(0, 11) + '|'
+  let balance = '' + value.balance.padEnd(16, ' ').slice(0, 16) + '|'
   let delay = ('' + value.delay).padEnd(5, ' ') + '|'
   let shotCount = ('' + value.shotCount).padEnd(5, ' ') + '|'
   let attackMultiple = ('' + value.attackMultiple).padEnd(8, ' ') + '|'

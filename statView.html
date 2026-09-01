@@ -17,7 +17,102 @@ Menu Select
 <a href="#upgradeCostList">Upgrade Cost List (업그레이드 비용 리스트)</a>
 <a href="#playerLvData">Player Exp Table List (플레이어 경험치 테이블 리스트)</a>
   </pre>
+  <pre style="color: brown;">
+무기 배율 기준 표
+spalsh: 0.5 (0.4 ~ 0.5)
+chase: 1.0 (always)
+mixed는 무기 발사체의 비중을 나눈 후, 각각의 조건들을 따로 계산하여 서로 합칩니다.
+
+shot-reflect: 1.04 ~ 1.08
+조건: 벽 반사가 최소 3회 이상, 아닐경우 벽에 반사되어도 해당 없음
+
+shot-front-only: 1.6
+조건: 샷이 반드시 전방 직선으로만 나감 (발사 범위는 +-100px 제한)
+
+shot-back-only: 2.0
+조건: 밸런스 측정용으로만 제공됨. 사용불가
+
+shot-Xway-front: [1.2 ~ 1.6 에서 임의지정]
+shot-Xway-back: [1.6 ~ 2.0 에서 임의지정]
+이들을 조합하여 사용하며, 정확한 정의를 할 수 없음 (개수, 방향을 다 정의하기에는 복잡함)
+만약 무기가 더 증가하면 기준을 마련할 수 있을듯
+조건: 모든 발사체가 동일한 방향이 아닌 경우
+
+멀티샷: 1.33 = (front 2/6 + chase 2/6 + 2way) = (0.333 * 1.6) + (0.333) + (0.333 * 1.4)
+미사일: 0.5 = splash
+애로우: 1.04 = shot-reflect
+레이저: 1.2 = (front 2/4 + chase 2/4) = (1.4 * 0.5) + (1.0 * 0.5)
+사피아: 1.0 = chase
+파라포: 0.48 = spalsh v2
+블래스터: 1.52 = 2way front
+사이드웨이브: 1.46 = (3way front + 2way back) = (0.6 * 1.3) + (0.4 * 1.7)
+링: 1.8 = 8way (360 degree divide 8 -> 5way front, 3way back 으로 해석) = (0.625 * 1.5) + (0.375 * 1.9) = 1.7975 -> 1.8로 간주
+래피드: 1.6 = front
+선단일: 1.0 = chase
+부메랑: 1.55 = shot - special movement (임의 지정됨)
+칼날: 1.0 = chase
+코그휠: 1.7 = front - penetration
+연사이: 1.8 = (50% front + 50% back) = (0.5 * 1.6) + (0.5 * 2)
+사방탄: 0.5 = splash
+타워핑크: 1.0 = chase
+타워퍼플: 1.04 = shot-reflect
+헬전: 1.3 = (50% front + 50% chase) = (0.5 * 1.6) + (0.5 * 1.0)
+  </pre>
+  <pre style="color: darkmagenta;">
+스킬 배율 기본 규칙
+모든 스킬의 쿨타임은 20초, 24초, 28초 3종류입니다.
+splash, area는 최소 24초 제한
+28초 스킬은 +0.1배율을 추가로 얻음
+
+타입별 배율 값
+chase: 1.0
+splash: 0.4 ~ 0.5
+shot-front: 1.2 (front/back의 구분은 없음)
+shot-Xway: 1.02 ~ 1.19
+area-splash: 0.3 ~ 0.6
+area-attack: 0.7 ~ 1.2
+formula: 1.0 ~ 1.2, 무기 알고리즘 내부에서 배율이 결정되는 경우, 단 최대는 1.2로 제한
+
+멀티샷: chase 1, c20
+미사일: splash 0.5, maxTarget: 20, c24
+애로우: shot-reflect 1.04, c20
+레이저: area-splash 0.5, maxTarget: 14. c24
+사피아: area-attack 0.88, maxTarget: 4. c24
+파라포: splash 0.44, c24
+블래스터: shot-front: 1.2, c24
+사이드웨이브: shot-Xways: 1.08, c20
+소드: chase 1, c24
+크리티컬체이서: splash 0.6 (0.5+0.1), maxTarget: 35, c28
+파일벙커: area-attack 1.3 (1.2+0.1), maxTarget: 3, c28
+산탄수: area-divide 0.3, maxTarget: 50, c24
+화이트플래시: area-splash 0.6, maxTarget: 22, c24
+링: shot-Xway 1.04, 8way
+래피드: shot-front 1.2, c20
+선단일: chase 1.1(1.0+0.1), c28
+한주먹: splash 0.57 (0.47+0.1), c28, maxTarget: 26
+부메랑: area-attack 0.86, c24, maxTarget: 4, c24
+문: forumla, 1.1(1.0+0.1) c28, maxTarget: 100
+칼날: shot-reflect, 1.08, c20
+코그휠: area-attack, 1.11, c24, maxTarget: 3
+연사이: shot-Xways: 1.07, c20
+사방탄: splash 0.48, c24
+하비란트: chase 1, c24
+아이스체이서: splash 0.6 (0.5+0.1), c28
+칼리버: chase 1, c24
+수직파: area-splash 0.55, maxTarget: 22, c24
+스피커: area-attack 0.90, maxTarget: 5, c24
+어묵꼬치: chase 1, c24
+파이어크래커: splash 0.5, maxTarget: 20, c24
+토이해머: chase 1, c24
+엑스킬: chase 1, c24
+엑스샷: shot-random 1.05, c24
+엑스빔: area-attack 0.94, maxTarget: 2, c24
+엑스붐: splash 0.5, c24, maxTarget: 28
+헬전: chase 1, c20
+  </pre>
 </body>
 <canvas id="canvas" width="800" height="600"></canvas>
 </html>
 <script src="statView.js" type="module"></script>
+<script>
+</script>

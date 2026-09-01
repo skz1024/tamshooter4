@@ -8,7 +8,7 @@ import { imageDataInfo, imageSrc } from "./imageSrc.js"
 import { EnemyData } from "./dataEnemy.js"
 import { soundSrc } from "./soundSrc.js"
 import { game } from "./game.js"
-import { dataExportStatWeapon } from "./dataStat.js"
+import { dataExportStatPlayerSkill, dataExportStatWeapon } from "./dataStat.js"
 
 let graphicSystem = game.graphic
 let soundSystem = game.sound
@@ -2057,6 +2057,7 @@ class SkillSantansu extends WeaponData {
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.santansu)
     this.repeatCount = 6
     this.repeatDelay = new DelayData(9)
+    
     this.state = SkillSantansu.STATE_SANTANSU
 
     let randomPositionNumber = option[0]
@@ -2064,7 +2065,13 @@ class SkillSantansu extends WeaponData {
     let finishXRange = 480
     this.finishX = Math.floor(Math.random() * finishXRange) + finishXMin
 
-    this.setMultiTarget(8)
+    // 산탄수는 무기 특성상 각 개체가 서로 스플래시 영역을 가지므로,
+    // maxTarget을 지정된 개수보다 5배 낮춰야 합니다.
+    // 그리고, 이 산탄수 무기는 maxTarget을 5배수로 설정해주세요.
+    let stat = dataExportStatPlayerSkill.get(this.id)
+    if (stat != null) {
+      this.setMultiTarget(this.maxTarget / stat.shot)
+    }
 
     this.santansuEffectUp = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillSantansuUp, 160, 160)
     this.santansuEffectDown = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillSantansuDown, 160, 160)
