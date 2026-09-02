@@ -149,12 +149,12 @@ class BoxObject {
   }
 
   /**
-   * 박스를 클릭한 경우 (참고: 마우스 좌표값을 넣지 않으면 박스 입장에서 박스를 클릭했는지 알 수 없습니다.)
+   * 박스를 클릭한 경우에 사용해주세요. (참고: 마우스 좌표값을 넣지 않으면 박스 입장에서 박스를 클릭했는지 알 수 없습니다.)
    * @param {number} mouseX 클릭한 마우스의 x좌표
    * @param {number} mouseY 클릭한 마우스의 y좌표
    */
   click (mouseX, mouseY) {
-    if (this.hidden) return
+    if (this.hidden) return false
 
     if (this.collision(mouseX, mouseY)) {
       this.clicked = true
@@ -162,7 +162,144 @@ class BoxObject {
       this.clicked = false
     }
   }
+
+  /** 마우스의 위치와 충돌되었습니까?, 마우스 좌표를 입력하면 마우스와 이 박스가 충돌되었는지를 검사합니다. */
+  getCollision (mouseX = 0, mouseY = 0) {
+    if (this.collision(mouseX, mouseY)) {
+      return true
+    } else {
+      return false
+    }
+  }
 }
+
+
+class UIComponentObject {
+  constructor () {
+    /** 
+     * 배경 그라디언트 색 목록
+     * 
+     * 아무것도 없으면 배경색 없음. 1종류면 단색 처리
+     * @type {string[]}
+     */ 
+    this.backgroundColor = ['red', 'blue']
+
+    this.TITLE_HEIGHT = imageDataInfo.mainSystem.uiClose.height
+    this.titleBackground = ['grey']
+
+    /** 레이어 레벨, 이 값이 0인 경우, 취소 버튼을 누를 때 화면이 닫힙니다. */
+    this.layerLevel = 0
+
+    /** 이 창이 열려있는가?, 창을 닫아야 할 때를 알아내기 위해 만든 변수 */
+    this.isOpen = true
+
+    this.x = 250
+    this.y = 100
+    this.width = 500
+    this.height = 100
+
+    this.tilteImageSrc = imageSrc.system.menuList
+    this.tilteImageObject = imageDataInfo.menuList.roundSelect
+    
+    let uiWidth = imageDataInfo.mainSystem.uiClose.width
+    this.uiCloseBox = new BoxImageObject(this.x + this.width - uiWidth, this.y, uiWidth, imageDataInfo.mainSystem.uiClose.height, '', imageSrc.system.mainSystem, imageDataInfo.mainSystem.uiClose)
+  }
+
+  /** 어떤 버튼이 눌렸는지를 오브젝트로 확인합니다. 버튼이 눌린것은 boolean값으로 확인해야합니다. */
+  getButtonObject () {
+    const buttonA = game.control.getButtonInput(game.control.buttonIndex.A)
+    const buttonB = game.control.getButtonInput(game.control.buttonIndex.B)
+    const buttonX = game.control.getButtonInput(game.control.buttonIndex.X)
+    const buttonY = game.control.getButtonInput(game.control.buttonIndex.Y)
+    const buttonUp = game.control.getButtonInput(game.control.buttonIndex.UP)
+    const buttonDown = game.control.getButtonInput(game.control.buttonIndex.DOWN)
+    const buttonLeft = game.control.getButtonInput(game.control.buttonIndex.LEFT)
+    const buttonRight = game.control.getButtonInput(game.control.buttonIndex.RIGHT)
+    const buttonSkill0 = game.control.getButtonInput(game.control.buttonIndex.L1)
+    const buttonSkill1 = game.control.getButtonInput(game.control.buttonIndex.L2)
+    const buttonSkill2 = game.control.getButtonInput(game.control.buttonIndex.R1)
+    const buttonSkill3 = game.control.getButtonInput(game.control.buttonIndex.R2)
+    return  {
+      buttonA, buttonB, buttonX, buttonY,
+      buttonUp, buttonDown, buttonLeft, buttonRight, buttonSkill0, buttonSkill1, buttonSkill2, buttonSkill3
+    }
+  }
+
+  /** 너비, 높이 설정 */
+  setWidthHeight (width = 400, height = 100) {
+    this.width = width
+    this.height = height
+  }
+
+  process () {
+    // 창이 열려있지 않으면 아무 동작도 하지 않음.
+    if (!this.isOpen) return
+
+    this.processButton()
+    this.processMouse()
+    this.processSelect()
+    this.processCancel()
+    this.processClose()
+  }
+
+  /** 선택을 했을 때 (마우스 클릭, 또는 A버튼) */
+  processSelect () {
+
+  }
+
+  /** 취소를 했을 때 (마우스 클릭 위치가 X표시 부분, 또는 B버튼) */
+  processCancel () {
+
+  }
+
+  /** 창을 닫아야 하거나 닫았을 때 처리 */
+  processClose () {
+    
+  }
+
+  /** 창을 엽니다. */
+  open () {
+    this.isOpen = true
+  }
+
+  /** 창을 닫습니다. */
+  close () {
+    this.isOpen = false
+  }
+
+  /** 버튼을 눌렀을 때 */
+  processButton () {
+    let button = this.getButtonObject()
+    if (button.buttonB) {
+      this.close()
+    }
+  }
+
+  /** 마우스를 움직이거나 클릭했을 때 */
+  processMouse () {
+    if (game.control.getMouseClick()) {
+      if (this.uiCloseBox.collision(game.control.mouseX, game.control.mouseY)) {
+        this.close()
+      }
+    }
+  }
+
+  /** 출력 함수 */
+  display () {
+    // 창이 열려있지 않으면 아무 동작도 하지 않음.
+    if (!this.isOpen) return
+
+    this.displayBackground()
+    gameFunction.imageObjectDisplay(this.tilteImageSrc, this.tilteImageObject, this.x, this.y)
+    this.uiCloseBox.display()
+  }
+
+  displayBackground () {
+    game.graphic.gradientRect(this.x, this.y, this.width, this.height, this.backgroundColor)
+    game.graphic.gradientRect(this.x, this.y, this.width, this.TITLE_HEIGHT, this.titleBackground)
+  }
+}
+
 
 /**
  * 클릭 가능한 BoxObject지만, 이미지를 사용합니다.
@@ -3287,6 +3424,8 @@ export class gameSystem {
   /** etc... 시스템 */ static etcSystem = new EtcSystem()
   /** error 시스템 */ static errorSystem = new ErrorSystem()
 
+  static testUI = new UIComponentObject()
+
 
   /** 현재 게임의 옵션 데이터를 가져옵니다. */
   static getGameOption () {
@@ -3791,6 +3930,8 @@ export class gameSystem {
     this.processSave()
     this.processLoad()
     this.processDebug()
+
+    this.testUI.process()
   }
 
   static fieldProcess () {
@@ -3896,6 +4037,8 @@ export class gameSystem {
       this.userSystem.display()
       this.displayStatLine()
     }
+
+    this.testUI.display()
     
   }
 

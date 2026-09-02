@@ -974,6 +974,8 @@ export class TamsaEngine {
 
       this.control.processButton() // 키 입력 프로세스
       this.control.processMouse() // 마우스 입력 프로세스
+
+      // setInterval 방식을 사용하지 못한 이유
       // 사실 이렇게 된건 firefox의 setInterval이 느리게 작동하기 때문이다.
       // 어쩔수 없이 requsetAnimationFrame을 사용해야 한다.
     }

@@ -325,6 +325,7 @@ export class ControlSystem {
       const canvasZoomHeight = targetElement.clientHeight / targetElement.height
 
       // 마우스의 현재 좌표를 입력합니다.
+      this.setMouseMove()
       this.setMousePosition(e.offsetX / canvasZoomWidth, e.offsetY / canvasZoomHeight)
       e.preventDefault()
     })
@@ -600,8 +601,9 @@ export class ControlSystem {
   getButtonInput (buttonIndex) {
     // 버튼이 눌려져있는 상태라면, 이 상태를 제거한 후 ture를 리턴합니다.
     // 왜냐하면 1번만 눌린 상태를 체크해야 하기 때문입니다.
+
     if (this.isButtonInput[buttonIndex]) {
-      this.isButtonInput[buttonIndex] = false
+      // this.isButtonInput[buttonIndex] = false
       return true
     } else {
       return false
@@ -695,6 +697,10 @@ export class ControlSystem {
         this.buttonPressTime[i] = 0
       }
     }
+
+    for (let i = 0; i < this.isButtonInput.length; i++) {
+      this.isButtonInput[i] = false
+    }
   }
 
   /** 아무 버튼 중 하나라도 눌려있는지를 확인합니다. */
@@ -719,7 +725,7 @@ export class ControlSystem {
   /** 마우스 x좌표 */ mouseX = 0
   /** 마우스 y좌표 */ mouseY = 0
   /** 마우스 누른상태 확인 */ isMouseDown = false
-  /** 마우스 이동 확인 이나 사용하지 않음 */ isMouseMove = false
+  /** 마우스 이동 확인 */ isMouseMove = false
   /** 마우스 클릭 확인 */ isClicked = false
   /** 마우스 클릭 인터벌 id */ clickIntervalId = 0
 
@@ -765,6 +771,7 @@ export class ControlSystem {
    */
   processMouse () {
     this.isClicked = false
+    this.isMouseMove = false
   }
 
 
@@ -778,6 +785,14 @@ export class ControlSystem {
   setMousePosition (offsetX, offsetY) {
     this.mouseX = offsetX
     this.mouseY = offsetY
+  }
+
+  /**
+   * 마우스가 이동 중인 상태로 설정합니다.
+   * (매 프레임마다 해제됨)
+   */
+  setMouseMove () {
+    this.isMouseMove = true
   }
 
   /**
@@ -812,6 +827,11 @@ export class ControlSystem {
     }
   }
 
+  /** 마우스가 이동중인지를 확인함. */
+  getMouseMove () {
+    return this.isMouseMove
+  }
+
   /** 마우스의 x좌표를 가져옵니다. */
   getMouseX () {
     return Math.floor(this.mouseX)
@@ -829,7 +849,7 @@ export class ControlSystem {
    */
   getMouseClick () {
     if (this.isClicked) {
-      this.isClicked = false
+      // this.isClicked = false // 이 부분은 더이상 사용되지 않으며, 엔진의 끝 부분에서 초기화됩니다.
       return true
     } else {
       return false

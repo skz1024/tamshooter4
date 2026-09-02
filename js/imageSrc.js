@@ -836,6 +836,8 @@ export class imageDataInfo {
     /** 라운드 요구 조건의 일부가 맞지 않음 (클리어 등등...) */ roundConditionLock: new ImageDataObject(140, 90, 60, 60),
     /** 라운드를 플레이 하고 클리어한경우 */ roundPlayAfterClear: new ImageDataObject(200, 90, 60, 60),
     /** 라운드가 아직 표시되지 않은 상태 */ roundDisplayQuestionMark: new ImageDataObject(260, 90, 60, 60),
+
+    /** 창 X 닫기 UI */ uiClose: new ImageDataObject(300, 210, 40, 40),
   }
 
   static enemyDieEffectList = {
@@ -1059,15 +1061,15 @@ export class imageDataInfo {
   }
 
   static menuList = {
-    roundSelect: {x: 0, y: 0, width: 400, height: 40, frame: 1},
-    weaponSelect: {x: 0, y: 40, width: 400, height: 40, frame: 1},
-    skillSelect: {x: 0, y: 80, width: 400, height: 40, frame: 1},
-    upgrade: {x: 0, y: 120, width: 400, height: 40, frame: 1},
-    inventory: new ImageDataObject(0, 160, 400, 40),
-    story: new ImageDataObject(0, 200, 400, 40),
-    option: {x: 0, y: 240, width: 400, height: 40, frame: 1},
-    data: {x: 0, y: 280, width: 400, height: 40, frame: 1},
-    etc: {x: 0, y: 320, width: 400, height: 40, frame: 1}
+    roundSelect: {x: 0, y: 0, width: 200, height: 40, frame: 1},
+    weaponSelect: {x: 0, y: 40, width: 200, height: 40, frame: 1},
+    skillSelect: {x: 0, y: 80, width: 200, height: 40, frame: 1},
+    upgrade: {x: 0, y: 120, width: 200, height: 40, frame: 1},
+    inventory: new ImageDataObject(0, 160, 200, 40),
+    story: new ImageDataObject(0, 200, 200, 40),
+    option: {x: 0, y: 240, width: 200, height: 40, frame: 1},
+    data: {x: 0, y: 280, width: 200, height: 40, frame: 1},
+    etc: {x: 0, y: 320, width: 200, height: 40, frame: 1}
   }
 
   static system = {
