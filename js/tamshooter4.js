@@ -1638,7 +1638,6 @@ class WeaponSelectSystem extends MenuSystem {
   /** 유저의 무기를 설정합니다. (id가 0인경우 지울 수 있지만, 내부적으로 1개의 무기가 있어야함.) */
   setWeapon (weaponId = 0) {
     if (weaponId == null) return
-    if (weaponId === ID.playerWeapon.multyshot) return
     if (this.cursorIcon >= dataExportPlayerWeapon.size) return // 커서 범위가 플레이어무기 범위를 초과할 수 없음
     if (!this.weaponUnlockConditionCheck(weaponId)) {
       game.sound.play(soundSrc.system.systemBuzzer)

@@ -33,8 +33,8 @@ let pre = document.getElementById('pre')
 let element = document.createElement('pre')
 element.id = 'playerSkillList'
 element.textContent = '-player skillList-\n' 
-+ 'name      |group       |balance       |cool|delay|attack  |max   |shot |repeat|attack|weapon\n' 
-+ '          |            |type          |time|     |multiple|target|count|count |count |attack\n'
++ 'name      |group       |balance       |cool|delay|attack  |max   |shot |repeat|attack|weapon|isMulti|\n' 
++ '          |            |type          |time|     |multiple|target|count|count |count |attack|Target |\n'
 pre?.appendChild(element)
 
 dataExportStatPlayerSkill.forEach((value) => {
@@ -51,15 +51,24 @@ dataExportStatPlayerSkill.forEach((value) => {
   let repeatCount = ('' + value.repeat).padEnd(6, ' ') + '|'
   let attackCount = ('' + value.hit).padEnd(6, ' ') + '|'
   let weaponAttack = ('' + value.weaponAttack).padEnd(6, ' ') + '|'
+  let isMultiTarget = ('' + (weaponData != null ? weaponData.isMultiTarget : false)).padEnd(7, ' ') + '|'
   
   // color를 얻어올 때, value.xxx 하는 이유는, 일반 변수를 넣으면 중간에 string 변형이 일어나기 때문에, 원본과 값이 다를 수 있음.
   let color = getSkillColor(value.balance, value.coolTime)
+
+  // 일부 잘못된 밸런스 규칙이 있는지 검사합니다. 스플래시는 여러 개체를 동시에 공격할 수 있어야 합니다.
+  if (balance === StatPlayerSkill.balanceTypeList.SPLASH && weaponData?.isMultiTarget === false) {
+    color = '#FF0000'
+  } else if (balance === StatPlayerSkill.balanceTypeList.AREA_SPLASH && weaponData?.isMultiTarget === false) {
+    color = '#FF0000'
+  }
+
   let element = document.createElement('pre')
   element.style.margin = '0'
   element.style.background = color
   element.style.color = 'black'
   element.style.width = '800px'
-  element.textContent = name + group + balance + coolTime + delay + attackMultiple + maxTarget + shotCount + repeatCount + attackCount + weaponAttack
+  element.textContent = name + group + balance + coolTime + delay + attackMultiple + maxTarget + shotCount + repeatCount + attackCount + weaponAttack + isMultiTarget
   pre?.appendChild(element)
 })
 

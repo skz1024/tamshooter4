@@ -199,6 +199,15 @@ export class StatPlayerSkill {
     if (this.group === PGroup.GROUP1 || this.group === PGroup.GROUP2 || this.group === '') {
       this.lock = false // 기본 무기는 자동 잠금 해제 (해당 요소를 조사할 필요가 없음)
     }
+
+    // 공격 배율 값은 최대 제한 수치가 부여됩니다.
+    if (attackMultiple > 1.2) {
+      attackMultiple = 1.2
+    } else if (balance === StatPlayerSkill.balanceTypeList.SPLASH && attackMultiple > 0.5) {
+      attackMultiple = 0.5
+    } else if (balance === StatPlayerSkill.balanceTypeList.AREA_SPLASH && attackMultiple > 0.6) {
+      attackMultiple = 0.6
+    }
   }
 
   /** 자신의 현재 공격력과 관련된 무기 공격력을 얻습니다. */
@@ -494,7 +503,7 @@ dataExportStatWeapon.set(ID.weapon.skillSeondanil, new StatWeapon(Tskill, 'seond
 dataExportStatWeapon.set(ID.weapon.skillSeondanilMini, new StatWeapon(TskillSub, 'seondanilmini', 1, 3))
 dataExportStatWeapon.set(ID.weapon.skillHanjumoek, new StatWeapon(Tskill, 'hanjumoek', 30, 5, false, true, 26))
 dataExportStatWeapon.set(ID.weapon.skillBoomerang, new StatWeapon(Tskill, 'boomerang', 30, 3, false, true, 3))
-dataExportStatWeapon.set(ID.weapon.skillMoon, new StatWeapon(Tskill, 'moon', 90, 2, false, true, 9999))
+dataExportStatWeapon.set(ID.weapon.skillMoon, new StatWeapon(Tskill, 'moon', 30, 3, false, true, 100))
 dataExportStatWeapon.set(ID.weapon.skillKalnal, new StatWeapon(Tskill, 'kalnal', 6, 8, false, false, 2))
 dataExportStatWeapon.set(ID.weapon.skillCogwheel, new StatWeapon(Tskill, 'cogwheel', 30, 6, false, true, 6))
 dataExportStatWeapon.set(ID.weapon.skillYeonsai, new StatWeapon(Tskill, 'yeonsai'))

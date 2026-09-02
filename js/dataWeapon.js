@@ -1164,7 +1164,7 @@ class Ring extends WeaponData {
   }
 
   /** 링의 이동방향 및 속도 설정 */
-  setRingDirection (ringDirection, baseSpeed) {
+  setRingDirection (ringDirection = '', baseSpeed = 0) {
     switch (ringDirection) {
       case 'left':
         this.setMoveSpeed(baseSpeed, 0)
@@ -2455,20 +2455,35 @@ class SkillMoon extends WeaponData {
     this.setMoveSpeed(0, 0)
     this.attackDelay = new DelayData(60)
     this.state = SkillMoon.STATE_WAIT
+    this.attackElapsedFrame = 0
+    this.baseWidth = this.width
+    this.baseHeight = this.height
+
+    // 기본 공격력을 알고 있어야, 적 수에 따른 데미지를 재조정 할 수 있음.
+    this.baseAttack = 0 // 참고로 이것은 afterInit에서 대입해야 정상적으로 공격력을 받아옵니다.
+
+    this.attackMultipleTable = [1.1, 1.1, 0.9, 0.84, 0.76]
+    this.attackMultipleMin = 0.07
+    for (let i = 5; i <= 100; i++) {
+      // 데미지 공식: Math.floor(((300 * 1.1) + (enemyCount * 5))) / enemyCount
+      let multiple = Math.floor(300 * 1.1 + (i * 5)) / i / 100
+
+      this.attackMultipleTable.push(multiple)
+    }
 
     /** 
-     * 이 스킬이 공격 상태일 때, 배경색을 바꾸는 기준의 알파값
-     * 
-     * 이 값은, 일시 정지 상태일 때, 화면이 깜빡거리는걸 막기 위해 추가된 값입니다.
+     * 달 표시용 기준 알파값
      */
-    this.ALPHA_BASE = 0.1
+    this.ALPHA_BASE = 0.8
+  }
 
-    /** 이 스킬이 공격 상태일 때, 배경색을 바꾸는 실제 알파 값(기준값을 기준으로 이 값이 변화) */
-    this.alpha = 0.1
+  afterInit () {
+    // 실제 무기에 입력된 공격력 대입
+    this.baseAttack = this.attack
   }
 
   getSplashArea () {
-    // 개막장 스플래시 범위 (화면 전체를 넘어감, 기본사이즈 800x600)
+    // 개막장 스플래시 범위 (화면 전체를 넘어감, 게임 기본사이즈 800x600)
     return {
       x: -1000,
       y: -1000,
@@ -2492,27 +2507,32 @@ class SkillMoon extends WeaponData {
       this.state = SkillMoon.STATE_ATTACK
       soundSystem.play(soundSrc.skill.skillMoonAttack)
     } else if (this.state === SkillMoon.STATE_ATTACK && this.repeatDelay.check()) {
-      this.processHitObject(this.getSplashArea())
 
-      this.degree = Math.floor(Math.random() * 360)
-      let size = Math.floor(Math.random() * 40) + 180
+      // 적 수에 따라 공격력 배율 재설정
+      let enemyCount = fieldState.getEnemyObjectCount()
+      if (enemyCount >= this.attackMultipleTable.length) {
+        this.attack = Math.floor(this.baseAttack * this.attackMultipleMin)
+      } else {
+        this.attack = Math.floor(this.baseAttack * this.attackMultipleTable[enemyCount])
+      }
+
+      this.processHitObject(this.getSplashArea())
+      this.attackElapsedFrame++
+
+      this.degree += 30
+      let size = this.baseWidth + (this.attackElapsedFrame * 30)
       this.setWidthHeight(size, size)
-      this.alpha = Math.random() * this.ALPHA_BASE
+
+      let alpha = this.ALPHA_BASE - (this.attackElapsedFrame / 40)
+      this.alpha = alpha > 0.1 ? alpha : 0.1
     }
   }
 
   display () {
     let tempAlpha = this.alpha
-    this.alpha = 0.8
     super.display()
 
     this.alpha = tempAlpha
-    // 검은색 배경 화면 추가 출력
-    if (this.state === SkillMoon.STATE_ATTACK) {
-      graphicSystem.setAlpha(this.alpha)
-      graphicSystem.fillRect(0, 0, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT, 'black')
-      graphicSystem.setAlpha(1)
-    }
   }
 }
 
@@ -2658,15 +2678,7 @@ class SkillHabirant extends WeaponData {
     this.hitSoundSrc = soundSrc.skill.skillHabirantHit
     this.downDelay = new DelayData(16)
     this.hitEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.kalnal)
-    this.ONESHOT_COUNT = 4
-  }
-
-  afterInit () {
-    // 공격력을 1/5로 정의
-    // 이것은, 적을 타격할 때 1번, 그리고 서브웨폰이 4번, 총 5번을 공격하기 때문
-    // 즉, 1회 공격당 최종적으로 5번을 타격함.
-    // 20% x 5 = 100%
-    this.attack = Math.floor(this.attack / 5)
+    /** 1타격당 서브 웨폰 생성 횟수 */ this.SUB_WEAPON_CREATE_COUNT = 4
   }
 
   processState () {
@@ -2696,9 +2708,11 @@ class SkillHabirant extends WeaponData {
       // 타겟이 잡힌 적은 일단 데미지를 무조건 받음
       this.processHitObject()
 
-      this.repeatCount -= this.ONESHOT_COUNT // 반복 횟수 4 감소
-      // 그후, 서브웨폰을 다시 재생성
-      for (let i = 0; i < this.ONESHOT_COUNT; i++) {
+      // 4개의 무기를 생성하므로, 서브웨폰 생성 개수만큼 반복 횟수를 감소시킵니다.
+      this.repeatCount -= this.SUB_WEAPON_CREATE_COUNT
+
+      // 그후, 서브웨폰을 반복 횟수만큼 재생성
+      for (let i = 0; i < this.SUB_WEAPON_CREATE_COUNT; i++) {
         fieldState.createWeaponObject(ID.weapon.skillHabirantSub, this.x, this.y, this.attack)
       }
     }
@@ -3458,7 +3472,7 @@ dataExportWeapon.set(ID.weapon.parapoShockWave, ParapoShockwave)
 dataExportWeapon.set(ID.weapon.sapia, Sapia)
 dataExportWeapon.set(ID.weapon.sapiaShot, SapiaShot)
 dataExportWeapon.set(ID.weapon.sidewave, Sidewave)
-dataExportWeapon.set(ID.weapon.subMultyshot, SubMultyshot)
+// dataExportWeapon.set(ID.weapon.subMultyshot, SubMultyshot)
 dataExportWeapon.set(ID.weapon.rapid, Rapid)
 dataExportWeapon.set(ID.weapon.ring, Ring)
 dataExportWeapon.set(ID.weapon.seondanil, Seondanil)
