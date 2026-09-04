@@ -8,8 +8,11 @@
  */
 export class ID {
   static playerWeapon = {
-    unused: 0,
-    /** 무기 번호를 가져올 때 사용(서브웨폰은 엉뚱한 번호를 가져온다.) */ weaponNumberStart: 10000,
+    /** 사용되지 않는 id @deprecated */ unused: 0,
+    /** 무기 번호를 가져올 때 사용(서브웨폰은 엉뚱한 번호를 가져온다.) 
+     * 지금은 목적이 바뀌어서 같은 값을 가진 또다른 변수를 만들었습니다.
+     *  @deprecated */ weaponNumberStart: 10000,
+    /** 10000번 코드는 다른 무기를 넘어가기 위한 아이콘으로 대체됨 */ nextWeaponChangeButton: 10000,
     multyshot: 10001,
     missile: 10002,
     arrow: 10003,

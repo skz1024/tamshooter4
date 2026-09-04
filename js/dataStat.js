@@ -119,6 +119,20 @@ export class StatPlayerWeapon {
     return divide !== 0 ? Math.floor(totalDamage / divide) : 0
   }
 
+  /** 아이콘 번호를 가져옵니다.
+   * 참고: weaponId는 10001부터 시작합니다. 이걸 1번으로 가정하고 순차적으로 1씩 올라갑니다.
+   * 
+   * 잘못된 숫자인경우, 0으로 리턴합니다.
+   */
+  static getIconNumber (weaponId = 10001) {
+    let startNum = ID.playerWeapon.weaponNumberStart
+    if (weaponId >= startNum && weaponId < startNum + dataExportStatPlayerWeapon.size) {
+      return weaponId - 10000
+    } else {
+      return 0
+    }
+  }
+
   /** 
    * 밸런스 타입 리스트
    * 밸런스 규칙에 대한 내용은 statView.html 참고
