@@ -1112,13 +1112,15 @@ export class userSystem {
       const AREA_WIDTH = 75 // 300 / 4 = 75
       const NUMBER_X = LAYERX
       const SKILL_X = LAYERX + imageDataInfo.mainSystem.skillSlot1Available.width
-      const SKILL_WIDTH = 40
-      const SKILL_HEIGHT = 20
+      const SKILL_WIDTH = imageDataInfo.system.weaponSkillIcon.width
+      const SKILL_HEIGHT = imageDataInfo.system.weaponSkillIcon.height
       
       const OUTPUT_NUMBER_X = NUMBER_X + (i * AREA_WIDTH)
       const OUTPUT_SKILL_X = SKILL_X + (i * AREA_WIDTH)
       const OUTPUT_TIME_X = OUTPUT_SKILL_X
       const OUTPUT_TIME_Y = LAYERY1 + 1
+      const OUTPUT_SKILL_WIDTH = 40
+      const OUTPUT_SKILL_HEIGHT = 20
 
       // skill number display
       const imgD = imageDataInfo.mainSystem
@@ -1140,7 +1142,7 @@ export class userSystem {
           const skillNumber = this.skillDisplayStat[i].id - ID.playerSkill.skillNumberStart // 스킬의 ID는 15001부터 시작이라, 15000을 빼면, 스킬 번호값을 얻을 수 있음.
           const skillXLine = skillNumber % 10
           const skillYLine = Math.floor(skillNumber / 10)
-          game.graphic.imageDisplay(skillIconImage, skillXLine * SKILL_WIDTH, skillYLine * SKILL_HEIGHT, SKILL_WIDTH, SKILL_HEIGHT, OUTPUT_SKILL_X, LAYERY1, SKILL_WIDTH, SKILL_HEIGHT, 0, 0, 0.5)
+          game.graphic.imageDisplay(skillIconImage, skillXLine * SKILL_WIDTH, skillYLine * SKILL_HEIGHT, SKILL_WIDTH, SKILL_HEIGHT, OUTPUT_SKILL_X, LAYERY1, OUTPUT_SKILL_WIDTH, OUTPUT_SKILL_HEIGHT, 0, 0, 0.5)
         }
         digitalDisplay(this.skillDisplayStat[i].coolTime + '', OUTPUT_TIME_X, OUTPUT_TIME_Y) // 스킬 쿨타임 시간
       } else {
@@ -1148,7 +1150,7 @@ export class userSystem {
           const skillNumber = this.skillDisplayStat[i].id - ID.playerSkill.skillNumberStart // 스킬의 ID는 15001부터 시작이라, 15000을 빼면, 스킬 번호값을 얻을 수 있음.
           const skillXLine = skillNumber % 10
           const skillYLine = Math.floor(skillNumber / 10)
-          game.graphic.imageDisplay(skillIconImage, skillXLine * SKILL_WIDTH, skillYLine * SKILL_HEIGHT, SKILL_WIDTH, SKILL_HEIGHT, OUTPUT_SKILL_X, LAYERY1, SKILL_WIDTH, SKILL_HEIGHT)
+          game.graphic.imageDisplay(skillIconImage, skillXLine * SKILL_WIDTH, skillYLine * SKILL_HEIGHT, SKILL_WIDTH, SKILL_HEIGHT, OUTPUT_SKILL_X, LAYERY1, OUTPUT_SKILL_WIDTH, OUTPUT_SKILL_HEIGHT)
         }
       }
     }

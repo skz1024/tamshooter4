@@ -10,7 +10,7 @@ import { game, gameFunction } from "./game.js";
 import { stringText, systemText } from "./text.js";
 import { dataExportPlayerSkill, dataExportPlayerWeapon } from "./dataPlayer.js";
 
-const versionText = 'created by skz1024 | ver 0.50 | 2024/05'
+const versionText = 'created by skz1024 | ver 0.56 | 2026/09'
 let digitalDisplay = gameFunction.digitalDisplay
 let loadComplete = false
 
@@ -204,7 +204,7 @@ class UIComponentObject {
     this.layerLevel = 0
 
     /** 이 창이 열려있는가?, 창을 닫아야 할 때를 알아내기 위해 만든 변수 */
-    this.isOpen = true
+    this.isOpen = false
 
     this.x = UIComponentObject.BASE_X
     this.y = UIComponentObject.BASE_Y
@@ -216,8 +216,6 @@ class UIComponentObject {
     
     let uiWidth = imageDataInfo.mainSystem.uiClose.width
     this.uiCloseBox = new BoxImageObject(this.x + this.width - uiWidth, this.y, uiWidth, imageDataInfo.mainSystem.uiClose.height, '', imageSrc.system.mainSystem, imageDataInfo.mainSystem.uiClose)
-
-    
   }
 
   /** 어떤 버튼이 눌렸는지를 오브젝트로 확인합니다. 버튼이 눌린것은 boolean값으로 확인해야합니다. */
@@ -313,7 +311,6 @@ class UIComponentObject {
 
   /** 창을 닫습니다. */
   close () {
-    game.sound.play(soundSrc.system.systemBack)
     this.isOpen = false
   }
 
@@ -321,6 +318,7 @@ class UIComponentObject {
   processButton () {
     let button = this.getButtonObject()
     if (button.buttonB) {
+      game.sound.play(soundSrc.system.systemBack)
       this.close()
     }
   }
@@ -329,6 +327,7 @@ class UIComponentObject {
   processMouse () {
     if (game.control.getMouseClick()) {
       if (this.uiCloseBox.collision(game.control.mouseX, game.control.mouseY)) {
+        game.sound.play(soundSrc.system.systemBack)
         this.close()
       }
     }
@@ -364,6 +363,84 @@ class UIComponentObject {
     game.graphic.gradientRect(this.x, this.y, this.width, this.height, this.backgroundColor)
     game.graphic.gradientRect(this.x, this.y, this.width, this.TITLE_HEIGHT, this.titleBackground)
   }
+}
+
+
+/** 
+ * 이 클래스는 단일 itemBox를 통한 메뉴를 구현할 때 사용합니다.  
+ * 
+ * 이 함수는 box를 1종류만 사용하는 것을 전제로 합니다.
+ * (weapon, skill, round) 같은 경우, 이 클래스를 사용하지 않습니다.
+ */
+class UIComponentBaseMenuObject extends UIComponentObject {
+  constructor () {
+    super()
+
+    /** @type {BoxObject[]} */
+    this.boxList = []
+
+    /** 커서 값 (참고: cursor는 객체로 가정합니다.) */
+    this.cursor = { value: 0 }
+  }
+
+  /** 커서를 해당 위치로 변경합니다. */
+  changeCursor (value = 0) {
+    // 참고: 이 함수는 사운드 출력까지 담당하기 때문에
+    // 중복된 선택을 한 경우 (마우스로 인하여) 에는 커서 변경을 취소합니다.
+    if (value === this.cursor.value) return
+
+    // 유효 범위 검사
+    if (value < 0 || value >= this.boxList.length) return
+
+    this.cursor.value = value
+    game.sound.play(soundSrc.system.systemCursor)
+    this.changeFocus()
+  }
+
+  open () {
+    super.open()
+    this.changeFocus()
+  }
+
+  /** 박스 내에 있는 포커스를 다른 포커스로 변경합니다. */
+  changeFocus () {
+    for (let i = 0; i < this.boxList.length; i++) {
+      // focus의 값은 true or false이므로, 조건식을 바로 대입하여 결과가 나옴
+      this.boxList[i].focus = i === this.cursor.value
+    }
+  }
+
+  processButton () {
+    super.processButton()
+    let button = this.getButtonObject()
+
+    if (button.buttonDown) {
+      this.changeCursor(this.cursor.value + 1)
+    } else if (button.buttonUp) {
+      this.changeCursor(this.cursor.value - 1)
+    }
+  }
+
+  processMouse () {
+    super.processMouse()
+    if (game.control.isMouseMove && this.throttleCheck(4)) {
+      const mouseX = game.control.getMouseX()
+      const mouseY = game.control.getMouseY()
+
+      for (let i = 0; i < this.boxList.length; i++) {
+        if (this.boxList[i].collision(mouseX, mouseY)) {
+          this.changeCursor(i)
+        }
+      }
+    }
+  }
+
+  displayContent () {
+    for (let i = 0; i < this.boxList.length; i++) {
+      this.boxList[i].display()
+    }
+  }
+
 }
 
 
@@ -929,7 +1006,7 @@ class UIComponentWeaponSkillGridObject extends UIComponentObject {
   constructor () {
     super()
     this.setPosition(UIComponentObject.BASE_X - 40, this.y - 60)
-    this.setWidthHeight(UIComponentObject.BASE_WIDTH + 80, UIComponentObject.BASE_HEIGHT + 60)
+    this.setWidthHeight(UIComponentObject.BASE_WIDTH + 80, UIComponentObject.BASE_HEIGHT + 120)
     this.COLUMN_COUNT = 7
 
     /** 해당 목록에서 사용할 타겟(무기 또는 스킬)의 id List */
@@ -947,6 +1024,9 @@ class UIComponentWeaponSkillGridObject extends UIComponentObject {
       userSelect: 0,
       layerNumber: 0,
     }
+
+    /** 커서 사운드가 켜져있는지 여부 */
+    this.isCursorSound = true
 
     const MAX_PRESET = userSystem.PRESET_MAX_COUNT
     this.presetBox = []
@@ -973,6 +1053,16 @@ class UIComponentWeaponSkillGridObject extends UIComponentObject {
     for (let i = 0; i < this.presetBox.length; i++) {
       this.presetBox[i].display()
     }
+  }
+
+  /** 커서 사운드를 끕니다. */
+  cursorSoundMute () {
+    this.isCursorSound = false
+  }
+
+  /** 커서 사운드를 켭니다. */
+  cursorSoundUnMute () {
+    this.isCursorSound = true
   }
 }
 
@@ -1027,12 +1117,19 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
         // 참고: 무기를 변경했다면 유저 선택 부분의 커서가 +1칸이 되고, 
         // +1칸이 되었을 때 정해진 칸수를 초과 (배열 length 이상) 다시 0칸으로 이동합니다.
         const nextNumber = this.cursor.userSelect + 1 < this.userSelectBox.length ? this.cursor.userSelect + 1 : 0
+
+        // 그리고, 임시적으로 커서 사운드를 껐다가 켭니다.
+        // 소리가 다른 효과음과 겹쳤기 때문입니다.
+        this.cursorSoundMute()
         this.changeCursor(this.LAYER_USER_SELECT, nextNumber)
         this.changeCursor(this.LAYER_WEAPON, this.cursor.weapon)
         this.#changeFocus()
+        this.cursorSoundUnMute()
       }
     }
   }
+
+  
 
   processButton () {
     let button = this.getButtonObject()
@@ -1193,7 +1290,9 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
     }
 
     this.#changeFocus()
-    game.sound.play(soundSrc.system.systemCursor)
+    if (this.isCursorSound) {
+      game.sound.play(soundSrc.system.systemCursor)
+    }
   }
 
   /** 포커스 변경, changeCursor를 사용한 경우에만 동작함 */
@@ -1392,12 +1491,19 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
       this.cursor.preset = movePosition
     }
 
-    this.#changeFocus()
-    game.sound.play(soundSrc.system.systemCursor)
+    this.changeFocus()
+    if (this.isCursorSound) {
+      game.sound.play(soundSrc.system.systemCursor)
+    }
+  }
+
+  open () {
+    super.open()
+    this.changeFocus()
   }
 
   /** 포커스 변경, changeCursor를 사용한 경우에만 동작함 */
-  #changeFocus () {
+  changeFocus () {
     
     for (let i = 0; i < this.presetBox.length; i++) {
       this.presetBox[i].focus = false
@@ -1449,7 +1555,7 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
     if (this.cursor.layerNumber === this.LAYER_PRESET && this.cursor.preset !== userSystem.skillPresetNumber) {
       userSystem.changePresetSkill(this.cursor.preset)
       game.sound.play(soundSrc.system.systemSelect)
-      this.#changeFocus()
+      this.changeFocus()
     }
   }
 
@@ -1464,9 +1570,14 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
         // 참고: 스킬를 변경했다면 유저 선택 부분의 커서가 +1칸이 되고, 
         // +1칸이 되었을 때 정해진 칸수를 초과 (배열 length 이상) 다시 0칸으로 이동합니다.
         const nextNumber = this.cursor.userSelect + 1 < this.userSelectBox.length ? this.cursor.userSelect + 1 : 0
+
+        // 그리고, 임시적으로 커서 사운드를 껐다가 켭니다.
+        // 소리가 다른 효과음과 겹쳤기 때문입니다.
+        this.cursorSoundMute()
         this.changeCursor(this.LAYER_USER_SELECT, nextNumber)
         this.changeCursor(this.LAYER_WEAPON, this.cursor.weapon)
-        this.#changeFocus()
+        this.changeFocus()
+        this.cursorSoundUnMute()
       }
     }
   }
@@ -1699,6 +1810,7 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
   }
 }
 
+
 class UIComponentStatUpgrade extends UIComponentObject {
   constructor () {
     super()
@@ -1765,7 +1877,8 @@ class UIComponentStatUpgrade extends UIComponentObject {
   }
 }
 
-class UIComponentInventory extends UIComponentObject {
+
+class UIComponentInventory extends UIComponentBaseMenuObject {
   constructor () {
     super()
     // 임시 기능
@@ -1776,16 +1889,15 @@ class UIComponentInventory extends UIComponentObject {
     this.setWidthHeight(UIComponentObject.BASE_WIDTH + 60, UIComponentObject.BASE_HEIGHT + 40)
     this.setPosition(UIComponentObject.BASE_X - 30, UIComponentObject.BASE_Y - 20)
 
-    this.cursor = { item: 0 }
+    this.cursor = { value: 0 }
 
-    this.itemBox = []
     for (let i = 0; i < 30; i++) {
       const x = i % 10
       const y = Math.floor(i / 10)
       const w = 50
       const h = 50
       const box = new BoxObject(this.x + 5 + (x * (w + 5)), this.y + 50 + (y * (h + 40)), w, h, '?')
-      this.itemBox.push(box)
+      this.boxList.push(box)
     }
   }
 
@@ -1794,50 +1906,22 @@ class UIComponentInventory extends UIComponentObject {
     let button = this.getButtonObject()
 
     if (button.buttonLeft) {
-      this.changeCursor(this.cursor.item - 1)
+      this.changeCursor(this.cursor.value - 1)
     } else if (button.buttonRight) {
-      this.changeCursor(this.cursor.item + 1)
-    } else if (button.buttonDown) {
-      this.changeCursor(this.cursor.item + 10)
+      this.changeCursor(this.cursor.value + 1)
+    }
+
+    // 참고: super.processButton에서 1칸을 이미 이동해버렸기 때문에
+    // 10칸을 이동하려면 9칸을 더 움직여야 함. 10칸을 움직이면 11칸을 이동하게 됨
+    if (button.buttonDown) {
+      this.changeCursor(this.cursor.value + 9)
     } else if (button.buttonUp) {
-      this.changeCursor(this.cursor.item - 10)
-    }
-  }
-
-  changeCursor (itemPosition = 0) {
-    if (this.cursor.item === itemPosition) return
-    if (itemPosition < 0 || itemPosition >= this.itemBox.length) return
-
-    this.cursor.item = itemPosition
-    game.sound.play(soundSrc.system.systemCursor)
-    this.changeFocus()
-  }
-
-  changeFocus () {
-    for (let i = 0; i < this.itemBox.length; i++) {
-      this.itemBox[i].focus = false
-
-      if (i === this.cursor.item) {
-        this.itemBox[i].focus = true
-      }
-    }
-  }
-
-  processMouse () {
-    if (game.control.isMouseMove && this.throttleCheck(3)) {
-      const mouseX = game.control.getMouseX()
-      const mouseY = game.control.getMouseY()
-
-      for (let i = 0; i < this.itemBox.length; i++) {
-        if (this.itemBox[i].collision(mouseX, mouseY)) {
-          this.changeCursor(i)
-        }
-      }
+      this.changeCursor(this.cursor.value - 9)
     }
   }
 
   displayIcon () {
-    for (let i = 0; i < this.itemBox.length; i++) {
+    for (let i = 0; i < this.boxList.length; i++) {
       let inven = userSystem.inventory.get(i)
       if (inven == null) continue
 
@@ -1850,19 +1934,19 @@ class UIComponentInventory extends UIComponentObject {
       const iconSectionSize = imageDataInfo.system.itemIconSection.width
       const sliceX = iconSectionSize * (itemData.iconNumber % 10)
       const sliceY = iconSectionSize * Math.floor(itemData.iconNumber / 10)
-      game.graphic.imageDisplay(src, sliceX, sliceY, iconSize, iconSize, this.itemBox[i].x, this.itemBox[i].y, iconSize, iconSize)
+      game.graphic.imageDisplay(src, sliceX, sliceY, iconSize, iconSize, this.boxList[i].x, this.boxList[i].y, iconSize, iconSize)
 
       if (itemData.type === userSystem.inventory.itemType.ITEM) {
         let countText = 'X' + inven.count
         if (inven.count >= 1000 && inven.count <= 9999) countText = (inven.count / 1000).toFixed(1) + 'K'
         else if (inven.count >= 10000) countText = '9K+'
-        digitalDisplay(countText, this.itemBox[i].x, this.itemBox[i].y + this.itemBox[i].height)
+        digitalDisplay(countText, this.boxList[i].x, this.boxList[i].y + this.boxList[i].height)
       }
     }
   }
 
   displayInfo () {
-    let index = this.cursor.item
+    let index = this.cursor.value
     let item = userSystem.inventory.get(index)
     if (item == null) return
 
@@ -1876,22 +1960,19 @@ class UIComponentInventory extends UIComponentObject {
     const x = this.x
     const y = this.y + this.height - 60
 
-    digitalDisplay('INDEX: ' + this.cursor.item + ', type: ' + typeText + firstLineText, x, y)
+    digitalDisplay('INDEX: ' + this.cursor.value + ', type: ' + typeText + firstLineText, x, y)
     game.graphic.fillText(data.name, x, y + 20)
     game.graphic.fillText(data.info, x, y + 40)
   }
 
   displayContent () {
-    for (let i = 0; i < this.itemBox.length; i++) {
-      this.itemBox[i].display()
-    }
-
+    super.displayContent()
     this.displayIcon()
     this.displayInfo()
   }
 }
 
-class UIComponentOption extends UIComponentObject {
+class UIComponentOption extends UIComponentBaseMenuObject {
   /** 옵션 목록의 리스트 */
   optionList = {
     MENU_SOUND_VOLUME: 0,
@@ -1919,7 +2000,7 @@ class UIComponentOption extends UIComponentObject {
     const endColor = '#ffcd75'
     const focusColor = '#432e0a'
 
-    this.cursor = { item: 0 }
+    this.cursor = { value: 0 }
 
     const boxText = [
       'sound volume',
@@ -1929,11 +2010,10 @@ class UIComponentOption extends UIComponentObject {
       'show damage',
     ]
 
-    this.optionBox = []
     for (let i = 0; i < 8; i++) {
       const y = this.y + 50 + (i * 25)
       const box = new BoxObject(this.x, y, 300, 25, boxText[i], startColor, endColor, focusColor)
-      this.optionBox.push(box)
+      this.boxList.push(box)
     }
   }
 
@@ -1946,21 +2026,17 @@ class UIComponentOption extends UIComponentObject {
     }
 
     if (button.buttonLeft) {
-      if (this.cursor.item === this.optionList.MENU_SOUND_VOLUME) {
+      if (this.cursor.value === this.optionList.MENU_SOUND_VOLUME) {
         this.optionChange(-2)
-      } else if (this.cursor.item === this.optionList.MENU_MUSIC_VOLUME) {
+      } else if (this.cursor.value === this.optionList.MENU_MUSIC_VOLUME) {
         this.optionChange(-2)
       }
     } else if (button.buttonRight) {
-      if (this.cursor.item === this.optionList.MENU_SOUND_VOLUME) {
+      if (this.cursor.value === this.optionList.MENU_SOUND_VOLUME) {
         this.optionChange(2)
-      } else if (this.cursor.item === this.optionList.MENU_MUSIC_VOLUME) {
+      } else if (this.cursor.value === this.optionList.MENU_MUSIC_VOLUME) {
         this.optionChange(2)
       }
-    } else if (button.buttonUp) {
-      this.changeCursor(this.cursor.item - 1)
-    } else if (button.buttonDown) {
-      this.changeCursor(this.cursor.item + 1)
     }
   }
 
@@ -1968,7 +2044,7 @@ class UIComponentOption extends UIComponentObject {
   optionChange (relativeValue = 0) {
     let volumeTable = [0, 20, 40, 60, 80, 100]
 
-    if (this.cursor.item === this.optionList.MENU_SOUND_VOLUME) {
+    if (this.cursor.value === this.optionList.MENU_SOUND_VOLUME) {
       if (relativeValue === 0) {
         // 마우스 클릭 형태로 간주, 다음 배열 번호로 이동
         // 배열에 있는 다음 값보다 작으면 다음 값으로 이동하게 됩니다.
@@ -1978,7 +2054,7 @@ class UIComponentOption extends UIComponentObject {
         this.optionValue.soundVolume += relativeValue
       }
       game.sound.play(soundSrc.system.systemCursor)
-    } else if (this.cursor.item === this.optionList.MENU_MUSIC_VOLUME) {
+    } else if (this.cursor.value === this.optionList.MENU_MUSIC_VOLUME) {
       if (relativeValue === 0) {
         // 마우스 클릭 형태로 간주, 다음 배열 번호로 이동
         // 배열에 있는 다음 값보다 작으면 다음 값으로 이동하게 됩니다.
@@ -1987,54 +2063,26 @@ class UIComponentOption extends UIComponentObject {
       } else {
         this.optionValue.musicVolume += relativeValue
       }
-    } else if (this.cursor.item === this.optionList.MENU_RESULT_AUTO_SKIP) {
+    } else if (this.cursor.value === this.optionList.MENU_RESULT_AUTO_SKIP) {
       this.optionValue.resultAutoSkip = !this.optionValue.resultAutoSkip
-    } else if (this.cursor.item === this.optionList.MENU_SHOW_ENEMY_HP) {
+    } else if (this.cursor.value === this.optionList.MENU_SHOW_ENEMY_HP) {
       this.optionValue.showEnemyHp = !this.optionValue.showEnemyHp
-    } else if (this.cursor.item === this.optionList.MENU_SHOW_DAMAGE) {
+    } else if (this.cursor.value === this.optionList.MENU_SHOW_DAMAGE) {
       this.optionValue.showDamage = !this.optionValue.showDamage
     }
 
     this.optionEnable()
   }
 
-  changeCursor (itemPosition = 0) {
-    if (this.cursor.item === itemPosition) return
-    if (itemPosition < 0 || itemPosition >= this.optionBox.length) return
-
-    this.cursor.item = itemPosition
-    game.sound.play(soundSrc.system.systemCursor)
-    this.changeFocus()
-  }
-
-  changeFocus () {
-    for (let i = 0; i < this.optionBox.length; i++) {
-      this.optionBox[i].focus = false
-
-      if (i === this.cursor.item) {
-        this.optionBox[i].focus = true
-      }
-    }
-  }
-
   processMouse () {
-    if (game.control.isMouseMove && this.throttleCheck(3)) {
-      const mouseX = game.control.getMouseX()
-      const mouseY = game.control.getMouseY()
-
-      for (let i = 0; i < this.optionBox.length; i++) {
-        if (this.optionBox[i].collision(mouseX, mouseY)) {
-          this.changeCursor(i)
-        }
-      }
-    }
+    super.processMouse()
 
     if (game.control.getMouseClick()) {
       const mouseX = game.control.getMouseX()
       const mouseY = game.control.getMouseY()
 
-      for (let i = 0; i < this.optionBox.length; i++) {
-        if (this.optionBox[i].collision(mouseX, mouseY)) {
+      for (let i = 0; i < this.boxList.length; i++) {
+        if (this.boxList[i].collision(mouseX, mouseY)) {
           this.optionChange()
         }
       }
@@ -2072,10 +2120,7 @@ class UIComponentOption extends UIComponentObject {
   }
 
   displayContent () {
-    for (let i = 0; i < this.optionBox.length; i++) {
-      this.optionBox[i].display()
-    }
-
+    super.displayContent()
     this.displayValue()
   }
 
@@ -2092,26 +2137,26 @@ class UIComponentOption extends UIComponentObject {
     let imageOptionCheckedData = imageDataInfo.mainSystem.optionChecked
     let imageOptionUnCheckedData = imageDataInfo.mainSystem.optionUnChecked
 
-    for (let i = 0; i < this.optionBox.length; i++) {
-      const x = this.optionBox[i].x + this.optionBox[i].width
+    for (let i = 0; i < this.boxList.length; i++) {
+      const x = this.boxList[i].x + this.boxList[i].width
       if (typeof value[i] === 'boolean') {
         if (value[i]) {
-          gameFunction.imageObjectDisplay(optionImageSrc, imageOptionCheckedData, this.optionBox[i].x + this.optionBox[i].width, this.optionBox[i].y)
+          gameFunction.imageObjectDisplay(optionImageSrc, imageOptionCheckedData, this.boxList[i].x + this.boxList[i].width, this.boxList[i].y)
         } else {
-          gameFunction.imageObjectDisplay(optionImageSrc, imageOptionUnCheckedData, this.optionBox[i].x + this.optionBox[i].width, this.optionBox[i].y)
+          gameFunction.imageObjectDisplay(optionImageSrc, imageOptionUnCheckedData, this.boxList[i].x + this.boxList[i].width, this.boxList[i].y)
         }
 
       } else if (typeof value[i] === 'number') {
         const k = value[i]
         if (typeof k === "number") {
-          digitalDisplay(value[i] + '', x + 5, this.optionBox[i].y)
+          digitalDisplay(value[i] + '', x + 5, this.boxList[i].y)
         }
       }
     }
   }
 }
 
-class UIComponentMisc extends UIComponentObject {
+class UIComponentMisc extends UIComponentBaseMenuObject {
   constructor () {
     super()
     this.tilteImageObject = imageDataInfo.menuList.etc
@@ -2126,34 +2171,32 @@ class UIComponentMisc extends UIComponentObject {
       'bios menu',
     ]
 
-    this.cursor = {item: 0}
+    this.cursor = { value: 0 }
 
     const startColor = '#e9d7be'
     const endColor = '#e9d7be'
     const focusColor = '#4e4841'
 
-    this.menuBox = []
-
     for (let i = 0; i < boxText.length; i++) {
       const y = this.y + 50 + (i * 25)
       const box = new BoxObject(this.x, y, 300, 25, boxText[i], startColor, endColor, focusColor)
-      this.menuBox.push(box)
+      this.boxList.push(box)
     }
   }
 
   menuSelect () {
-    switch (this.cursor.item) {
+    switch (this.cursor.value) {
       case 0: this.roundStart(ID.round.test1Enemy); break
       case 1: this.roundStart(ID.round.test2Background); break
       case 2: this.roundStart(ID.round.test3Round3DownTower); break
       case 3: this.roundStart(ID.round.test4Sound); break
     }
 
-    if (this.cursor.item === 4) {
+    if (this.cursor.value === 4) {
       let a = document.createElement('a')
       a.href = './statView.html'
       a.click() // 다른 html 파일로 이동
-    } else if (this.cursor.item === 5) {
+    } else if (this.cursor.value === 5) {
       game.runBiosMode()
 
       // 바이오스를 빠져나가면 메인화면으로 이동
@@ -2180,60 +2223,20 @@ class UIComponentMisc extends UIComponentObject {
     if (button.buttonA) {
       this.menuSelect()
     }
-
-    if (button.buttonUp) {
-      this.changeCursor(this.cursor.item - 1)
-    } else if (button.buttonDown) {
-      this.changeCursor(this.cursor.item + 1)
-    }
-  }
-
-  changeCursor (itemPosition = 0) {
-    if (this.cursor.item === itemPosition) return
-    if (itemPosition < 0 || itemPosition >= this.menuBox.length) return
-
-    this.cursor.item = itemPosition
-    game.sound.play(soundSrc.system.systemCursor)
-    this.changeFocus()
-  }
-
-  changeFocus () {
-    for (let i = 0; i < this.menuBox.length; i++) {
-      this.menuBox[i].focus = false
-
-      if (i === this.cursor.item) {
-        this.menuBox[i].focus = true
-      }
-    }
   }
 
   processMouse () {
-    if (game.control.isMouseMove && this.throttleCheck(3)) {
-      const mouseX = game.control.getMouseX()
-      const mouseY = game.control.getMouseY()
-
-      for (let i = 0; i < this.menuBox.length; i++) {
-        if (this.menuBox[i].collision(mouseX, mouseY)) {
-          this.changeCursor(i)
-        }
-      }
-    }
+    super.processMouse()
 
     if (game.control.getMouseClick()) {
       const mouseX = game.control.getMouseX()
       const mouseY = game.control.getMouseY()
 
-      for (let i = 0; i < this.menuBox.length; i++) {
-        if (this.menuBox[i].collision(mouseX, mouseY)) {
+      for (let i = 0; i < this.boxList.length; i++) {
+        if (this.boxList[i].collision(mouseX, mouseY)) {
           this.menuSelect()
         }
       }
-    }
-  }
-
-  displayContent () {
-    for (let i = 0; i < this.menuBox.length; i++) {
-      this.menuBox[i].display()
     }
   }
 }
@@ -2282,6 +2285,10 @@ class MainSystem extends MenuSystem {
   }
 
   processButton () {
+    if (gameSystem.uiOpenCheck()) {
+      return
+    }
+
     super.processButton()
 
     // 버튼 눌렀는지 확인하는 변수, true or false
@@ -2303,16 +2310,31 @@ class MainSystem extends MenuSystem {
     // 유저 스탯 강제 재조정
     userSystem.processStat()
 
+    // switch (this.cursorPosition) {
+    //   case this.MENU_ROUND_SELECT: gameSystem.stateId = gameSystem.STATE_ROUND_SELECT; break
+    //   case this.MENU_WEAPON_SELECT: gameSystem.stateId = gameSystem.STATE_WEAPON_SELECT; break
+    //   case this.MENU_SKILL_SELECT: gameSystem.stateId = gameSystem.STATE_SKILL_SELECT; break
+    //   case this.MENU_UPGRADE: gameSystem.stateId = gameSystem.STATE_UPGRADE; break
+    //   case this.MENU_OPTION: gameSystem.stateId = gameSystem.STATE_OPTION; break
+    //   case this.MENU_DATA_SETTING: gameSystem.stateId = gameSystem.STATE_DATA_SETTING; break
+    //   case this.MENU_ETC: gameSystem.stateId = gameSystem.STATE_ETC; break
+    //   case this.MENU_INVENTORY: gameSystem.stateId = gameSystem.STATE_INVENTORY; break
+    //   case this.MENU_STORY: gameSystem.stateId = gameSystem.STATE_STORY; break
+    // }
+
+    // 모든 UI창을 닫은 후, 실행한 창을 다시 염
+    gameSystem.allUIClose()
+
     switch (this.cursorPosition) {
-      // case this.MENU_ROUND_SELECT: gameSystem.stateId = gameSystem.STATE_ROUND_SELECT; break
-      // case this.MENU_WEAPON_SELECT: gameSystem.stateId = gameSystem.STATE_WEAPON_SELECT; break
-      // case this.MENU_SKILL_SELECT: gameSystem.stateId = gameSystem.STATE_SKILL_SELECT; break
-      // case this.MENU_UPGRADE: gameSystem.stateId = gameSystem.STATE_UPGRADE; break
-      // case this.MENU_OPTION: gameSystem.stateId = gameSystem.STATE_OPTION; break
-      // case this.MENU_DATA_SETTING: gameSystem.stateId = gameSystem.STATE_DATA_SETTING; break
-      // case this.MENU_ETC: gameSystem.stateId = gameSystem.STATE_ETC; break
-      // case this.MENU_INVENTORY: gameSystem.stateId = gameSystem.STATE_INVENTORY; break
-      // case this.MENU_STORY: gameSystem.stateId = gameSystem.STATE_STORY; break
+      case this.MENU_ROUND_SELECT: gameSystem.uiRoundSelect.open(); break
+      case this.MENU_WEAPON_SELECT: gameSystem.uiWeaponSelect.open(); break
+      case this.MENU_SKILL_SELECT: gameSystem.uiSkillSelect.open(); break
+      case this.MENU_UPGRADE: gameSystem.uiStatUpgarde.open(); break
+      case this.MENU_OPTION: gameSystem.uiOption.open(); break
+      case this.MENU_DATA_SETTING: break // 아직 아무것도 없음
+      case this.MENU_ETC: gameSystem.uiMisc.open(); break
+      case this.MENU_INVENTORY: gameSystem.uiInventroy.open(); break
+      case this.MENU_STORY: break // 아직 아무것도 없음
     }
 
     // 사운드 출력
@@ -5121,6 +5143,31 @@ export class gameSystem {
   static uiOption = new UIComponentOption()
   static uiMisc = new UIComponentMisc()
 
+  /** 모든 UI 창을 닫습니다. */
+  static allUIClose () {
+    this.uiRoundSelect.close()
+    this.uiWeaponSelect.close()
+    this.uiSkillSelect.close()
+    this.uiStatUpgarde.close()
+    this.uiInventroy.close()
+    this.uiOption.close()
+    this.uiMisc.close()
+  }
+
+  /** ui가 1개 이상 열려있는지를 확인함 */
+  static uiOpenCheck () {
+    const value = this.uiRoundSelect.isOpen
+      || this.uiWeaponSelect.isOpen
+      || this.uiWeaponSelect.isOpen
+      || this.uiSkillSelect.isOpen
+      || this.uiStatUpgarde.isOpen
+      || this.uiInventroy.isOpen
+      || this.uiOption.isOpen
+      || this.uiMisc.isOpen
+
+    return value
+  }
+
   /** 현재 게임의 옵션 데이터를 가져옵니다. */
   static getGameOption () {
     return this.optionSystem.optionValue
@@ -5613,17 +5660,21 @@ export class gameSystem {
     this.userSystem.process()
     if (this.stateId === this.STATE_MAIN) this.userSystem.showUserStat()
 
+
+    this.processUI() // 처리 순서 문제 때문에 UI를 앞에 배치함
+    // UI가 뒤에있으면 이중 선택 현상이 벌어짐
+
     switch (this.stateId) {
       case this.STATE_MAIN: this.mainSystem.process(); break
-      case this.STATE_OPTION: this.optionSystem.process(); break
-      case this.STATE_ROUND_SELECT: this.roundSelectSystem.process(); break
-      case this.STATE_DATA_SETTING: this.dataSettingSystem.process(); break
-      case this.STATE_WEAPON_SELECT: this.weaponSelectSystem.process(); break
-      case this.STATE_SKILL_SELECT: this.skillSelectSystem.process(); break
-      case this.STATE_UPGRADE: this.upgradeSystem.process(); break
-      case this.STATE_ETC: this.etcSystem.process(); break
-      case this.STATE_INVENTORY: this.inventorySystem.process(); break
-      case this.STATE_STORY: this.storySystem.process(); break
+      // case this.STATE_OPTION: this.optionSystem.process(); break
+      // case this.STATE_ROUND_SELECT: this.roundSelectSystem.process(); break
+      // case this.STATE_DATA_SETTING: this.dataSettingSystem.process(); break
+      // case this.STATE_WEAPON_SELECT: this.weaponSelectSystem.process(); break
+      // case this.STATE_SKILL_SELECT: this.skillSelectSystem.process(); break
+      // case this.STATE_UPGRADE: this.upgradeSystem.process(); break
+      // case this.STATE_ETC: this.etcSystem.process(); break
+      // case this.STATE_INVENTORY: this.inventorySystem.process(); break
+      // case this.STATE_STORY: this.storySystem.process(); break
       case this.STATE_FIELD: this.fieldProcess(); break
     }
 
@@ -5631,19 +5682,16 @@ export class gameSystem {
     this.processSave()
     this.processLoad()
     this.processDebug()
-    this.processUI()
   }
 
   static processUI () {
-    // this.uiRoundSelect.process()
-    // this.uiInventroy.process()
+    this.uiRoundSelect.process()
+    this.uiInventroy.process()
     this.uiMisc.process()
-    // this.uiSkillSelect.process()
-    // this.uiStatUpgarde.process()
-    // this.uiWeaponSelect.process()
-    
-    
-    // this.uiOption.process()
+    this.uiSkillSelect.process()
+    this.uiStatUpgarde.process()
+    this.uiWeaponSelect.process()
+    this.uiOption.process()
   }
 
   static fieldProcess () {
@@ -5724,15 +5772,15 @@ export class gameSystem {
     // 화면 출력
     switch (this.stateId) {
       case this.STATE_MAIN: this.mainSystem.display(); break
-      case this.STATE_OPTION: this.optionSystem.display(); break
-      case this.STATE_ROUND_SELECT: this.roundSelectSystem.display(); break
-      case this.STATE_DATA_SETTING: this.dataSettingSystem.display(); break
-      case this.STATE_WEAPON_SELECT: this.weaponSelectSystem.display(); break
-      case this.STATE_SKILL_SELECT: this.skillSelectSystem.display(); break
-      case this.STATE_UPGRADE: this.upgradeSystem.display(); break
-      case this.STATE_INVENTORY: this.inventorySystem.display(); break
-      case this.STATE_STORY: this.storySystem.display(); break
-      case this.STATE_ETC: this.etcSystem.display(); break
+      // case this.STATE_OPTION: this.optionSystem.display(); break
+      // case this.STATE_ROUND_SELECT: this.roundSelectSystem.display(); break
+      // case this.STATE_DATA_SETTING: this.dataSettingSystem.display(); break
+      // case this.STATE_WEAPON_SELECT: this.weaponSelectSystem.display(); break
+      // case this.STATE_SKILL_SELECT: this.skillSelectSystem.display(); break
+      // case this.STATE_UPGRADE: this.upgradeSystem.display(); break
+      // case this.STATE_INVENTORY: this.inventorySystem.display(); break
+      // case this.STATE_STORY: this.storySystem.display(); break
+      // case this.STATE_ETC: this.etcSystem.display(); break
     }
 
     if (this.stateId === this.STATE_FIELD) {
@@ -5754,13 +5802,13 @@ export class gameSystem {
   }
 
   static displayUI () {
-    // this.uiRoundSelect.display()
-    // this.uiInventroy.display()
+    this.uiRoundSelect.display()
+    this.uiInventroy.display()
     this.uiMisc.display()
-    // this.uiOption.display()
-    // this.uiSkillSelect.display()
-    // this.uiStatUpgarde.display()
-    // this.uiWeaponSelect.display()
+    this.uiOption.display()
+    this.uiSkillSelect.display()
+    this.uiStatUpgarde.display()
+    this.uiWeaponSelect.display()
   }
 
   static displayStatLine () {
