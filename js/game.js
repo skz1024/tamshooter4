@@ -59,7 +59,7 @@ class StatLineText {
 export class gameFunction {
   /**
    * digitalFont로 글자를 출력합니다. 너비 높이 비율은 2:3
-   * @param {string} inputText 입력할 텍스트
+   * @param {string | number} inputText 입력할 텍스트
    * @param {number} x 출력할 x좌표
    * @param {number} y 출력할 y좌표
    * @param {number} wordwidth 글자너비 2px 단위 권장
@@ -380,8 +380,11 @@ export class userSystem {
   /** 스킬 1세트의 개수 */
   static SKILL_LIST_COUNT = 8
 
-  /** 프리셋의 최대 번호 */
+  /** 프리셋의 최대 번호 (최대 개수가 아닙니다!) @deprecated */
   static PRESET_MAX_NUMBER = 4
+
+  /** 프리셋의 최대 개수 */
+  static PRESET_MAX_COUNT = 5
 
   /** 스킬 리스트의 프리셋 (모든 스킬번호는 연결되어있음. 각각 4개는 A/B슬롯을 나타냄. 8개가 1세트) */
   static skillPresetList = [

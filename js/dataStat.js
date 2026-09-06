@@ -127,7 +127,7 @@ export class StatPlayerWeapon {
   static getIconNumber (weaponId = 10001) {
     let startNum = ID.playerWeapon.weaponNumberStart
     if (weaponId >= startNum && weaponId < startNum + dataExportStatPlayerWeapon.size) {
-      return weaponId - 10000
+      return weaponId - ID.playerWeapon.weaponNumberStart
     } else {
       return 0
     }
@@ -248,6 +248,20 @@ export class StatPlayerSkill {
     AREA_DIVIED: 'area-divied',
     AREA_ATTACK: 'area-attack',
     FORMULA: 'formula',
+  }
+
+  /** 
+   * 스킬 id에 따른 아이콘 번호를 얻어옵니다. 
+   * 
+   * 스킬 id는 15000부터 시작합니다. 아이콘 번호는 15000을 기준으로 0이 되고 그 이후로 계속 증가
+  */
+  static getIconNumber (skillId = 0) {
+    let startNum = ID.playerSkill.skillNumberStart
+    if (skillId >= startNum && skillId < startNum + dataExportStatPlayerSkill.size) {
+      return skillId - ID.playerSkill.skillNumberStart
+    } else {
+      return 0
+    }
   }
 }
 
