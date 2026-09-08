@@ -1125,6 +1125,9 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
         this.changeCursor(this.LAYER_WEAPON, this.cursor.weapon)
         this.#changeFocus()
         this.cursorSoundUnMute()
+
+        // 저장 요청
+        saveSystem.requestSave()
       }
     }
   }
@@ -1578,6 +1581,9 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
         this.changeCursor(this.LAYER_WEAPON, this.cursor.weapon)
         this.changeFocus()
         this.cursorSoundUnMute()
+
+        // 저장 요청
+        saveSystem.requestSave()
       }
     }
   }
@@ -2117,6 +2123,10 @@ class UIComponentOption extends UIComponentBaseMenuObject {
     let musicValue = this.optionValue.musicOn ? this.optionValue.musicVolume / 100 : 0
     game.sound.setMusicGain(musicValue)
     game.sound.musicOn = this.optionValue.musicOn
+
+    // 저장 요청
+    // 다만 2초 단위로만 저장하고, 2초가 지나기 전 까지는 저장을 대기합니다.
+    saveSystem.requestSave()
   }
 
   displayContent () {
@@ -3244,7 +3254,7 @@ class DataSettingSystem extends MenuSystem {
 
     if (this.isQuestionResetWindow) {
       if (this.questionReset) {
-        gameSystem.dataReset()
+        gameSystem
         this.isResetComplete = true
         
         // 2초 후 자동 새로고침
@@ -5008,7 +5018,7 @@ class ErrorSystem extends MenuSystem {
     }
 
     if (this.buttonPressHit >= 10) {
-      gameSystem.dataReset()
+      saveSystem.dataReset()
       setTimeout(() => { location.reload() }, 1000)
     }
   }
@@ -5094,83 +5104,113 @@ class ErrorSystem extends MenuSystem {
   }
 }
 
-/**
- * 게임 시스템 (거의 모든 로직을 처리), 경고: new 키워드로 인스턴스를 생성하지 마세요.
- * 이건 단일 클래스입니다.
- * 
- * 참고: 메인 메뉴에 관해서 설정을 하고 싶다면, mainSystem을 수정해주세요.
- * 그리고, 새로운 메뉴가 추가되었다면, 여기서 process, display함수를 사용할 수 있도록 한 뒤에
- * 메인 메뉴에서 이동할 수 있도록 mainSystem도 같이 수정해야 합니다.
+/** 저장 데이터 관리용 클래스. 다만 이 클래스는 직접 참조할 수 없는 것이 많기 때문에,
+ * 일부 함수만 패킹하는 용도 (암호화 해제, 데이터 배치 등) 만 처리합니다.
  */
-export class gameSystem {
-  /** 게임 상태 ID */ static stateId = 0
-  /** 상태: 메인 */ static STATE_MAIN = 0
-  /** 상태: 라운드선택 */ static STATE_ROUND_SELECT = 1
-  /** 상태: 무기 선택 */ static STATE_WEAPON_SELECT = 2
-  /** 상태: 스킬 선택 */ static STATE_SKILL_SELECT = 3
-  /** 상태: 강화 */ static STATE_UPGRADE = 4
-  /** 상태: 게임 옵션 */ static STATE_OPTION = 5
-  /** 상태: 데이터 설정 */ static STATE_DATA_SETTING = 6
-  /** 상태: 기타... */ static STATE_ETC = 7
-  /** 상태: 인벤토리 */ static STATE_INVENTORY = 8
-  /** 상태: 스토리 */ static STATE_STORY = 9
-  /** 상태: 필드(게임 진행중) */ static STATE_FIELD = 12
-  /** 상태: 오류 발생 */ static STATE_ERROR = 13
-  /** 게임 첫 실행시 로드를 하기 위한 초기화 확인 변수 */ static isLoad = false
-  /** 게임에서 저장된 데이터가 있는지 확인하는 localStorage 키 이름 */ static SAVE_FLAG = 'saveFlag'
-
-  // 일부 시스템은 static을 사용하기 때문에 new를 이용해 인스턴스를 생성하지 않습니다.
-  /** 유저 시스템 */ static userSystem = userSystem
-  /** 필드 시스템 */ static fieldSystem = fieldSystem
-  /** 메인 시스템 */ static mainSystem = new MainSystem()
-  /** 옵션 시스템 */ static optionSystem = new OptionSystem()
-  /** 라운드 선택 시스템 */ static roundSelectSystem = new RoundSelectSystem()
-  /** 데이터 설정 시스템 */ static dataSettingSystem = new DataSettingSystem()
-  /** 스텟(게임, 필드 스탯) 표시 시스템 */ static statSystem = new StatSystem()
-  /** 무기 선택 시스템 */ static weaponSelectSystem = new WeaponSelectSystem()
-  /** 스킬 선택 시스템 */ static skillSelectSystem = new SkillSelectSystem()
-  /** 업그레이드 시스템 */ static upgradeSystem = new StatUpgradeSystem()
-  /** 인벤토리 시스템 */ static inventorySystem = new InventorySystem()
-  /** 스토리 시스템 */ static storySystem = new StorySystem()
-  /** etc... 시스템 */ static etcSystem = new EtcSystem()
-  /** error 시스템 */ static errorSystem = new ErrorSystem()
-
-  static uiRoundSelect = new UIComponentRoundSelect()
-  static uiWeaponSelect = new UIComponentWeaponSelect()
-  static uiSkillSelect = new UIComponentSkillSelect()
-  static uiStatUpgarde = new UIComponentStatUpgrade()
-  static uiInventroy = new UIComponentInventory()
-  static uiOption = new UIComponentOption()
-  static uiMisc = new UIComponentMisc()
-
-  /** 모든 UI 창을 닫습니다. */
-  static allUIClose () {
-    this.uiRoundSelect.close()
-    this.uiWeaponSelect.close()
-    this.uiSkillSelect.close()
-    this.uiStatUpgarde.close()
-    this.uiInventroy.close()
-    this.uiOption.close()
-    this.uiMisc.close()
+class saveSystem {
+  static arrayPackData () {
+    
   }
 
-  /** ui가 1개 이상 열려있는지를 확인함 */
-  static uiOpenCheck () {
-    const value = this.uiRoundSelect.isOpen
-      || this.uiWeaponSelect.isOpen
-      || this.uiWeaponSelect.isOpen
-      || this.uiSkillSelect.isOpen
-      || this.uiStatUpgarde.isOpen
-      || this.uiInventroy.isOpen
-      || this.uiOption.isOpen
-      || this.uiMisc.isOpen
+  static arrayUnPackData () {
 
-    return value
   }
 
-  /** 현재 게임의 옵션 데이터를 가져옵니다. */
-  static getGameOption () {
-    return this.optionSystem.optionValue
+  /** 데이터 리셋 여부 */
+  static isDataReset = false
+
+  /**
+   * 모든 데이터를 삭제합니다.
+   * 삭제 기능이 동작한 후, 2초 후 자동으로 새로고침 되기 때문에, 저장기능이 일시적으로 정지도비니다.
+   */
+  static dataReset () {
+    // localStorage.clear() // 이제 tamshooter4와 관련한 데이터만 삭제됩니다.
+    // 다른 데이터를 엉뚱하게 삭제할 가능성이 있으므로, localStorage.clear는 사용하지 않습니다.
+    localStorage.removeItem(this.getCurrentSaveKey())
+    localStorage.removeItem(this.getCurrentSaveKeyBackup())
+    this.isDataReset = true
+  }
+
+  /** 저장 데이터 배열의 인덱스 이름. 이 위치들은 같은 그룹일 경우 절대위치, 다른 그룹일 경우 상대위치입니다. */
+  static indexName = {
+    /** 헤더 영역 */ header: {
+      /** 세이브 플래그 */ SAVE_FLAG: 0,
+      /** 할당된 그룹 개수 */ TOTAL_GROUP_COUNT: 1,
+      /** 그룹 1의 인덱스 위치 */ GROUP1_INDEX_POSITION: 2,
+      /** 그룹 1의 데이터 개수 */ GROUP1_COUNT_POSITION: 3,
+      /** 그룹 2의 인덱스 위치 */ GROUP2_INDEX_POSITION: 4,
+      /** 그룹 2의 데이터 개수 */ GROUP2_COUNT_POSITION: 5,
+      /** 그룹 3의 인덱스 위치 */ GROUP3_INDEX_POSITION: 6,
+      /** 그룹 3의 데이터 개수 */ GROUP3_COUNT_POSITION: 7,
+      /** 그룹 4의 인덱스 위치 */ GROUP4_INDEX_POSITION: 8,
+      /** 그룹 4의 데이터 개수 */ GROUP4_COUNT_POSITION: 9,
+      /** 헤더의 마지막 인덱스 (임시용도) */ HEADER_LAST_INDEX: 10,
+    },
+
+    /** 그룹 1 옵션 데이터 영역 */ group1OptionData: {
+      SAVE_DATE_YEAR: 0,
+      SAVE_DATE_MONTH: 1,
+      SAVE_DATE_DATE: 2,
+      SAVE_DATE_HOUR: 3,
+      SAVE_DATE_MINUTE: 4,
+      SAVE_DATE_SECOND: 5,
+      START_DATE_YEAR: 6,
+      START_DATE_MONTH: 7,
+      START_DATE_DATE: 8,
+      START_DATE_HOUR: 9,
+      START_DATE_MINUTE: 10,
+      START_DATE_SECOND: 11,
+      PLAY_TIME_HOUR: 12,
+      PLAY_TIME_MINUTE: 13,
+      PLAY_TIME_SECOND: 14,
+      OPTION_SOUND_ON: 15,
+      OPTION_MUSIC_ON: 16,
+      OPTION_SOUND_VOLUME: 17,
+      OPTION_MUSIC_VOLUME: 18,
+      OPTION_RESULT_AUTO_SKIP: 19,
+      OPTION_SHOW_ENEMY_HP: 20,
+      OPTION_SHOW_DAMAGE: 21,
+    },
+
+    /** 그룹 2 암호화 데이터 (단순 조작 방지용) */ group2EncodeData: {
+      LV: 0,
+      EXP: 1,
+      GOLD: 2
+    },
+
+    /** 그룹 3 유저 데이터 영역, 고정 길이 저장용 */
+    group3UserData: {
+      // fixed (0 ~ 99, 이 범위는 임시 범위에 가까움)
+      /** 고정 범위 인덱스의 개수 */ FIXED_INDEX_COUNT: 0,
+      WEAPON_LIST: 0, 
+      SKILL_LIST: 4,
+      WEAPON_PRESET: 12,
+      WEAPON_PRESET_NUMBER: 32,
+      SKILL_PRESET: 33,
+      SKILL_PRESET_NUMBER: 73,
+      EQUIPMENT_INVENTORY_INDEX: 74,
+    },
+
+    /** 그룹 4 유저 데이터, 가변 길이 저장용 */
+    group4UserData: {
+      // variable (~100 부터 시작, 짝수는 시작 인덱스 번호, 홀수는 배열의 개수)
+      // 만약 데이터가 없다면, 아무 길이도 추가되지 않습니다.
+      INVENTORY_IDLIST: 0,
+      INVENTORY_IDLIST_COUNT: 1,
+      INVENTORY_ITEM_COUNT: 2,
+      INVENTORY_ITEM_COUNT_COUNT: 3,
+      INVENTORY_UPGRADE_LEVEL: 4,
+      INVENTORY_UPGRADE_LEVEL_COUNT: 5,
+      UNLOCK_WEAPON: 6,
+      UNLOCK_WEAPON_COUNT: 7,
+      UNLOCK_SKILL: 8,
+      UNLOCK_SKILL_COUNT: 9,
+      ROUND_CLEAR: 10,
+      ROUND_CLEAR_COUNT: 11,
+      SPECIAL_FLAG: 12,
+      SPECIAL_FLAG_COUNT: 13,
+      /** variable의 첫 데이터가 진입하는 지점 */ VARIABLE_DATA_START: 14,
+    }
   }
 
   /** 
@@ -5193,9 +5233,21 @@ export class gameSystem {
    */
   static saveKeyTamshooter4DataNumber = 0
 
+  /**
+   * 저장할 때, 기준 버전을 참고할 플래그 값입니다. 하위호환용으로만 제공
+   * @deprecated
+   */
   static saveFlagList = {
-    v0a36: 'v0a36',
-    level1V0a43: 'level1 v0a43',
+    /** 0.36버전 이후 만들어짐 */ v0a36: 'v0a36',
+    /** 0.43버전 이후 만들어짐*/ level1V0a43: 'level1 v0a43',
+  }
+
+  /** 
+   * 저장할 때, 헤더 플래그 값을 가져옵니다. 
+   * 해더는 배열의 0번째 칸에 저장합니다.
+  */
+  static saveHeaderFlag = {
+    /** 0.55버전의 특수 플래그 */ V055: 107780055
   }
 
   /** tamshooter4에서 사용하는 실제 세이브 키 (참고: 세이브 키 + 세이브 번호의 조합으로 키를 구성하기 때문에 이 함수를 사용해야 합니다.) */
@@ -5220,79 +5272,15 @@ export class gameSystem {
    */
   static initLoad = false
 
-  /** 저장 딜레이 프레임 간격 */
-  static SAVE_DELAY = 60
+  /** 저장 딜레이 프레임 간격  */
+  static SAVE_DELAY = 120
 
-  /**
-   * 저장 기능은, 1초에 한번씩 진행됩니다. 달래아 - 지연(프레임)
-   * 이 게임 내에서는, 지연 시간을 딜레이란 단어로 표기합니다.
-   * 
-   * @param {boolean} [forceSave=false] 강제 세이브 여부 (딜레이를 무시함) 특정 상황에서만 이 변수의 값을 true로 설정해주세요.
-   */
-  static processSave (forceSave = false) {
-    // 세이브 데이터를 저장하는 조건이 맞아야만 저장됩니다. 자세한 내용은 함수 내부를 살펴보세요.
-    if (!this.processSaveConditionCheck(forceSave)) return
+  /** 세이브 이벤트가 발생되었는지 확인하는 변수 */
+  static #isSaveEvent = false
 
-    // 저장 시간 (참고: getMonth는 0부터 시작하기 때문에 +1을 해야합니다.)
-    const saveDate = new Date()
-    const saveDateString = saveDate.getFullYear() + ',' + (saveDate.getMonth() + 1) + ',' + saveDate.getDate() + ',' + saveDate.getHours() + ',' + saveDate.getMinutes() + ',' + saveDate.getSeconds()
-
-    // 유저의 첫 시작 시간
-    const startDate = this.userSystem.startDate
-    const startDateString = startDate.year + ',' + startDate.month + ',' + startDate.day + ',' + startDate.hour + ',' + startDate.minute + ',' + startDate.second
-
-    // 플레이 타임 저장
-    const playTime = this.userSystem.playTime
-    const playTimeString = playTime.hour + ',' + playTime.minute + ',' + playTime.second
-
-    // 모든 옵션 값들 저장
-    const optionValue = this.optionSystem.optionValue
-
-    // 유저의 데이터
-    const userData = this.userSystem.getSaveData()
-
-    // sramDataList (간접 저장 정보)
-    // sram0: lv, exp, gold
-    // sram1: inventoryIdList
-    // sram2: inventoryCount
-    // sram3: inventoryUpgradeLevel
-    // sram4: weaponUnlockList
-    // sram5: skillUnlockList
-    // sram6: roundClearList
-    // sram7: specialFlagList
-    let sramData = [
-      this.saveNumberEncode(userData.lv, userData.exp, userData.gold),
-      this.saveNumberEncode(...userData.inventoryItemIdList),
-      this.saveNumberEncode(...userData.inventoryItemCountList),
-      this.saveNumberEncode(...userData.inventoryItemUpgardeLevel),
-      this.saveNumberEncode(...userData.weaponUnlockList),
-      this.saveNumberEncode(...userData.skillUnlockList),
-      this.saveNumberEncode(...userData.roundClearList),
-      this.saveNumberEncode(...userData.specialFlagList)
-    ]
-
-    let saveData = {
-      saveFlag: this.saveFlagList.level1V0a43,
-      saveDate: saveDateString,
-      startDate: startDateString,
-      playTime: playTimeString,
-      option: optionValue,
-      userData: userData,
-      sramData: sramData
-    }
-
-    let jsonString = JSON.stringify(saveData)
-    localStorage.setItem(this.getCurrentSaveKey(), jsonString)
-    localStorage.setItem(this.getCurrentSaveKeyBackup(), jsonString)
-
-    // 필드 저장 데이터는, 필드 상태에서, 게임이 진행 중일 때에만 저장됩니다. 클리어, 게임오버, 탈출상태가 되면 저장하지 않습니다.
-    if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
-      const fieldSaveData = fieldSystem.fieldSystemSaveData()
-      localStorage.setItem(this.getCurrentSaveKeyField(), JSON.stringify(fieldSaveData))
-    } else {
-      // 필드 상태가 아니면, 필드 저장 데이터는 삭제
-      localStorage.removeItem(this.getCurrentSaveKeyField())
-    }
+  /** 저장을 수행하도록 요청합니다. */
+  static requestSave () {
+    this.#isSaveEvent = true
   }
 
   /**
@@ -5300,22 +5288,103 @@ export class gameSystem {
    * @param {boolean} forceSave 
    * @returns {boolean}
    */
-  static processSaveConditionCheck (forceSave) {
+  static processSaveConditionCheck (forceSave = false) {
     // 데이터 리셋이 되었다면, 게임을 자동 새로고침하므로 저장 함수를 실행하지 않음.
     if (this.isDataReset) return false
 
-    /** 저장 딜레이 시간 */ const SAVE_DELAY = this.SAVE_DELAY
+    // 강제 저장 요청은, 무조건 수행합니다.
+    if (forceSave) return true
 
-    // 세이브 지연시간보다 세이브 지연 시간을 카운트 한 값이 낮으면 함수는 실행되지 않습니다.
-    // 즉, 60frame을 채울때까지 저장 기능은 미루어집니다. 따라서 1초에 1번씩 저장합니다.
-    this.saveDelayCount++ // 세이브 딜레이에 카운트 증가
-    // 강제세이브의 경우, 저장딜레이를 무시하고 강제로 저장함
-    if (!forceSave && this.saveDelayCount < SAVE_DELAY) return false
+    // 이것은 이벤트 기반이 작동하는 즉시 저장을 유도하기 위해 카운트를 미리 증가시켜 놓습니다.
+    this.saveDelayCount++
 
+    // requestSave 요청이 들어왔는지 확인합니다. 아니라면 저장하지 않습니다.
+    // 여전히 카운트는 증가되기 때문에, 이벤트가 들어오면 즉시 저장될 수 있습니다.
+    if (!this.#isSaveEvent) return false
+    
+    // 이벤트가 들어와도, 지연된 시간을 초과하기 전까지 저장이 지연됩니다.
+    if (this.saveDelayCount < this.SAVE_DELAY) return false
+
+    // 저장을 성공했다고 가정한다면
     // 세이브 딜레이 초기화
     this.saveDelayCount = 0
 
+    // 세이브 이벤트 제거
+    this.#isSaveEvent = false
+
     return true
+  }
+
+  
+  /**
+   * 숫자로 구성된 배열을 고속으로 난독화하고 무결성 체크섬을 부착합니다.
+   * @param {number[]} dataArray - 암호화할 정수 배열 (예: [lv, exp, gold, hp])
+   * @returns {number[]} - 난독화된 정수 배열
+   */
+  static numberArrayEncodeV055(dataArray) {
+    const len = dataArray.length;
+    // [0]: 시드키, [1~len]: 난독화된 데이터, [len+1]: 무결성 체크섬
+    const result = new Int32Array(len + 2);
+    
+    // 1. 32비트 난수 키 생성 (0이 아닌 값)
+    const maskKey = (Math.random() * 0x7FFFFFFF) | 1;
+    result[0] = maskKey;
+
+    let checksum = 2166136261; // FNV-1a Hash 초기값
+
+    // 2. 고속 XOR 및 무결성 핑거프린트 연산
+    for (let i = 0; i < len; i++) {
+      const val = dataArray[i] | 0; // 강제 32bit 정수화
+      
+      // 위치 기반 Dynamic XOR (키가 매번 달라짐)
+      const encryptedVal = val ^ (maskKey + i * 16807);
+      result[i + 1] = encryptedVal;
+
+      // FNV-1a 해시 갱신 (데이터 변조 감지용)
+      checksum ^= val;
+      checksum = Math.imul(checksum, 16777619);
+    }
+
+    // 3. 체크섬도 난독화하여 맨 뒤에 추가
+    result[len + 1] = checksum ^ maskKey;
+
+    // LocalStorage 저장 시 join(',')으로 1회 변환
+    return Array.from(result);
+  }
+
+  /**
+   * 난독화된 배열을 복호화하고 변조 여부를 검증합니다.
+   * @param {ArrayLike<number>} encryptedArray 
+   * @returns {number[] | null} - 변조되었거나 불법 데이터면 null 리턴
+   */
+  static numberArrayDecodeV055(encryptedArray) {
+    if (!encryptedArray || encryptedArray.length < 3) return null;
+
+    const maskKey = encryptedArray[0];
+    const len = encryptedArray.length - 2;
+    const decrypted = new Int32Array(len);
+    
+    let checksum = 2166136261;
+
+    for (let i = 0; i < len; i++) {
+      const encryptedVal = encryptedArray[i + 1];
+      const originalVal = encryptedVal ^ (maskKey + i * 16807);
+      
+      decrypted[i] = originalVal;
+
+      checksum ^= originalVal;
+      checksum = Math.imul(checksum, 16777619);
+    }
+
+    const expectedChecksum = encryptedArray[encryptedArray.length - 1] ^ maskKey;
+
+    // 체크섬이 일치하지 않으면 데이터가 조작된 것임!
+    if (checksum !== expectedChecksum) {
+      console.warn("세이브 데이터 변조가 감지되었습니다!");
+      return null;
+    }
+
+    return Array.from(decrypted);
   }
 
   /**
@@ -5324,6 +5393,11 @@ export class gameSystem {
    * 이 함수는 레스터 매개변수를 통해 데이터를 받으므로, 배열을 자료로 전달할 것이라면, ...Array 형태의 문법을 사용해주세요.
    * 
    * 주의: 15자리를 초과하는 숫자를 넣으면, 해당 결과는 정상적으로 보존되지 않고 망가질 수 있음.
+   *
+   * 0.55.7 버전 이후 사용되지 않습니다.
+   *  
+   * @deprecated
+   * 
    * @param  {string[] | number[]} saveNumber 
    * @returns {string} JSON문자열
    */
@@ -5377,6 +5451,9 @@ export class gameSystem {
 
   /**
    * encode로 변환하였던 문자열을 다시 원래의 숫자 배열로 변환시킵니다.
+   * 
+   * 0.55.7 버전 이후 사용되지 않습니다.
+   * @deprecated
    * @param {string} JSONParse JSON으로 인코딩된 문자열 (일반 문자열은 해독 불가능)
    */
   static saveNumberDecode (JSONParse) {
@@ -5438,6 +5515,288 @@ export class gameSystem {
 
     return divArray
   }
+}
+
+
+/**
+ * 게임 시스템 (거의 모든 로직을 처리), 경고: new 키워드로 인스턴스를 생성하지 마세요.
+ * 이건 단일 클래스입니다.
+ * 
+ * 참고: 메인 메뉴에 관해서 설정을 하고 싶다면, mainSystem을 수정해주세요.
+ * 그리고, 새로운 메뉴가 추가되었다면, 여기서 process, display함수를 사용할 수 있도록 한 뒤에
+ * 메인 메뉴에서 이동할 수 있도록 mainSystem도 같이 수정해야 합니다.
+ */
+export class gameSystem {
+  /** 게임 상태 ID */ static stateId = 0
+  /** 상태: 메인 */ static STATE_MAIN = 0
+  /** 상태: 라운드선택 */ static STATE_ROUND_SELECT = 1
+  /** 상태: 무기 선택 */ static STATE_WEAPON_SELECT = 2
+  /** 상태: 스킬 선택 */ static STATE_SKILL_SELECT = 3
+  /** 상태: 강화 */ static STATE_UPGRADE = 4
+  /** 상태: 게임 옵션 */ static STATE_OPTION = 5
+  /** 상태: 데이터 설정 */ static STATE_DATA_SETTING = 6
+  /** 상태: 기타... */ static STATE_ETC = 7
+  /** 상태: 인벤토리 */ static STATE_INVENTORY = 8
+  /** 상태: 스토리 */ static STATE_STORY = 9
+  /** 상태: 필드(게임 진행중) */ static STATE_FIELD = 12
+  /** 상태: 오류 발생 */ static STATE_ERROR = 13
+  /** 게임에서 저장된 데이터가 있는지 확인하는 localStorage 키 이름 */ static SAVE_FLAG = 'saveFlag'
+
+  // 일부 시스템은 static을 사용하기 때문에 new를 이용해 인스턴스를 생성하지 않습니다.
+  /** 유저 시스템 */ static userSystem = userSystem
+  /** 필드 시스템 */ static fieldSystem = fieldSystem
+  /** 메인 시스템 */ static mainSystem = new MainSystem()
+  /** 옵션 시스템 */ static optionSystem = new OptionSystem()
+  /** 라운드 선택 시스템 */ static roundSelectSystem = new RoundSelectSystem()
+  /** 데이터 설정 시스템 */ static dataSettingSystem = new DataSettingSystem()
+  /** 스텟(게임, 필드 스탯) 표시 시스템 */ static statSystem = new StatSystem()
+  /** 무기 선택 시스템 */ static weaponSelectSystem = new WeaponSelectSystem()
+  /** 스킬 선택 시스템 */ static skillSelectSystem = new SkillSelectSystem()
+  /** 업그레이드 시스템 */ static upgradeSystem = new StatUpgradeSystem()
+  /** 인벤토리 시스템 */ static inventorySystem = new InventorySystem()
+  /** 스토리 시스템 */ static storySystem = new StorySystem()
+  /** etc... 시스템 */ static etcSystem = new EtcSystem()
+  /** error 시스템 */ static errorSystem = new ErrorSystem()
+
+  static uiRoundSelect = new UIComponentRoundSelect()
+  static uiWeaponSelect = new UIComponentWeaponSelect()
+  static uiSkillSelect = new UIComponentSkillSelect()
+  static uiStatUpgarde = new UIComponentStatUpgrade()
+  static uiInventroy = new UIComponentInventory()
+  static uiOption = new UIComponentOption()
+  static uiMisc = new UIComponentMisc()
+
+  /** 모든 UI 창을 닫습니다. */
+  static allUIClose () {
+    this.uiRoundSelect.close()
+    this.uiWeaponSelect.close()
+    this.uiSkillSelect.close()
+    this.uiStatUpgarde.close()
+    this.uiInventroy.close()
+    this.uiOption.close()
+    this.uiMisc.close()
+  }
+
+  /** ui가 1개 이상 열려있는지를 확인함 */
+  static uiOpenCheck () {
+    const value = this.uiRoundSelect.isOpen
+      || this.uiWeaponSelect.isOpen
+      || this.uiWeaponSelect.isOpen
+      || this.uiSkillSelect.isOpen
+      || this.uiStatUpgarde.isOpen
+      || this.uiInventroy.isOpen
+      || this.uiOption.isOpen
+      || this.uiMisc.isOpen
+
+    return value
+  }
+
+  /** 현재 게임의 옵션 데이터를 가져옵니다. */
+  static getGameOption () {
+    return this.optionSystem.optionValue
+  }
+
+  static processSave () {
+    if (!saveSystem.processSaveConditionCheck()) return
+
+    this.processSaveV055()
+  }
+
+  static processSaveV055 () {
+    // 저장 시간 (참고: getMonth는 0부터 시작하기 때문에 +1을 해야합니다.)
+    const saveDate = new Date()
+
+    // 유저의 첫 시작 시간
+    const startDate = this.userSystem.startDate
+
+    // 플레이 타임 저장
+    const playTime = this.userSystem.playTime
+
+    // 모든 옵션 값들 저장
+    const optionValue = this.optionSystem.optionValue
+
+    // 참고: optionValue는 true일 때 1, false일 때 0입니다.
+    // 참고2: optionValue 앞에 +가 붙은 이유는 boolean 단축표현을 사용했기 때문입니다.
+    const group1Array = [
+      saveDate.getFullYear(), saveDate.getMonth() + 1, saveDate.getDate(), saveDate.getHours(), saveDate.getMinutes(), saveDate.getSeconds(),
+      startDate.year, startDate.month, startDate.day, startDate.hour, startDate.minute, startDate.second,
+      playTime.hour, playTime.minute, playTime.second,
+      +optionValue.soundOn, optionValue.soundVolume, +optionValue.musicOn, optionValue.musicVolume, +optionValue.resultAutoSkip, +optionValue.showEnemyHp, +optionValue.showDamage
+    ]
+
+    const group2ArrayBase = [
+      userSystem.lv, userSystem.exp, userSystem.gold
+    ]
+
+    // 그룹 2는 인코드를 진행합니다.
+    const group2Array = saveSystem.numberArrayEncodeV055(group2ArrayBase)
+
+    const userData = userSystem.getSaveData()
+
+    // 그룹 3 고정 길이 기반 유저 데이터
+    const group3Array = [
+      ...userData.weaponList, 
+      ...userData.skillList,
+      ...userData.weaponPreset,
+      userData.weaponPresetNumber,
+      ...userData.skillPreset,
+      userData.skillPresetNumber,
+      userData.equipment.itemIndex,
+    ]
+
+    // 그룹 4 가변 길이 기반 유저 데이터
+    const g4Index0 = saveSystem.indexName.group4UserData.VARIABLE_DATA_START
+    const g4Index1 = g4Index0 + userData.inventoryItemIdList.length
+    const g4Index2 = g4Index1 + userData.inventoryItemCountList.length
+    const g4Index3 = g4Index2 + userData.inventoryItemUpgardeLevel.length
+    const g4Index4 = g4Index3 + userData.weaponUnlockList.length
+    const g4Index5 = g4Index4 + userData.skillUnlockList.length
+    const g4Index6 = g4Index5 + userData.roundClearList.length
+    const g4Index7 = g4Index6 + userData.specialFlagList.length
+
+    const group4Array = [
+      g4Index0,
+      userData.inventoryItemIdList.length,
+      g4Index1,
+      userData.inventoryItemCountList.length,
+      g4Index2,
+      userData.inventoryItemUpgardeLevel.length,
+      g4Index3,
+      userData.weaponUnlockList.length,
+      g4Index4,
+      userData.skillUnlockList.length,
+      g4Index5,
+      userData.roundClearList.length,
+      g4Index6,
+      userData.specialFlagList.length,
+      ...userData.inventoryItemIdList,
+      ...userData.inventoryItemCountList,
+      ...userData.inventoryItemUpgardeLevel,
+      ...userData.weaponUnlockList,
+      ...userData.skillUnlockList,
+      ...userData.roundClearList,
+      ...userData.specialFlagList
+    ]
+
+    const totalGroupCount = 4
+    const headerArray = [
+      saveSystem.saveHeaderFlag.V055,
+      totalGroupCount,
+      0,
+      group1Array.length,
+      0,
+      group2Array.length,
+      0,
+      group3Array.length,
+      0,
+      group4Array.length,
+      0,
+    ]
+
+    // 헤더 길이의 가변적인 값을 오차 없이 대입하기 위해 인덱스 값을 나중에 대입합니다.
+    const group1Index = headerArray.length
+    const group2Index = group1Index + group1Array.length
+    const group3Index = group2Index + group2Array.length
+    const group4Index = group3Index + group3Array.length
+    const endIndex = group4Index + group4Array.length
+    headerArray[2] = group1Index
+    headerArray[4] = group2Index
+    headerArray[6] = group3Index
+    headerArray[8] = group4Index
+    headerArray[10] = endIndex
+
+
+    const finalArray = [
+      ...headerArray,
+      ...group1Array,
+      ...group2Array,
+      ...group3Array,
+      ...group4Array,
+    ]
+
+    // 지금까지 저장된 데이터를 Int32배열로 변경
+    const saveInt32Array = new Int32Array(finalArray)
+    const saveString = saveInt32Array.join(',')
+
+    localStorage.setItem(saveSystem.getCurrentSaveKey(), saveString)
+  }
+
+  /**
+   * 저장 기능은, 1초에 한번씩 진행됩니다. 달래아 - 지연(프레임)
+   * 이 게임 내에서는, 지연 시간을 딜레이란 단어로 표기합니다.
+   * 
+   * 이 버전은 V043을 기준으로 작성되어있습니다. 현재는 사용되지 않습니다.
+   * 
+   * @deprecated
+   * @param {boolean} [forceSave=false] 강제 세이브 여부 (딜레이를 무시함) 특정 상황에서만 이 변수의 값을 true로 설정해주세요.
+   */
+  static processSaveV043 (forceSave = false) {
+    // 세이브 데이터를 저장하는 조건이 맞아야만 저장됩니다. 자세한 내용은 함수 내부를 살펴보세요.
+    if (!saveSystem.processSaveConditionCheck(forceSave)) return
+
+    // header
+
+    // 저장 시간 (참고: getMonth는 0부터 시작하기 때문에 +1을 해야합니다.)
+    const saveDate = new Date()
+    const saveDateString = saveDate.getFullYear() + ',' + (saveDate.getMonth() + 1) + ',' + saveDate.getDate() + ',' + saveDate.getHours() + ',' + saveDate.getMinutes() + ',' + saveDate.getSeconds()
+
+    // 유저의 첫 시작 시간
+    const startDate = this.userSystem.startDate
+    const startDateString = startDate.year + ',' + startDate.month + ',' + startDate.day + ',' + startDate.hour + ',' + startDate.minute + ',' + startDate.second
+
+    // 플레이 타임 저장
+    const playTime = this.userSystem.playTime
+    const playTimeString = playTime.hour + ',' + playTime.minute + ',' + playTime.second
+
+    // 모든 옵션 값들 저장
+    const optionValue = this.optionSystem.optionValue
+
+    // 유저의 데이터
+    const userData = this.userSystem.getSaveData()
+
+    // sramDataList (간접 저장 정보)
+    // sram0: lv, exp, gold
+    // sram1: inventoryIdList
+    // sram2: inventoryCount
+    // sram3: inventoryUpgradeLevel
+    // sram4: weaponUnlockList
+    // sram5: skillUnlockList
+    // sram6: roundClearList
+    // sram7: specialFlagList
+    let sramData = [
+      saveSystem.saveNumberEncode(userData.lv, userData.exp, userData.gold),
+      saveSystem.saveNumberEncode(...userData.inventoryItemIdList),
+      saveSystem.saveNumberEncode(...userData.inventoryItemCountList),
+      saveSystem.saveNumberEncode(...userData.inventoryItemUpgardeLevel),
+      saveSystem.saveNumberEncode(...userData.weaponUnlockList),
+      saveSystem.saveNumberEncode(...userData.skillUnlockList),
+      saveSystem.saveNumberEncode(...userData.roundClearList),
+      saveSystem.saveNumberEncode(...userData.specialFlagList)
+    ]
+
+    let saveData = {
+      saveFlag: saveSystem.saveFlagList.level1V0a43,
+      saveDate: saveDateString,
+      startDate: startDateString,
+      playTime: playTimeString,
+      option: optionValue,
+      userData: userData,
+      sramData: sramData
+    }
+
+    let jsonString = JSON.stringify(saveData)
+    localStorage.setItem(saveSystem.getCurrentSaveKey(), jsonString)
+    localStorage.setItem(saveSystem.getCurrentSaveKeyBackup(), jsonString)
+
+    // 필드 저장 데이터는, 필드 상태에서, 게임이 진행 중일 때에만 저장됩니다. 클리어, 게임오버, 탈출상태가 되면 저장하지 않습니다.
+    if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
+      const fieldSaveData = fieldSystem.fieldSystemSaveData()
+      localStorage.setItem(saveSystem.getCurrentSaveKeyField(), JSON.stringify(fieldSaveData))
+    } else {
+      // 필드 상태가 아니면, 필드 저장 데이터는 삭제
+      localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
+    }
+  }
 
   /**
    * 해당 키로 데이터 로드 작업을 진행합니다.
@@ -5445,7 +5804,7 @@ export class gameSystem {
    * @param {string} key 불러올 데이터의 키 값
    * @returns {boolean} 성공 여부
    */
-  static processLoadStorageKey (key) {
+  static processLoadStorageKeyV043 (key) {
     let loadData
     let tamshooter4LoadData = localStorage.getItem(key)
     if (tamshooter4LoadData == null) {
@@ -5492,6 +5851,7 @@ export class gameSystem {
       for (let currentKey in insertUserData) {
         if (loadData.userData[currentKey] == null) continue
 
+        //@ts-ignore
         insertUserData[currentKey] = loadData.userData[currentKey]
       }
 
@@ -5509,7 +5869,7 @@ export class gameSystem {
       let userLvExp
       if (loadData.sramData) {
         sram0 = loadData.sramData[0]
-        userLvExp = this.saveNumberDecode(sram0)
+        userLvExp = saveSystem.saveNumberDecode(sram0)
         sram1 = loadData.sramData[1]
         sram2 = loadData.sramData[2]
         sram3 = loadData.sramData[3]
@@ -5530,31 +5890,31 @@ export class gameSystem {
       }
 
       if (sram1 != null || sram2 != null || sram3 != null) {
-        let decode1 = this.saveNumberDecode(sram1)
-        let decode2 = this.saveNumberDecode(sram2)
-        let decode3 = this.saveNumberDecode(sram3)
+        let decode1 = saveSystem.saveNumberDecode(sram1)
+        let decode2 = saveSystem.saveNumberDecode(sram2)
+        let decode3 = saveSystem.saveNumberDecode(sram3)
         if (decode1) insertUserData.inventoryItemIdList = decode1
         if (decode2) insertUserData.inventoryItemCountList = decode2
         if (decode3) insertUserData.inventoryItemUpgardeLevel = decode3
       }
 
       if (sram4 != null) {
-        let decode4 = this.saveNumberDecode(sram4)
+        let decode4 = saveSystem.saveNumberDecode(sram4)
         if (decode4) insertUserData.weaponUnlockList = decode4
       }
 
       if (sram5 != null) {
-        let decode5 = this.saveNumberDecode(sram5)
+        let decode5 = saveSystem.saveNumberDecode(sram5)
         if (decode5) insertUserData.skillUnlockList = decode5
       }
 
       if (sram6 != null) {
-        let decode6 = this.saveNumberDecode(sram6)
+        let decode6 = saveSystem.saveNumberDecode(sram6)
         if (decode6) insertUserData.roundClearList = decode6
       }
 
       if (sram7 != null) {
-        let decode7 = this.saveNumberDecode(sram7)
+        let decode7 = saveSystem.saveNumberDecode(sram7)
         if (decode7) insertUserData.specialFlagList = decode7
       }
 
@@ -5568,40 +5928,178 @@ export class gameSystem {
     return true
   }
 
-  /** 불러오기 기능: 게임을 실행할 때 한번만 실행. 만약, 또 불러오기를 하려면 게임을 재시작해주세요. */
   static processLoad () {
     // 이미 불러왔다면 함수는 실행되지 않습니다.
-    if (this.initLoad) return
+    if (saveSystem.initLoad) return
 
     // 초기 불러오기 완료 설정
-    this.initLoad = true
+    saveSystem.initLoad = true
 
     // 유저의 스킬을 강제로 표시하기 위해 해당 함수를 사용
     userSystem.setSkillDisplayStatDefaultFunction()
 
+
+    // 이제 버전에 따라 어느 로드 함수를 불러오는지를 결정해야 함
+    // 아무 데이터가 없으면 불러오기 하지 않음
+    let tamshooter4LoadData = localStorage.getItem(saveSystem.getCurrentSaveKey())
+    if (tamshooter4LoadData == null) return
+
+    // V043은 saveFlag로 특수한 값을 가지고 있으며, 문자열에 이것이 감지되는지를 확인
+    let str1 = saveSystem.saveFlagList.level1V0a43
+    let str1Include = tamshooter4LoadData.includes(str1)
+    if (str1Include) {
+      // V043 로드
+      this.processLoadV043()
+    } else {
+      // V055 로드
+      this.processLoadV055()
+    }
+  }
+
+  static processLoadV055 () {
+    const tamshooter4LoadData = localStorage.getItem(saveSystem.getCurrentSaveKey())
+    if (tamshooter4LoadData == null) return
+
+    // 로드된 데이터를 split(',') 하고 이걸 Int32Array에 넘깁니다.
+    const loadData = Int32Array.from(tamshooter4LoadData.split(','))
+    const indexName = saveSystem.indexName
+
+    // 헤더 검사는 건너 뜀 (추후 필요하면 작성함)
+    if (loadData[indexName.header.SAVE_FLAG] !== saveSystem.saveHeaderFlag.V055) {
+      // 이것은 V055 세이브파일이 아닙니다.
+    }
+
+    // 각 그룹별 인덱스 시작 값을 가져옴
+    const indexG1 = loadData[saveSystem.indexName.header.GROUP1_INDEX_POSITION]
+    const countG1 = loadData[saveSystem.indexName.header.GROUP1_COUNT_POSITION]
+    const indexG2 = loadData[saveSystem.indexName.header.GROUP2_INDEX_POSITION]
+    const countG2 = loadData[saveSystem.indexName.header.GROUP2_COUNT_POSITION]
+    const indexG3 = loadData[saveSystem.indexName.header.GROUP3_INDEX_POSITION]
+    const countG3 = loadData[saveSystem.indexName.header.GROUP3_COUNT_POSITION]
+    const indexG4 = loadData[saveSystem.indexName.header.GROUP4_INDEX_POSITION]
+    const countG4 = loadData[saveSystem.indexName.header.GROUP4_COUNT_POSITION]
+
+    let group1 = loadData.subarray(indexG1, indexG1 + countG1)
+    let group2Decode = loadData.subarray(indexG2, indexG2 + countG2)
+    let group2 = saveSystem.numberArrayDecodeV055(group2Decode)
+    let group3 = loadData.subarray(indexG3, indexG3 + countG3)
+    let group4 = loadData.subarray(indexG4, indexG4 + countG4)
+
+    // 이제 시작 인덱스 순서에 맞춰서 다시 배열 데이터를 집어넣음
+    const I1 = saveSystem.indexName.group1OptionData
+    this.userSystem.setStartDate(
+      group1[I1.SAVE_DATE_YEAR + 0], 
+      group1[I1.SAVE_DATE_YEAR + 1], 
+      group1[I1.SAVE_DATE_YEAR + 2], 
+      group1[I1.SAVE_DATE_YEAR + 3], 
+      group1[I1.SAVE_DATE_YEAR + 4], 
+      group1[I1.SAVE_DATE_YEAR + 5])
+    this.userSystem.setPlayTime(
+      group1[I1.PLAY_TIME_HOUR + 0],
+      group1[I1.PLAY_TIME_HOUR + 1],
+      group1[I1.PLAY_TIME_HOUR + 2]
+    )
+    this.optionSystem.optionValue.musicOn = group1[I1.OPTION_MUSIC_ON] === 1
+    this.optionSystem.optionValue.musicVolume = group1[I1.OPTION_MUSIC_VOLUME]
+    this.optionSystem.optionValue.soundOn = group1[I1.OPTION_SOUND_ON] === 1
+    this.optionSystem.optionValue.soundVolume = group1[I1.OPTION_SOUND_VOLUME]
+    this.optionSystem.optionValue.resultAutoSkip = group1[I1.OPTION_RESULT_AUTO_SKIP] === 1
+    this.optionSystem.optionValue.showEnemyHp = group1[I1.OPTION_SHOW_ENEMY_HP] === 1
+    this.optionSystem.optionValue.showDamage = group1[I1.OPTION_SHOW_DAMAGE] === 1
+
+
+    const I2 = saveSystem.indexName.group2EncodeData
+    if (group2 != null) {
+      this.userSystem.lv = group2[I2.LV]
+      this.userSystem.exp = group2[I2.EXP]
+      this.userSystem.gold = group2[I2.GOLD]
+    }
+
+
+    const I3 = saveSystem.indexName.group3UserData
+    this.userSystem.weaponList = Array.from(group3.subarray(I3.WEAPON_LIST, I3.WEAPON_LIST + 4))
+    this.userSystem.skillList = Array.from(group3.subarray(I3.SKILL_LIST, I3.SKILL_LIST + 8))
+
+    for (let i = 0; i < this.userSystem.weaponPresetList.length; i++) {
+      this.userSystem.weaponPresetList[i] = group3[I3.WEAPON_PRESET + i]
+    }
+    this.userSystem.weaponPresetNumber = group3[I3.WEAPON_PRESET_NUMBER]
+
+    for (let i = 0; i < this.userSystem.skillPresetList.length; i++) {
+      this.userSystem.skillPresetList[i] = group3[I3.SKILL_PRESET + i]
+    }
+    this.userSystem.skillPresetNumber = group3[I3.SKILL_PRESET_NUMBER]
+
+    // 인벤토리 인덱스를 불러온 후, 자기가 불러온 인덱스로 아이템을 강제 장착시킴
+    this.userSystem.equipment.itemIndex = group3[I3.EQUIPMENT_INVENTORY_INDEX]
+    this.userSystem.setEquipment(this.userSystem.equipment.itemIndex)
+
+
+    // 그룹 4 데이터
+    // 그룹 4는 가변데이터 기반이므로, 인덱스 값을 잘 추적해야 함
+    const I4 = saveSystem.indexName.group4UserData
+    const invIdIndex = group4[I4.INVENTORY_IDLIST]
+    const invIdCount = group4[I4.INVENTORY_IDLIST_COUNT]
+    const invItemIndex = group4[I4.INVENTORY_ITEM_COUNT]
+    const invItemCount = group4[I4.INVENTORY_ITEM_COUNT_COUNT]
+    const invUpIndex = group4[I4.INVENTORY_UPGRADE_LEVEL]
+    const invUpCount = group4[I4.INVENTORY_UPGRADE_LEVEL_COUNT]
+    const unlockWeaponIndex = group4[I4.UNLOCK_WEAPON]
+    const unlockWeaponCount = group4[I4.UNLOCK_WEAPON_COUNT]
+    const unlockSkillIndex = group4[I4.UNLOCK_SKILL]
+    const unlockSkillCount = group4[I4.UNLOCK_SKILL_COUNT]
+    const roundClearIndex = group4[I4.ROUND_CLEAR]
+    const roundClearCount = group4[I4.ROUND_CLEAR_COUNT]
+    const specialFlagIndex = group4[I4.SPECIAL_FLAG]
+    const specialFlagCount = group4[I4.SPECIAL_FLAG_COUNT]
+
+    const invSubId = group4.subarray(invIdIndex, invIdIndex + invIdCount)
+    const invSubItem = group4.subarray(invItemIndex, invItemIndex + invItemCount)
+    const invSubUp = group4.subarray(invUpIndex, invUpIndex + invUpCount)
+
+    if (invSubId != null && invSubItem != null && invSubUp != null) {
+      for (let i = 0; i < invSubId.length; i++) {
+        this.userSystem.inventory.add(invSubId[i], invSubItem[i], invSubUp[i])
+      }
+    }
+
+    this.userSystem.weaponUnlockList = Array.from(group4.subarray(unlockWeaponIndex, unlockWeaponIndex + unlockWeaponCount))
+    this.userSystem.skillUnlockList = Array.from(group4.subarray(unlockSkillIndex, unlockSkillIndex + unlockSkillCount))
+    this.userSystem.roundClearList = Array.from(group4.subarray(roundClearIndex, roundClearIndex + roundClearCount))
+    this.userSystem.specialFlagList = Array.from(group4.subarray(specialFlagIndex, specialFlagIndex + specialFlagCount))
+  }
+
+  /** 
+   * 불러오기 기능: 게임을 실행할 때 한번만 실행. 만약, 또 불러오기를 하려면 게임을 재시작해주세요. 
+   * 
+   * 이 버전은 V043을 기준으로 만들어져있으므로, 하위 호환으로만 제공됩니다.
+   * 
+   * @deprecated
+   */
+  static processLoadV043 () {
     // 불러오기 작업 진행, 아무것도 없으면 로드 작업 취소
-    let tamshooter4LoadData = localStorage.getItem(this.getCurrentSaveKey())
-    let tamshooter4BackupData = localStorage.getItem(this.getCurrentSaveKeyBackup())
+    let tamshooter4LoadData = localStorage.getItem(saveSystem.getCurrentSaveKey())
+    let tamshooter4BackupData = localStorage.getItem(saveSystem.getCurrentSaveKeyBackup())
     if (tamshooter4LoadData == null && tamshooter4BackupData == null) {
       return
     }
 
     // 데이터를 불러오고 성공했는지 여부를 판단
-    let isSuccess = this.processLoadStorageKey(this.getCurrentSaveKey())
+    let isSuccess = this.processLoadStorageKeyV043(saveSystem.getCurrentSaveKey())
     if (!isSuccess) {
       // 만약 실패했다면, 백업데이터를 통해 다시 시도
-      let isBackupSuccess = this.processLoadStorageKey(this.getCurrentSaveKeyBackup())
+      let isBackupSuccess = this.processLoadStorageKeyV043(saveSystem.getCurrentSaveKeyBackup())
       if (!isBackupSuccess) {
         // 이것도 실패했다면, 오류 발생시키고, 다른 메뉴로 이동시킴 (저장 기능은 사용 불가가됨)
         this.stateId = this.STATE_ERROR
-        localStorage.removeItem(this.getCurrentSaveKeyField())
+        localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
         return
       }
     }
     
     // 모든 데이터를 불러온 후 필드 데이터가 있으면 필드 데이터를 불러옴
     try {
-      const fieldSaveData = localStorage.getItem(this.getCurrentSaveKeyField())
+      const fieldSaveData = localStorage.getItem(saveSystem.getCurrentSaveKeyField())
       if (fieldSaveData != null) {
         // 경고: localStoarge 특성상 string값으로 비교해야 합니다.
         // 필드 저장 데이터가 있다면, state를 필드 데이터로 이동
@@ -5612,28 +6110,12 @@ export class gameSystem {
       }
     } catch (e) {
       alert(systemText.gameError.FILED_LOAD_ERROR)
-      localStorage.removeItem(this.getCurrentSaveKeyField())
+      localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
       this.stateId = this.STATE_MAIN
       game.setBiosDisplayPossible(true)
     }
-
-
-    
   }
 
-  static isDataReset = false
-
-  /**
-   * 모든 데이터를 삭제합니다.
-   * 삭제 기능이 동작한 후, 2초 후 자동으로 새로고침 되기 때문에, 저장기능이 일시적으로 정지도비니다.
-   */
-  static dataReset () {
-    // localStorage.clear() // 이제 tamshooter4와 관련한 데이터만 삭제됩니다.
-    // 다른 데이터를 엉뚱하게 삭제할 가능성이 있으므로, localStorage.clear는 사용하지 않습니다.
-    localStorage.removeItem(this.getCurrentSaveKey())
-    localStorage.removeItem(this.getCurrentSaveKeyBackup())
-    this.isDataReset = true
-  }
 
   static displayTodayTime () {
     const date = new Date()
@@ -5718,7 +6200,8 @@ export class gameSystem {
         this.stateId = this.STATE_FIELD
         break
       case messageList.REQUEST_SAVE:
-        this.processSave(true)
+        saveSystem.requestSave()
+        this.processSave()
         break
     }
 
