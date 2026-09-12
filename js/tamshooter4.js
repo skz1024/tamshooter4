@@ -19,10 +19,9 @@ let loadComplete = false
 
 /** 첫번째로 불러올 함수 사용 */
 let firstLoadFunction = () => {
-  for (let target in imageSrc.system) {
-    let src = imageSrc.system[target]
-    systemImageList.push(src)
-  }
+  
+  // 시스템이 가진 변수명들을 모두 가져와 이미지 리스트 경로에 추가합니다.
+  systemImageList.push(...Object.values(imageSrc.system))
   systemImageList.push(imageSrc.weapon.weapon) // 무기 이미지
   systemImageList.push(imageSrc.system.roundIcon) // 라운드 아이콘 이미지
   
@@ -32,15 +31,9 @@ let firstLoadFunction = () => {
   }
   
   // 사운드 생성 시작
-  for (let target in soundSrc.system) {
-    let src = soundSrc.system[target]
-    systemSoundList.push(src)
-  }
-  for (let target in soundSrc.skill) {
-    let src = soundSrc.skill[target]
-    systemSoundList.push(src)
-  }
-  
+  systemSoundList.push(...Object.values(soundSrc.system))
+  systemSoundList.push(...Object.values(soundSrc.skill))
+
   for (let i = 0; i < systemSoundList.length; i++) {
     game.sound.createAudio(systemSoundList[i])
   }
@@ -3588,7 +3581,7 @@ class WeaponSelectSystem extends MenuSystem {
     if (getData.weapon == null) return ''
 
     let icon = '    ' // 공백 4칸
-    let name = '' + getData.weapon.mainType.padEnd(16, ' ').slice(0, 16) + '|'
+    let name = '' + (getData.weapon.mainType + '').padEnd(16, ' ').slice(0, 16) + '|'
     let delay = ('' + getData.delay).padEnd(5, ' ') + '|'
     let shotCount = ('' + getData.shotCount).padEnd(4, ' ') + '|'
     let repeatCount = ('' + getData.weapon.repeatCount).padEnd(6, ' ') + '|'
@@ -5600,6 +5593,21 @@ export class gameSystem {
     if (!saveSystem.processSaveConditionCheck()) return
 
     this.processSaveV055()
+  }
+
+  static processSaveField () {
+    // 참고: FieldData는 저장 버전 플래그가 없습니다.
+    // 불러오지 못한 경우, 그 필드를 중지한 것으로 간주합니다.
+    // 필드는 구조가 매우 복잡하여, 버전별 관리를 할 수 없습니다.
+    
+    // 필드 저장 데이터는, 필드 상태에서, 게임이 진행 중일 때에만 저장됩니다. 클리어, 게임오버, 탈출상태가 되면 저장하지 않습니다.
+    if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
+      const fieldSaveData = fieldSystem.fieldSystemSaveData()
+      localStorage.setItem(saveSystem.getCurrentSaveKeyField(), JSON.stringify(fieldSaveData))
+    } else {
+      // 필드 상태가 아니면, 필드 저장 데이터는 삭제
+      localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
+    }
   }
 
   static processSaveV055 () {

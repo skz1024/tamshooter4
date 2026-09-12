@@ -18,6 +18,7 @@ export class GraphicSystem {
 
   // 널 체크 무시 용도로 사용 (클래스 생성할때 해당 값이 무조건 대입됨)
   /** @type {CanvasRenderingContext2D} */
+  //@ts-ignore
   context
 
   /**
@@ -54,37 +55,41 @@ export class GraphicSystem {
     this.CANVAS_HEIGHT_HALF = Math.floor(this.CANVAS_HEIGHT / 2)
 
     let context = this.canvas.getContext('2d')
-    if (context != null) this.context = context
+    if (context != null) {
+      this.context = context
 
-    // 그래픽 초기화
-    // 텍스트 베이스라인을 top으로 수정(기본이 alphabet이며 alphabet은 y축 위치가 이상함)
-    this.context.textBaseline = 'top'
+      // 그래픽 초기화
+      // 텍스트 베이스라인을 top으로 수정(기본이 alphabet이며 alphabet은 y축 위치가 이상함)
+      this.context.textBaseline = 'top'
+  
+      // 캔버스 폰트 출력에 대한 기본값 설정 (다만 폰트가 없을경우, 다른 폰트가 사용될 수 있음.)
+      // 폰트의 pixel은 20px로 정의됩니다.
+      this.context.font = GraphicSystem.DEFAULT_FONT
+   
+      /** 일반 폰트 설정용 */
+      this._fontName = GraphicSystem.DEFAULT_FONT
+      
+      /** 고정폭 폰트 설정용 */
+      this._fontNameMonospace = GraphicSystem.MONOSPACE_FONT
+  
+      /**  폰트의 사이즈 (monospace랑 공유됨) @type {number} */
+      this._fontSize = 20
+  
+      /** context에 입력될 font의 최종 문자 @type {string} */
+      this._fontNameResult = ''
+  
+      /** context에 입력될 monospace font의 최종 문자열 @type {string} */
+      this._fontNameMonospaceResult = ''
+  
+      // 기본 폰트 자동 설정
+      this.setFont(this._fontName)
+      this.setMonoscopeFont(this._fontNameMonospace)
+  
+      // 캔버스의 초기 상태를 저장.
+      this.context.save()
+    }
 
-    // 캔버스 폰트 출력에 대한 기본값 설정 (다만 폰트가 없을경우, 다른 폰트가 사용될 수 있음.)
-    // 폰트의 pixel은 20px로 정의됩니다.
-    this.context.font = GraphicSystem.DEFAULT_FONT
- 
-    /** 일반 폰트 설정용 */
-    this._fontName = GraphicSystem.DEFAULT_FONT
-    
-    /** 고정폭 폰트 설정용 */
-    this._fontNameMonospace = GraphicSystem.MONOSPACE_FONT
 
-    /**  폰트의 사이즈 (monospace랑 공유됨) @type {number} */
-    this._fontSize = 20
-
-    /** context에 입력될 font의 최종 문자 */
-    this._fontNameResult = ''
-
-    /** context에 입력될 monospace font의 최종 문자열 */
-    this._fontNameMonospaceResult = ''
-
-    // 기본 폰트 자동 설정
-    this.setFont(this._fontName)
-    this.setMonoscopeFont(this._fontNameMonospace)
-
-    // 캔버스의 초기 상태를 저장.
-    this.context.save()
 
     /** 
      * 이미지 뒤집기: 0. 없음, 1. 가로, 2. 세로, 3. 가로 + 세로, 그 외의 숫자는 무시
@@ -1011,6 +1016,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     // this.setCanvasFont(GraphicSystem.DEFAULT_FONT)
     // this.context.font = '16px NaNum'
     this.context.fillStyle = color
+
     this.context.font = this._fontNameResult
 
     if (this.checkTransform()) {
@@ -1051,6 +1057,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    */
   fillTextMonospace (text = '', x, y, color = 'black', maxWidth = null) {
     this.context.fillStyle = color
+
     this.context.font = this._fontNameMonospaceResult
 
     if (this.checkTransform()) {

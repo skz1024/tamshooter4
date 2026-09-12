@@ -55,7 +55,7 @@ class DamageObject {
     /** 생성 Id */ this.createId = 0
   }
 
-  setData (x, y, attack) {
+  setData (x = 0, y = 0, attack = 0) {
     this.x = x
     this.y = y
     this.attack = attack
@@ -227,15 +227,17 @@ class PlayerObject extends FieldData {
     ]
 
     /**
-     * 서브 무기 슬롯
+     * 서브 무기 슬롯 (현재는 사용되지 않음)
      * 
      * 게임 규칙 상, 이 무기는 성능과 효과가 고정되어있습니다.
      * 무조건 유도성능을 가진 무기이며, 이 무기는 화면 바깥에 있는 적을 죽일 수 있게 하기 위한 무기입니다.
      * (사용자가 적이 남아있는것을 눈치채게 하기 위해서 일부러 이렇게 만들었습니다.)
+     * 
+     * @deprecated
      * @type {WeaponSlot}
      */
     this.subWeaponSlot = {
-      weapon: null, id: ID.playerWeapon.subMultyshot, delayCount: 0
+      weapon: null, id: ID.playerWeapon.multyshot, delayCount: 0
     }
 
     /**
@@ -817,19 +819,19 @@ class PlayerObject extends FieldData {
    * @param {Object} saveData 
    */
   fieldBaseLoadData (saveData) {
-    for (let key in saveData) {
-      if (typeof saveData[key] === 'object') {
-        if (key === 'weapon') {
-          this.setLoadWeaponData(saveData[key])
-        } else if (key === 'skill') {
-          this.setLoadSkillData(saveData[key])
-        } else {
-          this[key] = saveData[key]
-        }
-      } else {
-        this[key] = saveData[key]
-      }
-    }
+    // for (let key in saveData) {
+    //   if (typeof saveData[key] === 'object') {
+    //     if (key === 'weapon') {
+    //       this.setLoadWeaponData(saveData[key])
+    //     } else if (key === 'skill') {
+    //       this.setLoadSkillData(saveData[key])
+    //     } else {
+    //       this[key] = saveData[key]
+    //     }
+    //   } else {
+    //     this[key] = saveData[key]
+    //   }
+    // }
 
     // 로드 후, 유저 스탯을 다시 갱신함 (hpCalc를 간접 계산하는 것 때문에 바로 갱신이 안되어 강제로 갱신함)
     this.processSendUserStat()
@@ -1150,9 +1152,10 @@ export class fieldState {
    * 더이상 사용하지 마세요.
    * 
    * 보스를 생성하는데, 해당 보스 적 객체의 데이터랑 연결할 수 있도록 return이 추가되었습니다.
+   * @param {any} option 
    * @deprecated
    */
-  static createEnemyBoss (typeId, x = 0, y = 0, ...option) {
+  static createEnemyBoss (typeId = 0, x = 0, y = 0, ...option) {
     const GetClass = tamshooter4Data.getEnemy(typeId)
     if (GetClass == null) return
 
@@ -1372,19 +1375,14 @@ export class fieldState {
   static #processEnemyObjectItemCheck (targetEnemy) {
     // 만약 아이템이 있다면 그 아이템을 추가함
     let item = targetEnemy.getItem()
-    if (item.id.length === 0) return
 
-    if (item.id.length >= 1) {
-      for (let j = 0; j < item.id.length; j++) {
-        fieldSystem.requestAddItem(item.id[j], item.count[j]) // 필드시스템에 아이템 추가
-        let newEffect = new ItemDropEffect() // 이펙트 생성
-        newEffect.setItemId(item.id[j])
-        fieldState.createEffectObject(newEffect, targetEnemy.x, targetEnemy.y) // 이펙트 추가
-      }
-    }
+    fieldSystem.requestAddItem(item.id, item.count) // 필드시스템에 아이템 추가
+    let newEffect = new ItemDropEffect() // 이펙트 생성
+    newEffect.setItemId(item.id)
+    fieldState.createEffectObject(newEffect, targetEnemy.x, targetEnemy.y) // 이펙트 추가
 
     // 남은 아이템 전부 제거 (드랍이 완료되었으므로)
-    targetEnemy.removeItemAll()
+    targetEnemy.removeItem()
   }
 
   static processDamageObject () {
@@ -2142,50 +2140,50 @@ export class fieldSystem {
   static fieldSystemSaveData () {
     // 무기는 저장 용량을 줄이기 위하여 스킬만 저장하도록 변경됩니다.
     // 일반 무기는 불러왔을 때 모두 삭제됩니다.
-    let weaponObject = fieldState.weaponObject
-    let weapon = []
-    for (let i = 0; i < weaponObject.length; i++) {
-      if (weaponObject[i].mainType === 'skill' || weaponObject[i].mainType === 'skillsub') {
-        weapon.push(weaponObject[i].fieldBaseSaveData())
-      }
-    }
+    // let weaponObject = fieldState.weaponObject
+    // let weapon = []
+    // for (let i = 0; i < weaponObject.length; i++) {
+    //   if (weaponObject[i].mainType === 'skill' || weaponObject[i].mainType === 'skillsub') {
+    //     weapon.push(weaponObject[i].fieldBaseSaveData())
+    //   }
+    // }
 
-    // 죽어있거나 삭제된 적은 저장하지 않습니다.
-    let enemyObject = fieldState.enemyObject
-    let enemy = []
-    for (let i = 0; i < enemyObject.length; i++) {
-      if (enemyObject[i].isDied || enemyObject[i].isDeleted) {
-        continue
-      } else {
-        enemy.push(enemyObject[i].fieldBaseSaveData())
-      }
-    }
+    // // 죽어있거나 삭제된 적은 저장하지 않습니다.
+    // let enemyObject = fieldState.enemyObject
+    // let enemy = []
+    // for (let i = 0; i < enemyObject.length; i++) {
+    //   if (enemyObject[i].isDied || enemyObject[i].isDeleted) {
+    //     continue
+    //   } else {
+    //     enemy.push(enemyObject[i].fieldBaseSaveData())
+    //   }
+    // }
 
-    let sprite = fieldState.spriteObject.map((data) => {
-      return data.fieldBaseSaveData()
-    })
+    // let sprite = fieldState.spriteObject.map((data) => {
+    //   return data.fieldBaseSaveData()
+    // })
     
-    let player = fieldState.playerObject.fieldBaseSaveData()
-    let round = this.getRoundSaveData()
-    let field = {
-      stateId: this.stateId,
-      fieldScore: this.fieldScore,
-      fieldGold: this.fieldGold,
-      totalScore: this.totalScore,
-      enimationFrame: this.scoreEnimationFrame,
-      exitDelayCount: this.exitDelayCount,
-      fieldItemCountList: this.fieldItemCountList,
-      fieldItemIdList: this.fieldItemIdList,
-    }
+    // let player = fieldState.playerObject.fieldBaseSaveData()
+    // let round = this.getRoundSaveData()
+    // let field = {
+    //   stateId: this.stateId,
+    //   fieldScore: this.fieldScore,
+    //   fieldGold: this.fieldGold,
+    //   totalScore: this.totalScore,
+    //   enimationFrame: this.scoreEnimationFrame,
+    //   exitDelayCount: this.exitDelayCount,
+    //   fieldItemCountList: this.fieldItemCountList,
+    //   fieldItemIdList: this.fieldItemIdList,
+    // }
     
-    return {
-      weapon,
-      enemy,
-      player,
-      round,
-      field,
-      sprite,
-    }
+    // return {
+    //   weapon,
+    //   enemy,
+    //   player,
+    //   round,
+    //   field,
+    //   sprite,
+    // }
   }
 
   /** 널 체크 문제 때문에 이 함수를 만듬... */

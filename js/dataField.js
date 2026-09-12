@@ -10,7 +10,7 @@ let graphicSystem = game.graphic
  * @param {FieldData | any} objectA
  * @param {FieldData | any} objectB
  */
- export function collision (objectA, objectB) {
+export function collision (objectA, objectB) {
   if (objectA.x < objectB.x + objectB.width &&
     objectA.x + objectA.width > objectB.x &&
     objectA.y < objectB.y + objectB.height &&
@@ -287,7 +287,7 @@ export class DelayData {
    * @param {number} count 
    */
   setCount (count) {
-
+    this.count = count
   }
 }
 
@@ -480,36 +480,77 @@ export class EnimationData {
  */
 export class FieldData {
   static direction = {
-    LEFT: 'left',
-    RIGHT: 'right',
-    DOWN: 'down',
-    UP: 'up'
+    NODATA: 0,
+    LEFT: 1,
+    RIGHT: 2,
+    DOWN: 3,
+    UP: 4
   }
+
+  static objectType = {
+    FIELD: 0,
+    ENEMY: 1,
+    WEAPON: 2,
+    SPRITE: 3,
+    PLAYER: 4,
+  }
+
+  /** 상태 관리 표준 상수 (공통 값을 사용할 생각이라면, 이 상수를 사용하세요.)
+   * 
+   * 특정 객체만 단독으로 가지는 상태 값 또는 이름은 해당 객체 내의 static 값을 참조하세요.
+   */
+  static state = {
+    NONE: 0,
+    NORMAL: 1,
+    ATTACK: 2,
+    BOOST: 3,
+    MOVE: 4,
+    STOP: 5,
+  }
+
 
   constructor () {
     /**
      * 오브젝트 타입
-     * 사용자가 중간에 수정하는 것은 불가능 (무조건 생성할 때 값이 정해짐)
-     * 필드 상태에서 오브젝트 타입을 구분할 때 사용
+     * 
+     * 필드 내부에서, 이 오브젝트가 무슨 타입인지를 나타내는지 확인함.
+     * 
+     * 오브젝트 종류에는 Field, Sprite등이 있으며, 이들은 FieldData를 상속받아 각 개체에 맞게 다른 기능을 구현함.
+     * @type {number}
      */
-    this.objectType = 'field'
+    this.objectType = FieldData.objectType.FIELD
 
     /** 
-     * 타입 대표 구분용도 (이것은 해당 요소의 대표타입: 예를들어, DonggramiEnemy과 같은것을 의미) 
+     * 이 정보는 개체 알고리즘 내부에서, 특정 적을 구분하기 위한 용도로 만들어졌으나, 게임에서 자주 사용되지는 않습니다.
      * 
-     * 이 정보는 같은 그룹으로 분류된 객체들의 특징을 구분하기 위해 만들어졌으나, 게임에서 자주 사용되지는 않습니다.
+     * 현재는 하위호환 코드로만 남겨졌습니다.
+     * @deprecated
      */ 
-    this.mainType = ''
+    this.mainType = 0
 
     /** 
-     * 타입 세부 구분용도 (해당 객체가 어떤 형태의 내부 타입을 사용하는 지 추갈)
+     * 이 정보는 개체 알고리즘 내부에서, 특정 적을 구분하기 위한 용도로 만들어졌습니다.
      * 
-     * 이 정보는 같은 객체로 분류된 객체들의 특징을 구분하기 위해 만들어진 변수입니다.
+     * mainType과 다른 점이라면, 과거 mainType은 일종의 그룹을 나누는 역할을 하였지만, 지금은 사라졌습니다.
+     * 
+     * 현재는 하위호환 코드 또는 일부 구분 용도로만 간접적으로 사용합니다.
      */
-    this.subType = ''
+    this.subType = 0
 
-    /** 타입 세부 구분용 Id (Id는 number 입니다.) */ this.id = 0
-    /** 생성 ID, 일부 객체에서 중복 확인용도로 사용 */ this.createId = 0
+    /** 
+     * 각 개체의 클래스는 ID가 할당되어 있으며, 해당 id를 통하여 어떤 개 원본 객체인지를 알아냅니다.
+     * 
+     * 같은 객체에서 생성되었다면, 같은 종류의 객체이므로 id 또한 같습니다.
+     * */ 
+    this.id = 0
+
+
+    /** 
+     * 생성 ID, 일부 객체에서 중복 확인용도로 사용 
+     * 
+     * 자기 자신의 createId는 중복될 수 없습니다. 이것을 이용하여 자기 자신을 구분할 수 있습니다.
+     */ 
+    this.createId = 0
     
     /** 
      * 초기화 판정 여부 (일부 오브젝트에 사용)  
@@ -531,12 +572,14 @@ export class FieldData {
 
     /** 오브젝트의 가로 길이 */ this.width = 0
     /** 오브젝트의 세로 길이 */ this.height = 0
-    /** 오브젝트의 현재 상태 (문자열) */ this.state = ''
+    /** 오브젝트의 현재 상태, 하위 호환 코드로만 남겨둡니다. 추후에 다시 사용될 수 있습니다. */ this.state = 0
     
     /** 
      * 오브젝트가 가진 일종의 메세지 변수 (외부(fieldData가 아닌 round나 다른곳)에서 활용할 용도로 주로 사용)\
      * 
      * 이 변수는 다른 요소에서 해당 객체에게 정보를 전달하기 위한 목적을 가지고 있습니다.
+     * 
+     * 이 값은 저장되지 않습니다.
      */ 
     this.message = ''
 
@@ -544,6 +587,9 @@ export class FieldData {
      * 해당 오브젝트가 저장 후 불러오기를 할 때 필요한 정보가 있다면 해당하는 문자열을 추가로 저장할 수 있습니다.
      * 
      * 다만 더 복잡한 방식을 사용하고 싶다면, saveList를 사용해주세요.
+     * 
+     * 더이상 string 데이터를 저장 데이터로 확장하여 사용하지 않습니다.
+     * @deprecated
      */
     this.saveString = ''
 
@@ -553,6 +599,10 @@ export class FieldData {
      * 
      * 이 변수는 저장할 때 최종적으로 JSON으로 변경되어 저장됩니다.
      * 그러나, 함수를 사용하면 해당 함수의 정보는 사라지고 오류가 발생하므로, 변수만 저장해야 합니다. (객체는 상관없으나 함수가 있으면 안됨)
+     * 
+     * 이 변수는 더이상 사용되지 않으며, 하위호환 코드로 남겨놓겠습니다.
+     * 
+     * @deprecated
      * 
      * @type {object}
      */
@@ -577,17 +627,19 @@ export class FieldData {
     /** 공격 가능 여부 (이 값이 true 일 경우만 공격이 가능) */ this.isAttackEnable = true
     /** 회전한 각도 (일부 객체에서만 사용) */ this.degree = 0
     /** 뒤집기 0: 없음, 1: 수직, 2: 수평, 3: 수직 + 수평, 나머지 무시(0으로 처리) */ this.flip = 0
-    /** 알파값 (참고: 이 값이 1인경우, 알파처리는 무시됨, 이 값이 0인경우 출력하지 않음) */ this.alpha = 1
+    /** 알파값 (참고: 이 값이 1인경우, 알파처리는 무시됨, 이 값이 0인경우 출력하지 않음) 이 값은 저장되지 않음. */ this.alpha = 1
 
     /**
      * 방향 설정을 위해서, 반드시 FieldData.direction 객체가 가지고 있는 상수 값을 사용해주세요.
+     * 
+     * 값은 number를 치환해서 사용합니다.
      * 
      * 이동 방향 설정(left, right만 사용 가능) 이 값은 x축에만 영향을 줌, 기본값: right (일반적인 좌표 방향)
      * 
      * left: + 일경우 왼쪽으로 이동, - 일경우 오른쪽으로 이동.
      * right: + 일경우 오른쪽으로 이동, - 일경우 왼쪽으로 이동.
      * 아무 값도 없다면 이 값을 적용하지 않음.
-     * @type {string}
+     * @type {number}
      */
     this.moveDirectionX = FieldData.direction.RIGHT
 
@@ -599,7 +651,7 @@ export class FieldData {
      * 이동 방향 설정(up. down만 사용 가능) 이 값은 y축에만 영향을 줌. 기본값: down
      * up: + 일경우 위쪽으로 이동, - 일경우 아래쪽으로 이동
      * down: + 일경우 아래쪽으로 이동, - 일경우 위쪽으로 이동
-     * @type {string}
+     * @type {number}
      */
     this.moveDirectionY = FieldData.direction.DOWN
 
@@ -638,6 +690,13 @@ export class FieldData {
      */
     this.attackDelay = null
 
+    /**
+     * 특정 행위를 반복하는 등으로 사용되는 딜레이
+     * 
+     * @type {DelayData | null}
+     */
+    this.repeatDelay = null
+
     /** 점수 (대표 객체마다 용도가 다를 수 있음.) */ this.score = 0
 
     /** 해당 오브젝트가 생성된 후 진행된 시간(단위: 프레임) */ this.elapsedFrame = 0
@@ -647,6 +706,12 @@ export class FieldData {
      * 만약 그 다른 오브젝트의 isDelete 값이 true 라면 이 값을 수동으로 null로 지정해주세요.
      * 
      * 기본적으로 FieldData가 기준이지만, 이를 상속받은 모든 객체를 사용할 수도 있으므로, any 형식으로 지정됩니다.
+     * 
+     * 이 오브젝트는 하위호환 코드로 남겨놓고, 이제는 간접참조 방식으로 재구현 됩니다.
+     * 
+     * 또한 이 오브젝트는 저장하지 않습니다.
+     * 
+     * @deprecated
      * @type {FieldData | any | null}
      */
     this.targetObject = null
@@ -685,6 +750,27 @@ export class FieldData {
      * @type {ImageDataObject} ImageData의 변수값
      */
     this.imageData = imageDataInfo.default.unused
+
+
+    /** 
+     * 필드 개체 점수 (enemyData에서 주로 사용됨) 
+     * 
+     * 점수 계산 공식: 적 체력의 1%를 기준으로, 적 그룹에 따라 변화
+     */
+    this.score = 100
+
+    /**
+     * 충돌 지연시간
+     * (참고: 기본적으로는 적이 플레이어에 닿았다면 60프레임 이후 다시 플레이어를 타격할 수 있습니다.)
+     * 
+     * 그러나 이 값이 적마다 다를 수 있습니다.
+     * 
+     * 참고로, 이 딜레이를 채우기 전까지 적은 플레이어랑 충돌하지 않습니다. 그래서 적이 등장하자마자 공격당하는것은 불가능합니다.
+     * @type {DelayData}
+     */
+    this.collisionDelay = new DelayData(60)
+    this.collisionDelay.count = 0 // 생성되자마자 충돌을 막기 위해서 지연시간 카운트를 0부터 계산합니다.
+
   }
 
   /**
@@ -729,31 +815,31 @@ export class FieldData {
   }
 
   /**
-   * 이동 방향 설정, x축, y축 동시 설정 가능, 이동 방향을 없앨거면, 공백 '' 을 넣어주세요.
+   * 이동 방향 설정, x축, y축 동시 설정 가능
    * 
-   * 아무런 값도 사용하지 않는 경우 공백으로 처리됩니다. 이 경우 기본적인 좌표방식을 사용합니다. 그러나 잘못된 값을 넣을경우, 해당 설정은 무시(취소됨)
+   * 이동 방향이 사라졌다고 판단한 경우, 기본값으로 가정합니다.
+   * 기본값은 right, down 입니다.
    * 
    * 주의: FieldData.direction에 방향과 관련된 상수가 있으므로 해당 값을 사용해야 합니다.
-   * @param {string} directionX x축 방향, 'left', 'right', ''(이 경우 right처럼 사용됨) 사용 가능
-   * @param {string} directionY y축 방향, 'up', 'down', ''(이 경우 down처럼 사용됨) 사용 가능
+   * @param {number} directionX x축 방향 FieldData.direction.RIGHT, FieldData.direction.LEFT 사용 가능
+   * @param {number} directionY y축 방향 FieldData.direction.DOWN, FieldData.direction.UP 사용 가능
    */
-  setMoveDirection (directionX = '', directionY = '') {
+  setMoveDirection (directionX = FieldData.direction.RIGHT, directionY = FieldData.direction.DOWN) {
     const LEFT = FieldData.direction.LEFT
     const RIGHT = FieldData.direction.RIGHT
     const UP = FieldData.direction.UP
     const DOWN = FieldData.direction.DOWN
-    const SPACE = ''
 
     if (directionX === LEFT || directionX === RIGHT) {
       this.moveDirectionX = directionX
-    } else if (directionX === SPACE) {
-      this.moveDirectionX = SPACE
+    } else {
+      this.moveDirectionX = RIGHT
     }
 
     if (directionY === UP || directionY === DOWN) {
       this.moveDirectionY = directionY
-    } else if (directionY === SPACE) {
-      this.moveDirectionY = SPACE
+    } else {
+      this.moveDirectionY = DOWN
     }
   }
 
@@ -942,8 +1028,7 @@ export class FieldData {
 
   /** 
    * 상태 변경 및 추가적인 처리를 위해 만들어진 함수 (다만 기본적으로는 아무것도 하지 않고, 객체의 기능 확장용으로 사용합니다.)  
-   * 
-   * 따라서 이 함수는 super.processState를 사용할 필요는 없습니다.
+   *
    */
   processState () {
 
@@ -1165,6 +1250,11 @@ export class FieldData {
    * 만약 이걸 상속받은 하위 클래스에서 클래스 개별적으로 저장하고 싶은 정보가 있다면, 다른 방식을 사용해야 합니다.
    * 
    * 해당 함수는 상속해서 수정하면 안됩니다.
+   * 
+   * 이 함수는 이전 버전에서 사용되었으나, 새로운 버전 V055로 교체되면서 제거되었습니다.
+   * 
+   * 
+   * @deprecated
    */
   fieldBaseSaveData () {
     this.saveProcess() // 저장 로직 추가 실행
@@ -1207,11 +1297,6 @@ export class FieldData {
 
       // 시스템 값
       elapsedFrame: this.elapsedFrame,
-      isAfterInited: this.isAfterInited,
-
-      // 추가 확장 저장 값
-      saveString: this.saveString,
-      saveList: this.saveList,
     }
   }
 
@@ -1222,39 +1307,41 @@ export class FieldData {
    * 
    * 해당 함수는 상속해서 수정하면 안됩니다.
    * @param {Object} saveData 세이브 된 데이터 (필드 객체가 아님)
+   * 
+   * @deprecated
    */
   fieldBaseLoadData (saveData) {
     // 세이브 데이터에 있는 모든 키 목록을 루프하여 변수값을 지정합니다.
-    for (let key in saveData) {
-      if (typeof saveData[key] === 'object') {
-        // 오브젝트의 값이 없을경우, 해당 값을 처리하지 않고 루프를 건너뜀
-        if (saveData[key] == null) continue
+    // for (let key in saveData) {
+    //   if (typeof saveData[key] === 'object') {
+    //     // 오브젝트의 값이 없을경우, 해당 값을 처리하지 않고 루프를 건너뜀
+    //     if (saveData[key] == null) continue
 
-        if (key === 'saveList') {
-          // 만약 key가 saveList의 변수는 saveList 자체가 오브젝트이므로 일반적인 변수처럼 데이터를 불러옵니다.
-          // 상세한 작업은 loadProcess에서 추가적으로 진행해야 합니다.
-          this[key] = saveData[key]
-        } else if (saveData[key].hasOwnProperty('delay') && saveData[key].hasOwnProperty('count')) {
-          // delay와 관련한 클래스인지 확인하기 위해 해당 오브젝트에 delay, count 변수가 있는지 확인합니다.
-          // delay 객체를 사용하려면 해당 객체를 명시적으로 생성해야 하므로, 이 코드로 판단할 수 있습니다.
-          // 널 체크 (없을경우 무시)
-          if (this[key].setDelay != null) {
-            // setDelay가 있다면, 오브젝트에 있는 delay, count값을 추가합니다.
-            this[key].setDelay(saveData[key].delay)
-            this[key].setCount(saveData[key].count)
-          }
-        } else {
-          // 직접적인 데이터 추가 (배열 등등...)
-          this[key] = saveData[key]
-        }
-      } else {
-        // 각 키가 일반적인 변수이면, 해당 값을 그대로 대입합니다.
-        this[key] = saveData[key]
-      }
-    }
+    //     if (key === 'saveList') {
+    //       // 만약 key가 saveList의 변수는 saveList 자체가 오브젝트이므로 일반적인 변수처럼 데이터를 불러옵니다.
+    //       // 상세한 작업은 loadProcess에서 추가적으로 진행해야 합니다.
+    //       this[key] = saveData[key]
+    //     } else if (saveData[key].hasOwnProperty('delay') && saveData[key].hasOwnProperty('count')) {
+    //       // delay와 관련한 클래스인지 확인하기 위해 해당 오브젝트에 delay, count 변수가 있는지 확인합니다.
+    //       // delay 객체를 사용하려면 해당 객체를 명시적으로 생성해야 하므로, 이 코드로 판단할 수 있습니다.
+    //       // 널 체크 (없을경우 무시)
+    //       if (this[key].setDelay != null) {
+    //         // setDelay가 있다면, 오브젝트에 있는 delay, count값을 추가합니다.
+    //         this[key].setDelay(saveData[key].delay)
+    //         this[key].setCount(saveData[key].count)
+    //       }
+    //     } else {
+    //       // 직접적인 데이터 추가 (배열 등등...)
+    //       this[key] = saveData[key]
+    //     }
+    //   } else {
+    //     // 각 키가 일반적인 변수이면, 해당 값을 그대로 대입합니다.
+    //     this[key] = saveData[key]
+    //   }
+    // }
 
     // 추가적인 로드 작업 진행 (saveString, saveList 변수와 관련된 값은.)
-    this.loadProcess()
+    // this.loadProcess()
   }
 
   /** 
@@ -1264,6 +1351,8 @@ export class FieldData {
    * (이 함수는 복잡한 처리 및 가독성 향상을 위해 만들어진 것이므로, 필수로 사용하지 않습니다.)
    * 
    * 이 함수는 불러오기 할 때 자동으로 호출됩니다.
+   * 
+   * @deprecated
    */
   loadProcess () {
     
@@ -1277,6 +1366,8 @@ export class FieldData {
    * (이 함수는 복잡한 처리 및 가독성 향상을 위해 만들어진 것이므로, 필수로 사용하지 않습니다.)
    * 
    * (저장 중에 saveList, saveString도 같이 저장됩니다.)
+   * 
+   * @deprecated
    */
   saveProcess () {
 

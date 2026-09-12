@@ -116,14 +116,17 @@ let digitalDisplay = gameFunction.digitalDisplay
 
 // 사운드 선 로딩
 // 나중에 후로딩 방식으로 변경할지 잘 모르겠음.
-for (let key in soundSrc.system) {
-  game.sound.createAudio(soundSrc.system[key])
+
+for (const src of Object.values(soundSrc.system)) {
+  game.sound.createAudio(src);
 }
-for (let key in soundSrc.music) {
-  game.sound.createAudio(soundSrc.music[key])
+
+for (const src of Object.values(soundSrc.music)) {
+  game.sound.createAudio(src);
 }
-for (let key in soundSrc.skill) {
-  game.sound.createAudio(soundSrc.skill[key])
+
+for (const src of Object.values(soundSrc.skill)) {
+  game.sound.createAudio(src);
 }
 
 
@@ -1325,8 +1328,8 @@ export class userSystem {
       }
     }
 
-    let weaponPreset = []
-    let skillPreset = []
+    /** @type {number[]} */ let weaponPreset = []
+    /** @type {number[]} */ let skillPreset = []
     if (saveData.weaponPresetNumber) this.weaponPresetNumber = saveData.weaponPresetNumber
     if (saveData.skillPresetNumber) this.skillPresetNumber = saveData.skillPresetNumber
     if (saveData.weaponPreset) weaponPreset = saveData.weaponPreset

@@ -3849,9 +3849,9 @@ class RTestEnemy extends RoundData {
       if (this.saveList.targetId < ID.enemy.START_ID) {
         this.saveList.targetId = ID.enemy.START_ID
       }
-    } else if (button.a) {
+    } else if (button.A) {
       this.field.createEnemy(this.saveList.targetId, 600, 300)
-    } else if (button.b) {
+    } else if (button.B) {
       this.field.allEnemyDelete()
     }
 
@@ -3991,18 +3991,16 @@ class RTestSound extends RoundData {
     }
 
     this.soundSrcList = []
-    for (let target in soundSrc) {
-      if (target === 'music') continue
-
-      for (let subTarget in soundSrc[target]) {
-        this.soundSrcList.push(soundSrc[target][subTarget])
-      }
+    // 1. music을 제외한 모든 효과음(Sound) 경로 수집
+    for (const [category, group] of Object.entries(soundSrc)) {
+      if (category === 'music') continue;
+      
+      // 객체 내부의 값(src)들을 추출하여 일괄 추가
+      this.soundSrcList.push(...Object.values(group));
     }
 
-    this.musicSrcList = []
-    for (let music in soundSrc.music) {
-      this.musicSrcList.push(soundSrc.music[music])
-    }
+    // 2. 배경음악(Music) 경로 수집
+    this.musicSrcList = Object.values(soundSrc.music);
   }
 
   process () {
@@ -5441,9 +5439,6 @@ class Round2_3 extends RoundData {
     this.coursePhaseA1PlayerDamage()
     this.coursePhaseA1EnemyDamage()
 
-    // 매 초(60프레임) 마다 시간 감소
-    if (this.time.currentTimeTotalFrame % 60 === 0) this.areaStat.battleLeftTime--
-
     this.coursePhaseA1Result() // 결과 처리
   }
 
@@ -5599,17 +5594,11 @@ class Round2_3 extends RoundData {
 
     let player = fieldState.getPlayerObject()
 
-    // 플레이어 무적 상태이면, 무시
-    if (this.areaStat.invincibleFrame > 0) {
-      this.areaStat.invincibleFrame--
-      return
-    }
-
     // 해당 적이 가지고 있는 4가지 상태
-    const STATE_HAMMER = 'hammer'
-    const STATE_EARTHQUAKE = 'earthquake'
-    const STATE_NORMAL = 'normal'
-    const STATE_BOOST = 'boost'
+    const STATE_HAMMER = 3
+    const STATE_EARTHQUAKE = 4
+    const STATE_NORMAL = 1
+    const STATE_BOOST = 2
 
     // 각각의 판정범위를 가지는 오브젝트
     let enemyObject = {x: enemy.x, y: enemy.y, width: enemy.width, height: enemy.height}
@@ -5657,9 +5646,8 @@ class Round2_3 extends RoundData {
     // 사운드 및 플레이어 강제 이동 처리
     this.sound.play(soundSrc.round.r2_3_a1_damage)
     this.areaStat.playerHpPercent = playerHpPercent // 플레이어 hp 퍼센트 변경
-    this.areaStat.invincibleFrame = 45 // 무적프레임: 공통 45
     const autoMoveX = (Math.random() * 120 - 60) + player.x
-    const autoMoveY = this.state === STATE_EARTHQUAKE ? (Math.random() * 120 - 60) + 120 : (Math.random() * 240 - 120) + player.y
+    const autoMoveY = enemy.state === STATE_EARTHQUAKE ? (Math.random() * 120 - 60) + 120 : (Math.random() * 240 - 120) + player.y
     player.setAutoMove(autoMoveX, autoMoveY, 30)
   }
 
@@ -5741,8 +5729,8 @@ class Round2_3 extends RoundData {
     let playerP = this.field.getPlayerObject()
     for (let i = 0; i < enemyArray.length; i++) {
       let enemyC = enemyArray[i]
-      if (enemyC.state === '' && collision(playerP, enemyC)) {
-        enemyC.state = 'collision'
+      if (enemyC.state === 0 && collision(playerP, enemyC)) {
+        enemyC.state = 2
         this.sound.play(soundSrc.round.r2_3_a1_damage)
         const autoMoveX = playerP.x + (Math.random() * 200) - 100
         const autoMoveY = playerP.y + (Math.random() * 200) - 100
@@ -5944,7 +5932,7 @@ class Round2_3 extends RoundData {
       for (let i = 0; i < enemyObject.length; i++) {
         let enemy = enemyObject[i]
         if (enemy.moveDelay != null) {
-          enemy.state = 'move'
+          enemy.state = 3
           enemy.moveDelay.count = (-20 * i) + enemy.moveDelay.delay
         }
       }
@@ -5971,7 +5959,7 @@ class Round2_3 extends RoundData {
       let enemyObject = this.field.getEnemyObject()
       for (let i = 0; i < enemyObject.length; i++) {
         let enemy = enemyObject[i]
-        enemy.state = 'stop'
+        enemy.state = 2
       }
     }
   }
@@ -6279,8 +6267,8 @@ class Round2_3 extends RoundData {
     let player = this.field.getPlayerObject()
     let enemyObject = this.field.getEnemyObject()
     for (let i = 0; i < enemyObject.length; i++) {
-      if (enemyObject[i].state === '' && collision(player, enemyObject[i])) {
-        enemyObject[i].state = 'collision'
+      if (enemyObject[i].state === 1 && collision(player, enemyObject[i])) {
+        enemyObject[i].state = 2
         player.setAutoMove(player.x + Math.random() * 200 - 100, player.y + Math.random() * 200 - 100, 20)
         this.sound.play(soundSrc.round.r2_3_a1_damage)
         this.areaStat.areaBcollisionCount++
@@ -6425,10 +6413,10 @@ class Round2_3 extends RoundData {
     let enemy = this.field.getEnemyObject()
     for (let i = 0; i < enemy.length; i++) {
       let currentEnemy = enemy[i]
-      if (currentEnemy.state === '' && collision(player, currentEnemy)) {
+      if (currentEnemy.state === 0 && collision(player, currentEnemy)) {
         // 알고리즘은 그 위의 스프라이트랑 거의 동일
         player.setAutoMove(player.x + (Math.random() * 200 - 100), player.y + (Math.random() * 200 - 100), 60)
-        currentEnemy.state = 'automove' + ' ' + (Math.random() * 200 - 100) + ' ' + (Math.random() * 200 - 100)
+        currentEnemy.message = 'automove' + ' ' + (Math.random() * 200 - 100) + ' ' + (Math.random() * 200 - 100)
         this.sound.soundPlay(soundSrc.round.r2_3_a1_damage)
         this.areaStat.areaBcollisionCount++
       }
@@ -6786,7 +6774,7 @@ class Round2_3 extends RoundData {
       afterInit () {
         super.afterInit()
         this.setMoveSpeed(4, 0)
-        this.state = 'right'
+        this.state = FieldData.direction.RIGHT
       }
       
       process () {
@@ -6799,11 +6787,11 @@ class Round2_3 extends RoundData {
         }
 
         if (this.moveDelay.check()) {
-          if (this.state === 'left') {
-            this.state = 'right'
+          if (this.state === FieldData.direction.LEFT) {
+            this.state = FieldData.direction.RIGHT
             this.setMoveSpeed(4, 0)
           } else {
-            this.state = 'left'
+            this.state = FieldData.direction.LEFT
             this.setMoveSpeed(-4, 0)
           }
         }
@@ -6820,7 +6808,7 @@ class Round2_3 extends RoundData {
       afterInit () {
         super.afterInit()
         this.setMoveSpeed(0, 4)
-        this.state = 'down'
+        this.state = FieldData.direction.DOWN
       }
       
       process () {
@@ -6833,11 +6821,11 @@ class Round2_3 extends RoundData {
         }
 
         if (this.moveDelay.check()) {
-          if (this.state === 'down') {
-            this.state = 'up'
+          if (this.state === FieldData.direction.DOWN) {
+            this.state = FieldData.direction.UP
             this.setMoveSpeed(0, -4)
           } else {
-            this.state = 'down'
+            this.state = FieldData.direction.DOWN
             this.setMoveSpeed(0, 4)
           }
         }
@@ -7185,8 +7173,8 @@ class Round2_3 extends RoundData {
       // 그리고, 이동 변화값만 지정합니다. 적 내부에서 자기 자신을 기준으로 최종 위치가 결정되기 때문입니다.
       for (let i = 0; i < enemy.length; i++) {
         let currentEnemy = enemy[i]
-        if (currentEnemy.state === '' && collision(currentEnemy, this)) {
-          currentEnemy.state = 'automove' + ' ' + addPositionX + ' ' + addPositionY
+        if (currentEnemy.message === '' && collision(currentEnemy, this)) {
+          currentEnemy.message = 'automove' + ' ' + addPositionX + ' ' + addPositionY
           soundSystem.play(soundSrc.round.r2_3_b3_move)
         }
       }
@@ -7216,8 +7204,8 @@ class Round2_3 extends RoundData {
       // 참고사항: 이 state 변경 옵션은 특정 적에게만 적용됩니다. 다른 적에겐 아무 효과가 없습니다.
       for (let i = 0; i < enemy.length; i++) {
         let currentEnemy = enemy[i]
-        if (currentEnemy.state === '' && collision(currentEnemy, this)) {
-          currentEnemy.state = 'automove' + ' ' + endPositionX + ' ' + endPositionY
+        if (currentEnemy.message === '' && collision(currentEnemy, this)) {
+          currentEnemy.message = 'automove' + ' ' + endPositionX + ' ' + endPositionY
           soundSystem.play(soundSrc.round.r2_3_b3_move)
         }
       }
@@ -7461,28 +7449,28 @@ class Round2_4 extends RoundData {
   }
 
   processSaveString () {
-    this.saveString = this.spriteElevator.state 
-      + ',' + this.spriteElevator.stateDelay.count 
-      + ',' + this.spriteElevator.floorDelay.count
-      + ',' + this.spriteElevator.floor
-      + ',' + this.spriteElevator.floorArrive
-      + ',' + this.spriteElevator.isFloorMove
-      + ',' + this.currentCourseName
-      + ',' + this.spriteElevator.x
-      + ',' + this.spriteElevator.y
+    // this.saveString = this.spriteElevator.state 
+    //   + ',' + this.spriteElevator.stateDelay.count 
+    //   + ',' + this.spriteElevator.floorDelay.count
+    //   + ',' + this.spriteElevator.floor
+    //   + ',' + this.spriteElevator.floorArrive
+    //   + ',' + this.spriteElevator.isFloorMove
+    //   + ',' + this.currentCourseName
+    //   + ',' + this.spriteElevator.x
+    //   + ',' + this.spriteElevator.y
   }
 
   loadProcess () {
-    let str = this.saveString.split(',')
-    this.spriteElevator.state = str[0]
-    this.spriteElevator.stateDelay.count = Number(str[1])
-    this.spriteElevator.floorDelay.count = Number(str[2])
-    this.spriteElevator.floor = Number(str[3])
-    this.spriteElevator.floorArrive = Number(str[4])
-    this.spriteElevator.isFloorMove = str[5] === 'true' ? true : false
-    this.currentCourseName = str[6]
-    this.spriteElevator.x = Number(str[7])
-    this.spriteElevator.y = Number(str[8])
+    // let str = this.saveString.split(',')
+    // this.spriteElevator.state = str[0]
+    // this.spriteElevator.stateDelay.count = Number(str[1])
+    // this.spriteElevator.floorDelay.count = Number(str[2])
+    // this.spriteElevator.floor = Number(str[3])
+    // this.spriteElevator.floorArrive = Number(str[4])
+    // this.spriteElevator.isFloorMove = str[5] === 'true' ? true : false
+    // this.currentCourseName = str[6]
+    // this.spriteElevator.x = Number(str[7])
+    // this.spriteElevator.y = Number(str[8])
   }
 
   roundPhase00 () {
@@ -7738,7 +7726,7 @@ class Round2_4 extends RoundData {
         let e = enemy[i]
         if (e.id !== ID.enemy.donggramiEnemy.leaf && e.id !== ID.enemy.donggramiEnemy.tree) {
           e.setMoveSpeed(9, 0)
-          e.setMoveDirection(FieldData.direction.LEFT, '')
+          e.setMoveDirection(FieldData.direction.LEFT, 0)
           e.isPossibleExit = true
           e.isExitToReset = false
         } else {
@@ -8014,6 +8002,11 @@ class Round2_4 extends RoundData {
 
   static createSpriteElevator () {
     class ElevatorSprite extends FieldData {
+      static STATE_CLOSE = 0
+      static STATE_CLOSEING = 1
+      static STATE_OPEN = 2
+      static STATE_OPENING = 3
+
       constructor () {
         super()
         this.setAutoImageData(imageSrc.round.round2_4_elevator, imageDataInfo.round2_4_elevator.elevatorClose)
@@ -8033,12 +8026,8 @@ class Round2_4 extends RoundData {
         this.arrowDownEnimation = EnimationData.createEnimation(imageSrc.round.round2_4_elevatorNumber, imageDataInfo.round2_4_elevator.numberDownRun, 7, -1)
         this.floorDelay = new DelayData(60)
 
-        this.STATE_CLOSE = 'close'
-        this.STATE_CLOSEING = 'closing'
-        this.STATE_OPEN = 'open'
-        this.STATE_OPENING = 'opening'
         this.stateDelay = new DelayData(36) // 4 * 9 frame enimation
-        this.state = this.STATE_CLOSE
+        this.state = ElevatorSprite.STATE_CLOSE
 
         /** 엘리베이터의 기본 출력 좌표값 */ this.BASE_X = 200
         /** 엘리베이터의 기본 출력 좌표값 */ this.BASE_Y = 100
@@ -8067,17 +8056,17 @@ class Round2_4 extends RoundData {
 
       processDoor () {
         // 닫혀있거나 열려있는 상태에서는, 깅제로 에니메이션 프레임을 조절해서 스프라이트를 출력하도록 처리
-        if (this.state === this.STATE_OPEN) {
+        if (this.state === ElevatorSprite.STATE_OPEN) {
           this.openEnimation.elapsedFrame = 0
-        } else if (this.state === this.STATE_CLOSE) {
+        } else if (this.state === ElevatorSprite.STATE_CLOSE) {
           this.closeEnimation.elapsedFrame = 0
         }
 
         // 일정 시간이 지난 후에는 문이 열려있거나 닫혀있는것을 유지시킵니다.
-        if (this.state === this.STATE_OPENING && this.stateDelay.check()) {
-          this.state = this.STATE_OPEN
-        } else if (this.state === this.STATE_CLOSEING && this.stateDelay.check()) {
-          this.state = this.STATE_CLOSE
+        if (this.state === ElevatorSprite.STATE_OPENING && this.stateDelay.check()) {
+          this.state = ElevatorSprite.STATE_OPEN
+        } else if (this.state === ElevatorSprite.STATE_CLOSEING && this.stateDelay.check()) {
+          this.state = ElevatorSprite.STATE_CLOSE
         }
       }
 
@@ -8106,7 +8095,7 @@ class Round2_4 extends RoundData {
 
       /** 이동할 층을 설정합니다. -5 부터 5까지 가능, 0층은 무시됨, 단 엘리베이터가 닫혀있어야만 사용 가능 */
       setFloorMove (floorArrive = 1) {
-        if (this.state !== this.STATE_CLOSE) return
+        if (this.state !== ElevatorSprite.STATE_CLOSE) return
 
         if (floorArrive !== 0 && floorArrive >= -5 && floorArrive <= 5) {
           this.isFloorMove = true
@@ -8167,10 +8156,10 @@ class Round2_4 extends RoundData {
         graphicSystem.imageDisplay(imageSrc.round.round2_4_elevator, imgD.x, imgD.y, imgD.width, imgD.height, this.x, this.y, this.width, this.height)
 
         switch (this.state) {
-          case this.STATE_OPEN: this.displayDoorOpen(); break
-          case this.STATE_OPENING: this.openEnimation.display(this.x, this.y); break
-          case this.STATE_CLOSE: this.displayDoorClose(); break
-          case this.STATE_CLOSEING: this.closeEnimation.display(this.x, this.y); break
+          case ElevatorSprite.STATE_OPEN: this.displayDoorOpen(); break
+          case ElevatorSprite.STATE_OPENING: this.openEnimation.display(this.x, this.y); break
+          case ElevatorSprite.STATE_CLOSE: this.displayDoorClose(); break
+          case ElevatorSprite.STATE_CLOSEING: this.closeEnimation.display(this.x, this.y); break
         }
       }
 
@@ -8191,12 +8180,12 @@ class Round2_4 extends RoundData {
        * @param {boolean} isOpen 이 값이 true면 open, false면 close
        */
       setDoorOpen (isOpen = true) {
-        if (isOpen && this.state === this.STATE_CLOSE) {
-          this.state = this.STATE_OPENING
+        if (isOpen && this.state === ElevatorSprite.STATE_CLOSE) {
+          this.state = ElevatorSprite.STATE_OPENING
           soundSystem.play(soundSrc.round.r2_4_elevatorDoorOpen)
           this.openEnimation.reset()
-        } else if (!isOpen && this.state === this.STATE_OPEN){
-          this.state = this.STATE_CLOSEING
+        } else if (!isOpen && this.state === ElevatorSprite.STATE_OPEN){
+          this.state = ElevatorSprite.STATE_CLOSEING
           soundSystem.play(soundSrc.round.r2_4_elevatorDoorClose)
           this.closeEnimation.reset()
         }
@@ -8325,8 +8314,8 @@ class Round2_5 extends RoundData {
 
   loadProcess () {
     let str = this.saveString.split('|')
-    /** @type {Array} */ let arrayDonggrami = JSON.parse(str[0])
-    /** @type {Array} */ let arrayIntruder = JSON.parse(str[1])
+    let arrayDonggrami = JSON.parse(str[0])
+    let arrayIntruder = JSON.parse(str[1])
 
     for (let i = 0; i < arrayDonggrami.length; i++) {
       let donggrami = new this.SpriteDonggrami()
@@ -8377,7 +8366,7 @@ class Round2_5 extends RoundData {
             sprite.talkType = sprite.TALKTYPE_EMOJI
             sprite.talkDelay.setDelay(Math.floor(Math.random() * 40) + 10)
           } else {
-            sprite.talkState = sprite.TALKSTATE_TALK
+            sprite.talkState = this.SpriteDonggrami.TALKSTATE_TALK
           }
         }
       }
@@ -8387,7 +8376,7 @@ class Round2_5 extends RoundData {
         sprite.roundState = sprite.ROUND_LOSE
         sprite.setTalkIndex()
         sprite.talkDelay.countReset()
-        sprite.talkState = sprite.TALKSTATE_TALK
+        sprite.talkState = this.SpriteDonggrami.TALKSTATE_TALK
       }
 
       sprite.process()
@@ -8832,10 +8821,13 @@ class Round2_5 extends RoundData {
       this.emojiType = Math.random() < 0.5 ? this.myStatic.EmojiList.HAPPY : this.myStatic.EmojiList.SMILE
       this.emojiDelay = new DelayData(60)
       
-      this.TALKTYPE_A = 'aa'
-      this.TALKTYPE_B = 'bb'
-      this.TALKTYPE_EMOJI = 'emoji'
-      this.TALKTYPE_EASTEREGG = 'easteregg'
+      this.TALKTYPE_A = 67
+      this.TALKTYPE_B = 68
+      this.TALKTYPE_EMOJI = 69
+      this.TALKTYPE_EASTEREGG = 70
+
+      this.TALKSTATE_TALK = 1
+      this.TALKSTATE_EMOJI = 2
 
       // 87%확률 A타입, 13%확률 B타입
       this.talkType = Math.random() < 0.87 ? this.TALKTYPE_A : this.TALKTYPE_B
@@ -8934,11 +8926,11 @@ class Round2_5 extends RoundData {
       if (this.talkDelay.check()) {
         // 대화 딜레이에 도달하면, 대화중인 상태에서는 대화를 끝내고, 아니라면 대화를 함
         this.talkDelay.setDelay(this.getTalkRandomDelay())
-        if (this.talkState === '') {
+        if (this.talkState === 0) {
           this.talkState = this.TALKSTATE_TALK
           this.setTalkIndex()
         } else if (this.talkState === this.TALKSTATE_TALK) {
-          this.talkState = ''
+          this.talkState = 0
         }
       }
     }
@@ -9045,10 +9037,10 @@ class Round2_5 extends RoundData {
       this.talkType = this.TALKTYPE_EASTEREGG
       this.hp = this.BASEDPS * 1000 // 안죽게 하기 위한 과도한 체력
 
-      this.STATE_QUSESTION = 'q'
-      this.STATE_AUTOMOVE = 'auto'
-      this.STATE_EXCLMATION = '!'
-      this.STATE_NORMAL = 'normal'
+      this.STATE_QUSESTION = 40
+      this.STATE_AUTOMOVE = 41
+      this.STATE_EXCLMATION = 42
+      this.STATE_NORMAL = 43
       this.state = this.STATE_QUSESTION
 
       this.stateDelay = new DelayData(180)
@@ -9122,7 +9114,7 @@ class Round2_5 extends RoundData {
       if (this.state === this.STATE_QUSESTION || this.state === this.STATE_AUTOMOVE) {
         this.setTalkIndex()
       } else {
-        this.talkState = '' // 대화 상태 바로 제거
+        this.talkState = 0 // 대화 상태 바로 제거
       }
     }
 
@@ -9313,26 +9305,26 @@ class Round2_6 extends RoundData {
 
   processSaveString () {
     // 2-4 코드와의 차이점은, course에 대한 정보가 없음
-    this.saveString = this.spriteElevator.state
-      + ',' + this.spriteElevator.stateDelay.count 
-      + ',' + this.spriteElevator.floorDelay.count
-      + ',' + this.spriteElevator.floor
-      + ',' + this.spriteElevator.floorArrive
-      + ',' + this.spriteElevator.isFloorMove
-      + ',' + this.spriteElevator.x
-      + ',' + this.spriteElevator.y
+    // this.saveString = this.spriteElevator.state
+    //   + ',' + this.spriteElevator.stateDelay.count 
+    //   + ',' + this.spriteElevator.floorDelay.count
+    //   + ',' + this.spriteElevator.floor
+    //   + ',' + this.spriteElevator.floorArrive
+    //   + ',' + this.spriteElevator.isFloorMove
+    //   + ',' + this.spriteElevator.x
+    //   + ',' + this.spriteElevator.y
   }
 
   loadProcess () {
-    let str = this.saveString.split(',')
-    this.spriteElevator.state = str[0]
-    this.spriteElevator.stateDelay.count = Number(str[1])
-    this.spriteElevator.floorDelay.count = Number(str[2])
-    this.spriteElevator.floor = Number(str[3])
-    this.spriteElevator.floorArrive = Number(str[4])
-    this.spriteElevator.isFloorMove = str[5] === 'true' ? true : false
-    this.spriteElevator.x = Number(str[6])
-    this.spriteElevator.y = Number(str[7])
+    // let str = this.saveString.split(',')
+    // this.spriteElevator.state = str[0]
+    // this.spriteElevator.stateDelay.count = Number(str[1])
+    // this.spriteElevator.floorDelay.count = Number(str[2])
+    // this.spriteElevator.floor = Number(str[3])
+    // this.spriteElevator.floorArrive = Number(str[4])
+    // this.spriteElevator.isFloorMove = str[5] === 'true' ? true : false
+    // this.spriteElevator.x = Number(str[6])
+    // this.spriteElevator.y = Number(str[7])
   }
 
   roundPhase00 () {
@@ -9797,6 +9789,8 @@ class Round3TempletePlayerOption extends FieldData {
         } 
       }
 
+      weapon.state
+
       this.weaponObject.push(weapon)
     }
   }
@@ -10044,8 +10038,8 @@ class Round3TempletePlayerOption extends FieldData {
       this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.purpleShot)
       this.setMoveSpeed(20, 0)
 
-      this.STATE_FRONT = 'front'
-      this.STATE_CHASE = 'chase'
+      this.STATE_FRONT = 2
+      this.STATE_CHASE = 3
       this.state = this.STATE_FRONT
     }
 
@@ -10066,8 +10060,8 @@ class Round3TempletePlayerOption extends FieldData {
       super()
       this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.khakiShot)
       this.setMoveSpeed(Math.random() * 4 - 2, Math.random() * 1 + 10)
-      this.STATE_NORMAL = 'normal'
-      this.STATE_CHASE = 'chase'
+      this.STATE_NORMAL = 1
+      this.STATE_CHASE = 2
       this.setWidthHeight(this.width * 2, this.height * 2)
     }
 
@@ -10207,14 +10201,18 @@ class Round3TempleteBossWarning extends FieldData {
 class Round3TempleteBossSprite extends FieldData {
   constructor () {
     super()
-    this.TYPE_ROBOT = 'robot'
-    this.TYPE_DASU = 'dasu'
-    this.TYPE_ANTI_PHASE2 = 'antiPhase2'
-    this.TYPE_ANTI_PHASE3 = 'antiPhase3'
-    this.TYPE_ANTI_PHASE4 = 'antiPhase4'
-    this.TYPE_ANTI_PHASECLEAR = 'antiPhaseClear'
-    this.state = ''
+    this.TYPE_ROBOT = 109985
+    this.TYPE_DASU = 109986
+    this.TYPE_ANTI_PHASE2 = 109987
+    this.TYPE_ANTI_PHASE3 = 109988
+    this.TYPE_ANTI_PHASE4 = 109989
+    this.TYPE_ANTI_PHASECLEAR = 109990
+    this.state = 0
     this.dasuCore = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}]
+
+    this.STATE_START = 1
+    this.STATE_RIGHT = 2
+    this.STATE_CREATE_WAIT = 3
   }
 
   createSpriteBossRobot () {
@@ -10224,7 +10222,7 @@ class Round3TempleteBossSprite extends FieldData {
     this.subType = this.TYPE_ROBOT
     this.x = 900
     this.setMoveSpeed(-10, 0)
-    this.state = 'start'
+    this.state = this.STATE_START
     this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
     this.degree = 270
   }
@@ -10285,37 +10283,37 @@ class Round3TempleteBossSprite extends FieldData {
   }
 
   getSaveString () {
-    if (this.subType === '') {
-      return ''
-    } else {
-      return JSON.stringify(this)
-    }
+    // if (this.subType === '') {
+    //   return ''
+    // } else {
+    //   return JSON.stringify(this)
+    // }
   }
 
   setLoadString (text = '') {
-    if (text === '') return
+    // if (text === '') return
 
-    let str = JSON.parse(text)
-    if (str.state != null) this.state = str.state
-    if (str.degree != null) this.degree = Number(str.degree)
-    if (str.subType != null) this.subType = str.subType
-    if (str.moveSpeedX != null) this.moveSpeedX = Number(str.moveSpeedX)
-    if (str.moveSpeedY != null) this.moveSpeedY = Number(str.moveSpeedY)
-    if (str.x != null) this.x = Number(str.x)
-    if (str.y != null) this.y = Number(str.y)
-    if (str.elapsedFrame != null) this.elapsedFrame = Number(str.elapsedFrame)
-    if (str.width != null) this.width = Number(str.width)
-    if (str.height != null) this.height = Number(str.height)
+    // let str = JSON.parse(text)
+    // if (str.state != null) this.state = str.state
+    // if (str.degree != null) this.degree = Number(str.degree)
+    // if (str.subType != null) this.subType = str.subType
+    // if (str.moveSpeedX != null) this.moveSpeedX = Number(str.moveSpeedX)
+    // if (str.moveSpeedY != null) this.moveSpeedY = Number(str.moveSpeedY)
+    // if (str.x != null) this.x = Number(str.x)
+    // if (str.y != null) this.y = Number(str.y)
+    // if (str.elapsedFrame != null) this.elapsedFrame = Number(str.elapsedFrame)
+    // if (str.width != null) this.width = Number(str.width)
+    // if (str.height != null) this.height = Number(str.height)
 
-    // image 재등록 (로드가 완료된 이후, 타입은 무엇인지 알지만, 이미지가 무엇인지 몰라 출력되지 않습니다.)
-    if (this.subType === this.TYPE_ROBOT) {
-      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.crazyRobot, 0)
-    } else if (this.subType === this.TYPE_DASU) {
-      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.bossDasu, 0)
-    } else if (this.subType === this.TYPE_ANTI_PHASE2 || this.subType === this.TYPE_ANTI_PHASE3 || this.subType === this.TYPE_ANTI_PHASE4) {
-      this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 3)
-      this.setWidthHeight(this.width * 2, this.height * 2)
-    }
+    // // image 재등록 (로드가 완료된 이후, 타입은 무엇인지 알지만, 이미지가 무엇인지 몰라 출력되지 않습니다.)
+    // if (this.subType === this.TYPE_ROBOT) {
+    //   this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.crazyRobot, 0)
+    // } else if (this.subType === this.TYPE_DASU) {
+    //   this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.bossDasu, 0)
+    // } else if (this.subType === this.TYPE_ANTI_PHASE2 || this.subType === this.TYPE_ANTI_PHASE3 || this.subType === this.TYPE_ANTI_PHASE4) {
+    //   this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 3)
+    //   this.setWidthHeight(this.width * 2, this.height * 2)
+    // }
   }
 
   processMove () {
@@ -10339,17 +10337,17 @@ class Round3TempleteBossSprite extends FieldData {
 
   processMoveBossRobot () {
     // 보스 로봇 이동
-    if (this.state === 'start' && this.x + this.width < -300) {
+    if (this.state === this.STATE_START && this.x + this.width < -300) {
       this.setMoveSpeed(10, 0)
-      this.state = 'right'
+      this.state = this.STATE_RIGHT
       this.degree = 90
-    } else if (this.state === 'right' && this.x > 900) {
+    } else if (this.state === this.STATE_RIGHT && this.x > 900) {
       this.setMoveSpeed(-10, 0)
-      this.state = 'createwait'
+      this.state = this.STATE_CREATE_WAIT
       this.degree = 0
       this.setWidthHeight(this.width * 2, this.height * 2)
       this.y = graphicSystem.CANVAS_HEIGHT_HALF - (this.height / 2)
-    } else if (this.state === 'createwait') {
+    } else if (this.state === this.STATE_CREATE_WAIT) {
       if (this.x < 500) {
         this.x = 500
         this.setMoveSpeed(0, 0)
@@ -10357,12 +10355,12 @@ class Round3TempleteBossSprite extends FieldData {
       } else {
         if (this.elapsedFrame >= 300) {
           fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.crazyRobot, this.x, this.y)
-          this.subType = ''
+          this.subType = 0
         }
       }
     }
 
-    if (this.state === 'start' || this.state === 'right') {
+    if (this.state === this.STATE_START || this.state === this.STATE_RIGHT) {
       if (this.x >= 100 && this.x <= graphicSystem.CANVAS_WIDTH - 100 && this.elapsedFrame % 6 === 0) {
         let bullet1 = new Round3TempleteBossSprite.RobotRocketBullet()
         let bullet2 = new Round3TempleteBossSprite.RobotRocketBullet()
@@ -10396,7 +10394,7 @@ class Round3TempleteBossSprite extends FieldData {
     }
 
     if (this.elapsedFrame >= 300) {
-      this.subType = ''
+      this.subType = 0
       fieldState.createEnemyObject(ID.enemy.towerEnemyGroup3.bossDasu, this.x, this.y)
     }
   }
@@ -10416,7 +10414,7 @@ class Round3TempleteBossSprite extends FieldData {
     } else if (this.elapsedFrame >= 541) {
       // 알파값을 원래대로 복구하고 해당 스프라이트 제거
       this.alpha = 1
-      this.subType = ''
+      this.subType = 0
     }
   }
 
@@ -10458,7 +10456,7 @@ class Round3TempleteBossSprite extends FieldData {
     } else if (this.elapsedFrame >= 1080) {
       // 적 생성 후, 스프라이트 처리 종료
       fieldState.createEnemyObject(ID.enemy.towerEnemyGroup4.antijemulP3_1, this.x, this.y)
-      this.subType = ''
+      this.subType = 0
     }
   }
 
@@ -10472,7 +10470,7 @@ class Round3TempleteBossSprite extends FieldData {
     if (this.elapsedFrame >= 780) {
       // 적 생성, 스프라이트 처리 종료
       fieldState.createEnemyObject(ID.enemy.towerEnemyGroup4.antijemulP4_1, this.x, this.y)
-      this.subType = ''
+      this.subType = 0
     }
   }
 
@@ -10508,7 +10506,7 @@ class Round3TempleteBossSprite extends FieldData {
           this.imageObjectDisplay(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.bossDasuCore, this.dasuCore[i].x, this.dasuCore[i].y)
         }
       }
-    } else if (this.subType !== '') {
+    } else if (this.subType !== 0) {
       super.display()
     }
   }
@@ -11160,7 +11158,7 @@ class Round3_2 extends Round3Templete {
     } else if (this.timeCheckFrame(pTime + 8)) {
       this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellpo, [ID.item.hellgiComponent], [1])
     } else if (this.timeCheckFrame(pTime + 11)) {
-      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellpa [ID.item.hellgiComponent], [1])
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellpa, [ID.item.hellgiComponent], [1])
     } else if (this.timeCheckFrame(pTime + 15) || this.timeCheckFrame(pTime + 19)) {
       this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup2.hellna, [ID.item.hellgiComponent], [1])
     }
@@ -12785,12 +12783,12 @@ class Round3_5 extends Round3Templete {
 
   processSaveString () {
     super.processSaveString()
-    this.saveList.areaPhase2 = JSON.stringify(this.areaPhase2)
+    // this.saveList.areaPhase2 = JSON.stringify(this.areaPhase2)
   }
 
   loadProcess () {
     super.loadProcess()
-    this.areaPhase2 = JSON.parse(this.saveList.areaPhase2)
+    // this.areaPhase2 = JSON.parse(this.saveList.areaPhase2)
   }
 
   loadProcessSprite () {
@@ -12898,11 +12896,11 @@ class Round3_5 extends Round3Templete {
   }
 
   static spriteList = {
-    TORNADO_PHASE2_1: 'tornadophase2_1',
-    TORNADO_PHASE2_2: 'tornadophase2_2',
-    GREENUP: 'greengasiup',
-    GREENDOWN: 'greengasidown',
-    PREYELLOW: 'yellow',
+    TORNADO_PHASE2_1: 454,
+    TORNADO_PHASE2_2: 455,
+    GREENUP: 456,
+    GREENDOWN: 457,
+    PREYELLOW: 458,
   }
 
   static BlackSpaceTornadoPhase2_1 = class extends EnemyBulletData {
@@ -12985,7 +12983,7 @@ class Round3_5 extends Round3Templete {
   static BlackSpacePreBulletYellow = class extends FieldData {
     constructor () {
       super()
-      this.mainType = Round3_5.spriteList.PREYELLOW
+      this.mainType = 84 // Round3_5.spriteList.PREYELLOW
       this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.blackSpaceBulletYellow)
       this.setWidthHeight(1000, 100)
     }
@@ -14284,24 +14282,26 @@ class Round3_10 extends Round3Templete {
       + ',' + this.spriteRescue.state
       + ',' + this.spriteRescue.eyeTimeFrame
 
-    this.saveList.addText = addText
+    // this.saveList.addText = addText
   }
 
   loadProcess () {
     super.loadProcess()
-    let str = this.saveList.addText.split(',')
-    this.spriteElevator.state = str[0]
-    this.spriteElevator.stateDelay.count = Number(str[1])
-    this.spriteElevator.floorDelay.count = Number(str[2])
-    this.spriteElevator.floor = Number(str[3])
-    this.spriteElevator.floorArrive = Number(str[4])
-    this.spriteElevator.isFloorMove = str[5] === 'true' ? true : false
-    this.spriteElevator.x = Number(str[6])
-    this.spriteElevator.y = Number(str[7])
-    this.spriteRescue.x = Number(str[8])
-    this.spriteRescue.y = Number(str[9])
-    this.spriteRescue.state = str[10]
-    this.spriteRescue.eyeTimeFrame = Number(str[11])
+    return
+
+    // let str = this.saveList.addText.split(',')
+    // this.spriteElevator.state = str[0]
+    // this.spriteElevator.stateDelay.count = Number(str[1])
+    // this.spriteElevator.floorDelay.count = Number(str[2])
+    // this.spriteElevator.floor = Number(str[3])
+    // this.spriteElevator.floorArrive = Number(str[4])
+    // this.spriteElevator.isFloorMove = str[5] === 'true' ? true : false
+    // this.spriteElevator.x = Number(str[6])
+    // this.spriteElevator.y = Number(str[7])
+    // this.spriteRescue.x = Number(str[8])
+    // this.spriteRescue.y = Number(str[9])
+    // this.spriteRescue.state = str[10]
+    // this.spriteRescue.eyeTimeFrame = Number(str[11])
   }
 
   settingBackground () {
@@ -14601,7 +14601,7 @@ class Round3_10 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 3, pTime + 10, 180)) {
       this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellgi, [ID.item.hellgiComponent], [1])
     } else if (this.timeCheckInterval(pTime + 11, pTime + 20, 180)) {
-      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellna, [ID.item.hellgiComponent], [1])
+      this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellba, [ID.item.hellgiComponent], [1])
     } else if (this.timeCheckInterval(pTime + 21, pTime + 30, 180)) {
       this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup5.hellnet, [ID.item.hellgiComponent], [1])
     } else if (this.timeCheckInterval(pTime + 31, pTime + 39, 180)) {
@@ -15065,8 +15065,8 @@ class Round3_10 extends Round3Templete {
       super()
       this.setAutoImageData(imageSrc.round.round3_10_rescueSprite, imageDataInfo.round3_10_rescueSprite.resuceChracter)
 
-      this.STATE_EYECLOSE = 'eyeClose'
-      this.STATE_EYEOPEN = 'eyeOpen'
+      this.STATE_EYECLOSE = 1
+      this.STATE_EYEOPEN = 2
       this.state = this.STATE_EYECLOSE
 
       this.eyeTimeFrame = 0

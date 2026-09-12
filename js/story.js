@@ -135,7 +135,7 @@ export class storySystem {
     for (let i = 0; i < group.length; i++) {
       let currentGroup = group[i]
       let line = currentGroup.split('\n')
-      for (let j = 0; j < )
+      // for (let j = 0; j < )
     }
   }
 }

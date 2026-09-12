@@ -20,7 +20,7 @@ export class WeaponData extends FieldData {
   constructor () {
     super()
     /** 공격력(해당 오브젝트의 공격력) */ this.attack = 0
-    /** 해당 객체의 기본 오브젝트 타입(임의 수정 불가능) */ this.objectType = 'weapon'
+    /** 해당 객체의 기본 오브젝트 타입(임의 수정 불가능) */ this.objectType = 0
     /** 무기의 기본 이동 방향 x축 = 오른쪽 */ this.moveDirectionX = FieldData.direction.RIGHT
     /** 무기의 기본 이동 방향 y축 = 아래쪽 */ this.moveDirectionY = FieldData.direction.DOWN
 
@@ -126,8 +126,8 @@ export class WeaponData extends FieldData {
     if (stat == null) return
 
     this.isChaseType = stat.isChaseType
-    this.mainType = stat.mainType
-    this.subType = stat.subType
+    // this.mainType = stat.mainType
+    // this.subType = stat.subType
     this.repeatCount = stat.repeatCount
     this.setMultiTarget(stat.isMultiTarget ? stat.maxTarget : 0) // 멀티타겟인경우 최대타겟, 아닌경우 0
     this.maxHitCount = stat.maxTarget
@@ -587,7 +587,7 @@ export class WeaponData extends FieldData {
 
       this.setMoveSpeed(speedX, speedY)
     } else {
-      this.setMoveDirection('right')
+      this.setMoveDirection(FieldData.direction.RIGHT)
       this.moveSpeedX = 20
       this.moveSpeedY = 0
     }
@@ -659,9 +659,9 @@ class MultyshotData extends WeaponData {
 }
 
 class MissileData extends WeaponData {
-  static STATE_NORMAL = 'normal'
-  static STATE_SPLASH = 'splash'
-  static STATE_ROCKET = 'rocket'
+  static STATE_NORMAL = 1
+  static STATE_SPLASH = 2
+  static STATE_ROCKET = 3
 
   constructor () {
     super()
@@ -714,7 +714,7 @@ class MissileData extends WeaponData {
    */
   processAttackNormal () {
     if (this.enemyHitedCheck()) {
-      this.state = 'splash'
+      this.state = MissileData.STATE_SPLASH
       this.moveSpeedX = 0
       this.moveSpeedY = 0
       this.isChaseType = false
@@ -741,7 +741,7 @@ class MissileRocket extends MissileData {
   constructor (option = [2]) {
     super()
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.missileRocket)
-    this.subType = 'missileRocket'
+    this.subType = 445
     this.id = ID.weapon.missileRocket
     this.moveSpeedX = 24
     this.moveSpeedY = option.length >= 1 ? option[0] : -2
@@ -843,7 +843,7 @@ class Laser extends WeaponData {
 class LaserBlue extends Laser {
   constructor () {
     super()
-    this.subType = 'laserBlue'
+    this.subType = 446
     this.id = ID.weapon.laserBlue
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.laserBlue)
     this.chaseMissLimit = 1 // 적 1번만 추적 가능
@@ -891,6 +891,8 @@ class Sapia extends WeaponData {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.sapia)
+    this.SUBTYPE_SAPIA = 492
+    this.subType = this.SUBTYPE_SAPIA
   }
 
   processMove () {
@@ -973,7 +975,7 @@ class Sapia extends WeaponData {
   }
 
   display () {
-    if (this.subType === 'sapia') {
+    if (this.subType === 492) {
       graphicSystem.fillLine(fieldState.getPlayerObject().x, fieldState.getPlayerObject().y, this.x, this.y, 'blue')
     }
     super.display()
@@ -989,7 +991,9 @@ class SapiaShot extends Sapia {
     super()
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.sapiaShot)
     this.id = ID.weapon.sapiaShot
-    this.subType = 'sapiaShot'
+
+    this.SUBTYPE_SHOT = 493
+    this.subType = this.SUBTYPE_SHOT
     this.targetX = option.length >= 1 ? option[0] : 0
     this.targetY = option.length >= 2 ? option[1] : 0
     
@@ -1063,16 +1067,16 @@ class ParapoShockwave extends Parapo {
    * 옵션:
    * 0. direction(방향)
    */
-  constructor (option = ['']) {
+  constructor (option = [0]) {
     super()
-    this.subType = 'shockwave'
+    this.subType = 0
     this.width = 100
     this.height = 100
     this.moveSpeedX = 0
     this.moveSpeedY = 0
 
     this.parapoEffect = null
-    let direction = option.length >= 1 ? option[0] : 'left'
+    let direction = option.length >= 1 ? option[0] : FieldData.direction.LEFT
     switch (direction) {
       default:
       case ParapoShockwave.direction.LEFT:
@@ -1113,7 +1117,7 @@ class BlasterMini extends Blaster {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.blasterMini)
-    this.subType = 'blastermini'
+    this.subType = 1
     this.isLineChase = true
   }
 }
@@ -1168,7 +1172,7 @@ class Ring extends WeaponData {
     switch (ringDirection) {
       case 'left':
         this.setMoveSpeed(baseSpeed, 0)
-        this.setMoveDirection(FieldData.direction.LEFT, '!')
+        this.setMoveDirection(FieldData.direction.LEFT, FieldData.direction.NODATA)
         break
       case 'leftup':
         this.setMoveSpeed(baseSpeed, baseSpeed)
@@ -1180,11 +1184,11 @@ class Ring extends WeaponData {
         break
       case 'up':
         this.setMoveSpeed(0, baseSpeed)
-        this.setMoveDirection('!', FieldData.direction.UP)
+        this.setMoveDirection(FieldData.direction.NODATA, FieldData.direction.UP)
         break
       case 'down':
         this.setMoveSpeed(0, baseSpeed)
-        this.setMoveDirection('!', FieldData.direction.DOWN)
+        this.setMoveDirection(FieldData.direction.NODATA, FieldData.direction.DOWN)
         break
       case 'rightup':
         this.setMoveSpeed(baseSpeed, baseSpeed)
@@ -1197,7 +1201,7 @@ class Ring extends WeaponData {
       case 'right':
       default:
         this.setMoveSpeed(baseSpeed, 0)
-        this.setMoveDirection(FieldData.direction.RIGHT, '!')
+        this.setMoveDirection(FieldData.direction.RIGHT, FieldData.direction.NODATA)
     }
   }
 
@@ -1391,20 +1395,21 @@ class R3TowerPink extends WeaponData {
 }
 
 class R3TowerPurple extends WeaponData {
+  static STATE_FRONT = 2
+  static STATE_CHASE = 3
+
   // 이 무기는 Round3 에서 사용하는 무기와 거의 동일함 (이미지만 약간 다름)
   constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.r3TowerPurple, 4)
-    this.STATE_FRONT = 'front'
-    this.STATE_CHASE = 'chase'
-    this.state = this.STATE_FRONT
+    this.state = R3TowerPurple.STATE_FRONT
     this.setMoveSpeed(10, 0)
   }
 
   processMove () {
     super.processMove()
-    if (this.state === this.STATE_FRONT && this.x > graphicSystem.CANVAS_WIDTH) {
-      this.state = this.STATE_CHASE
+    if (this.state === R3TowerPurple.STATE_FRONT && this.x > graphicSystem.CANVAS_WIDTH) {
+      this.state = R3TowerPurple.STATE_CHASE
       let randomEnemy = fieldState.getRandomEnemyObject()
       if (randomEnemy != null) {
         this.setMoveSpeedChaseLine(randomEnemy.centerX, randomEnemy.centerY, 20, 10)
@@ -1715,8 +1720,8 @@ class SkillSapia extends Sapia {
 }
 
 class SkillParapo extends Parapo {
-  static STATE_NORMAL = 'normal'
-  static STATE_SHOCKWAVE = 'shockwave'
+  static STATE_NORMAL = 1
+  static STATE_SHOCKWAVE = 2
 
   constructor () {
     super()
@@ -1809,8 +1814,8 @@ class SkillSidewave extends Sidewave {
 }
 
 class SkillSword extends WeaponData {
-  static STATE_MOVE = 'move'
-  static STATE_ATTACK = 'attack'
+  static STATE_MOVE = 2
+  static STATE_ATTACK = 3
 
   constructor () {
     super()
@@ -1910,9 +1915,9 @@ class SkillHyperBall extends WeaponData {
 }
 
 class SkillCriticalChaser extends WeaponData {
-  static STATE_CHASE = 'chase'
-  static STATE_NORMAL = 'normal'
-  static STATE_SPLASH = 'splash'
+  static STATE_CHASE = 2
+  static STATE_NORMAL = 1
+  static STATE_SPLASH = 4
 
   constructor () {
     super()
@@ -1972,8 +1977,8 @@ class SkillCriticalChaser extends WeaponData {
 class SkillPileBunker extends WeaponData {
   constructor () {
     super()
-    this.mainType = 'skill'
-    this.subType = 'pilebunker'
+    this.mainType = 14
+    this.subType = 24
     // no image and no enimation
 
     this.areaEffect = [
@@ -2042,9 +2047,9 @@ class SkillPileBunker extends WeaponData {
 }
 
 class SkillSantansu extends WeaponData {
-  static STATE_SANTANSU = 'santansu'
-  static STATE_MOVE_UP = 'moveup'
-  static STATE_ATTACK = 'attack'
+  static STATE_SANTANSU = 1
+  static STATE_MOVE_UP = 2
+  static STATE_ATTACK = 3
 
   /**
    * 옵션: 최종 도착 지점 X위치 범위 설정
@@ -2052,8 +2057,8 @@ class SkillSantansu extends WeaponData {
    */
   constructor (option = [Math.floor(Math.random() * 5)]) {
     super()
-    this.mainType = 'skill'
-    this.subType = 'santansu'
+    this.mainType = 1
+    this.subType = 2
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.santansu)
     this.repeatCount = 6
     this.repeatDelay = new DelayData(9)
@@ -2158,8 +2163,8 @@ class SkillSantansu extends WeaponData {
 class SkillWhiteflash extends WeaponData {
   constructor () {
     super()
-    this.mainType = 'skill'
-    this.subType = 'whiteflash'
+    this.mainType = 1
+    this.subType = 2
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.whiteflash, 6)
     this.setWidthHeight(120, 120)
     this.moveSpeedX = 30
@@ -2256,9 +2261,9 @@ class SkillRapid extends WeaponData {
 }
 
 class SkillSeondanil extends WeaponData {
-  static STATE_STOP = 'stop'
-  static STATE_ATTACK = 'attack'
-  static STATE_MINI = 'mini'
+  static STATE_STOP = 1
+  static STATE_ATTACK = 2
+  static STATE_MINI = 3
 
   constructor () {
     super()
@@ -2336,8 +2341,8 @@ class SkillHanjumeok extends WeaponData {
     let splashArea = this.getSplashArea()
     this.splashEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillHanjumeokSplash, splashArea.width, splashArea.height, 2)
 
-    this.STATE_JUMEOK = 'jumeok'
-    this.STATE_SPLASH = 'splash'
+    this.STATE_JUMEOK = 1
+    this.STATE_SPLASH = 2
     this.state = this.STATE_JUMEOK
   }
 
@@ -2446,8 +2451,8 @@ class SkillBoomerang extends WeaponData {
 }
 
 class SkillMoon extends WeaponData {
-  static STATE_WAIT = 'wait'
-  static STATE_ATTACK = 'attack'
+  static STATE_WAIT = 1
+  static STATE_ATTACK = 2
 
   constructor () {
     super()
@@ -2671,8 +2676,8 @@ class SkillSabangtan extends Sabangtan {
 class SkillHabirant extends WeaponData {
   constructor () {
     super()
-    this.STATE_NORMAL = 'normal'
-    this.STATE_HABIRANT = 'habirnat'
+    this.STATE_NORMAL = 1
+    this.STATE_HABIRANT = 2
     this.state = this.STATE_NORMAL
     this.chaseMissCount = 480
     this.hitSoundSrc = soundSrc.skill.skillHabirantHit
@@ -2722,8 +2727,8 @@ class SkillHabirant extends WeaponData {
 class SkillHabirantSub extends WeaponData {
   constructor () {
     super()
-    this.STATE_NORMAL = 'normal'
-    this.STATE_HABIRANT = 'habirnat'
+    this.STATE_NORMAL = 1
+    this.STATE_HABIRANT = 2
     this.state = this.STATE_NORMAL
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.habirant)
   }
@@ -2809,9 +2814,9 @@ class SkillCalibur extends WeaponData {
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.calibur)
     this.setWidthHeight(this.width * 2, this.height * 2)
 
-    this.STATE_UP = 'up'
-    this.STATE_DOWN = 'down'
-    this.STATE_CALIBUR = 'calibur'
+    this.STATE_UP = 1
+    this.STATE_DOWN = 2
+    this.STATE_CALIBUR = 3
     this.state = this.STATE_UP
 
     this.stateDelay = new DelayData(75)
@@ -2921,9 +2926,9 @@ class SkillSpeaker extends WeaponData {
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.speaker, 2)
     this.effectWave = EnimationData.createEnimation(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.speaker, 0, 3)
     this.effectWave.setOutputSize(this.width * 3, this.height * 3)
-    this.STATE_DOWN = 'down'
-    this.STATE_ATTACK = 'attack'
-    this.STATE_EXIT = 'exit'
+    this.STATE_DOWN = 1
+    this.STATE_ATTACK = 2
+    this.STATE_EXIT = 3
     this.state = this.STATE_DOWN
     this.exitSpeed = 0
     this.exitDelay = 0
@@ -3181,8 +3186,8 @@ class SkillR3XSeries extends WeaponData {
     super()
     this.changeFrame = 48
     this.voiceSrc = ''
-    this.STATE_WAIT = 'wait'
-    this.STATE_ATTACK = 'attack'
+    this.STATE_WAIT = 1
+    this.STATE_ATTACK = 2
     this.state = this.STATE_WAIT
     this.WAIT_FRAME_1 = 42
     this.WAIT_FRAME_2 = 30
