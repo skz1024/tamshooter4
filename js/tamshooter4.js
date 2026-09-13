@@ -806,6 +806,7 @@ class UIComponentRoundSelect extends UIComponentObject {
     if (fieldSystem.message === fieldSystem.messageList.STATE_FIELD) {
       game.sound.play(soundSrc.system.systemEnter)
       gameSystem.stateId = gameSystem.STATE_FIELD
+      this.close() // 라운드 선택이 시작되고 게임이 시작하면 창을 닫음
     }
   }
 
@@ -5590,9 +5591,28 @@ export class gameSystem {
   }
 
   static processSave () {
+    let isFieldSave = false
+    if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
+      isFieldSave = true
+      saveSystem.requestSave()
+    }
+
     if (!saveSystem.processSaveConditionCheck()) return
 
     this.processSaveV055()
+
+    // field save (temp code)
+    if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
+      fieldSystem.fieldSystemSaveData()
+      const saveLength = fieldSystem.fieldSave.array[fieldSystem.fieldSave.index.header.TOTAL_LENGTH]
+
+      let subArray = fieldSystem.fieldSave.array.subarray(0, saveLength)
+      let resultText = subArray.join(',')
+      localStorage.setItem(saveSystem.getCurrentSaveKeyField(), resultText)
+    } else {
+      // 필드 상태가 아니라면, 필드를 저장하지 않음
+      localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
+    }
   }
 
   static processSaveField () {
@@ -5601,13 +5621,13 @@ export class gameSystem {
     // 필드는 구조가 매우 복잡하여, 버전별 관리를 할 수 없습니다.
     
     // 필드 저장 데이터는, 필드 상태에서, 게임이 진행 중일 때에만 저장됩니다. 클리어, 게임오버, 탈출상태가 되면 저장하지 않습니다.
-    if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
-      const fieldSaveData = fieldSystem.fieldSystemSaveData()
-      localStorage.setItem(saveSystem.getCurrentSaveKeyField(), JSON.stringify(fieldSaveData))
-    } else {
-      // 필드 상태가 아니면, 필드 저장 데이터는 삭제
-      localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
-    }
+    // if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
+    //   const fieldSaveData = fieldSystem.fieldSystemSaveData()
+    //   localStorage.setItem(saveSystem.getCurrentSaveKeyField(), JSON.stringify(fieldSaveData))
+    // } else {
+    //   // 필드 상태가 아니면, 필드 저장 데이터는 삭제
+    //   localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
+    // }
   }
 
   static processSaveV055 () {
@@ -5961,6 +5981,20 @@ export class gameSystem {
     } else {
       // V055 로드
       this.processLoadV055()
+    }
+
+    try {
+      let fieldData = localStorage.getItem(saveSystem.getCurrentSaveKeyField())
+      if (fieldData != null) {
+        let numberArray = fieldData.split(',').map(Number)
+        fieldSystem.fieldSave.array.set(numberArray);
+        fieldSystem.fieldSystemLoadData(null)
+        this.stateId = this.STATE_FIELD
+      }
+    } catch (e) {
+      alert(systemText.gameError.FILED_LOAD_ERROR)
+      // localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
+      this.stateId = this.STATE_MAIN
     }
   }
 

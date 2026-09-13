@@ -73,7 +73,6 @@ export class WeaponData extends FieldData {
 
     /**
      * 반복 딜레이 객체(딜레이가 없어도 생성됨, 다만 사용되지 않을뿐)
-     * @type {DelayData}
      */
     this.repeatDelay = new DelayData(1)
 

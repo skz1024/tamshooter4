@@ -1771,8 +1771,8 @@ export class RoundData {
     /** 라운드 클리어 사운드 (아무것도 없다면 기본값) */
     this.clearSoundSrc = ''
 
-    /** 라운드의 상태 (저장용도) @type {string} */ 
-    this.state = ''
+    /** 라운드의 상태 (저장용도) @type {number} */ 
+    this.state = 0
 
     /** 저장 용도로 사용하는 객체 (어떤 형태인지는 알 수 없음, 저장될 때 JSON으로 변환해야 하기 때문에 함수는 사용 불가능) @type {object} */
     this.saveList = {}
@@ -1952,6 +1952,39 @@ export class RoundData {
         this.time.currentTimePaused = false
       }
     }
+  }
+
+  getSaveDataV055 () {
+    const isBgLayerUsing = this.bgLayer.getIsUsing()
+    const layer = this.bgLayer.getLayer()
+
+    /** @type {number[]} */
+    // const bgLayerArray = [
+    //   layer.length < 1 ? 
+    // ]
+
+    /** @type {number[]} */
+    const returnArray = [
+      this.stat.id ? this.stat.id : 0,
+      this.state,
+      this.time.currentTime,
+      this.time.currentTimeFrame,
+      this.time.currentTimeTotalFrame,
+      this.time.currentTimePaused ? 1 : 0,
+      this.time.plusTime,
+      this.time.plusTimeFrame,
+      0, // currentMusicIndex (temp)
+      Math.floor(game.sound.getMusicCurrentTime()),
+      //--- background
+      0, // backgroundIndexNumbeer
+      isBgLayerUsing ? this.bgLayer.getBackgroundPosition().x : this.bgLegacy.x,
+      isBgLayerUsing ? this.bgLayer.getBackgroundPosition().y : this.bgLegacy.y,
+      isBgLayerUsing ? this.bgLayer.getBackgroundSpeed().speedX : this.bgLegacy.backgroundSpeedX,
+      isBgLayerUsing ? this.bgLayer.getBackgroundSpeed().speedY : this.bgLegacy.backgroundSpeedY,
+      isBgLayerUsing ? this.bgLayer.getBackgroundWidthHeight().width : 0,
+      isBgLayerUsing ? this.bgLayer.getBackgroundWidthHeight().height : 0,
+      //--- bgLayer
+    ]
   }
 
   baseRoundSaveData () {
