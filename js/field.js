@@ -2380,7 +2380,7 @@ export class fieldSystem {
       // bgLayer
       const layer = this.round.bgLayer.getLayer()
       for (let i = 0; i < 10 && i < layer.length; i++) {
-        const LINDEX = rd.BGLAYER_OFFSET_START + (i * rd.BGLAYER_OFFSET_COUNT)
+        const LINDEX = rd.START_INDEX + rd.BGLAYER_OFFSET_START + (i * rd.BGLAYER_OFFSET_COUNT)
         fieldSave.array[LINDEX + rd.BGLAYER_X] = layer[i].x
         fieldSave.array[LINDEX + rd.BGLAYER_Y] = layer[i].y
         fieldSave.array[LINDEX + rd.BGLAYER_SPEEDX] = layer[i].speedX
@@ -2713,6 +2713,9 @@ export class fieldSystem {
 
     // 게임을 불러오기 했다면, 일시정지 상태가 됩니다.
     this.stateId = this.STATE_LOADING_PAUSE
+
+    this.round.sound.musicPlayLegacy() // 임시조치
+    this.round.sound.musicPlay() // 재생되는지는 모르겠지만 일단 넣어봄
   }
 
   /**

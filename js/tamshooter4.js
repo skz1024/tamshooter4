@@ -5626,26 +5626,26 @@ export class gameSystem {
 
   /** 저장 과정을 처리합니다. */
   static processSave () {
-    const isFieldSave = this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE)
+    // 조건이 많아진 이유는, 로드 직후의 상태에서 저장되지 못하는 문제가 있었기 때문
+    // 그래서 확실히 필드가 끝났다는 보증이 있는 상황만 피해서 저장합니다.
+    const isFieldSave = this.stateId === this.STATE_FIELD 
+    && (fieldSystem.stateId === fieldSystem.STATE_NORMAL 
+      || fieldSystem.stateId === fieldSystem.STATE_PAUSE
+      || fieldSystem.stateId === fieldSystem.STATE_LOADING
+      || fieldSystem.stateId === fieldSystem.STATE_LOADING_PAUSE)
     const isMainSave = saveSystem.processSaveConditionCheck()
     const isFieldAutoSave = saveSystem.processfieldAutoSaveConditionCheck()
 
     if (isMainSave) {
       this.processSaveV055()
-
-      if (isFieldSave) {
-        this.processSaveField()
-      } else {
-        localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
-      }
     }
-    
-    if (isFieldSave && isFieldAutoSave) {
-      this.processSaveField()
 
-      if (!isFieldSave) {
-        localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
+    if (isFieldSave) {
+      if (isMainSave || isFieldAutoSave) {
+        this.processSaveField()
       }
+    } else {
+      localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
     }
   }
 
@@ -6009,6 +6009,14 @@ export class gameSystem {
     // 초기 불러오기 완료 설정
     saveSystem.initLoad = true
 
+    // 사용자가 다른 탭으로 이동하거나, 브라우저 창을 최소화하거나, 다른 앱/화면으로 전환할 때 즉시 발생합니다.
+    // 그렇다고 해도 2초 제약은 여전히 존재합니다. 저장 간격이 2초보다 짧아질 수 없습니다.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        saveSystem.requestSave()
+      }
+    });
+
     // 이제 버전에 따라 어느 로드 함수를 불러오는지를 결정해야 함
     // 아무 데이터가 없으면 불러오기 하지 않음
     let tamshooter4LoadData = localStorage.getItem(saveSystem.getCurrentSaveKey())
@@ -6256,8 +6264,8 @@ export class gameSystem {
     }
 
     this.processStatLine()
-    this.processSave()
     this.processLoad()
+    this.processSave()
     this.processDebug()
   }
 
@@ -6283,10 +6291,10 @@ export class gameSystem {
     const messageList = this.fieldSystem.messageList
     switch (this.fieldSystem.message) {
       case messageList.CHANGE_MUSICON:
-        this.optionSystem.setSelectOption(this.optionSystem.MENU_MUSIC)
+        this.uiOption.optionValue.musicOn = !this.uiOption.optionValue.musicOn
         break
       case messageList.CHANGE_SOUNDON:
-        this.optionSystem.setSelectOption(this.optionSystem.MENU_SOUND)
+        this.uiOption.optionValue.soundOn = !this.uiOption.optionValue.soundOn
         break
       case messageList.STATE_MAIN:
         this.stateId = this.STATE_MAIN

@@ -840,7 +840,7 @@ class BgLayer {
 
 /** soundSystem을 간편하게 사용하기 위한 함수 집합 */
 class BaseSound {
-  /** 해당 라운드의 기본적인 음악의 오디오 경로 (경고: 이것은 라운드를 시작할때만 적용합니다.) @type {string} */
+  /** 해당 라운드의 기본적인 음악의 오디오 경로 (경고: 이것은 라운드를 시작할때만 적용합니다.) @deprecated @type {string} */
   static roundStartMusicSrc = ''
 
   /** 현재 음악의 오디오 경로 @type {string} */
@@ -1869,10 +1869,10 @@ export class RoundData {
     /** 라운드의 상태 (저장용도) @type {number} */ 
     this.state = 0
 
-    /** 저장 용도로 사용하는 객체 (어떤 형태인지는 알 수 없음, 저장될 때 JSON으로 변환해야 하기 때문에 함수는 사용 불가능) @type {object} */
+    /** 저장 용도로 사용하는 객체 (어떤 형태인지는 알 수 없음, 저장될 때 JSON으로 변환해야 하기 때문에 함수는 사용 불가능) @deprecated @type {object} */
     this.saveList = {}
 
-    /** 저장 용도로 사용하는 문자열 (어떤 형태로 저장되는지는 알 수 없지만, 반드시 문자열로 저장해야) @type {string} */
+    /** 저장 용도로 사용하는 문자열 (어떤 형태로 저장되는지는 알 수 없지만, 반드시 문자열로 저장해야) @deprecated @type {string} */
     this.saveString = ''
 
     /** 배경레이어 (roundData의 표준 배경 화면 출력 시스템) @type {BgLayer} */
@@ -2175,8 +2175,8 @@ export class RoundData {
 
   /** 라운드 시작시에 대한 처리 */
   roundStart () {
-    if (this.timeCheckFrame(0, 4)) { // 라운드 시작하자마자 음악 재생
-      soundSystem.musicPlay(this.sound.currentMusicSrc)
+    if (this.timeCheckFrame(0, 30)) { // 라운드 시작하자마자 음악 재생
+      // soundSystem.musicPlay(this.sound.currentMusicSrc) 이 코드는 취소됨
     }
   }
 
@@ -2185,11 +2185,18 @@ export class RoundData {
    * 따라서, 현재 음악을 재생할 수 있도록, 이 함수를 프로세스 합니다.
    */
   processMusic () {
-    if (this.timeCheckFrame(0, 4)) {
+    if (this.timeCheckFrame(0, 12)) {
       // 게임 시작 즉시 음악을 호출하는 것이 불가능하므로, 약간의 지연을 넣어서 처리했습니다.
-      // 0초 4프레임 시점에서 음악이 재생됩니다.
       this.sound.currentMusicSrc = this.sound.roundStartMusicSrc
       this.sound.musicPlayStartTime()
+
+      // 또는
+      if (this.sound.currentMusicSrc !== '') {
+        soundSystem.musicPlay(this.sound.currentMusicSrc)
+      } else {
+        this.sound.currentMusicIndex = 1
+        this.sound.musicPlay()
+      }
     }
 
     this.sound.processFade() // 페이드 과정을 진행하고 다음 음악으로 교체하기 위한 작업
