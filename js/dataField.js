@@ -773,6 +773,20 @@ export class FieldData {
     this.collisionDelay = new DelayData(60)
     this.collisionDelay.count = 0 // 생성되자마자 충돌을 막기 위해서 지연시간 카운트를 0부터 계산합니다.
 
+
+    /**
+     * 필드 객체 데이터가 추가적으로 저장할 수 있는 공간.
+     * 이 데이터는 int32Array여야만 합니다.
+     * 
+     * 이 데이터는 가급적이면 저장 용도로만 활용해주세요. 
+     * 변수 명 생략 등을 위해 활용하는건 코드 관리에 어려움이 생길 수 있습니다.
+     * 
+     * 현재 32칸으로 구성되어 있지만, 32칸을 다 쓸수 있는지는 아직 나도 확신이 안듭니다.
+     * 가급적이면 24칸 이하로 사용해주세요.
+     * 
+     * @type {Int32Array}
+     */
+    this.extendedMemory = new Int32Array(32)
   }
 
   /**
@@ -1372,6 +1386,16 @@ export class FieldData {
    * @deprecated
    */
   saveProcess () {
+
+  }
+
+  /** extendedMemory 데이터를 작성하는 함수 템플릿 */
+  writeExtendedMemory () {
+
+  }
+
+  /** extendedMemory 데이터를 읽고 이를 fieldObject에 적용하는 함수 템플릿 */
+  readExtendedMemory () {
 
   }
 }

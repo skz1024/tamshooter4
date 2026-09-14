@@ -26,6 +26,7 @@ export class EnemyData extends FieldData {
     super()
     this.isAfterInited = false
     this.moveDirectionX = FieldData.direction.LEFT
+    this.objectType = FieldData.objectType.ENEMY
 
     /**
      * 죽은 후 삭제되기까지의 지연시간

@@ -1602,6 +1602,7 @@ class fieldSave {
       BACKGROUND_HEIGHT: 16,
       BGLAYER_OFFSET_START: 17, // BgLayer의 오프셋 시작 번호 (17 ~ 66, 60count)
       BGLAYER_OFFSET_COUNT: 6, // BgLayer의 오프셋 개수
+      BGLAYER_MAX_COUNT: 10,
       BGLAYER_X: 0,
       BGLAYER_Y: 1,
       BGLAYER_SPEEDX: 2,
@@ -1636,7 +1637,7 @@ class fieldSave {
       SKILL_OFFSET_REPEAT_COUNT: 3,
     },
 
-    /** 필드 개체 영역 */ object : {
+    /** 오브젝트 개체 영역 */ object : {
       START_INDEX: fieldSave.OBJECT_OFFSET,
       MAX_LENGTH: fieldSave.OBJECT_LENGTH,
 
@@ -1780,13 +1781,22 @@ export class fieldSystem {
     fieldState.playerObject.plusExp(score)
   }
 
-  /** 플레이어의 골드를 증가시키도록 요청 */
+  /** 
+   * 플레이어의 골드를 증가시키도록 요청
+   * 
+   * 참고: 이 골드 추가는 던전 진행이 끝나야만 처리되므로, 필드 중간에 저장하진 않습니다.
+   */
   static requestAddGold (gold = 0) {
     this.fieldGold += gold
     fieldState.playerObject.plusGold(gold)
   }
 
-  /** 플레이어의 골드를 감소시키도록 요청 */
+  /** 플레이어의 골드를 감소시키도록 요청
+   * 
+   * 이 함수는 매우 특수한 경우에만 사용됩니다.
+   * 
+   * round 2-4 같은 경우의 사용을 예정하고 있으나 코드가 구현되지 않음.
+   */
   static requestSubtractGold (gold = 0) {
     this.fieldGold -= gold
     fieldState.playerObject.plusGold(gold)
@@ -1794,6 +1804,8 @@ export class fieldSystem {
 
   /**
    * 플레이어에게 아이템을 추가시키도록 요청
+   * 
+   * 이 요청을 받으면 리스트를 필드 목록에 쌓은 다음, 던전 진행이 끝난 후 (게임 오버를 포함) 아이템을 직접 추가합니다.
    * @param {number} id 아이템의 id (id가 0인경우 무효)
    * @param {number} count 아이템의 개수 (0이하는 무효)
    */
@@ -1807,8 +1819,17 @@ export class fieldSystem {
     } else {
       this.fieldItemCountList[index] += count
     }
-    
-    fieldState.playerObject._addItem(id, count)
+  }
+
+  /**
+   * 플레이어에게 아이템을 직접 추가합니다.
+   * 
+   * 이것은 던전이 끝난 후에 적용합니다.
+   */
+  static requestPlayerAddItem () {
+    for (let i = 0; i < this.fieldItemIdList.length; i++) {
+      fieldState.playerObject._addItem(this.fieldItemIdList[i], this.fieldItemCountList[i])
+    }
   }
 
   /**
@@ -2003,8 +2024,7 @@ export class fieldSystem {
     // 사용자가 나가면 현재까지 얻은 점수를 보여줌, 따로 출력할 배경 사운드는 없음
     this.scoreSound()
     if (this.exitDelayCount === 0) {
-      this.message = this.messageList.REQUEST_SAVE // 강제 저장을 통해 필드 저장 데이터를 삭제하고, 메인화면으로 돌아가게끔 유도
-      this.requestAddGold(this.getRoundGoldCalculation()) // 골드 추가
+      this.roundEndWait()
     }
 
     this.scoreEnimationFrame++
@@ -2026,8 +2046,7 @@ export class fieldSystem {
       game.sound.play(clearSoundSrc)
       userSystem.plusExp(this.round.stat.clearBonus)
       this.totalScore = this.fieldScore + this.round.stat.clearBonus
-      this.message = this.messageList.REQUEST_SAVE // 강제 저장을 통해 필드 저장 데이터를 삭제하고, 메인화면으로 돌아가게끔 유도
-      this.requestAddGold(this.getRoundGoldCalculation()) // 골드 추가
+      this.roundEndWait()
       userSystem.addRoundClear(this.roundId) // 라운드 클리어 ID 추가
     }
 
@@ -2045,8 +2064,7 @@ export class fieldSystem {
     // 라운드 실패 사운드 재생 (딜레이카운트가 0일때만 재생해서 중복 재생 방지)
     if (this.exitDelayCount === 0) {
       game.sound.play(soundSrc.system.systemGameOver)
-      this.message = this.messageList.REQUEST_SAVE // 강제 저장을 통해 필드 저장 데이터를 삭제하고, 메인화면으로 돌아가게끔 유도
-      this.requestAddGold(this.getRoundGoldCalculation()) // 골드 추가
+      this.roundEndWait()
     }
 
     this.scoreSound()
@@ -2059,6 +2077,17 @@ export class fieldSystem {
     }
   }
 
+  /** 라운드 진행이 종료 대기 (클리어, 게임오버, 중단) 되었을 때 해당 함수를 실행합니다. 
+   * 이후에 시간이 더 지나면 roundExit가 실행되어 라운드를 빠져나갑니다.
+   * 
+   * 이 함수 자체는 라운드를 나가지 못합니다.
+  */
+  static roundEndWait () {
+    this.message = this.messageList.REQUEST_SAVE // 강제 저장을 통해 필드 저장 데이터를 삭제하고, 메인화면으로 돌아가게끔 유도
+    this.requestAddGold(this.getRoundGoldCalculation()) // 골드 추가
+    this.requestPlayerAddItem() // 플레이어에게 아이템 추가
+  }
+
   static processNormal () {
     const buttonPause = game.control.getButtonInput(game.control.buttonIndex.START)
       || game.control.getButtonInput(game.control.buttonIndex.ESC)
@@ -2067,7 +2096,7 @@ export class fieldSystem {
     // 음악 시간 로딩 변수값이 존재할 때, 해당 음악을 강제로 재생합니다.
     // 내부적으로 round에서는 로드 음악 시작 값이 존재하면 해당 부분부터 재생을 시작합니다.
     if (this.round.sound.loadCurrentMusicTime !== 0) {
-      this.round.sound.musicPlay()
+      this.round.sound.musicPlayLegacy()
     }
 
     if (buttonPause) {
@@ -2123,7 +2152,6 @@ export class fieldSystem {
       case this.STATE_EXIT:
         game.sound.musicStop()
         this.processExit()
-        game.control.getButtonInput(game.control.buttonIndex.START) // 버튼 중복 누르기 방지용
         break
       case this.STATE_LOADING:
       case this.STATE_LOADING_PAUSE:
@@ -2336,7 +2364,7 @@ export class fieldSystem {
       fieldSave.array[rd.START_INDEX + rd.CURRENT_TIME_PAUSED] = this.round.time.currentTimePaused ? 1 : 0
       fieldSave.array[rd.START_INDEX + rd.PLUS_TIME] = this.round.time.plusTime
       fieldSave.array[rd.START_INDEX + rd.PLUS_TIME_FRAME] = this.round.time.plusTimeFrame
-      fieldSave.array[rd.START_INDEX + rd.CURRENT_MUSIC_INDEX] = 0 // currentMusicIndex (temp)
+      fieldSave.array[rd.START_INDEX + rd.CURRENT_MUSIC_INDEX] = this.round.sound.currentMusicIndex
       fieldSave.array[rd.START_INDEX + rd.CURRENT_MUSIC_TIME] = Math.floor(game.sound.getMusicCurrentTime())
       fieldSave.array[rd.START_INDEX + rd.BACKGROUND_INDEX_NUMBER] = 0 // backgroundIndexNumber
 
@@ -2554,8 +2582,8 @@ export class fieldSystem {
     this.round.time.currentTimePaused = fieldSave.array[rd.START_INDEX + rd.CURRENT_TIME_PAUSED] ? true : false
     this.round.time.plusTime = fieldSave.array[rd.START_INDEX + rd.PLUS_TIME]
     this.round.time.plusTimeFrame = fieldSave.array[rd.START_INDEX + rd.PLUS_TIME_FRAME]
-    // temp current music index
-    // temp (music play)
+    this.round.sound.currentMusicIndex = fieldSave.array[rd.START_INDEX + rd.CURRENT_MUSIC_INDEX]
+    this.round.sound.loadCurrentMusicTime = fieldSave.array[rd.START_INDEX + rd.CURRENT_MUSIC_TIME]
     // background index number
     // background layer
     let isBgLayerUsing = this.round.bgLayer.getIsUsing()
@@ -2676,7 +2704,7 @@ export class fieldSystem {
       
     } // for end
 
-    
+
     // 게임을 불러온 이후, 유저의 정보를 강제로 mainSystem에 전송시킵니다.
     fieldState.playerObject.processSendUserStat()
 

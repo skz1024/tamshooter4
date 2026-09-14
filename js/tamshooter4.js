@@ -5102,20 +5102,15 @@ class ErrorSystem extends MenuSystem {
  * 일부 함수만 패킹하는 용도 (암호화 해제, 데이터 배치 등) 만 처리합니다.
  */
 class saveSystem {
-  static arrayPackData () {
-    
-  }
-
-  static arrayUnPackData () {
-
-  }
-
   /** 데이터 리셋 여부 */
   static isDataReset = false
 
+  /** 저장 데이터를 관리하는 배열 */
+  static array = new Int32Array(1600)
+
   /**
    * 모든 데이터를 삭제합니다.
-   * 삭제 기능이 동작한 후, 2초 후 자동으로 새로고침 되기 때문에, 저장기능이 일시적으로 정지도비니다.
+   * 삭제 기능이 동작한 후, 2초 후 자동으로 새로고침 되기 때문에, 저장기능이 일시적으로 정지됩니다.
    */
   static dataReset () {
     // localStorage.clear() // 이제 tamshooter4와 관련한 데이터만 삭제됩니다.
@@ -5126,7 +5121,7 @@ class saveSystem {
   }
 
   /** 저장 데이터 배열의 인덱스 이름. 이 위치들은 같은 그룹일 경우 절대위치, 다른 그룹일 경우 상대위치입니다. */
-  static indexName = {
+  static index = {
     /** 헤더 영역 */ header: {
       /** 세이브 플래그 */ SAVE_FLAG: 0,
       /** 할당된 그룹 개수 */ TOTAL_GROUP_COUNT: 1,
@@ -5258,7 +5253,20 @@ class saveSystem {
     return 'tamshooter4FieldData'
   }
 
-  /** 저장 지연 시간을 카운트 하는 변수 */ static saveDelayCount = 0
+  /** 
+   * 저장 지연 시간을 카운트 하는 변수 
+   * 
+   * 메인 화면은 최소 120프레임 간격으로 저장합니다.
+   * requestSave가 호출된 순간 저장하지만, 120프레임 이내에 다시 저장하지 않습니다.
+   */ 
+  static saveDelayCount = 0
+
+  /** 
+   * 필드 자동 저장을 위한 지연 시간을 카운트 하는 함수
+   * requestSave가 호출된 후, 저장이 완료된 경우 이 변수 또한 같이 0으로 초기화됩니다.
+   */
+  static saveDelayFieldCount = 0
+
   /**
    * 게임 실행시 불러오기는 단 한번만 합니다.
    * 기본값: false, 한번 로드했다면 true.
@@ -5266,8 +5274,16 @@ class saveSystem {
    */
   static initLoad = false
 
-  /** 저장 딜레이 프레임 간격  */
-  static SAVE_DELAY = 120
+  /** 저장에 대한 최소 간격 (120프레임 = 2초)  */
+  static SAVE_DELAY_MAIN = 120
+
+  /** 
+   * 필드 자동 저장에 대한 최소 간격 (300프레임 = 5초)
+   * 
+   * 단, requestSave가 호출된 경우, SAVE_DELAY_MAIN과 동일한 간격으로 저장합니다.
+   * 자세한 내용은 saveDelayCount 변수를 참조하세요.
+   */
+  static SAVE_DELAY_FIELD = 300
 
   /** 세이브 이벤트가 발생되었는지 확인하는 변수 */
   static #isSaveEvent = false
@@ -5279,15 +5295,15 @@ class saveSystem {
 
   /**
    * 세이브가 진행되어야 하는지 확인합니다.
-   * @param {boolean} forceSave 
+   * 
+   * 주의: 이 함수를 연속 2번 호출하지 마세요. 이 함수는 저장 딜레이 카운트를 리셋하는 효과도 있습니다.
+   * 
+   * 더이상 강제 저장 요청은 수행되지 않습니다.
    * @returns {boolean}
    */
-  static processSaveConditionCheck (forceSave = false) {
+  static processSaveConditionCheck () {
     // 데이터 리셋이 되었다면, 게임을 자동 새로고침하므로 저장 함수를 실행하지 않음.
     if (this.isDataReset) return false
-
-    // 강제 저장 요청은, 무조건 수행합니다.
-    if (forceSave) return true
 
     // 이것은 이벤트 기반이 작동하는 즉시 저장을 유도하기 위해 카운트를 미리 증가시켜 놓습니다.
     this.saveDelayCount++
@@ -5297,14 +5313,32 @@ class saveSystem {
     if (!this.#isSaveEvent) return false
     
     // 이벤트가 들어와도, 지연된 시간을 초과하기 전까지 저장이 지연됩니다.
-    if (this.saveDelayCount < this.SAVE_DELAY) return false
+    if (this.saveDelayCount < this.SAVE_DELAY_MAIN) return false
 
     // 저장을 성공했다고 가정한다면
     // 세이브 딜레이 초기화
     this.saveDelayCount = 0
+    this.saveDelayFieldCount = 0 // 필드 주기도 같이 초기화됨
 
     // 세이브 이벤트 제거
     this.#isSaveEvent = false
+
+    return true
+  }
+
+  /** 
+   * 필드에서의 자동 저장 조건 확인, 이것은 이벤트 기반으로 동작하지 않습니다.
+   * 
+   * 참고로, 필드 자동 저장은 세이브 이벤트랑은 별도이지만,
+   * 내부 카운터는 이벤트가 발생하고 메인 코드 저장이 완료되면 0으로 재설정됩니다.
+   */
+  static processfieldAutoSaveConditionCheck () {
+    if (this.isDataReset) return false
+
+    this.saveDelayFieldCount++
+
+    if (this.saveDelayFieldCount < this.SAVE_DELAY_FIELD) return false
+    this.saveDelayFieldCount = 0
 
     return true
   }
@@ -5534,7 +5568,7 @@ export class gameSystem {
   /** 상태: 스토리 */ static STATE_STORY = 9
   /** 상태: 필드(게임 진행중) */ static STATE_FIELD = 12
   /** 상태: 오류 발생 */ static STATE_ERROR = 13
-  /** 게임에서 저장된 데이터가 있는지 확인하는 localStorage 키 이름 */ static SAVE_FLAG = 'saveFlag'
+  /** 게임에서 저장된 데이터가 있는지 확인하는 localStorage 키 이름 @deprecated */ static SAVE_FLAG = 'saveFlag'
 
   // 일부 시스템은 static을 사용하기 때문에 new를 이용해 인스턴스를 생성하지 않습니다.
   /** 유저 시스템 */ static userSystem = userSystem
@@ -5590,163 +5624,175 @@ export class gameSystem {
     return this.optionSystem.optionValue
   }
 
+  /** 저장 과정을 처리합니다. */
   static processSave () {
-    let isFieldSave = false
-    if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
-      isFieldSave = true
-      saveSystem.requestSave()
+    const isFieldSave = this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE)
+    const isMainSave = saveSystem.processSaveConditionCheck()
+    const isFieldAutoSave = saveSystem.processfieldAutoSaveConditionCheck()
+
+    if (isMainSave) {
+      this.processSaveV055()
+
+      if (isFieldSave) {
+        this.processSaveField()
+      } else {
+        localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
+      }
     }
-
-    if (!saveSystem.processSaveConditionCheck()) return
-
-    this.processSaveV055()
-
-    // field save (temp code)
-    if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
-      fieldSystem.fieldSystemSaveData()
-      const saveLength = fieldSystem.fieldSave.array[fieldSystem.fieldSave.index.header.TOTAL_LENGTH]
-
-      let subArray = fieldSystem.fieldSave.array.subarray(0, saveLength)
-      let resultText = subArray.join(',')
-      localStorage.setItem(saveSystem.getCurrentSaveKeyField(), resultText)
-    } else {
-      // 필드 상태가 아니라면, 필드를 저장하지 않음
-      localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
-    }
-  }
-
-  static processSaveField () {
-    // 참고: FieldData는 저장 버전 플래그가 없습니다.
-    // 불러오지 못한 경우, 그 필드를 중지한 것으로 간주합니다.
-    // 필드는 구조가 매우 복잡하여, 버전별 관리를 할 수 없습니다.
     
-    // 필드 저장 데이터는, 필드 상태에서, 게임이 진행 중일 때에만 저장됩니다. 클리어, 게임오버, 탈출상태가 되면 저장하지 않습니다.
-    // if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
-    //   const fieldSaveData = fieldSystem.fieldSystemSaveData()
-    //   localStorage.setItem(saveSystem.getCurrentSaveKeyField(), JSON.stringify(fieldSaveData))
-    // } else {
-    //   // 필드 상태가 아니면, 필드 저장 데이터는 삭제
-    //   localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
-    // }
+    if (isFieldSave && isFieldAutoSave) {
+      this.processSaveField()
+
+      if (!isFieldSave) {
+        localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
+      }
+    }
   }
+
+  /** 필드 상황을 저장합니다. */
+  static processSaveField () {
+    fieldSystem.fieldSystemSaveData()
+    const saveLength = fieldSystem.fieldSave.array[fieldSystem.fieldSave.index.header.TOTAL_LENGTH]
+
+    let subArray = fieldSystem.fieldSave.array.subarray(0, saveLength)
+    let resultText = subArray.join(',')
+    localStorage.setItem(saveSystem.getCurrentSaveKeyField(), resultText)
+  }
+  
 
   static processSaveV055 () {
-    // 저장 시간 (참고: getMonth는 0부터 시작하기 때문에 +1을 해야합니다.)
-    const saveDate = new Date()
+    /** 현재 오프셋 위치 */ let offset = 0
+    const buffer = saveSystem.array
 
-    // 유저의 첫 시작 시간
-    const startDate = this.userSystem.startDate
+    // --- 1. HEADER 구역 예동 (위치 예약) ---
+    const HEADER_SIZE = saveSystem.index.header.HEADER_LAST_INDEX;
+    const headerStart = offset;
+    offset += HEADER_SIZE; // HeaderSize 확보 후, offset 이동
 
-    // 플레이 타임 저장
-    const playTime = this.userSystem.playTime
+    // --- 2. GROUP 1: 날짜/시간/옵션 (고정 길이) ---
+    const group1Index = offset;
+    const saveDate = new Date();
+    const startDate = this.userSystem.startDate;
+    const playTime = this.userSystem.playTime;
+    const opt = this.optionSystem.optionValue;
 
-    // 모든 옵션 값들 저장
-    const optionValue = this.optionSystem.optionValue
+    buffer[offset++] = saveDate.getFullYear();
+    buffer[offset++] = saveDate.getMonth() + 1;
+    buffer[offset++] = saveDate.getDate();
+    buffer[offset++] = saveDate.getHours();
+    buffer[offset++] = saveDate.getMinutes();
+    buffer[offset++] = saveDate.getSeconds();
+    buffer[offset++] = startDate.year;
+    buffer[offset++] = startDate.month;
+    buffer[offset++] = startDate.day;
+    buffer[offset++] = startDate.hour;
+    buffer[offset++] = startDate.minute;
+    buffer[offset++] = startDate.second;
+    buffer[offset++] = playTime.hour;
+    buffer[offset++] = playTime.minute;
+    buffer[offset++] = playTime.second;
+    buffer[offset++] = opt.soundOn ? 1 : 0;
+    buffer[offset++] = opt.soundVolume;
+    buffer[offset++] = opt.musicOn ? 1 : 0;
+    buffer[offset++] = opt.musicVolume;
+    buffer[offset++] = opt.resultAutoSkip ? 1 : 0;
+    buffer[offset++] = opt.showEnemyHp ? 1 : 0;
+    buffer[offset++] = opt.showDamage ? 1 : 0;
+    const group1Length = offset - group1Index;
 
-    // 참고: optionValue는 true일 때 1, false일 때 0입니다.
-    // 참고2: optionValue 앞에 +가 붙은 이유는 boolean 단축표현을 사용했기 때문입니다.
-    const group1Array = [
-      saveDate.getFullYear(), saveDate.getMonth() + 1, saveDate.getDate(), saveDate.getHours(), saveDate.getMinutes(), saveDate.getSeconds(),
-      startDate.year, startDate.month, startDate.day, startDate.hour, startDate.minute, startDate.second,
-      playTime.hour, playTime.minute, playTime.second,
-      +optionValue.soundOn, optionValue.soundVolume, +optionValue.musicOn, optionValue.musicVolume, +optionValue.resultAutoSkip, +optionValue.showEnemyHp, +optionValue.showDamage
-    ]
+    // --- 3. GROUP 2: 인코드 데이터 (고정 길이) ---
+    const group2Index = offset;
+    // 기존 인코드 함수를 buffer와 offset을 인자로 받아 직접 대입하도록 개선 권장
+    // 예: offset = saveSystem.encodeToBuffer(buffer, offset, [userSystem.lv, userSystem.exp, userSystem.gold]);
+    const encodedData = saveSystem.numberArrayEncodeV055([userSystem.lv, userSystem.exp, userSystem.gold]);
+    for (let i = 0; i < encodedData.length; i++) {
+      buffer[offset++] = encodedData[i];
+    }
+    const group2Length = offset - group2Index;
 
-    const group2ArrayBase = [
-      userSystem.lv, userSystem.exp, userSystem.gold
-    ]
+    // --- 4. GROUP 3: 고정 길이 유저 데이터 ---
+    const group3Index = offset;
+    const userData = userSystem.getSaveData();
 
-    // 그룹 2는 인코드를 진행합니다.
-    const group2Array = saveSystem.numberArrayEncodeV055(group2ArrayBase)
+    // 전개 연산자(...) 대신 for 루프 직접 밀어넣기
+    for (let i = 0; i < userData.weaponList.length; i++) buffer[offset++] = userData.weaponList[i];
+    for (let i = 0; i < userData.skillList.length; i++) buffer[offset++] = userData.skillList[i];
+    for (let i = 0; i < userData.weaponPreset.length; i++) buffer[offset++] = userData.weaponPreset[i];
+    buffer[offset++] = userData.weaponPresetNumber;
+    for (let i = 0; i < userData.skillPreset.length; i++) buffer[offset++] = userData.skillPreset[i];
+    buffer[offset++] = userData.skillPresetNumber;
+    buffer[offset++] = userData.equipment.itemIndex;
+    const group3Length = offset - group3Index;
 
-    const userData = userSystem.getSaveData()
+    // --- 5. GROUP 4: 가변 길이 유저 데이터 ---
+    const group4Index = offset;
 
-    // 그룹 3 고정 길이 기반 유저 데이터
-    const group3Array = [
-      ...userData.weaponList, 
-      ...userData.skillList,
-      ...userData.weaponPreset,
-      userData.weaponPresetNumber,
-      ...userData.skillPreset,
-      userData.skillPresetNumber,
-      userData.equipment.itemIndex,
-    ]
+    // 가변 오프셋 헤더 (14개 슬롯) 작성 위치 예약
+    const g4HeaderStart = offset;
+    offset += 14;
 
-    // 그룹 4 가변 길이 기반 유저 데이터
-    const g4Index0 = saveSystem.indexName.group4UserData.VARIABLE_DATA_START
-    const g4Index1 = g4Index0 + userData.inventoryItemIdList.length
-    const g4Index2 = g4Index1 + userData.inventoryItemCountList.length
-    const g4Index3 = g4Index2 + userData.inventoryItemUpgardeLevel.length
-    const g4Index4 = g4Index3 + userData.weaponUnlockList.length
-    const g4Index5 = g4Index4 + userData.skillUnlockList.length
-    const g4Index6 = g4Index5 + userData.roundClearList.length
-    const g4Index7 = g4Index6 + userData.specialFlagList.length
+    // 실제 가변 아이템들 쓰면서 오프셋 기록
+    const invIdOffset = offset - group4Index;
+    for (let i = 0; i < userData.inventoryItemIdList.length; i++) buffer[offset++] = userData.inventoryItemIdList[i];
 
-    const group4Array = [
-      g4Index0,
-      userData.inventoryItemIdList.length,
-      g4Index1,
-      userData.inventoryItemCountList.length,
-      g4Index2,
-      userData.inventoryItemUpgardeLevel.length,
-      g4Index3,
-      userData.weaponUnlockList.length,
-      g4Index4,
-      userData.skillUnlockList.length,
-      g4Index5,
-      userData.roundClearList.length,
-      g4Index6,
-      userData.specialFlagList.length,
-      ...userData.inventoryItemIdList,
-      ...userData.inventoryItemCountList,
-      ...userData.inventoryItemUpgardeLevel,
-      ...userData.weaponUnlockList,
-      ...userData.skillUnlockList,
-      ...userData.roundClearList,
-      ...userData.specialFlagList
-    ]
+    const invCountOffset = offset - group4Index;
+    for (let i = 0; i < userData.inventoryItemCountList.length; i++) buffer[offset++] = userData.inventoryItemCountList[i];
 
-    const totalGroupCount = 4
-    const headerArray = [
-      saveSystem.saveHeaderFlag.V055,
-      totalGroupCount,
-      0,
-      group1Array.length,
-      0,
-      group2Array.length,
-      0,
-      group3Array.length,
-      0,
-      group4Array.length,
-      0,
-    ]
+    const invUpgOffset = offset - group4Index;
+    for (let i = 0; i < userData.inventoryItemUpgardeLevel.length; i++) buffer[offset++] = userData.inventoryItemUpgardeLevel[i];
 
-    // 헤더 길이의 가변적인 값을 오차 없이 대입하기 위해 인덱스 값을 나중에 대입합니다.
-    const group1Index = headerArray.length
-    const group2Index = group1Index + group1Array.length
-    const group3Index = group2Index + group2Array.length
-    const group4Index = group3Index + group3Array.length
-    const endIndex = group4Index + group4Array.length
-    headerArray[2] = group1Index
-    headerArray[4] = group2Index
-    headerArray[6] = group3Index
-    headerArray[8] = group4Index
-    headerArray[10] = endIndex
+    const wpnUnkOffset = offset - group4Index;
+    for (let i = 0; i < userData.weaponUnlockList.length; i++) buffer[offset++] = userData.weaponUnlockList[i];
 
+    const sklUnkOffset = offset - group4Index;
+    for (let i = 0; i < userData.skillUnlockList.length; i++) buffer[offset++] = userData.skillUnlockList[i];
 
-    const finalArray = [
-      ...headerArray,
-      ...group1Array,
-      ...group2Array,
-      ...group3Array,
-      ...group4Array,
-    ]
+    const rndClrOffset = offset - group4Index;
+    for (let i = 0; i < userData.roundClearList.length; i++) buffer[offset++] = userData.roundClearList[i];
 
-    // 지금까지 저장된 데이터를 Int32배열로 변경
-    const saveInt32Array = new Int32Array(finalArray)
-    const saveString = saveInt32Array.join(',')
+    const spcFlgOffset = offset - group4Index;
+    for (let i = 0; i < userData.specialFlagList.length; i++) buffer[offset++] = userData.specialFlagList[i];
 
-    localStorage.setItem(saveSystem.getCurrentSaveKey(), saveString)
+    // G4 내부 오프셋 헤더 기록
+    let g4Ptr = g4HeaderStart;
+    buffer[g4Ptr++] = invIdOffset;
+    buffer[g4Ptr++] = userData.inventoryItemIdList.length;
+    buffer[g4Ptr++] = invCountOffset;
+    buffer[g4Ptr++] = userData.inventoryItemCountList.length;
+    buffer[g4Ptr++] = invUpgOffset;
+    buffer[g4Ptr++] = userData.inventoryItemUpgardeLevel.length;
+    buffer[g4Ptr++] = wpnUnkOffset;
+    buffer[g4Ptr++] = userData.weaponUnlockList.length;
+    buffer[g4Ptr++] = sklUnkOffset;
+    buffer[g4Ptr++] = userData.skillUnlockList.length;
+    buffer[g4Ptr++] = rndClrOffset;
+    buffer[g4Ptr++] = userData.roundClearList.length;
+    buffer[g4Ptr++] = spcFlgOffset;
+    buffer[g4Ptr++] = userData.specialFlagList.length;
+
+    const group4Length = offset - group4Index;
+    const endIndex = offset;
+
+    // --- 6. HEADER 최종 백필(Back-fill) 채우기 ---
+    let hPtr = headerStart;
+    buffer[hPtr++] = saveSystem.saveHeaderFlag.V055;
+    buffer[hPtr++] = 4; // totalGroupCount
+    buffer[hPtr++] = group1Index;
+    buffer[hPtr++] = group1Length;
+    buffer[hPtr++] = group2Index;
+    buffer[hPtr++] = group2Length;
+    buffer[hPtr++] = group3Index;
+    buffer[hPtr++] = group3Length;
+    buffer[hPtr++] = group4Index;
+    buffer[hPtr++] = group4Length;
+    buffer[hPtr++] = endIndex;
+
+    // --- 7. 저장 (유효 데이터 길이만큼만 slice 없이 바로 문자열화) ---
+    // subarray는 메모리를 생성하지 않고 0~offset까지의 뷰만 생성함 (Zero-Allocation)
+    const validBufferView = buffer.subarray(0, offset);
+    const saveString = validBufferView.join(',');
+
+    localStorage.setItem(saveSystem.getCurrentSaveKey(), saveString);
   }
 
   /**
@@ -5760,7 +5806,7 @@ export class gameSystem {
    */
   static processSaveV043 (forceSave = false) {
     // 세이브 데이터를 저장하는 조건이 맞아야만 저장됩니다. 자세한 내용은 함수 내부를 살펴보세요.
-    if (!saveSystem.processSaveConditionCheck(forceSave)) return
+    if (!saveSystem.processSaveConditionCheck()) return
 
     // header
 
@@ -5963,10 +6009,6 @@ export class gameSystem {
     // 초기 불러오기 완료 설정
     saveSystem.initLoad = true
 
-    // 유저의 스킬을 강제로 표시하기 위해 해당 함수를 사용
-    userSystem.setSkillDisplayStatDefaultFunction()
-
-
     // 이제 버전에 따라 어느 로드 함수를 불러오는지를 결정해야 함
     // 아무 데이터가 없으면 불러오기 하지 않음
     let tamshooter4LoadData = localStorage.getItem(saveSystem.getCurrentSaveKey())
@@ -5983,13 +6025,24 @@ export class gameSystem {
       this.processLoadV055()
     }
 
+    // 로드가 끝난 직후, 유저 데이터는 입력되었지만 화면에 갱신되지 않습니다.
+    // 이 과정을 처리하기 위해 강제 실행 함수를 사용합니다.
+    userSystem.setSkillDisplayStatDefaultFunction() // 유저 스킬 강제 보여지기
+    userSystem.processStat() // 유저 스탯 강제 재설정
+
+    // 필드 데이터 로드
+    this.processFieldLoad()
+  }
+
+  /** 필드 데이터를 로드합니다. */
+  static processFieldLoad () {
     try {
       let fieldData = localStorage.getItem(saveSystem.getCurrentSaveKeyField())
       if (fieldData != null) {
         let numberArray = fieldData.split(',').map(Number)
-        fieldSystem.fieldSave.array.set(numberArray);
-        fieldSystem.fieldSystemLoadData(null)
-        this.stateId = this.STATE_FIELD
+        fieldSystem.fieldSave.array.set(numberArray)
+        fieldSystem.fieldSystemLoadData(null) // 임시 코드
+        this.stateId = this.STATE_FIELD // 필드를 강제로 진행하도록 상태 변경
       }
     } catch (e) {
       alert(systemText.gameError.FILED_LOAD_ERROR)
@@ -6004,7 +6057,7 @@ export class gameSystem {
 
     // 로드된 데이터를 split(',') 하고 이걸 Int32Array에 넘깁니다.
     const loadData = Int32Array.from(tamshooter4LoadData.split(','))
-    const indexName = saveSystem.indexName
+    const indexName = saveSystem.index
 
     // 헤더 검사는 건너 뜀 (추후 필요하면 작성함)
     if (loadData[indexName.header.SAVE_FLAG] !== saveSystem.saveHeaderFlag.V055) {
@@ -6012,14 +6065,14 @@ export class gameSystem {
     }
 
     // 각 그룹별 인덱스 시작 값을 가져옴
-    const indexG1 = loadData[saveSystem.indexName.header.GROUP1_INDEX_POSITION]
-    const countG1 = loadData[saveSystem.indexName.header.GROUP1_COUNT_POSITION]
-    const indexG2 = loadData[saveSystem.indexName.header.GROUP2_INDEX_POSITION]
-    const countG2 = loadData[saveSystem.indexName.header.GROUP2_COUNT_POSITION]
-    const indexG3 = loadData[saveSystem.indexName.header.GROUP3_INDEX_POSITION]
-    const countG3 = loadData[saveSystem.indexName.header.GROUP3_COUNT_POSITION]
-    const indexG4 = loadData[saveSystem.indexName.header.GROUP4_INDEX_POSITION]
-    const countG4 = loadData[saveSystem.indexName.header.GROUP4_COUNT_POSITION]
+    const indexG1 = loadData[saveSystem.index.header.GROUP1_INDEX_POSITION]
+    const countG1 = loadData[saveSystem.index.header.GROUP1_COUNT_POSITION]
+    const indexG2 = loadData[saveSystem.index.header.GROUP2_INDEX_POSITION]
+    const countG2 = loadData[saveSystem.index.header.GROUP2_COUNT_POSITION]
+    const indexG3 = loadData[saveSystem.index.header.GROUP3_INDEX_POSITION]
+    const countG3 = loadData[saveSystem.index.header.GROUP3_COUNT_POSITION]
+    const indexG4 = loadData[saveSystem.index.header.GROUP4_INDEX_POSITION]
+    const countG4 = loadData[saveSystem.index.header.GROUP4_COUNT_POSITION]
 
     let group1 = loadData.subarray(indexG1, indexG1 + countG1)
     let group2Decode = loadData.subarray(indexG2, indexG2 + countG2)
@@ -6028,7 +6081,7 @@ export class gameSystem {
     let group4 = loadData.subarray(indexG4, indexG4 + countG4)
 
     // 이제 시작 인덱스 순서에 맞춰서 다시 배열 데이터를 집어넣음
-    const I1 = saveSystem.indexName.group1OptionData
+    const I1 = saveSystem.index.group1OptionData
     this.userSystem.setStartDate(
       group1[I1.SAVE_DATE_YEAR + 0], 
       group1[I1.SAVE_DATE_YEAR + 1], 
@@ -6050,7 +6103,7 @@ export class gameSystem {
     this.optionSystem.optionValue.showDamage = group1[I1.OPTION_SHOW_DAMAGE] === 1
 
 
-    const I2 = saveSystem.indexName.group2EncodeData
+    const I2 = saveSystem.index.group2EncodeData
     if (group2 != null) {
       this.userSystem.lv = group2[I2.LV]
       this.userSystem.exp = group2[I2.EXP]
@@ -6058,7 +6111,7 @@ export class gameSystem {
     }
 
 
-    const I3 = saveSystem.indexName.group3UserData
+    const I3 = saveSystem.index.group3UserData
     this.userSystem.weaponList = Array.from(group3.subarray(I3.WEAPON_LIST, I3.WEAPON_LIST + 4))
     this.userSystem.skillList = Array.from(group3.subarray(I3.SKILL_LIST, I3.SKILL_LIST + 8))
 
@@ -6079,7 +6132,7 @@ export class gameSystem {
 
     // 그룹 4 데이터
     // 그룹 4는 가변데이터 기반이므로, 인덱스 값을 잘 추적해야 함
-    const I4 = saveSystem.indexName.group4UserData
+    const I4 = saveSystem.index.group4UserData
     const invIdIndex = group4[I4.INVENTORY_IDLIST]
     const invIdCount = group4[I4.INVENTORY_IDLIST_COUNT]
     const invItemIndex = group4[I4.INVENTORY_ITEM_COUNT]

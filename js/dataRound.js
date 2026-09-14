@@ -854,14 +854,62 @@ class BaseSound {
     soundSystem.play(soundSrc)
   }
 
+  /** 음악의 인덱스 테이블 (0번은 음악 없음으로 간주됨)
+   * int32Array 데이터를 저장하기 위해 만들어졌습니다.
+   * 
+   * 기존 코드랑도 호환 되도록 임시 코드가 추가되었습니다.
+   * 다만, 새로 추가되는 라운드는 currentMusicSrc와 같은 값을 직접 사용하지 않도록 할 계획입니다.
+   */
+  static _musicSrcIndex = ['']
+
+  /** 
+   * 현재 재생중인 음악의 인덱스 번호입니다.
+   * 0번의 경우 음악이 재생되지 않습니다.
+   */
+  static currentMusicIndex = 0
+
+  /** 
+   * 새로운 인덱스 영역에 음악을 추가합니다.
+   * 
+   * 암묵적으로는 음악 개수의 제한이 없으나, 가급적이면 5개 이하로 설정해주세요.
+   */
+  static addMusicIndex (src = '') {
+    if (src === '') return
+
+    this._musicSrcIndex.push(src)
+  }
+
+  /** 현재 음악을 재생합니다. */
+  static musicPlay () {
+    // 음악 인덱스가 0번 상태인경우 재생하지 않습니다.
+    if (this.currentMusicIndex === 0) {
+      soundSystem.musicStop()
+      return
+    } 
+
+    if (this.loadCurrentMusicTime !== 0) {
+      // 로드한 시점에서 음악 시간이 다른 값으로 할당된 경우
+      if (soundSystem.getCacheAudio(this.currentMusicSrc) != null) {
+        // 저장딘 게임 불러오기 전용 변수
+        soundSystem.musicPlay(this._musicSrcIndex[this.currentMusicIndex], this.loadCurrentMusicTime)
+        this.loadCurrentMusicTime = 0 // 음악 현재 시간 초기화
+      }
+    } else if (soundSystem.getMusicPaused()) { // 음악이 일시정지 된 경우에만 다시 재생하도록 합니다.
+      soundSystem.musicPlay(this._musicSrcIndex[this.currentMusicIndex])
+    }
+  }
+
   /**
    * currentMusicSrc 경로에 해당하는 음악을 재생합니다.
    * 
    * currentMusicSrc를 변경하고 싶다면 해당 변수값을 조작한 후 다시 musicPlay를 해주세요.
    * 
    * 참고: 저장된 게임 불러오기를 했을 때 이 함수를 사용하면 모든 인수를 무시합니다.
+   * 
+   * 이 함수는 현재 레거시 되었으며, 새로운 musicPlay 함수로 대체됩니다.
+   * @deprecated
    */
-  static musicPlay () {
+  static musicPlayLegacy () {
     // 음악이 없으면 재생하지 않음
     if (this.currentMusicSrc === '') {
       soundSystem.musicStop()
@@ -894,6 +942,7 @@ class BaseSound {
     soundSystem.musicStop()
     this.currentMusicSrc = ''
     this.fadeNextMusicSrc = ''
+    this.currentMusicIndex = 0
   }
 
   /**
@@ -921,40 +970,83 @@ class BaseSound {
     }
   }
 
-  /** 페이드 이후 다음 음악으로 교체할 대상 */ static fadeNextMusicSrc = ''
+  /** 페이드 이후 다음 음악으로 교체할 대상 @deprecated */ static fadeNextMusicSrc = ''
   /** 페이드 지연 프레임 */ static fadeDelay = 0
   /** 페이드 지연을 계산하는 카운트값 */ static fadeDelayCount = 0
+  /** 다음 음악 인덱스 번호 */ static fadeNextIndex = 0
 
   /** 
    * 음악을 페이드 아웃 합니다.
+   * 
+   * 이 함수는 기능 변경 없이 하위호환을 유지할 수 있기 때문에 남겨놓았습니다.
+   * 
    * @param {number} fadeFrame 페이드를 진행하는 총 프레임 수 (주의: soundSystem의 musicFadeout과 시간 적용 방식이 다릅니다.)
    */
-  static musicFadeOut (fadeFrame = 0) {
+  static musicFadeOutLegacy (fadeFrame = 0) {
     soundSystem.musicFadeOut(fadeFrame / game.FPS)
+    this.fadeNextIndex = 0
+    this.currentMusicIndex = 0
   }
 
   /**
    * 음악을 페이드 인 합니다. 
    * 
    * 참고: 이 함수를 이용하면 재생중인 음악을 강제로 변경할 수 있음.
+   * 
+   * audioSrc로 음악을 직접 지정하는 방식은 더이상 사용되지 않으므로, 이 함수는 deprecated 되었습니다.
+   * 
    * @param {string} audioSrc
    * @param {number} fadeFrame 
+   * @deprecated
    */
-  static musicFadeIn (audioSrc, fadeFrame = 60) {
+  static musicFadeInLegacy (audioSrc, fadeFrame = 60) {
     if (audioSrc === '') return
 
     soundSystem.musicPlay(audioSrc, 0, fadeFrame / game.FPS)
     this.currentMusicSrc = audioSrc
   }
+
+  /** 
+   * 음악을 변경 합니다. 다음 인덱스가 지정되지 않은 경우, fadeout만 지정합니다.
+   * 
+   * 만약 fadeIn만 구현하고 싶다면, 먼저 musicStop() 함수로 음악을 강제로 정지한 후, 이 함수를 사용해주세요.
+   * 
+   * nextIndex가 0일 경우, fadeOut이 진행됩니다.
+   */
+  static musicChange (nextIndex = 0, fadeFrame = 0) {
+    if (nextIndex < this._musicSrcIndex.length) {
+      console.warn('next: ' + nextIndex + ', max: ' + this._musicSrcIndex)
+      console.warn('This request is ignored. An invalid index was referenced.')
+    } else if (nextIndex === 0) {
+      // fadeout만 진행
+      soundSystem.musicFadeOut(fadeFrame / game.FPS)
+    } else if (this.currentMusicIndex === 0) {
+      soundSystem.musicPlay(this._musicSrcIndex[nextIndex], 0, fadeFrame / game.FPS)
+      this.currentMusicIndex = nextIndex
+    } else {
+      // fadeout, fadein 둘 다 진행
+      // 다만, fadein은 processFade에서 진행하고, 여기서는 먼저 fadeout을 합니다.
+      soundSystem.musicFadeOut(fadeFrame / game.FPS)
+      this.fadeNextIndex = nextIndex
+      this.fadeDelayCount = fadeFrame
+      this.fadeDelay = fadeFrame
+    }
+  }
   
+  /** 페이드를 진행시키는 함수 */
   static processFade () {
     this.fadeDelayCount--
     if (this.fadeDelayCount === 0) {
       if (this.fadeNextMusicSrc !== '') {
-        soundSystem.musicPlay(this.fadeNextMusicSrc, 0, this.fadeDelay / 60) // 60프레임 = 1초
+        // 코드 사용 중지
+        // soundSystem.musicPlay(this.fadeNextMusicSrc, 0, this.fadeDelay / 60) // 60프레임 = 1초
       }
 
-      this.currentMusicSrc = this.fadeNextMusicSrc
+      if (this.fadeNextIndex !== 0) {
+        this.currentMusicIndex = this.fadeNextIndex
+        soundSystem.musicPlay(this._musicSrcIndex[this.fadeNextIndex], 0, this.fadeDelay / game.FPS)
+        this.fadeNextIndex = 0 // 다음 페이드 인덱스는 0으로 설정
+      }
     }
   }
 
@@ -1521,6 +1613,9 @@ class BasePhase {
 
     /** 현재 페이즈의 시간을 판단하기 위해 만들어진 변수 */
     this.time = 0
+
+    /** 전체 페이즈 종료 시간, 계산된 값 */
+    this.phaseAllEndTime = 0
   }
   
   /**
@@ -1811,10 +1906,14 @@ export class RoundData {
      * 
      * 페이즈 종료 시간은 마지막 페이즈 시간에서 1초를 추가
      * 
-     * 이것은 이제 쓸모가 없어졌으며, 굳이 원한다면 함수를 사용해주세요.
+     * 이것은 이제 쓸모가 없어졌으며, 다른 것으로 대체되었습니다.
+     * @example {this.phase.phaseAllEndTime} // 이걸 쓰세요.
+     * 
      * @deprecated 
      */ 
     this.phaseAllEndTime = 0
+
+    
 
     /** 
      * 로드된 스프라이트의 대한 데이터  
@@ -1824,9 +1923,23 @@ export class RoundData {
      * 
      * 그럼 이 값을 참고하여 스프라이트 로드 작업을 라운드에서 추가로 진행하면 됩니다.
      * 모든 로드 작업이 끝난 이후 이 정보는 자동으로 삭제됩니다.
+     * 
+     * @deprecated
      * @type {any} 
      */
     this.loadSpriteData = {}
+
+
+    /**
+     * 라운드 객체 데이터가 추가적으로 저장할 수 있는 공간
+     * 이 데이터는 int32Array여야만 합니다.
+     * 
+     * 현재는 40칸 정도를 정의해 둔 상황입니다.
+     * 이 데이터를 이용하여 라운드에 따로 필요한 정보들을 저장할 수 있습니다.
+     * 
+     * 주의: 필드 스프라이트는 여기에 저장할 수 없습니다.
+     */
+    this.extendedMemory = new Int32Array(40)
   }
 
   /**
@@ -1954,6 +2067,28 @@ export class RoundData {
     }
   }
 
+  /** 
+   * extendedMemory 데이터를 작성하는 함수 템플릿
+   * 
+   * 참고사항: bgLayer는 10개까지 저장하며, extendedMemory랑 아무 연관이 없습니다.
+   */
+  writeExtendedMemory () {
+
+  }
+
+  /** 
+   * extendedMemory 데이터를 읽고 이를 fieldObject에 적용하는 함수 템플릿 
+   * 
+   * 참고사항: bgLayer는 10개까지 저장하며, extendedMemory랑 아무 연관이 없습니다.
+  */
+  readExtendedMemory () {
+
+  }
+
+  /**
+   * 사용되지 않는 함수, 추후 제거 예정
+   * @deprecated
+   */
   getSaveDataV055 () {
     const isBgLayerUsing = this.bgLayer.getIsUsing()
     const layer = this.bgLayer.getLayer()
@@ -1987,6 +2122,10 @@ export class RoundData {
     ]
   }
 
+  /**
+   * 사용되지 않는 함수, 추후 제거 예정
+   * @deprecated
+   */
   baseRoundSaveData () {
     let isBgLayerUsing = this.bgLayer.getIsUsing()
 
@@ -2026,6 +2165,9 @@ export class RoundData {
    * saveString 문자열을 어떻게 저장할 것인지에 대한 함수
    * 
    * (saveString을 조작하는 방식이 복잡할 수 있으므로, 함수로 따로 분리하였습니다.)
+   * 
+   * 사용되지 않는 함수, 추후 제거 예정
+   * @deprecated
    */
   processSaveString () {
     
@@ -2033,7 +2175,7 @@ export class RoundData {
 
   /** 라운드 시작시에 대한 처리 */
   roundStart () {
-    if (this.timeCheckFrame(0, 1)) { // 라운드 시작하자마자 음악 재생
+    if (this.timeCheckFrame(0, 4)) { // 라운드 시작하자마자 음악 재생
       soundSystem.musicPlay(this.sound.currentMusicSrc)
     }
   }
@@ -2043,7 +2185,7 @@ export class RoundData {
    * 따라서, 현재 음악을 재생할 수 있도록, 이 함수를 프로세스 합니다.
    */
   processMusic () {
-    if (this.timeCheckFrame(0, 2)) {
+    if (this.timeCheckFrame(0, 4)) {
       // 게임 시작 즉시 음악을 호출하는 것이 불가능하므로, 약간의 지연을 넣어서 처리했습니다.
       // 0초 4프레임 시점에서 음악이 재생됩니다.
       this.sound.currentMusicSrc = this.sound.roundStartMusicSrc
@@ -2055,6 +2197,9 @@ export class RoundData {
 
   /**
    * 불러온 데이터를 이용해 라운드 값을 설정합니다.
+   * 
+   * 더이상 사용되지 않음.
+   * @deprecated
    * 
    * @param {*} saveData 이 데이터의 정보는 getSaveData 가 return 하는 오브젝트를 참고해주세요.
    */
@@ -2106,6 +2251,9 @@ export class RoundData {
    * saveString, saveList를 통해 일부 내용을 참조할 수 있습니다.
    * 
    * 게임을 불러오는 과정에서 자동으로 이 함수를 호출하므로, 다른 process함수에서 이 함수를 호출하지 마세요.
+   * 
+   * 저장 형식 변경으로 이 함수가 더이상 사용되지 않습니다.
+   * @deprecated
    */
   loadProcess () {
 
@@ -2119,6 +2267,9 @@ export class RoundData {
    * 코드의 기본 템플릿은, 이 함수 내부에 있는 주석을 살펴보세요.
    * 
    * 이 함수는 fieldSystem에서 불러올 때 호출되며 사용자가 직접 호출하면 안됩니다.
+   * 
+   * 저장 형식 변경으로 이 함수가 더이상 사용되지 않습니다.
+   * @deprecated
    */
   loadProcessSprite () {
     // 이것은 이 함수의 기본적인 코드의 구성을 설명하기 위해 만들어졌습니다.
@@ -2145,6 +2296,9 @@ export class RoundData {
 
   /** 
    * 외부에서 불러온 스프라이트 데이터를 설정합니다.
+   * 
+   * 저장 형식 변경으로 이 함수가 더이상 사용되지 않습니다.
+   * @deprecated
    * @param {any} spriteData
    */
   setLoadSpriteData (spriteData) {
@@ -3021,7 +3175,7 @@ class Round1_4 extends RoundData {
     // 시작하자마자 보스 등장 (0 ~ 15)
     if (this.timeCheckInterval(3) && this.time.currentTimeFrame === 0) {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss)
-      this.sound.musicFadeIn(soundSrc.music.music06_round1_boss_thema, 0)
+      this.sound.musicFadeInLegacy(soundSrc.music.music06_round1_boss_thema, 0)
     }
 
     // 보스가 일찍 죽으면 해당 페이즈 스킵
@@ -3032,14 +3186,14 @@ class Round1_4 extends RoundData {
     this.timePauseWithEnemyCount(15)
 
     if (this.timeCheckInterval(15) && this.field.enemyNothingCheck()) {
-      this.sound.musicFadeOut(60)
+      this.sound.musicFadeOutLegacy(60)
     }
   }
 
   roundPhase01 () {
     // 진짜 보스 등장(...)
     if (this.timeCheckFrame(21)) {
-      this.sound.musicFadeIn(this.sound.roundStartMusicSrc, 0)
+      this.sound.musicFadeInLegacy(this.sound.roundStartMusicSrc, 0)
       this.field.createEnemy(ID.enemy.jemulEnemy.bossEye, graphicSystem.CANVAS_WIDTH_HALF - 100, graphicSystem.CANVAS_HEIGHT_HALF - 100)
     }
     
@@ -3122,7 +3276,7 @@ class Round1_4 extends RoundData {
     const phase3End = this.phase.phaseTime[3].endTime
 
     if (this.timeCheckFrame(phase3Time, 5)) {
-      this.sound.musicFadeIn(soundSrc.music.music08_round1_4_jemul, 0)
+      this.sound.musicFadeInLegacy(soundSrc.music.music08_round1_4_jemul, 0)
     }
 
     // 배경 흔들기는 processBackground에서 처리합니다.
@@ -3180,7 +3334,7 @@ class Round1_4 extends RoundData {
     }
 
     if (this.timeCheckFrame(phase3Time + 22)) {
-      this.sound.musicFadeIn(soundSrc.music.music26_round1_4_blackSpace)
+      this.sound.musicFadeInLegacy(soundSrc.music.music26_round1_4_blackSpace)
     }
 
     // background layer change
@@ -3202,7 +3356,7 @@ class Round1_4 extends RoundData {
       this.bgLayer.setLayerAlphaFade(0, 1, 180)
       this.bgLayer.setLayerAlphaFade(1, 0, 120)
     } else if (this.timeCheckFrame(pTime + 1)) {
-      this.sound.musicFadeOut(120)
+      this.sound.musicFadeOutLegacy(120)
     }
   }
 
@@ -3246,7 +3400,7 @@ class Round1_4 extends RoundData {
       this.bgLayer.setLayerAlphaFade(0, 1, 420)
       this.bgLayer.setLayerAlphaFade(2, 0, 300)
       this.bgLayer.setLayerAlphaFade(3, 0, 60)
-      this.sound.musicFadeOut(480)
+      this.sound.musicFadeOutLegacy(480)
     }
   }
 
@@ -3761,7 +3915,7 @@ class Round1_6 extends RoundData {
     if (this.timeCheckFrame(planetMusicPlayTime, 0)) {
       this.sound.musicChangeOLD(this.musicPlanet, fadeTime)
     } else if (this.timeCheckFrame(planetMusicPlayTime + 27)) {
-      this.sound.musicFadeOut(120)
+      this.sound.musicFadeOutLegacy(120)
     }
   }
   processSaveString () {
@@ -4372,7 +4526,7 @@ class Round2_1 extends RoundData {
     this.timePauseWithEnemyCount(this.BOSSTIME)
 
     if (this.timeCheckFrame(this.BOSSTIME + 1)) {
-      this.sound.musicFadeOut(120)
+      this.sound.musicFadeOutLegacy(120)
       this.field.addPlayerItem(ID.item.donggramiTicket, 1, false) // 이펙트 없이 아이템 추가
     }
   }
@@ -4626,7 +4780,7 @@ class Round2_2 extends RoundData {
     }
 
     if (this.timeCheckFrame(167, 12)) {
-      this.sound.musicFadeOut(180)
+      this.sound.musicFadeOutLegacy(180)
     }
 
     // 아이템을 가진 적 추가 (동그라미 티켓)
@@ -5481,7 +5635,7 @@ class Round2_3 extends RoundData {
 
     // 준비 시간 (3초 후) 음악 재생 및 레디 표시 (레디 상황에서 초기값 설정)
     if (this.timeCheckFrame(pTime + cTime.READY)) {
-      this.sound.musicFadeIn(this.musicList.a1_battle_room, 0)
+      this.sound.musicFadeInLegacy(this.musicList.a1_battle_room, 0)
       this.setResult(this.resultList.READY)
       this.areaStat.time = 45
       this.areaStat.enemyHpPercent = 100
@@ -5724,7 +5878,7 @@ class Round2_3 extends RoundData {
     const pTime = this.getPhaseStartTime()
     const cTime = this.checkTimeList
     if (this.timeCheckFrame(pTime + cTime.READY)) {
-      this.sound.musicFadeIn(this.musicList.b1_jump_room, 0)
+      this.sound.musicFadeInLegacy(this.musicList.b1_jump_room, 0)
       this.setResult(this.resultList.READY)
       this.areaStat.time = 45
       this.areaStat.areaBcollisionCount = 0 // 충돌횟수 리셋
@@ -5838,7 +5992,7 @@ class Round2_3 extends RoundData {
 
     // 준비 및 시작
     if (this.timeCheckFrame(pTime + cTime.READY)) {
-      this.sound.musicFadeIn(this.musicList.c1_bullet_room, 0)
+      this.sound.musicFadeInLegacy(this.musicList.c1_bullet_room, 0)
       this.setResult(this.resultList.READY)
       this.areaStat.c1BulletDamage = 0
       this.areaStat.time = 45
@@ -5949,7 +6103,7 @@ class Round2_3 extends RoundData {
     const pTime = this.getPhaseStartTime()
     const cTime = this.checkTimeList
     if (this.timeCheckFrame(pTime + cTime.READY)) {
-      this.sound.musicFadeIn(this.musicList.a2_break_room, 0)
+      this.sound.musicFadeInLegacy(this.musicList.a2_break_room, 0)
       this.setResult(this.resultList.READY)
       this.areaStat.time = 45
       this.areaStat.playerHpPercent = 100
@@ -6140,7 +6294,7 @@ class Round2_3 extends RoundData {
       this.areaStat.a3PowerEnemy = 0
       this.areaStat.a3PowerPlayer = 0
       this.areaStat.time = 45
-      this.sound.musicFadeIn(this.musicList.a3_power_room, 0)
+      this.sound.musicFadeInLegacy(this.musicList.a3_power_room, 0)
     } else if (this.timeCheckFrame(pTime + cTime.START)) {
       this.setResult(this.resultList.START)
       this.field.createEnemy(ID.enemy.donggramiEnemy.a3_collector)
@@ -6282,7 +6436,7 @@ class Round2_3 extends RoundData {
     const cTime = this.checkTimeList
 
     if (this.timeCheckFrame(pTime + cTime.READY)) {
-      this.sound.musicFadeIn(this.musicList.b2_warp_room, 0)
+      this.sound.musicFadeInLegacy(this.musicList.b2_warp_room, 0)
       this.setResult(this.resultList.READY)
       this.areaStat.time = 45
       this.areaStat.b2WarpCount = 0
@@ -6415,7 +6569,7 @@ class Round2_3 extends RoundData {
 
     // 준비, 시작
     if (this.timeCheckFrame(pTime + cTime.READY)) {
-      this.sound.musicFadeIn(this.musicList.b3_move_room, 0)
+      this.sound.musicFadeInLegacy(this.musicList.b3_move_room, 0)
       this.areaStat.time = 45
       this.areaStat.areaBcollisionCount = 0
       this.areaStat.b3ObjectCollisionPlayerAutomoveFrame = 0
@@ -6499,7 +6653,7 @@ class Round2_3 extends RoundData {
     const pTime = this.getPhaseStartTime()
     const cTime = this.checkTimeList
     if (this.timeCheckFrame(pTime + cTime.READY)) {
-      this.sound.musicFadeIn(this.musicList.c2_square_room, 0)
+      this.sound.musicFadeInLegacy(this.musicList.c2_square_room, 0)
       this.setResult(this.resultList.READY)
       this.areaStat.c2SquareScore = 0
       this.areaStat.time = 45
@@ -6677,7 +6831,7 @@ class Round2_3 extends RoundData {
     if (this.timeCheckFrame(pTime + cTime.READY)) {
       this.areaStat.c3Goal = 0
       this.areaStat.time = 45
-      this.sound.musicFadeIn(this.musicList.c3_trap_room, 0)
+      this.sound.musicFadeInLegacy(this.musicList.c3_trap_room, 0)
       this.setResult(this.resultList.READY)
       player.x = 0
       player.y = 0
@@ -7588,7 +7742,7 @@ class Round2_4 extends RoundData {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
     if (this.timeCheckFrame(pTime + 0)) {
       // 음악 변경 및 재생
-      this.sound.musicFadeIn(soundSrc.music.music12_donggrami_hall_outside, 1)
+      this.sound.musicFadeInLegacy(soundSrc.music.music12_donggrami_hall_outside, 1)
     }
 
     // 적들 등장 (dps 60% ~ 90%)
@@ -7775,7 +7929,7 @@ class Round2_4 extends RoundData {
 
     // 음악 페이드 아웃 및 정지
     if (this.timeCheckFrame(pTime + 37)) {
-      this.sound.musicFadeOut(1)
+      this.sound.musicFadeOutLegacy(1)
     }
 
     // 아이템을 가진 적 2번 생성 (도망쳐 이벤트 때문에 기준시간 (30초단위)보다 조금 더 빨리 생성됨)
@@ -7797,7 +7951,7 @@ class Round2_4 extends RoundData {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
     if (this.timeCheckFrame(pTime + 1)) {
       this.sound.soundPlay(soundSrc.round.r2_4_message1)
-      this.sound.musicFadeIn(soundSrc.music.music13_round2_4_jemu, 0)
+      this.sound.musicFadeInLegacy(soundSrc.music.music13_round2_4_jemu, 0)
     } else if (this.timeCheckFrame(pTime + 38)) {
       this.sound.musicStop()
     }
@@ -7823,7 +7977,7 @@ class Round2_4 extends RoundData {
     if (this.timeCheckFrame(pTime + 1)) {
       this.field.createEnemy(ID.enemy.intruder.jemuBoss)
       this.sound.soundPlay(soundSrc.round.r2_4_message1)
-      this.sound.musicFadeIn(soundSrc.music.music13_round2_4_jemu, 0)
+      this.sound.musicFadeInLegacy(soundSrc.music.music13_round2_4_jemu, 0)
     } else if (this.timeCheckFrame(pTime + 38)) {
       this.sound.musicStop()
     }
@@ -8461,8 +8615,8 @@ class Round2_5 extends RoundData {
     } else if (this.timeCheckFrame(pTime + 5)) {
       this.bgLegacy.color = Round2_1.getMaeulGradientColor()
     } else if (this.timeCheckFrame(pTime + 6)) {
-      this.sound.musicFadeIn(soundSrc.music.music14_intruder_battle, 0)
-      this.sound.musicPlay()
+      this.sound.musicFadeInLegacy(soundSrc.music.music14_intruder_battle, 0)
+      this.sound.musicPlayLegacy()
     }
 
     // 각각의 적들이 차례대로 출현
@@ -8796,7 +8950,7 @@ class Round2_5 extends RoundData {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
 
     if (this.timeCheckFrame(pTime)) {
-      this.sound.musicFadeOut(1)
+      this.sound.musicFadeOutLegacy(1)
       // 클리어 구간에서 아이템을 추가함
       // 다만, 동그라미가 없어도 아이템은 추가됨 (동그라미가 있으면 무작위의 동그라미가 있는 위치에서 아이템이 생성됨)
       let random = Math.floor(Math.random() * this.spriteDonggrami.length)
@@ -9410,9 +9564,9 @@ class Round2_6 extends RoundData {
 
     // music
     if (this.timeCheckFrame(pTime + 0)) {
-      this.sound.musicFadeIn(soundSrc.music.music12_donggrami_hall_outside)
+      this.sound.musicFadeInLegacy(soundSrc.music.music12_donggrami_hall_outside)
     } else if (this.timeCheckFrame(pTime + 26)) {
-      this.sound.musicFadeOut(180)
+      this.sound.musicFadeOutLegacy(180)
     }
 
     // donggramiParty (dps 120%)
@@ -9436,8 +9590,8 @@ class Round2_6 extends RoundData {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
 
     if (this.timeCheckFrame(pTime + 0)) {
-      this.sound.musicFadeIn(soundSrc.music.music15_donggrami_ruin, 120)
-      this.sound.musicPlay()
+      this.sound.musicFadeInLegacy(soundSrc.music.music15_donggrami_ruin, 120)
+      this.sound.musicPlayLegacy()
     }
 
     // dps 100%
@@ -9454,7 +9608,7 @@ class Round2_6 extends RoundData {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
 
     if (this.timeCheckFrame(pTime + 26)) {
-      this.sound.musicFadeOut(180)
+      this.sound.musicFadeOutLegacy(180)
     }
 
     // dps 120%
@@ -11054,13 +11208,13 @@ class Round3_1 extends Round3Templete {
   roundPhase06 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0)) {
-      this.sound.musicFadeOut(120) // 음악 페이드 아웃
+      this.sound.musicFadeOutLegacy(120) // 음악 페이드 아웃
     } else if (this.timeCheckFrame(pTime + 3)) {
       this.bossWarning.createWarning(this.bossTextList.bossCrazyRobot) // 보스 경고 생성
     } else if (this.timeCheckFrame(pTime + 9)) {
       this.bossSprite.createSpriteBossRobot() // 보스 등장
       this.sound.currentMusicSrc = soundSrc.music.music17_down_tower_boss
-      this.sound.musicPlay()
+      this.sound.musicPlayLegacy()
     }
 
     this.timePauseWithEnemyCount(pTime + 16)
@@ -11368,11 +11522,11 @@ class Round3_2 extends Round3Templete {
   roundPhase07 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0)) {
-      this.sound.musicFadeOut(120) // 음악 페이드 아웃
+      this.sound.musicFadeOutLegacy(120) // 음악 페이드 아웃
     } else if (this.timeCheckFrame(pTime + 3)) {
       this.field.createEnemy(ID.enemy.towerEnemyGroup2.bossBar, 0, graphicSystem.CANVAS_HEIGHT) // 스프라이트 방식의 등장이 없으므로 적을 직접 생성
       this.sound.currentMusicSrc = soundSrc.music.music17_down_tower_boss
-      this.sound.musicPlay()
+      this.sound.musicPlayLegacy()
     }
 
     this.timePauseWithEnemyCount(pTime + 6)
@@ -11607,13 +11761,13 @@ class Round3_3 extends Round3Templete {
   roundPhase06 () {
     const pTime = this.phase.getCurrentPhaseStartTime()
     if (this.timeCheckFrame(pTime + 0)) {
-      this.sound.musicFadeOut(120) // 음악 페이드 아웃
+      this.sound.musicFadeOutLegacy(120) // 음악 페이드 아웃
     } else if (this.timeCheckFrame(pTime + 3)) {
       this.bossWarning.createWarning(this.bossTextList.bossDasuCore) // 보스 경고 생성
     } else if (this.timeCheckFrame(pTime + 9)) {
       this.bossSprite.createSpriteBossDasu() // 보스 등장
       this.sound.currentMusicSrc = soundSrc.music.music17_down_tower_boss
-      this.sound.musicPlay()
+      this.sound.musicPlayLegacy()
     }
 
     this.timePauseWithEnemyCount(pTime + 16)
@@ -11748,11 +11902,11 @@ class Round3_4 extends Round3Templete {
 
     // 음악 변경
     if (this.timeCheckFrame(pTime + 16)) {
-      this.sound.musicFadeOut(120)
+      this.sound.musicFadeOutLegacy(120)
     } else if (this.timeCheckFrame(pTime + 19)) {
       this.sound.musicStop()
     } else if (this.timeCheckFrame(pTime + 20)) {
-      this.sound.musicFadeIn(soundSrc.music.music18_down_tower_void, 300)
+      this.sound.musicFadeInLegacy(soundSrc.music.music18_down_tower_void, 300)
     }
   }
 
@@ -11920,7 +12074,7 @@ class Round3_4 extends Round3Templete {
 
     // 음악 페이드 아웃 및 정지
     if (this.timeCheckFrame(pTime + 1)) {
-      this.sound.musicFadeOut(300)
+      this.sound.musicFadeOutLegacy(300)
     } else if (this.timeCheckFrame(pTime + 6)) {
       this.sound.musicStop()
     } else if (this.timeCheckFrame(pTime + 10)) {
@@ -12108,7 +12262,7 @@ class Round3_5 extends Round3Templete {
       this.bossWarning.createWarning(this.bossTextList.bossNokgasi)
       this.sound.musicStop()
     } else if (this.timeCheckFrame(pTime + 9)) {
-      this.sound.musicFadeIn(soundSrc.music.music19_round3_5_phase1, 120)
+      this.sound.musicFadeInLegacy(soundSrc.music.music19_round3_5_phase1, 120)
       this.field.createEnemy(ID.enemy.towerEnemyGroup4.nokgasi1)
     }
 
@@ -12182,7 +12336,7 @@ class Round3_5 extends Round3Templete {
     if (this.timeCheckFrame(pTime + 0)) {
       this.roundPhase02_1AreaInit()
     } else if (this.timeCheckFrame(pTime + 5)) {
-      this.sound.musicFadeIn(soundSrc.music.music20_round3_5_blackSpace, 300)
+      this.sound.musicFadeInLegacy(soundSrc.music.music20_round3_5_blackSpace, 300)
     }
 
     this.roundPhase02_1BackgroundProcess()
@@ -12660,7 +12814,7 @@ class Round3_5 extends Round3Templete {
     this.timePauseWithEnemyCount(pEnd) // 특정 시간이 되면 적이 완전히 사라질 때까지 멈춥니다. 
     if (this.areaPhase2.elapsedFrame === 60) {
       this.createBlackSpaceBossPhase2_1(ID.enemy.towerEnemyGroup4.blackSpaceArea) // 보스 생성
-      this.sound.musicFadeOut(180) // 음악 페이드 아웃
+      this.sound.musicFadeOutLegacy(180) // 음악 페이드 아웃
     }
     
     let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.blackSpaceArea)
@@ -12696,7 +12850,7 @@ class Round3_5 extends Round3Templete {
     } else if (this.timeCheckFrame(pTime + 21)) {
       // 보스전 시작 및 음악 재생
       this.sound.currentMusicSrc = soundSrc.music.music21_round3_5_antijemulNormal
-      this.sound.musicPlay()
+      this.sound.musicPlayLegacy()
     }
 
     this.timePauseWithEnemyCount(pEnd - 1)
@@ -12742,7 +12896,7 @@ class Round3_5 extends Round3Templete {
       this.bgLayer.setLayerAlphaFade(this.layerList.REDZONE, 1, 300)
       // this.sound.play(soundSrc.round.r3_5_phase4Start)
     } else if (this.timeCheckFrame(pTime + 12)) {
-      this.sound.musicFadeIn(soundSrc.music.music22_round3_5_antijemulHyper, 0)
+      this.sound.musicFadeInLegacy(soundSrc.music.music22_round3_5_antijemulHyper, 0)
     }
 
     if (this.timeCheckInterval(pTime + 15, pEnd - 1)) {
@@ -12785,7 +12939,7 @@ class Round3_5 extends Round3Templete {
         fieldState.allEnemyBulletDelete() // 모든 총알 삭제
         this.time.setCurrentTime(pEnd) // 다음 페이즈 시간으로 이동시킴
         this.time.setCurrentTimePause(false) // 시간 일시정지 해제
-        this.sound.musicFadeOut(120)
+        this.sound.musicFadeOutLegacy(120)
         this.bossSprite.createSpriteAntiClear(this.antiBossX, this.antiBossY)
       } else {
         this.antiBossX = enemy.x
@@ -13381,7 +13535,7 @@ class Round3_6 extends Round3Templete {
     }
 
     if (this.timeCheckFrame(pEnd - 3)) {
-      this.sound.musicFadeOut(180) // 음악 페이드 아웃
+      this.sound.musicFadeOutLegacy(180) // 음악 페이드 아웃
     }
     
     // 타임스탑
@@ -13585,7 +13739,7 @@ class Round3_7 extends Round3Templete {
     }
 
     if (this.timeCheckFrame(pTime + 31)) {
-      this.sound.musicFadeOut(120)
+      this.sound.musicFadeOutLegacy(120)
     } else if (this.timeCheckFrame(pTime + 33)) {
       this.bossWarning.createWarning(this.bossTextList.bossGabudan)
     }
@@ -13616,7 +13770,7 @@ class Round3_7 extends Round3Templete {
 
     if (enemy.message === 'start') {
       enemy.message = '' // 메세지 중복처리 방지용도
-      this.sound.musicFadeIn(soundSrc.music.music17_down_tower_boss)
+      this.sound.musicFadeInLegacy(soundSrc.music.music17_down_tower_boss)
     } else if (enemy.message === 'end') {
       enemy.message = ''
       this.sound.musicStop()
@@ -13935,7 +14089,7 @@ class Round3_8 extends Round3Templete {
     }
 
     if (this.timeCheckFrame(pTime + 14)) {
-      this.sound.musicFadeOut(180)
+      this.sound.musicFadeOutLegacy(180)
     }
 
     this.timePauseWithEnemyCount(pTime + 17)
@@ -14219,11 +14373,11 @@ class Round3_9 extends Round3Templete {
     const pTime = this.phase.getCurrentPhaseStartTime()
     const pEnd = this.phase.getCurrentPhaseEndTime()
     if (this.timeCheckFrame(pTime + 2)) {
-      this.sound.musicFadeOut(180)
+      this.sound.musicFadeOutLegacy(180)
     } else if (this.timeCheckFrame(pTime + 5)) {
       this.bossWarning.createWarning(this.bossTextList.bossVacuumCleaner)
     } else if (this.timeCheckFrame(pTime + 12)) {
-      this.sound.musicFadeIn(soundSrc.music.music17_down_tower_boss, 0)
+      this.sound.musicFadeInLegacy(soundSrc.music.music17_down_tower_boss, 0)
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.vacuumCleaner, 600, 100)
     }
 
@@ -14607,7 +14761,7 @@ class Round3_10 extends Round3Templete {
     }
 
     if (this.timeCheckFrame(pTime + 2)) {
-      this.sound.musicFadeIn(soundSrc.music.music25_down_tower_outwall, 10)
+      this.sound.musicFadeInLegacy(soundSrc.music.music25_down_tower_outwall, 10)
     }
 
     // dps 100% ~ 120%
@@ -14807,7 +14961,7 @@ class Round3_10 extends Round3Templete {
     }
 
     if (this.timeCheckFrame(pEnd - 2)) {
-      this.sound.musicFadeOut(120)
+      this.sound.musicFadeOutLegacy(120)
     }
 
     // 에너지 dps 40% -> 100% -> 240% -> 100% -> 40%
@@ -14849,7 +15003,7 @@ class Round3_10 extends Round3Templete {
     }
 
     if (this.timeCheckFrame(pTime + 0, 30)) {
-      this.sound.musicFadeIn(soundSrc.music.music16_down_tower, 180)
+      this.sound.musicFadeInLegacy(soundSrc.music.music16_down_tower, 180)
     }
 
     // 코어 다수 등장 후, 함선 등장, 이후 fakeship만 등장
@@ -14942,7 +15096,7 @@ class Round3_10 extends Round3Templete {
     const pEnd = this.phase.getCurrentPhaseEndTime()
 
     if (this.timeCheckFrame(pEnd - 4)) {
-      this.sound.musicFadeOut(180)
+      this.sound.musicFadeOutLegacy(180)
     }
 
     // 마지막 러쉬, 타워 에너미 레이저
@@ -14965,9 +15119,9 @@ class Round3_10 extends Round3Templete {
     }
 
     if (this.timeCheckFrame(pTime + 1)) {
-      this.sound.musicFadeIn(soundSrc.music.music10_donggrami_maeul, 60)
+      this.sound.musicFadeInLegacy(soundSrc.music.music10_donggrami_maeul, 60)
     } else if (this.timeCheckFrame(pEnd - 4)) {
-      this.sound.musicFadeOut(180)
+      this.sound.musicFadeOutLegacy(180)
     }
 
     // 여기서는 dps가 180% 이하 (마지막 구역이므로)
@@ -15058,7 +15212,7 @@ class Round3_10 extends Round3Templete {
     if (this.timeCheckFrame(pTime + 18)) {
       this.bossWarning.createWarning(this.bossTextList.bossGamokBangpae)
     } else if (this.timeCheckFrame(pTime + 25)) {
-      this.sound.musicFadeIn(soundSrc.music.music17_down_tower_boss, 1)
+      this.sound.musicFadeInLegacy(soundSrc.music.music17_down_tower_boss, 1)
       this.field.createEnemy(ID.enemy.towerEnemyGroup5.gamokBangpae, 800, 200)
       this.spriteRescue.x = 100 + 5
       this.spriteRescue.y = 200
