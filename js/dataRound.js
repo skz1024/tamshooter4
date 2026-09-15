@@ -872,27 +872,47 @@ class BaseSound {
    * 새로운 인덱스 영역에 음악을 추가합니다.
    * 
    * 암묵적으로는 음악 개수의 제한이 없으나, 가급적이면 5개 이하로 설정해주세요.
+   * 
+   * @param {string} [src=''] 음악의 경로, 값이 없다고 판단된다면 음악을 추가하지 않습니다.
+   * @param {boolean} [isMainMusic=false] 값이 true일 경우 메인 뮤직으로 변경, 이 경우 인덱스 번호를 자동으로 새로 넣은 음악으로 지정합니다.
    */
-  static addMusicIndex (src = '') {
+  static addMusicIndex (src = '', isMainMusic = false) {
     if (src === '') return
 
     this._musicSrcIndex.push(src)
+
+    if (isMainMusic) {
+      // 마지막에 등록된 음악의 인덱스는 배열의 길이에서 1을 빼야 합니다.
+      this.currentMusicIndex = this._musicSrcIndex.length - 1
+    }
   }
 
-  /** 현재 음악을 재생합니다. */
+  /** 현재 음악을 재생합니다.
+   * 지금은 하위 호환 코드가 포함되어 있습니다.
+   * 
+   */
   static musicPlay () {
     // 음악 인덱스가 0번 상태인경우 재생하지 않습니다.
-    if (this.currentMusicIndex === 0) {
+    // 그리고 음악 경로가 지정하지 않은 경우 재생하지 않습니다.
+    if (this.currentMusicIndex === 0 && this.currentMusicSrc === '') {
       soundSystem.musicStop()
       return
-    } 
+    }
 
     if (this.loadCurrentMusicTime !== 0) {
       // 로드한 시점에서 음악 시간이 다른 값으로 할당된 경우
-      if (soundSystem.getCacheAudio(this.currentMusicSrc) != null) {
-        // 저장딘 게임 불러오기 전용 변수
-        soundSystem.musicPlay(this._musicSrcIndex[this.currentMusicIndex], this.loadCurrentMusicTime)
-        this.loadCurrentMusicTime = 0 // 음악 현재 시간 초기화
+      if (this.currentMusicSrc !== '') { // 음악 경로가 존재할 경우 (하위호환 코드)
+        if (soundSystem.getCacheAudio(this.currentMusicSrc) != null) {
+          // 저장딘 게임 불러오기 전용 변수
+          soundSystem.musicPlay(this.currentMusicSrc, this.loadCurrentMusicTime)
+          this.loadCurrentMusicTime = 0 // 음악 현재 시간 초기화
+        }
+      } else { // 음악 경로가 없다면 인덱스 참조
+        if (soundSystem.getCacheAudio(this.currentMusicSrc) != null) {
+          // 저장딘 게임 불러오기 전용 변수
+          soundSystem.musicPlay(this._musicSrcIndex[this.currentMusicIndex], this.loadCurrentMusicTime)
+          this.loadCurrentMusicTime = 0 // 음악 현재 시간 초기화
+        }
       }
     } else if (soundSystem.getMusicPaused()) { // 음악이 일시정지 된 경우에만 다시 재생하도록 합니다.
       soundSystem.musicPlay(this._musicSrcIndex[this.currentMusicIndex])
@@ -943,6 +963,11 @@ class BaseSound {
     this.currentMusicSrc = ''
     this.fadeNextMusicSrc = ''
     this.currentMusicIndex = 0
+  }
+
+  /** 음악을 일시정지 합니다. (재생 상태가 정지로 바뀌는 것 뿐이며, 다시 재생하려면 musicPlay를 해주세요.) */
+  static musicPause () {
+    soundSystem.musicPause()
   }
 
   /**
@@ -2021,7 +2046,9 @@ export class RoundData {
   processDebug () {}
 
   /**
-   * 시간 간격 확인 함수, 프레임 단위 계산을 totalFrame으로 하기 때문에 시간이 멈추어도 함수는 작동합니다.
+   * 시간 간격 확인 함수
+   * 
+   * start, end는 시간 멈춤에 영향을 받지만, intervalFrame은 전체 프레임을 기준으로 계산하므로, 시간이 멈추어도 frame은 체크합니다.
    * 
    * start이상 end이하일경우 true, 아닐경우 false
    * 
@@ -2348,7 +2375,6 @@ class Round1_1 extends RoundData {
     super()
     this.stat.setStat(ID.round.round1_1)
     this.bgLegacy.imageSrc = imageSrc.round.round1_1_space
-    this.sound.roundStartMusicSrc = soundSrc.music.music01_space_void
 
     this.phase.addRoundPhase(this, this.roundPhase00, 1, 10)
     this.phase.addRoundPhase(this, this.roundPhase01, 11, 30)
@@ -2370,6 +2396,9 @@ class Round1_1 extends RoundData {
 
     this.load.addImageList(RoundPackLoad.getRound1ShareImage())
     this.load.addSoundList(RoundPackLoad.getRound1ShareSound())
+
+    this.sound.addMusicIndex(soundSrc.music.music01_space_void, true)
+    this.sound.addMusicIndex(soundSrc.music.music06_round1_boss_thema)
   }
 
   roundPhase00 () {
@@ -2474,7 +2503,7 @@ class Round1_1 extends RoundData {
 
     // 보스 출현
     if (this.timeCheckFrame(147, 0)) {
-      this.sound.musicChangeOLD(soundSrc.music.music06_round1_boss_thema)
+      this.sound.musicChange(2, 0)
       this.field.createEnemy(ID.enemy.spaceEnemy.boss, 0, 0)
     }
 
@@ -2541,7 +2570,6 @@ class Round1_2 extends RoundData {
     super()
     this.stat.setStat(ID.round.round1_2)
     this.bgLegacy.imageSrc = imageSrc.round.round1_2_meteorite
-    this.sound.roundStartMusicSrc = soundSrc.music.music02_meteorite_zone_field
     this.meteoriteDeepImage = imageSrc.round.round1_3_meteoriteDeep
 
     this.phase.addRoundPhase(this, this.roundPhase00, 0, 15)
@@ -2566,6 +2594,8 @@ class Round1_2 extends RoundData {
 
     this.load.addImageList(RoundPackLoad.getRound1ShareImage())
     this.load.addSoundList(RoundPackLoad.getRound1ShareSound())
+
+    this.sound.addMusicIndex(soundSrc.music.music02_meteorite_zone_field, true)
   }
 
   processBackground () {

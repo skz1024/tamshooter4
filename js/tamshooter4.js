@@ -831,9 +831,15 @@ class UIComponentRoundSelect extends UIComponentObject {
   processMouse () {
     super.processMouse()
 
-    // 마우스 클릭 시 서브 라운드 커서 상태면 라운드 시작
+    // 마우스 클릭 시 서브 라운드 커서 상태면 커서가 서브 라운드 내부에 있는지 확인하고, 맞게 있으면 라운드 시작
+    // 이렇게 하는 이유는, 다른 공간을 클릭했는데 라운드를 시작하는 현상이 있었기 때문
     if (game.control.getMouseClick() && this.cursor.layerNumber === this.LAYER_NUMBER_SUB) {
-      this.roundStart()
+      const mouseX = game.control.getMouseX()
+      const mouseY = game.control.getMouseY()
+      for (let i = 0; i < this.subRoundBox.length; i++) {
+        if (this.subRoundBox[i].collision(mouseX, mouseY))
+        this.roundStart()
+      }
     }
   }
 
@@ -5621,7 +5627,8 @@ export class gameSystem {
 
   /** 현재 게임의 옵션 데이터를 가져옵니다. */
   static getGameOption () {
-    return this.optionSystem.optionValue
+    return this.uiOption.optionValue
+    // return this.optionSystem.optionValue
   }
 
   /** 저장 과정을 처리합니다. */
@@ -5674,7 +5681,7 @@ export class gameSystem {
     const saveDate = new Date();
     const startDate = this.userSystem.startDate;
     const playTime = this.userSystem.playTime;
-    const opt = this.optionSystem.optionValue;
+    const opt = this.uiOption.optionValue;
 
     buffer[offset++] = saveDate.getFullYear();
     buffer[offset++] = saveDate.getMonth() + 1;
@@ -6102,13 +6109,13 @@ export class gameSystem {
       group1[I1.PLAY_TIME_HOUR + 1],
       group1[I1.PLAY_TIME_HOUR + 2]
     )
-    this.optionSystem.optionValue.musicOn = group1[I1.OPTION_MUSIC_ON] === 1
-    this.optionSystem.optionValue.musicVolume = group1[I1.OPTION_MUSIC_VOLUME]
-    this.optionSystem.optionValue.soundOn = group1[I1.OPTION_SOUND_ON] === 1
-    this.optionSystem.optionValue.soundVolume = group1[I1.OPTION_SOUND_VOLUME]
-    this.optionSystem.optionValue.resultAutoSkip = group1[I1.OPTION_RESULT_AUTO_SKIP] === 1
-    this.optionSystem.optionValue.showEnemyHp = group1[I1.OPTION_SHOW_ENEMY_HP] === 1
-    this.optionSystem.optionValue.showDamage = group1[I1.OPTION_SHOW_DAMAGE] === 1
+    this.uiOption.optionValue.musicOn = group1[I1.OPTION_MUSIC_ON] === 1
+    this.uiOption.optionValue.musicVolume = group1[I1.OPTION_MUSIC_VOLUME]
+    this.uiOption.optionValue.soundOn = group1[I1.OPTION_SOUND_ON] === 1
+    this.uiOption.optionValue.soundVolume = group1[I1.OPTION_SOUND_VOLUME]
+    this.uiOption.optionValue.resultAutoSkip = group1[I1.OPTION_RESULT_AUTO_SKIP] === 1
+    this.uiOption.optionValue.showEnemyHp = group1[I1.OPTION_SHOW_ENEMY_HP] === 1
+    this.uiOption.optionValue.showDamage = group1[I1.OPTION_SHOW_DAMAGE] === 1
 
 
     const I2 = saveSystem.index.group2EncodeData
@@ -6292,9 +6299,11 @@ export class gameSystem {
     switch (this.fieldSystem.message) {
       case messageList.CHANGE_MUSICON:
         this.uiOption.optionValue.musicOn = !this.uiOption.optionValue.musicOn
+        this.uiOption.optionEnable()
         break
       case messageList.CHANGE_SOUNDON:
         this.uiOption.optionValue.soundOn = !this.uiOption.optionValue.soundOn
+        this.uiOption.optionEnable()
         break
       case messageList.STATE_MAIN:
         this.stateId = this.STATE_MAIN
@@ -6312,8 +6321,8 @@ export class gameSystem {
     this.fieldSystem.message = ''
 
     // 사운드 음악 옵션을 필드에게 전달
-    fieldSystem.option.musicOn = this.optionSystem.optionValue.musicOn
-    fieldSystem.option.soundOn = this.optionSystem.optionValue.soundOn
+    fieldSystem.option.musicOn = this.uiOption.optionValue.musicOn
+    fieldSystem.option.soundOn = this.uiOption.optionValue.soundOn
   }
 
   // 디버그 용도로 사용되는 함수

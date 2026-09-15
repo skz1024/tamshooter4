@@ -518,6 +518,14 @@ export class SoundSystem {
     }
   }
 
+  /** 
+   * 
+   * 이 코드는 과거 코드의 잔재로 추정됩니다.
+   * 
+   * 현재는 사용하지 않도록 변경했습니다.
+   * @deprecated 
+   * 
+   */
   musicResume () {
     if (this.currentMusic instanceof HTMLMediaElement) {
       // 음악을 특정 지점부터 다시 재생

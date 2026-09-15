@@ -1971,7 +1971,7 @@ export class fieldSystem {
     const buttonA = game.control.getButtonInput(game.control.buttonIndex.A)
     const buttonB = game.control.getButtonInput(game.control.buttonIndex.B)
     const maxMenuNumber = 3
-    game.sound.setEchoDisable() // 에코 기능 정지
+    // game.sound.setEchoDisable() // 에코 기능 정지 (에코 기능이 게임에서 사용되지 않는 것으로 판단)
     // game.sound.setMusicEcho() // 에코 기능 정지 [음악은 정지해야할지 잘 모르겠음]
 
     if (buttonUp && this.cursor > 0) {
@@ -2005,8 +2005,11 @@ export class fieldSystem {
     if (isResume) {
       this.stateId = this.STATE_NORMAL // pause 상태 해제
       if (this.round != null) { // round 음악 다시 재생
-        game.sound.musicResume()
+        // game.sound.musicResume()
+        this.round.sound.musicPlay() // resume 상태가 해제되면 음악을 다시 재생시키도록 합니다.
       }
+    } else if (this.round != null) {
+      this.round.sound.musicPause()
     }
   }
 
@@ -2096,7 +2099,7 @@ export class fieldSystem {
     // 음악 시간 로딩 변수값이 존재할 때, 해당 음악을 강제로 재생합니다.
     // 내부적으로 round에서는 로드 음악 시작 값이 존재하면 해당 부분부터 재생을 시작합니다.
     if (this.round.sound.loadCurrentMusicTime !== 0) {
-      this.round.sound.musicPlayLegacy()
+      this.round.sound.musicPlay()
     }
 
     if (buttonPause) {
@@ -2138,7 +2141,7 @@ export class fieldSystem {
 
     switch (this.stateId) {
       case this.STATE_PAUSE:
-        game.sound.musicPause()
+        // game.sound.musicPause()
         this.processPause()
         break
       case this.STATE_ROUND_CLEAR:
@@ -2714,8 +2717,8 @@ export class fieldSystem {
     // 게임을 불러오기 했다면, 일시정지 상태가 됩니다.
     this.stateId = this.STATE_LOADING_PAUSE
 
-    this.round.sound.musicPlayLegacy() // 임시조치
-    this.round.sound.musicPlay() // 재생되는지는 모르겠지만 일단 넣어봄
+    // 라운드의 일부 요소를 처리하기 위해서 1프레임 강제 진행
+    this.round.process() 
   }
 
   /**

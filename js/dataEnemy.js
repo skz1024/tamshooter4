@@ -2011,7 +2011,7 @@ class MeteoriteBombEnemyBullet extends EnemyBulletData {
     const MAX_DAMAGE = 16000
     for (let i = 0; i < enemy.length; i++) {
       let currentEnemy = enemy[i]
-      if (collision(enemy, this)) {
+      if (collision(currentEnemy, this)) {
         let targetDamage = Math.floor(currentEnemy.hpMax * 0.2)
         if (targetDamage < MIN_DAMAGE) {
           targetDamage = MIN_DAMAGE
@@ -2099,10 +2099,25 @@ class MeteoriteEnemyStone extends MeteoriteEnemyData {
     if (!this.isDied) return
 
     // 조각 4개를 추가한다.
-    fieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x, this.y, this.stoneType, 0)
-    fieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x + (this.width / 2), this.y, this.stoneType, 1)
-    fieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x + (this.width / 2), this.y + (this.height / 2), this.stoneType, 2)
-    fieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x, this.y + (this.height / 2), this.stoneType, 3)
+    let a = fieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x, this.y)
+    if (a instanceof MeteoriteEnemyStonePiece) {
+      a.stoneChange(this.stoneType, 0)
+    }
+
+    let b = fieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x + (this.width / 2), this.y)
+    if (b instanceof MeteoriteEnemyStonePiece) {
+      b.stoneChange(this.stoneType, 1)
+    }
+
+    let c = fieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x + (this.width / 2), this.y + (this.height / 2))
+    if (c instanceof MeteoriteEnemyStonePiece) {
+      c.stoneChange(this.stoneType, 2)
+    }
+
+    let d = fieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x, this.y + (this.height / 2))
+    if (d instanceof MeteoriteEnemyStonePiece) {
+      d.stoneChange(this.stoneType, 3)
+    }
 
     // 그리고 해당 객체는 삭제
     this.isDeleted = true
@@ -2110,37 +2125,46 @@ class MeteoriteEnemyStone extends MeteoriteEnemyData {
 }
 
 class MeteoriteEnemyStonePiece extends MeteoriteEnemyData {
-  /**
-   * 
-   * @param {[number, number]} option 
-   */
-  constructor (option = [0, 0]) {
-    super()
-    const imageDataList = [
-      [
-        imageDataInfo.meteoriteEnemy.stoneBlackPiece1,
-        imageDataInfo.meteoriteEnemy.stoneBlackPiece2,
-        imageDataInfo.meteoriteEnemy.stoneBlackPiece3,
-        imageDataInfo.meteoriteEnemy.stoneBlackPiece4
-      ],
-      [
-        imageDataInfo.meteoriteEnemy.stoneBrownPiece1,
-        imageDataInfo.meteoriteEnemy.stoneBrownPiece2,
-        imageDataInfo.meteoriteEnemy.stoneBrownPiece3,
-        imageDataInfo.meteoriteEnemy.stoneBrownPiece4
-      ],
-      [
-        imageDataInfo.meteoriteEnemy.stoneGreenPiece1,
-        imageDataInfo.meteoriteEnemy.stoneGreenPiece2,
-        imageDataInfo.meteoriteEnemy.stoneGreenPiece3,
-        imageDataInfo.meteoriteEnemy.stoneGreenPiece4
-      ]
+  static imageDataList = [
+    [
+      imageDataInfo.meteoriteEnemy.stoneBlackPiece1,
+      imageDataInfo.meteoriteEnemy.stoneBlackPiece2,
+      imageDataInfo.meteoriteEnemy.stoneBlackPiece3,
+      imageDataInfo.meteoriteEnemy.stoneBlackPiece4
+    ],
+    [
+      imageDataInfo.meteoriteEnemy.stoneBrownPiece1,
+      imageDataInfo.meteoriteEnemy.stoneBrownPiece2,
+      imageDataInfo.meteoriteEnemy.stoneBrownPiece3,
+      imageDataInfo.meteoriteEnemy.stoneBrownPiece4
+    ],
+    [
+      imageDataInfo.meteoriteEnemy.stoneGreenPiece1,
+      imageDataInfo.meteoriteEnemy.stoneGreenPiece2,
+      imageDataInfo.meteoriteEnemy.stoneGreenPiece3,
+      imageDataInfo.meteoriteEnemy.stoneGreenPiece4
     ]
+  ]
+
+  constructor () {
+    super()
+
+    // 우선 기본값으로 설정됨
+    this.setAutoImageData(imageSrc.enemy.meteoriteEnemy, MeteoriteEnemyStonePiece.imageDataList[0][0])
+    this.stoneType = 0
+    this.pieceNumber = 0
+  }
+
+  stoneChange (stoneType = 0, pieceNumber = 0) {
+    const imageDataList = MeteoriteEnemyStonePiece.imageDataList
+    this.stoneType = stoneType
+    this.pieceNumber = pieceNumber
 
     // 돌 타입 설정
     const pieceNumberMax = 4
-    this.stoneType = option.length > 0 ? option[0] : Math.floor(Math.random() * MeteoriteEnemyStone.TYPE_STONE_MAX)
-    this.pieceNumber = option.length > 1 ? option[1] : Math.floor(Math.random() * pieceNumberMax)
+    if (this.pieceNumber >= pieceNumberMax) {
+      this.pieceNumber = 0
+    }
 
     if (this.pieceNumber != null) {
       this.setAutoImageData(imageSrc.enemy.meteoriteEnemy, imageDataList[this.stoneType][this.pieceNumber])
@@ -2154,7 +2178,7 @@ class MeteoriteEnemyStonePiece extends MeteoriteEnemyData {
 
     // pieceNumber에 따라 이동 방향이 다릅니다.
     // 0: 왼쪽 위, 1: 오른쪽 위, 2: 오른쪽 아래, 3: 왼쪽 아래
-    switch (this.pieceNumber) {
+    switch (pieceNumber) {
       case 0:
         this.moveDirectionX = FieldData.direction.LEFT
         this.moveDirectionY = FieldData.direction.UP

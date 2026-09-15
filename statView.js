@@ -203,12 +203,18 @@ for (let i = 0; i <= StatItem.UPGRADE_LEVEL_MAX; i++) {
 let element5 = document.createElement('pre')
 element5.id = 'playerLvData'
 element5.textContent = '-player level data / max level: ' + StatUser.MAX_LEVEL + '-\n'
-+ 'level|exp     |attack|\n'
++ 'level|exp     |section |total   |attack|\n'
 pre?.appendChild(element5)
 
+let sectionExp = 0
+let totalExp = 0
 for (let i = 0; i < StatUser.expTable.length; i++) {
   let level = (i + '').padEnd(5, ' ') + '|'
   let exp = (StatUser.expTable[i] + '').padEnd(8, ' ') + '|'
+  sectionExp = i % 10 === 0 ? StatUser.expTable[i] : sectionExp + StatUser.expTable[i]
+  let section = (sectionExp + '').padEnd(8, ' ') + '|'
+  totalExp += StatUser.expTable[i]
+  let total = (totalExp + '').padEnd(8) + '|'
   let attack = (StatUser.attackLevelTable[i] + '').padEnd(6, ' ') + '|'
 
   let color = i % 2 === 0 ? '#F5FFF1' : '#DDE8D9'
@@ -221,6 +227,6 @@ for (let i = 0; i < StatUser.expTable.length; i++) {
   element.style.background = color
   element.style.width = '800px'
   element.style.color = 'black'
-  element.textContent = level + exp + attack
+  element.textContent = level + exp + section + total + attack
   pre?.appendChild(element)
 }
