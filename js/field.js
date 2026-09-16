@@ -1949,7 +1949,7 @@ export class fieldSystem {
     if (this.round == null) return 0
     if (this.round.time.currentTime < 30) return 0 // 적어도 30초이상 진행해야 골드를 얻을 수 있음.
 
-    let gold = this.round.stat.gold
+    let gold = this.round.stat.gold10SecRate
     let timeMultiple = Math.floor(this.round.time.currentTime / 10)
     return gold * timeMultiple
   }
@@ -2006,7 +2006,7 @@ export class fieldSystem {
       this.stateId = this.STATE_NORMAL // pause 상태 해제
       if (this.round != null) { // round 음악 다시 재생
         // game.sound.musicResume()
-        this.round.sound.musicPlay() // resume 상태가 해제되면 음악을 다시 재생시키도록 합니다.
+        this.round.sound.musicResume() // resume 상태가 해제되면 음악을 다시 재생시키도록 합니다.
       }
     } else if (this.round != null) {
       this.round.sound.musicPause()
@@ -2047,8 +2047,8 @@ export class fieldSystem {
     if (this.exitDelayCount === 0 && this.round != null) {
       let clearSoundSrc = this.round.clearSoundSrc !== '' ? this.round.clearSoundSrc : soundSrc.system.systemRoundClear
       game.sound.play(clearSoundSrc)
-      userSystem.plusExp(this.round.stat.clearBonus)
-      this.totalScore = this.fieldScore + this.round.stat.clearBonus
+      userSystem.plusExp(this.round.stat.clearBonusScore)
+      this.totalScore = this.fieldScore + this.round.stat.clearBonusScore
       this.roundEndWait()
       userSystem.addRoundClear(this.roundId) // 라운드 클리어 ID 추가
     }
@@ -2249,7 +2249,7 @@ export class fieldSystem {
   static getResultText () {
     let clearBonus = 0
     if (this.stateId === this.STATE_ROUND_CLEAR && this.round != null) {
-      clearBonus = this.round.stat.clearBonus
+      clearBonus = this.round.stat.clearBonusScore
     }
 
     let viewScore = this.totalScore * (this.exitDelayCount / this.SCORE_ENIMATION_MAX_FRAME)
@@ -2269,7 +2269,7 @@ export class fieldSystem {
 
     let clearBonus = 0
     if (this.stateId === this.STATE_ROUND_CLEAR && this.round != null) {
-      clearBonus = this.round.stat.clearBonus
+      clearBonus = this.round.stat.clearBonusScore
     }
 
     let resultText = this.getResultText()
@@ -2393,6 +2393,10 @@ export class fieldSystem {
       }
 
       // extends input (temp code)
+      for (let i = 0; i < this.round.extendedMemory.length; i++) {
+        const EINDEX = rd.START_INDEX + rd.EXTENDS_START + i
+        fieldSave.array[EINDEX] = this.round.extendedMemory[i]
+      }
     }
 
     // player area
@@ -2598,7 +2602,7 @@ export class fieldSystem {
       // 배경 레이어 (bgLayer 전용)
       let layer = this.round.bgLayer.getLayer()
       for (let i = 0; i < 10 && i < layer.length; i++) {
-        const LINDEX = rd.BGLAYER_OFFSET_START + (i * rd.BGLAYER_OFFSET_COUNT)
+        const LINDEX = rd.START_INDEX + rd.BGLAYER_OFFSET_START + (i * rd.BGLAYER_OFFSET_COUNT)
         layer[i].x = fieldSave.array[LINDEX + rd.BGLAYER_X]
         layer[i].y = fieldSave.array[LINDEX + rd.BGLAYER_Y]
         layer[i].speedX = fieldSave.array[LINDEX + rd.BGLAYER_SPEEDX]
@@ -2613,6 +2617,13 @@ export class fieldSystem {
       this.round.bgLegacy.backgroundSpeedX = fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDX]
       this.round.bgLegacy.backgroundSpeedY = fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDY]
     }
+
+    // round extendedmemory
+    for (let i = 0; i < this.round.extendedMemory.length; i++) {
+      const EINDEX = rd.START_INDEX + rd.EXTENDS_START + i
+      this.round.extendedMemory[i] = fieldSave.array[EINDEX]
+    }
+    this.round.readExtendedMemory() // 불러온 메모리를 읽어야 정상적으로 라운드 정보에 대입이 가능합니다.
 
     fieldState.playerObject.x = fieldSave.array[pl.START_INDEX + pl.X]
     fieldState.playerObject.y = fieldSave.array[pl.START_INDEX + pl.Y]

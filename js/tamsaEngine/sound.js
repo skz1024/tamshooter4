@@ -519,12 +519,7 @@ export class SoundSystem {
   }
 
   /** 
-   * 
-   * 이 코드는 과거 코드의 잔재로 추정됩니다.
-   * 
-   * 현재는 사용하지 않도록 변경했습니다.
-   * @deprecated 
-   * 
+   * musicPause로 인하여 음악이 정지된 경우, musicResume으로 이를 해제시키고 음악을 계속 재생시킬 수 있습니다.
    */
   musicResume () {
     if (this.currentMusic instanceof HTMLMediaElement) {

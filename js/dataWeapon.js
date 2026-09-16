@@ -2321,7 +2321,7 @@ class SkillSeondanilMini extends SkillSeondanil {
     super.processAttack()
 
     if (this.repeatCount === 0) {
-      fieldState.createEffectObject(this.hitEffect, this.x, this.y)
+      // fieldState.createEffectObject(this.hitEffect, this.x, this.y)
       soundSystem.play(soundSrc.skill.skillSeondanilHit)
     }
   }
@@ -2335,7 +2335,7 @@ class SkillHanjumeok extends WeaponData {
     this.moveSpeedX = 1
     this.setMultiTarget(10)
 
-    this.hitEffect = new CustomEffect(imageSrc.weapon.skill, imageDataInfo.skill.hanjumoek)
+    this.jumeokEffect = new CustomEffect(imageSrc.weapon.skill, imageDataInfo.skill.hanjumoek)
 
     let splashArea = this.getSplashArea()
     this.splashEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillHanjumeokSplash, splashArea.width, splashArea.height, 2)
@@ -2405,9 +2405,9 @@ class SkillHanjumeok extends WeaponData {
       let effectY = current.y + Math.floor(Math.random() * 80) - 40
 
       // 이펙트의 각도를 수정하기 위해, 필드에서 생성된 이펙트를 가져옵니다.
-      let returnEffect = fieldState.createEffectObject(this.hitEffect, effectX, effectY)
+      let returnEffect = fieldState.createEffectObject(this.jumeokEffect, effectX, effectY)
 
-      // 에니메이션 각도 수정 (객체의 각도를 수정하는것은 의미가 없음.)
+      // 에니메이션 각도 수정 (애니메이션 형태기 때문에 에니메이션 각도를 수정해야 합니다.)
       if (returnEffect != null && returnEffect.enimation != null) {
         returnEffect.enimation.degree = Math.random() * 360
       }
@@ -3509,7 +3509,7 @@ dataExportWeapon.set(ID.weapon.skillRapid, SkillRapid)
 dataExportWeapon.set(ID.weapon.skillRing, SkillRing)
 dataExportWeapon.set(ID.weapon.skillSeondanil, SkillSeondanil)
 dataExportWeapon.set(ID.weapon.skillSeondanilMini, SkillSeondanilMini)
-dataExportWeapon.set(ID.weapon.skillHanjumoek, SkillHanjumeok)
+dataExportWeapon.set(ID.weapon.skillHanjumeok, SkillHanjumeok)
 dataExportWeapon.set(ID.weapon.skillBoomerang, SkillBoomerang)
 dataExportWeapon.set(ID.weapon.skillMoon, SkillMoon)
 dataExportWeapon.set(ID.weapon.skillKalnal, SkillKalnal)

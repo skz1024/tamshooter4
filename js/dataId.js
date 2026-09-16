@@ -131,7 +131,7 @@ export class ID {
     skillRing: 16017,
     skillSeondanil: 16018,
     skillSeondanilMini: 16019,
-    skillHanjumoek: 16020,
+    skillHanjumeok: 16020,
     skillBoomerang: 16021,
     skillMoon: 16022,
 

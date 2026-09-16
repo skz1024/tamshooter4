@@ -2418,6 +2418,7 @@ class JemulEnemyHellShip extends JemulEnemyData {
     this.enimationUp  = new EnimationData(this.imageSrc, up.x, up.y, up.width, up.height, up.frame, 1, -1, this.width, this.height)
     this.enimationDown  = new EnimationData(this.imageSrc, down.x, down.y, down.width, down.height, down.frame, 1, -1, this.width, this.height)
 
+    this.moveDirectionX = FieldData.direction.RIGHT
     this.STATE_FRONT = 4
     this.STATE_UP = 5
     this.STATE_DOWN = 6
@@ -2470,14 +2471,26 @@ class JemulEnemyHellShip extends JemulEnemyData {
       this.moveDirectionX = FieldData.direction.RIGHT
     }
 
-    if (this.moveDirectionX === FieldData.direction.RIGHT) {
-      if (this.enimation) this.enimation.flip = 1
-      this.enimationUp.flip = 1
-      this.enimationDown.flip = 1
+    if (this.moveDirectionX === FieldData.direction.LEFT) {
+      if (this.moveSpeedX < 2) {
+        if (this.enimation) this.enimation.flip = 1
+        this.enimationUp.flip = 1
+        this.enimationDown.flip = 1
+      } else {
+        if (this.enimation) this.enimation.flip = 0
+        this.enimationUp.flip = 0
+        this.enimationDown.flip = 0
+      }
     } else {
-      if (this.enimation) this.enimation.flip = 0
-      this.enimationUp.flip = 0
-      this.enimationDown.flip = 0
+      if (this.moveSpeedX > 2) {
+        if (this.enimation) this.enimation.flip = 1
+        this.enimationUp.flip = 1
+        this.enimationDown.flip = 1
+      } else {
+        if (this.enimation) this.enimation.flip = 0
+        this.enimationUp.flip = 0
+        this.enimationDown.flip = 0
+      }
     }
 
     if (this.state === this.STATE_UP || this.state === this.STATE_DOWN) {

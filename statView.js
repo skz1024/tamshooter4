@@ -1,6 +1,6 @@
 //@ts-check
 
-import { StatItem, StatPlayerSkill, StatPlayerWeapon, StatUser, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, dataExportStatRoundBalance, dataExportStatWeapon } from "./js/dataStat.js"
+import { StatItem, StatPlayerSkill, StatPlayerWeapon, StatUser, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, dataExportStatWeapon } from "./js/dataStat.js"
 
 /** 현재에 해당하는 스킬 값을 얻어옴 */
 const getSkillColor = (balance = '', coolTime = 20) => {
@@ -28,6 +28,7 @@ const getSkillColor = (balance = '', coolTime = 20) => {
 
   return color
 }
+
 
 let pre = document.getElementById('pre')
 let element = document.createElement('pre')
@@ -69,6 +70,12 @@ dataExportStatPlayerSkill.forEach((value) => {
   element.style.color = 'black'
   element.style.width = '800px'
   element.textContent = name + group + balance + coolTime + delay + attackMultiple + maxTarget + shotCount + repeatCount + attackCount + weaponAttack + isMultiTarget
+  element.addEventListener('mouseenter', () => {
+    element.style.outline = '3px solid black'
+  })
+  element.addEventListener('mouseleave', () => {
+    element.style.outline = ''
+  })
   pre?.appendChild(element)
 })
 
@@ -121,31 +128,36 @@ dataExportStatPlayerWeapon.forEach((value) => {
   element.style.width = '800px'
   element.style.color = 'black'
   element.textContent = name + group + balance + delay + shotCount + repeatCount + attackMultiple + splashTarget + weaponAttack
+  element.addEventListener('mouseenter', () => {
+    element.style.outline = '3px solid black'
+  })
+  element.addEventListener('mouseleave', () => {
+    element.style.outline = ''
+  })
   pre?.appendChild(element)
 })
 
 let element3 = document.createElement('pre')
 element3.id = 'roundList'
 element3.textContent = '-roundList-\n'
-+ 'round|require|standard|finish|clear  |gold |gold |balance|play|timediv|round name|round info |\n'
-+ 'text |level  |power   |time  |bonus  |value|total|score  |time|score  |          |           |\n'
++ 'round|req  |req   |finish|clear  |gold |gold |target |play|timediv|round name|round info |\n'
++ 'text |level|attack|time  |bonus  |value|total|score  |time|score  |          |           |\n'
 pre?.appendChild(element3)
 
 dataExportStatRound.forEach((value, keyId) => {
   let roundText = '' + value.roundText.padEnd(5, ' ').slice(0, 5) + '|'
-  let requireLevel = ('' + value.requireLevel).padEnd(7, ' ') + '|'
-  let requireAttack = ('' + value.requireAttack).padEnd(8, ' ') + '|'
+  let requireLevel = ('' + value.requireLevel).padEnd(5, ' ') + '|'
+  let requireAttack = ('' + value.requireAttack).padEnd(6, ' ') + '|'
   let finishTime = ('' + value.finishTime).padEnd(6, ' ') + '|'
-  let clearBonus = ('' + value.clearBonus).padEnd(7, ' ') + '|'
-  let goldValue = ('' + value.gold).padEnd(5, ' ') + '|'
+  let clearBonus = ('' + value.clearBonusScore).padEnd(7, ' ') + '|'
+  let goldValue = ('' + value.gold10SecRate).padEnd(5, ' ') + '|'
   let goldTotal = ('' + value.goldTotal).padEnd(5, ' ') + '|'
 
-  let balanceData = dataExportStatRoundBalance.get(keyId)
-  let balanceScore = ('' + (balanceData != null ? balanceData.balanceScore : 0)).padEnd(7, ' ') + '|'
-  let playTime = ('' + (balanceData != null ? balanceData.playTime : 0)).padEnd(4, ' ') + '|'
-  let timeDivScore = ('' + (balanceData != null ? balanceData.timeDivScore : 0)).padEnd(7, ' ') + '|'
+  let balanceScore = ('' + (value.baseTime * value.scorePerSecond)).padEnd(7, ' ') + '|'
+  let playTime = ('' + value.baseTime).padEnd(4, ' ') + '|'
+  let timeDivScore = ('' + value.scorePerSecond).padEnd(7, ' ') + '|'
   let roundName = '' + value.roundName.padEnd(15, ' ')
-  let roundInfo = '' // value.roundInfo + '|'
+  let roundInfo = value.roundInfo // + '|'
 
   let textA = roundText + requireLevel + requireAttack + finishTime + clearBonus + goldValue + goldTotal
   let textB = balanceScore + playTime + timeDivScore + roundName + roundInfo
@@ -158,6 +170,12 @@ dataExportStatRound.forEach((value, keyId) => {
   element.style.color = 'black'
   element.style.width = '800px'
   element.textContent = textA + textB
+  element.addEventListener('mouseenter', () => {
+    element.style.background = 'skyblue'
+  })
+  element.addEventListener('mouseleave', () => {
+    element.style.background = color
+  })
   pre?.appendChild(element)
 })
 
@@ -197,6 +215,12 @@ for (let i = 0; i <= StatItem.UPGRADE_LEVEL_MAX; i++) {
   element.style.color = 'black'
   element.style.width = '800px'
   element.textContent = level + attackPercent + attackDifferent + costPercent + totalCostPercentString + refundPercent + totalCostRefund + totalCostDifferent + totalCostPrevDiff
+  element.addEventListener('mouseenter', () => {
+    element.style.background = 'skyblue'
+  })
+  element.addEventListener('mouseleave', () => {
+    element.style.background = color
+  })
   pre?.appendChild(element)
 }
 
@@ -228,5 +252,11 @@ for (let i = 0; i < StatUser.expTable.length; i++) {
   element.style.width = '800px'
   element.style.color = 'black'
   element.textContent = level + exp + section + total + attack
+  element.addEventListener('mouseenter', () => {
+    element.style.background = 'skyblue'
+  })
+  element.addEventListener('mouseleave', () => {
+    element.style.background = color
+  })
   pre?.appendChild(element)
 }

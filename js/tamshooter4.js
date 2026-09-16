@@ -1981,11 +1981,13 @@ class UIComponentInventory extends UIComponentBaseMenuObject {
 class UIComponentOption extends UIComponentBaseMenuObject {
   /** 옵션 목록의 리스트 */
   optionList = {
-    MENU_SOUND_VOLUME: 0,
-    MENU_MUSIC_VOLUME: 1,
-    MENU_RESULT_AUTO_SKIP: 2,
-    MENU_SHOW_ENEMY_HP: 3,
-    MENU_SHOW_DAMAGE: 4,
+    MENU_SOUND_ON: 0,
+    MENU_SOUND_VOLUME: 1,
+    MENU_MUSIC_ON: 2,
+    MENU_MUSIC_VOLUME: 3,
+    MENU_RESULT_AUTO_SKIP: 4,
+    MENU_SHOW_ENEMY_HP: 5,
+    MENU_SHOW_DAMAGE: 6,
   }
 
   optionValue = {
@@ -2009,7 +2011,9 @@ class UIComponentOption extends UIComponentBaseMenuObject {
     this.cursor = { value: 0 }
 
     const boxText = [
+      'sound on',
       'sound volume',
+      'music on',
       'music volume',
       'result auto skip',
       'show enemy hp',
@@ -2050,7 +2054,9 @@ class UIComponentOption extends UIComponentBaseMenuObject {
   optionChange (relativeValue = 0) {
     let volumeTable = [0, 20, 40, 60, 80, 100]
 
-    if (this.cursor.value === this.optionList.MENU_SOUND_VOLUME) {
+    if (this.cursor.value === this.optionList.MENU_SOUND_ON) {
+      this.optionValue.soundOn = !this.optionValue.soundOn
+    } else if (this.cursor.value === this.optionList.MENU_SOUND_VOLUME) {
       if (relativeValue === 0) {
         // 마우스 클릭 형태로 간주, 다음 배열 번호로 이동
         // 배열에 있는 다음 값보다 작으면 다음 값으로 이동하게 됩니다.
@@ -2060,6 +2066,8 @@ class UIComponentOption extends UIComponentBaseMenuObject {
         this.optionValue.soundVolume += relativeValue
       }
       game.sound.play(soundSrc.system.systemCursor)
+    } else if (this.cursor.value === this.optionList.MENU_MUSIC_ON) {
+      this.optionValue.musicOn = !this.optionValue.musicOn
     } else if (this.cursor.value === this.optionList.MENU_MUSIC_VOLUME) {
       if (relativeValue === 0) {
         // 마우스 클릭 형태로 간주, 다음 배열 번호로 이동
@@ -2136,7 +2144,9 @@ class UIComponentOption extends UIComponentBaseMenuObject {
 
   displayValue () {
     const value = [
+      this.optionValue.soundOn,
       this.optionValue.soundVolume,
+      this.optionValue.musicOn,
       this.optionValue.musicVolume,
       this.optionValue.resultAutoSkip,
       this.optionValue.showEnemyHp,
@@ -5699,8 +5709,8 @@ export class gameSystem {
     buffer[offset++] = playTime.minute;
     buffer[offset++] = playTime.second;
     buffer[offset++] = opt.soundOn ? 1 : 0;
-    buffer[offset++] = opt.soundVolume;
     buffer[offset++] = opt.musicOn ? 1 : 0;
+    buffer[offset++] = opt.soundVolume;
     buffer[offset++] = opt.musicVolume;
     buffer[offset++] = opt.resultAutoSkip ? 1 : 0;
     buffer[offset++] = opt.showEnemyHp ? 1 : 0;

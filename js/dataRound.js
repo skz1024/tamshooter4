@@ -871,7 +871,7 @@ class BaseSound {
   /** 
    * 새로운 인덱스 영역에 음악을 추가합니다.
    * 
-   * 암묵적으로는 음악 개수의 제한이 없으나, 가급적이면 5개 이하로 설정해주세요.
+   * 코드상으로는 음악 개수의 제한은 없습니다만, 필요한 경우가 아니라면 음악은 5개 이하를 권장합니다.
    * 
    * @param {string} [src=''] 음악의 경로, 값이 없다고 판단된다면 음악을 추가하지 않습니다.
    * @param {boolean} [isMainMusic=false] 값이 true일 경우 메인 뮤직으로 변경, 이 경우 인덱스 번호를 자동으로 새로 넣은 음악으로 지정합니다.
@@ -885,6 +885,11 @@ class BaseSound {
       // 마지막에 등록된 음악의 인덱스는 배열의 길이에서 1을 빼야 합니다.
       this.currentMusicIndex = this._musicSrcIndex.length - 1
     }
+  }
+
+  /** 음악을 정지한 후, 처음부터 재생하는 것이 아닌 이어서 재생할 때 사용하는 함수 */
+  static musicResume () {
+    game.sound.musicResume()
   }
 
   /** 현재 음악을 재생합니다.
@@ -1039,14 +1044,20 @@ class BaseSound {
    * nextIndex가 0일 경우, fadeOut이 진행됩니다.
    */
   static musicChange (nextIndex = 0, fadeFrame = 0) {
-    if (nextIndex < this._musicSrcIndex.length) {
-      console.warn('next: ' + nextIndex + ', max: ' + this._musicSrcIndex)
+    if (nextIndex >= this._musicSrcIndex.length) {
+      console.warn('next: ' + nextIndex + ', max: ' + this._musicSrcIndex.length)
       console.warn('This request is ignored. An invalid index was referenced.')
     } else if (nextIndex === 0) {
       // fadeout만 진행
       soundSystem.musicFadeOut(fadeFrame / game.FPS)
+      this.currentMusicIndex = 0
     } else if (this.currentMusicIndex === 0) {
       soundSystem.musicPlay(this._musicSrcIndex[nextIndex], 0, fadeFrame / game.FPS)
+      this.currentMusicIndex = nextIndex
+    } else if (fadeFrame === 0) {
+      // 페이드 프레임이 0일 때, 페이드 버그문제 때문에 이 조건을 추가하였음.
+      // 왜 fadeFrame이 0일때 음악 재생 버그가 발생하는지 난 모르겠음.
+      soundSystem.musicPlay(this._musicSrcIndex[nextIndex], 0)
       this.currentMusicIndex = nextIndex
     } else {
       // fadeout, fadein 둘 다 진행
@@ -1506,8 +1517,8 @@ class BaseStat extends StatRound {
     /** (해당 라운드를 원할하게 플레이 할 수 있는) 권장 공격력, 입장은 상관 없음 */ this.requireLevel = stat.requireLevel
     /** 라운드 이름, text.js에서 값을 가져와서 입력하세요. */ this.requireAttack = stat.requireAttack
     /** 라운드 종료 시간(이 시간이 되면 클리어), 단위: 초 */ this.finishTime = stat.finishTime
-    /** 클리어 보너스 점수 */ this.clearBonus = stat.clearBonus
-    /** 획득 골드의 라운드 기준값 10초 단위로 진행할 때마다 획득 총량은 해당 골드만큼 증가함 */ this.gold = stat.gold
+    /** 클리어 보너스 점수 */ this.clearBonusScore = stat.clearBonusScore
+    /** 획득 골드의 라운드 기준값 10초 단위로 진행할 때마다 획득 총량은 해당 골드만큼 증가함 */ this.gold10SecRate = stat.gold10SecRate
   }
 
   /**
@@ -1524,8 +1535,8 @@ class BaseStat extends StatRound {
     this.requireLevel = stat.requireLevel
     this.requireAttack = stat.requireAttack
     this.finishTime = stat.finishTime
-    this.clearBonus = stat.clearBonus
-    this.gold = stat.gold
+    this.clearBonusScore = stat.clearBonusScore
+    this.gold10SecRate = stat.gold10SecRate
   }
 }
 
@@ -2012,6 +2023,7 @@ export class RoundData {
     this.processTime()
     this.processMusic()
     this.processSaveString()
+    this.writeExtendedMemory()
   }
 
   processTime () {
@@ -2214,15 +2226,10 @@ export class RoundData {
   processMusic () {
     if (this.timeCheckFrame(0, 12)) {
       // 게임 시작 즉시 음악을 호출하는 것이 불가능하므로, 약간의 지연을 넣어서 처리했습니다.
-      this.sound.currentMusicSrc = this.sound.roundStartMusicSrc
-      this.sound.musicPlayStartTime()
-
-      // 또는
       if (this.sound.currentMusicSrc !== '') {
         soundSystem.musicPlay(this.sound.currentMusicSrc)
-      } else {
-        this.sound.currentMusicIndex = 1
-        this.sound.musicPlay()
+      } else if (this.sound.currentMusicIndex !== 0) {
+        soundSystem.musicPlay(this.sound._musicSrcIndex[1])
       }
     }
 
@@ -2758,7 +2765,6 @@ class Round1_3 extends RoundData {
     super()
     this.stat.setStat(ID.round.round1_3)
     this.bgLegacy.imageSrc = imageSrc.round.round1_3_meteoriteDeep
-    this.sound.roundStartMusicSrc = soundSrc.music.music02_meteorite_zone_field
 
     // ---
     this.battleMusic = soundSrc.music.music03_meteorite_zone_battle
@@ -2767,13 +2773,13 @@ class Round1_3 extends RoundData {
 
     this.phase.addRoundPhase(this, this.roundPhase00, 1, 10)
     this.phase.addRoundPhase(this, this.roundPhase01, 11, 30)
-    this.phase.addRoundPhase(this, this.roundPhase02, 31, 70)
-    this.phase.addRoundPhase(this, this.roundPhase03, 71, 90)
-    this.phase.addRoundPhase(this, this.roundPhase04, 91, 140)
-    this.phase.addRoundPhase(this, this.roundPhase05, 141, 160)
-    this.phase.addRoundPhase(this, this.roundPhase06, 161, 180)
-    this.phase.addRoundPhase(this, this.roundPhase07, 181, 200)
-    this.phase.addRoundPhase(this, this.roundPhase08, 201, 210)
+    this.phase.addRoundPhase(this, this.roundPhase02, 31, 60)
+    this.phase.addRoundPhase(this, this.roundPhase03, 61, 75)
+    this.phase.addRoundPhase(this, this.roundPhase04, 76, 110)
+    this.phase.addRoundPhase(this, this.roundPhase05, 111, 130)
+    this.phase.addRoundPhase(this, this.roundPhase06, 131, 150)
+    this.phase.addRoundPhase(this, this.roundPhase07, 151, 170)
+    this.phase.addRoundPhase(this, this.roundPhase08, 171, 180)
 
     // 로드해야 할 파일 리스트 작성
     this.load.addImageList([
@@ -2792,6 +2798,9 @@ class Round1_3 extends RoundData {
 
     this.load.addImageList(RoundPackLoad.getRound1ShareImage())
     this.load.addSoundList(RoundPackLoad.getRound1ShareSound())
+
+    this.sound.addMusicIndex(soundSrc.music.music02_meteorite_zone_field, true)
+    this.sound.addMusicIndex(soundSrc.music.music03_meteorite_zone_battle)
   }
 
   processBackground () {
@@ -2831,7 +2840,7 @@ class Round1_3 extends RoundData {
 
   roundPhase00 () {
     // 운석이 쏟아지는(?) 페이즈
-    if (this.timeCheckInterval(0, 9, 90)) {
+    if (this.timeCheckInterval(0, 9, 60)) {
       this.field.createEnemy(ID.enemy.meteoriteEnemy.class1)
       this.field.createEnemy(ID.enemy.meteoriteEnemy.class2)
       this.field.createEnemy(ID.enemy.meteoriteEnemy.class3)
@@ -2846,7 +2855,7 @@ class Round1_3 extends RoundData {
     // 보스가 한번만 등장하도록, currentTimeFrame을 사용하여 추가로 시간 조건을 넣었습니다.
     if (this.timeCheckFrame(11, 0)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss, 900)
-      this.sound.musicChangeOLD(this.battleMusic, 2)
+      this.sound.musicChange(2, 60) // 운석 전투 지대로 음악 변경
     }
 
     // 보스가 죽었다면, 스킵 (이 구간은 건너뜀)
@@ -2859,58 +2868,44 @@ class Round1_3 extends RoundData {
   }
 
   roundPhase02 () {
-    // 음악 변경
-    if (this.timeCheckFrame(31, 1)) {
-      this.sound.musicChangeOLD(this.sound.roundStartMusicSrc, 2)
-    }
-
-    if (this.timeCheckInterval(31, 36, 20)) {
+    if (this.timeCheckInterval(31, 35, 20)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.rotateRocket)
     }
-    if (this.timeCheckInterval(37, 42, 30)) {
+    if (this.timeCheckInterval(36, 41, 30)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.energyBolt)
     }
-    if (this.timeCheckInterval(43, 48, 30)) {
+    if (this.timeCheckInterval(42, 45, 30)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellDrill)
     }
-    if (this.timeCheckInterval(49, 54, 30)) {
+    if (this.timeCheckInterval(46, 50, 30)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellSpike)
     }
-    if (this.timeCheckInterval(55, 67, 60)) {
+    if (this.timeCheckInterval(51, 57, 60)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellAir)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellShip)
     }
 
     // 적의 수가 2 초과라면, 시간이 일시정지합니다.
-    this.timePauseWithEnemyCount(69, 2)
-
-    // 배경음악 정지
-    if (this.timeCheckFrame(68)) {
-      this.sound.musicChangeOLD('', 1)
-    }
+    this.timePauseWithEnemyCount(59, 2)
   }
 
   roundPhase03 () {
-    // 이 페이즈 이후 부터 해당 음악이 적용됩니다.
-    if (this.timeCheckFrame(71, 1)) {
+    if (this.timeCheckFrame(61, 1)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss, 900)
-      this.sound.currentMusicSrc = this.battleMusic
-      // 음악을 처음부터 재생하는것이 아닌 중간부터 재생
-      this.sound.musicPlayStartTime(19.194)
     }
 
     // 보스가 죽었다면, 해당 구간 스킵 처리
-    if (this.timeCheckInterval(75, 89, 30) && this.field.enemyNothingCheck()) {
-      this.time.setCurrentTime(90)
+    if (this.timeCheckInterval(61, 74, 30) && this.field.enemyNothingCheck()) {
+      this.time.setCurrentTime(75)
     }
 
     // 적이 있다면, 시간을 멈춥니다.
-    this.timePauseWithEnemyCount(90)
+    this.timePauseWithEnemyCount(75)
   }
 
   roundPhase04_1 () {
     // 감지기 + 제물에어 + 제물쉽 = 초당 60% 딜 필요
-    if (this.timeCheckInterval(91, 100, 60)) {
+    if (this.timeCheckInterval(77, 83, 60)) {
       this.field.createEnemy(ID.enemy.spaceEnemy.gamjigi)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellAir)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellShip)
@@ -2918,7 +2913,7 @@ class Round1_3 extends RoundData {
   }
 
   roundPhase04_2 () {
-    if (this.timeCheckInterval(101, 110, 120)) {
+    if (this.timeCheckInterval(84, 90, 120)) {
       for (let i = 0; i < 6; i++) {
         this.field.createEnemy(ID.enemy.jemulEnemy.rotateRocket, graphicSystem.CANVAS_WIDTH, (i * 80))
       }
@@ -2927,14 +2922,14 @@ class Round1_3 extends RoundData {
 
   roundPhase04_3 () {
     // 48%
-    if (this.timeCheckInterval(111, 120, 60)) {
+    if (this.timeCheckInterval(91, 95, 60)) {
       for (let i = 0; i < 4; i++) {
         this.field.createEnemy(ID.enemy.jemulEnemy.energyBolt)
       }
     }
 
     // 60%
-    if (this.timeCheckInterval(112, 113, 60)) {
+    if (this.timeCheckInterval(96, 100, 60)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellDrill, graphicSystem.CANVAS_WIDTH_HALF + 40, 0)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellDrill, graphicSystem.CANVAS_WIDTH_HALF - 40, 0)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellDrill, graphicSystem.CANVAS_WIDTH_HALF + 40, graphicSystem.CANVAS_HEIGHT)
@@ -2942,7 +2937,7 @@ class Round1_3 extends RoundData {
     }
 
     // 40%
-    if (this.timeCheckInterval(116, 117, 60)) {
+    if (this.timeCheckInterval(96, 100, 60)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellSpike, 0, 0)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellSpike, graphicSystem.CANVAS_WIDTH, 0)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellSpike, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT)
@@ -2951,23 +2946,21 @@ class Round1_3 extends RoundData {
   }
 
   roundPhase04_4 () {
-    if (this.timeCheckInterval(121, 122, 30)) {
+    if (this.timeCheckInterval(101, 102, 30)) {
       this.field.createEnemy(ID.enemy.meteoriteEnemy.bomb)
       this.field.createEnemy(ID.enemy.meteoriteEnemy.blackMeteo)
       this.field.createEnemy(ID.enemy.meteoriteEnemy.whiteMeteo)
     }
 
-    if (this.timeCheckInterval(123, 127, 20)) {
+    if (this.timeCheckInterval(103, 104, 20)) {
       this.field.createEnemy(ID.enemy.spaceEnemy.gamjigi)
     }
 
-    if (this.timeCheckInterval(127, 130, 10)) {
+    if (this.timeCheckInterval(106, 107, 20)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.rotateRocket)
     }
-  }
 
-  roundPhase04_5 () {
-    if (this.timeCheckInterval(131, 137, 30)) {
+    if (this.timeCheckInterval(107, 107, 30)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellAir)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellShip)
     }
@@ -2978,27 +2971,26 @@ class Round1_3 extends RoundData {
     this.roundPhase04_2()
     this.roundPhase04_3()
     this.roundPhase04_4()
-    this.roundPhase04_5()
-    this.timePauseWithEnemyCount(139, 4)
+    this.timePauseWithEnemyCount(109, 5)
   }
 
   roundPhase05 () {
-    if (this.timeCheckInterval(141) && this.time.currentTimeFrame === 0) {
+    if (this.timeCheckInterval(111) && this.time.currentTimeFrame === 0) {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss, 900)
     }
 
     // 보스가 죽었다면 지속적으로 적이 등장 (이 구간부터 스킵할 수 없음)
-    if (this.timeCheckInterval(145, 158, 60) && this.field.enemyNothingCheck()) {
+    if (this.timeCheckInterval(115, 128, 60) && this.field.enemyNothingCheck()) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellAir)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellShip)
     }
 
     // 적이 있다면, 시간을 멈춥니다.
-    this.timePauseWithEnemyCount(159, 0)
+    this.timePauseWithEnemyCount(129, 0)
   }
 
   roundPhase06 () {
-    if (this.timeCheckInterval(161) && this.time.currentTimeFrame === 0) {
+    if (this.timeCheckInterval(131) && this.time.currentTimeFrame === 0) {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss, 900)
       for (let i = 0; i < 5; i++) {
         this.field.createEnemy(ID.enemy.jemulEnemy.hellShip)
@@ -3006,74 +2998,66 @@ class Round1_3 extends RoundData {
     }
 
     // 보스까지 있는데 로켓까지 나온다. 지옥이다.
-    if (this.timeCheckInterval(166, 176, 60)) {
+    if (this.timeCheckInterval(136, 146, 60)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.rotateRocket, graphicSystem.CANVAS_WIDTH, 0)
     }
 
     // 보스가 죽은경우 로켓이 쏟아짐
-    if (this.timeCheckInterval(165, 178, 20) && this.field.enemyNothingCheck()) {
+    if (this.timeCheckInterval(135, 148, 20) && this.field.enemyNothingCheck()) {
       this.field.createEnemy(ID.enemy.jemulEnemy.rotateRocket, graphicSystem.CANVAS_WIDTH, 0)
     }
 
     // 적이 있다면, 시간을 멈춥니다.
-    this.timePauseWithEnemyCount(179, 0)
+    this.timePauseWithEnemyCount(149, 0)
   }
 
   roundPhase07 () {
     // 한번 더?
-    if (this.timeCheckInterval(181) && this.time.currentTimeFrame === 0) {
+    if (this.timeCheckInterval(151) && this.time.currentTimeFrame === 0) {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss, 900)
       this.field.createEnemy(ID.enemy.spaceEnemy.gamjigi)
     }
 
     // 감지기 출현
-    if (this.timeCheckInterval(184, 191, 60)) {
+    if (this.timeCheckInterval(153, 156, 60)) {
       this.field.createEnemy(ID.enemy.spaceEnemy.gamjigi)
     }
 
     // 비행기의 추가적인 공격
-    if (this.timeCheckInterval(185, 185, 30)) {
+    if (this.timeCheckInterval(158, 158, 30)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellShip, graphicSystem.CANVAS_WIDTH, 0)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellShip, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT_HALF)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellShip, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT)
     }
 
     // 비행기의 추가적인 공격
-    if (this.timeCheckInterval(189, 189, 30)) {
+    if (this.timeCheckInterval(164, 164, 30)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellAir, graphicSystem.CANVAS_WIDTH, 0)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellAir, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT_HALF)
       this.field.createEnemy(ID.enemy.jemulEnemy.hellAir, graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT)
     }
 
     // 감지기 또 출현...
-    if (this.timeCheckInterval(195, 198, 20)) {
+    if (this.timeCheckInterval(165, 166, 20)) {
       this.field.createEnemy(ID.enemy.spaceEnemy.gamjigi)
     }
 
     // 적이 있다면, 시간을 멈춥니다.
-    this.timePauseWithEnemyCount(199, 0)
+    this.timePauseWithEnemyCount(169, 0)
   }
 
   roundPhase08 () {
     // 아직도 안끝났다! 마지막 페이즈
-    if (this.timeCheckInterval(200, 206, 10)) {
+    if (this.timeCheckInterval(171, 176, 10)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.hellDrill)
     }
 
     // 적이 있다면, 시간을 멈춥니다.
-    this.timePauseWithEnemyCount(208, 0)
+    this.timePauseWithEnemyCount(178, 0)
   }
 
   process () {
     super.process()
-  }
-
-  loadProcess () {
-
-    // 꼼수긴 하지만 어쩔 수 없음
-    // if (this.phase.getCurrentPhase() >= 4 && this.sound.currentMusicSrc != this.battleMusic) {
-    //   this.sound.musicChange(this.battleMusic, 2)
-    // }
   }
 
   display () {
@@ -3090,10 +3074,13 @@ class Round1_4 extends RoundData {
   constructor () {
     super()
     this.stat.setStat(ID.round.round1_4)
-    this.sound.roundStartMusicSrc = soundSrc.music.music03_meteorite_zone_battle
     this.waitTimeFrame = 0
     this.backgroundDegree = 0
     this.backgroundFilp = 0
+    this.sound.addMusicIndex(soundSrc.music.music03_meteorite_zone_battle, true)
+    this.sound.addMusicIndex(soundSrc.music.music06_round1_boss_thema)
+    this.sound.addMusicIndex(soundSrc.music.music08_round1_4_jemul)
+    this.sound.addMusicIndex(soundSrc.music.music26_round1_4_blackSpace)
 
     this.messageSound = {
       message1: soundSrc.round.r1_4_message1,
@@ -3164,10 +3151,21 @@ class Round1_4 extends RoundData {
       this.messageSound.jemulstar,
       this.messageSound.jemulstart,
       soundSrc.round.r1_4_jemulFail,
+      soundSrc.music.music26_round1_4_blackSpace
     ])
 
     this.load.addImageList(RoundPackLoad.getRound1ShareImage())
     this.load.addSoundList(RoundPackLoad.getRound1ShareSound())
+  }
+
+  writeExtendedMemory () {
+    this.extendedMemory[0] = this.saveList.anotherRoute ? 1 : 0
+    this.extendedMemory[1] = this.saveList.anotherRoutePlusTimeFrame
+  }
+
+  readExtendedMemory () {
+    this.saveList.anotherRoute = this.extendedMemory[0] ? true : false
+    this.saveList.anotherRoutePlusTimeFrame = this.extendedMemory[1]
   }
 
   processBackground () {
@@ -3212,7 +3210,7 @@ class Round1_4 extends RoundData {
     // 시작하자마자 보스 등장 (0 ~ 15)
     if (this.timeCheckInterval(3) && this.time.currentTimeFrame === 0) {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss)
-      this.sound.musicFadeInLegacy(soundSrc.music.music06_round1_boss_thema, 0)
+      this.sound.musicChange(2, 10)
     }
 
     // 보스가 일찍 죽으면 해당 페이즈 스킵
@@ -3222,15 +3220,20 @@ class Round1_4 extends RoundData {
 
     this.timePauseWithEnemyCount(15)
 
+    // 적이 남아있는지 확인하고, 아무것도 없으면 음악을 페이드 아웃함
     if (this.timeCheckInterval(15) && this.field.enemyNothingCheck()) {
-      this.sound.musicFadeOutLegacy(60)
+      this.sound.musicChange(0, 60)
+    }
+
+    if (this.timeCheckInterval(17)) {
+      this.sound.musicStop()
     }
   }
 
   roundPhase01 () {
     // 진짜 보스 등장(...)
     if (this.timeCheckFrame(21)) {
-      this.sound.musicFadeInLegacy(this.sound.roundStartMusicSrc, 0)
+      this.sound.musicChange(1, 30)
       this.field.createEnemy(ID.enemy.jemulEnemy.bossEye, graphicSystem.CANVAS_WIDTH_HALF - 100, graphicSystem.CANVAS_HEIGHT_HALF - 100)
     }
     
@@ -3297,7 +3300,7 @@ class Round1_4 extends RoundData {
       }
 
       if (this.timeCheckFrame(phase2Time + 25)) {
-        // 보스 죽이기 (점수도 얻음.)
+        // 보스 죽이기 (그 때문에 플레이어도 일정 점수를 얻음.)
         boss.message = 'die'
       }
     }
@@ -3313,7 +3316,7 @@ class Round1_4 extends RoundData {
     const phase3End = this.phase.phaseTime[3].endTime
 
     if (this.timeCheckFrame(phase3Time, 5)) {
-      this.sound.musicFadeInLegacy(soundSrc.music.music08_round1_4_jemul, 0)
+      this.sound.musicChange(3, 0)
     }
 
     // 배경 흔들기는 processBackground에서 처리합니다.
@@ -3371,7 +3374,7 @@ class Round1_4 extends RoundData {
     }
 
     if (this.timeCheckFrame(phase3Time + 22)) {
-      this.sound.musicFadeInLegacy(soundSrc.music.music26_round1_4_blackSpace)
+      this.sound.musicChange(4)
     }
 
     // background layer change
@@ -3465,17 +3468,15 @@ class Round1_5 extends RoundData {
     this.stat.setStat(ID.round.round1_5)
     this.bgLegacy.imageSrc = imageSrc.round.round1_4_meteoriteDark
     this.redZoneImage = imageSrc.round.round1_5_meteoriteRed
-    this.sound.roundStartMusicSrc = soundSrc.music.music04_meteorite_zone_red
 
     this.phase.addRoundPhase(this, this.roundPhase00, 1, 30)
     this.phase.addRoundPhase(this, this.roundPhase01, 31, 60)
     this.phase.addRoundPhase(this, this.roundPhase02, 61, 90)
     this.phase.addRoundPhase(this, this.roundPhase03, 91, 107)
     this.phase.addRoundPhase(this, this.roundPhase04, 108, 120)
-    this.phase.addRoundPhase(this, this.roundPhase05, 121, 150)
-    this.phase.addRoundPhase(this, this.roundPhase06, 151, 180)
-    this.phase.addRoundPhase(this, this.roundPhase07, 181, 200)
-    this.phase.addRoundPhase(this, this.roundPhase08, 201, 210)
+    this.phase.addRoundPhase(this, this.roundPhase05, 121, 140)
+    this.phase.addRoundPhase(this, this.roundPhase06, 141, 166)
+    this.phase.addRoundPhase(this, this.roundPhase07, 167, 180)
 
     this.load.addImageList([
       imageSrc.round.round1_4_meteoriteDark,
@@ -3490,6 +3491,9 @@ class Round1_5 extends RoundData {
       soundSrc.music.music02_meteorite_zone_field,
     ])
 
+    this.sound.addMusicIndex(soundSrc.music.music04_meteorite_zone_red, true)
+    this.sound.addMusicIndex(soundSrc.music.music02_meteorite_zone_field)
+
     this.load.addImageList(RoundPackLoad.getRound1ShareImage())
     this.load.addSoundList(RoundPackLoad.getRound1ShareSound())
   }
@@ -3497,22 +3501,27 @@ class Round1_5 extends RoundData {
   processBackground () {
     const imageA = imageSrc.round.round1_3_meteoriteDeep
     let phase7Start = this.phase.phaseTime[7].startTime
-    let phase8Start = this.phase.phaseTime[8].startTime
+    let phase7End = this.phase.phaseTime[7].endTime
     if (this.timeCheckFrame(phase7Start, 0)) {
       this.bgLegacy.changeImage(imageA, 600)
     } else if (this.timeCheckFrame(30, 0)) {
       this.bgLegacy.changeImage(this.redZoneImage, 600)
     }
 
+    // 불러오기 이후, 이미지 강제 출력용도 (페이드 도중에는 강제화 하지 않도록 시간 간격을 두었음.)
+    if (this.timeCheckInterval(40, phase7Start - 1)) {
+      this.bgLegacy.imageSrc = this.redZoneImage
+    } else if (this.timeCheckInterval(phase7Start + 10, 210)) {
+      this.bgLegacy.imageSrc = imageA
+    }
+
     if (this.timeCheckInterval(0, phase7Start - 1)) {
-      this.bgLegacy.backgroundSpeedX = 0.8
-    } else if (this.timeCheckInterval(phase7Start, phase8Start)) {
-      this.bgLegacy.backgroundSpeedX = 1.2
-    } else if (this.timeCheckInterval(phase8Start, 210)) {
+      this.bgLegacy.backgroundSpeedX = 0.6
+    } else if (this.timeCheckInterval(phase7Start, phase7End)) {
       this.bgLegacy.backgroundSpeedX = 1
     }
 
-    if (this.timeCheckInterval(45, 150, 600)) {
+    if (this.timeCheckInterval(45, phase7Start - 20, 600)) {
       if (this.bgLegacy.backgroundSpeedY === 0 || this.bgLegacy.backgroundSpeedY === 0.1) {
         this.bgLegacy.backgroundSpeedY = -0.1
       } else {
@@ -3642,22 +3651,22 @@ class Round1_5 extends RoundData {
 
   roundPhase05 () {
     // 50%
-    if (this.timeCheckInterval(121, 135, 10)) {
+    if (this.timeCheckInterval(121, 131, 10)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.redJewel)
     }
 
     // 20%
-    if (this.timeCheckInterval(124, 128, 30)) {
+    if (this.timeCheckInterval(124, 127, 30)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.rotateRocket)
     }
 
     // 20%
-    if (this.timeCheckInterval(129, 135, 60)) {
+    if (this.timeCheckInterval(128, 131, 60)) {
       this.field.createEnemy(ID.enemy.spaceEnemy.gamjigi)
     }
 
     // 80%
-    if (this.timeCheckInterval(136, 150, 60)) {
+    if (this.timeCheckInterval(132, 139, 60)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.redAir)
       this.field.createEnemy(ID.enemy.jemulEnemy.redShip)
     }
@@ -3665,35 +3674,35 @@ class Round1_5 extends RoundData {
 
   roundPhase06 () {
     // 80%
-    if (this.timeCheckInterval(151, 171, 90)) {
+    if (this.timeCheckInterval(141, 148, 90)) {
       this.field.createEnemy(ID.enemy.jemulEnemy.redAir)
       this.field.createEnemy(ID.enemy.jemulEnemy.redShip)
     }
 
     // 75%
-    if (this.timeCheckInterval(151, 171, 90)) {
+    if (this.timeCheckInterval(149, 154, 90)) {
       this.field.createEnemy(ID.enemy.meteoriteEnemy.red)
       this.field.createEnemy(ID.enemy.meteoriteEnemy.bomb)
     }
 
     // 30% + 60%
-    if (this.timeCheckInterval(174, 178, 20)) {
+    if (this.timeCheckInterval(155, 163, 20)) {
       this.field.createEnemy(ID.enemy.spaceEnemy.gamjigi)
       this.field.createEnemy(ID.enemy.jemulEnemy.redJewel)
     }
 
     // 적이 많다면, 시간 멈춤
-    this.timePauseWithEnemyCount(179)
+    this.timePauseWithEnemyCount(166, 10)
   }
 
   roundPhase07 () {
     // 운석지대
-    if (this.timeCheckFrame(181, 11)) {
-      this.sound.musicChangeOLD(soundSrc.music.music02_meteorite_zone_field)
+    if (this.timeCheckFrame(169, 11)) {
+      this.sound.musicChange(2, 60)
     }
 
     // 40%
-    if (this.timeCheckInterval(181, 200, 60)) {
+    if (this.timeCheckInterval(170, 175, 60)) {
       this.field.createEnemy(ID.enemy.meteoriteEnemy.class1)
       this.field.createEnemy(ID.enemy.meteoriteEnemy.class2)
       this.field.createEnemy(ID.enemy.meteoriteEnemy.class3)
@@ -3701,20 +3710,13 @@ class Round1_5 extends RoundData {
     }
 
     // 53%
-    if (this.timeCheckInterval(181, 200, 90)) {
+    if (this.timeCheckInterval(170, 177, 90)) {
       this.field.createEnemy(ID.enemy.meteoriteEnemy.bomb)
       this.field.createEnemy(ID.enemy.meteoriteEnemy.whiteMeteo)
       this.field.createEnemy(ID.enemy.meteoriteEnemy.blackMeteo)
     }
-  }
 
-  roundPhase08 () {
-    // 50%
-    if (this.timeCheckInterval(201, 207, 60)) {
-      this.field.createEnemy(ID.enemy.meteoriteEnemy.stone)
-    }
-
-    this.timePauseWithEnemyCount(208)
+    this.timePauseWithEnemyCount(178)
   }
 
   display () {
@@ -3729,9 +3731,6 @@ class Round1_6 extends RoundData {
     this.stat.setStat(ID.round.round1_6)
     this.bgLegacy.imageSrc = imageSrc.round.round1_2_meteorite
     this.spaceImage = imageSrc.round.round1_6_space
-    this.sound.roundStartMusicSrc = soundSrc.music.music02_meteorite_zone_field
-    this.musicTour = soundSrc.music.music05_space_tour
-    this.musicPlanet = soundSrc.music.music07_paran_planet_entry
 
     this.phase.addRoundPhase(this, this.roundPhase00, 1, 30)
     this.phase.addRoundPhase(this, this.roundPhase01, 31, 60)
@@ -3762,6 +3761,11 @@ class Round1_6 extends RoundData {
 
     this.load.addImageList(RoundPackLoad.getRound1ShareImage())
     this.load.addSoundList(RoundPackLoad.getRound1ShareSound())
+
+    this.sound.addMusicIndex(soundSrc.music.music02_meteorite_zone_field, true)
+    this.sound.addMusicIndex(soundSrc.music.music06_round1_boss_thema)
+    this.sound.addMusicIndex(soundSrc.music.music05_space_tour)
+    this.sound.addMusicIndex(soundSrc.music.music07_paran_planet_entry)
   }
 
   /**
@@ -3837,7 +3841,7 @@ class Round1_6 extends RoundData {
     // 보스 출현: 중복 생성을 방지하기 위해 시간값을 강제로 변경했습니다.
     if (this.timeCheckFrame(27)) {
       this.field.createEnemy(ID.enemy.spaceEnemy.boss)
-      this.sound.musicChangeOLD(soundSrc.music.music06_round1_boss_thema)
+      this.sound.musicChange(2, 0)
       this.time.setCurrentTime(28)
     }
 
@@ -3938,9 +3942,14 @@ class Round1_6 extends RoundData {
   processPhase () {
     super.processPhase()
 
+    // 행성이 정해진 시간에 제대로 동작하도록 진행과정 추가
+    if (this.time.currentTime >= this.stat.finishTime - this.planet.totalDisplayTime) {
+      this.planet.process()
+    }
+
     // 음악 재생 시간 관계상, 29초 지점부터 음악이 변경됨.
     if (this.timeCheckFrame(30, 4)) {
-      this.sound.musicChangeOLD(this.musicTour, 0)
+      this.sound.musicChange(3, 0)
       this.bgLegacy.changeImage(this.spaceImage, 360)
     }
 
@@ -3950,17 +3959,23 @@ class Round1_6 extends RoundData {
     const fadeTime = 1
     const planetMusicPlayTime = 128 - fadeTime
     if (this.timeCheckFrame(planetMusicPlayTime, 0)) {
-      this.sound.musicChangeOLD(this.musicPlanet, fadeTime)
+      this.sound.musicChange(4, 0)
     } else if (this.timeCheckFrame(planetMusicPlayTime + 27)) {
       this.sound.musicFadeOutLegacy(120)
     }
   }
-  processSaveString () {
+
+  writeExtendedMemory () {
     // 행성을 배경에 표시하기 위해 데이터의 일부를 저장
-    if (this.time.currentTime >= this.stat.finishTime - this.planet.totalDisplayTime) {
-      this.planet.process()
-      this.saveString = this.planet.x + ',' + this.planet.size + ',' + this.planet.elapsedFrame
-    }
+    this.extendedMemory[0] = this.planet.x
+    this.extendedMemory[1] = this.planet.y
+    this.extendedMemory[2] = this.planet.elapsedFrame
+  }
+
+  readExtendedMemory () {
+    this.planet.x = this.extendedMemory[0]
+    this.planet.y = this.extendedMemory[1]
+    this.planet.elapsedFrame = this.extendedMemory[2]
   }
 
   processBackground () {
@@ -3968,21 +3983,18 @@ class Round1_6 extends RoundData {
     if (this.timeCheckInterval(31, this.stat.finishTime)) {
       this.bgLegacy.imageSrc = this.spaceImage
     }
+
+    this.bgLegacy.backgroundSpeedX = 0.5
   }
 
   display () {
     super.display()
-    if (this.timeCheckInterval(28)) this.meter.bossHpDefaultStyle(ID.enemy.spaceEnemy.boss)
+    if (this.timeCheckInterval(28)) {
+      this.meter.bossHpDefaultStyle(ID.enemy.spaceEnemy.boss)
+    }
     if (this.time.currentTime >= this.stat.finishTime - this.planet.totalDisplayTime) {
       this.planet.display()
     }
-  }
-
-  loadProcess () {
-    let str = this.saveString.split(',')
-    this.planet.x = Number(str[0])
-    this.planet.size = Number(str[1])
-    this.planet.elapsedFrame = Number(str[2])
   }
 }
 
