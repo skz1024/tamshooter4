@@ -1123,19 +1123,18 @@ class BlasterMini extends Blaster {
 
 class Sidewave extends WeaponData {
   /**
-   * 옵션 목록
-   * 0. moveSpeedY = 0, 1. direction = 'right'
+   * 옵션은 다음과 같이 전달받습니다. ('right 4')
+   * 0. direction = 'right', moveSpeedY = 0, 
    */
   constructor (option = ['']) {
     super()
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.sidewave)
     this.moveSpeedX = 11
-    
-    let optionResult = option[0] != null ? option[0].split(' ') : [0, 'right']
+    let direction = option[0].split(' ')[0]
+    let moveSpeedY = Number(option[0].split(' ')[1])
 
-    this.moveSpeedY = Number(optionResult[1])
-
-    if (optionResult[0] === Sidewave.direction.LEFT) {
+    this.moveSpeedY = moveSpeedY
+    if (direction === 'left') {
       if (this.enimation) this.enimation.flip = 1 // 좌우 반전 (왼쪽으로 무기가 이동하므로)
       this.moveDirectionX = Sidewave.direction.LEFT
     }

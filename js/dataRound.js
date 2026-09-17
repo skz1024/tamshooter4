@@ -2118,6 +2118,8 @@ export class RoundData {
   /** 
    * extendedMemory 데이터를 읽고 이를 fieldObject에 적용하는 함수 템플릿 
    * 
+   * 이 함수는 불러오기 한 순간 1번만 발동합니다.
+   * 
    * 참고사항: bgLayer는 10개까지 저장하며, extendedMemory랑 아무 연관이 없습니다.
   */
   readExtendedMemory () {
@@ -4353,7 +4355,6 @@ class Round2_1 extends RoundData {
   constructor () {
     super()
     this.stat.setStat(ID.round.round2_1)
-    this.sound.roundStartMusicSrc = soundSrc.music.music09_paran_planet
     this.maeulImage = imageSrc.round.round2_2_maeul_entrance
 
     this.phase.addRoundPhase(this, this.roundPhase01, 0, 30)
@@ -4374,12 +4375,14 @@ class Round2_1 extends RoundData {
     this.load.addImageList(RoundPackLoad.getRound2ShareImage())
     this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
 
+    this.sound.addMusicIndex(soundSrc.music.music09_paran_planet, true)
+
     this.BOSSTIME = 146
-    this.setBgLayer()
+    this.setRound2_1BgLayer()
   }
 
-  /** bgLayer를 설정할게 많아서 따로 함수로 분리: 참고 setBgLayer라는 함수는 RoundData에는 없는 함수입니다. */
-  setBgLayer () {
+  /** bgLayer를 설정할게 많아서 따로 함수로 분리함. */
+  setRound2_1BgLayer () {
     const darkSky = '#001A33'
     const darklight = '#002E5B'
     const sky = '#00478D'
@@ -4474,8 +4477,10 @@ class Round2_1 extends RoundData {
       this.field.createEnemy(ID.enemy.donggramiEnemy.questionMark)
     }
 
-    // 이모지 동그라미 dps 60%
-    if (this.timeCheckInterval(50, 56, 20)) {
+    // 이모지 동그라미 dps 40%
+    // 이모지가 너무 많이 나오는 탓에 (100%확률로 이모지 등장)
+    // 적 수를 약간 감소시켰습니다.
+    if (this.timeCheckInterval(50, 56, 30)) {
       this.field.createEnemy(ID.enemy.donggramiEnemy.emoji)
     }
 
@@ -4619,7 +4624,6 @@ class Round2_2 extends RoundData {
   constructor () {
     super()
     this.stat.setStat(ID.round.round2_2)
-    this.sound.roundStartMusicSrc = soundSrc.music.music10_donggrami_maeul
 
     // 시간이 배경에 맞추어서 진행되기 때문에, 배경이 변경되는 것을 기준으로 대략적인 시간 값이 설정되었습니다.
     // 1초에 60frame = 60px씩 이동
@@ -4653,10 +4657,12 @@ class Round2_2 extends RoundData {
 
     this.load.addImageList(RoundPackLoad.getRound2ShareImage())
     this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
-    this.setBgLayer()
+    
+    this.sound.addMusicIndex(soundSrc.music.music10_donggrami_maeul, true)
+    this.setRound2_2BgLayer()
   }
 
-  setBgLayer () {
+  setRound2_2BgLayer () {
     this.bgLayer.setColor(Round2_1.getMaeulGradientColor())
 
     const bgList = [
@@ -4870,11 +4876,13 @@ class Round2_3 extends RoundData {
     getLayer[this.layerNumber.PLACARD2_2].setAlpha(1) // 2-2 플래카드만 표시
     getLayer[this.layerNumber.PLACARD2_3].setAlpha(0)
 
-    this.phase.addRoundPhase(this, this.roundPhase00, 0, 9)
-    this.phase.addRoundPhase(this, this.roundPhase01, 10, 69)
-    this.phase.addRoundPhase(this, this.roundPhase01, 70, 129)
-    this.phase.addRoundPhase(this, this.roundPhase01, 130, 189)
-    this.phase.addRoundPhase(this, this.roundPhase04, 190, 192)
+    // 각 미니게임의 구간 시간은 58초로 설정되었습니다.
+    // 미니게임은 45초간 지속되지만, 연출, 결과 등으로 시간이 더 추가되는 구조입니다.
+    this.phase.addRoundPhase(this, this.roundPhase00, 0, 4)
+    this.phase.addRoundPhase(this, this.roundPhase01, 5, 62)
+    this.phase.addRoundPhase(this, this.roundPhase01, 63, 120)
+    this.phase.addRoundPhase(this, this.roundPhase01, 121, 178)
+    this.phase.addRoundPhase(this, this.roundPhase04, 179, 182)
 
     /** 음악의 리스트 (복도 구간은 음악 없음) */
     this.musicList = {
@@ -4921,9 +4929,9 @@ class Round2_3 extends RoundData {
 
     /** 시간 기준 값 (60초구성의 구역만 적용) */
     this.checkTimeList = {
-      /** 준비 출력 */ READY: 2,
-      /** 시작 또는 파이트 출력 */ START: 4,
-      /** 완료 */ COMPLETE: 50,
+      /** 준비 출력 */ READY: 1,
+      /** 시작 또는 파이트 출력 */ START: 3,
+      /** 완료 */ COMPLETE: 49,
     }
 
     /** 모든 구역에 대한 종합 스탯 (다만 모든 스탯이 공통적으로 사용되는것은 아닙니다.) */
@@ -4995,13 +5003,18 @@ class Round2_3 extends RoundData {
      */
     this.courseName = 'z1'
 
+    /** 코스 이름 리스트, 이 배열은 저장 데이터의 숫자/문자 변환 용도로만 사용합니다. */
+    this.courseNameList = ['a1', 'a2', 'a3', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3', 'z1', 'z2']
+
     /** 최대 코스의 개수 (9개) */ this.MAX_COURSE_COUNT = 9
 
     /** 코스 선택시 현재 선택된 번호 (0 ~ 8번까지 선택 가능) */
     this.courseCursorNumber = 0
 
-    /** 코스를 클리어한 리스트 값 (중복 클리어 방지용도) @type {number[]} */
-    this.courseClearList = []
+    /** 코스를 클리어한 리스트 값 (중복 클리어 방지용도) 
+     * 아무 코스도 클리어 하지 않았다면, -1로 간주됩니다.
+     * @type {number[]} */
+    this.courseClearList = [-1, -1, -1]
 
     /** 코스 선택 시간 */
     this.courseSelectTime = 6
@@ -5172,7 +5185,15 @@ class Round2_3 extends RoundData {
   /** 코스 이름 변경 */
   changeCourseName () {
     // 9개중 3개의 코스를 클리어하면, 마지막 구역으로 이동함
-    if (this.courseClearList.length === 3) {
+    // courseClearList가 -1로 채워졌으므로, 다른 방식으로 코스 클리어를 구분합니다.
+    let clearCount = 0
+    for (let i = 0; i < this.courseClearList.length; i++) {
+      if (this.courseClearList[i] !== -1) {
+        clearCount++
+      }
+    }
+
+    if (clearCount === 3) {
       this.courseName = 'z2'
       return
     }
@@ -5189,6 +5210,22 @@ class Round2_3 extends RoundData {
       case 7: this.courseName = 'c2'; break
       case 8: this.courseName = 'c3'; break
     }
+  }
+
+  /**
+   * 코스 이름을 기준으로 코스 번호를 얻어옵니다.
+   * @param {string} courseName 
+   */
+  getCourseNumber (courseName = '') {
+    return this.courseNameList.indexOf(courseName)
+  }
+
+  /**
+   * 코스 번호를 기준으로 코스 이름을 얻어옵니다.
+   * @param {number} courseNumber 
+   */
+  getCourseName (courseNumber = 0) {
+    return this.courseNameList[courseNumber]
   }
 
   changeCourseBackground () {
@@ -5299,7 +5336,7 @@ class Round2_3 extends RoundData {
     }
 
     // 현재 페이즈 종료시까지 이 선택모드를 해제하지 않으면 시간은 진행되지 않습니다.
-    if (this.time.currentTime >= this.phase.phaseTime[this.phase.getCurrentPhase()].endTime - 1 && this.isCourseSelectMode) {
+    if (this.time.currentTime >= this.phase.phaseTime[this.phase.getCurrentPhase()].endTime && this.isCourseSelectMode) {
       this.time.setCurrentTimePause(true, 'course select')
     }
 
@@ -5341,8 +5378,8 @@ class Round2_3 extends RoundData {
   processAreaTime () {
     const startTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
     
-    // 각 페이즈 시작 시간의 5초, 55초 동안만 areaStat의 시간 감소가 적용됩니다.
-    if (!this.timeCheckInterval(startTime + 5, startTime + 55)) return
+    // 각 페이즈 시작 시간의 4초, 54초 동안만 areaStat의 시간 감소가 적용됩니다.
+    if (!this.timeCheckInterval(startTime + 4, startTime + 54)) return
     if (this.areaStat.time >= 1 && this.time.currentTimeTotalFrame % 60 === 59) {
       this.areaStat.time--
     }
@@ -5367,7 +5404,7 @@ class Round2_3 extends RoundData {
    * 
    * 기본적으로 모든 구역들은 start ~ complete 시점까지 진행됩니다.
    * 
-   * reday (2 ~ 3), start(4 ~ 50), complete(51 ~ 54), next(55 ~ 60)
+   * reday (+3), start(+45), complete(+5), next(+5)
    */
   areaRunningTimeCheck () {
     let startTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime + this.checkTimeList.START
@@ -5383,7 +5420,7 @@ class Round2_3 extends RoundData {
   /** 현재 구역의 시간이 결과 화면 또는 스탯 화면을 표시하는 시간 범위 이내인지 확인합니다. */
   areaShowResultTimeCheck () {
     let readyTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime + this.checkTimeList.READY
-    let completeTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime + this.checkTimeList.COMPLETE + 4
+    let completeTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime + this.checkTimeList.COMPLETE + 3
     
     if (this.timeCheckInterval(readyTime, completeTime)) {
       return true
@@ -5392,7 +5429,99 @@ class Round2_3 extends RoundData {
     }
   }
 
+  writeExtendedMemory () {
+    this.extendedMemory[0] = this.getCourseNumber(this.courseName)
+    this.extendedMemory[1] = Number(this.isCourseSelectMode)
+    this.extendedMemory[2] = this.courseCursorNumber
+    this.extendedMemory[3] = this.courseClearList[0]
+    this.extendedMemory[4] = this.courseClearList[1]
+    this.extendedMemory[5] = this.courseClearList[2]
+
+    // 공통 스탯
+    this.extendedMemory[6] = this.areaStat.time
+    this.extendedMemory[7] = this.areaStat.playerHpPercent
+    this.extendedMemory[8] = this.areaStat.enemyHpPercent
+    this.extendedMemory[9] = this.areaStat.playerReceiveDamage
+    this.extendedMemory[10] = this.areaStat.a1UserHp
+    this.extendedMemory[11] = this.areaStat.a1UserAttack
+    this.extendedMemory[12] = this.areaStat.a2UserHp
+    this.extendedMemory[13] = this.areaStat.a2BrickHp
+
+    // 플레이어 관련 이동 스탯
+    this.extendedMemory[14] = this.areaStat.playerInvincibleFrame
+    this.extendedMemory[15] = this.areaStat.playerHpEnimation
+    this.extendedMemory[16] = this.areaStat.playerHpEnimationFrame
+    this.extendedMemory[17] = this.areaStat.playerBounceSpeed
+    this.extendedMemory[18] = this.areaStat.playerBounceDelay
+    this.extendedMemory[19] = this.areaStat.playerBounceDelayCount
+    this.extendedMemory[20] = this.areaStat.playerMoveImpossibleFrameCount
+
+    // 기타 스탯 
+    this.extendedMemory[21] = this.areaStat.areaBcollisionCount
+    this.extendedMemory[22] = this.areaStat.a3PowerPlayer
+    this.extendedMemory[23] = this.areaStat.a3PowerEnemy
+    this.extendedMemory[24] = this.areaStat.b2WarpCount
+    this.extendedMemory[25] = this.areaStat.b3ObjectCollisionPlayerAutomoveFrame
+    this.extendedMemory[26] = this.areaStat.c1BulletDamage
+    this.extendedMemory[27] = this.areaStat.c2SquareScore
+    this.extendedMemory[28] = this.areaStat.c2SquareBlack
+    this.extendedMemory[29] = this.areaStat.c2SquareBlackMax
+    this.extendedMemory[30] = this.areaStat.c2TimeBonusValue
+    this.extendedMemory[31] = this.areaStat.c2TimeBonusMultiple
+    this.extendedMemory[32] = this.areaStat.c3Goal
+    this.extendedMemory[33] = this.areaStat.a2CreateEnemyCount
+    this.extendedMemory[34] = this.areaStat.damageSoundDelayCount
+  }
+
+  readExtendedMemory () {
+    this.courseName = this.getCourseName(this.extendedMemory[0])
+    this.isCourseSelectMode = !!this.extendedMemory[1]
+    this.courseCursorNumber = this.extendedMemory[2] 
+    this.courseClearList[0] = this.extendedMemory[3] 
+    this.courseClearList[1] = this.extendedMemory[4] 
+    this.courseClearList[2] = this.extendedMemory[5] 
+
+    // 공통 스탯
+    this.areaStat.time = this.extendedMemory[6]
+    this.areaStat.playerHpPercent = this.extendedMemory[7]
+    this.areaStat.enemyHpPercent = this.extendedMemory[8]
+    this.areaStat.playerReceiveDamage = this.extendedMemory[9]
+    this.areaStat.a1UserHp = this.extendedMemory[10]
+    this.areaStat.a1UserAttack = this.extendedMemory[11]
+    this.areaStat.a2UserHp = this.extendedMemory[12]
+    this.areaStat.a2BrickHp = this.extendedMemory[13]
+
+    // 플레이어 관련 이동 스탯
+    this.areaStat.playerInvincibleFrame = this.extendedMemory[14]
+    this.areaStat.playerHpEnimation = this.extendedMemory[15]
+    this.areaStat.playerHpEnimationFrame = this.extendedMemory[16]
+    this.areaStat.playerBounceSpeed = this.extendedMemory[17]
+    this.areaStat.playerBounceDelay = this.extendedMemory[18]
+    this.areaStat.playerBounceDelayCount = this.extendedMemory[19]
+    this.areaStat.playerMoveImpossibleFrameCount = this.extendedMemory[20]
+
+    // 기타 스탯 
+    this.areaStat.areaBcollisionCount = this.extendedMemory[20]
+    this.areaStat.a3PowerPlayer = this.extendedMemory[21]
+    this.areaStat.a3PowerEnemy = this.extendedMemory[22]
+    this.areaStat.b2WarpCount = this.extendedMemory[23]
+    this.areaStat.b3ObjectCollisionPlayerAutomoveFrame = this.extendedMemory[24]
+    this.areaStat.c1BulletDamage = this.extendedMemory[25]
+    this.areaStat.c2SquareScore = this.extendedMemory[26]
+    this.areaStat.c2SquareBlack = this.extendedMemory[27]
+    this.areaStat.c2SquareBlackMax = this.extendedMemory[28]
+    this.areaStat.c2TimeBonusValue = this.extendedMemory[29]
+    this.areaStat.c2TimeBonusMultiple = this.extendedMemory[30]
+    this.areaStat.c3Goal = this.extendedMemory[31]
+    this.areaStat.a2CreateEnemyCount = this.extendedMemory[32]
+    this.areaStat.damageSoundDelayCount = this.extendedMemory[33]
+
+    this.changeCourseBackground()
+  }
+
   processSaveString () {
+    return
+
     // 저장 방식
     // 현재 맵, 선택모드, 현재 커서 값, 에리어 스탯, 결과값
     // 참고: JSON 파싱 버그를 막기 위해 구분자는 |(막대기?) 로 사용합니다.
@@ -5407,6 +5536,8 @@ class Round2_3 extends RoundData {
   }
 
   loadProcess () {
+    return
+
     let str = this.saveString.split('|')
     this.courseName = str[0]
     this.isCourseSelectMode = str[1] === 'true' ? true : false
@@ -5424,7 +5555,7 @@ class Round2_3 extends RoundData {
   roundPhase00 () {
     // 바탕화면이 나오고, 3초 후 코스 선택 화면이 등장
     // 적은 등장하지 않음
-    if (this.timeCheckFrame(3)) {
+    if (this.timeCheckFrame(2)) {
       this.setCourseSelectMode()
     }
   }
@@ -5444,14 +5575,14 @@ class Round2_3 extends RoundData {
 
     const currentPhase = this.phase.getCurrentPhase()
     if (currentPhase === 1 || currentPhase === 2) {
-      if (this.timeCheckFrame(this.phase.phaseTime[currentPhase].endTime - 4)) {
+      if (this.timeCheckFrame(this.phase.phaseTime[currentPhase].endTime - 3)) {
         this.setCourseSelectMode()
       }
     } else if (currentPhase === 3) {
       // 결과값을 삭제한 뒤, 다시 원래 지역으로 되돌아갑니다.
-      if (this.timeCheckFrame(this.phase.phaseTime[currentPhase].endTime - 3)) {
+      if (this.timeCheckFrame(this.phase.phaseTime[currentPhase].endTime - 2)) {
         this.setResult(this.resultList.NOTHING)
-      } else if (this.timeCheckFrame(this.phase.phaseTime[currentPhase].endTime - 1)) {
+      } else if (this.timeCheckFrame(this.phase.phaseTime[currentPhase].endTime)) {
         this.changeCourse()
       }
     }
@@ -5459,6 +5590,7 @@ class Round2_3 extends RoundData {
 
   roundPhase04 () {
     // 비어있는 함수
+    // 이 페이즈 자체는 아무 역할도 하지 않지만, 페이즈 시간 등의 구분을 하기 위하여 만들어졌습니다.
   }
 
   display () {
@@ -5519,8 +5651,10 @@ class Round2_3 extends RoundData {
         case 8: targetBox = this.lightBoxList.c3; break
       }
 
-      // 검정색으로 칠하기
-      graphicSystem.fillRect(targetBox.x, targetBox.y, targetBox.width, targetBox.height, 'black')
+      if (this.courseClearList[i] !== -1) {
+        // 검정색으로 칠하기
+        graphicSystem.fillRect(targetBox.x, targetBox.y, targetBox.width, targetBox.height, 'black')
+      }
     }
   }
 
@@ -5729,9 +5863,9 @@ class Round2_3 extends RoundData {
     const pTime = this.getPhaseStartTime()
     const cTime = this.checkTimeList
     const result = this.getPhaseA1Result()
-    if (result === '') return // 결과가 없으면 처리하지 않음
+    if (result === this.resultList.NOTHING) return // 결과가 없으면 처리하지 않음
 
-    this.time.setCurrentTime(pTime + cTime.COMPLETE + 1) // 중복 처리 방지를 위한 시간 이동
+    this.time.setCurrentTime(pTime + cTime.COMPLETE) // 중복 처리 방지를 위한 시간 이동
     this.setResult(result)
     this.sound.musicStop()
     this.playerMoveEnable() // 플레이어 이동 가능하도록 강제로 처리
@@ -5805,8 +5939,8 @@ class Round2_3 extends RoundData {
   /** 적 데미지를 처리하기 위한 함수 */
   coursePhaseA1EnemyDamage () {
     // 유저 공격력을 그대로 가져와 유저가 준 데미지를 dps로 변환함
-    // 기준값은 dps의 50% (따라서 공격력을 2로 나눔)
-    const downValue = (this.areaStat.a1UserAttack / 2)
+    // 기준값은 dps의 25% (따라서 공격력을 4로 나눔)
+    const downValue = (this.areaStat.a1UserAttack / 4)
     let enemy = this.field.getEnemyObjectById(ID.enemy.donggramiEnemy.a1_fighter)
     if (enemy == null) return
 
@@ -5827,6 +5961,13 @@ class Round2_3 extends RoundData {
   coursePhaseA1PlayerDamage () {
     let enemy = this.field.getEnemyObjectById(ID.enemy.donggramiEnemy.a1_fighter)
     if (enemy == null) return
+
+    // 플레이어 무적 프레임이 남아있으면, 이 프레임을 감소시키고 함수 처리를 무효화함.
+    // 이렇게하면, 플레이어와 적과의 연속 충돌을 막을 수 있음.
+    if (this.areaStat.playerInvincibleFrame > 0) {
+      this.areaStat.playerInvincibleFrame--
+      return
+    }
 
     let player = fieldState.getPlayerObject()
 
@@ -5882,6 +6023,7 @@ class Round2_3 extends RoundData {
     // 사운드 및 플레이어 강제 이동 처리
     this.sound.play(soundSrc.round.r2_3_a1_damage)
     this.areaStat.playerHpPercent = playerHpPercent // 플레이어 hp 퍼센트 변경
+    this.areaStat.playerInvincibleFrame = 15 // 무적 프레임 15 추가, 연속적으로 맞지 않게 하기 위함
     const autoMoveX = (Math.random() * 120 - 60) + player.x
     const autoMoveY = enemy.state === STATE_EARTHQUAKE ? (Math.random() * 120 - 60) + 120 : (Math.random() * 240 - 120) + player.y
     player.setAutoMove(autoMoveX, autoMoveY, 30)
@@ -5946,7 +6088,7 @@ class Round2_3 extends RoundData {
     if (this.areaStat.time === 0 && this.result !== this.resultList.COMPLETE && this.time.currentTime <= pTime + cTime.COMPLETE) {
       this.setResult(this.resultList.COMPLETE)
       this.playerMoveEnable()
-      this.time.setCurrentTime(pTime + cTime.COMPLETE + 1)
+      this.time.setCurrentTime(pTime + cTime.COMPLETE)
       this.addPlayerDonggramiTicket() // 동그라미 티켓 2장 추가
 
       // 점수 처리
@@ -5965,8 +6107,8 @@ class Round2_3 extends RoundData {
     let playerP = this.field.getPlayerObject()
     for (let i = 0; i < enemyArray.length; i++) {
       let enemyC = enemyArray[i]
-      if (enemyC.state === 0 && collision(playerP, enemyC)) {
-        enemyC.state = 2
+      if (enemyC.state === DonggramiEnemy.STATE_NORMAL && collision(playerP, enemyC)) {
+        enemyC.state = DonggramiEnemy.STATE_PLAYER_COLLISION
         this.sound.play(soundSrc.round.r2_3_a1_damage)
         const autoMoveX = playerP.x + (Math.random() * 200) - 100
         const autoMoveY = playerP.y + (Math.random() * 200) - 100
@@ -6075,7 +6217,7 @@ class Round2_3 extends RoundData {
     this.addPlayerDonggramiTicket() // 동그라미 티켓 2장 추가
 
     // 중복 처리 방지를 위한 시간 변경
-    this.time.setCurrentTime(pTime + cTime.COMPLETE + 1)
+    this.time.setCurrentTime(pTime + cTime.COMPLETE)
 
     // 나머지 총알 스프라이트 전부 삭제
     fieldState.allSpriteDelete()
@@ -6187,7 +6329,6 @@ class Round2_3 extends RoundData {
       const positionY = 100 * ((this.field.getEnemyCount() % 5) + 1)
       this.field.createEnemy(ID.enemy.donggramiEnemy.a2_brick, positionX, positionY)
       this.areaStat.a2CreateEnemyCount++
-      console.log(this.areaStat.a2CreateEnemyCount, this.field.getEnemyCount())
     }
 
     // 해당 구역이 시작되기 전까지, 벽돌은 움직이지 않는 상태입니다.
@@ -6289,7 +6430,7 @@ class Round2_3 extends RoundData {
     if (result === this.resultList.NOTHING) return
 
     // 결과값 처리
-    this.time.setCurrentTime(pTime + cTime.COMPLETE + 1) // 중복 처리 방지를 위한 시간 이동
+    this.time.setCurrentTime(pTime + cTime.COMPLETE) // 중복 처리 방지를 위한 시간 이동
     this.setResult(result)
     this.sound.musicStop()
     this.playerMoveEnable() // 플레이어 이동 가능하도록 강제로 처리
@@ -6430,7 +6571,7 @@ class Round2_3 extends RoundData {
     this.field.addScore(totalScore)
     this.addPlayerDonggramiTicket()
     
-    this.time.setCurrentTime(pTime + cTime.COMPLETE + 1)
+    this.time.setCurrentTime(pTime + cTime.COMPLETE)
     fieldState.allSpriteDelete()
 
     this.coursePhaseA3ResultEnemy()
@@ -6552,7 +6693,7 @@ class Round2_3 extends RoundData {
 
     // 결과 처리
     this.setResult(this.resultList.COMPLETE)
-    this.time.setCurrentTime(pTime + cTime.COMPLETE + 1)
+    this.time.setCurrentTime(pTime + cTime.COMPLETE)
 
     // 점수 계산
     let bonusWarp = this.areaStat.b2WarpCount * 50
@@ -6649,10 +6790,10 @@ class Round2_3 extends RoundData {
     let enemy = this.field.getEnemyObject()
     for (let i = 0; i < enemy.length; i++) {
       let currentEnemy = enemy[i]
-      if (currentEnemy.state === 0 && collision(player, currentEnemy)) {
+      if (currentEnemy.state === DonggramiEnemy.STATE_NORMAL && collision(player, currentEnemy)) {
         // 알고리즘은 그 위의 스프라이트랑 거의 동일
-        player.setAutoMove(player.x + (Math.random() * 200 - 100), player.y + (Math.random() * 200 - 100), 60)
-        currentEnemy.message = 'automove' + ' ' + (Math.random() * 200 - 100) + ' ' + (Math.random() * 200 - 100)
+        player.setAutoMove(player.x + (Math.random() * 400 - 200), player.y + (Math.random() * 400 - 200), 60)
+        currentEnemy.state = DonggramiEnemy.STATE_PLAYER_COLLISION
         this.sound.soundPlay(soundSrc.round.r2_3_a1_damage)
         this.areaStat.areaBcollisionCount++
       }
@@ -6672,7 +6813,7 @@ class Round2_3 extends RoundData {
     if (this.areaStat.time !== 0) return
 
     this.setResult(this.resultList.COMPLETE)
-    this.time.setCurrentTime(pTime + cTime.COMPLETE + 1)
+    this.time.setCurrentTime(pTime + cTime.COMPLETE)
     fieldState.allSpriteDelete()
 
     // 점수 처리
@@ -6735,7 +6876,7 @@ class Round2_3 extends RoundData {
     this.field.addScore(totalScore)
     this.addPlayerDonggramiTicket()
 
-    this.time.setCurrentTime(pTime + cTime.COMPLETE + 1)
+    this.time.setCurrentTime(pTime + cTime.COMPLETE)
   }
 
   coursePhaseC2SquareScore () {
@@ -6928,7 +7069,7 @@ class Round2_3 extends RoundData {
     this.addPlayerDonggramiTicket()
 
     fieldState.allSpriteDelete()
-    this.time.setCurrentTime(pTime + cTime.COMPLETE + 1)
+    this.time.setCurrentTime(pTime + cTime.COMPLETE)
   }
 
   coursePhaseC3TrapClass () {
@@ -7409,8 +7550,8 @@ class Round2_3 extends RoundData {
       // 그리고, 이동 변화값만 지정합니다. 적 내부에서 자기 자신을 기준으로 최종 위치가 결정되기 때문입니다.
       for (let i = 0; i < enemy.length; i++) {
         let currentEnemy = enemy[i]
-        if (currentEnemy.message === '' && collision(currentEnemy, this)) {
-          currentEnemy.message = 'automove' + ' ' + addPositionX + ' ' + addPositionY
+        if (currentEnemy.state === DonggramiEnemy.STATE_NORMAL && collision(currentEnemy, this)) {
+          currentEnemy.state = DonggramiEnemy.STATE_PLAYER_COLLISION
           soundSystem.play(soundSrc.round.r2_3_b3_move)
         }
       }
@@ -7440,8 +7581,8 @@ class Round2_3 extends RoundData {
       // 참고사항: 이 state 변경 옵션은 특정 적에게만 적용됩니다. 다른 적에겐 아무 효과가 없습니다.
       for (let i = 0; i < enemy.length; i++) {
         let currentEnemy = enemy[i]
-        if (currentEnemy.message === '' && collision(currentEnemy, this)) {
-          currentEnemy.message = 'automove' + ' ' + endPositionX + ' ' + endPositionY
+        if (currentEnemy.state === DonggramiEnemy.STATE_NORMAL && collision(currentEnemy, this)) {
+          currentEnemy.state = DonggramiEnemy.STATE_PLAYER_COLLISION
           soundSystem.play(soundSrc.round.r2_3_b3_move)
         }
       }
@@ -7555,12 +7696,12 @@ class Round2_4 extends RoundData {
     }
 
     this.phase.addRoundPhase(this, this.roundPhase00, 0, 1) // 초기
-    this.phase.addRoundPhase(this, this.roundPhase01, 2, 19) // 복도 + 엘리베이터
-    this.phase.addRoundPhase(this, this.roundPhase02, 20, 59) // 필드1
-    this.phase.addRoundPhase(this, this.roundPhase03, 60, 99) // 필드2
-    this.phase.addRoundPhase(this, this.roundPhase04, 100, 139) // 필드3
-    this.phase.addRoundPhase(this, this.roundPhase05, 140, 179) // 보스전/필드4
-    this.phase.addRoundPhase(this, this.roundPhase06, 180, 207) // 지하실 이동
+    this.phase.addRoundPhase(this, this.roundPhase01, 2, 16) // 복도 + 엘리베이터 (14초)
+    this.phase.addRoundPhase(this, this.roundPhase02, 17, 56) // 필드1 (40초)
+    this.phase.addRoundPhase(this, this.roundPhase03, 57, 96) // 필드2 (40초)
+    this.phase.addRoundPhase(this, this.roundPhase04, 97, 136) // 필드3 (40초)
+    this.phase.addRoundPhase(this, this.roundPhase05, 137, 172) // 보스전/필드4 (35초)
+    this.phase.addRoundPhase(this, this.roundPhase06, 173, 190) // 지하실 이동 (17초)
 
     /** 각 코스의 이름 상수 */
     this.courseName = {
@@ -7569,6 +7710,8 @@ class Round2_4 extends RoundData {
       /** 상점 내부 */ SHOP: 'shop',
       /** 1번째 구역에서만 사용함 */ FIRST: 'first'
     }
+
+    this.courseNameList = [this.courseName.FIRST, this.courseName.SHOP, this.courseName.OUTSIDE, this.courseName.INSIDE]
 
     /** 현재 코스의 이름: (총 3종류: inside, outside, shop, (first는 초기값용도로만 사용) ) */
     this.currentCourseName = this.courseName.FIRST
@@ -7612,7 +7755,20 @@ class Round2_4 extends RoundData {
     this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
     this.spriteElevator = Round2_4.createSpriteElevator()
 
+    // 참고: 기본 배경음악은 donggrami_hall_outside지만, 
+    // 시작하자마자 배경음을 재생하지 않기 때문에, 재생되는 음악 인덱스는 수동으로 지정해야 합니다.
+    this.sound.addMusicIndex(soundSrc.music.music12_donggrami_hall_outside)
+    this.sound.addMusicIndex(soundSrc.music.music13_round2_4_jemu)
+
     this.setLayerBg()
+  }
+
+  getCourseNumber (courseName = '') {
+    return this.courseNameList.indexOf(courseName)
+  }
+
+  getCourseName (courseNumber = 0) {
+    return this.courseNameList[courseNumber]
   }
 
   /** 해당 라운드 전용 layerBg 수정 */
@@ -7684,29 +7840,28 @@ class Round2_4 extends RoundData {
     }
   }
 
-  processSaveString () {
-    // this.saveString = this.spriteElevator.state 
-    //   + ',' + this.spriteElevator.stateDelay.count 
-    //   + ',' + this.spriteElevator.floorDelay.count
-    //   + ',' + this.spriteElevator.floor
-    //   + ',' + this.spriteElevator.floorArrive
-    //   + ',' + this.spriteElevator.isFloorMove
-    //   + ',' + this.currentCourseName
-    //   + ',' + this.spriteElevator.x
-    //   + ',' + this.spriteElevator.y
+  writeExtendedMemory () {
+    this.extendedMemory[0] = this.spriteElevator.state
+    this.extendedMemory[1] = this.spriteElevator.stateDelay.count 
+    this.extendedMemory[2] = this.spriteElevator.floorDelay.count
+    this.extendedMemory[3] = this.spriteElevator.floor
+    this.extendedMemory[4] = this.spriteElevator.floorArrive
+    this.extendedMemory[5] = this.spriteElevator.isFloorMove ? 1 : 0
+    this.extendedMemory[6] = this.getCourseNumber(this.currentCourseName)
+    this.extendedMemory[7] = this.spriteElevator.x
+    this.extendedMemory[8] = this.spriteElevator.y
   }
 
-  loadProcess () {
-    // let str = this.saveString.split(',')
-    // this.spriteElevator.state = str[0]
-    // this.spriteElevator.stateDelay.count = Number(str[1])
-    // this.spriteElevator.floorDelay.count = Number(str[2])
-    // this.spriteElevator.floor = Number(str[3])
-    // this.spriteElevator.floorArrive = Number(str[4])
-    // this.spriteElevator.isFloorMove = str[5] === 'true' ? true : false
-    // this.currentCourseName = str[6]
-    // this.spriteElevator.x = Number(str[7])
-    // this.spriteElevator.y = Number(str[8])
+  readExtendedMemory () {
+    this.spriteElevator.state = this.extendedMemory[0]
+    this.spriteElevator.stateDelay.count = this.extendedMemory[1] 
+    this.spriteElevator.floorDelay.count = this.extendedMemory[2]
+    this.spriteElevator.floor = this.extendedMemory[3]
+    this.spriteElevator.floorArrive = this.extendedMemory[4]
+    this.spriteElevator.isFloorMove = !!this.extendedMemory[5]
+    this.currentCourseName = this.getCourseName(this.extendedMemory[6])
+    this.spriteElevator.x = this.extendedMemory[7]
+    this.spriteElevator.y = this.extendedMemory[8]
   }
 
   roundPhase00 () {
@@ -7760,7 +7915,7 @@ class Round2_4 extends RoundData {
 
     // 엘리베이터에 도착하고 엘리베이터에 탑승하여 다른 층으로 이동하는 과정
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    const ElevatorTime = pTime + 7
+    const ElevatorTime = pTime + 4
     if (this.timeCheckFrame(ElevatorTime + 0)) {
       this.spriteElevator.setDoorOpen(true) // 엘리베이터 열림
     } else if (this.timeCheckFrame(ElevatorTime + 1)) {
@@ -7791,7 +7946,7 @@ class Round2_4 extends RoundData {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
     if (this.timeCheckFrame(pTime + 0)) {
       // 음악 변경 및 재생
-      this.sound.musicFadeInLegacy(soundSrc.music.music12_donggrami_hall_outside, 1)
+      this.sound.musicChange(1, 10)
     }
 
     // 적들 등장 (dps 60% ~ 90%)
@@ -7978,7 +8133,7 @@ class Round2_4 extends RoundData {
 
     // 음악 페이드 아웃 및 정지
     if (this.timeCheckFrame(pTime + 37)) {
-      this.sound.musicFadeOutLegacy(1)
+      this.sound.musicChange(0, 60)
     }
 
     // 아이템을 가진 적 2번 생성 (도망쳐 이벤트 때문에 기준시간 (30초단위)보다 조금 더 빨리 생성됨)
@@ -8000,23 +8155,29 @@ class Round2_4 extends RoundData {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
     if (this.timeCheckFrame(pTime + 1)) {
       this.sound.soundPlay(soundSrc.round.r2_4_message1)
-      this.sound.musicFadeInLegacy(soundSrc.music.music13_round2_4_jemu, 0)
-    } else if (this.timeCheckFrame(pTime + 38)) {
+      this.sound.musicChange(2, 60)
+    } else if (this.timeCheckFrame(pTime + 34)) {
       this.sound.musicStop()
     }
 
-    // 획득 경험치 비율을 조정하기 위해 적 수를 증가시킴
-    if (this.timeCheckInterval(pTime + 1, pTime + 10, 12)) {
+    // 시간이 갈수록 적은 더 많이 등장한다.
+    if (this.timeCheckInterval(pTime + 1, pTime + 6, 20)) {
       this.field.createEnemy(ID.enemy.intruder.square)
-    } else if (this.timeCheckInterval(pTime + 11, pTime + 36, 10)) {
+    } else if (this.timeCheckInterval(pTime + 7, pTime + 12, 15)) {
+      this.field.createEnemy(ID.enemy.intruder.square)
+    } else if (this.timeCheckInterval(pTime + 13, pTime + 28, 10)) {
+      this.field.createEnemy(ID.enemy.intruder.square)
+    } else if (this.timeCheckInterval(pTime + 29, pTime + 32, 5)) {
       this.field.createEnemy(ID.enemy.intruder.square)
     }
     
-    this.timePauseWithEnemyCount(pTime + 38)
+    this.timePauseWithEnemyCount(pTime + 34)
 
     // outside코스와의 점수 차이를 보정하기 위해 일정 점수를 추가함
-    if (this.timeCheckFrame(pTime + 39)) {
-      fieldSystem.requestAddScore(4500)
+    // outside는 12500점, inside는 9300점 (50 * 186) 이므로
+    // 이 격차는 약 3000점정도 이므로, 대충 3000점을 더 주는것으로 함
+    if (this.timeCheckFrame(pTime + 34)) {
+      fieldSystem.requestAddScore(3000)
     }
   }
 
@@ -8026,15 +8187,15 @@ class Round2_4 extends RoundData {
     if (this.timeCheckFrame(pTime + 1)) {
       this.field.createEnemy(ID.enemy.intruder.jemuBoss)
       this.sound.soundPlay(soundSrc.round.r2_4_message1)
-      this.sound.musicFadeInLegacy(soundSrc.music.music13_round2_4_jemu, 0)
-    } else if (this.timeCheckFrame(pTime + 38)) {
+      this.sound.musicChange(2, 60)
+    } else if (this.timeCheckFrame(pTime + 34)) {
       this.sound.musicStop()
     }
 
-    this.timePauseWithEnemyCount(pTime + 39)
+    this.timePauseWithEnemyCount(pTime + 34)
 
-    if (this.timeCheckInterval(pTime + 25, pTime + 36) && this.field.getEnemyCount() <= 0) {
-      this.time.setCurrentTime(pTime + 37)
+    if (this.timeCheckInterval(pTime + 25, pTime + 33) && this.field.getEnemyCount() <= 0) {
+      this.time.setCurrentTime(pTime + 34)
     }
   }
 
@@ -8042,48 +8203,48 @@ class Round2_4 extends RoundData {
     this.spriteElevator.process()
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
     if (this.currentCourseName === this.courseName.INSIDE) {
-      if (this.timeCheckFrame(pTime + 5)) {
+      if (this.timeCheckFrame(pTime + 2)) {
         this.spriteElevator.setFloorPosition(3)
-      } else if (this.timeCheckFrame(pTime + 15)) {
+      } else if (this.timeCheckFrame(pTime + 6)) {
         this.spriteElevator.setDoorOpen(true)
-      } else if (this.timeCheckFrame(pTime + 16)) {
+      } else if (this.timeCheckFrame(pTime + 7)) {
         this.changeElevatorDisplay(true)
-      } else if (this.timeCheckFrame(pTime + 17)) {
+      } else if (this.timeCheckFrame(pTime + 8)) {
         this.spriteElevator.setDoorOpen(false)
-      } else if (this.timeCheckFrame(pTime + 18)) {
+      } else if (this.timeCheckFrame(pTime + 9)) {
         this.spriteElevator.setFloorMove(-1)
         this.bgLayer.setBackgroundPosition(this.bgXY.B1_X, this.bgXY.B1_Y)
-      } else if (this.timeCheckFrame(pTime + 22)) {
+      } else if (this.timeCheckFrame(pTime + 13)) {
         this.spriteElevator.setDoorOpen(true)
-      } else if (this.timeCheckFrame(pTime + 23)) {
+      } else if (this.timeCheckFrame(pTime + 14)) {
         this.changeElevatorDisplay(false)
-      } else if (this.timeCheckFrame(pTime + 24)) {
+      } else if (this.timeCheckFrame(pTime + 15)) {
         this.spriteElevator.setDoorOpen(false)
       }
     } else {
-      if (this.timeCheckFrame(pTime + 10)) {
+      if (this.timeCheckFrame(pTime + 4)) {
         this.spriteElevator.setFloorPosition(1)
-      } else if (this.timeCheckFrame(pTime + 17)) {
+      } else if (this.timeCheckFrame(pTime + 7)) {
         this.spriteElevator.setDoorOpen(true)
-      } else if (this.timeCheckFrame(pTime + 18)) {
+      } else if (this.timeCheckFrame(pTime + 8)) {
         this.changeElevatorDisplay(true)
-      } else if (this.timeCheckFrame(pTime + 19)) {
+      } else if (this.timeCheckFrame(pTime + 9)) {
         this.spriteElevator.setDoorOpen(false)
-      } else if (this.timeCheckFrame(pTime + 20)) {
+      } else if (this.timeCheckFrame(pTime + 10)) {
         this.spriteElevator.setFloorMove(-1)
         this.bgLayer.setBackgroundPosition(this.bgXY.B1_X, this.bgXY.B1_Y)
-      } else if (this.timeCheckFrame(pTime + 22)) {
+      } else if (this.timeCheckFrame(pTime + 12)) {
         this.spriteElevator.setDoorOpen(true)
-      } else if (this.timeCheckFrame(pTime + 23)) {
+      } else if (this.timeCheckFrame(pTime + 13)) {
         this.changeElevatorDisplay(false)
-      } else if (this.timeCheckFrame(pTime + 24)) {
+      } else if (this.timeCheckFrame(pTime + 14)) {
         this.spriteElevator.setDoorOpen(false)
       }
     }
 
     // 아이템을 임의의 시점에 즉시 추가하고, 이를 표시하지 않음
     // 이 구간에서 총 2장을 획득함
-    if (this.timeCheckFrame(pTime + 4) || this.timeCheckFrame(pTime + 25)) {
+    if (this.timeCheckFrame(pTime + 2) || this.timeCheckFrame(pTime + 15)) {
       this.field.addPlayerItem(ID.item.donggramiTicket, 1, true)
     }
   }
@@ -8110,7 +8271,7 @@ class Round2_4 extends RoundData {
         // 1층에서만 이동하는걸 적용하기 위해, y축 조건도 추가하였음
         if (this.currentCourseName === this.courseName.OUTSIDE) {
           if (x > this.bgXY.F1_LEFT_X && y === this.bgXY.F1_START_Y) {
-            this.bgLayer.setBackgroundSpeed(-2, 0)
+            this.bgLayer.setBackgroundSpeed(-4, 0)
           } else if (y === this.bgXY.F1_START_Y) {
             this.bgLayer.setBackgroundPosition(this.bgXY.F1_LEFT_X, y)
             this.bgLayer.setBackgroundSpeed(0, 0)
@@ -8118,7 +8279,7 @@ class Round2_4 extends RoundData {
           this.spriteElevator.x = 0 - x + this.spriteElevator.BASE_X
         } else {
           if (x < this.bgXY.F1_RIGHT_X && y === this.bgXY.F1_START_Y) {
-            this.bgLayer.setBackgroundSpeed(2, 0)
+            this.bgLayer.setBackgroundSpeed(4, 0)
           } else if (y === this.bgXY.F1_START_Y) {
             this.bgLayer.setBackgroundPosition(this.bgXY.F1_RIGHT_X, y)
             this.bgLayer.setBackgroundSpeed(0, 0)
@@ -8192,10 +8353,10 @@ class Round2_4 extends RoundData {
         // 배경 이동이 멈추면 엘리베이터는 고정 위치에 출력되도록 변경됩니다. (왜냐하면 화면 좌표가 중간에 변경되기 때문)
         if (this.currentCourseName === this.courseName.OUTSIDE) {
           if (y < this.bgXY.ROOFTOP_B1_Y) {
-            this.bgLayer.setBackgroundSpeed(0, 2)
+            this.bgLayer.setBackgroundSpeed(0, 6)
             this.spriteElevator.x = -x + this.bgXY.ROOFTOP_B1_X + this.spriteElevator.BASE_X
           } else if (y === this.bgXY.ROOFTOP_B1_Y && x > this.bgXY.ROOFTOP_B1_X) {
-            this.bgLayer.setBackgroundSpeed(-2, 0)
+            this.bgLayer.setBackgroundSpeed(-4, 0)
             this.spriteElevator.x = -x + this.bgXY.ROOFTOP_B1_X + this.spriteElevator.BASE_X
           } else {
             this.bgLayer.setBackgroundSpeed(0, 0)
@@ -8204,7 +8365,7 @@ class Round2_4 extends RoundData {
         } else {
           // 다시 오른쪽으로 이동... (속도는 아주 빠름)
           if (x < this.bgXY.F3_START_X && y === this.bgXY.F3_START_Y) {
-            this.bgLayer.setBackgroundSpeed(3, 0)
+            this.bgLayer.setBackgroundSpeed(8, 0)
             this.spriteElevator.x = -x + this.bgXY.F3_START_X + this.spriteElevator.BASE_X
           } else {
             this.bgLayer.setBackgroundSpeed(0, 0)

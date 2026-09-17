@@ -673,12 +673,12 @@ dataExportStatRound.set(ID.round.round1_4, new StatRound(5, '1-4', 2, 44000, 155
 dataExportStatRound.set(ID.round.round1_5, new StatRound(6, '1-5', 4, 44000, 180, 34000, 10).setBalance(180, 440).setRoundInfo('운석 지대 - 레드 존'))
 dataExportStatRound.set(ID.round.round1_6, new StatRound(7, '1-6', 4, 44000, 152, 32000, 10).setBalance(170, 440).setRoundInfo('우주 여행 - 파란 행성 가는 길'))
 // round 2
-dataExportStatRound.set(ID.round.round2_1, new StatRound(11, '2-1', 10, 50000, 150, 40000, 12).setRoundInfo('파란 행성 - 하늘 300km ~ 250km'))
-dataExportStatRound.set(ID.round.round2_2, new StatRound(12, '2-2', 11, 50000, 170, 44000, 12).setRoundInfo('동그라미 마을'))
-dataExportStatRound.set(ID.round.round2_3, new StatRound(13, '2-3', 12, 50000, 192, 48000, 12).setRoundInfo('동그라미 스페이스'))
-dataExportStatRound.set(ID.round.round2_4, new StatRound(14, '2-4', 14, 60000, 207, 52000, 13).setRoundInfo('동그라미 마을 홀'))
-dataExportStatRound.set(ID.round.round2_5, new StatRound(15, '2-5', 15, 60000, 204, 32000, 13).setRoundInfo('지하실 전투'))
-dataExportStatRound.set(ID.round.round2_6, new StatRound(16, '2-6', 16, 60000, 150, 48000, 12).setRoundInfo('폐허가 된 동그라미 마을'))
+dataExportStatRound.set(ID.round.round2_1, new StatRound(11, '2-1', 10, 50000, 150, 40000, 12).setBalance(170, 500).setRoundInfo('파란 행성 - 하늘 300km ~ 250km'))
+dataExportStatRound.set(ID.round.round2_2, new StatRound(12, '2-2', 10, 50000, 170, 36000, 12).setBalance(170, 530).setRoundInfo('동그라미 마을'))
+dataExportStatRound.set(ID.round.round2_3, new StatRound(13, '2-3', 12, 50000, 182, 40000, 12).setBalance(175, 540).setRoundInfo('동그라미 스페이스'))
+dataExportStatRound.set(ID.round.round2_4, new StatRound(14, '2-4', 12, 55000, 190, 52000, 13).setBalance(190, 550).setRoundInfo('동그라미 마을 홀'))
+dataExportStatRound.set(ID.round.round2_5, new StatRound(15, '2-5', 14, 55000, 204, 32000, 13).setBalance(190, 550).setRoundInfo('지하실 전투'))
+dataExportStatRound.set(ID.round.round2_6, new StatRound(16, '2-6', 14, 55000, 150, 48000, 12).setBalance(150, 550).setRoundInfo('폐허가 된 동그라미 마을'))
 // round 3
 dataExportStatRound.set(ID.round.round3_1, new StatRound(21, '3-1', 20, 70000, 200, 71400, 14).setRoundInfo('다운 타워 1'))
 dataExportStatRound.set(ID.round.round3_2, new StatRound(22, '3-2', 21, 70000, 220, 72800, 14).setRoundInfo('다운 타워 2'))
