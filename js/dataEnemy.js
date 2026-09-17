@@ -6550,7 +6550,7 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
         // 스프라이트 데미지 처리
         for (let i = 0; i < sprite.length; i++) {
           if (sprite[i] instanceof DonggramiEnemy && collision(sprite[i], this.attackObjectThunder)) {
-            sprite[i].hp -= 5000
+            sprite[i].hp -= 30000
           }
         }
       }
@@ -6583,7 +6583,7 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
         for (let i = 0; i < sprite.length; i++) {
           if (!(sprite[i] instanceof DonggramiEnemy)) continue // 동그라미 클래스를 상속받은 개체가 아니라면 무시
           if (collisionClass.collisionOBB(sprite[i], this.attackObject1) || collisionClass.collisionOBB(sprite[i], this.attackObject2)) {
-            sprite[i].hp -= 5000
+            sprite[i].hp -= 20000
           }
         }
       }
@@ -6644,11 +6644,11 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
 class IntruderEnemyJemuBossUltra extends IntruderEnemyJemuBoss {
   constructor () {
     super()
-    // 점수는 의도적으로 낮게 설정함
-    this.setEnemyByCpStat(15120, 0, 400) // 360% x 42s!!! (초당 360%dps를 42초동안 때려야한다!!!)
+    // 점수는 라운드 2-5의 특성 때문에 높은 dps배율이 의도되어 낮게 설정함
+    this.setEnemyByCpStat(20000, 0, 1000) // 500% x 40dps = 20000
     this.patternDelayList.ENERGY12 = 15
-    this.patternDelayList.ENERGYP3 = 9
-    this.patternDelayList.ENERGYRE = 9
+    this.patternDelayList.ENERGYP3 = 6
+    this.patternDelayList.ENERGYRE = 4
     this.patternDelayList.THUNDERLR = 20
   }
 }
@@ -6885,7 +6885,7 @@ class IntruderEnemyRendown extends IntruderEnemy {
     super()
     let targetImageData = Math.random() < 0.3 ? imageDataInfo.intruderEnemy.rendownBlue : imageDataInfo.intruderEnemy.rendownGreen
     this.setAutoImageData(this.imageSrc, targetImageData, 6)
-    this.setEnemyByCpStat(100)
+    this.setEnemyByCpStat(50)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderRendown, new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.pulseDiamondBlue, this.width, this.height, 3))
     this.dieAfterDeleteDelay = new DelayData(60)
   }
@@ -7237,7 +7237,7 @@ class IntruderEnemyGami extends IntruderEnemy {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.gami)
-    this.setEnemyByCpStat(100, 17)
+    this.setEnemyByCpStat(50, 17)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderGami)
     this.setIntruderDelay(66, 0)
 
@@ -7348,7 +7348,7 @@ class IntruderEnemyHanoi extends IntruderEnemy {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.hanoi)
-    this.setEnemyByCpStat(200, 22)
+    this.setEnemyByCpStat(100, 22)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderHanoi, new CustomEffect(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.enemyDieIntruderHanoi, this.width, this.height, 6))
     this.setRandomMoveSpeed(1, 0)
   }
@@ -7425,7 +7425,7 @@ class IntruderEnemyDaseok extends IntruderEnemy {
   constructor () {
     super()
     this.setAutoImageData(this.imageSrc, imageDataInfo.intruderEnemy.daseok)
-    this.setEnemyByCpStat(500, 33)
+    this.setEnemyByCpStat(200, 23)
     this.setDieEffectOption(soundSrc.enemyDie.enemyDieIntruderDaseok, new CustomEffect(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.enemyDieIntruderDaseok, this.width, this.height, 3))
     this.setMoveSpeed(0, 0) // 이동하지 않음
     this.setIntruderDelay(40, 240)

@@ -8608,13 +8608,13 @@ class Round2_5 extends RoundData {
     /** @type {SpriteDonggrami[]} */ this.spriteDonggrami = []
     /** @type {SpriteIntruder[]} */ this.spriteIntruder = []
 
-    this.phase.addRoundPhase(this, this.roundPhase00, 0, 40)
-    this.phase.addRoundPhase(this, this.roundPhase01, 41, 80)
-    this.phase.addRoundPhase(this, this.roundPhase02, 81, 100)
-    this.phase.addRoundPhase(this, this.roundPhase03, 101, 150)
-    this.phase.addRoundPhase(this, this.roundPhase04, 151, 190)
-    this.phase.addRoundPhase(this, this.roundPhase05, 191, 200)
-    this.phase.addRoundPhase(this, this.roundPhase06, 201, 204)
+    this.phase.addRoundPhase(this, this.roundPhase00, 0, 40) // 신규 적 출현 40초
+    this.phase.addRoundPhase(this, this.roundPhase01, 41, 60) // 신규 타워 출현 및 동그라미 첫 등장
+    this.phase.addRoundPhase(this, this.roundPhase02, 61, 100) // 동그라미 vs 적 1차 배틀 (40)
+    this.phase.addRoundPhase(this, this.roundPhase03, 101, 140) // 동그라미 vs 적 2차 배틀 (40)
+    this.phase.addRoundPhase(this, this.roundPhase04, 141, 176) // 동그라미 vs 보스전 (35)
+    this.phase.addRoundPhase(this, this.roundPhase05, 177, 185) // 후반 소규모 적들
+    this.phase.addRoundPhase(this, this.roundPhase06, 186, 190) // 마무리
 
     this.load.addImageList([
       imageSrc.round.round2_5_floorB1Light,
@@ -8641,6 +8641,9 @@ class Round2_5 extends RoundData {
 
     /** 현재 이스터 에그 모드가 적용중인지에 대한 값 (이 값은 저장되지 않음) */
     this.isEnableEasterEggmode = false
+
+    // 음악은 게임이 시작한 후 5초 후에 재생합니다.
+    this.sound.addMusicIndex(soundSrc.music.music14_intruder_battle)
   }
 
   process () {
@@ -8696,35 +8699,21 @@ class Round2_5 extends RoundData {
     }
   }
 
-  processSaveString () {
-    let arrayDonggrami = []
-    let arrayIntruder = []
-    for (let i = 0; i < this.spriteDonggrami.length; i++) {
-      arrayDonggrami.push(this.spriteDonggrami[i].getSaveDonggramiData())
-    }
-    for (let i = 0; i < this.spriteIntruder.length; i++) {
-      arrayIntruder.push(this.spriteIntruder[i].getSaveIntruderData())
-    }
-
-    this.saveString = JSON.stringify(arrayDonggrami) + '|' + JSON.stringify(arrayIntruder)
+  writeExtendedMemory () {
+    this.extendedMemory[0] = this.spriteDonggrami.length
+    this.extendedMemory[1] = this.spriteIntruder.length
   }
 
-  loadProcess () {
-    let str = this.saveString.split('|')
-    let arrayDonggrami = JSON.parse(str[0])
-    let arrayIntruder = JSON.parse(str[1])
+  readExtendedMemory () {
+    const spriteDonggramiCount = this.extendedMemory[0]
+    const spriteIntruderCount = this.extendedMemory[1]
 
-    for (let i = 0; i < arrayDonggrami.length; i++) {
-      let donggrami = new this.SpriteDonggrami()
-      let current = arrayDonggrami[i]
-      donggrami.setLoadDonggramiStat(current.color, current.x, current.y, current.moveSpeedX, current.moveSpeedY, current.hp)
-      this.spriteDonggrami.push(donggrami)
+    for (let i = 0; i < spriteDonggramiCount; i++) {
+      this.createSpriteDonggrami()
     }
-
-    for (let i = 0; i < arrayIntruder.length; i++) {
-      let current = arrayIntruder[i]
-      let intruder = new this.SpriteIntruder(current.id, current.x, current.y, current.z)
-      this.spriteIntruder.push(intruder)
+    
+    for (let i = 0; i < spriteIntruderCount; i++) {
+      this.createSpriteIntruder(ID.enemy.intruder.metal)
     }
   }
 
@@ -8825,8 +8814,7 @@ class Round2_5 extends RoundData {
     } else if (this.timeCheckFrame(pTime + 5)) {
       this.bgLegacy.color = Round2_1.getMaeulGradientColor()
     } else if (this.timeCheckFrame(pTime + 6)) {
-      this.sound.musicFadeInLegacy(soundSrc.music.music14_intruder_battle, 0)
-      this.sound.musicPlayLegacy()
+      this.sound.musicChange(1, 0)
     }
 
     // 각각의 적들이 차례대로 출현
@@ -8853,7 +8841,7 @@ class Round2_5 extends RoundData {
       for (let i = 0; i < 2; i++) {
         this.createSpriteIntruder(ID.enemy.intruder.flying2, 400, 200 + (Math.floor(i / 1) * 200))
       }
-    } else if (this.timeCheckFrame(pTime + 30)) { // 200% + 80% = 280%dps / 4s
+    } else if (this.timeCheckFrame(pTime + 28)) { // 200% + 80% = 280%dps / 4s
       for (let i = 0; i < 2; i++) {
         this.field.createEnemy(ID.enemy.intruder.gami, 700)
       }
@@ -8862,316 +8850,289 @@ class Round2_5 extends RoundData {
       }
     }
 
-    if (this.timeCheckInterval(pTime + 34, pTime + 37, 12)) { // locket 50%dps / 4s
+    if (this.timeCheckInterval(pTime + 32, pTime + 38, 12)) {
       this.field.createEnemy(ID.enemy.intruder.flyingRocket)
     }
-    this.timePauseWithEnemyCount(pTime + 38)
+
+    this.timePauseWithEnemyCount(pTime + 39)
   }
 
   roundPhase01 () {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
     const pEnd = this.phase.phaseTime[this.phase.getCurrentPhase()].endTime
-    // total phase dps: 240% (first 6 seconds 100%) (main dps 120%, donggrami dps: 120%)
+    // total phase dps 200% (41 ~ 50)
+    // tower phase dps 100% (51 ~ 59)
 
-    // 메인 패턴
-    this.roundPhase01_1()
-    this.roundPhase01_2()
-
-    // 추가로 나오는 적들 (3초동안 dps 80% 추가)
-    if (this.timeCheckInterval(pTime + 16, pTime + 18, 15) || this.timeCheckInterval(pTime + 26, pTime + 28, 15)) {
-      this.field.createEnemy(ID.enemy.intruder.flyingRocket)
-      this.field.createEnemy(ID.enemy.intruder.flyingRocket)
-    }
-
-    // 추가로 나오는 적들 (5초동안 dps 100% 추가)
-    if (this.timeCheckInterval(pTime + 29, pTime + 34, 90)) {
-      this.field.createEnemy(ID.enemy.intruder.momi)
-      this.field.createEnemy(ID.enemy.intruder.gami)
-    }
-    
-    this.roundPhase01_donggrami() // 동그라미 생성
-    this.timePauseWithEnemyCount(pEnd - 1) // 적이 다 죽어야 다음페이즈로 진행
-
-    if (this.timeCheckFrame(pTime + 15) || this.timeCheckFrame(pTime + 35)) {
-      this.field.createEnemyInsertItem(ID.enemy.intruder.metal, [ID.item.donggramiTicket], [1])
-    }
-  }
-
-  roundPhase01_1 () {
-    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    // 0s ~ 10s 120% dps
-    if (this.timeCheckInterval(pTime + 0, pTime + 10, 10)) {
+    // phase 1
+    if (this.timeCheckInterval(pTime + 1, pTime + 7, 10)) {
       let random = Math.floor(Math.random() * 3)
       switch (random) {
         case 0: this.field.createEnemy(ID.enemy.intruder.metal); break
         case 1: this.field.createEnemy(ID.enemy.intruder.diacore); break
         default: this.field.createEnemy(ID.enemy.intruder.square); break
       }
-    } 
-  }
-
-  roundPhase01_2 () {
-    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    // 11s ~ 37s, total dps 240%
-    // 해당 페이즈 시간이 32초를 넘어가면, 서서히 등장하진 않음.
-
-    // dps 60%
-    if (this.timeCheckInterval(pTime + 11, pTime + 37, 20)) {
-      let inputList = [ID.enemy.intruder.square, ID.enemy.intruder.diacore, ID.enemy.intruder.metal]
-      let random = Math.floor(Math.random() * inputList.length)
-      if (Math.random() < 0.5 || this.timeCheckInterval(pTime + 32, pTime + 37)) {
-        this.field.createEnemy(inputList[random])
-      } else {
-        this.createSpriteIntruder(inputList[random])
-      }
     }
 
-    // dps 100%
-    if (this.timeCheckInterval(pTime + 11, pTime + 37, 120)) {
-      let inputList = [ID.enemy.intruder.lever, ID.enemy.intruder.rendown, ID.enemy.intruder.lever]
-      for (let i = 0; i < inputList.length; i++) {
-        if (Math.random() < 0.4 || this.timeCheckInterval(pTime + 32, pTime + 37)) {
-          this.field.createEnemy(inputList[i])
-        } else {
-          this.createSpriteIntruder(inputList[i])
-        }
-      }
-    }
-
-    // dps 80%
-    if (this.timeCheckInterval(pTime + 11, pTime + 37, 60)) {
-      let inputList = [ID.enemy.intruder.flying1, ID.enemy.intruder.flying2]
-      for (let i = 0; i < inputList.length; i++) {
-        if (Math.random() < 0.4 || this.timeCheckInterval(pTime + 32, pTime + 37)) {
-          this.field.createEnemy(inputList[i])
-        } else {
-          this.createSpriteIntruder(inputList[i])
-        }
-      }
-    }
-  }
-
-  roundPhase01_donggrami () {
-    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    // 페이즈 시작 7초가 지난 시점에서 한꺼번에 10마리의 동그라미가 등장함
-    if (this.timeCheckFrame(pTime + 7)) {
-      for (let i = 0; i < 10; i++) {
-        this.createSpriteDonggrami()
-      }
-    }
-
-    // 페이즈 진행 중 계속 동그라미가 등장 (최대 10마리까지)
-    if (this.timeCheckInterval(pTime + 10, pTime + 39, 40) && this.getDonggramiCount() < 10) {
+    // 동그라미 5마리를 추가 (딱 1번만 등장)
+    if (this.timeCheckInterval(pTime + 3, pTime + 3, 12)) {
       this.createSpriteDonggrami()
     }
-  }
-
-  roundPhase02 () {
-    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-
-    // tower
-    if (this.timeCheckInterval(pTime + 0, pTime + 12, 180)) {
-      this.field.createEnemy(ID.enemy.intruder.hanoi, Math.random() * 400, 400) 
-      this.field.createEnemy(ID.enemy.intruder.hanoi, Math.random() * 400, 400)
-      this.field.createEnemy(ID.enemy.intruder.hanoi, Math.random() * 400, 400) 
-    } else if (this.timeCheckFrame(pTime + 12)) {
+    
+    // phase 2 (타워만 등장)
+    if (this.timeCheckInterval(pTime + 8, pTime + 12, 60)) {
+      this.field.createEnemy(ID.enemy.intruder.hanoi)
+    } else if (this.timeCheckInterval(pTime + 17, pTime + 17, 60)) {
+      this.field.createEnemy(ID.enemy.intruder.hanoi)
+    }
+    
+    // 다석은 화면 공간에 나누어서 5마리가 한꺼번에 출현
+    if (this.timeCheckFrame(pTime + 14)) {
       for (let i = 0; i < 5; i++) {
         this.field.createEnemy(ID.enemy.intruder.daseok, i * 160, 400)
       }
     }
 
+    this.timePauseWithEnemyCount(pTime + 19)
+  }
+
+  roundPhase02 () {
+    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+
+    // 이제부터 본격적인 동그라미 vs 적들의 대결이 시작됨
+    // dps: 100%(player) + 180% (donggrami)
+    // dps range 280% ~ 320%
+
     // donggrami
-    if (this.timeCheckInterval(pTime + 0, pTime + 19, 50) && this.getDonggramiCount() < 10) {
+    // 참고: 동그라미는 66초 시점부터 등장합니다.
+    if (this.timeCheckFrame(pTime + 6)) {
+      for (let i = 0; i < 10; i++) {
+        this.createSpriteDonggrami() // 동그라미 10마리 한꺼번에 등장
+      }
+    }
+
+    // donggrami 매 초당 2마리씩 생성
+    if (this.timeCheckInterval(pTime + 6, pTime + 38, 30) && this.getDonggramiCount() < 25) {
       this.createSpriteDonggrami()
     }
 
-    if (this.timeCheckFrame(pTime + 5)) {
-      this.field.createEnemyInsertItem(ID.enemy.intruder.hanoi, [ID.item.donggramiTicket], [1])
+    // 적들 등장 함수는 코드가 너무 길어서 따로 정의하였음.
+    this.roundPhase02_2()
+    this.roundPhase02_3()
+    this.timePauseWithEnemyCount(pTime + 39)
+  }
+
+  roundPhase02_2 () {
+    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+
+    // totalDPS 270%+- (player 100% + donggrami 180%)
+    // A: dps 20%, B: dps 50%
+    let inputListA = [ID.enemy.intruder.square, ID.enemy.intruder.metal, ID.enemy.intruder.diacore]
+    let inputListB = [ID.enemy.intruder.rendown, ID.enemy.intruder.lever]
+
+    // Agroup 20% * 6 = 120%
+    // 일정 확률로 적을 직접 생성시키거나 스프라이트 형태로 생성시킵니다.
+    if (this.timeCheckInterval(pTime + 0, pTime + 19, 10)) {
+      let random = Math.floor(Math.random() * inputListA.length)
+      Math.random() < 0.5 ? this.field.createEnemy(inputListA[random]) : this.createSpriteIntruder(inputListA[random])
     }
 
-    this.timePauseWithEnemyCount(pTime + 19)
+    // Bgroup 50% * 4 = 150%
+    if (this.timeCheckInterval(pTime + 0, pTime + 19, 15)) {
+      let random = Math.floor(Math.random() * inputListB.length)
+      Math.random() < 0.5 ? this.field.createEnemy(inputListB[random]) : this.createSpriteIntruder(inputListB[random])
+    }
+  }
+
+  roundPhase02_3 () {
+    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+
+    // totalDPS 260% ~ 310% (player 100% + donggrami 180%)
+    // A: dps 20%, B: dps 50%
+    let inputListA = [ID.enemy.intruder.square, ID.enemy.intruder.metal, ID.enemy.intruder.diacore]
+    let inputListB = [ID.enemy.intruder.rendown, ID.enemy.intruder.lever]
+
+    // 이들은 스프라이트로 처리하기 싫기 때문에 따로 구분함
+    let inputListC = [ID.enemy.intruder.momi, ID.enemy.intruder.flying1, ID.enemy.intruder.flying2]
+
+    // Agroup 20% * 2 = 40%
+    // 일정 확률로 적을 직접 생성시키거나 스프라이트 형태로 생성시킵니다.
+    if (this.timeCheckInterval(pTime + 20, pTime + 37, 30)) {
+      let random = Math.floor(Math.random() * inputListA.length)
+      Math.random() < 0.5 ? this.field.createEnemy(inputListA[random]) : this.createSpriteIntruder(inputListA[random])
+    }
+
+    // Bgroup 50% * 2 = 100%
+    if (this.timeCheckInterval(pTime + 20, pTime + 37, 20)) {
+      let random = Math.floor(Math.random() * inputListB.length)
+      Math.random() < 0.5 ? this.field.createEnemy(inputListB[random]) : this.createSpriteIntruder(inputListB[random])
+    }
+
+    // Cgroup (momi, flying) 120%
+    if (this.timeCheckInterval(pTime + 20, pTime + 37, 20)) {
+      let random = Math.floor(Math.random() * inputListC.length)
+      this.field.createEnemy(inputListC[random])
+    }
+
+    // Dgroup gami 50%
+    if (this.timeCheckInterval(pTime + 29, pTime + 37, 60)) {
+      this.field.createEnemy(ID.enemy.intruder.gami)
+    }
   }
 
   roundPhase03 () {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    // phase dps: 360% (player 120%, donggrami 240%)
-    // 참고: dps에 오차가 있을 수 있음
-    // phase 50 seconds
-    // 엄청나게 많은 적이 나옴
+    // phase dps: ~400% (player 100%, donggrami 270%)
+    // 대규모 동그라미 vs 적들의 대결
 
-    this.roundPhase03_1()
     this.roundPhase03_2()
     this.roundPhase03_3()
 
-    // donggrami (1 second per 2)
-    if (this.timeCheckInterval(pTime + 0, pTime + 49, 30) && this.getDonggramiCount() < 20) {
+    // donggrami (1 second per 3)
+    if (this.timeCheckInterval(pTime + 0, pTime + 38, 20) && this.getDonggramiCount() < 30) {
       this.createSpriteDonggrami()
     }
 
-    if (this.timeCheckFrame(pTime + 10)) {
-      this.field.createEnemyInsertItem(ID.enemy.intruder.metal, [ID.item.donggramiTicket], [1])
-    } else if (this.timeCheckFrame(pTime + 40)) {
-      this.field.createEnemyInsertItem(ID.enemy.intruder.hanoi, [ID.item.donggramiTicket], [1])
-    }
-
-    this.timePauseWithEnemyCount(pTime + 49)
-  }
-
-  roundPhase03_1 () {
-    const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    let inputListA = [ID.enemy.intruder.square, ID.enemy.intruder.metal, ID.enemy.intruder.diacore]
-    let inputListB = [ID.enemy.intruder.rendown, ID.enemy.intruder.lever, ID.enemy.intruder.lever]
-
-    // 3-1-1 dps ListA = 240% (20x12), ListB = 100%, total 340%
-    // 3-1-2 dps ListA = 120% (20x6), ListB = 250%(200 + 50), total 370%
-    if (this.timeCheckInterval(pTime + 0, pTime + 7, 5) || this.timeCheckInterval(pTime + 8, pTime + 15, 10)) {
-      let random = Math.floor(Math.random() * inputListA.length)
-      if (Math.random() < 0.5) {
-        this.field.createEnemy(inputListA[random])
-      } else {
-        this.createSpriteIntruder(inputListA[random])
-      }
-    }
-
-    if (this.timeCheckInterval(pTime + 0, pTime + 7, 120) || this.timeCheckInterval(pTime + 8, pTime + 15, 60)) {
-      for (let i = 0; i < inputListB.length; i++) {
-        if (Math.random() < 0.5) {
-          this.field.createEnemy(inputListB[i])
-        } else {
-          this.createSpriteIntruder(inputListB[i])
-        }
-      }
-
-      // 레버 하나 추가 (dps를 맞추기 위해서)
-      if (this.timeCheckInterval(pTime + 8, pTime + 15, 60)) {
-        this.field.createEnemy(ID.enemy.intruder.lever)
-      }
-    }
+    this.timePauseWithEnemyCount(pTime + 39)
   }
 
   roundPhase03_2 () {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    // 3-2-1 dps: flying 240%, square 40%, lever 50%, total 330%
-    // 3-2-2 dps: flying 80%, rocket 80%, monster 180% (momi 80%, gami 100%), total 340%
-    if (this.timeCheckInterval(pTime + 16, pTime + 23, 10) || this.timeCheckInterval(pTime + 24, pTime + 31, 30)) {
+    // 3-2-2A dps: flying rush 400% (40 * 10)
+    if (this.timeCheckInterval(pTime + 0, pTime + 9, 6)) {
       let targetEnemyId = Math.random() < 0.5 ? ID.enemy.intruder.flying1 : ID.enemy.intruder.flying2
-      if (Math.random() < 0.5) {
-        this.field.createEnemy(targetEnemyId)
-      } else {
-        this.createSpriteIntruder(targetEnemyId)
-      }
+      Math.random() < 0.5 ? this.field.createEnemy(targetEnemyId) : this.createSpriteIntruder(targetEnemyId)
     }
 
-    if (this.timeCheckInterval(pTime + 16, pTime + 23, 30)) {
-      let inputList = [ID.enemy.intruder.square, ID.enemy.intruder.diacore, ID.enemy.intruder.metal]
-      let random = Math.floor(Math.random() * inputList.length)
-      if (Math.random() < 0.5 || this.timeCheckInterval(pTime + 32, pTime + 37)) {
-        this.field.createEnemy(inputList[random])
-      } else {
-        this.createSpriteIntruder(inputList[random])
-      }
+    // 3-2-2B dps: sqaure rush 400% (20 * 20)
+    let inputListA = [ID.enemy.intruder.square, ID.enemy.intruder.metal, ID.enemy.intruder.diacore]
+    if (this.timeCheckInterval(pTime + 10, pTime + 14, 3)) {
+      let random = Math.floor(Math.random() * inputListA.length)
+      Math.random() < 0.5 ? this.field.createEnemy(inputListA[random]) : this.createSpriteIntruder(inputListA[random])
     }
 
-    if (this.timeCheckInterval(pTime + 16, pTime + 23, 60)) {
-      this.field.createEnemy(ID.enemy.intruder.lever)
-    } else if (this.timeCheckInterval(pTime + 24, pTime + 31, 15)) {
-      this.field.createEnemy(ID.enemy.intruder.flyingRocket)
-    }
-    
-    if (this.timeCheckInterval(pTime + 24, pTime + 31, 60)) {
-      this.field.createEnemy(ID.enemy.intruder.gami)
-      this.field.createEnemy(ID.enemy.intruder.momi)
-      this.field.createEnemy(ID.enemy.intruder.momi)
+    // 3-2-2C dps: tower rush 400% (1 * 2) + 2
+    if (this.timeCheckInterval(pTime + 15, pTime + 19, 60)) {
+      const daseokX = Math.floor(Math.random() * (game.graphic.CANVAS_WIDTH - 200))
+      this.field.createEnemy(ID.enemy.intruder.daseok, daseokX)
     }
   }
 
   roundPhase03_3 () {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    // 3-2-1 dps: square 40%, flying 40%, gami 50%, tower 225%, total 355%
-    // 3-2-2 dps: tower 350% (daseok 250%, hanoi 100%)
+    // 어떤식으로든 ~400%가 랜덤 조합 형태로 나오게 됨.
+    // 260%를 우선 채우고, 나머지 값은 아무렇게나 추가로 채우는 방식 (매 초 랜덤)
+    if (this.timeCheckInterval(pTime + 21, pTime + 36, 60)) {
+      // sprite group 160% (20 * 3 + 50 * 2)
+      Math.random() < 0.5 ? this.field.createEnemy(ID.enemy.intruder.square) : this.createSpriteIntruder(ID.enemy.intruder.square)
+      Math.random() < 0.5 ? this.field.createEnemy(ID.enemy.intruder.metal) : this.createSpriteIntruder(ID.enemy.intruder.metal)
+      Math.random() < 0.5 ? this.field.createEnemy(ID.enemy.intruder.diacore) : this.createSpriteIntruder(ID.enemy.intruder.diacore)
+      Math.random() < 0.5 ? this.field.createEnemy(ID.enemy.intruder.rendown) : this.createSpriteIntruder(ID.enemy.intruder.rendown)
+      Math.random() < 0.5 ? this.field.createEnemy(ID.enemy.intruder.lever) : this.createSpriteIntruder(ID.enemy.intruder.lever)
 
-    if (this.timeCheckInterval(pTime + 32, pTime + 36, 60)) {
-      this.field.createEnemy(ID.enemy.intruder.square)
-      this.field.createEnemy(ID.enemy.intruder.metal)
-    }
-
-    if (this.timeCheckInterval(pTime + 32, pTime + 36, 120)) {
+      // flying group 100%
       this.field.createEnemy(ID.enemy.intruder.flying1)
       this.field.createEnemy(ID.enemy.intruder.flying2)
-      this.field.createEnemy(ID.enemy.intruder.gami)
+      this.field.createEnemy(ID.enemy.intruder.flyingRocket)
+      this.field.createEnemy(ID.enemy.intruder.flyingRocket)
     }
 
-    if (this.timeCheckFrame(pTime + 32)) {
-      this.field.createEnemy(ID.enemy.intruder.hanoi)
-      this.field.createEnemy(ID.enemy.intruder.daseok)
+    let random = Math.floor(Math.random() * 5)
+    if (this.timeCheckInterval(pTime + 21, pTime + 37, 60)) {
+      if (random === 0) { // 120%
+        this.field.createEnemy(ID.enemy.intruder.square)
+        this.field.createEnemy(ID.enemy.intruder.metal)
+        this.field.createEnemy(ID.enemy.intruder.diacore)
+        this.field.createEnemy(ID.enemy.intruder.square)
+        this.field.createEnemy(ID.enemy.intruder.metal)
+        this.field.createEnemy(ID.enemy.intruder.diacore)
+      } else if (random === 1) { // 100%
+        this.field.createEnemy(ID.enemy.intruder.rendown)
+        this.field.createEnemy(ID.enemy.intruder.lever)
+      } else if (random === 2) { // 100%
+        this.field.createEnemy(ID.enemy.intruder.flying1)
+        this.field.createEnemy(ID.enemy.intruder.flying2)
+        this.field.createEnemy(ID.enemy.intruder.flyingRocket)
+        this.field.createEnemy(ID.enemy.intruder.flyingRocket)
+      } else if (random === 3) { // 90%
+        this.field.createEnemy(ID.enemy.intruder.momi)
+        this.field.createEnemy(ID.enemy.intruder.gami)
+      } else if (random === 4) { // 100%
+        this.field.createEnemy(ID.enemy.intruder.hanoi)
+      }
     }
 
-    if (this.timeCheckInterval(pTime + 36, pTime + 48, 120)) {
-      this.field.createEnemy(ID.enemy.intruder.hanoi)
+    // 그와중에 다석도 섞여나옴
+    if (this.timeCheckFrame(pTime + 30) || this.timeCheckFrame(pTime + 35)) {
       this.field.createEnemy(ID.enemy.intruder.daseok)
     }
   }
 
   roundPhase04 () {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    // boss
+    // 미친 보스 등장 (탄환을 정말 많이 쏠거임)
     if (this.timeCheckFrame(pTime + 1)) {
       this.sound.soundPlay(soundSrc.round.r2_4_message1)
       this.field.createEnemy(ID.enemy.intruder.jemuBossUltra) // 공포의 보스 등장
     }
 
-    // 동그라미들의 반격, 4초에 한번씩 나옴 (최대 30마리 제한)
-    if (this.timeCheckInterval(pTime + 0, pTime + 40, 120) && this.getDonggramiCount() < 15) {
-      for (let i = 0; i < 3; i++) {
+    // 동그라미들의 반격, 1초에 5마리가 한번에 나옴 (최대 40마리 제한)
+    if (this.timeCheckInterval(pTime + 0, pTime + 40, 60) && this.getDonggramiCount() < 40) {
+      for (let i = 0; i < 5; i++) {
         this.createSpriteDonggrami()
       }
     }
 
     // 적이 죽은경우, 빠르게 진행되도록 처리 (단, 일정시간이 지나야만 함)
-    if (this.timeCheckInterval(pTime + 19, pTime + 38) && this.field.enemyNothingCheck()) {
-      this.time.setCurrentTime(pTime + 39)
+    if (this.timeCheckInterval(pTime + 20, pTime + 34) && this.field.enemyNothingCheck()) {
+      this.time.setCurrentTime(pTime + 35)
     }
 
-    this.timePauseWithEnemyCount(pTime + 39)
+    this.timePauseWithEnemyCount(pTime + 35)
   }
 
   roundPhase05 () {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    if (this.timeCheckInterval(pTime + 0, pTime + 7, 5)) {
+    if (this.timeCheckInterval(pTime + 0, pTime + 5, 3)) {
       this.field.createEnemy(ID.enemy.intruder.flyingRocket)
     }
-    if (this.timeCheckInterval(pTime + 0, pTime + 7, 30)) {
+    if (this.timeCheckInterval(pTime + 0, pTime + 5, 20)) {
       this.field.createEnemy(ID.enemy.intruder.momi)
     }
 
-    if (this.timeCheckFrame(pTime + 2)) {
-      this.field.createEnemyInsertItem(ID.enemy.intruder.flyingRocket, [ID.item.donggramiTicket], [1])
-    }
-
-    if (this.timeCheckInterval(pTime + 0, pTime + 10, 30) && this.getDonggramiCount() < 10) {
+    if (this.timeCheckInterval(pTime + 0, pTime + 10, 60) && this.getDonggramiCount() < 10) {
       this.createSpriteDonggrami()
     }
 
-    this.timePauseWithEnemyCount(pTime + 9)
+    this.timePauseWithEnemyCount(pTime + 7)
   }
   
   roundPhase06 () {
     // (이 페이즈의 목적은 동그라미가 승리 대사를 하도록 만들기 위한것)
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-
     if (this.timeCheckFrame(pTime)) {
-      this.sound.musicFadeOutLegacy(1)
-      // 클리어 구간에서 아이템을 추가함
-      // 다만, 동그라미가 없어도 아이템은 추가됨 (동그라미가 있으면 무작위의 동그라미가 있는 위치에서 아이템이 생성됨)
-      let random = Math.floor(Math.random() * this.spriteDonggrami.length)
-      let donggrami = this.spriteDonggrami[random]
-      if (donggrami != null) {
-        this.field.addPlayerItem(ID.item.donggramiTicket, 1, true, donggrami.x, donggrami.y)
-      } else {
-        this.field.addPlayerItem(ID.item.donggramiTicket, 1, true)
-      }
+      this.sound.musicChange(0, 60)
     }
 
+    if (this.timeCheckFrame(pTime + 0) || this.timeCheckFrame(pTime + 1)) {
+      // 클리어 구간에서 아이템을 추가함
+      // 다만, 동그라미가 없어도 아이템은 추가됨 (동그라미가 있으면 무작위의 동그라미가 있는 위치에서 아이템이 생성됨)
+      for (let i = 0; i < 3; i++) {
+        let random = Math.floor(Math.random() * this.spriteDonggrami.length)
+        let donggrami = this.spriteDonggrami[random]
+        if (donggrami != null) {
+          this.field.addPlayerItem(ID.item.donggramiTicket, 1, true, donggrami.x, donggrami.y)
+        } else {
+          this.field.addPlayerItem(ID.item.donggramiTicket, 1, true)
+        }
+      }
+    }
+  }
+
+  processBackground () {
+    super.processBackground()
+    if (this.timeCheckInterval(7, 190)) {
+      this.bgLegacy.imageSrc = imageSrc.round.round2_5_floorB1Break
+    }
   }
 
   display () {
@@ -9408,7 +9369,16 @@ class Round2_5 extends RoundData {
       for (let i = 0; i < enemyBulletObject.length; i++) {
         let enemyBullet = enemyBulletObject[i]
         if (collision(this, enemyBullet)) {
-          this.hp -= (this.attack / 10)
+          // 데미지 값 설정
+          // 보스가 쏘는 총알은 동그라미에게 강력한 데미지를 줄 수 있음.
+          if (enemyBullet.imageData === imageDataInfo.intruderEnemy.energyBolt) {
+            this.hp -= (this.hpMax / 2)
+          } else if (enemyBullet.imageData === imageDataInfo.intruderEnemy.energyReflect) {
+            this.hp -= (this.hpMax / 4)
+          } else {
+            this.hp -= (this.attack / 10)
+          }
+
           enemyBullet.isDeleted = true
         }
       }
@@ -9653,6 +9623,9 @@ class Round2_6 extends RoundData {
 
     this.spriteElevator = Round2_4.createSpriteElevator()
     this.setBgLayer()
+
+    this.sound.addMusicIndex(soundSrc.music.music12_donggrami_hall_outside)
+    this.sound.addMusicIndex(soundSrc.music.music15_donggrami_ruin)
   }
 
   setBgLayer () {
@@ -9701,27 +9674,25 @@ class Round2_6 extends RoundData {
   }
 
   processSaveString () {
-    // 2-4 코드와의 차이점은, course에 대한 정보가 없음
-    // this.saveString = this.spriteElevator.state
-    //   + ',' + this.spriteElevator.stateDelay.count 
-    //   + ',' + this.spriteElevator.floorDelay.count
-    //   + ',' + this.spriteElevator.floor
-    //   + ',' + this.spriteElevator.floorArrive
-    //   + ',' + this.spriteElevator.isFloorMove
-    //   + ',' + this.spriteElevator.x
-    //   + ',' + this.spriteElevator.y
+    this.extendedMemory[0] = this.spriteElevator.state
+    this.extendedMemory[1] = this.spriteElevator.stateDelay.count
+    this.extendedMemory[2] = this.spriteElevator.floorDelay.count
+    this.extendedMemory[3] = this.spriteElevator.floor
+    this.extendedMemory[4] = this.spriteElevator.floorArrive
+    this.extendedMemory[5] = this.spriteElevator.isFloorMove ? 1 : 0
+    this.extendedMemory[6] = this.spriteElevator.x
+    this.extendedMemory[7] = this.spriteElevator.y
   }
 
   loadProcess () {
-    // let str = this.saveString.split(',')
-    // this.spriteElevator.state = str[0]
-    // this.spriteElevator.stateDelay.count = Number(str[1])
-    // this.spriteElevator.floorDelay.count = Number(str[2])
-    // this.spriteElevator.floor = Number(str[3])
-    // this.spriteElevator.floorArrive = Number(str[4])
-    // this.spriteElevator.isFloorMove = str[5] === 'true' ? true : false
-    // this.spriteElevator.x = Number(str[6])
-    // this.spriteElevator.y = Number(str[7])
+    this.spriteElevator.state = this.extendedMemory[0]
+    this.spriteElevator.stateDelay.count = this.extendedMemory[1]
+    this.spriteElevator.floorDelay.count = this.extendedMemory[2]
+    this.spriteElevator.floor = this.extendedMemory[3]
+    this.spriteElevator.floorArrive = this.extendedMemory[4]
+    this.spriteElevator.isFloorMove = !!this.extendedMemory[5]
+    this.spriteElevator.x = this.extendedMemory[6]
+    this.spriteElevator.y = this.extendedMemory[7]
   }
 
   roundPhase00 () {
@@ -9774,9 +9745,9 @@ class Round2_6 extends RoundData {
 
     // music
     if (this.timeCheckFrame(pTime + 0)) {
-      this.sound.musicFadeInLegacy(soundSrc.music.music12_donggrami_hall_outside)
+      this.sound.musicChange(1, 60)
     } else if (this.timeCheckFrame(pTime + 26)) {
-      this.sound.musicFadeOutLegacy(180)
+      this.sound.musicFadeOutLegacy(120)
     }
 
     // donggramiParty (dps 120%)
@@ -9800,8 +9771,7 @@ class Round2_6 extends RoundData {
     const pTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
 
     if (this.timeCheckFrame(pTime + 0)) {
-      this.sound.musicFadeInLegacy(soundSrc.music.music15_donggrami_ruin, 120)
-      this.sound.musicPlayLegacy()
+      this.sound.musicChange(2, 120)
     }
 
     // dps 100%
