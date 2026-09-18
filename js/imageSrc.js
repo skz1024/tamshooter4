@@ -515,6 +515,7 @@ export class imageDataInfo {
     hexagon: new ImageDataObject(720, 670, 110, 100, 1),
     octagon: new ImageDataObject(840, 670, 130, 130, 1),
     crazyRobot: new ImageDataObject(900, 0, 250, 300, 1),
+    hellgrey: new ImageDataObject(950, 1050, 90, 120, 1),
 
     // bullet
     bulletTapo: new ImageDataObject(0, 700, 90, 30, 1),

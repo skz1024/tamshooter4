@@ -9879,13 +9879,14 @@ class Round2_OS95 extends RoundData {
 /** 라운드 3에서 사용하는 플레이어 옵션에 대한 클래스 */
 class Round3TempletePlayerOption extends FieldData {
   static colorList = {
-    orange: 'orange',
-    skyblue: 'skyblue',
-    green: 'green',
-    black: 'black',
-    pink: 'pink',
-    purple: 'purple',
-    khaki: 'khaki',
+    unused: 0,
+    orange: 1,
+    skyblue: 2,
+    green: 3,
+    black: 4,
+    pink: 5,
+    purple: 6,
+    khaki: 7,
   }
 
   /** 
@@ -9899,11 +9900,10 @@ class Round3TempletePlayerOption extends FieldData {
     super()
     /** 플레이어 위치 기준 옵션의 상대 위치값 X좌표 @type {number} */ this.POSITION_X = 50
     /** 플레이어 위치 기준 옵션의 상대 위치값 첫번째 옵션의 Y좌표 @type {number} */ this.POSITION_Y = -10
-    /** 옵션의 현재 색 @type {string} */ this._color = ''
+    /** 옵션의 현재 색 @type {number} */ this._color = 0
     /** 현재 옵션의 레벨 (게임 도중에 리셋되지 않습니다.), 이 값을 수정하려면 setLevel을 사용해주세요. @type {number} */ this._level = 0
-    /** 현재 레벨에 따른 dps퍼센트값 기준 @type {number[]} */ this.dpsPercentLevel = [10, 14, 18, 30, 36, 42, 60, 70, 80, 100]
+    /** 현재 레벨에 따른 dps퍼센트값 기준 @type {number[]} */ this.dpsPercentLevel = [10, 20, 30]
     this.imageSrc = imageSrc.round.round3_playerOption
-    /** 옵션을 가지고 있는 여부 @type {boolean} */ this._hasOption = false
     /** 옵션의 무기 발사에 대한 지연시간 카운터 */ this._delayCount = 0
 
     /** 옵션의 레벨이 게임 진행상황에 따라 자동으로 변경됨 (단 구현로직은 상속받은 하위클래스에 구현되어있어, 
@@ -9930,22 +9930,22 @@ class Round3TempletePlayerOption extends FieldData {
      * 옵션에 대한 확장 정보 
      */ 
     this.optionInfo = {
-      /** @type {optionInfo} */ orange: {shotPerSecond: [6, 10, 12, 15], shotPerCount: [2, 3, 4, 5], attackMultiple: 1},
-      /** @type {optionInfo} */ green: {shotPerSecond: [6, 10, 10, 15], shotPerCount: [6, 6, 12, 12], attackMultiple: 1.15},
-      /** @type {optionInfo} */ skyblue: {shotPerSecond: [2, 4, 4, 4], shotPerCount: [1, 1, 2, 3], attackMultiple: 0.75}, // splash의 특성때문에 데미지가 낮게 설계됨
-      /** @type {optionInfo} */ black: {shotPerSecond: [1, 2, 3, 4], shotPerCount: [2, 2, 2, 2], attackMultiple: 1.05}, // black은 무기가 2번 공격할 수 있음 따라서 0.6 * 2 = 1.2
-      /** @type {optionInfo} */ pink: {shotPerSecond: [4, 6, 6, 6], shotPerCount: [1, 2, 3, 4], attackMultiple: 1},
-      /** @type {optionInfo} */ purple: {shotPerSecond: [4, 6, 10, 12], shotPerCount: [1, 2, 3, 3], attackMultiple: 1},
-      /** @type {optionInfo} */ khaki: {shotPerSecond: [3, 4, 6, 6], shotPerCount: [2, 4, 4, 4], attackMultiple: 1.05},
+      /** @type {optionInfo} */ orange: {shotPerSecond: [6, 10, 12], shotPerCount: [4, 4, 4], attackMultiple: 1},
+      /** @type {optionInfo} */ green: {shotPerSecond: [12, 15, 15], shotPerCount: [4, 5, 6], attackMultiple: 1.2},
+      /** @type {optionInfo} */ skyblue: {shotPerSecond: [2, 2, 2], shotPerCount: [1, 2, 3], attackMultiple: 0.4}, // splash의 특성때문에 데미지가 낮게 설계됨
+      /** @type {optionInfo} */ black: {shotPerSecond: [1, 2, 3], shotPerCount: [2, 2, 2], attackMultiple: 1}, // black은 무기가 2번 공격할 수 있음 따라서 0.6 * 2 = 1.2
+      /** @type {optionInfo} */ pink: {shotPerSecond: [2, 3, 3], shotPerCount: [2, 2, 4], attackMultiple: 1},
+      /** @type {optionInfo} */ purple: {shotPerSecond: [4, 6, 6], shotPerCount: [1, 2, 3], attackMultiple: 1},
+      /** @type {optionInfo} */ khaki: {shotPerSecond: [2, 2, 4], shotPerCount: [2, 4, 4], attackMultiple: 1},
     }
 
     /** 
      * 레벨에 대한 클래스 레벨값: 이 값들은 무기의 단계를 표현할 때 사용합니다.
      * 예를들어, 레벨 4라면, 클래스레벨은 1가 되는 형식입니다.
      * 
-     * 최대레벨은 9입니다.
+     * 하지만 옵션 밸런스의 변경으로 지금은, 클래스 레벨과 옵션 레벨이 일치하게 되어버렸습니다.
      */
-    this.classLevel = [0, 0, 0, 1, 1, 1, 2, 2, 2, 3]
+    this.classLevel = [0, 1, 2]
 
     /** 옵션의 최대 레벨 @type {number} */ this.LEVEL_MAX = this.classLevel.length - 1
 
@@ -9954,7 +9954,6 @@ class Round3TempletePlayerOption extends FieldData {
 
     // 임시 이미지 설정
     this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.orange, 3)
-
     
     /** 옵션에서 관리하는 무기의 오브젝트 @type {WeaponData[]} */
     this.weaponObject = []
@@ -9965,11 +9964,11 @@ class Round3TempletePlayerOption extends FieldData {
   }
 
   /**
-   * 옵션의 현재 색을 설정합니다. (이 함수로 색을 설정하면, 자동으로 옵션을 장착한 것으로 처리)
-   * @param {string} color 
+   * 옵션의 현재 색을 설정합니다.
+   * colorList.unused 인 경우 현재 색은 변동하지 않지만, 옵션은 사라집니다.
+   * @param {number} color 
    */
   setColor (color) {
-    this._hasOption = true
     this._color = color
     switch (color) {
       case this.colorList.orange: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.orange, 3); break
@@ -9984,13 +9983,22 @@ class Round3TempletePlayerOption extends FieldData {
 
   /** 옵션의 정보를 저장하고 있는 문자열 데이터를 얻어옵니다. */
   getSaveString () {
-    let hasOption = this._hasOption ? 'T' : '' // 옵션이 있을경우 문자열로 값을 추가하고 없을경우 무시
-    let str = '' + this._level + '|' + this._color + '|' + hasOption
-    for (let i = 0; i < this.optionObject.length; i++) {
-      str += '|' + this.optionObject[i].color + ' ' + this.optionObject[i].x + ' ' + this.optionObject[i].y
-    }
+    // let hasOption = this._hasOption ? 'T' : '' // 옵션이 있을경우 문자열로 값을 추가하고 없을경우 무시
+    // let str = '' + this._level + '|' + this._color + '|' + hasOption
+    // for (let i = 0; i < this.optionObject.length; i++) {
+    //   str += '|' + this.optionObject[i].color + ' ' + this.optionObject[i].x + ' ' + this.optionObject[i].y
+    // }
 
-    return str
+    // return str
+
+    // new save system
+    // level
+    // color
+    // optionObject[0].color 
+    // optionObject[0].x // y좌표 저장하지 않습니다. (불러올 때 임의 값 지정됨)
+    // optionObject[1].color
+    // optionObject[1].x // y좌표 저장하지 않습니다. (불러올 때 임의 값 지정됨)
+    
   }
 
   /**
@@ -10000,20 +10008,20 @@ class Round3TempletePlayerOption extends FieldData {
    * @param {string} str 
    */
   setLoadString (str) {
-    let text = str.split('|')
-    this._level = Number(text[0])
-    this._color = text[1]
-    this._hasOption = text[2] !== '' // 해당 텍스트에 값이 있으면 true, 아니면 false
-    for (let i = 3; i < text.length; i++) {
-      let split = text[i].split(' ')
-      let option = new Round3TempletePlayerOption.OptionObject(split[0])
-      option.x = Number(split[1])
-      option.y = Number(split[2])
-      this.optionObject.push(option)
-    }
+    // let text = str.split('|')
+    // this._level = Number(text[0])
+    // this._color = text[1]
+    // this._hasOption = text[2] !== '' // 해당 텍스트에 값이 있으면 true, 아니면 false
+    // for (let i = 3; i < text.length; i++) {
+    //   let split = text[i].split(' ')
+    //   let option = new Round3TempletePlayerOption.OptionObject(split[0])
+    //   option.x = Number(split[1])
+    //   option.y = Number(split[2])
+    //   this.optionObject.push(option)
+    // }
     
-    this.setColor(this._color)
-    this.processMove() // 옵션 위치가 플레이어 근처로 이동하도록 조정
+    // this.setColor(this._color)
+    // this.processMove() // 옵션 위치가 플레이어 근처로 이동하도록 조정
   }
 
   /** 현재 옵션의 정보를 현재 레벨에 맞추어 가져옵니다. (현재 색에 따라 얻어오는 정보는 달라짐) */
@@ -10047,7 +10055,6 @@ class Round3TempletePlayerOption extends FieldData {
    * @param {number} level 설정할 레벨
    * */
   setMenualLevel (level) {
-    this._hasOption = true
     this.isAutoLevel = false
 
     if (level >= 0 && level <= this.LEVEL_MAX) {
@@ -10062,7 +10069,7 @@ class Round3TempletePlayerOption extends FieldData {
   /** 레벨을 자동으로 변환하도록 수정, 단 현재 시간을 입력해야함 */
   setAutoLevel (currentTime = 0) {
     this.isAutoLevel = true
-    this._level = Math.floor(currentTime / 10)
+    this._level = Math.floor(currentTime / 30)
 
     if (this._level < 0) this._level = 0
     else if (this._level > this.LEVEL_MAX) this._level = this.LEVEL_MAX
@@ -10188,10 +10195,15 @@ class Round3TempletePlayerOption extends FieldData {
       let option = this.optionObject[i]
       option.process()
 
+      // 옵션이 색이 존재하지 않는다면, 바로 삭제함
+      if (option.color === Round3TempletePlayerOption.colorList.unused) {
+        option.isDeleted = true
+        continue
+      }
+
       // 유저가 옵션에 충돌한 경우 타입에 따라 옵션 추가하고 해당 객체 삭제
       if (collision(player, option)) {
         soundSystem.play(soundSrc.round.r3_playerOption)
-        this._hasOption = true
         switch (option.color) {
           case this.colorList.black: this.setColor(this.colorList.black); break
           case this.colorList.green: this.setColor(this.colorList.green); break
@@ -10215,10 +10227,14 @@ class Round3TempletePlayerOption extends FieldData {
   /**
    * 새로운 옵션 아이템을 생성합니다. (옵션의 색을 지정해주세요.)
    * 
+   * 옵션의 색이 0인 경우, 생성은 취소됨
+   * 
    * 참고: 옵션아이템은 한번에 2개까지만 생성하는것을 권장합니다. (안그러면 옵션 여러개가 겹쳐져서 출력됨)
-   * @param {string} color 옵션의 색
+   * @param {number} color 옵션의 색
    */
   createOptionItem (color) {
+    if (color === Round3TempletePlayerOption.colorList.unused) return
+
     let option = new Round3TempletePlayerOption.OptionObject(color)
     let x = graphicSystem.CANVAS_WIDTH
     let y = graphicSystem.CANVAS_HEIGHT_HALF - 120 + (120 * this.optionObject.length)
@@ -10230,7 +10246,7 @@ class Round3TempletePlayerOption extends FieldData {
     super.process()
     this.processOption() // 옵션객체(아이템)은 내가 옵션울 가지고 있지 않아도 해당 로직을 동작해야 합니다.
 
-    if (this._color === '' || !this._hasOption) {
+    if (this._color === this.colorList.unused) {
       this.isAttackEnable = false
       return
     } else {
@@ -10248,7 +10264,7 @@ class Round3TempletePlayerOption extends FieldData {
     }
 
     // 옵션의 색이 없다면 무기를 사용하지 않고, 출력도 하지 않습니다.
-    if (this._color === '') return
+    if (this._color === this.colorList.unused) return
     for (let i = 0; i < this.weaponObject.length; i++) {
       this.weaponObject[i].display()
     }
@@ -10258,15 +10274,14 @@ class Round3TempletePlayerOption extends FieldData {
 
   /** 옵션의 모든 능력치를 리셋합니다. 플레이어는 옵션을 가지지 않은 상태가 됩니다. */
   reset () {
-    this._color = ''
-    this._hasOption = false
+    this._color = 0
     this._level = 0
   }
 
   static OptionObject = class extends FieldData {
     /** 
      * 해당 옵션을 생성합니다. 옵션의 색이 올바르지 않다면 해당 옵션은 삭제됩니다.
-     * @param {string} color 옵션의 색 (자세한건 PlayerOption의 colorList 참조)
+     * @param {number} color 옵션의 색 (자세한건 PlayerOption의 colorList 참조)
      */
     constructor (color) {
       super()
@@ -10297,6 +10312,12 @@ class Round3TempletePlayerOption extends FieldData {
       // y축이 화면 바깥에 나갈 수 없습니다.
       if (this.y < 0) this.y = 0
       if (this.y > graphicSystem.CANVAS_HEIGHT) this.y = graphicSystem.CANVAS_HEIGHT
+    }
+
+    display () {
+      if (this.color !== Round3TempletePlayerOption.colorList.unused) {
+        super.display()
+      }
     }
   }
 
@@ -10450,6 +10471,51 @@ class Round3TempletePlayerOption extends FieldData {
 }
 
 class Round3TempleteBossWarning extends FieldData {
+  static BASE_TEXT = 'STRONG ENEMY DETECTED'
+  static textList = {
+    textUnknown: 'UNKNOWN',
+    bossCrazyRobot: 'CRAZY ROBOT',
+    bossBar: 'BOSS BAR',
+    bossDasuCore: 'DASU CORE',
+    bossNokgasi: 'NOKGASI',
+    bossAnti: 'ANTI JEMUL',
+    bossGabudan: 'GABUDAN COMPUTER',
+    bossVacuumCleaner: 'VACUUM CLEANER',
+    bossGamokBangpae: 'GAMOK BANGPAE',
+    bossDetector: 'DETECT COM',
+    bossHellGrey: 'HELL GREY',
+  }
+
+  /** 이 변수는, 저장 데이터를 number로 변환하기 위해 만들었습니다.
+   * 따라서 외부에서 사용할 필요는 없습니다.
+   */
+  static _textIndexList = [
+    this.textList.textUnknown,
+    this.textList.bossCrazyRobot,
+    this.textList.bossBar,
+    this.textList.bossDasuCore,
+    this.textList.bossNokgasi,
+    this.textList.bossAnti,
+    this.textList.bossGabudan,
+    this.textList.bossVacuumCleaner,
+    this.textList.bossGamokBangpae,
+    this.textList.bossDetector,
+    this.textList.bossHellGrey
+  ]
+
+  /** 텍스트 값에 따른 숫자 값을 얻어옵니다. (저장 용도로만 사용됨) */
+  getTextToIndex (text = '') {
+    return Round3TempleteBossWarning._textIndexList.indexOf(text)
+  }
+
+  /** 인덱스 값에 따른 텍스트 값을 얻어옵니다. (저장 용도로만 사용됨) */
+  getIndexToText (index = 0) {
+    if (index < 0) return ''
+    if (index >= Round3TempleteBossWarning._textIndexList.length)
+
+    return Round3TempleteBossWarning._textIndexList[index]
+  }
+
   constructor () {
     super()
     this.setAutoImageData(imageSrc.round.round3_bossWarning, imageDataInfo.round3_bossWarning.warning)
@@ -10466,14 +10532,14 @@ class Round3TempleteBossWarning extends FieldData {
     this.alpha = 0
     this.alphaModeUp = true
 
-    this.baseText = 'STRONG ENEMY DETECTED'
+    this.baseText = Round3TempleteBossWarning.BASE_TEXT
     this.baseTextViewLength = 0
     this.baseTextDelay = new DelayData(6)
-    this.addText = 'unknown'
+    this.addText = Round3TempleteBossWarning.textList.textUnknown
   }
 
   /** 보스 경고를 생성합니다. 보스 경고는 생성된 시점으로부터 5초(300프레임)간 표시됩니다. */
-  createWarning (addText = 'unknown') {
+  createWarning (addText = Round3TempleteBossWarning.textList.textUnknown) {
     this._isCreateWarning = true
     this.partObject1.width = 10
     this.partObject2.width = 10
@@ -10488,6 +10554,12 @@ class Round3TempleteBossWarning extends FieldData {
 
   getSaveString () {
     return '' + this._isCreateWarning + '|' + this.baseText + '|' + this.baseTextViewLength + '|' + this.addText + '|' + this.displayCount
+
+    // new save System
+    // isCreateWarning
+    // baseTextViewLength
+    // addText
+    // displayCount
   }
 
   setLoadString (text = '') {
@@ -10568,18 +10640,33 @@ class Round3TempleteBossWarning extends FieldData {
 class Round3TempleteBossSprite extends FieldData {
   constructor () {
     super()
-    this.TYPE_ROBOT = 109985
-    this.TYPE_DASU = 109986
-    this.TYPE_ANTI_PHASE2 = 109987
-    this.TYPE_ANTI_PHASE3 = 109988
-    this.TYPE_ANTI_PHASE4 = 109989
-    this.TYPE_ANTI_PHASECLEAR = 109990
+    this.TYPE_ROBOT = 2
+    this.TYPE_DASU = 3
+    this.TYPE_ANTI_PHASE2 = 4
+    this.TYPE_ANTI_PHASE3 = 5
+    this.TYPE_ANTI_PHASE4 = 6
+    this.TYPE_ANTI_PHASECLEAR = 7
     this.state = 0
     this.dasuCore = [{x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}, {x: 0, y: 0}]
 
     this.STATE_START = 1
     this.STATE_RIGHT = 2
     this.STATE_CREATE_WAIT = 3
+    this.moveDirectionX = FieldData.direction.RIGHT
+  }
+
+  /** 스프라이트를 로드한 직후, 이미지 데이터를 다시 등록합니다. 
+   * 이 함수를 사용해야 로드 직후 이미지가 정상적으로 출력됩니다.
+  */
+  spriteRecoveryImage () {
+    switch (this.subType) {
+      case this.TYPE_ROBOT: this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.crazyRobot); break
+      case this.TYPE_DASU: this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.bossDasu); break
+      case this.TYPE_ANTI_PHASE2: // 안티 제물 공통 (phase 4까지)
+      case this.TYPE_ANTI_PHASE3: // 안티 제물 공통 (phase 4까지)
+      case this.TYPE_ANTI_PHASE4: this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 4); break
+      case this.TYPE_ANTI_PHASECLEAR: this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 1800); break
+    }
   }
 
   createSpriteBossRobot () {
@@ -11045,18 +11132,9 @@ class Round3Templete extends RoundData {
     this.playerOption = new Round3TempletePlayerOption()
     this.playerOption.reset()
     this.bossWarning = new Round3TempleteBossWarning()
+    this.bossWarningStatic = Round3TempleteBossWarning
     this.bossSprite = new Round3TempleteBossSprite()
-    this.bossTextList = {
-      bossCrazyRobot: 'CRAZY ROBOT',
-      bossBar: 'BOSS BAR',
-      bossDasuCore: 'DASU CORE',
-      bossNokgasi: 'NOKGASI',
-      bossAnti: 'ANTI JEMUL',
-      bossGabudan: 'GABUDAN COMPUTER',
-      bossVacuumCleaner: 'VACUUM CLEANER',
-      bossGamokBangpae: 'GAMOK BANGPAE',
-      bossDetector: 'DETECT COM'
-    }
+    this.bossTextList = Round3TempleteBossWarning.textList
 
     this.load.addImageList(RoundPackLoad.getRound3ShareImage())
     this.load.addSoundList(RoundPackLoad.getRound3ShareSound())
@@ -11103,20 +11181,89 @@ class Round3Templete extends RoundData {
   }
 
   processSaveString () {
-    let saveData = {
-      option: this.playerOption.getSaveString(),
-      bossWarning: this.bossWarning.getSaveString(),
-      bossSprite: this.bossSprite.getSaveString(),
+    // let saveData = {
+    //   option: this.playerOption.getSaveString(),
+    //   bossWarning: this.bossWarning.getSaveString(),
+    //   bossSprite: this.bossSprite.getSaveString(),
+    // }
+
+    // this.saveString = JSON.stringify(saveData)
+  }
+
+  writeExtendedMemory () {
+    // option
+    this.extendedMemory[0] = this.playerOption._level
+    this.extendedMemory[1] = this.playerOption._color
+
+    const LENGTH1 = this.playerOption.optionObject.length >= 1
+    const LENGTH2 = this.playerOption.optionObject.length >= 2
+    this.extendedMemory[2] = LENGTH1 ? this.playerOption.optionObject[0].color : 0
+    this.extendedMemory[3] = LENGTH1 ? this.playerOption.optionObject[0].x : 0
+    this.extendedMemory[4] = LENGTH2 ? this.playerOption.optionObject[1].color : 0
+    this.extendedMemory[5] = LENGTH2 ? this.playerOption.optionObject[1].x : 0
+    // 이 이후의 옵션목록은 저장하지 않습니다. (즉, 2개가 최대치, 이후는 잘림)
+
+    // warning
+    this.extendedMemory[6] = this.bossWarning._isCreateWarning ? 1 : 0
+    this.extendedMemory[7] = this.bossWarning.baseTextViewLength
+    this.extendedMemory[8] = this.bossWarning.getTextToIndex(this.bossWarning.addText)
+    this.extendedMemory[9] = this.bossWarning.displayCount
+
+    // boss sprite
+    this.extendedMemory[10] = this.bossSprite.subType
+    this.extendedMemory[11] = this.bossSprite.x
+    this.extendedMemory[12] = this.bossSprite.y
+    this.extendedMemory[13] = this.bossSprite.moveSpeedX
+    this.extendedMemory[14] = this.bossSprite.moveSpeedY
+    this.extendedMemory[15] = this.bossSprite.degree
+    this.extendedMemory[16] = this.bossSprite.elapsedFrame
+    this.extendedMemory[17] = this.bossSprite.alpha
+    this.extendedMemory[18] = this.bossSprite.state
+  }
+
+  readExtendedMemory () {
+    // option
+    this.playerOption._level = this.extendedMemory[0]
+    this.playerOption._color = this.extendedMemory[1]
+
+    // option object는 실제로 생성되지 않았으므로, 직접 생성한 이후 값을 덮어씌웁니다.
+    // 잠재적인 버그가 있을거라고 판단되는 경우, 난 이코드를 제거할 수도 있고, 옵션오브젝트의 저장을 취소할 수도 있음.
+    const COLOR1 = this.extendedMemory[2]
+    if (COLOR1 !== Round3TempletePlayerOption.colorList.unused) {
+      this.playerOption.createOptionItem(COLOR1)
+      this.playerOption.optionObject[0].x = this.extendedMemory[3]
     }
 
-    this.saveString = JSON.stringify(saveData)
+    const COLOR2 = this.extendedMemory[4]
+    if (COLOR2 !== Round3TempletePlayerOption.colorList.unused) {
+      this.playerOption.createOptionItem(COLOR2)
+      this.playerOption.optionObject[1].x = this.extendedMemory[5]
+    }
+
+    // warning
+    this.bossWarning._isCreateWarning = Boolean(this.extendedMemory[6])
+    this.bossWarning.baseTextViewLength = this.extendedMemory[7]
+    this.bossWarning.getIndexToText(this.extendedMemory[8])
+    this.bossWarning.displayCount = this.extendedMemory[9]
+
+    // boss sprite
+    this.bossSprite.subType = this.extendedMemory[10]
+    this.bossSprite.x = this.extendedMemory[11]
+    this.bossSprite.y = this.extendedMemory[12]
+    this.bossSprite.moveSpeedX = this.extendedMemory[13]
+    this.bossSprite.moveSpeedY = this.extendedMemory[14]
+    this.bossSprite.degree = this.extendedMemory[15]
+    this.bossSprite.elapsedFrame = this.extendedMemory[16]
+    this.bossSprite.alpha = this.extendedMemory[17]
+    this.bossSprite.state = this.extendedMemory[18]
+    this.bossSprite.spriteRecoveryImage() // 스프리아트 이미지 복원
   }
 
   loadProcess () {
-    let saveData = JSON.parse(this.saveString)
-    this.playerOption.setLoadString(saveData.option)
-    this.bossWarning.setLoadString(saveData.bossWarning)
-    this.bossSprite.setLoadString(saveData.bossSprite)
+    // let saveData = JSON.parse(this.saveString)
+    // this.playerOption.setLoadString(saveData.option)
+    // this.bossWarning.setLoadString(saveData.bossWarning)
+    // this.bossSprite.setLoadString(saveData.bossSprite)
   }
 
   process () {

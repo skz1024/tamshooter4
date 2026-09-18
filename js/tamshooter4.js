@@ -713,11 +713,7 @@ class UIComponentRoundSelect extends UIComponentObject {
     this.roundCount = [0, 6, 6, 12]
 
     let r = ID.round
-    this.roundIdTable = {
-      r1: [r.round1_1, r.round1_2, r.round1_3, r.round1_4, r.round1_5, r.round1_6],
-      r2: [r.round2_1, r.round2_2, r.round2_3, r.round2_4, r.round2_5, r.round2_6],
-      r3: [r.round3_1, r.round3_2, r.round3_3, r.round3_4, r.round3_5, r.round3_6, r.round3_7, r.round3_8, r.round3_9, r.round3_10],
-    }
+    this.roundSelectGridTable = StatRound.world.roundSelectGridTable
 
     /** 메인 라운드의 박스 */
     this.mainRoundBox = []
@@ -895,11 +891,10 @@ class UIComponentRoundSelect extends UIComponentObject {
   }
 
   getRoundIdTable () {
-    switch (this.cursor.mainRound) {
-      case 0: return this.roundIdTable.r1
-      case 1: return this.roundIdTable.r2
-      case 2: return this.roundIdTable.r3
-      default: return undefined
+    if (this.cursor.mainRound < this.roundSelectGridTable.length) {
+      return this.roundSelectGridTable[this.cursor.mainRound]
+    } else {
+      return null
     }
   }
 
@@ -941,13 +936,16 @@ class UIComponentRoundSelect extends UIComponentObject {
     let roundData = dataExportStatRound.get(roundIdTable[this.cursor.subRound])
     if (roundData == null) return
 
+    let text3 = '' + roundData.roundName
     let text1 = 'ROUND: ' + roundData.roundText + ', TIME: ' + roundData.finishTime
     let text2 = 'REQ LV: ' + roundData.requireLevel + ', ATTACK: ' + roundData.requireAttack
     const outputX = this.x + 20
-    const outputY1 = this.y + this.height - 50
-    const outputY2 = this.y + this.height - 30
-    digitalDisplay(text1, outputX, outputY1)
-    digitalDisplay(text2, outputX, outputY2)
+    const outputY1 = this.y + this.height - 60
+    const outputY2 = this.y + this.height - 40
+    const outputY3 = this.y + this.height - 20
+    game.graphic.fillText(text3, outputX, outputY1)
+    digitalDisplay(text1, outputX, outputY2)
+    digitalDisplay(text2, outputX, outputY3)
   }
 
   displayMainRoundIcon () {
@@ -970,6 +968,10 @@ class UIComponentRoundSelect extends UIComponentObject {
   }
 
   displayMainRoundInfo () {
+    if (this.cursor.mainRound >= this.roundSelectGridTable.length) {
+      return
+    }
+
     const levelmin = StatRound.world.requireLevelMinList
     const levelmax = StatRound.world.requireLevelMaxList
     const number = this.cursor.mainRound + 1
@@ -982,8 +984,8 @@ class UIComponentRoundSelect extends UIComponentObject {
     let text2 = 'LV: ' + levelRangeText + ', ATTACK: ' + attackRangeText
 
     const outputX = this.x + 20
-    const outputY1 = this.y + this.height - 50
-    const outputY2 = this.y + this.height - 30
+    const outputY1 = this.y + this.height - 60
+    const outputY2 = this.y + this.height - 40
     digitalDisplay(text1, outputX, outputY1)
     digitalDisplay(text2, outputX, outputY2)
   }

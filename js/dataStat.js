@@ -342,6 +342,23 @@ export class StatRound {
     /** 라운드 아이콘 리스트 (0번 라운드는 없기 때문에 -1임) */
     static iconList = [-1, 1, 10, 20]
 
+    /** 라운드 선택 화면에서 배열 인덱스에 따른 기본 라운드 표시 값입니다.
+     * 이 값은 상수라기 보다는, 보여지기 위한 값이므로 string으로 처리합니다.
+     * @type {string[]}
+     */
+    static baseRoundTextList = ['R: 1', 'R: 2', 'R: 3']
+
+    /** 라운드 선택 화면에서 활용되는 그리드 테이블입니다. 이 테이블을 참조하여 라운드 목록을 표시합니다. */
+    static roundSelectGridTable = [
+      // round 1, 2 (1-1 ~ 1-6, 2-1 ~ 2-6)
+      [ID.round.round1_1, ID.round.round1_2, ID.round.round1_3, ID.round.round1_4, ID.round.round1_5, ID.round.round1_6],
+      [ID.round.round2_1, ID.round.round2_2, ID.round.round2_3, ID.round.round2_4, ID.round.round2_5, ID.round.round2_6],
+
+      // round 3 (3-1 ~ 3-12)
+      [ID.round.round3_1, ID.round.round3_2, ID.round.round3_3, ID.round.round3_4, ID.round.round3_5, ID.round.round3_6, 
+       ID.round.round3_7, ID.round.round3_8, ID.round.round3_9, ID.round.round3_10, ID.round.round3_11, ID.round.round3_12],
+    ]
+
     /** 각 라운드를 대표하는 제목 */
     static TitleList = [
       '',
@@ -680,16 +697,18 @@ dataExportStatRound.set(ID.round.round2_4, new StatRound(14, '2-4', 12, 55000, 1
 dataExportStatRound.set(ID.round.round2_5, new StatRound(15, '2-5', 14, 55000, 190, 15000, 10).setBalance(190, 550).setRoundInfo('지하실 전투'))
 dataExportStatRound.set(ID.round.round2_6, new StatRound(16, '2-6', 14, 55000, 150, 42000, 10).setBalance(150, 550).setRoundInfo('폐허가 된 동그라미 마을'))
 // round 3
-dataExportStatRound.set(ID.round.round3_1, new StatRound(21, '3-1', 20, 70000, 200, 71400, 14).setRoundInfo('다운 타워 1'))
-dataExportStatRound.set(ID.round.round3_2, new StatRound(22, '3-2', 21, 70000, 220, 72800, 14).setRoundInfo('다운 타워 2'))
-dataExportStatRound.set(ID.round.round3_3, new StatRound(23, '3-3', 21, 70000, 200, 74200, 14).setRoundInfo('다운 타워 3'))
-dataExportStatRound.set(ID.round.round3_4, new StatRound(24, '3-4', 22, 70000, 240, 78000, 14).setRoundInfo('다운 타워 보이드'))
-dataExportStatRound.set(ID.round.round3_5, new StatRound(25, '3-5', 23, 70000, 610, 130000, 14).setRoundInfo('안티 제물'))
-dataExportStatRound.set(ID.round.round3_6, new StatRound(26, '3-6', 25, 77000, 220, 83800, 15).setRoundInfo('다운 타워 코어 1'))
-dataExportStatRound.set(ID.round.round3_7, new StatRound(27, '3-7', 25, 77000, 220, 84600, 15).setRoundInfo('다운 타워 코어 2'))
-dataExportStatRound.set(ID.round.round3_8, new StatRound(28, '3-8', 26, 77000, 220, 86600, 15).setRoundInfo('다운 타워 통로 1'))
-dataExportStatRound.set(ID.round.round3_9, new StatRound(29, '3-9', 26, 77000, 220, 87800, 15).setRoundInfo('다운 타워 통로 2'))
-dataExportStatRound.set(ID.round.round3_10, new StatRound(19, '3-10', 28, 77000, 447, 160000, 15).setRoundInfo('동그라미 마을로 돌아가는 길'))
+dataExportStatRound.set(ID.round.round3_1, new StatRound(21, '3-1', 20, 70000, 200, 71400, 14).setBalance(220, 700).setRoundInfo('다운 타워 1'))
+dataExportStatRound.set(ID.round.round3_2, new StatRound(22, '3-2', 21, 70000, 220, 72800, 14).setBalance(220, 700).setRoundInfo('다운 타워 2'))
+dataExportStatRound.set(ID.round.round3_3, new StatRound(23, '3-3', 21, 70000, 200, 74200, 14).setBalance(220, 700).setRoundInfo('다운 타워 3'))
+dataExportStatRound.set(ID.round.round3_4, new StatRound(24, '3-4', 22, 70000, 240, 78000, 14).setBalance(220, 740).setRoundInfo('다운 타워 4 -> 보이드'))
+dataExportStatRound.set(ID.round.round3_5, new StatRound(24, '3-5', 22, 70000, 240, 78000, 14).setBalance(220, 740).setRoundInfo('보이드 -> 다운타워 5'))
+dataExportStatRound.set(ID.round.round3_6, new StatRound(25, '3-6', 23, 70000, 610, 130000, 14).setRoundInfo('안티 제물'))
+dataExportStatRound.set(ID.round.round3_7, new StatRound(26, '3-7', 25, 77000, 220, 83800, 15).setRoundInfo('다운 타워 코어 1'))
+dataExportStatRound.set(ID.round.round3_8, new StatRound(27, '3-8', 25, 77000, 220, 84600, 15).setRoundInfo('다운 타워 코어 2'))
+dataExportStatRound.set(ID.round.round3_9, new StatRound(28, '3-9', 26, 77000, 220, 86600, 15).setRoundInfo('다운 타워 통로 1'))
+dataExportStatRound.set(ID.round.round3_10, new StatRound(29, '3-10', 26, 77000, 220, 87800, 15).setRoundInfo('다운 타워 통로 2'))
+dataExportStatRound.set(ID.round.round3_11, new StatRound(22, '3-11', 28, 77000, 447, 160000, 15).setRoundInfo('동그라미 마을로 돌아가는 길'))
+dataExportStatRound.set(ID.round.round3_12, new StatRound(22, '3-12', 28, 77000, 447, 160000, 15).setRoundInfo('동그라미 마을로 돌아가는 길'))
 
 /**
  * 외부에서 사용하기 위한 아이템 스탯 값
@@ -715,3 +734,4 @@ dataExportStatItem.set(ID.item.donggramiUSB, new StatItem(4, StatItem.TYPE_ITEM,
 dataExportStatItem.set(ID.item.hellgiComponent, new StatItem(5, StatItem.TYPE_ITEM, '헬기(hellgi) 부품(component)', 60, '다운타워에서 등장하는 헬기들이 부서지고 남은 부품들'))
 dataExportStatItem.set(ID.item.upgradeStone, new StatItem(6, StatItem.TYPE_ITEM, '강화석', 100, '강화할 때 필요한 아이템'))
 dataExportStatItem.set(ID.item.boseokTest, new StatItem(7, StatItem.TYPE_ITEM, '보석 테스트', 0, '보석 테스트 용도 아이템'))
+
