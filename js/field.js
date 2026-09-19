@@ -390,27 +390,16 @@ class PlayerObject extends FieldData {
    * @param {number} damage 
    */
   damageCalcuration (damage) {
-    let shieldDamage = 0
-    let hpDamage = 0
+    // Gemini의 도움을 받아 코드 수정
+    // 1. 쉴드가 흡수할 수 있는 데미지 계산 (현재 쉴드량과 총 데미지 중 작은 값)
+    const shieldDamage = Math.min(this.shield, damage)
+    
+    // 2. 흡수하고 남은 데미지가 HP로 들어감
+    const hpDamage = damage - shieldDamage;
 
-    if (this.shield > damage) {
-      // 쉴드가 데미지보다 많을 때
-      shieldDamage = damage
-      this.shield -= damage
-    } else if (this.shield < damage) {
-      // 쉴드가 데미지보다 적을 때
-      if (this.shield > 0) {
-        // 쉴드가 0 초과인 경우
-        shieldDamage = this.shield
-        hpDamage = damage - this.shield
-        this.shield = 0
-        this.hp -= hpDamage
-      } else {
-        // 쉴드가 0인경우
-        hpDamage = damage
-        this.hp -= hpDamage
-      }
-    }
+    // 3. 상태 업데이트
+    this.shield -= shieldDamage;
+    this.hp -= hpDamage;
 
     // 총 데미지값 리턴
     return {
@@ -2388,9 +2377,10 @@ export class fieldSystem {
         fieldSave.array[LINDEX + rd.BGLAYER_Y] = layer[i].y
         fieldSave.array[LINDEX + rd.BGLAYER_SPEEDX] = layer[i].speedX
         fieldSave.array[LINDEX + rd.BGLAYER_SPEEDY] = layer[i].speedY
-        fieldSave.array[LINDEX + rd.BGLAYER_ALPHAEND] = layer[i].alphaEnd
+        fieldSave.array[LINDEX + rd.BGLAYER_ALPHAEND] = layer[i].alphaEnd * 100 // 알파값은 0 ~ 1범위라 100배 해서 저장
         fieldSave.array[LINDEX + rd.BGLAYER_ISSYNCHRONIZED] = layer[i].isSynchronized ? 1 : 0
       }
+      
 
       // extends input (temp code)
       for (let i = 0; i < this.round.extendedMemory.length; i++) {
@@ -2607,9 +2597,14 @@ export class fieldSystem {
         layer[i].y = fieldSave.array[LINDEX + rd.BGLAYER_Y]
         layer[i].speedX = fieldSave.array[LINDEX + rd.BGLAYER_SPEEDX]
         layer[i].speedY = fieldSave.array[LINDEX + rd.BGLAYER_SPEEDY]
-        layer[i].alphaEnd = fieldSave.array[LINDEX + rd.BGLAYER_ALPHAEND]
+
+        // 알파값은 100배해서 저장했기 때문에, 다시 100으로 나눠 복원
+        // 참고로, 알파는 setAlpha를 통해 수정해야 정상적인 형태로 적용합니다.
+        layer[i].setAlpha(fieldSave.array[LINDEX + rd.BGLAYER_ALPHAEND] / 100) 
         layer[i].isSynchronized = fieldSave.array[LINDEX + rd.BGLAYER_ISSYNCHRONIZED] ? true : false
       }
+
+      this.round.bgLayer.process()
     } else {
       // this.round.bgLegacy.imageSrc = saveData.backgroundImageSrc
       this.round.bgLegacy.x = fieldSave.array[rd.START_INDEX + rd.BACKGROUND_X]

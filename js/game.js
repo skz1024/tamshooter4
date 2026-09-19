@@ -840,6 +840,9 @@ export class userSystem {
 
     // 스킬 교체
     this.skillList[skillSlotNumber] = skillId
+
+    // 스킬 교체 이후 화면에 다시 갱신
+    this.setSkillDisplayStatDefaultFunction()
     return true
   }
 

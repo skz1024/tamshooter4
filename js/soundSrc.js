@@ -170,6 +170,7 @@ export class soundSrc {
     enemyDieTowerSquare: './sound/enemyDieTowerSquare.ogg',
     enemyDieTowerTapo: './sound/enemyDieTowerTapo.ogg',
     enemyDieTowerX: './sound/enemyDieTowerX.ogg',
+    enemyDieTowerHellgrey: './sound/enemyDieTowerHellgrey.ogg',
 
     // tower group 2 (3-2)
     enemyDieTowerBar1: './sound/enemyDieTowerBar1.ogg',

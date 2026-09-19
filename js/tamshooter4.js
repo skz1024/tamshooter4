@@ -213,8 +213,8 @@ class UIComponentObject {
 
   /** 어떤 버튼이 눌렸는지를 오브젝트로 확인합니다. 버튼이 눌린것은 boolean값으로 확인해야합니다. */
   getButtonObject () {
-    const buttonA = game.control.getButtonInput(game.control.buttonIndex.A)
-    const buttonB = game.control.getButtonInput(game.control.buttonIndex.B)
+    const buttonA = game.control.getButtonInput(game.control.buttonIndex.A) || game.control.getButtonInput(game.control.buttonIndex.START)
+    const buttonB = game.control.getButtonInput(game.control.buttonIndex.B) || game.control.getButtonInput(game.control.buttonIndex.ESC)
     const buttonX = game.control.getButtonInput(game.control.buttonIndex.X)
     const buttonY = game.control.getButtonInput(game.control.buttonIndex.Y)
     const buttonUp = game.control.getButtonInput(game.control.buttonIndex.UP)
@@ -802,6 +802,9 @@ class UIComponentRoundSelect extends UIComponentObject {
     if (fieldSystem.message === fieldSystem.messageList.STATE_FIELD) {
       game.sound.play(soundSrc.system.systemEnter)
       gameSystem.stateId = gameSystem.STATE_FIELD
+
+      // START버튼이 필드에서도 연속으로 눌려지는 행위를 막기 위해 이 순간에는 버튼 입력을 리셋시킴
+      game.control.resetButtonInput()
       this.close() // 라운드 선택이 시작되고 게임이 시작하면 창을 닫음
     }
   }
@@ -2178,6 +2181,49 @@ class UIComponentOption extends UIComponentBaseMenuObject {
   }
 }
 
+class UIComponentDataSetting extends UIComponentBaseMenuObject {
+  constructor () {
+    super()
+    this.tilteImageObject = imageDataInfo.menuList.data
+    this.backgroundColor = ['#E0AC00', '#B2F641']
+    const boxText = [
+      'debug menu',
+      'level change to 0',
+      'level change to 10',
+      'level change to 20',
+    ]
+
+    for (let i = 0; i < boxText.length; i++) {
+      const y = this.y + 50 + (i * 25)
+      const box = new BoxObject(this.x, y, 300, 25, boxText[i], '#E0AC00', '#B2F641')
+      this.boxList.push(box)
+    }
+  }
+
+  menuSelect () {
+    switch (this.cursor.value) {
+      case 1: userSystem.lv = 0; break
+      case 2: userSystem.lv = 10; break
+      case 3: userSystem.lv = 20; break
+    }
+  }
+
+  processMouse () {
+    super.processMouse()
+
+    if (game.control.getMouseClick()) {
+      const mouseX = game.control.getMouseX()
+      const mouseY = game.control.getMouseY()
+
+      for (let i = 0; i < this.boxList.length; i++) {
+        if (this.boxList[i].collision(mouseX, mouseY)) {
+          this.menuSelect()
+        }
+      }
+    }
+  }
+}
+
 class UIComponentMisc extends UIComponentBaseMenuObject {
   constructor () {
     super()
@@ -2224,6 +2270,8 @@ class UIComponentMisc extends UIComponentBaseMenuObject {
       // 바이오스를 빠져나가면 메인화면으로 이동
       gameSystem.stateId = gameSystem.STATE_MAIN 
     }
+
+    this.close()
   }
 
   /**
@@ -2353,7 +2401,7 @@ class MainSystem extends MenuSystem {
       case this.MENU_SKILL_SELECT: gameSystem.uiSkillSelect.open(); break
       case this.MENU_UPGRADE: gameSystem.uiStatUpgarde.open(); break
       case this.MENU_OPTION: gameSystem.uiOption.open(); break
-      case this.MENU_DATA_SETTING: break // 아직 아무것도 없음
+      case this.MENU_DATA_SETTING: gameSystem.uiDataSetting.open(); break
       case this.MENU_ETC: gameSystem.uiMisc.open(); break
       case this.MENU_INVENTORY: gameSystem.uiInventroy.open(); break
       case this.MENU_STORY: break // 아직 아무것도 없음
@@ -5610,6 +5658,7 @@ export class gameSystem {
   static uiStatUpgarde = new UIComponentStatUpgrade()
   static uiInventroy = new UIComponentInventory()
   static uiOption = new UIComponentOption()
+  static uiDataSetting = new UIComponentDataSetting()
   static uiMisc = new UIComponentMisc()
 
   /** 모든 UI 창을 닫습니다. */
@@ -5620,6 +5669,7 @@ export class gameSystem {
     this.uiStatUpgarde.close()
     this.uiInventroy.close()
     this.uiOption.close()
+    this.uiDataSetting.close()
     this.uiMisc.close()
   }
 
@@ -5633,6 +5683,7 @@ export class gameSystem {
       || this.uiInventroy.isOpen
       || this.uiOption.isOpen
       || this.uiMisc.isOpen
+      || this.uiDataSetting.isOpen
 
     return value
   }
@@ -6296,6 +6347,7 @@ export class gameSystem {
     this.uiStatUpgarde.process()
     this.uiWeaponSelect.process()
     this.uiOption.process()
+    this.uiDataSetting.process()
   }
 
   static fieldProcess () {
@@ -6416,6 +6468,7 @@ export class gameSystem {
     this.uiSkillSelect.display()
     this.uiStatUpgarde.display()
     this.uiWeaponSelect.display()
+    this.uiDataSetting.display()
   }
 
   static displayStatLine () {

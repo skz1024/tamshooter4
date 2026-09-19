@@ -309,6 +309,8 @@ export class ID {
       pentagonMini: 20272,
       hexagonMini: 20273,
       octagonMini: 20274,
+      hellgrey: 20275,
+      hellgreyBoss: 20276,
     },
     towerEnemyGroup2: {
       barYellow: 20277,
