@@ -2191,6 +2191,7 @@ class UIComponentDataSetting extends UIComponentBaseMenuObject {
       'level change to 0',
       'level change to 10',
       'level change to 20',
+      'level change to 25',
     ]
 
     for (let i = 0; i < boxText.length; i++) {
@@ -2200,11 +2201,21 @@ class UIComponentDataSetting extends UIComponentBaseMenuObject {
     }
   }
 
+  processButton () {
+    super.processButton()
+    let button = this.getButtonObject()
+
+    if (button.buttonA) {
+      this.menuSelect()
+    }
+  }
+
   menuSelect () {
     switch (this.cursor.value) {
       case 1: userSystem.lv = 0; break
       case 2: userSystem.lv = 10; break
       case 3: userSystem.lv = 20; break
+      case 4: userSystem.lv = 25; break
     }
   }
 

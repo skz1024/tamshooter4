@@ -703,12 +703,12 @@ dataExportStatRound.set(ID.round.round3_3, new StatRound(23, '3-3', 20, 60000, 2
 dataExportStatRound.set(ID.round.round3_4, new StatRound(24, '3-4', 22, 63000, 220, 32000, 14).setBalance(220, 740).setRoundInfo('다운 타워 보이드'))
 dataExportStatRound.set(ID.round.round3_5, new StatRound(24, '3-5', 22, 63000, 220, 32000, 14).setBalance(220, 740).setRoundInfo('다운 타워 중심부'))
 dataExportStatRound.set(ID.round.round3_6, new StatRound(25, '3-6', 23, 63000, 360, 64000, 14).setBalance(360, 800).setRoundInfo('안티 제물'))
-dataExportStatRound.set(ID.round.round3_7, new StatRound(26, '3-7', 24, 66000, 220, 83800, 15).setBalance(220, 780).setRoundInfo('다운 타워 코어 1'))
-dataExportStatRound.set(ID.round.round3_8, new StatRound(27, '3-8', 24, 66000, 220, 84600, 15).setBalance(220, 780).setRoundInfo('다운 타워 코어 2'))
-dataExportStatRound.set(ID.round.round3_9, new StatRound(28, '3-9', 24, 66000, 220, 86600, 15).setBalance(220, 780).setRoundInfo('다운 타워 통로 1'))
-dataExportStatRound.set(ID.round.round3_10, new StatRound(29, '3-10', 24, 66000, 220, 87800, 15).setBalance(220, 780).setRoundInfo('다운 타워 통로 2'))
-dataExportStatRound.set(ID.round.round3_11, new StatRound(22, '3-11', 26, 69000, 447, 160000, 15).setBalance(220, 800).setRoundInfo('다운 타워 외벽'))
-dataExportStatRound.set(ID.round.round3_12, new StatRound(22, '3-12', 26, 69000, 447, 160000, 15).setBalance(220, 800).setRoundInfo('동그라미 마을로 돌아가는 길'))
+dataExportStatRound.set(ID.round.round3_7, new StatRound(26, '3-7', 24, 66000, 220, 45000, 15).setBalance(220, 780).setRoundInfo('다운 타워 코어 1'))
+dataExportStatRound.set(ID.round.round3_8, new StatRound(27, '3-8', 24, 66000, 220, 36000, 15).setBalance(220, 780).setRoundInfo('다운 타워 코어 2'))
+dataExportStatRound.set(ID.round.round3_9, new StatRound(28, '3-9', 24, 66000, 220, 36000, 15).setBalance(220, 780).setRoundInfo('다운 타워 통로 1'))
+dataExportStatRound.set(ID.round.round3_10, new StatRound(30, '3-10', 24, 66000, 220, 36000, 15).setBalance(220, 780).setRoundInfo('다운 타워 통로 2'))
+dataExportStatRound.set(ID.round.round3_11, new StatRound(31, '3-11', 26, 69000, 220, 34000, 15).setBalance(220, 800).setRoundInfo('다운 타워 외벽'))
+dataExportStatRound.set(ID.round.round3_12, new StatRound(32, '3-12', 26, 69000, 220, 34000, 15).setBalance(220, 800).setRoundInfo('동그라미 마을로 돌아가는 길'))
 
 /**
  * 외부에서 사용하기 위한 아이템 스탯 값

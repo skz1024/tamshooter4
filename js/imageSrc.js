@@ -515,7 +515,7 @@ export class imageDataInfo {
     hexagon: new ImageDataObject(720, 670, 110, 100, 1),
     octagon: new ImageDataObject(840, 670, 130, 130, 1),
     crazyRobot: new ImageDataObject(900, 0, 250, 300, 1),
-    hellgrey: new ImageDataObject(950, 1050, 90, 120, 1),
+    hellgrey: new ImageDataObject(950, 1050, 90, 121, 1),
 
     // bullet
     bulletTapo: new ImageDataObject(0, 700, 90, 30, 1),
@@ -762,6 +762,9 @@ export class imageDataInfo {
     cameraAttackAreaShot: new ImageDataObject(701, 200, 100, 100),
     helltellAttack: new ImageDataObject(802, 200, 40, 60),
     radioAttack: new ImageDataObject(0, 600, 100, 40, 8),
+
+    // 3-10
+    fakeHellGreyBoss: new ImageDataObject(900, 1012, 90, 121)
   }
 
   static towerEnemyGroup5Gabudan = {

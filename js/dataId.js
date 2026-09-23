@@ -252,6 +252,7 @@ export class ID {
       tree: 20197,
       leaf: 20198,
 
+      // 라운드 2-3 전용
       a1_fighter: 20200,
       b1_bounce: 20201,
       a2_brick: 20202,
@@ -259,6 +260,9 @@ export class ID {
       b2_mini: 20204,
       a3_collector: 20205,
       b3_mini: 20206,
+
+      /** 라운드 3 전용 */ r3_getLost: 20355,
+      /** 라운드 3 전용 */ r3_returnToMaeul: 20356,
     },
     intruder: {
       jemuBoss: 20210,
@@ -392,6 +396,7 @@ export class ID {
       cutter: 20351,
       vacuumCleaner: 20352,
       gamokBangpae: 20353,
+      fakeHellgreyBoss: 20354,
     }
   }
 

@@ -3635,6 +3635,8 @@ export class DonggramiEnemy extends EnemyData {
     /** 파티형, 라운드 2-4, 2-6 */ PARTY: 4,
     /** 폐허, 라운드 2-6 */ RUIN: 5,
     /** 라운드 2-4에서 동그라미가 도망쳐라는것을 외칠 때 사용 */ R2_4RUN: 6,
+    /** 라운드 3-9, 3-10에서 동그람가 길을 잃은 경우 */ R3_GETLOST: 7,
+    /** 라운드 3-12 마지막에서 동그라미 마을에 돌아온 플레이어를 환영하는 경우 */ R3_RETURNTO: 8,
   }
 
   /** 
@@ -3659,6 +3661,12 @@ export class DonggramiEnemy extends EnemyData {
     const INDEX_RUIN_LENGTH = 4
     const INDEX_R2_4RUN_X = 2
     const INDEX_R2_4RUN_Y = 15
+    const INDEX_R3_GETLOST_X = 5
+    const INDEX_R3_GETLOST_Y = 8
+    const INDEX_R3_GETLOST_LENGTH = 5
+    const INDEX_R3_RETURNTO_X = 5
+    const INDEX_R3_RETURNTO_Y = 14
+    const INDEX_R3_RETURNTO_LENGTH = 6
 
     if (this.talkType === DonggramiEnemy.TalkTypeList.NORMAL) {
       this.talkIndex.x = INDEX_NORMAL_X
@@ -3675,6 +3683,12 @@ export class DonggramiEnemy extends EnemyData {
     } else if (this.talkType === DonggramiEnemy.TalkTypeList.RUIN) {
       this.talkIndex.x = INDEX_RUIN_X
       this.talkIndex.y = Math.floor(Math.random() * INDEX_RUIN_LENGTH)
+    } else if (this.talkType === DonggramiEnemy.TalkTypeList.R3_GETLOST) {
+      this.talkIndex.x = INDEX_R3_GETLOST_X
+      this.talkIndex.y = INDEX_R3_GETLOST_Y + Math.floor(Math.random() * INDEX_R3_GETLOST_LENGTH)
+    } else if (this.talkType === DonggramiEnemy.TalkTypeList.R3_RETURNTO)  {
+      this.talkIndex.x = INDEX_R3_RETURNTO_X
+      this.talkIndex.y = INDEX_R3_RETURNTO_Y + Math.floor(Math.random() * INDEX_R3_RETURNTO_LENGTH)
     } else {
       this.talkIndex.x = this.TALK_INDEX_UNUSED
       this.talkIndex.y = this.TALK_INDEX_UNUSED
@@ -6249,6 +6263,21 @@ class DonggramiEnemyTalkRuinR2_6 extends DonggramiEnemyTalk {
     this.talkType = this.talkTypeList.RUIN
   }
 }
+
+class DonggramiEnemyR3_GetLost extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.talkType = this.talkTypeList.R3_GETLOST
+  }
+}
+
+class DonggramiEnemyR3_ReturnToMaeul extends DonggramiEnemy {
+  constructor () {
+    super()
+    this.talkType = this.talkTypeList.R3_RETURNTO
+  }
+}
+
 
 class IntruderEnemy extends EnemyData {
   constructor () {
@@ -14787,12 +14816,15 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
   processAttack () {
     if (this.state === TowerEnemyGroup5Gabudan.STATE_PROGRAM_RUN1 && this.attackDelay.check()) {
       // 원형 탄막 생성
-      const baseSpeed = 3
-      for (let i = 0; i < 16; i++) {
+      const baseSpeed = 4
+      const bulletCount = 15
+      const randomOffset = Math.floor(Math.random() * (360 / bulletCount))
+
+      for (let i = 0; i < bulletCount; i++) {
         let bullet = TowerEnemy.bulletRed.getCreateObject()
         bullet.setPosition(graphicSystem.CANVAS_WIDTH_HALF, graphicSystem.CANVAS_HEIGHT_HALF)
         
-        let degree = (i * 360 / 16) + (this.elapsedFrame % (360 / 16))
+        let degree = (i * 360 / bulletCount) + (this.elapsedFrame % (360 / bulletCount)) + randomOffset
         let radian = Math.PI / 180 * degree
         let speedX = Math.cos(radian) * baseSpeed
         let speedY = Math.sin(radian) * baseSpeed
@@ -14800,27 +14832,39 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
         fieldState.createEnemyBulletObject(bullet)
       }
     } else if (this.state === TowerEnemyGroup5Gabudan.STATE_PROGRAM_RUN2 && this.attackDelay.check()) {
+      this.attackDelay.delay = 40
       // 확산 탄막 생성 (위, 아래 방향)
-      const baseSpeed = 3
-      for (let i = 0; i < 8; i++) {
-        let bullet = TowerEnemy.bulletBlue.getCreateObject()
-        bullet.setPosition(graphicSystem.CANVAS_WIDTH_HALF, graphicSystem.CANVAS_HEIGHT_HALF)
+      const baseSpeed = 5
+      const sectionX = 150
+      const sectionY = 100
+      const bulletCount = 6
+      const randomOffsetY = Math.floor(Math.random() * 40)
+      const randomOffsetX = Math.floor(Math.random() * 100)
 
-        let speedX = -1 + (i % 4)
-        let speedY = Math.floor(i / 4) === 0 ? -baseSpeed : baseSpeed
-        bullet.setMoveSpeed(speedX, speedY)
-        fieldState.createEnemyBulletObject(bullet)
+      for (let i = 0; i < bulletCount; i++) {
+        let bullet1 = TowerEnemy.bulletBlue.getCreateObject()
+        if (Math.random() < 0.5) {
+          bullet1.setPosition((sectionX * i) + randomOffsetX, 0)
+          bullet1.setMoveSpeed(0, baseSpeed)
+        } else {
+          bullet1.setPosition((sectionX * i) + randomOffsetX, graphicSystem.CANVAS_HEIGHT)
+          bullet1.setMoveSpeed(0, -baseSpeed)
+        }
+
+        // let bullet2 = TowerEnemy.bulletBlue.getCreateObject()
+        // bullet2.setPosition((sectionX * i) + randomOffset, graphicSystem.CANVAS_HEIGHT)
+        // bullet2.setMoveSpeed(0, -baseSpeed)
+        
+        fieldState.createEnemyBulletObject(bullet1)
+        // fieldState.createEnemyBulletObject(bullet2)
       }
 
       // 왼쪽, 오른쪽 방향
-      for (let i = 0; i < 14; i++) {
-        let bullet = TowerEnemy.bulletBlue.getCreateObject()
-        bullet.setPosition(graphicSystem.CANVAS_WIDTH_HALF, graphicSystem.CANVAS_HEIGHT_HALF)
-
-        let speedX = Math.floor(i / 7) === 0 ? -baseSpeed : baseSpeed
-        let speedY = -3 + (i % 7)
-        bullet.setMoveSpeed(speedX, speedY)
-        fieldState.createEnemyBulletObject(bullet)
+      for (let i = 0; i < bulletCount; i++) {
+        let bullet2 = TowerEnemy.bulletBlue.getCreateObject()
+        bullet2.setPosition(graphicSystem.CANVAS_WIDTH, (i * sectionY) + randomOffsetY)
+        bullet2.setMoveSpeed(-baseSpeed, 0)
+        fieldState.createEnemyBulletObject(bullet2)
       }
     }
   }
@@ -14861,7 +14905,7 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
     switch (this.elapsedFrame) {
       case FPS * 1: this.state = TowerEnemyGroup5Gabudan.STATE_BOOTING1; break
       case FPS * 4: this.state = TowerEnemyGroup5Gabudan.STATE_BOOTING2; break
-      case FPS * 5: this.state = TowerEnemyGroup5Gabudan.STATE_BOOTING3; break // ㅂ팅 스크린
+      case FPS * 5: this.state = TowerEnemyGroup5Gabudan.STATE_BOOTING3; break // 부팅 스크린
       case FPS * 6: this.state = TowerEnemyGroup5Gabudan.STATE_OSLOADING; break // os loading 화면
       case FPS * 10: this.state = TowerEnemyGroup5Gabudan.STATE_BACKGROUND1; break // 배경만 표시
       case FPS * 12: this.state = TowerEnemyGroup5Gabudan.STATE_BACKGROUND2; break // 배경 + 아이콘 표시
@@ -15309,7 +15353,7 @@ class TowerEnemyGroup5VaccumCleaner extends TowerEnemy {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.vacuumCleaner)
-    this.setEnemyByCpStat(3500, 15)
+    this.setEnemyByCpStat(4200, 15)
     this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerVacuumCleaner, imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.circleBlue)
     this.isPossibleExit = false
     this.setMoveSpeed(0, 0)
@@ -15450,7 +15494,7 @@ class TowerEnemyGroup5VaccumCleaner extends TowerEnemy {
     }
 
     // 공격 주기 확인
-    this.attackDelay.setDelay(15)
+    this.attackDelay.setDelay(10)
     if (this.stateDelay.count <= this.stateDelay.delay - 120 && this.attackDelay.check()) {
       this.processAttackFirstCreate()
     } 
@@ -15527,7 +15571,7 @@ class TowerEnemyGroup5VaccumCleaner extends TowerEnemy {
       }
     }
 
-    this.attackDelay.setDelay(60)
+    this.attackDelay.setDelay(30)
     if (!this.attackDelay.check()) return
     let player = fieldState.getPlayerObject()
     soundSystem.play(soundSrc.enemyAttack.towerVacuumCleanerTrash)
@@ -15630,7 +15674,7 @@ class TowerEnemyGroup5VaccumCleaner extends TowerEnemy {
       soundSystem.play(soundSrc.enemyAttack.towerVacuumCleanerHyper)
     }
 
-    this.attackDelay.setDelay(45)
+    this.attackDelay.setDelay(15)
     if (!this.attackDelay.check()) return
 
     for (let i = 0; i < 8; i++) {
@@ -15768,17 +15812,22 @@ class TowerEnemyGroup5GamokBangpae extends TowerEnemy {
 
   processAttack () {
     if (!this.attackDelay.check()) return
-    let bullet = new IntruderEnemyDaseok.EnergyBullet()
+
+    const maxCount = this.hp < this.hpMax * TowerEnemy.HYPER_HP_CONDITION ? 4 : 2
+
+    for (let i = 0; i < maxCount; i++) {
+      let bullet = new IntruderEnemyDaseok.EnergyBullet()
+      bullet.setPosition(graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
+      bullet.setMoveSpeed(-Math.random() * 5 - 4, Math.random() * 12 - 6)
+      fieldState.createEnemyBulletObject(bullet)
+    }
+
     let randomSound = Math.floor(Math.random() * 3)
     switch (randomSound) {
       case 0: soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergy); break
       case 1: soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergyHigh); break
       case 2: soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergyLow); break
     }
-    
-    bullet.setPosition(graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
-    bullet.setMoveSpeed(-Math.random() * 5 - 4, Math.random() * 12 - 6)
-    fieldState.createEnemyBulletObject(bullet)
   }
 
   display () {} // 출력 없음
@@ -15799,6 +15848,67 @@ class TowerEnemyGroup5GamokBangpae extends TowerEnemy {
       if (this.dieEffect) {
         this.dieEffect.setWidthHeight(graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT)
         fieldState.createEffectObject(this.dieEffect.getObject(), 0, 0)
+      }
+    }
+  }
+}
+
+class TowerEnemy5GroupFakeHellGreyBoss extends TowerEnemyHellTemplet{
+  constructor () {
+    super()
+    this.setAutoImageData(imageSrc.enemy.towerEnemyGroup5, imageDataInfo.towerEnemyGroup5.fakeHellGreyBoss)
+    this.setEnemyByCpStat(900, 30) // dps 150 * 6 = 900%
+    this.setWidthHeight(this.width * 3, this.height * 3)
+    this.moveDelay.setDelay(10)
+    this.targetSpeed.xBase = 5
+    this.targetSpeed.yBase = 5
+    this.targetSpeed.xChange = 0.19
+    this.targetSpeed.yChange = 0.19
+    this.targetSpeed.xMax = 7
+    this.targetSpeed.yMax = 7
+    this.setDieEffectTemplet(soundSrc.enemyDie.enemyDieTowerFakeHell)
+    this.dieColor = TowerEnemyHellTemplet.dieColorList.violet
+    this.dieAfterDeleteDelay.delay = 300
+  }
+
+  processMove () {
+    super.processMove()
+    // 플레이어를 항상 추적합니다.
+    if (this.moveDelay.count === 0) {
+      // 플레이어를 추적하도록 속도 변경
+      let player = fieldState.getPlayerObject()
+      this.targetSpeed._x = (player.centerX - this.centerX) / 20
+      this.targetSpeed._y = (player.centerY - this.centerY) / 20
+    }
+  }
+
+  getCollisionArea () {
+    return [
+      this.getCollisionAreaCalcurationObject(29, 0, 32, 121),
+      this.getCollisionAreaCalcurationObject(0, 33, 69, 54),
+      this.getCollisionAreaCalcurationObject(69, 50, 21, 21),
+    ]
+  }
+
+  processDieAfter () {
+    super.processDieAfter()
+
+    if (this.isDied) {
+      // 예외 로직 추가 (임시 처리)
+      this.y -= 4 // 위에 상속된 함수에서, y좌표를 다시 추가시켜서 고정함.
+    }
+
+    if (this.isDied) {
+      if (this.dieAfterDeleteDelay.count === this.dieAfterDeleteDelay.delay - 1) {
+        soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
+        soundSystem.play(soundSrc.enemyDie.enemyDieTowerFakeHell)
+
+        // 이 이펙트는 TowerEnemyHell의 이펙트를 출력시키기 위해 객체를 생성합니다.
+        // 기존 보스 방식과 Hell방식과도 호환되지 않아서, 코드를 복사하고 새로 만들었습니다.
+        const effect = TowerEnemyHellTemplet.DieEffectRed.getObject()
+        effect.width = this.width
+        effect.height = this.height
+        fieldState.createEffectObject(effect, this.x, this.y)
       }
     }
   }
@@ -15911,6 +16021,10 @@ dataExportEnemy.set(ID.enemy.donggramiEnemy.leaf, DonggramiEnemyLeaf)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.talkRunawayR2_4, DonggramiEnemyTalkRunAwayR2_4)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.talkParty, DonggramiEnemyTalkParty)
 dataExportEnemy.set(ID.enemy.donggramiEnemy.talkRuinR2_6, DonggramiEnemyTalkRuinR2_6)
+
+// dongramiEnemy / round 3-9, 3-10, 3-12
+dataExportEnemy.set(ID.enemy.donggramiEnemy.r3_getLost, DonggramiEnemyR3_GetLost)
+dataExportEnemy.set(ID.enemy.donggramiEnemy.r3_returnToMaeul, DonggramiEnemyR3_ReturnToMaeul)
 
 // intruderEnemy / round 2-5 ~ 2-6, boss 2-4 ~ 2-5
 dataExportEnemy.set(ID.enemy.intruder.jemuBoss, IntruderEnemyJemuBoss)
@@ -16045,3 +16159,4 @@ dataExportEnemy.set(ID.enemy.towerEnemyGroup5.roller, TowerEnemyGroup5Roller)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup5.cutter, TowerEnemyGroup5Cutter)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup5.vacuumCleaner, TowerEnemyGroup5VaccumCleaner)
 dataExportEnemy.set(ID.enemy.towerEnemyGroup5.gamokBangpae, TowerEnemyGroup5GamokBangpae)
+dataExportEnemy.set(ID.enemy.towerEnemyGroup5.fakeHellgreyBoss, TowerEnemy5GroupFakeHellGreyBoss)
