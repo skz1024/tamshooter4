@@ -10,7 +10,7 @@ import { game, gameFunction } from "./game.js";
 import { stringText, systemText } from "./text.js";
 import { dataExportPlayerSkill, dataExportPlayerWeapon } from "./dataPlayer.js";
 
-const versionText = 'created by skz1024 | ver 0.56 | 2026/09'
+const versionText = 'created by skz1024 | ver 0.57 | 2026/09/23'
 let digitalDisplay = gameFunction.digitalDisplay
 let loadComplete = false
 
@@ -916,7 +916,6 @@ class UIComponentRoundSelect extends UIComponentObject {
 
     const iconWidth = imageDataInfo.default.roundIcon.width
     const ICON_COLUMN_COUNT = 10
-    const imageSectionWidth = iconWidth + 20
     for (let i = 0; i < roundIdTable.length; i++) {
       let roundData = dataExportStatRound.get(roundIdTable[i])
       if (roundData == null) continue
@@ -929,6 +928,11 @@ class UIComponentRoundSelect extends UIComponentObject {
 
       game.graphic.imageDisplay(imageSrc.system.roundIcon, iconPositionX * iconWidth, iconPositionY * iconWidth, iconWidth, iconWidth, outputX, outputY, iconWidth, iconWidth)
       digitalDisplay(roundData.roundText, outputX, outputDigitalY)
+
+      if (userSystem.lv < roundData.requireLevel) {
+        gameFunction.imageObjectDisplay(imageSrc.system.mainSystem, imageDataInfo.mainSystem.roundConditionLevelAttackReject, outputX, outputY)
+      }
+      
     }
   }
 
