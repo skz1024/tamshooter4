@@ -1,12 +1,78 @@
+// ID 동결을 위한 전용 Freeze 함수
+// 객체 내부의 객체까지 전부 동결합니다.
+function deepFreeze(obj) {
+  Object.keys(obj).forEach((name) => {
+    const prop = obj[name];
+    if (typeof prop === 'object' && prop !== null) {
+      deepFreeze(prop); // 하위 객체가 있으면 재귀 호출
+    }
+  });
+  return Object.freeze(obj);
+}
+
 /**
  * 공통적으로 사용하는 객체 ID (상수 값 - 숫자만 허용)
- * 
- * ID 값은 서로 달라야 합니다. (사람이 실수한게 아니라면...)
- * 
- * 이 값을 심볼로 정의하지 마세요. 심볼은 로컬스토리지에 저장할 수 없습니다.
- * 실시간 저장이 필요한 이 게임 특성상, 심볼을 저장 데이터 용도로 활용하는것은 부적절합니다.
+
+ID 규칙 (기본 5자리 숫자, 이후 확장 가능)
+ID 범위 (배치 순서는 고정)
+플레이어 무기: 10000 ~ 11999,
+플레이어 스킬: 12000 ~ 19999,
+적: 20000 ~ 39999,
+무기: 40000 ~ 49999,
+아이템: 50000 ~ 69999,
+라운드: 70000 ~ 79999,
+장비: 80000 ~ 80999,
+다음 구역에서 특수한 ID가 필요하다면 확장할 수 있음.
+
+참고: ID type을 계산하기 위해서는 ID.getType 함수를 사용해주세요.
+
  */
 export class ID {
+  /** 참고, 이 상수는 타입의 첫번째 객체의 시작 값이랑 동일합니다. */
+  static type = {
+    /** ID를 사용할 생각이 없다면, 이 값을 사용해도 됩니다. 일반적으로 0은 사용하지 않음으로 간주됩니다. */ 
+    UNUSED: 0,
+    //---
+    PLAYER_WEAPON: 10000,
+    PLAYER_SKILL: 12000,
+    ENEMY: 20000,
+    WEAPON: 40000,
+    ITEM: 50000,
+    ROUND: 70000,
+    EQUIPMENT: 80000,
+  }
+
+  /** 
+   * 해당 ID의 타입 상수를 리턴합니다.
+   * 주의: 타입 상수값은 ID.type을 참고하세요. 디버그 할 때 어려움을 겪는다면, getTypeString을 사용할 수도 있습니다.
+   */
+  static getType (idValue) {
+    const entries = Object.entries(this.type);
+    
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const [key, startId] = entries[i];
+      if (idValue >= startId) {
+        // 숫자 상수값(10000, 20000 등)을 그대로 반환
+        return this.type[key]; 
+      }
+    }
+    return this.type.UNUSED;
+  }
+
+  /** 해당 ID의 타입 상수 변수 이름을 출력합니다. 이것은 타입을 문자열로 표시하는 것과 거의 동일합니다. */
+  static getTypeString (idValue) {
+    const entries = Object.entries(this.type);
+      
+    // 뒤에서부터(큰 숫자부터) 비교
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const [typeName, startId] = entries[i];
+      if (idValue >= startId) {
+        return typeName; // 또는 대응하는 Enum 값
+      }
+    }
+    return "UNUSED";
+  }
+
   static playerWeapon = {
     /** 사용되지 않는 id @deprecated */ unused: 0,
     /** 무기 번호를 가져올 때 사용(서브웨폰은 엉뚱한 번호를 가져온다.) 
@@ -37,132 +103,132 @@ export class ID {
   static playerSkill = {
     unused: 0,
     /** 스킬 번호 ID의 시작점 */
-    skillNumberStart: 15000,
-    multyshot: 15001,
-    missile: 15002,
-    arrow: 15003,
-    laser: 15004,
-    sapia: 15005,
-    parapo: 15006,
-    blaster: 15007,
-    sidewave: 15008,
-    sword: 15009,
-    hyperBall: 15010,
-    critcalChaser: 15011,
-    pileBunker: 15012,
-    santansu: 15013,
-    whiteflash: 15014,
-    ring: 15015,
-    rapid: 15016,
-    seondanil: 15017,
-    hanjumoek: 15018,
-    boomerang: 15019,
-    moon: 15020,
-    kalnal: 15021,
-    cogwheel: 15022,
-    yeonsai: 15023,
-    sabangtan: 15024,
-    habirant: 15025,
-    icechaser: 15026,
-    calibur: 15027,
-    sujikpa: 15028,
-    speaker: 15029,
-    eomukggochi: 15030,
-    r2Firecracker: 15031,
-    r2Toyhammer: 15032,
-    r3Xkill: 15033,
-    r3Xshot: 15034,
-    r3Xbeam: 15035,
-    r3Xboom: 15036,
-    r3Helljeon: 15037,
+    skillNumberStart: 12000,
+    multyshot: 12001,
+    missile: 12002,
+    arrow: 12003,
+    laser: 12004,
+    sapia: 12005,
+    parapo: 12006,
+    blaster: 12007,
+    sidewave: 12008,
+    sword: 12009,
+    hyperBall: 12010,
+    critcalChaser: 12011,
+    pileBunker: 12012,
+    santansu: 12013,
+    whiteflash: 12014,
+    ring: 12015,
+    rapid: 12016,
+    seondanil: 12017,
+    hanjumoek: 12018,
+    boomerang: 12019,
+    moon: 12020,
+    kalnal: 12021,
+    cogwheel: 12022,
+    yeonsai: 12023,
+    sabangtan: 12024,
+    habirant: 12025,
+    icechaser: 12026,
+    calibur: 12027,
+    sujikpa: 12028,
+    speaker: 12029,
+    eomukggochi: 12030,
+    r2Firecracker: 12031,
+    r2Toyhammer: 12032,
+    r3Xkill: 12033,
+    r3Xshot: 12034,
+    r3Xbeam: 12035,
+    r3Xboom: 12036,
+    r3Helljeon: 12037,
   }
 
   static weapon = {
     unused: 0,
 
     // group 1
-    multyshot: 11010,
-    missile: 11011,
-    missileRocket: 11012,
-    arrow: 11013,
-    laser: 11014,
-    laserBlue: 11015,
-    sapia: 11016,
-    sapiaShot: 11017,
-    parapo: 11018,
-    parapoShockWave: 11019,
-    blaster: 11020,
-    blasterMini: 11021,
-    sidewave: 11022,
-    rapid: 11024,
-    ring: 11025,
-    seondanil: 11026,
-    boomerang: 11027,
+    multyshot: 41010,
+    missile: 41011,
+    missileRocket: 41012,
+    arrow: 41013,
+    laser: 41014,
+    laserBlue: 41015,
+    sapia: 41016,
+    sapiaShot: 41017,
+    parapo: 41018,
+    parapoShockWave: 41019,
+    blaster: 41020,
+    blasterMini: 41021,
+    sidewave: 41022,
+    rapid: 41024,
+    ring: 41025,
+    seondanil: 41026,
+    boomerang: 41027,
 
     // group 2
-    kalnal: 11028,
-    cogwheel: 11029,
-    yeonsai: 11030,
-    sabangtan: 11031,
+    kalnal: 41028,
+    cogwheel: 41029,
+    yeonsai: 41030,
+    sabangtan: 41031,
 
     // extend r3
-    r3TowerPink: 11032,
-    r3TowerPurple: 11033,
-    r3Helljeon: 11034,
+    r3TowerPink: 41032,
+    r3TowerPurple: 41033,
+    r3Helljeon: 41034,
 
     // skill list
     // group 1 skill
-    skillMultyshot: 16001,
-    skillMissile: 16002,
-    skillArrow: 16003,
-    skillLaser: 16004,
-    skillSapia: 16005,
-    skillParapo: 16006,
-    skillBlaster: 16007,
-    skillSidewave: 16008,
-    skillSword: 16009,
-    skillHyperBall: 16010,
-    skillCriticalChaser: 16011,
-    skillPileBunker: 16012,
-    skillSantansu: 16013,
-    skillWhiteflash: 16014,
-    skillWhiteflashSmoke: 16015,
-    skillRapid: 16016,
-    skillRing: 16017,
-    skillSeondanil: 16018,
-    skillSeondanilMini: 16019,
-    skillHanjumeok: 16020,
-    skillBoomerang: 16021,
-    skillMoon: 16022,
+    skillMultyshot: 46001,
+    skillMissile: 46002,
+    skillArrow: 46003,
+    skillLaser: 46004,
+    skillSapia: 46005,
+    skillParapo: 46006,
+    skillBlaster: 46007,
+    skillSidewave: 46008,
+    skillSword: 46009,
+    skillHyperBall: 46010,
+    skillCriticalChaser: 46011,
+    skillPileBunker: 46012,
+    skillSantansu: 46013,
+    skillWhiteflash: 46014,
+    skillWhiteflashSmoke: 46015,
+    skillRapid: 46016,
+    skillRing: 46017,
+    skillSeondanil: 46018,
+    skillSeondanilMini: 46019,
+    skillHanjumeok: 46020,
+    skillBoomerang: 46021,
+    skillMoon: 46022,
 
     // group 2 skill
-    skillKalnal: 16023,
-    skillCogwheel: 16024,
-    skillYeonsai: 16025,
-    skillSabangtan: 16026,
-    skillHabirant: 16027,
-    skillHabirantSub: 16028,
-    skillIcechaser: 16029,
-    skillCalibur: 16030,
-    skillCaliburSub: 16031,
-    skillSujikpa: 16032,
-    skillSpeaker: 16033,
-    skillEomukggochi: 16034,
-    skillEomukggochiSub: 16035,
+    skillKalnal: 46023,
+    skillCogwheel: 46024,
+    skillYeonsai: 46025,
+    skillSabangtan: 46026,
+    skillHabirant: 46027,
+    skillHabirantSub: 46028,
+    skillIcechaser: 46029,
+    skillCalibur: 46030,
+    skillCaliburSub: 46031,
+    skillSujikpa: 46032,
+    skillSpeaker: 46033,
+    skillEomukggochi: 46034,
+    skillEomukggochiSub: 46035,
 
     // round 2 donggrami skill
-    skillR2Firecraker: 16036,
-    skillR2Toyhammer: 16037,
+    skillR2Firecraker: 46036,
+    skillR2Toyhammer: 46037,
 
     // round 3 X series skill, helljeon
-    skillR3Xkill: 16038,
-    skillR3Xshot: 16039,
-    skillR3XshotSub: 16040,
-    skillR3Xbeam: 16041,
-    skillR3XbeamSub: 16042,
-    skillR3Xboom: 16043,
-    skillR3XboomSub: 16044,
-    skillR3Helljeon: 16045,
+    skillR3Xkill: 46038,
+    skillR3Xshot: 46039,
+    skillR3XshotSub: 46040,
+    skillR3Xbeam: 46041,
+    skillR3XbeamSub: 46042,
+    skillR3Xboom: 46043,
+    skillR3XboomSub: 46044,
+    skillR3Helljeon: 46045,
   }
 
   /**
@@ -440,16 +506,16 @@ export class ID {
   }
 
   static equipment = {
-    unused: 33500,
-    standardPlusC1Blue: 33501,
-    donggramiMugi: 33502,
-    hellgiJangbi: 33503,
+    unused: 80000,
+    standardPlusC1Blue: 80001,
+    donggramiMugi: 80002,
+    hellgiJangbi: 80003,
   }
 
   static item = {
-    standardPlusC1Blue: 35000,
-    donggramiMugi: 35001,
-    hellgiJangbi: 35002,
+    standardPlusC1Blue: 50000,
+    donggramiMugi: 50001,
+    hellgiJangbi: 50002,
     donggramiTicket: 36000,
     donggramiUSB: 36001,
     hellgiComponent: 36002,
@@ -457,4 +523,4 @@ export class ID {
     boseokTest: 36004,
   }
 }
-Object.freeze(ID)
+deepFreeze(ID) // 절대로 ID를 수정하지 마

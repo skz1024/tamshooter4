@@ -1251,6 +1251,31 @@ class BaseField {
   static removePlayerItem (id, count = 1) {
     fieldSystem.requestRemoveItem(id, count)
   }
+  
+  /** 플레이어에게 골드를 추가하도록 요청합니다. (필드에서만 UserSystem에 대하여 직접 접근이 가능합니다.) */
+  static requestAddGoldToPlayer (amount = 0) {
+    if (amount < 0) return
+    fieldSystem.requestSubtractGold(amount)
+  }
+
+  /** 플레이어의 아이템의 보유 개수가 얼마인지 확인합니다. */
+  static requestGetItemCount (id = 0) {
+    return fieldSystem.requestGetItemCount(id)
+  }
+
+  /** 플레이어의 스킬이 언락되어있는지 확인합니다. */
+  static requestIsSkillUnlocked (id = 0) {
+    return fieldSystem.requestIsSkillUnlocked(id)
+  }
+
+  /** 특정 라운드가 클리어 되어 있는지 여부를 확인합니다. */
+  static requestGetRoundCleared (id = 0) {
+    return fieldSystem.requestIsRoundClear(id)
+  }
+
+  static requestGetUserGold () {
+    return fieldSystem.requestGetUserGold()
+  }
 }
 
 
@@ -1896,9 +1921,13 @@ class BaseLoad {
    */
   check () {
     let imageLoadCount = graphicSystem.getImageCompleteCount(this.imageList)
-    // let soundLoadCount = soundSystem.getAudioLoadCompleteCount(this.loadingSoundList)
-    
-    return imageLoadCount === this.imageList.length ? true : false
+    let soundLoadCount = soundSystem.getAudioLoadCompleteCount(this.soundList)
+
+    // 이 코드는 일부 임시조치가 되어있습니다.
+    // 확정 코드가 아니지만, 기존 코드 상태를 그대로 유지하겠습니다.
+    const i = imageLoadCount === this.imageList.length ? true : false
+    // const s = soundLoadCount === this.soundList.length ? true : false
+    return i
   }
 
   /**
@@ -7740,11 +7769,79 @@ class Round2_4 extends RoundData {
 
     /** 각 코스의 이름 상수 */
     this.courseName = {
-      INSIDE: 'inside',
-      OUTSIDE: 'outside',
-      /** 상점 내부 */ SHOP: 'shop',
-      /** 1번째 구역에서만 사용함 */ FIRST: 'first'
+      INSIDE: 0,
+      OUTSIDE: 1,
+      /** 상점 내부 */ SHOP: 2,
+      /** 1번째 구역에서만 사용함 */ FIRST: 3
     }
+
+    /** 상점에서 사용하는 변수. 단 동그라미 대사 타입을 빼고 저장하지 않습니다. */
+    this.shop = {
+      /** 상점에 입장하고 난 후의 프레임 값. 60이상이면 음악 재생 */
+      entryFrame: 0,
+      talkIdleFrame: 0, // 추후 작성해!
+      talkFrame: 0, // TALK를 시작한 후, 대화가 진행된 총 프레임
+      talkStatus: 0, // 2-5, 3-12 클리어 여부에 따라 대사가 달라집니다.  
+      TALKSTATUS_VALUE: { // 참고: Welcome같은 대사들은 좌표로 처리하므로, NORMAL로 설정하면 됩니다.
+        NONE: 0, // 아무것도 안함
+        WELCOME: 11,
+        NOGOLD: 12,
+        NOTICKET: 13,
+        BUY_SUCCESS: 14,
+        ALREADY_OWNED: 15,
+        IDLE1: 21,
+        IDLE2: 22,
+        IDLE3: 23,
+        R2_5: 2, // 2-5 라운드 대사 진행 여부
+        R3_12: 3 // 3-12 라운드 대사 진행 여부
+      },
+
+      TALK_INDEX: {
+        WELCOME: {X: 7, YA: 0, YB: 10, LENGTH: 3},
+        NOGOLD: {X: 7, YA: 3, YB: 13, LENGTH: 1},
+        NOTICKET: {X: 7, YA: 4, YB: 14, LENGTH: 1},
+        BUY_SUCCESS: {X: 7, YA: 5, YB: 15, LENGTH: 1},
+        ALREADY_OWNED: {X: 7, YA: 6, YB: 16, LENGTH: 1},
+        IDLE1: {X: 7, YA: 7, YB: 17, LENGTH: 1},
+        IDLE2: {X: 7, YA: 8, YB: 18, LENGTH: 1},
+        IDLE3: {X: 7, YA: 9, YB: 19, LENGTH: 1},
+        R2_5: {X: 8, YA: 0, YB: 7, LENGTH: 6},
+        R3_12: {X: 9, YA: 0, YB: 8, LENGTH: 7},
+      },
+
+      /** 동그라미 타입은 A형 (감정형), B형 (관찰자형) 으로 성향이 나윕니다.
+       * 단, 제시되는 대화는 전부 동일한 개념을 가리키므로, 똑같은 답을 다르게 표현한다고 생각하세요.
+       * A형인 경우 0번이고, B형인 경우 1번입니다. 다른 번호는 아무 일도 벌어지지 않습니다. */ 
+      talkType: 0,
+      /** A형 */ TALK_TYPE_A: 0,
+      /** B형 */ TYPE_TALK_B: 1,
+
+      /** 이미지 인덱스 좌표값. X, Y 기반 방식으로 텍스트 출력 */ talkIndexX: 0,
+      /** 이미지 인덱스 좌표값. X, Y 기반 방식으로 텍스트 출력 */ talkIndexY: 0,
+
+      // 구매 관련 확인 변수, 상점에 입장하거나 물건을 구매할 때 재조사합니다.
+      hasSkillFirecracker: false,
+      hasSkillToyhammer: false,
+      hasEquipmentDonggramiJangbi: false,
+      hasItemDonggramiUSB: false,
+
+      ITEM_PRICE: {
+        SKILL_FIRECRACKER: 500,
+        SKILL_TOYHAMMER: 500,
+        EQUIPMENT_DONGGRAMI_MUGI: 1200,
+        ITEM_DONGGRAMI_USB: 70,
+      },
+
+      // 대화 관련 조건부
+      isR2_5Clear: false,
+      isR3_12Clear: false,
+
+      // 유저 골드 표시
+      userGold: 0,
+      userItemDonggramiTicket: 0,
+    }
+
+    this.itemList = [ID.playerSkill.r2Firecracker, ID.playerSkill.r2Toyhammer, ID.item.donggramiUSB]
 
     this.courseNameList = [this.courseName.FIRST, this.courseName.SHOP, this.courseName.OUTSIDE, this.courseName.INSIDE]
 
@@ -7754,6 +7851,7 @@ class Round2_4 extends RoundData {
     this.load.addImageList([
       imageSrc.round.round2_4_corridor,
       imageSrc.round.round2_4_courseSelect,
+      imageSrc.round.round2_4_donggrami_shop,
       imageSrc.round.round2_4_elevator,
       imageSrc.round.round2_4_elevatorFloor1,
       imageSrc.round.round2_4_elevatorFloor3,
@@ -7794,16 +7892,9 @@ class Round2_4 extends RoundData {
     // 시작하자마자 배경음을 재생하지 않기 때문에, 재생되는 음악 인덱스는 수동으로 지정해야 합니다.
     this.sound.setMusicIndex(1, soundSrc.music.music12_donggrami_hall_outside)
     this.sound.setMusicIndex(2, soundSrc.music.music13_round2_4_jemu)
+    this.sound.setMusicIndex(3, soundSrc.music.music27_donggrami_shop)
 
     this.setLayerBg()
-  }
-
-  getCourseNumber (courseName = '') {
-    return this.courseNameList.indexOf(courseName)
-  }
-
-  getCourseName (courseNumber = 0) {
-    return this.courseNameList[courseNumber]
   }
 
   /** 해당 라운드 전용 layerBg 수정 */
@@ -7861,6 +7952,25 @@ class Round2_4 extends RoundData {
 
     // 코스 선택 레이어 (코스 선택시에만 표시하는 용도)
     this.bgLayer.addLayerImage(imageSrc.round.round2_4_courseSelect, 1)
+
+    // 상점 레이어 (상점 선택시에만 표시하는 용도)
+    this.bgLayer.addLayerImage(imageSrc.round.round2_4_donggrami_shop_background, 0)
+    this.bgLayer.addLayerImage(imageSrc.round.round2_4_donggrami_shop, 0)
+  }
+
+  /** 상점의 데이터를 불러오고, 상점의 상태를 재적용 합니다. */
+  refreshShop () {
+    // 필요한 것
+    this.shop.hasSkillFirecracker = this.field.requestIsSkillUnlocked(ID.playerSkill.r2Firecracker)
+    this.shop.hasSkillToyhammer = this.field.requestIsSkillUnlocked(ID.playerSkill.r2Toyhammer)
+    this.shop.hasEquipmentDonggramiJangbi = this.field.requestGetItemCount(ID.item.donggramiMugi) > 0
+    this.shop.hasItemDonggramiUSB = this.field.requestGetItemCount(ID.item.donggramiUSB) > 0
+
+    this.shop.isR2_5Clear = this.field.requestGetRoundCleared(ID.round.round2_5)
+    this.shop.isR3_12Clear = this.field.requestGetRoundCleared(ID.round.round3_12)
+
+    this.shop.userGold = this.field.requestGetUserGold()
+    this.shop.userItemDonggramiTicket = this.field.requestGetItemCount(ID.item.donggramiTicket)
   }
 
   /** 
@@ -7882,7 +7992,7 @@ class Round2_4 extends RoundData {
     this.extendedMemory[3] = this.spriteElevator.floor
     this.extendedMemory[4] = this.spriteElevator.floorArrive
     this.extendedMemory[5] = this.spriteElevator.isFloorMove ? 1 : 0
-    this.extendedMemory[6] = this.getCourseNumber(this.currentCourseName)
+    this.extendedMemory[6] = this.currentCourseName
     this.extendedMemory[7] = this.spriteElevator.x
     this.extendedMemory[8] = this.spriteElevator.y
   }
@@ -7894,7 +8004,7 @@ class Round2_4 extends RoundData {
     this.spriteElevator.floor = this.extendedMemory[3]
     this.spriteElevator.floorArrive = this.extendedMemory[4]
     this.spriteElevator.isFloorMove = !!this.extendedMemory[5]
-    this.currentCourseName = this.getCourseName(this.extendedMemory[6])
+    this.currentCourseName = this.extendedMemory[6]
     this.spriteElevator.x = this.extendedMemory[7]
     this.spriteElevator.y = this.extendedMemory[8]
   }
@@ -7907,13 +8017,28 @@ class Round2_4 extends RoundData {
       player.y = 500
     }
 
-    // 코스 선택
+    // 시간 멈춤 및 안내 표시
     if (this.timeCheckInterval(1, 2)) {
-      this.roundPhase00CourseSelect()
+      if (this.currentCourseName === this.courseName.FIRST) {
+        this.time.setCurrentTimePause(true, 'please select course')
+      } else if (this.currentCourseName === this.courseName.SHOP) {
+        // this.time.setCurrentTimePause(true, 'donggrami shop')
+        this.time.setCurrentTimePause(true, 'GOLD: ' + this.shop.userGold + ', TICKET: ' + this.shop.userItemDonggramiTicket)
+      }
+
+      // 코스 선택
+      if (this.currentCourseName === this.courseName.FIRST) {
+        this.roundPhase00CourseSelect()
+      }
+  
+      if (this.currentCourseName === this.courseName.SHOP) {
+        this.roundPhase00Shop()
+      }
     }
-    
-    // 추가 작업 필요 (다만 나중에 할 예정)
-    this.roundPhase00Shop()
+
+    // 시작 지점 설정
+    // 일부 로드 현상이 일어났을 때, 데이터가 누락되는 현상이 있는 것으로 보여서 추가함
+    this.bgLayer.setBackgroundPosition(this.bgXY.F1_START_X, this.bgXY.F1_START_Y)
   }
 
   roundPhase00CourseSelect () {
@@ -7921,7 +8046,6 @@ class Round2_4 extends RoundData {
     let areaOutside = { x: 0, y: 300, width: 200, height: 300 }
     let areaShop = { x: 260, y: 140, width: 280, height: 270 }
 
-    this.time.setCurrentTimePause(true, 'please select course')
     let player = this.field.getPlayerObject()
 
     // 코스를 선택했으면 해당하는 코스를 진행하고 다음 페이즈로 이동합니다.
@@ -7936,11 +8060,179 @@ class Round2_4 extends RoundData {
     } else if (collision(player, areaShop)) {
       // 상점에서는 현재 시간이 변경되지 않습니다.
       this.currentCourseName = this.courseName.SHOP
+      this.refreshShop()
+      // 이 경우에는 배경 전환이 페이드로 진행
+      this.bgLayer.setLayerAlphaFade(1, 0, 60)
+      this.bgLayer.setLayerAlphaFade(2, 1, 30)
+      this.bgLayer.setLayerAlphaFade(3, 1, 60)
+      // 플레이어 강제 위치 이동
+      player.setPosition(400, 500)
+      // 동그라미 대사 기본값으로 변경
+      this.shop.talkStatus = this.shop.TALKSTATUS_VALUE.WELCOME
+      this.shop.talkFrame = 0
     }
   }
 
   roundPhase00Shop () {
-    // 미정...
+    const areaExit = { x: 0, y: 450, width: 200, height: 150 }
+    const areaBox1 = { x: 0, y: 200, width: 100, height: 100 }
+    const areaBox2 = { x: 150, y: 200, width: 100, height: 100 }
+    const areaBox3 = { x: 300, y: 200, width: 100, height: 100 }
+    const areaBox4 = { x: 450, y: 200, width: 100, height: 100 }
+    const areaTalkBox1 = { x: 650, y: 300, width: 100, height: 100 }
+    const areaTalkBox2 = { x: 650, y: 450, width: 100, height: 100 }
+
+    let player = this.field.getPlayerObject()
+
+    // 배경음악은 화면 전환 애니메이션을 고려하여 60프레임 후에 재생시킵니다.
+    this.shop.entryFrame++
+    if (this.shop.entryFrame === 60) {
+      this.sound.musicChange(3, 0)
+    }
+
+    this.roundPhase00ShopUpdateTalkIndexByFrame()
+
+    if (collision(player, areaBox1)) {
+      // buy item
+      if (this.shop.hasSkillFirecracker) {
+        // 너는 가지고 있다
+      } else if (this.shop.userGold >= this.shop.ITEM_PRICE.SKILL_FIRECRACKER) {
+        // 구매 성공
+      } else {
+        // 너 돈없어
+      }
+    } else if (collision(player, areaBox2)) {
+      // buy item
+      if (this.shop.hasSkillToyhammer) {
+        // 너는 가지고 있다
+      } else if (this.shop.userGold >= this.shop.ITEM_PRICE.SKILL_TOYHAMMER) {
+        // 구매 성공
+      } else {
+        // 너 돈없어
+      }
+    } else if (collision(player, areaBox3)) {
+      // buy item
+      if (this.shop.hasEquipmentDonggramiJangbi) {
+        // 너는 가지고 있다
+      } else if (this.shop.userGold >= this.shop.ITEM_PRICE.EQUIPMENT_DONGGRAMI_MUGI) {
+        // 구매 성공
+      } else {
+        // 너 돈없어
+      }
+    } else if (collision(player, areaBox4)) {
+      // buy item
+      if (this.shop.hasItemDonggramiUSB) {
+        // 너는 가지고 있다
+      } else if (this.shop.userItemDonggramiTicket >= this.shop.ITEM_PRICE.ITEM_DONGGRAMI_USB) {
+        // 구매 성공
+      } else {
+        // 너 티켓 없어
+      }
+    } else if (collision(player, areaTalkBox1)) {
+      // talk
+      this.shop.talkStatus = this.shop.TALKSTATUS_VALUE.R2_5
+      this.shop.talkFrame = 0
+    } else if (collision(player, areaTalkBox2)) {
+      // talk
+      this.shop.talkStatus = this.shop.TALKSTATUS_VALUE.R3_12
+      this.shop.talkFrame = 0
+    }
+
+    // 플레이어가 EXIT 영역에 간 경우에, 라운드 출발 시점으로 되돌립니다.
+    if (collision(player, areaExit)) {
+      this.sound.musicChange(0, 120)
+      this.bgLayer.setLayerAlphaFade(1, 1, 20)
+      this.bgLayer.setLayerAlphaFade(2, 0, 20)
+      this.bgLayer.setLayerAlphaFade(3, 0, 20)
+      this.time.setCurrentTime(0) // 0초, 초기 상황으로 설정 (그래야 플레이어 위치가 다시 재설정됨)
+      this.time.setCurrentTimePause(false) // 시간 멈춤이 풀리지 않으면 초기화 동작이 불가능하여 적용.
+      this.currentCourseName = this.courseName.FIRST // 다시 원래 지역으로 이동
+      this.shop.entryFrame = 0 // 음악 재생용 상점 입장 시간을 초기화 시킴
+    }
+  }
+
+  setShopTalkIndex (x = 0, y = 0) {
+    this.shop.talkIndexX = x
+    this.shop.talkIndexY = y
+  }
+
+  roundPhase00ShopUpdateTalkIndexByFrame () {
+    const IS_TYPE_A = this.shop.talkType === this.shop.TALK_TYPE_A
+    const TALK_SECOND = Math.floor(this.shop.talkFrame / game.FPS)
+    const INDEX = this.shop.TALK_INDEX
+    const STATUS = this.shop.TALKSTATUS_VALUE
+    this.shop.talkFrame++
+
+    const TIME_WELCOME = [1, 5, 9, 13]
+    const TIME_R2_5 = [0, 4, 8, 12, 16, 20, 25]
+    const TIME_R3_12 = [0, 4, 8, 12, 16, 20, 24, 29]
+    let targetYNext = 0
+
+    switch (this.shop.talkStatus) {
+      case STATUS.WELCOME:
+        targetYNext = TIME_WELCOME.indexOf(TALK_SECOND)
+        // 0 부터 (끝 - 1) 번 까지 (즉, 마지막 요소는 제외)
+        if (targetYNext >= 0 && targetYNext < TIME_WELCOME.length - 1) {
+          this.setShopTalkIndex(INDEX.WELCOME.X, IS_TYPE_A ? INDEX.WELCOME.YA + targetYNext : INDEX.WELCOME.YB + targetYNext)
+        } else if (targetYNext === TIME_WELCOME.length - 1) {
+          this.shop.talkStatus = this.shop.TALKSTATUS_VALUE.NONE
+        }
+        break
+      case STATUS.R2_5:
+        targetYNext = TIME_R2_5.indexOf(TALK_SECOND)
+        if (targetYNext >= 0 && targetYNext < TIME_R2_5.length - 1) {
+          this.setShopTalkIndex(INDEX.R2_5.X, IS_TYPE_A ? INDEX.R2_5.YA + targetYNext : INDEX.R2_5.YB + targetYNext)
+        } else if (targetYNext === TIME_R2_5.length - 1) {
+          this.shop.talkStatus = this.shop.TALKSTATUS_VALUE.NONE
+        }
+        break
+      case STATUS.R3_12:
+        targetYNext = TIME_R3_12.indexOf(TALK_SECOND)
+        if (targetYNext >= 0 && targetYNext < TIME_R3_12.length - 1) {
+          this.setShopTalkIndex(INDEX.R3_12.X, IS_TYPE_A ? INDEX.R3_12.YA + targetYNext : INDEX.R3_12.YB + targetYNext)
+        } else if (targetYNext === TIME_R3_12.length - 1) {
+          this.shop.talkStatus = this.shop.TALKSTATUS_VALUE.NONE
+        }
+        break
+      case STATUS.ALREADY_OWNED:
+        this.setShopTalkIndex(INDEX.ALREADY_OWNED.X, IS_TYPE_A ? INDEX.ALREADY_OWNED.YA : INDEX.ALREADY_OWNED.YB)
+        break
+      case STATUS.BUY_SUCCESS:
+        this.setShopTalkIndex(INDEX.BUY_SUCCESS.X, IS_TYPE_A ? INDEX.BUY_SUCCESS.YA : INDEX.BUY_SUCCESS.YB)
+        break
+      case STATUS.NOGOLD:
+        this.setShopTalkIndex(INDEX.NOGOLD.X, IS_TYPE_A ? INDEX.NOGOLD.YA : INDEX.NOGOLD.YB)
+        break
+      case STATUS.NOTICKET:
+        this.setShopTalkIndex(INDEX.NOTICKET.X, IS_TYPE_A ? INDEX.NOTICKET.YA : INDEX.NOTICKET.YB)
+        break
+      case STATUS.IDLE1:
+        this.setShopTalkIndex(INDEX.IDLE1.X, IS_TYPE_A ? INDEX.IDLE1.YA : INDEX.IDLE1.YB)
+        break
+      case STATUS.IDLE2:
+        this.setShopTalkIndex(INDEX.IDLE2.X, IS_TYPE_A ? INDEX.IDLE2.YA : INDEX.IDLE2.YB)
+        break
+      case STATUS.IDLE3:
+        this.setShopTalkIndex(INDEX.IDLE3.X, IS_TYPE_A ? INDEX.IDLE3.YA : INDEX.IDLE3.YB)
+        break
+    }
+
+    const list1 = [ STATUS.ALREADY_OWNED, STATUS.BUY_SUCCESS, STATUS.NOGOLD, STATUS.NOTICKET ]
+    if (TALK_SECOND >= 5 && list1.includes(this.shop.talkStatus)) {
+      this.shop.talkStatus = this.shop.TALKSTATUS_VALUE.NONE
+    }
+
+    const list2 = [STATUS.IDLE1, STATUS.IDLE2, STATUS.IDLE3] 
+    if (TALK_SECOND >= 7 && list2.includes(this.shop.talkStatus)) {
+      this.shop.talkStatus = this.shop.TALKSTATUS_VALUE.NONE
+    }
+
+    // 참고로 대사 처리 후 NONE 상태가 된다면 대화 진행 프레임을 0으로 만듭니다.
+    // 이렇게 하면 대사 순서 초기화 가능
+    if (this.shop.talkStatus === this.shop.TALKSTATUS_VALUE.NONE) {
+      this.shop.talkFrame = 0
+      this.shop.talkIdleFrame = 0
+    }
   }
 
   roundPhase01 () {
@@ -8430,6 +8722,57 @@ class Round2_4 extends RoundData {
       // 보스전 체력 표시
       if (this.currentCourseName === this.courseName.OUTSIDE) this.meter.bossHpDefaultStyle(ID.enemy.intruder.jemuBoss)
     }
+
+    if (currentPhase === 0 && this.currentCourseName === this.courseName.SHOP && this.shop.entryFrame >= 60) {
+      this.displayDonggramiShopDonggrami()
+      this.displayDonggramiShopTalk()
+    }
+  }
+
+  displayDonggramiShopDonggrami () {
+    const areaBox1 = { x: 0, y: 200, width: 100, height: 100 }
+    const areaBox2 = { x: 150, y: 200, width: 100, height: 100 }
+    const areaBox3 = { x: 300, y: 200, width: 100, height: 100 }
+    const areaBox4 = { x: 450, y: 200, width: 100, height: 100 }
+    // const areaTalkBox1 = { x: 650, y: 300, width: 100, height: 100 }
+    // const areaTalkBox2 = { x: 650, y: 450, width: 100, height: 100 }
+    const donggrami = {x: 100, y: 100}
+    const donggramiImageObject = this.shop.talkType === this.shop.TALK_TYPE_A ? imageDataInfo.donggramiEnemy.lightBlue : imageDataInfo.donggramiEnemy.darkBlue
+    const donggramiImageSrc = imageSrc.enemy.donggramiEnemy
+    
+    const TEXT_MARGIN = 8
+    const TEXT_SIZE_WITH_MARGIN = 24
+    const TICKET_ICON_SIZE = 40
+    
+    // item price
+    digitalDisplay('G500', areaBox1.x + TEXT_MARGIN, areaBox1.y + areaBox1.height - TEXT_SIZE_WITH_MARGIN)
+    digitalDisplay('G500', areaBox2.x + TEXT_MARGIN, areaBox2.y + areaBox2.height - TEXT_SIZE_WITH_MARGIN)
+    digitalDisplay('G1200', areaBox3.x + TEXT_MARGIN, areaBox3.y + areaBox3.height - TEXT_SIZE_WITH_MARGIN)
+    digitalDisplay('70', areaBox4.x + TICKET_ICON_SIZE, areaBox4.y + areaBox4.height - TEXT_SIZE_WITH_MARGIN)
+    
+    // donggrami
+    gameFunction.imageObjectDisplay(donggramiImageSrc, donggramiImageObject, donggrami.x, donggrami.y)
+
+    digitalDisplay('STATUS: ' + this.shop.talkStatus + ', INEDX: ' + this.shop.talkIndexX + ', ' + this.shop.talkIndexY, 0, 40)
+  }
+
+  displayDonggramiShopTalk () {
+    if (this.shop.talkStatus === this.shop.TALKSTATUS_VALUE.NONE) return
+
+    const donggramiTextBox = {x: 150, y: 60}
+    const donggramiTextImageObjectSrc = imageSrc.enemy.donggramiEnemy
+    const donggramiTextImageObject = imageDataInfo.donggramiEnemy.speechBubble
+    const donggramiTextList = {x: 150, y: 60}
+    const donggramiTextListSrc = imageSrc.enemy.donggramiEnemyTalkList
+    const donggramiTextWidth = 200
+    const donggramiTextHeight = 40
+    const donggramiTextX = donggramiTextWidth * this.shop.talkIndexX
+    const donggramiTextY = donggramiTextHeight * this.shop.talkIndexY
+
+    gameFunction.imageObjectDisplay(donggramiTextImageObjectSrc, donggramiTextImageObject, donggramiTextBox.x, donggramiTextBox.y)
+    game.graphic.imageDisplay(donggramiTextListSrc, donggramiTextX, donggramiTextY, donggramiTextWidth, donggramiTextHeight,
+      donggramiTextList.x, donggramiTextList.y, donggramiTextWidth, donggramiTextHeight
+    )
   }
 
   static createSpriteElevator () {

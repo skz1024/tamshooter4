@@ -1,8 +1,7 @@
 //@ts-check
 
-import { tamshooter4Data } from "./data.js"
 import { ID } from "./dataId.js"
-import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatWeapon } from "./dataStat.js"
+import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon } from "./dataStat.js"
 import { dataExportWeapon, WeaponData } from "./dataWeapon.js"
 import { fieldState } from "./field.js"
 import { soundSrc } from "./soundSrc.js"

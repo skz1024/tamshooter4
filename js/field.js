@@ -1773,7 +1773,7 @@ export class fieldSystem {
   /** 
    * 플레이어의 골드를 증가시키도록 요청
    * 
-   * 참고: 이 골드 추가는 던전 진행이 끝나야만 처리되므로, 필드 중간에 저장하진 않습니다.
+   * 참고: 이 골드 추가는 던전 진행이 끝나야만 처리되므로, 필드 중간에 플레이어의 골드를 저장하진 않습니다.
    */
   static requestAddGold (gold = 0) {
     this.fieldGold += gold
@@ -1853,6 +1853,33 @@ export class fieldSystem {
 
     // 필드에서 아이템을 얻었는지와 관계없이 해당 아이템은 삭제함
     fieldState.playerObject._removeItem(id, count)
+  }
+
+  /**
+   * 플레이어의 아이템 개수를 가져오도록 요청합니다.
+   * @param {number} id 
+   */
+  static requestGetItemCount (id) {
+    // 여기서는 userSystem 전역 변수로 처리합니다.
+    // 이후 버전에서 playerObject에 request를 보내던 부분은 삭제할 겁니다.
+    return userSystem.inventory.getCount(id)
+  }
+
+  /**
+   * 플레이어의 스킬이 잠금 해제되었는지 확인합니다.
+   * @param {number} id 
+   */
+  static requestIsSkillUnlocked (id) {
+    return userSystem.getSkillUnlock(id)
+  }
+
+  /** 라운드가 클리어 되어 있는지를 확인합니다. */
+  static requestIsRoundClear (roundId = 0) {
+    return userSystem.getRoundClear(roundId)
+  }
+
+  static requestGetUserGold () {
+    return userSystem.gold
   }
 
   /** 라운드 오브젝트를 생성하고 이 객체을 리턴합니다. */

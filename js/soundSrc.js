@@ -408,5 +408,6 @@ export class soundSrc {
     music24_down_tower_passage: './music/music24_down_tower_passage.ogg',
     music25_down_tower_outwall: './music/music25_down_tower_outwall.ogg',
     music26_round1_4_blackSpace: './music/music26_round1_4_blackSpace.ogg',
+    music27_donggrami_shop: './music/music27_donggrami_shop.ogg'
   }
 }

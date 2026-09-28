@@ -107,6 +107,8 @@ export class imageSrc {
     round2_3_status: './image/round/round2_3_status.png',
     round2_3_effect: './image/round/round2_3_effect.png',
     round2_4_courseSelect: './image/round/round2_4_courseSelect.png',
+    round2_4_donggrami_shop: './image/round/round2_4_donggrami_shop.png',
+    round2_4_donggrami_shop_background: './image/round/round2_4_donggrami_shop_background.png',
     round2_4_elevator: './image/round/round2_4_elevator.png',
     round2_4_elevatorNumber: './image/round/round2_4_elevatorNumber.png',
     round2_4_elevatorFloor1: './image/round/round2_4_elevatorFloor1.png',
@@ -434,7 +436,9 @@ export class imageDataInfo {
     /** 접시 깨지기 */ plateBreak: {x: 600, y: 550, width: 50, height: 20, frame: 10},
     /** 캔들 + 불 이펙트 */ candleFire: {x: 900, y: 280, width: 30, height: 60, frame: 10},
 
-    /** 대화 크기 */ textArea: new ImageDataObject(0, 0, 200, 40)
+    /** donggramiTextList에서 각 배치된 텍스트 기준 크기.
+     * 이것은 말풍선을 의미하는 것이 아니므로 말풍선을 표시하고 싶다면 textSpeech를 사용하세요. */ 
+    textArea: new ImageDataObject(0, 0, 200, 40)
   }
 
   static intruderEnemy = {

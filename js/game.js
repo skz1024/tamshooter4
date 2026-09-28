@@ -191,6 +191,21 @@ class userInventorySystem {
   }
 
   /**
+   * 인벤토리의 아이템 개수를 반환
+   * @param {number} id 
+   */
+  static getCount (id) {
+    for (let i = 0; i < this.itemList.length; i++) {
+      // 아이디를 직접 다 찾아봄
+      if (this.itemList[i].id === id) {
+        return i
+      }
+    }
+
+    return 0
+  }
+
+  /**
    * 인벤토리의 아이템 삭제 (참고: 해당 슬롯은 삭제되는게 아닌, 데이터만 사라집니다.)
    * 
    * 주의: 장비아이템은, 인벤토리데이터랑 연동되어있어, 이 함수를 사용하면 장비의 인덱스를 갱신할 수 없음.
@@ -586,6 +601,14 @@ export class userSystem {
     }
 
     this.inventory.delete(itemIndex, count)
+  }
+
+  /**
+   * 인벤토리에 있는 ID에 해당하는 아이템 개수를 가져옵니다.
+   * @param {number} itemId 
+   */
+  static getInventoryItemCount (itemId) {
+    this.inventory.getCount(itemId)
   }
 
   /** 무기 리스트(기본값), 0 ~ 3번까지만 있음. 4번은 무기를 사용하기 싫을 때 사용 따라서 무기가 지정되지 않음. */
