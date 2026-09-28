@@ -175,7 +175,7 @@ export class SoundSystem {
    * 
    * 경고: createBuffer로 버퍼를 먼저 등록해주세요. 여기서도 등록이 진행되기는 하나, 값을 바로 리턴받을 수 없습니다.
    * 
-   * 이 버퍼는 bufferPlay를 통해 바로 오디오를 재생할 수 있습니다.
+   * 이 버퍼는 buffer 관련 함수를 통해 바로 오디오를 재생할 수 있습니다.
    * 
    * 경고: 오디오 경로가 잘못되었는지는 사용자가 스스로 판단해야 합니다. 잘못된 경로를 사용하면 에러가 날 수 있습니다.
    * @param {string} audioSrc 오디오 파일의 경로 (이 값은 고유한 키로 사용됩니다.)
@@ -292,7 +292,7 @@ export class SoundSystem {
    * 
    * 오디오 객체를 재생할 수도 있습니다. 이 경우 웹 오디오 효과를 받을 수 없습니다.
    * 
-   * @param {HTMLMediaElement | string} audioSrc 오디오의 경로
+   * @param {string} audioSrc 오디오의 경로
    * string을 넣으면 해당 오디오 경로에 있는 파일을 직접 재생합니다.
    * 
    * AudioBuffer를 넣으면 playBuffer 함수를 대신 실행합니다.
@@ -305,9 +305,14 @@ export class SoundSystem {
     if (typeof audioSrc === 'string') {
       getAudio = this.getCacheAudio(audioSrc)
       getNode = this.getCacheAudioNode(audioSrc)
-    } else if (audioSrc instanceof HTMLAudioElement) {
-      getAudio = audioSrc
-    }
+    } 
+    
+    // death code (이 코드는 사용되지 않습니다만, 만일을 위해서 주석으로 남겨놓겠습니다.)
+    // 만약 audioSrc 매개변수에 HTMLAudioElement로 값을 넣을 일이 있다면, 이 코드를 사용할 수도 있습니다.
+    // else if (audioSrc instanceof HTMLAudioElement) {
+    //   getAudio = audioSrc
+    //   getNode = this.getCacheAudioNode(getAudio.src)
+    // }
     
     if (getAudio == null || getNode == null) return // 노드 또는 오디오가 없다면 재생 불가능
     getNode.connect(this.audioNode.firstGain) // 재생을 위한 오디오 연결
@@ -341,7 +346,7 @@ export class SoundSystem {
     let getBuffer = this.getCacheBuffer(audioSrc)
     if (getBuffer == null) return // 버퍼가 없다면 실행 불가능
 
-    if (start < 0) start = 0 // 시작시건 버그 금지
+    if (start < 0) start = 0 // 시작시간 버그 금지
     if (duration <= 0) duration = getBuffer.duration // duration 기본값 설정
 
     // 버퍼 소스 생성
@@ -489,7 +494,7 @@ export class SoundSystem {
 
     // 타임아웃이 미리 예약되어있다면 이를 취소하고 다시 페이드를 진행합니다.
     if (this.fadeOutIntervalId !== 0) clearTimeout(this.fadeOutIntervalId) 
-    this.fadeOutIntervalId = setTimeout(this.musicStop.bind(this), fadeSecond * 1000) // fadeSconde는 초단위이고, setTimeout는 밀리세컨드단위
+    this.fadeOutIntervalId = setTimeout(this.musicStop.bind(this), fadeSecond * 1000) // fadeSecond는 초단위이고, setTimeout는 밀리세컨드단위
   }
 
   /** 현재 재생중인 모든 음악 정지, 재생중인 트랙의 모든 데이터는 지워집니다. */
@@ -565,7 +570,7 @@ export class SoundSystem {
    * 
    * 함수에 매개변수가 모두 없으면 에코 기능은 동작하지 않습니다. 
    * 
-   * 특정한 변수 값만 넣고 싶다면, null을 넣거나 음수 갑을 입력하세요.
+   * 특정한 변수 값만 넣고 싶다면, null을 넣거나 음수 값을 입력하세요.
    * 
    * @param {number} echoGain 에코 게인 (0 ~ 1)
    * @param {number} feedBackGain 에코 피드백 게인 (0 ~ 1)

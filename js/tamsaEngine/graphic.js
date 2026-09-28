@@ -563,7 +563,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * @param {number} y 출력할 y좌표
    * @param {number} width 출력할 길이
    * @param {number} height 출력할 높이
-   * @param {number[]} option 추가 옵션: flip(0: none, 1: vertical, 2: horizontal, 3:all), rotate(0 ~ 360), alpha(0 ~ 1)
+   * @param {number[]} option 추가 옵션: flip(0: none, 1: X축방향, 2: Y축방향, 3:all), rotate(0 ~ 360), alpha(0 ~ 1)
    */
   imageDisplay (imageSrc, sliceX = 0, sliceY = 0, sliceWidth, sliceHeight, x = 0, y = 0, width = 1, height = 1, ...option) {
     let getImage = typeof imageSrc === 'string' ? this.getCacheImage(imageSrc) : imageSrc
@@ -1251,7 +1251,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
      * 그러나 이미지가 캔버스보다 큰 경우 확대를 할 필요가 없으므로 배율은 1
      */
     const multipleWidth = imageWidth < canvasWidth ? canvasWidth / imageWidth : 1
-    const multipleHeight = imageWidth < canvasWidth ? canvasHeight / imageHeight : 1
+    const multipleHeight = imageHeight < canvasHeight ? canvasHeight / imageHeight : 1
 
     /**  
      * 결과 이미지
@@ -1269,16 +1269,16 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     }
 
     // 이미지의 시작점이 이미지의 너비 초과 또는 음수일경우, 이미지 X 좌표 변경
-    if (imageStartX > imageWidth) {
+    if (imageStartX >= imageWidth) {
       imageStartX = imageStartX % imageWidth
-    } else if (imageStartX < 0) {
+    } else if (imageStartX <= 0) {
       imageStartX = imageWidth - Math.abs(imageStartX % imageWidth)
     }
 
     // 이미지의 시작점이 이미지의 높이 초과 또는 음수인경우, 이미지 Y 좌표 변경
-    if (imageStartY > imageHeight) {
+    if (imageStartY >= imageHeight) {
       imageStartY = imageStartY % imageHeight
-    } else if (imageStartY < 0) {
+    } else if (imageStartY <= 0) {
       imageStartY = imageHeight - Math.abs(imageStartY % imageHeight)
     }
 
@@ -1323,13 +1323,13 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
         const screenBaseStartX = multipleWidth !== 1 ? Math.floor(imageStartX * multipleWidth) : imageStartX
         const screenBaseStartY = multipleHeight !== 1 ? Math.floor(imageStartY * multipleHeight) : imageStartY
         const screenBaseWidth = multipleWidth !== 1 ? canvasWidth - screenBaseStartX : imageWidth - screenBaseStartX
-        const screenBaseHeight = multipleWidth !== 1 ? canvasHeight - screenBaseStartY : imageHeight - screenBaseStartY
+        const screenBaseHeight = multipleHeight !== 1 ? canvasHeight - screenBaseStartY : imageHeight - screenBaseStartY
         const screenExtendWidth = multipleWidth !== 1 ? canvasWidth - screenBaseWidth : imageWidth - screenBaseWidth
         const screenExtendHeight = multipleWidth !== 1 ? canvasHeight - screenBaseHeight : imageHeight - screenBaseHeight
 
         // 오류 방지를 위해 이미지를 자르는 사이즈가 0이 되지 않도록 조건을 정한 후 출력
         // 첫번째 기본 이미지
-        if (screenBaseWidth !== 0 || screenBaseHeight !== 0) {
+        if (screenBaseWidth !== 0 && screenBaseHeight !== 0) {
           this.imageDisplay(resultImage, screenBaseStartX, screenBaseStartY, screenBaseWidth, screenBaseHeight, 0, 0, screenBaseWidth, screenBaseHeight)
         }
 

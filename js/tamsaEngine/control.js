@@ -73,6 +73,9 @@ class TouchButton {
     this.divAreaForth.appendChild(this.buttonX)
     this.divAreaForth.appendChild(this.buttonY)
 
+    // 함수 강제 바인드
+    this.changeLayout = this.changeLayout.bind(this)
+
     // 마지막: 레이아웃 처리(가로/세로모드에 따른...)
     this.changeLayout()
   }
@@ -198,6 +201,9 @@ class TouchButton {
     buttonElement.addEventListener('touchend', () => {
       buttonElement.style.backgroundColor = bgColor
     })
+    buttonElement.addEventListener('touchcancel', () => {
+      buttonElement.style.backgroundColor = bgColor
+    })
 
     element.appendChild(buttonElement)
     return element
@@ -211,13 +217,12 @@ class TouchButton {
    * @param {boolean} autoResizeEvent 브라우저의 크기가 변경되면, 자동으로 가로/세로 모드로 전환합니다.
    */
   bodyInsert (autoResizeEvent = true) {
-    if (document.getElementById('firstElement') == null) {
-      document.body.appendChild(this.elementCenter)
-      if (autoResizeEvent) {
-        addEventListener('resize', () => {
-          this.changeLayout()
-        })
-      }
+    // 이미 이 엘리먼트가 body에 생성되어있다면 더 설치하지 않습니다.
+    if (this.elementCenter.isConnected) return
+
+    document.body.appendChild(this.elementCenter)
+    if (autoResizeEvent) {
+      addEventListener('resize', this.changeLayout)
     }
   }
 
@@ -274,8 +279,8 @@ export class ControlSystem {
       // 마우스의 offsetX, offsetY를 계산하기
       //@ts-expect-error
       var rect = e.target.getBoundingClientRect();
-      var offsetX = e.targetTouches[0].pageX - rect.left;
-      var offsetY = e.targetTouches[0].pageY - rect.top;
+      var offsetX = e.targetTouches[0].clientX - rect.left;
+      var offsetY = e.targetTouches[0].clientY - rect.top;
     
       // 캔버스의 확대/축소를 고려하여 마우스의 좌표를 계산합니다.
       const canvasZoomWidth = targetElement.clientWidth / targetElement.width
@@ -292,8 +297,8 @@ export class ControlSystem {
       // 마우스의 offsetX, offsetY를 계산하기
       //@ts-expect-error
       var rect = e.target.getBoundingClientRect();
-      var offsetX = e.targetTouches[0].pageX - rect.left;
-      var offsetY = e.targetTouches[0].pageY - rect.top;
+      var offsetX = e.targetTouches[0].clientX - rect.left;
+      var offsetY = e.targetTouches[0].clientY - rect.top;
     
       // 캔버스의 확대/축소를 고려하여 마우스의 좌표를 계산합니다.
       const canvasZoomWidth = targetElement.clientWidth / targetElement.width
@@ -306,6 +311,9 @@ export class ControlSystem {
     })
     targetElement.addEventListener('touchend', () => {
       this.setMouseUp() // 터치에서 모든 손을 떼면 마우스를 뗀 것과 같음
+    })
+    targetElement.addEventListener('touchcancel', () => {
+      this.setMouseUp() // 터치가 취소되는 경우도 마우스를 뗀 것과 같은 것으로 간주
     })
     targetElement.addEventListener('mousedown', (e) => {
       if (e.button !== 0) return // 왼쪽 클릭 이외는 무시
@@ -391,6 +399,10 @@ export class ControlSystem {
       this.setButtonUp(buttonIndex)
       e.preventDefault()
     })
+    targetButton.addEventListener('touchcancel', (e) => {
+      this.setButtonUp(buttonIndex)
+      e.preventDefault()
+    })
   }
 
   /**
@@ -419,8 +431,8 @@ export class ControlSystem {
 
       // offsetX, offsetY를 얻기 위한 과정
       var rect = e.target.getBoundingClientRect()
-      var offsetX = e.targetTouches[0].pageX - rect.left
-      var offsetY = e.targetTouches[0].pageY - rect.top
+      var offsetX = e.targetTouches[0].clientX - rect.left
+      var offsetY = e.targetTouches[0].clientY - rect.top
     
       let percentX = offsetX / rect.width
       let percentY = offsetY / rect.height
@@ -474,6 +486,19 @@ export class ControlSystem {
 
     // 터치에서 손을 떼었다면 이동버튼은 아무것도 누르지 않은것으로 처리합니다.
     this.touchButton.divAreaSecond.addEventListener('touchend', (e) => {
+      if (this.touchButton == null) return
+
+      this.setButtonUp(this.buttonIndex.LEFT)
+      this.setButtonUp(this.buttonIndex.RIGHT)
+      this.setButtonUp(this.buttonIndex.DOWN)
+      this.setButtonUp(this.buttonIndex.UP)
+      this.touchButton.buttonArrow.style.left = centerPercent
+      this.touchButton.buttonArrow.style.top = centerPercent
+      e.preventDefault()
+    })
+
+    // touchend에서 코드 복사됨
+    this.touchButton.divAreaSecond.addEventListener('touchcancel', (e) => {
       if (this.touchButton == null) return
 
       this.setButtonUp(this.buttonIndex.LEFT)

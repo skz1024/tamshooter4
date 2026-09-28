@@ -15342,11 +15342,6 @@ class Round3_11 extends Round3Templete {
     this.stat.setStat(ID.round.round3_11)
     this.layerList = {
       R3_9_EXITAREA: 0,
-      DOWNTOWER3_4: 1,
-      DOWNTOWER3_3: 2,
-      DOWNTOWER3_2: 3,
-      DOWNTOWER3_1: 4,
-      MAEUL_ELEVATOR: 5,
     }
 
     this.BGCONST = {
@@ -15417,6 +15412,8 @@ class Round3_11 extends Round3Templete {
     // 기본 위치 설정 (참고: 내부 레이어는 알아서 위치가 조정됩니다. (800x600에 나누어져서 위치가 맞추어 출력됨))
     this.bgLayer.setBackgroundWidthHeight(BGXMAX, BGHEIGHT * 7)
     this.bgLayer.setBackgroundPosition(BGWIDTH * 0, BGHEIGHT * 6)
+
+    this.bgLayer.addLayerImage(imageSrc.round.round3_9_finishArea)
   }
 
   processBackground () {
@@ -15459,7 +15456,7 @@ class Round3_11 extends Round3Templete {
   processBackgroundPhase0305Outwall () {
     const currentPhase = this.phase.getCurrentPhase()
     const position = this.bgLayer.getBackgroundPosition()
-    const BGXposition = [0, 0, 0, this.BGCONST.BGWIDTH * 0, this.BGCONST.BGWIDTH * 1, this.BGCONST.BGWIDTH * 3]
+    const BGXposition = [0, 0, 0, this.BGCONST.BGWIDTH * 0, this.BGCONST.BGWIDTH * 1, this.BGCONST.BGWIDTH * 2]
     this.bgLayer.setBackgroundSpeed(0, -4)
 
     // 현재 페이즈에서 같은 배경을 반복하도록, 배경좌표 조정
@@ -15478,14 +15475,14 @@ class Round3_11 extends Round3Templete {
 
     // terrace
     if (position.y < this.BGCONST.BGHEIGHT * 1) {
-      this.bgLayer.setBackgroundPosition(this.BGCONST.BGWIDTH * 3, this.BGCONST.BGHEIGHT * 1)
+      this.bgLayer.setBackgroundPosition(this.BGCONST.BGWIDTH * 2, this.BGCONST.BGHEIGHT * 1)
       this.bgLayer.setBackgroundSpeed(0, 0)
     }
   }
 
   processDebug () {
     // if (this.timeCheckFrame(0, 4)) {
-    //   this.time.setCurrentTime(this.phase.phaseTime[6].startTime + 0)
+    //   this.time.setCurrentTime(this.phase.phaseTime[5].startTime + 0)
     //   this.bgLayer.setLayerAlpha(this.layerList.R3_9_EXITAREA, 0)
     //   this.playerOption.setColor(4)
     // }

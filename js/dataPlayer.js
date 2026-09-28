@@ -427,13 +427,13 @@ export class PlayerSkillData {
 
     /**
      * 스킬 사용 사운드 (null일경우 아무 사운드도 없음)
-     * @type {HTMLMediaElement | null | string}
+     * @type {string | null}
      */
     this.useSound = null
 
     /**
      * 스킬을 사용한 후 한번 반복할 때 나오는 샷 사운드 (null일경우 아무 사운드도 없음)
-     * @type {HTMLMediaElement | null | string}
+     * @type {string | null}
      */
     this.shotSound = null
 
@@ -515,8 +515,8 @@ export class PlayerSkillData {
 
   /**
    * 사운드 설정
-   * @param {HTMLMediaElement | null | string} useSound 해당 스킬을 사용했을 때 나오는 사운드
-   * @param {HTMLMediaElement | null | string} shotSound 해당 스킬을 사용한 후 무기가 발사될 때 나오는 사운드
+   * @param {null | string} useSound 해당 스킬을 사용했을 때 나오는 사운드
+   * @param {null | string} shotSound 해당 스킬을 사용한 후 무기가 발사될 때 나오는 사운드
    */
   setSound (useSound = null, shotSound = null) {
     this.useSound = useSound
