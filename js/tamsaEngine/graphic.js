@@ -588,7 +588,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
         drawX - pad > this.CANVAS_WIDTH ||
         drawY + pad < 0  || 
         drawY - pad > this.CANVAS_HEIGHT) {
-      return; // 💥 여기서 즉시 탈출 (이하 모든 분기문 및 렌더링 스킵!)
+      return; // 여기서 즉시 탈출 (이하 모든 분기문 및 렌더링 스킵!)
     }
 
     //@ts-ignore

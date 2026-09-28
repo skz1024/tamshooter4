@@ -50,11 +50,8 @@ export class collisionClass {
 
     // X축이나 Y축 중 하나라도 멀리 떨어져 있으면 충돌 불가
     if (dx >= halfWidths || dy >= halfHeights) {
-      game.performanceData.OBBmiss++
       return false
     }
-
-    game.performanceData.OBBcall++
 
     // 각 오브젝트의 꼭짓점과 모서리를 계산합니다.
     // 자세한건, 각 함수의 내부 구현 참고... (내용이 너무 길어서 분리됨)

@@ -494,7 +494,7 @@ export class SoundSystem {
 
     // 타임아웃이 미리 예약되어있다면 이를 취소하고 다시 페이드를 진행합니다.
     if (this.fadeOutIntervalId !== 0) clearTimeout(this.fadeOutIntervalId) 
-    this.fadeOutIntervalId = setTimeout(this.musicStop.bind(this), fadeSecond * 1000) // fadeSecond는 초단위이고, setTimeout는 밀리세컨드단위
+    this.fadeOutIntervalId = window.setTimeout(this.musicStop.bind(this), fadeSecond * 1000) // fadeSecond는 초단위이고, setTimeout는 밀리세컨드단위
   }
 
   /** 현재 재생중인 모든 음악 정지, 재생중인 트랙의 모든 데이터는 지워집니다. */

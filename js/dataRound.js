@@ -5453,9 +5453,6 @@ class Round2_3 extends RoundData {
     super.process()
     this.processCourseSelect()
     this.processAreaTime()
-
-    // let layer = this.bgLayer.getLayer()
-    // console.log(layer[0].alpha, layer[1].alpha, layer[2].alpha)
   }
 
   /** 플레이어에게 동그라미 티켓 2장을 추가합니다. */

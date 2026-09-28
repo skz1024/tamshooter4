@@ -2248,7 +2248,6 @@ class SkillRing extends Ring {
   }
 
   display () {
-    console.log('?')
     super.display()
   }
 }

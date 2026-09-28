@@ -683,7 +683,7 @@ export class ControlSystem {
    * 이 함수를 사용하기 전까지 processButton이 일정시간마다 호출됩니다.
    */
   clearIntervalButtonDown () {
-    clearInterval(this.intervalId)
+    window.clearInterval(this.intervalId)
     this.intervalId = 0
   }
 
@@ -700,11 +700,11 @@ export class ControlSystem {
   setIntervalButtonDown (ms = 20) {
     if (this.intervalId !== 0) {
       // 이미 id가 있는경우 기존 interval를 해제합니다.
-      clearInterval(this.intervalId)
+      window.clearInterval(this.intervalId)
     }
 
     // 새 interval 생성
-    this.intervalId = setInterval(() => {
+    this.intervalId = window.setInterval(() => {
       this.processButton()
     }, ms)
   }
@@ -769,11 +769,11 @@ export class ControlSystem {
   setIntervalMouseClickCancle (ms = 20) {
     if (this.clickIntervalId!== 0) {
       // 이미 id가 있는경우 기존 interval를 해제합니다.
-      clearInterval(this.clickIntervalId)
+      window.clearInterval(this.clickIntervalId)
     }
 
     // 새 interval 생성
-    this.clickIntervalId = setInterval(() => {
+    this.clickIntervalId = window.setInterval(() => {
       this.processMouse()
     }, ms)
   }
@@ -782,10 +782,10 @@ export class ControlSystem {
    * setInterval에 등록되었던 click interval을 확인하는 함수를 제거합니다. 
    * 
    * tamsaEngine을 사용할경우 이 함수를 자동으로 호출하지만 사용자가 control.js 파일만 단독으로 사용한다면
-   * 이 함수를 사용하기 전까지 clearIntervalMouseClickCancle이 일정시간마다 호출됩니다.
+   * 이 함수를 사용하기 전까지 window.clearIntervalMouseClickCancle이 일정시간마다 호출됩니다.
    */
   clearIntervalMouseClickCancle () {
-    clearInterval(this.clickIntervalId)
+    window.clearInterval(this.clickIntervalId)
     this.clickIntervalId = 0
   }
 
