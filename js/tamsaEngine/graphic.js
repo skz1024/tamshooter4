@@ -591,9 +591,6 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
       return; // 여기서 즉시 탈출 (이하 모든 분기문 및 렌더링 스킵!)
     }
 
-    //@ts-ignore
-    this.countDrawcall(imageSrc)
-
     // 이미지 출력 (만약, 인수의 수가 3개 또는 5개라면 imageView 함수로 대신 출력합니다. )
     if (arguments.length === 3) {
       this.imageView(getImage, sliceX, sliceY)

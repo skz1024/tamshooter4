@@ -2372,3 +2372,7 @@ button 관련 input 함수의 동작 방식을 변경하였습니다.
 2026/09/29 v0.57.4 - fix version
 1. 테스트 코드 제거
 2. setTimeout을 ts-check가 제대로 인식하도록 window.setTimeout으로 변경
+
+
+2026/09/29 v0.57.5 - refix
+1. graphic.js가 잘못된 변수를 호출하여 게임을 중지시킨 문제 수정
