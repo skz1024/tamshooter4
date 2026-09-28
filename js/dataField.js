@@ -40,6 +40,22 @@ export class collisionClass {
    * @param {FieldData | any} objectB
    */
   static collisionOBB (objectA, objectB) {
+    // 1차 검사: 충돌 계산을 하기 전, 특정 영역에 들어왔는지 먼저 확인합니다.
+    // $$\text{두 중심 사이의 거리} < \text{플레이어 반지름} + \text{적 반지름}$$ 을 제곱한 값
+    const dx = Math.abs(objectA.x - objectB.x)
+    const dy = Math.abs(objectA.y - objectB.y)
+
+    const halfWidths = (objectA.width + objectB.width) / 2
+    const halfHeights = (objectA.height + objectB.height) / 2
+
+    // X축이나 Y축 중 하나라도 멀리 떨어져 있으면 충돌 불가
+    if (dx >= halfWidths || dy >= halfHeights) {
+      game.performanceData.OBBmiss++
+      return false
+    }
+
+    game.performanceData.OBBcall++
+
     // 각 오브젝트의 꼭짓점과 모서리를 계산합니다.
     // 자세한건, 각 함수의 내부 구현 참고... (내용이 너무 길어서 분리됨)
     const vertexA = this.getVertex(objectA)

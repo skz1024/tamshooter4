@@ -430,6 +430,9 @@ export class WeaponData extends FieldData {
   /**
    * 이 함수는, OBB 충돌 감지를 할 때 사용하는 함수입니다.
    * hitObject가 두 종류로 나뉘어진건, OBB충돌범위에 몇가지 정보가 더 필요하기 때문입니다.
+   * 
+   * 무기는 OBBCollision을 계산할 이유가 없습니다.
+   * @deprecated
    * @param {AttackAreaDegree} attackArea 공격 범위
    */
   processHitObjectOBBCollision (attackArea) {

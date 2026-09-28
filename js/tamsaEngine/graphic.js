@@ -571,6 +571,29 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
     // 참고: 이미지의 크기가 0이면 이미지가 정상적으로 로드된게 아니므로, 이미지 출력을 무시합니다.
     if (getImage == null || getImage.width === 0) return
 
+    // 이미지가 화면 바깥으로 벗어나 있으면, 출력을 시도하지 않습니다.
+    // width, height 인수가 전달되지 않은 경우(인수 3개 등) 이미지 자체 크기 사용
+    const renderWidth = width || sliceWidth || getImage.width || 0;
+    const renderHeight = height || sliceHeight || getImage.height || 0;
+    
+    // 회전/뒤집기를 고려해 가로/세로 중 더 큰 값을 여유분(Padding)으로 사용
+    // 이 조건문의 일부는 AI를 사용하여 만들었습니다.
+    const pad = renderWidth > renderHeight ? renderWidth : renderHeight;
+    const drawX = x !== undefined ? x : sliceX;
+    const drawY = y !== undefined ? y : sliceY;
+
+    // 카메라/화면 밖 벗어남 판정 (카메라 좌표계 기준)
+    // 생각해보니, 이 코드는 카메라 좌표로 제안되어서, 내가 추가로 수정함
+    if (drawX + pad < 0 || 
+        drawX - pad > this.CANVAS_WIDTH ||
+        drawY + pad < 0  || 
+        drawY - pad > this.CANVAS_HEIGHT) {
+      return; // 💥 여기서 즉시 탈출 (이하 모든 분기문 및 렌더링 스킵!)
+    }
+
+    //@ts-ignore
+    this.countDrawcall(imageSrc)
+
     // 이미지 출력 (만약, 인수의 수가 3개 또는 5개라면 imageView 함수로 대신 출력합니다. )
     if (arguments.length === 3) {
       this.imageView(getImage, sliceX, sliceY)

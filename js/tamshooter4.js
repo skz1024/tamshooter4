@@ -2195,7 +2195,7 @@ class UIComponentDataSetting extends UIComponentBaseMenuObject {
       'level change to 0',
       'level change to 10',
       'level change to 20',
-      'level change to 25',
+      'level change to 26',
     ]
 
     for (let i = 0; i < boxText.length; i++) {
@@ -2219,7 +2219,7 @@ class UIComponentDataSetting extends UIComponentBaseMenuObject {
       case 1: userSystem.lv = 0; break
       case 2: userSystem.lv = 10; break
       case 3: userSystem.lv = 20; break
-      case 4: userSystem.lv = 25; break
+      case 4: userSystem.lv = 26; break
     }
   }
 
@@ -6134,7 +6134,7 @@ export class gameSystem {
       if (fieldData != null) {
         let numberArray = fieldData.split(',').map(Number)
         fieldSystem.fieldSave.array.set(numberArray)
-        fieldSystem.fieldSystemLoadData(null) // 임시 코드
+        fieldSystem.fieldSystemLoadData(null) // 필드 시스템에서 데이터를 로드합니다. (null은 의미 없지만 임시로 넣음)
         this.stateId = this.STATE_FIELD // 필드를 강제로 진행하도록 상태 변경
       }
     } catch (e) {
@@ -6194,7 +6194,7 @@ export class gameSystem {
     this.uiOption.optionValue.resultAutoSkip = group1[I1.OPTION_RESULT_AUTO_SKIP] === 1
     this.uiOption.optionValue.showEnemyHp = group1[I1.OPTION_SHOW_ENEMY_HP] === 1
     this.uiOption.optionValue.showDamage = group1[I1.OPTION_SHOW_DAMAGE] === 1
-
+    this.uiOption.optionEnable() // 옵션 적용
 
     const I2 = saveSystem.index.group2EncodeData
     if (group2 != null) {

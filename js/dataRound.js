@@ -15544,7 +15544,7 @@ class Round3_11 extends Round3Templete {
       this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellba, [ID.item.hellgiComponent], [1])
     } else if (this.timeCheckInterval(pTime + 21, pTime + 30, 180)) {
       this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup5.hellnet, [ID.item.hellgiComponent], [1])
-    } else if (this.timeCheckInterval(pTime + 31, pTime + 39, 180)) {
+    } else if (this.timeCheckInterval(pTime + 31, pTime + 38, 180)) {
       this.field.createEnemyInsertItem(ID.enemy.towerEnemyGroup1.hellcho, [ID.item.hellgiComponent], [1])
     }
 
