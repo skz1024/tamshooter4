@@ -1,4 +1,5 @@
 //@ts-check
+"use strict"
 
 import { imageSrc, imageDataInfo, ImageDataObject } from "./imageSrc.js";
 import { dataExportStatItem, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, StatItem, StatPlayerSkill, StatPlayerWeapon, StatRound } from "./dataStat.js";

@@ -1862,7 +1862,7 @@ export class fieldSystem {
   static requestGetItemCount (id) {
     // 여기서는 userSystem 전역 변수로 처리합니다.
     // 이후 버전에서 playerObject에 request를 보내던 부분은 삭제할 겁니다.
-    return userSystem.inventory.getCount(id)
+    return userSystem.inventory.getItemCount(id)
   }
 
   /**

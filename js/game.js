@@ -194,11 +194,11 @@ class userInventorySystem {
    * 인벤토리의 아이템 개수를 반환
    * @param {number} id 
    */
-  static getCount (id) {
+  static getItemCount (id) {
     for (let i = 0; i < this.itemList.length; i++) {
       // 아이디를 직접 다 찾아봄
       if (this.itemList[i].id === id) {
-        return i
+        return this.itemList[i].count
       }
     }
 
@@ -608,7 +608,7 @@ export class userSystem {
    * @param {number} itemId 
    */
   static getInventoryItemCount (itemId) {
-    this.inventory.getCount(itemId)
+    this.inventory.getItemCount(itemId)
   }
 
   /** 무기 리스트(기본값), 0 ~ 3번까지만 있음. 4번은 무기를 사용하기 싫을 때 사용 따라서 무기가 지정되지 않음. */

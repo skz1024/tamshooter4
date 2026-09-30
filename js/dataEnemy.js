@@ -7,6 +7,8 @@ import { fieldState, fieldSystem } from "./field.js"
 import { ImageDataObject, imageDataInfo, imageSrc } from "./imageSrc.js"
 import { soundSrc } from "./soundSrc.js"
 import { game, gameFunction } from "./game.js"
+import { getDegreeByVector } from "./tamsaEngine/util.js"
+import { DonggramiEntity } from "./dataEntity.js"
 
 let graphicSystem = game.graphic
 let soundSystem = game.sound
@@ -658,8 +660,7 @@ export class EnemyBulletData extends FieldData {
     let nextY = this.y + speedY
     let distanceX = nextX - this.x
     let distanceY = nextY - this.y
-    const atangent = Math.atan2(distanceY, distanceX)
-    this.degree = atangent * (180 / Math.PI)
+    this.degree = getDegreeByVector(distanceX, distanceY)
   }
 
   /**
@@ -1110,8 +1111,7 @@ class SpaceEnemyGamjigi extends SpaceEnemyData {
       const playerY = fieldState.getPlayerObject().centerY
       const distanceX = playerX - this.x
       const distanceY = playerY - this.y
-      const atangent = Math.atan2(distanceY, distanceX)
-      this.degree = atangent * (180 / Math.PI)
+      this.degree = getDegreeByVector(distanceX, distanceY)
 
       this.moveSpeedX = distanceX / 200
       this.moveSpeedY = distanceY / 200
@@ -2246,11 +2246,10 @@ class JemulEnemyRotateRocket extends JemulEnemyData {
     const playerY = fieldState.getPlayerObject().centerY
     const distanceX = playerX - this.x
     const distanceY = playerY - this.y
-    const atangent = Math.atan2(distanceY, distanceX)
 
     // 판정 문제 때문에 에니메이션 각도와 실제 각도를 동시에 변경
-    this.degree = atangent * (180 / Math.PI)
-    if (this.enimation) this.enimation.degree = this.degree 
+    this.degree = getDegreeByVector(distanceX, distanceY)
+    if (this.enimation) this.enimation.degree = getDegreeByVector(distanceX, distanceY)
 
     this.moveSpeedX = distanceX / 250
     this.moveSpeedY = distanceY / 250
@@ -3200,8 +3199,7 @@ class JemulEnemyBossEye extends JemulEnemyData {
       const playerY = fieldState.getPlayerObject().centerY
       const distanceX = playerX - graphicSystem.CANVAS_WIDTH_HALF
       const distanceY = playerY - graphicSystem.CANVAS_HEIGHT_HALF
-      const atangent = Math.atan2(distanceY, distanceX)
-      this.laserObject[0].degree = atangent * (180 / Math.PI)
+      this.laserObject[0].degree = getDegreeByVector(distanceX, distanceY)
     } else {
       for (let i = 0; i < this.laserObject.length; i++) {
         if (this.laserObject[i].width < LASER_WIDTH) {
@@ -7186,8 +7184,7 @@ class IntruderEnemyFlying1 extends IntruderEnemy {
         speedY = speedY < 0 ? 4 : -4
       }
 
-      const atangent = Math.atan2(speedY, speedX)
-      this.degree = atangent * (180 / Math.PI)
+      this.degree = getDegreeByVector(speedX, speedY)
 
       this.moveSpeedX = speedX
       this.moveSpeedY = speedY
@@ -7251,8 +7248,7 @@ class IntruderEnemyFlyingRocket extends IntruderEnemy {
       this.setMoveSpeed(speedX, speedY)
     }
 
-    const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
-    this.degree = atangent * (180 / Math.PI)
+    this.setDegreeByVelocity()
 
     super.processMove()
   }
@@ -7486,8 +7482,7 @@ class IntruderEnemyDaseok extends IntruderEnemy {
         speedY *= mul
       }
 
-      const atangent = Math.atan2(speedY, speedX)
-      this.degree = atangent * (180 / Math.PI)
+      getDegreeByVector(speedX, speedY)
 
       this.moveSpeedX = speedX
       this.moveSpeedY = speedY
@@ -7777,9 +7772,7 @@ class TowerEnemyGroup1MoveYellowEnergy extends TowerEnemyGroup1MoveBlue {
     if (this.moveSpeedY <= -MAX_SPEED) this.moveSpeedY = -MAX_SPEED
 
     this.setMoveSpeed(this.moveSpeedX + targetSpeedXChange, this.moveSpeedY + targetSpeedYChange)
-
-    const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
-    this.degree = atangent * (180 / Math.PI)
+    this.setDegreeByVelocity()
   }
 
   processMoveFinishPosition () {
@@ -7871,8 +7864,7 @@ class TowerEnemyGroup1Tapo extends TowerEnemy {
 
     processMove () {
       super.processMove()
-      const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
-      this.degree = atangent * (180 / Math.PI)
+      this.setDegreeByVelocity()
     }
 
     // 회전을 사용하기 때문에 충돌 방식이 다릅니다.
@@ -8192,8 +8184,25 @@ class TowerEnemyHellTemplet extends TowerEnemy {
     if (!this.isAngleChange) return // 회전각도가 허용되지 않으면 각도는 재설정 되지 않습니다.
 
     // 회전각도 설정
-    const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
-    this.degree = atangent * (180 / Math.PI)
+    this.setDegreeByVelocity()
+  }
+
+  /** Y축 방향에 따라서 각도를 변경합니다.
+   * 이 각도는 일부 적들만 사용하며, 일정 범위 내 각도일때는 각도 전환을, 만약 방향이 바뀌어버리면 뒤집기를 시도합니다.
+   */
+  processChangeAngleByVerticalSpeed () {
+    if (this.moveSpeedY <= 0.5 && this.moveSpeedY >= -0.5) {
+      this.degree = 0
+    } else if (this.moveSpeedY >= 0.5) {
+      this.degree = (this.moveSpeedY - 0.5) * -6
+      if (this.degree > 30 && this.degree < 180) this.degree = 30
+    } else if (this.moveSpeedY <= -0.5) {
+      this.degree = (this.moveSpeedY + 0.5) * -6
+      if (this.degree > 180 && this.degree < 330) this.degree = 330
+    }
+
+    if (this.moveSpeedX < 0) this.flip = 1
+    else this.flip = 0
   }
 
   /** 헬시리즈 개체의 속도를 변경합니다. */
@@ -8319,21 +8328,7 @@ class TowerEnemyGroup1Hellgi extends TowerEnemyHellTemplet {
   }
 
   processChangeAngle () {
-    // 각도 계산이 헬시리즈랑 다르게 진행되므로, super.processChangeAngle을 사용하지 않습니다.
-    // y축의 속도에 따라 각도 조절 (단 일정 각도를 벗어나지 못함)
-    if (this.moveSpeedY <= 0.5 && this.moveSpeedY >= -0.5) {
-      this.degree = 0
-    } else if (this.moveSpeedY >= 0.5) {
-      this.degree = (this.moveSpeedY - 0.5) * -6
-      if (this.degree > 30 && this.degree < 180) this.degree = 30
-    } else if (this.moveSpeedY <= -0.5) {
-      this.degree = (this.moveSpeedY + 0.5) * -6
-      if (this.degree > 180 && this.degree < 330) this.degree = 330
-    }
-
-    // 이동 속도에 따라서, 좌우 반전 결정 (왼쪽이 마이너스입니다. 그래서 왼쪽방향일때만 반전 적용)
-    if (this.moveSpeedX < 0) this.flip = 1
-    else this.flip = 0
+    this.processChangeAngleByVerticalSpeed()
   }
 }
 
@@ -9150,8 +9145,7 @@ class TowerEnemyGroup1CrazyRobot extends TowerEnemy {
 
     processMove () {
       super.processMove()
-      const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
-      this.degree = atangent * (180 / Math.PI)
+      this.setDegreeByVelocity()
 
       let player = fieldState.getPlayerObject()
       if (this.y < 0 || this.y + this.height > graphicSystem.CANVAS_HEIGHT 
@@ -9830,20 +9824,7 @@ class TowerEnemyGroup2Hellla extends TowerEnemyHellTemplet {
   }
 
   processChangeAngle () {
-    // y축의 속도에 따라 각도 조절 (단 일정 각도를 벗어나지 못함) - hellgi랑 같음
-    if (this.moveSpeedY <= 0.5 && this.moveSpeedY >= -0.5) {
-      this.degree = 0
-    } else if (this.moveSpeedY >= 0.5) {
-      this.degree = (this.moveSpeedY - 0.5) * -6
-      if (this.degree > 30 && this.degree < 180) this.degree = 30
-    } else if (this.moveSpeedY <= -0.5) {
-      this.degree = (this.moveSpeedY + 0.5) * -6
-      if (this.degree > 180 && this.degree < 330) this.degree = 330
-    }
-
-    // 이동 속도에 따라서, 좌우 반전 결정 (왼쪽이 마이너스입니다. 그래서 왼쪽방향일때만 반전 적용)
-    if (this.moveSpeedX < 0) this.flip = 1
-    else this.flip = 0
+    this.processChangeAngleByVerticalSpeed()
   }
 
   processAttack () {
@@ -14716,20 +14697,7 @@ class TowerEnemyGroup5Hellnet extends TowerEnemyHellTemplet {
   }
 
   processChangeAngle () {
-    // y축의 속도에 따라 각도 조절 (단 일정 각도를 벗어나지 못함) - hellgi랑 같음
-    if (this.moveSpeedY <= 0.5 && this.moveSpeedY >= -0.5) {
-      this.degree = 0
-    } else if (this.moveSpeedY >= 0.5) {
-      this.degree = (this.moveSpeedY - 0.5) * -6
-      if (this.degree > 30 && this.degree < 180) this.degree = 30
-    } else if (this.moveSpeedY <= -0.5) {
-      this.degree = (this.moveSpeedY + 0.5) * -6
-      if (this.degree > 180 && this.degree < 330) this.degree = 330
-    }
-
-    // 이동 속도에 따라서, 좌우 반전 결정 (왼쪽이 마이너스입니다. 그래서 왼쪽방향일때만 반전 적용)
-    if (this.moveSpeedX < 0) this.flip = 1
-    else this.flip = 0
+    this.processChangeAngleByVerticalSpeed()
   }
 }
 

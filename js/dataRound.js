@@ -8004,6 +8004,10 @@ class Round2_4 extends RoundData {
     this.currentCourseName = this.extendedMemory[6]
     this.spriteElevator.x = this.extendedMemory[7]
     this.spriteElevator.y = this.extendedMemory[8]
+
+    if (this.currentCourseName === this.courseName.SHOP) {
+      this.refreshShop()
+    }
   }
 
   roundPhase00 () {
@@ -8500,10 +8504,18 @@ class Round2_4 extends RoundData {
     // outside코스와의 점수 차이를 보정하기 위해 일정 점수를 추가함
     // outside는 12500점, inside는 9300점 (50 * 186) 이므로
     // 이 격차는 약 3000점정도 이므로, 대충 3000점을 더 주는것으로 함
-    if (this.timeCheckFrame(pTime + 34)) {
+    // 뒤에 프레임 값이 붙은 이유는, pTime+34 초 상황에서 점수를 중복처리 막기 위함
+    if (this.timeCheckFrame(pTime + 34, 42)) {
       fieldSystem.requestAddScore(3000)
     }
   }
+
+  // processDebug () {
+  //   if (this.timeCheckFrame(0, 4)) {
+  //     this.time.setCurrentTime(135)
+  //     this.currentCourseName = this.courseName.INSIDE
+  //   }
+  // }
 
   roundPhase05Outside () {
     // 보스전 진행
@@ -8713,7 +8725,12 @@ class Round2_4 extends RoundData {
 
     if (currentPhase === 5) {
       // 적이 존재하면 배경 그라디언트가 변경됨
-      let targetColor = this.field.getEnemyCount() === 0 ? Round2_1.getMaeulGradientColor() : ['#1F1C2C', '#928DAB']
+      // 인사이드 코스의 경우, 적이 생성보다 빨리 죽을 수 있기 때문에 배경 깜빡임을 방지하기 위해
+      // 보스 메세지 사운드가 나오는 시점부터 배경 강제 전환
+      const pTime = this.phase.getCurrentPhaseStartTime()
+      const timeCondition = this.timeCheckInterval(pTime + 1 && pTime + 34)
+      const condition = this.field.getEnemyCount() === 0 || timeCondition 
+      let targetColor = condition ? Round2_1.getMaeulGradientColor() : ['#1F1C2C', '#928DAB']
       this.bgLayer.setColor(targetColor)
 
       // 보스전 체력 표시

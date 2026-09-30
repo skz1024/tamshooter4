@@ -2,6 +2,7 @@
 
 import { ImageDataObject, imageDataInfo } from "./imageSrc.js"
 import { game } from "./game.js"
+import { getDegreeByVector } from "./tamsaEngine/util.js"
 
 let graphicSystem = game.graphic
 
@@ -962,6 +963,19 @@ export class FieldData {
     // 이동방향이 공백인 경우는 right, down인 것처럼 처리합니다. 그래서 left와 up이 아닐때 +값을 적용하도록 했습니다.
     this.moveSpeedX = this.moveDirectionX !== FieldData.direction.LEFT ? speedX : -speedX
     this.moveSpeedY = this.moveDirectionY !== FieldData.direction.UP ? speedY : -speedY
+  }
+
+  /** 이동하는 방향으로 각도를 자동 설정합니다. 
+   * 참고사항: 이 경우 연산량이 많음 적과 플레이어의 OBB충돌 연산을 시도할 수 있으니, 꼭 필요한 적에게만 사용하세요.
+  */
+  setDegreeByVelocity () {
+    // 이동속도가 0인 경우, 각도가 0으로 뒤집힐 위험이 있어 각도 조정 대상에서 제외합니다.
+    if (this.moveSpeedX === 0 && this.moveSpeedY === 0) return
+
+    this.degree = getDegreeByVector(
+      this.moveDirectionX === FieldData.direction.RIGHT ? this.moveSpeedX : -this.moveSpeedX,
+      this.moveDirectionY === FieldData.direction.DOWN ? this.moveSpeedY : -this.moveSpeedY
+    )
   }
 
   /**
