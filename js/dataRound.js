@@ -9,8 +9,9 @@ import { fieldState, fieldSystem } from "./field.js"
 import { soundSrc } from "./soundSrc.js"
 import { game, gameFunction, gameVar } from "./game.js"
 import { StatRound, dataExportStatRound } from "./dataStat.js"
-import { CustomEnemyBullet, DonggramiEnemy, EnemyBulletData, EnemyData, dataExportEnemy } from "./dataEnemy.js"
+import { CustomEnemyBullet, EnemyBulletData, EnemyData, dataExportEnemy } from "./dataEnemy.js"
 import { WeaponData } from "./dataWeapon.js"
+import { DonggramiEntity } from "./dataEntity.js"
 
 let graphicSystem = game.graphic
 let soundSystem = game.sound
@@ -6168,8 +6169,8 @@ class Round2_3 extends RoundData {
     let playerP = this.field.getPlayerObject()
     for (let i = 0; i < enemyArray.length; i++) {
       let enemyC = enemyArray[i]
-      if (enemyC.state === DonggramiEnemy.STATE_NORMAL && collision(playerP, enemyC)) {
-        enemyC.state = DonggramiEnemy.STATE_PLAYER_COLLISION
+      if (enemyC.state === DonggramiEntity.STATES.NORMAL && collision(playerP, enemyC)) {
+        enemyC.state = DonggramiEntity.STATES.R2_3_PLAYER_COLLISION
         this.sound.play(soundSrc.round.r2_3_a1_damage)
         const autoMoveX = playerP.x + (Math.random() * 200) - 100
         const autoMoveY = playerP.y + (Math.random() * 200) - 100
@@ -6851,10 +6852,10 @@ class Round2_3 extends RoundData {
     let enemy = this.field.getEnemyObject()
     for (let i = 0; i < enemy.length; i++) {
       let currentEnemy = enemy[i]
-      if (currentEnemy.state === DonggramiEnemy.STATE_NORMAL && collision(player, currentEnemy)) {
+      if (currentEnemy.state === DonggramiEntity.STATES.NORMAL && collision(player, currentEnemy)) {
         // 알고리즘은 그 위의 스프라이트랑 거의 동일
         player.setAutoMove(player.x + (Math.random() * 400 - 200), player.y + (Math.random() * 400 - 200), 60)
-        currentEnemy.state = DonggramiEnemy.STATE_PLAYER_COLLISION
+        currentEnemy.state = DonggramiEntity.STATES.R2_3_PLAYER_COLLISION
         this.sound.soundPlay(soundSrc.round.r2_3_a1_damage)
         this.areaStat.areaBcollisionCount++
       }
@@ -7611,8 +7612,8 @@ class Round2_3 extends RoundData {
       // 그리고, 이동 변화값만 지정합니다. 적 내부에서 자기 자신을 기준으로 최종 위치가 결정되기 때문입니다.
       for (let i = 0; i < enemy.length; i++) {
         let currentEnemy = enemy[i]
-        if (currentEnemy.state === DonggramiEnemy.STATE_NORMAL && collision(currentEnemy, this)) {
-          currentEnemy.state = DonggramiEnemy.STATE_PLAYER_COLLISION
+        if (currentEnemy.state === DonggramiEntity.STATES.NORMAL && collision(currentEnemy, this)) {
+          currentEnemy.state = DonggramiEntity.STATES.R2_3_PLAYER_COLLISION
           soundSystem.play(soundSrc.round.r2_3_b3_move)
         }
       }
@@ -7642,8 +7643,8 @@ class Round2_3 extends RoundData {
       // 참고사항: 이 state 변경 옵션은 특정 적에게만 적용됩니다. 다른 적에겐 아무 효과가 없습니다.
       for (let i = 0; i < enemy.length; i++) {
         let currentEnemy = enemy[i]
-        if (currentEnemy.state === DonggramiEnemy.STATE_NORMAL && collision(currentEnemy, this)) {
-          currentEnemy.state = DonggramiEnemy.STATE_PLAYER_COLLISION
+        if (currentEnemy.state === DonggramiEntity.STATES.NORMAL && collision(currentEnemy, this)) {
+          currentEnemy.state = DonggramiEntity.STATES.R2_3_PLAYER_COLLISION
           soundSystem.play(soundSrc.round.r2_3_b3_move)
         }
       }
@@ -8995,10 +8996,8 @@ class Round2_5 extends RoundData {
     this.clearSoundSrc = soundSrc.round.r2_5_clear // 클리어 사운드 변경
 
     // 타입 지정용 임시 클래스 (자동완성 목적)
-    class SpriteDonggrami extends this.SpriteDonggrami {}
-    class SpriteIntruder extends this.SpriteIntruder {}
-    /** @type {SpriteDonggrami[]} */ this.spriteDonggrami = []
-    /** @type {SpriteIntruder[]} */ this.spriteIntruder = []
+    /** @type {InstanceType<typeof this.SpriteDonggrami>[]} */ this.spriteDonggrami = []
+    /** @type {InstanceType<typeof this.SpriteIntruder>[]} */ this.spriteIntruder = []
 
     this.phase.addRoundPhase(this, this.roundPhase00, 0, 40) // 신규 적 출현 40초
     this.phase.addRoundPhase(this, this.roundPhase01, 41, 60) // 신규 타워 출현 및 동그라미 첫 등장
@@ -9138,13 +9137,13 @@ class Round2_5 extends RoundData {
         if (sprite.roundState !== sprite.ROUND_WIN) {
           sprite.roundState = sprite.ROUND_WIN
           sprite.setTalkIndex()
-          sprite.talkDelay.countReset()
+          sprite.entity.talkDelay.countReset()
           let random = Math.random() * 100
           if (random < 33 && sprite.talkType === sprite.TALKTYPE_A) {
             sprite.talkType = sprite.TALKTYPE_EMOJI
-            sprite.talkDelay.setDelay(Math.floor(Math.random() * 40) + 10)
+            sprite.entity.talkDelay.setDelay(Math.floor(Math.random() * 40) + 10)
           } else {
-            sprite.talkState = this.SpriteDonggrami.TALKSTATE_TALK
+            sprite.talkState = DonggramiEntity.TALK_STATES.TALK
           }
         }
       }
@@ -9153,8 +9152,8 @@ class Round2_5 extends RoundData {
       if (player.isDied) {
         sprite.roundState = sprite.ROUND_LOSE
         sprite.setTalkIndex()
-        sprite.talkDelay.countReset()
-        sprite.talkState = this.SpriteDonggrami.TALKSTATE_TALK
+        sprite.entity.talkDelay.countReset()
+        sprite.talkState = DonggramiEntity.TALK_STATES.TALK
       }
 
       sprite.process()
@@ -9550,11 +9549,13 @@ class Round2_5 extends RoundData {
    * 하지만 동그라미가 가진 복잡한 기능을 이 스프라이트에 다시 구현하기는
    * 너무 복잡해서 어쩔 수 없었음.
    */
-  SpriteDonggrami = class extends DonggramiEnemy {
+  SpriteDonggrami = class SpriteDonggrami extends FieldData {
     constructor () {
       super()
+      this.entity = new DonggramiEntity()
+
       /** 동그라미 1회 타격당 주는 데미지 */ this.BASEDPS = 5000
-      this.setDonggramiColor(this.myStatic.colorGroup.ALL)
+      this.entity.setDonggramiColor(DonggramiEntity.colorGroup.ALL)
 
       // 방향 제거 (적은 반대방향 (오른쪽에서 왼쪽)을 기준으로 행동함 그래서 이 부분을 제거해야함)
       this.setMoveDirection()
@@ -9568,7 +9569,7 @@ class Round2_5 extends RoundData {
       this.x = 0
       this.y = Math.random() * graphicSystem.CANVAS_HEIGHT
       this.getTargetAndSetSpeed()
-      this.emojiType = Math.random() < 0.5 ? this.myStatic.EmojiList.HAPPY : this.myStatic.EmojiList.SMILE
+      this.emojiType = Math.random() < 0.5 ? DonggramiEntity.EmojiList.HAPPY : DonggramiEntity.EmojiList.SMILE
       this.emojiDelay = new DelayData(60)
       
       this.TALKTYPE_A = 67
@@ -9582,11 +9583,11 @@ class Round2_5 extends RoundData {
       // 87%확률 A타입, 13%확률 B타입
       this.talkType = Math.random() < 0.87 ? this.TALKTYPE_A : this.TALKTYPE_B
 
-      this.ROUND_MID = 'fieldMid'
-      this.ROUND_BOSS = 'fieldBoss'
-      this.ROUND_WIN = 'fieldWin'
-      this.ROUND_LOSE = 'fieldLose'
-      this.ROUND_EASTEREGG = 'fieldEasteregg'
+      this.ROUND_MID = 66
+      this.ROUND_BOSS = 67
+      this.ROUND_WIN = 68
+      this.ROUND_LOSE = 69
+      this.ROUND_EASTEREGG = 70
       
       /** 라운드 상태: 이것은 라운드 2-5의 진행상태에 따라 대사를 다르게 하기 위한것 */
       this.roundState = this.ROUND_MID
@@ -9609,27 +9610,27 @@ class Round2_5 extends RoundData {
       const INDEX_TALKWIN_BY = 15
       const INDEX_TALKLOSE_Y = 17
 
-      this.talkIndex.x = INDEX_X
+      this.entity.talkIndex.x = INDEX_X
       if (this.roundState === this.ROUND_LOSE) { // 패배한 경우
-        this.talkIndex.y = INDEX_TALKLOSE_Y // 모두가 같은 말을 함
+        this.entity.talkIndex.y = INDEX_TALKLOSE_Y // 모두가 같은 말을 함
         return
       }
       
       if (this.talkType === this.TALKTYPE_A) {
         if (this.roundState === this.ROUND_MID) {
-          this.talkIndex.y = INDEX_TALKMID_AY + Math.floor(Math.random() * INDEX_TALKMID_AYLENGTH)
+          this.entity.talkIndex.y = INDEX_TALKMID_AY + Math.floor(Math.random() * INDEX_TALKMID_AYLENGTH)
         } else if (this.roundState === this.ROUND_BOSS) {
-          this.talkIndex.y = INDEX_TALKBOSS_AY + Math.floor(Math.random() * INDEX_TALKBOSS_AYLENGTH)
+          this.entity.talkIndex.y = INDEX_TALKBOSS_AY + Math.floor(Math.random() * INDEX_TALKBOSS_AYLENGTH)
         } else if (this.roundState === this.ROUND_WIN) {
-          this.talkIndex.y = INDEX_TALKWIN_AY + Math.floor(Math.random() * INDEX_TALKWIN_AYLENGTH)
+          this.entity.talkIndex.y = INDEX_TALKWIN_AY + Math.floor(Math.random() * INDEX_TALKWIN_AYLENGTH)
         }
       } else if (this.talkType === this.TALKTYPE_B) {
         if (this.roundState === this.ROUND_MID) {
-          this.talkIndex.y = INDEX_TALKMID_BY
+          this.entity.talkIndex.y = INDEX_TALKMID_BY
         } else if (this.roundState === this.ROUND_BOSS) {
-          this.talkIndex.y = INDEX_TALKBOSS_BY
+          this.entity.talkIndex.y = INDEX_TALKBOSS_BY
         } else if (this.roundState === this.ROUND_WIN) {
-          this.talkIndex.y = INDEX_TALKWIN_BY
+          this.entity.talkIndex.y = INDEX_TALKWIN_BY
         }
       }
     }
@@ -9652,30 +9653,22 @@ class Round2_5 extends RoundData {
       this.moveSpeedX = moveSpeedX
       this.moveSpeedY = moveSpeedY
       this.hp = hp
-      this.setDonggramiColor()
+      this.entity.setDonggramiColor()
     }
-
-    /** 동그라미가 가지고 있는 스탯값을 저장 */
-    getSaveDonggramiData () {
-      return {x: this.x, y: this.y, color: this.color, hp: this.hp, moveSpeedX: this.moveSpeedX, moveSpeedY: this.moveSpeedY}
-    }
-
-    /** 플레이어와의 충돌 없음 (원본 클래스가 적이기 때문에 이 기능을 냅두면 스프라이트가 플레이어를 죽임) */
-    processPlayerCollision () {}
 
     processTalk () {
       if (this.talkType === this.TALKSTATE_EMOJI) {
-        if (this.talkDelay.check()) { // 일정 딜레이 후 이모지 출력
+        if (this.entity.talkDelay.check()) { // 일정 딜레이 후 이모지 출력
           this.talkState = this.TALKSTATE_EMOJI
           soundSystem.play(soundSrc.donggrami.emoji)
-          this.talkDelay.setDelay(480) // 딜레이 재설정으로 이모지를 중복해서 출력하지 못하게 함
+          this.entity.talkDelay.setDelay(480) // 딜레이 재설정으로 이모지를 중복해서 출력하지 못하게 함
         }
         return
       }
 
-      if (this.talkDelay.check()) {
+      if (this.entity.talkDelay.check()) {
         // 대화 딜레이에 도달하면, 대화중인 상태에서는 대화를 끝내고, 아니라면 대화를 함
-        this.talkDelay.setDelay(this.getTalkRandomDelay())
+        this.entity.talkDelay.setDelay(this.entity.getTalkRandomDelay())
         if (this.talkState === 0) {
           this.talkState = this.TALKSTATE_TALK
           this.setTalkIndex()
@@ -9904,11 +9897,11 @@ class Round2_5 extends RoundData {
       const INDEX_TALKEGG_FUNNY_Y = 19
 
       if (this.state === this.STATE_QUSESTION) {
-        this.talkIndex.x = INDEX_X
-        this.talkIndex.y = INDEX_TALKEGG_Y
+        this.entity.talkIndex.x = INDEX_X
+        this.entity.talkIndex.y = INDEX_TALKEGG_Y
       } else if (this.state === this.STATE_AUTOMOVE) {
-        this.talkIndex.x = INDEX_X
-        this.talkIndex.y = INDEX_TALKEGG_FUNNY_Y
+        this.entity.talkIndex.x = INDEX_X
+        this.entity.talkIndex.y = INDEX_TALKEGG_FUNNY_Y
       }
     }
 

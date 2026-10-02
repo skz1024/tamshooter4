@@ -3,11 +3,24 @@
 import { CustomEffect } from "./dataEffect.js"
 import { DelayData, FieldData } from "./dataField.js"
 import { fieldState } from "./field.js"
-import { game } from "./game.js"
+import { game, gameFunction } from "./game.js"
 import { imageDataInfo, imageSrc } from "./imageSrc.js"
 import { soundSrc } from "./soundSrc.js"
 
-export class DonggramiEntity extends FieldData {
+/**
+ * 엔티티 데이터가 정의해야 하는 표준 함수들.
+ * 
+ * 만약 process, display 기능이 없다고 하더래도 반드시 함수는 구현되어야 합니다.
+ * 
+ * @typedef {Object} EntityData
+ * @property {() => void} process
+ * @property {(x: number, y: number) => void} display
+ */
+
+/**
+ * @implements {EntityData}
+ */
+export class DonggramiEntity {
   static TALK_STATES = {
     NONE: 0,
     TALK: 73187,
@@ -23,12 +36,16 @@ export class DonggramiEntity extends FieldData {
   /** 동그라미가 죽을 때 나오는 사운드 */
   static DONGGRAMI_DIE_SOUND = soundSrc.enemyDie.enemyDieDonggrami
 
+  /** @deprecated 나중에 새로 변경됨 */
   static MESSAGE_EMOJICATCH = 'emojicatch'
+
+  /** 동그라미가 죽으면 화면 밑으로 내려가는 속도 값 */
+  static DIE_FALL_SPEED = 10
 
   static STATES = {
     NORMAL: FieldData.state.NORMAL,
     R2_3_PLAYER_COLLISION: 13742568,
-    R2_4_PLAYER_COLLISION_PROCESSING: 13742593,
+    R2_3_PLAYER_COLLISION_PROCESSING: 13742593,
     R2_AUTOMOVE: 14750826,
     SPEED_BOOST: 15672762,
     /** 느낌표 진행 상태 */ EXCLMATION_PROCESS: 30174266,
@@ -91,17 +108,21 @@ export class DonggramiEntity extends FieldData {
    */
   static SUBTYPE_EMOJI = 232288
 
+  static BASE_SPEED = 3
+
+  /** 이것은 스프라이트에게 전달하기 위한 값입니다. */
+  static BASE_HP = 50000
+
   constructor () {
-    super()
     this.imageSrc = imageSrc.enemy.donggramiEnemy
+    this.imageData = imageDataInfo.donggramiEnemy.blue
+
+    this.outputWidth = this.imageData.width
+    this.outputHeight = this.imageData.height
+
     this.color = ''
     this.colorNumber = 0
-    this.dieAfterDeleteDelay = new DelayData(60) // 죽는데 걸리는 시간 추가
     this.setDonggramiColor(DonggramiEntity.colorGroup.ALL)
-
-    this.isPossibleExit = true
-    this.isExitToReset = true
-    this.setRandomMoveSpeed(3, 3, true)
 
     /** 대화 상태, (이모지 표현 포함) */ this.talkState = DonggramiEntity.TALK_STATES.NONE
     /** 이모지 타입 */ this.emojiType = 0
@@ -111,8 +132,8 @@ export class DonggramiEntity extends FieldData {
     /** 대화 기본 지연시간 */ this.TALK_DELAY = 180
     /** 대화 종료 기본시간 */ this.TALK_END_DELAY = 300
     this.talkDelay = new DelayData(this.TALK_DELAY + inputTalkDelay)
-    this.talkTypeList = DonggramiEntity.TalkTypeList
-    this.talkType = this.talkTypeList.NOTHING
+    this.TALK_TYPES = DonggramiEntity.TalkTypeList
+    this.talkType = this.TALK_TYPES.NOTHING
 
     /** 
      * 현재 대화값의 인덱스 (이미지를 간접 참조하기 때문에 인덱스 번호로 지정됨),
@@ -305,18 +326,6 @@ export class DonggramiEntity extends FieldData {
     this.colorNumber = DonggramiEntity.getColorNumberByGroupColorNumber(groupNumber)
     this.imageData = DonggramiEntity.imageDataList[this.colorNumber]
     this.color = DonggramiEntity.colorText[this.colorNumber]
-
-    this.setAutoImageData(this.imageSrc, this.imageData)
-  }
-
-  /** 동그라미는 죽으면 떨어집니다. 그리고 화면 바깥으로 나가면 삭제됩니다. */
-  processDonggamiFall () {
-    if (this.isDied) {
-      this.y += 10
-      if (this.y + this.height > game.graphic.CANVAS_HEIGHT) {
-        this.isDeleted = true
-      }
-    }
   }
 
   /** 느낌표 이펙트 데이터 */
@@ -331,9 +340,9 @@ export class DonggramiEntity extends FieldData {
   /** 이모지를 받는 설정을 합니다. 이모지에 반응할 확률은 50% */
   setCatchEmoji () {
     // 대화타입이 일반, 파티, 쇼핑에만 영향을 끼침
-    const condition = this.talkType === this.talkTypeList.NORMAL
-      || this.talkType === this.talkTypeList.PARTY
-      || this.talkType === this.talkTypeList.SHOPPING
+    const condition = this.talkType === this.TALK_TYPES.NORMAL
+      || this.talkType === this.TALK_TYPES.PARTY
+      || this.talkType === this.TALK_TYPES.SHOPPING
     if (!condition) return // 그외는 해당사항 없음
 
     let random = Math.floor(Math.random() * 100)
@@ -344,7 +353,6 @@ export class DonggramiEntity extends FieldData {
   }
 
   process () {
-    super.process()
     this.processMessage()
     this.processTalk()
   }
@@ -358,8 +366,8 @@ export class DonggramiEntity extends FieldData {
 
   processTalk () {
     // 대화가 없거나, 이모지를 사용하면 리턴
-    if (this.talkType === this.talkTypeList.NOTHING) return
-    if (this.talkType === this.talkTypeList.EMOJI) return
+    if (this.talkType === this.TALK_TYPES.NOTHING) return
+    if (this.talkType === this.TALK_TYPES.EMOJI) return
     
     // 딜레이 체크
     if (!this.talkDelay.check()) return
@@ -380,16 +388,23 @@ export class DonggramiEntity extends FieldData {
     }
   }
 
-  display () {
-    super.display()
-    
+  /** @type {EntityData['display']} */
+  display (x, y) {
+    this.displayDonggrami(x, y)
+
     // 주의: state랑 변수명이 다름
     // 대화 상태가 대화일때는 대화 표시, 이모지 상태일때는 이모지 표시
-    if (this.talkState === DonggramiEntity.TALK_STATES.TALK) this.displayTalk()
-    if (this.talkState === DonggramiEntity.TALK_STATES.EMOJI) this.displayEmoji()
+    if (this.talkState === DonggramiEntity.TALK_STATES.TALK) this.displayTalk(x, y)
+    if (this.talkState === DonggramiEntity.TALK_STATES.EMOJI) this.displayEmoji(x, y)
   }
 
-  displayTalk () {
+  /** @type {EntityData['display']} */
+  displayDonggrami (x, y) {
+    gameFunction.imageObjectDisplay(this.imageSrc, this.imageData, x, y, this.outputWidth, this.outputHeight)
+  }
+
+  /** @type {EntityData['display']} */
+  displayTalk (x, y) {
     // 대화가 초기화되지 않은 경우 강제 함수 종료
     if (this.talkIndex.x === DonggramiEntity.TALK_INDEXS.NULL) return
     if (this.talkIndex.x === DonggramiEntity.TALK_INDEXS.UNUSED) return
@@ -397,21 +412,21 @@ export class DonggramiEntity extends FieldData {
     if (this.talkIndex.y === DonggramiEntity.TALK_INDEXS.UNUSED) return
 
     const imgDspeech = imageDataInfo.donggramiEnemy.speechBubble
-    const imgDtale = imageDataInfo.donggramiEnemy.speechBubbleTale
-    const bubbleSize = imgDspeech.height
+    const borderHeight = 50
 
     // 스피치버블의 출력 위치는, 위쪽에 출력하면서 동시에 오브젝트에 겹치지 않아야 합니다.
     // 그래서 예상 크기만큼을 y축에서 뺍니다.
-    const speechBubbleY = this.y - imgDtale.height - bubbleSize
+    // x축의 경우, 여백 구간을 조금 더 추가합니다.
+    const speechBubbleX = x
+    const speechBubbleY = y - borderHeight
 
     // 스피치 버블, 테일 출력
-    this.imageObjectDisplay(imageSrc.enemy.donggramiEnemy, imgDtale, this.x, this.y - imgDtale.height)
-    this.imageObjectDisplay(imageSrc.enemy.donggramiEnemy, imgDspeech, this.x, speechBubbleY)
+    gameFunction.imageObjectDisplay(imageSrc.enemy.donggramiEnemy, imgDspeech, speechBubbleX, speechBubbleY)
 
     const TALKTEXTWIDTH = imageDataInfo.donggramiEnemy.textArea.width
     const TALKTEXTHEIGHT = imageDataInfo.donggramiEnemy.textArea.height
-    const TEXTLAYERX = this.x + 10
-    const TEXTLAYERY = speechBubbleY + 6
+    const TEXTLAYERX = x
+    const TEXTLAYERY = speechBubbleY + 5
     game.graphic.imageDisplay(
       imageSrc.enemy.donggramiEnemyTalkList, 
       TALKTEXTWIDTH * this.talkIndex.x, 
@@ -425,20 +440,21 @@ export class DonggramiEntity extends FieldData {
     )
   }
 
-  displayEmoji () {
+  /** @type {EntityData['display']} */
+  displayEmoji (x, y) {
     const src = imageSrc.enemy.donggramiEnemy
     const imgD = imageDataInfo.donggramiEnemy
     const typeList = DonggramiEntity.EmojiList
     const EMOJIHEIGHT = imgD.EmojiAmaze.height
     switch (this.emojiType) {
-      case typeList.AMAZE: this.imageObjectDisplay(src, imgD.EmojiAmaze, this.x, this.y - EMOJIHEIGHT); break
-      case typeList.ANGRY: this.imageObjectDisplay(src, imgD.EmojiAngry, this.x, this.y - EMOJIHEIGHT); break
-      case typeList.FROWN: this.imageObjectDisplay(src, imgD.EmojiFrown, this.x, this.y - EMOJIHEIGHT); break
-      case typeList.HAPPY: this.imageObjectDisplay(src, imgD.EmojiHappy, this.x, this.y - EMOJIHEIGHT); break
-      case typeList.HAPPYSAD: this.imageObjectDisplay(src, imgD.EmojiHappySad, this.x, this.y - EMOJIHEIGHT); break
-      case typeList.SAD: this.imageObjectDisplay(src, imgD.EmojiSad, this.x, this.y - EMOJIHEIGHT); break
-      case typeList.SMILE: this.imageObjectDisplay(src, imgD.EmojiSmile, this.x, this.y - EMOJIHEIGHT); break
-      case typeList.THINKING: this.imageObjectDisplay(src, imgD.EmojiThinking, this.x, this.y - EMOJIHEIGHT); break
+      case typeList.AMAZE: gameFunction.imageObjectDisplay(src, imgD.EmojiAmaze, x, y - EMOJIHEIGHT); break
+      case typeList.ANGRY: gameFunction.imageObjectDisplay(src, imgD.EmojiAngry, x, y - EMOJIHEIGHT); break
+      case typeList.FROWN: gameFunction.imageObjectDisplay(src, imgD.EmojiFrown, x, y - EMOJIHEIGHT); break
+      case typeList.HAPPY: gameFunction.imageObjectDisplay(src, imgD.EmojiHappy, x, y - EMOJIHEIGHT); break
+      case typeList.HAPPYSAD: gameFunction.imageObjectDisplay(src, imgD.EmojiHappySad, x, y - EMOJIHEIGHT); break
+      case typeList.SAD: gameFunction.imageObjectDisplay(src, imgD.EmojiSad, x, y - EMOJIHEIGHT); break
+      case typeList.SMILE: gameFunction.imageObjectDisplay(src, imgD.EmojiSmile, x, y - EMOJIHEIGHT); break
+      case typeList.THINKING: gameFunction.imageObjectDisplay(src, imgD.EmojiThinking, x, y - EMOJIHEIGHT); break
     }
   }
 

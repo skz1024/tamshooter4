@@ -2394,3 +2394,17 @@ button 관련 input 함수의 동작 방식을 변경하였습니다.
 이 버전은 임시체크이므로, 기능이 완전히 구현되지 않았습니다. 다만 실행엔 오류가 없습니다.
 7. 라운드 2-5클리어 음악이 임시로 변경되었는데, 다음 버전때 다시 결정합니다.
 8. shop, donggrami 기능은 아직 미구현입니다. entity먼저 구현하고, 다시 shop을 만들겠습니다.
+
+
+2026/10/03 v0.57.7 - donggramiEntity, code change
+1. DonggramiEntity가 추가되고, 기존 DonggamiEnemy가 가지고 있던 코드는 제거되었습니다.
+2. DonggramiEnemy가 entity를 소유하고, Round2_5_DonggramiSprite도 entity를 소유합니다.
+3. 동그라미 말풍선 크기와 위치가 재수정되었고, 말풍선과 꼬리가 합쳐졌습니다.
+4. 동그라미 말풍선 꼬리의 imageData는 제거됩니다.
+5. 동그라미 entity를 만들면서 예상치 못한 버그들을 수정하였습니다.
+
+아직 동그라미의 기능은 완벽하게 구현되지 않았습니다.
+왜냐하면 Message를 이용하여 특정 무언가를 해야할 때가 있기 때문입니다.
+따라서, DonggramiEntity에 대량의 내용이 추가될 것입니다.
+💀의 세계의 오신 것을 환영합니다.
+

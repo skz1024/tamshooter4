@@ -407,8 +407,7 @@ export class imageDataInfo {
     /** 슬픔 */ EmojiSad: {x: 800, y: 80, width: 40, height: 40, frame: 1},
     /** 화남 */ EmojiAngry: {x: 840, y: 80, width: 40, height: 40, frame: 1},
     /** 생각중... */ EmojiThinking: {x: 880, y: 80, width: 40, height: 40, frame: 1},
-    /** 말풍선(donggramiTalk 전용) */ speechBubble: {x: 600, y: 120, width: 200, height: 52, frame: 1},
-    /** 말풍선 꼬리 */ speechBubbleTale: {x: 810, y: 120, width: 70, height: 26, frame: 1},
+    /** 말풍선(donggramiTalk 전용) */ speechBubble: {x: 120, y: 510, width: 210, height: 76, frame: 1},
     /** 환영 대화창 */ welcomeText: {x: 600, y: 180, width: 198, height: 78, frame: 1},
     /** 마을 대화창 */ welcomeMaeulText: {x: 800, y: 180, width: 198, height: 78, frame: 1},
 
