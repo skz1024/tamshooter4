@@ -429,7 +429,7 @@ class PlayerObject extends FieldData {
 
   /** 플레이어에게 아이템을 삭제합니다. (fieldSystem에서 간접적으로 사용함)  */
   _removeItem (id = 0, count = 0) {
-    userSystem.inventoryItemDelete(id, count)
+    userSystem.inventoryItemDeleteById(id, count)
   }
 
   process () {
@@ -1788,7 +1788,7 @@ export class fieldSystem {
    */
   static requestSubtractGold (gold = 0) {
     this.fieldGold -= gold
-    fieldState.playerObject.plusGold(gold)
+    fieldState.playerObject.minusGold(gold)
   }
 
   /**
@@ -1871,6 +1871,11 @@ export class fieldSystem {
    */
   static requestIsSkillUnlocked (id) {
     return userSystem.getSkillUnlock(id)
+  }
+
+  /** 플레이어의 스킬을 잠금 해제합니다. */
+  static requestSkillUnlock (id = 0) {
+    userSystem.addSkillUnlock(id)
   }
 
   /** 라운드가 클리어 되어 있는지를 확인합니다. */

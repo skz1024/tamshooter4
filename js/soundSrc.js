@@ -331,6 +331,9 @@ export class soundSrc {
     r2_3_a3_power1: './sound/round2_3_a3_power1.ogg',
     r2_3_a3_power2: './sound/round2_3_a3_power2.ogg',
     r2_3_b3_move: './sound/round2_3_b3_move.ogg',
+    r2_4_donggramiShopBuy: './sound/round2_4_donggramiShopBuy.ogg',
+    r2_4_donggramiShopFail: './sound/round2_4_donggramiShopFail.ogg',
+    r2_4_donggramiShopTalk: './sound/round2_4_donggramiShopTalk.ogg',
     r2_4_elevatorMove: './sound/round2_4_elevatorMove.ogg',
     r2_4_elevatorDoorOpen: './sound/round2_4_elevatorDoorOpen.wav',
     r2_4_elevatorDoorClose: './sound/round2_4_elevatorDoorClose.wav',
@@ -370,7 +373,7 @@ export class soundSrc {
     juiceCola: './sound/donggramiJuiceCola.wav',
     juiceThrow: './sound/donggramiJuiceThrow.wav',
     plate: './sound/donggramiPlate.wav',
-    juiceEat: './sound/donggramiJuiceEat.ogg'
+    juiceEat: './sound/donggramiJuiceEat.ogg',
   }
 
   static music = {

@@ -246,6 +246,14 @@ export class DonggramiEntity {
     imageDataInfo.donggramiEnemy.bigRed,
   ]
 
+  /** 컬러 인덱스, 이 값은 특수한 상황에서만 사용되어 기능이 적게 구현되어 있습니다.
+   * 순서는 imageDataList를 참고해주세요.
+   */
+  static COLOR_INDEXS = {
+    LIGHT_BLUE: 0,
+    DARK_BLUE: 2
+  }
+
   /** 색 이름의 텍스트 */
   static colorText = [
     'darkblue', 'blue', 'lightblue', 'darkgreen', 'green', 'lightgreen',
@@ -324,6 +332,18 @@ export class DonggramiEntity {
    */
   setDonggramiColor (groupNumber = 0) {
     this.colorNumber = DonggramiEntity.getColorNumberByGroupColorNumber(groupNumber)
+    this.imageData = DonggramiEntity.imageDataList[this.colorNumber]
+    this.color = DonggramiEntity.colorText[this.colorNumber]
+  }
+
+  /** 
+   * 동그라미 색상을 특정 값으로 강제 설정합니다.
+   * 다만, 이 함수는 문자열로 받는게 아니라 인덱스로 받는 구조임을 주의해주세요.  
+   * 
+   * 이 함수는 특수한 경우에만 쓰이므로, 기능이 완벽하게 구현되지 않았습니다.
+   */
+  setDonggramiColorIndex (colorNumber = 0) {
+    this.colorNumber = colorNumber
     this.imageData = DonggramiEntity.imageDataList[this.colorNumber]
     this.color = DonggramiEntity.colorText[this.colorNumber]
   }
@@ -412,7 +432,7 @@ export class DonggramiEntity {
     if (this.talkIndex.y === DonggramiEntity.TALK_INDEXS.UNUSED) return
 
     const imgDspeech = imageDataInfo.donggramiEnemy.speechBubble
-    const borderHeight = 50
+    const borderHeight = 60
 
     // 스피치버블의 출력 위치는, 위쪽에 출력하면서 동시에 오브젝트에 겹치지 않아야 합니다.
     // 그래서 예상 크기만큼을 y축에서 뺍니다.
@@ -425,7 +445,7 @@ export class DonggramiEntity {
 
     const TALKTEXTWIDTH = imageDataInfo.donggramiEnemy.textArea.width
     const TALKTEXTHEIGHT = imageDataInfo.donggramiEnemy.textArea.height
-    const TEXTLAYERX = x
+    const TEXTLAYERX = x + 5
     const TEXTLAYERY = speechBubbleY + 5
     game.graphic.imageDisplay(
       imageSrc.enemy.donggramiEnemyTalkList, 
@@ -544,4 +564,10 @@ export class DonggramiEntity {
       }
     }
   }
+}
+
+
+/** 박스형 엔티티, 충돌 구조를  */
+export class BoxEntity {
+  
 }

@@ -301,6 +301,7 @@ export class WeaponData extends FieldData {
       if (currentEnemy.isDied) continue // 적이 죽은경우 무시
 
       // 충돌 조건에 따른 충돌 검사
+      //@ts-ignore
       let isCollision = (isCollisionOBBCheck && collisionClass.collisionOBB(attackArea, currentEnemy))
         || (!isCollisionOBBCheck && collision(attackArea, currentEnemy))
 
@@ -337,6 +338,7 @@ export class WeaponData extends FieldData {
       const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
       if (currentEnemy.isDied) continue // 적이 죽은경우 무시
 
+      //@ts-ignore
       let isCollision = (isCollisionOBBCheck && collisionClass.collisionOBB(attackArea, currentEnemy))
         || (!isCollisionOBBCheck && collision(attackArea, currentEnemy))
 

@@ -6,10 +6,31 @@ import { getDegreeByVector } from "./tamsaEngine/util.js"
 
 let graphicSystem = game.graphic
 
+/** 
+ * 충돌 객체 검사의 기준이 되는 표준 인터페이스
+ * 
+ * 모든 객체는 다음과 같은 속성을 가지고 있어야 충돌 판정이 가능합니다.
+ * @typedef {Object} CollisionTarget
+ * @property {number} x
+ * @property {number} y
+ * @property {number} width
+ * @property {number} height
+ */
+
+/**
+ * OBB가 필요한 충돌 객체 검사 기준이 되는 표준 인터페이스.
+ * @typedef {Object} OBBCollisionTarget
+ * @property {number} x
+ * @property {number} y
+ * @property {number} width
+ * @property {number} height
+ * @property {number} degree 각도 (radian이 아닙니다.)
+ */
+
 /**
  * 충돌 감지 함수
- * @param {FieldData | any} objectA
- * @param {FieldData | any} objectB
+ * @param {CollisionTarget} objectA
+ * @param {CollisionTarget} objectB
  */
 export function collision (objectA, objectB) {
   if (objectA.x < objectB.x + objectB.width &&
@@ -19,6 +40,24 @@ export function collision (objectA, objectB) {
     return true
   } else {
     return false
+  }
+}
+
+/** 필드에서 사용하는 충돌 박스 영역 생성기, collision 함수를 통해서 충돌 체크 가능 */
+export class collisionBox {
+  constructor (x = 0, y = 0, width = 0, height = 0) {
+    this.x = x
+    this.y = y
+    this.width = width
+    this.height = height
+  }
+
+  /**
+   * 충돌이 되었는지 아닌지 확인합니다. 
+   * @param {CollisionTarget} target 
+  */
+  collision (target) {
+    return collision(this, target)
   }
 }
 
@@ -37,8 +76,8 @@ export class collisionClass {
    *
    * 이 코드는 이 사이트를 참고해 재구성한 후 리메이크 했습니다.
    * http://programmerart.weebly.com/separating-axis-theorem.html
-   * @param {FieldData | any} objectA
-   * @param {FieldData | any} objectB
+   * @param {OBBCollisionTarget} objectA
+   * @param {OBBCollisionTarget} objectB
    */
   static collisionOBB (objectA, objectB) {
     // 1차 검사: 충돌 계산을 하기 전, 특정 영역에 들어왔는지 먼저 확인합니다.
@@ -131,7 +170,7 @@ export class collisionClass {
 
   /**
    * 꼭짓점을 얻습니다.
-   * @param {FieldData} objectA
+   * @param {OBBCollisionTarget} objectA
    * @returns 꼭짓점 배열
    */
   static getVertex (objectA) {

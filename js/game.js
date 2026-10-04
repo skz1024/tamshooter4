@@ -205,6 +205,18 @@ class userInventorySystem {
     return 0
   }
 
+  /** 인벤토리의 아이템에 해당하는 id를 기반으로 아이템이 있는 인덱스 값을 가져옵니다. */
+  static getIndexById (id = 0) {
+    for (let i = 0; i < this.itemList.length; i++) {
+      // 아이디를 직접 다 찾아봄
+      if (this.itemList[i].id === id) {
+        return i
+      }
+    }
+
+    return -1
+  }
+
   /**
    * 인벤토리의 아이템 삭제 (참고: 해당 슬롯은 삭제되는게 아닌, 데이터만 사라집니다.)
    * 
@@ -579,6 +591,15 @@ export class userSystem {
       refund,
       nextLevelAttack,
     }
+  }
+
+  /**
+   * 인벤토리 데이터 아이템을 삭제합니다. 이것은 itemId를 기반으로 합니다.
+   * @param {number} itemId 아이템의 id
+   */
+  static inventoryItemDeleteById (itemId, count = 0) {
+    const index = this.inventory.getIndexById(itemId)
+    this.inventoryItemDelete(index, count)
   }
 
   /**
