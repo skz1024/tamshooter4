@@ -193,7 +193,7 @@ class PlayerMultyshot extends PlayerWeaponData {
   constructor () {
     super()
     this.setAutoPlayerWeapon(ID.playerWeapon.multyshot)
-    this.option = [null, null, -3, 3, 'chase', 'chase']
+    this.option = [0, 1, 2, 3, 4, 5]
     this.position = [{x: 0, y: 10}, {x: 0, y: -10}, {x: 0, y: -5}, {x: 0, y: 5}, {x: -15, y: -15}, {x: -15, y: 15}]
   }
 }
@@ -212,7 +212,8 @@ class PlayerMissile extends PlayerWeaponData {
     ]
     this.weaponIdList = setIdList
 
-    this.option = [null, null, -2, 2]
+    // -1은 다른 타입이 옵션을 사용하기 때문에 구분을 위해 넣은 값이며 숫자 자체에는 의미가 없습니다.
+    this.option = [-1, -1, 0, 1]
     this.position = [{x: 0, y: -5}, {x: 0, y: 5}, {x: 10, y: -5}, {x: 10, y: 5}]
   }
 }
@@ -225,7 +226,7 @@ class PlayerArrow extends PlayerWeaponData {
     super()
     this.setAutoPlayerWeapon(ID.playerWeapon.arrow)
     this.position = [{x: 0, y: -10}, {x: 0, y: -10}]
-    this.option = [5, -5]
+    this.option = [0, 1]
   }
 }
 
@@ -287,7 +288,7 @@ class PlayerSidewave extends PlayerWeaponData {
   constructor () {
     super()
     this.setAutoPlayerWeapon(ID.playerWeapon.sidewave)
-    this.option = ['right 4', 'right 3', 'right 2', 'right -2', 'right -3', 'right -4', 'left 3', 'left -3']
+    this.option = [0, 1, 2, 3, 4, 5, 6, 7]
     this.position = [{x: 0, y: 12 - 30}, {x: 0, y: 8 - 30}, {x: 0, y: 4 - 30}, {x: 0, y: -4 - 30},
      {x: 0, y: -8 - 30}, {x: 0, y: -12 - 30}, {x: 0, y: + 4}, {x: 0, y: -4 - 30}]
   }
@@ -305,7 +306,7 @@ class PlayerRing extends PlayerWeaponData {
   constructor () {
     super()
     this.setAutoPlayerWeapon(ID.playerWeapon.ring)
-    this.option = ['up', 'down', 'left', 'leftdown', 'leftup', 'right', 'rightdown', 'rightup']
+    this.option = [0, 1, 2, 3, 4, 5, 6, 7]
   }
 }
 
@@ -462,7 +463,6 @@ export class PlayerSkillData {
       * @type {{x: number, y: number}[]}
       */
      this.position = []
-
   }
 
   /**
@@ -593,7 +593,7 @@ class PlayerSkillArrow extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.arrow)
-    this.option = [7, -7]
+    this.option = [0, 1]
     this.setSound(null, soundSrc.skill.skillArrowShot)
   }
 }
@@ -644,7 +644,7 @@ class PlayerSkillSidewave extends PlayerSkillData {
   constructor () {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.sidewave)
-    this.option = [-7, 0, 7]
+    this.option = [0, 1, 2]
     this.position = [{x: 0, y: -70}]
     this.setSound(null, soundSrc.skill.skillSidewaveShot)
   }
@@ -714,7 +714,7 @@ class PlayerSkillRing extends PlayerSkillData {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.ring)
     this.setSound(null, soundSrc.skill.skillRing)
-    this.option = ['left', 'leftdown', 'leftup', 'right', 'rightdown', 'rightup', 'up', 'down']
+    this.option = [0, 1, 2, 3, 4, 5, 6, 7]
   }
 }
 

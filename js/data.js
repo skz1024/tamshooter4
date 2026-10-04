@@ -91,7 +91,7 @@ export class tamshooter4Data {
 
   /**
    * @param {number} id ID 클래스가 가지고 있는 id 함수
-   * @returns {WeaponData} 무기 객체
+   * @returns {typeof WeaponData} 무기 객체
    */
   static getWeapon = (id) => this.weapon.get(id) 
 

@@ -3288,7 +3288,7 @@ class Round1_4 extends RoundData {
     // 시작하자마자 보스 등장 (0 ~ 15)
     if (this.timeCheckInterval(3) && this.time.currentTimeFrame === 0) {
       this.field.createEnemy(ID.enemy.jemulEnemy.boss)
-      this.sound.musicChange(2, 10)
+      this.sound.musicChange(2, 0)
     }
 
     // 보스가 일찍 죽으면 해당 페이즈 스킵

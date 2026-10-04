@@ -193,6 +193,20 @@ export class WeaponData extends FieldData {
   }
 
   /**
+   * 옵션의 번호를 설정합니다. 번호가 설정된 무기는 자체적인 알고리즘을 통하여 무기의 발사 스타일을 변경합니다.
+   * 
+   * 이 함수는 단독으로는 아무 역할도 하지 않으며, 따라서 오버라이딩을 해야 합니다.
+   * 
+   * 각 무기마다 세부 구현 공식은 다를 수 있습니다.
+   * 
+   * 주의: 이 함수를 오버라이딩 할 때, option 매개변수를 까먹지 마세요.
+   * @param {number} option
+   */
+  setOption (option = 0) {
+
+  }
+
+  /**
    * 무기가 적을 타격하여 데미지를 주는 함수입니다.
    * 아직까지는, 무기의 공격력 만큼만 적의 체력을 감소시키는 역할만 합니다.
    * 절대로, 다른 곳에서 적의 체력을 직접 감소시키지 마세요!
@@ -421,7 +435,6 @@ export class WeaponData extends FieldData {
       }
     }
 
-    // 어떠한 적도 충돌하지 않았다면 false
     if (hitEnemyList.length >= 1) {
       return hitEnemyList
     } else {
@@ -629,26 +642,33 @@ export class WeaponData extends FieldData {
 }
 
 class MultyshotData extends WeaponData {
-  /**
-   * optionList
-   * 0. speedY = 0, 1. chase(추적) = false
-   * @param {number[] | string[]} option 개체의 옵션
-   */
-  constructor (option = [0]) {
+  constructor () {
     super()
-    // 옵션에 따른 값 설정
     this.moveSpeedX = 20
-    if (typeof option[0] === 'number') {
-      this.moveSpeedY = option[0]
-    } else if (typeof option[0] === 'string') {
-      this.isLineChase = true
-    } else {
-      this.moveSpeedY = 0
-      this.isLineChase = false
+
+    // imageData 설정은 setOption에서 진행합니다!
+  }
+
+  setOption (number = 0) {
+    switch (number) {
+      // front
+      case 0: this.moveSpeedY = 0;  this.isLineChase = false; break
+      case 1: this.moveSpeedY = 0;  this.isLineChase = false; break
+
+      // sidewave
+      case 2: this.moveSpeedY = -3; this.isLineChase = false; break
+      case 3: this.moveSpeedY = 3;  this.isLineChase = false; break
+
+      // chase
+      case 4: this.moveSpeedY = 0;  this.isLineChase = true;  break
+      case 5: this.moveSpeedY = 0;  this.isLineChase = true;  break
     }
 
     // 컬러 번호에 따른 무기 이미지 변경
     let colorNumber = 0
+    if (number >= 2 && number <= 3) colorNumber = 1
+    else if (number >= 4 && number <= 5) colorNumber = 2
+
     if (this.isLineChase) colorNumber = 2
     else if (this.moveSpeedY != 0) colorNumber = 1
 
@@ -738,18 +758,17 @@ class MissileData extends WeaponData {
 }
 
 class MissileRocket extends MissileData {
-  /**
-   * option list
-   * 0. speedY
-   */
-  constructor (option = [2]) {
+  constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.missileRocket)
     this.subType = 445
     this.id = ID.weapon.missileRocket
     this.moveSpeedX = 24
-    this.moveSpeedY = option.length >= 1 ? option[0] : -2
     this.state = MissileData.STATE_NORMAL
+  }
+
+  setOption (number = 0) {
+    this.moveSpeedY = number === 0 ? 2 : -2
   }
 
   getSplashArea () {
@@ -813,22 +832,22 @@ class ReflectWeaponData extends WeaponData {
 }
 
 class Arrow extends ReflectWeaponData {
-  /**
-   * option list
-   * 0. moveSpeedY (참고: 이 값이 음수면 갈색이고, 양수면 초록색입니다.)
-   */
-  constructor (option = [2]) {
+  constructor () {
     super()
-    this.moveSpeedY = option.length >= 1 ? option[0] : 2
+    this.moveSpeedX = 17
+    this.reflectCount = 6
+    this.color = 'brown'
+  }
+
+  setOption (number = 0) {
+    this.moveSpeedY = number === 0 ? -5 : 5
+
     let imageDataList = [
       imageDataInfo.weapon.arrowGreen,
       imageDataInfo.weapon.arrowBrown
     ]
     let imageDataNumber = this.moveSpeedY >= 0 ? 0 : 1
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataList[imageDataNumber])
-    this.moveSpeedX = 17
-    this.reflectCount = 6
-    this.color = 'brown'
   }
 }
 
@@ -986,6 +1005,11 @@ class Sapia extends WeaponData {
   }
 }
 
+/**
+ * 과거 코드의 잔재로 추정되며, 무기 밸런스가 변경이 되었는데도 이 부분을 확인하지 못했습니다.
+ * 
+ * @deprecated
+ */
 class SapiaShot extends Sapia {
   /**
    * 옵션: 배열의 순서대로
@@ -1057,42 +1081,38 @@ class Parapo extends WeaponData {
       const shockWaveSize = 100
       const shockWaveSizeHalf = shockWaveSize / 2
       const divideAttack = Math.floor(this.attack / 4)
-      fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX - shockWaveSize, enemyCenterY - shockWaveSizeHalf, divideAttack, 'left')
-      fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX, enemyCenterY - shockWaveSizeHalf, divideAttack, 'right')
-      fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX - shockWaveSizeHalf, enemyCenterY - shockWaveSize, divideAttack, 'up')
-      fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX - shockWaveSizeHalf, enemyCenterY, divideAttack, 'down')
+      fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX - shockWaveSize, enemyCenterY - shockWaveSizeHalf, divideAttack, 0)
+      fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX, enemyCenterY - shockWaveSizeHalf, divideAttack, 1)
+      fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX - shockWaveSizeHalf, enemyCenterY - shockWaveSize, divideAttack, 2)
+      fieldState.createWeaponObject(ID.weapon.parapoShockWave, enemyCenterX - shockWaveSizeHalf, enemyCenterY, divideAttack, 3)
       this.repeatCount--
     }
   }
 }
 
 class ParapoShockwave extends Parapo {
-  /**
-   * 옵션:
-   * 0. direction(방향)
-   */
-  constructor (option = [0]) {
+  constructor () {
     super()
     this.subType = 0
     this.width = 100
     this.height = 100
     this.moveSpeedX = 0
     this.moveSpeedY = 0
-
     this.parapoEffect = null
-    let direction = option.length >= 1 ? option[0] : FieldData.direction.LEFT
-    switch (direction) {
-      default:
-      case ParapoShockwave.direction.LEFT:
+  }
+
+  setOption (number = 0) {
+    switch (number) {
+      case 0: // left
         this.parapoEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.parapoLeft, 100, 100, 1)
         break
-      case ParapoShockwave.direction.RIGHT:
+      case 1: 
         this.parapoEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.parapoRight, 100, 100, 1)
         break
-      case ParapoShockwave.direction.UP:
+      case 2:
         this.parapoEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.parapoUp, 100, 100, 1)
         break
-      case ParapoShockwave.direction.DOWN:
+      case 3:
         this.parapoEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.parapoDown, 100, 100, 1)
         break
     }
@@ -1101,7 +1121,9 @@ class ParapoShockwave extends Parapo {
   processAttack () {
     this.repeatCount--
     this.processHitObject()
-    fieldState.createEffectObject(this.parapoEffect, this.x, this.y)
+    if (this.parapoEffect) {
+      fieldState.createEffectObject(this.parapoEffect, this.x, this.y)
+    }
   }
 
   display () {
@@ -1131,17 +1153,29 @@ class Sidewave extends WeaponData {
    * 옵션은 다음과 같이 전달받습니다. ('right 4')
    * 0. direction = 'right', moveSpeedY = 0, 
    */
-  constructor (option = ['']) {
+  constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.sidewave)
     this.moveSpeedX = 11
-    let direction = option[0].split(' ')[0]
-    let moveSpeedY = Number(option[0].split(' ')[1])
+  }
 
-    this.moveSpeedY = moveSpeedY
-    if (direction === 'left') {
-      if (this.enimation) this.enimation.flip = 1 // 좌우 반전 (왼쪽으로 무기가 이동하므로)
-      this.moveDirectionX = Sidewave.direction.LEFT
+  setOption (number = 0) {
+    this.option = ['right 4', 'right 3', 'right 2', 'right -2', 'right -3', 'right -4', 'left 3', 'left -3']
+
+    switch (number) {
+      case 0: this.moveSpeedY = 4;  /* right, flip 없음 */ break
+      case 1: this.moveSpeedY = 3;  /* right */ break
+      case 2: this.moveSpeedY = 2;  /* right */ break
+      case 3: this.moveSpeedY = -2; /* right */ break
+      case 4: this.moveSpeedY = -3; /* right */ break
+      case 5: this.moveSpeedY = -4; /* right */ break
+      case 6: this.moveSpeedY = 3;  break // left
+      case 7: this.moveSpeedY = -3; break // left
+    }
+
+    if (number >= 6 && number <= 7 && this.enimation) {
+      // 좌우 반전 (왼쪽으로 무기가 이동하므로)
+      this.enimation.flip = 1; this.moveDirectionX = Sidewave.direction.LEFT
     }
   }
 }
@@ -1155,19 +1189,21 @@ class Rapid extends WeaponData {
 }
 
 class Ring extends WeaponData {
-  /**
-   * @param {string[]} option moveDirection max 8way 이동 방향 최대 8방향
-   */
-  constructor (option = ['right']) {
+  static ringDirectionList = ['up', 'down', 'left', 'leftdown', 'leftup', 'right', 'rightdown', 'rightup']
+
+  constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.ring)
-
-    let ringDirection = option[0]
-    this.setRingDirection(ringDirection, 16)
 
     // 링도 arrow랑 비슷하게 벽튕기기 효과가 있지만 1번만 튕겨집니다. (차별화를 위해서...)
     this.bounceCount = 0
     this.bounceMaxCount = 1
+  }
+
+  setOption (number = 0) {
+    if (number >= 0 && number < Ring.ringDirectionList.length) {
+      this.setRingDirection(Ring.ringDirectionList[number], 16)
+    }
   }
 
   /** 링의 이동방향 및 속도 설정 */
@@ -1330,34 +1366,30 @@ class Cogwheel extends WeaponData {
 }
 
 class Yeonsai extends WeaponData {
-  /**
-   * 옵션 목록
-   * 0 ~ 5: 발사 번호 (0 ~ 2: 왼쪽, 3 ~ 5: 오른쪽)
-   */
-  constructor (option = [0]) {
+  constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.yeonsai)
+  }
 
-    let speedX = option[0] < 3 ? -20 : 20
+  setOption (number = 0) {
+    let speedX = number < 3 ? -20 : 20
     let speedY = Math.floor(Math.random() * 4) - 2
     this.setMoveSpeed(speedX, speedY)
   }
 }
 
 class Sabangtan extends MissileData {
-  /**
-   * 옵션 목록
-   * 0 ~ 3: 발사 번호
-   */
-  constructor (option = [0]) {
+  constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.sabangtan)
-
     this.splashEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.sabangtan, this.getSplashArea().width, this.getSplashArea().height)
+  }
+
+  setOption (number = 0) {
     const speedX = 2
     const speedY = 6
 
-    switch (option[0]) {
+    switch (number) {
       case 0: this.setMoveSpeed(-speedX, -speedY); break
       case 1: this.setMoveSpeed(-speedX, speedY); break
       case 2: this.setMoveSpeed(speedX, -speedY); break
@@ -1423,30 +1455,34 @@ class R3TowerPurple extends WeaponData {
 
 class R3Helljeon extends WeaponData {
   // 옵션: 0번을 선택하면 노멀타입, 1번을 선택하면 체이스 타입
-  constructor (option = [0]) {
+  constructor () {
     super()
     this.TYPE_CHASE = 'chase'
     this.TYPE_NORMAL = 'normal'
     this.ANGLE_SPEED = 10
     this.BASE_SPEED = 11
+    this.setMoveSpeed(this.BASE_SPEED, 0)
+    this.saveList = {
+      type: this.TYPE_NORMAL,
+      angleDegree: 0,
+      isAngleMove: false,
+      targetSpeedX: this.moveSpeedX,
+      targetSpeedY: this.moveSpeedY,
+    }
+  }
 
+  setOption (number = 0) {
     // 지정된 옵션에 따라 무기 타입 결정
-    const currentType = option[0] === 0 ? this.TYPE_NORMAL : this.TYPE_CHASE
+    const currentType = number === 0 ? this.TYPE_NORMAL : this.TYPE_CHASE
+    
+    // 하위 호환 코드
+    this.saveList.type = currentType
 
     // 이미지 설정
     if (currentType === this.TYPE_NORMAL) {
       this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.r3TowerHelljeonNormal)
     } else {
       this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.r3TowerHelljeonChase)
-    }
-
-    this.setMoveSpeed(this.BASE_SPEED, 0)
-    this.saveList = {
-      type: currentType,
-      angleDegree: 0,
-      isAngleMove: false,
-      targetSpeedX: this.moveSpeedX,
-      targetSpeedY: this.moveSpeedY,
     }
   }
 
@@ -1557,6 +1593,10 @@ class R3Helljeon extends WeaponData {
   }
 }
 
+/**
+ * 사용되지 않는 것으로 보임
+ * @deprecated
+ */
 class SubMultyshot extends WeaponData {
   constructor () {
     super()
@@ -1607,13 +1647,16 @@ class SkillMissile extends MissileData {
 }
 
 class SkillArrow extends Arrow {
-  // Arrow를 상속받아서, 그대로 옵션으로 활용
-  constructor (option = [2]) {
-    super(option)
+  constructor () {
+    super()
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.arrow, 3)
     this.color = 'purple'
     this.moveSpeedX = 16
     this.reflectCount = 12
+  }
+
+  setOption (number = 0) {
+    this.moveSpeedY = number === 0 ? 7 : -7
   }
 }
 
@@ -1808,11 +1851,19 @@ class SkillBlaster extends Blaster {
 }
 
 class SkillSidewave extends Sidewave {
-  constructor (option = [0, 'right']) {
+  constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.sidewave)
     this.moveSpeedX = 22
-    this.moveSpeedY = Number(option[0])
+    this.moveSpeedY = 7
+  }
+
+  setOption (number = 0) {
+    switch (number) {
+      case 0: this.moveSpeedY = -7; break
+      case 1: this.moveSpeedY = 0; break
+      case 2: this.moveSpeedY = 7; break
+    }
   }
 }
 
@@ -2054,11 +2105,11 @@ class SkillSantansu extends WeaponData {
   static STATE_MOVE_UP = 2
   static STATE_ATTACK = 3
 
-  /**
-   * 옵션: 최종 도착 지점 X위치 범위 설정
-   * option = randomPositionNumber (0 ~ 4)
-   */
-  constructor (option = [Math.floor(Math.random() * 5)]) {
+  static santansuEffectUp = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillSantansuUp, 160, 160)
+  static santansuEffectDown = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillSantansuDown, 160, 160)
+  static santansuEffectWater = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillSantansuWater, 160, 160)
+
+  constructor () {
     super()
     this.mainType = 1
     this.subType = 2
@@ -2067,8 +2118,10 @@ class SkillSantansu extends WeaponData {
     this.repeatDelay = new DelayData(9)
     
     this.state = SkillSantansu.STATE_SANTANSU
+  }
 
-    let randomPositionNumber = option[0]
+  setOption (number = 0) {
+    let randomPositionNumber = number
     let finishXMin = 0 + (randomPositionNumber * 80)
     let finishXRange = 480
     this.finishX = Math.floor(Math.random() * finishXRange) + finishXMin
@@ -2081,12 +2134,6 @@ class SkillSantansu extends WeaponData {
       this.setMultiTarget(this.maxTarget / stat.shot)
     }
 
-    this.santansuEffectUp = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillSantansuUp, 160, 160)
-    this.santansuEffectDown = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillSantansuDown, 160, 160)
-    this.santansuEffectWater = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillSantansuWater, 160, 160)
-  }
-
-  afterInit () {
     // 최종지점 X축으로 10프레임동안 이동하도록 이동속도 조정
     this.moveSpeedX = (this.finishX - this.x) / 10
     this.moveSpeedY = (0 - this.y) / 10
@@ -2109,6 +2156,9 @@ class SkillSantansu extends WeaponData {
 
   processAttack () {
     if (this.state === SkillSantansu.STATE_SANTANSU) {
+      // 이 코드는 밸런스 패치 또는 버그 수정을 위하여 수정된 것으로 보입니다.
+      // 현재는 쓸모 없는 코드이지만, 일단 남겨두겠습니다.
+      //
       // 산탄수 상태에서 적이랑 충돌했는지 확인
       // if (this.getEnemyHitObject(this, 1)) {
       //   // 위쪽으로만 이동하도록 변경
@@ -2122,7 +2172,7 @@ class SkillSantansu extends WeaponData {
       // 화면 위까지 닿았을 때 공격 상태로 전환
       if (this.y <= 0) {
         soundSystem.play(soundSrc.skill.skillSantansuHit)
-        fieldState.createEffectObject(this.santansuEffectUp, this.x, 0)
+        fieldState.createEffectObject(SkillSantansu.santansuEffectUp, this.x, 0)
         this.y = 0
         this.state = SkillSantansu.STATE_ATTACK
         this.moveSpeedX = 0
@@ -2141,17 +2191,17 @@ class SkillSantansu extends WeaponData {
         }
 
         this.processHitObject(attackArea)
-        fieldState.createEffectObject(this.santansuEffectUp, this.x, 0)
-        fieldState.createEffectObject(this.santansuEffectDown, this.x, 0)
-        fieldState.createEffectObject(this.santansuEffectDown, this.x, 160)
-        fieldState.createEffectObject(this.santansuEffectDown, this.x, 320)
-        fieldState.createEffectObject(this.santansuEffectDown, this.x, 480)
-        fieldState.createEffectObject(this.santansuEffectDown, this.x, 640)
-        fieldState.createEffectObject(this.santansuEffectWater, this.x, 0)
-        fieldState.createEffectObject(this.santansuEffectWater, this.x, 160)
-        fieldState.createEffectObject(this.santansuEffectWater, this.x, 320)
-        fieldState.createEffectObject(this.santansuEffectWater, this.x, 480)
-        fieldState.createEffectObject(this.santansuEffectWater, this.x, 640)
+        fieldState.createEffectObject(SkillSantansu.santansuEffectUp, this.x, 0)
+        fieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 0)
+        fieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 160)
+        fieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 320)
+        fieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 480)
+        fieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 640)
+        fieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 0)
+        fieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 160)
+        fieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 320)
+        fieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 480)
+        fieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 640)
       }
     }
   }
@@ -2235,18 +2285,15 @@ class SkillWhiteFlashSmoke extends SkillWhiteflash {
 }
 
 class SkillRing extends Ring {
-  /**
-   * @param {string[]} option moveDirection max 8way 이동 방향 최대 8방향
-   */
-  constructor (option = ['right']) {
+  constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.ring)
-
-    let moveDirection = option[0]
-    this.setRingDirection(moveDirection, 36)
-
     this.bounceCount = 0
     this.bounceMaxCount = 4
+  }
+
+  setOption (number = 0) {
+    this.setRingDirection(Ring.ringDirectionList[number], 36)
   }
 
   display () {
@@ -2597,12 +2644,12 @@ class SkillCogwheel extends WeaponData {
 }
 
 class SkillYeonsai extends WeaponData {
-  // 옵션: 연사 번호 (0 ~ 9번까지)
-  constructor (option = [0]) {
+  constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.yeonsai)
+  }
 
-    const number = option[0]
+  setOption (number = 0) {
     const speedX = 20
     switch (number) {
       case 0: this.setMoveSpeed(speedX, -8); break
@@ -2619,11 +2666,14 @@ class SkillYeonsai extends WeaponData {
 }
 
 class SkillSabangtan extends Sabangtan {
-  // 옵션: 무기 번호 (0 ~ 3번까지)
-  constructor (option = [0]) {
+  constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.sabangtan)
-    this.numberSabangtan = option[0]
+    this.numberSabangtan = 0
+  }
+
+  setOption (number = 0) {
+    this.numberSabangtan = number
   }
 
   getSplashArea () {
@@ -3068,16 +3118,17 @@ class SkillEomukggochi extends WeaponData {
 }
 
 class SkillEomukggochiSub extends WeaponData {
-  constructor (option = [0]) {
+  constructor () {
     super()
-    const number = option[0]
+    this.isLineChase = true
+  }
+
+  setOption (number = 0) {
     switch (number) {
       case 0: this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.eomukggochi1); break
       case 1: this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.eomukggochi2); break
       case 2: this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.eomukggochi3); break
     }
-
-    this.isLineChase = true
   }
 }
 
@@ -3456,9 +3507,10 @@ class SkillR3XboomSub extends MissileData {
 
 class SkillR3Helljeon extends R3Helljeon {
   constructor () {
-    super([1]) // 추적 옵션을 부여하도록 처리
+    super() 
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.r3Helljeon)
-    // 이 이외에 차이는 없음
+    // 추적 옵션을 부여하도록 처리 이 이외에 차이는 없음
+    this.setOption(1)
   }
 }
 

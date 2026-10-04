@@ -1088,19 +1088,19 @@ export class fieldState {
    * @param {number} x
    * @param {number} y
    * @param {number} attack 공격력 (반드시 정수여야 함. Math.floor 연산 회피를 위해 여기서는 검사하지 않음.)
-   * @param {any[]} addOption 추가옵션 (무기 클래스에 추가로 입력할 ...매개변수)
+   * @param {number} addOption 추가옵션 (무기 클래스에 추가로 입력할 ...매개변수)
    */
-  static createWeaponObject (typeId, x = 0, y = 0, attack = 1, ...addOption) {
+  static createWeaponObject (typeId, x = 0, y = 0, attack = 1, addOption = 0) {
     const GetClass = tamshooter4Data.getWeapon(typeId)
     if (GetClass == null) return
     
     /** @type {WeaponData} */
-    //@ts-expect-error
-    const inputData = new GetClass(addOption)
+    const inputData = new GetClass()
     inputData.createId = this.getNextCreateId()
     inputData.id = typeId
     inputData.setPosition(x, y)
     inputData.setAttack(attack) // 무기 공격력 설정
+    inputData.setOption(addOption)
     this.weaponObject.push(inputData)
     return inputData
   }
@@ -1110,10 +1110,9 @@ export class fieldState {
    * @param {number} typeId 타입의 id
    * @param {number} x x좌표
    * @param {number} y y좌표
-   * @param  {...any} option 추가옵션 (현재는 사용되지 않음.)
    * @returns 
    */
-  static createEnemyObject (typeId, x = 0, y = 0, ...option) {
+  static createEnemyObject (typeId, x = 0, y = 0) {
     const GetClass = tamshooter4Data.getEnemy(typeId)
     if (GetClass == null) return
 
