@@ -2436,6 +2436,12 @@ button 관련 input 함수의 동작 방식을 변경하였습니다.
 4. 라운드 1-4 보스 배경음이 페이드인 되지 않도록 변경합니다.
 
 
-2026/10/?? v0.57.?? - User-Field Communication Standard
+2026/10/06 v0.57.11 - refactor stat ui display
+1. stat UI display 값이 int32 배열로 재구성되고 statUiBuffer가 추가되었습니다.
+기존에 사용했던 코드 중 일부는 제거되거나 수정되었습니다.
+2. field의 playerObject에 있던 processUserStat 함수가 fieldSystem이 있는곳으로 이동합니다.
+
+
+2026/10/?? v0.57.11 - User-Field Communication Standard
 
 

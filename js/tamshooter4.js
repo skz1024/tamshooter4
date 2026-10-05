@@ -1459,7 +1459,7 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
     this.userSelectBox = []
     const userSkillWidth = skillWidth + 40
     const LEFT_BORDER = 80
-    for (let i = 0; i < userSystem.SKILL_LIST_COUNT; i++) {
+    for (let i = 0; i < userSystem.SKILL_LIST_TOTAL_COUNT; i++) {
       let line = Math.floor(i / (8 / 2)) // 스킬 리스트의 절반
       let x = i % 4
       let box = new BoxObject(LEFT_BORDER + this.x + (userSkillWidth * x), LAYER_Y_USER_SKILL + (skillHeight * line), userSkillWidth, skillHeight, '', BoxObject.DEFAULT_BOX_COLOR)

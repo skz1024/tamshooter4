@@ -409,33 +409,32 @@ class PlayerObject extends FieldData {
   }
 
   /** 플레이어에게 경험치를 추가합니다. */
-  plusExp (score = 0) {
-    userSystem.plusExp(score)
+  addExp (score = 0) {
+    userSystem.addExp(score)
   }
 
   /** 플레이어에게 골드를 추가합니다. */
-  plusGold (gold = 0) {
-    userSystem.plusGold(gold)
+  addGold (gold = 0) {
+    userSystem.addGold(gold)
   }
 
-  minusGold (gold = 0) {
-    userSystem.minusGold(gold)
+  subtractGold (gold = 0) {
+    userSystem.subtractGold(gold)
   }
 
   /** 플레이어에게 아이템을 추가합니다. (fieldSystem에서 간접적으로 사용함) */
-  _addItem (id = 0, count = 0) {
+  addItem (id = 0, count = 0) {
     userSystem.inventory.add(id, count)
   }
 
   /** 플레이어에게 아이템을 삭제합니다. (fieldSystem에서 간접적으로 사용함)  */
-  _removeItem (id = 0, count = 0) {
+  removeItem (id = 0, count = 0) {
     userSystem.inventoryItemDeleteById(id, count)
   }
 
   process () {
     if (this.disable) return 
 
-    this.processSendUserStat()
     if (!this.isDied) {
       this.processButton()
       this.processAttack()
@@ -554,16 +553,6 @@ class PlayerObject extends FieldData {
     for (let i = 0; i < this.skillSlotB.length; i++) {
       this.processSkillLogic(this.skillSlotB[i])
     }
-
-    if (this.usingSkillSlotA) {
-      for (let i = 0; i < this.skillSlotA.length; i++) {
-        userSystem.setSkillDisplayStat(i, Math.round(this.skillSlotA[i].coolTimeFrame / 60), this.skillSlotA[i].id)
-      }
-    } else {
-      for (let i = 0; i < this.skillSlotB.length; i++) {
-        userSystem.setSkillDisplayStat(i, Math.round(this.skillSlotB[i].coolTimeFrame / 60), this.skillSlotB[i].id)
-      }
-    }
   }
 
   /**
@@ -602,18 +591,7 @@ class PlayerObject extends FieldData {
     // console.log(fieldState.weaponObject[0].x + ', ' + fieldState.weaponObject[0].y + ', ' + fieldState.weaponObject[0].targetObject.x + ', ' + fieldState.weaponObject[0].targetObject.y)
   }
 
-  /**
-   * 이 코드는 유저의 스탯을 강제로 mainSystem에 전송하기 위한 코드이며,
-   * 불러오기 한 직후, 또는 매 프레임 이후에 실행합니다.
-   */
-  processSendUserStat () {
-    userSystem.hp = this.hp
-    userSystem.shield = this.shield
-    for (let i = 0; i < 4; i++) {
-      userSystem.skillDisplayStat[i].coolTime = Math.ceil(this.skillSlotA[i].coolTimeFrame / 60)
-      userSystem.skillDisplayStat[i].id = this.skillSlotA[i].id
-    }
-  }
+
 
   processMove () {
     // 화면 영역에서 벗어나는거 금지
@@ -1766,7 +1744,7 @@ export class fieldSystem {
 
     this.fieldScore += score
     this.totalScore += score
-    fieldState.playerObject.plusExp(score)
+    fieldState.playerObject.addExp(score)
   }
 
   /** 
@@ -1776,7 +1754,7 @@ export class fieldSystem {
    */
   static requestAddGold (gold = 0) {
     this.fieldGold += gold
-    fieldState.playerObject.plusGold(gold)
+    fieldState.playerObject.addGold(gold)
   }
 
   /** 플레이어의 골드를 감소시키도록 요청
@@ -1787,7 +1765,7 @@ export class fieldSystem {
    */
   static requestSubtractGold (gold = 0) {
     this.fieldGold -= gold
-    fieldState.playerObject.minusGold(gold)
+    fieldState.playerObject.subtractGold(gold)
   }
 
   /**
@@ -1816,7 +1794,7 @@ export class fieldSystem {
    */
   static requestPlayerAddItem () {
     for (let i = 0; i < this.fieldItemIdList.length; i++) {
-      fieldState.playerObject._addItem(this.fieldItemIdList[i], this.fieldItemCountList[i])
+      fieldState.playerObject.addItem(this.fieldItemIdList[i], this.fieldItemCountList[i])
     }
   }
 
@@ -1851,7 +1829,7 @@ export class fieldSystem {
     }
 
     // 필드에서 아이템을 얻었는지와 관계없이 해당 아이템은 삭제함
-    fieldState.playerObject._removeItem(id, count)
+    fieldState.playerObject.removeItem(id, count)
   }
 
   /**
@@ -2067,7 +2045,7 @@ export class fieldSystem {
     if (this.exitDelayCount === 0 && this.round != null) {
       let clearSoundSrc = this.round.clearSoundSrc !== '' ? this.round.clearSoundSrc : soundSrc.system.systemRoundClear
       game.sound.play(clearSoundSrc)
-      userSystem.plusExp(this.round.stat.clearBonusScore)
+      userSystem.addExp(this.round.stat.clearBonusScore)
       this.totalScore = this.fieldScore + this.round.stat.clearBonusScore
       this.roundEndWait()
       userSystem.addRoundClear(this.roundId) // 라운드 클리어 ID 추가
@@ -2155,6 +2133,21 @@ export class fieldSystem {
     }
   }
 
+  /**
+   * 이 코드는 유저의 스탯을 강제로 mainSystem에 전송하기 위한 코드이며,
+   * 불러오기 한 직후, 또는 매 프레임 이후에 실행합니다.
+   */
+  static processSendUserStat () {
+    const player = fieldState.getPlayerObject()
+    userSystem.setStatUiHpShield(player.hp, player.shield, player.shieldMax)
+
+    const skillSlot = player.usingSkillSlotA ? player.skillSlotA : player.skillSlotB
+    for (let i = 0; i < userSystem.SKILL_LIST_SLOT_COUNT; i++) {
+      const coolTime = Math.round(skillSlot[i].coolTimeFrame / 60)
+      userSystem.setStatUiSkill(i, skillSlot[i].id, coolTime)
+    }
+  }
+
   static process () {
     // game.sound.musicProcess()
     this.processRoundTimePaused()
@@ -2182,6 +2175,7 @@ export class fieldSystem {
         break
       default:
         this.processNormal()
+        this.processSendUserStat()
         break
     }
   }
@@ -2746,7 +2740,7 @@ export class fieldSystem {
 
 
     // 게임을 불러온 이후, 유저의 정보를 강제로 mainSystem에 전송시킵니다.
-    fieldState.playerObject.processSendUserStat()
+    this.processSendUserStat()
 
     // 데이터 표시
     gameVar.statLineText2.setStatLineText(this.getFieldDataString(), this.round?.time._currentTime, this.round?.stat.finishTime, '#D5F5E3' ,'#33ff8c')

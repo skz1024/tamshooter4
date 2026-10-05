@@ -129,7 +129,6 @@ for (const src of Object.values(soundSrc.skill)) {
   game.sound.createAudio(src);
 }
 
-
 class InventoryItem {
   /**
    * 인벤토리에 저장되는 정보
@@ -353,6 +352,38 @@ class userInventorySystem {
  * @property {number[]} specialFlagList
  */
 
+
+class StatUIBuffer {
+  static INDEXS = {
+    HP: 0,
+    SHIELD: 1,
+    SHIELD_MAX: 2,
+    SKILL1_ID: 3,
+    SKILL1_COOLTIME: 4,
+    SKILL2_ID: 5,
+    SKILL2_COOLTIME: 6,
+    SKILL3_ID: 7,
+    SKILL3_COOLTIME: 8,
+    SKILL4_ID: 9,
+    SKILL4_COOLTIME: 10,
+  }
+
+  #buffer = new Int32Array(11)
+
+  setHp (value = 0) { this.#buffer[StatUIBuffer.INDEXS.HP] = value }
+  setShield (value = 0) { this.#buffer[StatUIBuffer.INDEXS.SHIELD] = value }
+  setShieldMax (value = 0) { this.#buffer[StatUIBuffer.INDEXS.SHIELD_MAX] = value }
+  setSkillId (slotNumber = 0, value = 0) { this.#buffer[StatUIBuffer.INDEXS.SKILL1_ID + (slotNumber * 2)] = value }
+  setSkillCoolTime (slotNumber = 0, value = 0) { this.#buffer[StatUIBuffer.INDEXS.SKILL1_COOLTIME + (slotNumber * 2)] = value }
+
+  getHp () { return this.#buffer[StatUIBuffer.INDEXS.HP] }
+  getShield () { return this.#buffer[StatUIBuffer.INDEXS.SHIELD] }
+  getShieldMax () { return this.#buffer[StatUIBuffer.INDEXS.SHIELD_MAX] }
+  getSkillId (slotNumber = 0) { return this.#buffer[StatUIBuffer.INDEXS.SKILL1_ID + (slotNumber * 2)] }
+  getSkillCoolTime (slotNumber = 0) { return this.#buffer[StatUIBuffer.INDEXS.SKILL1_COOLTIME + (slotNumber * 2)] }
+}
+
+
 /** 유저 정보 (static 클래스) */
 export class userSystem {
   /** 최대 레벨 */ static MAX_LEVEL = StatUser.MAX_LEVEL
@@ -379,9 +410,11 @@ export class userSystem {
 
   /** 스페셜 플래그 (특수한 용도로 사용됨) */ static specialFlagList = [0]
 
-
   /** 라운드 클리어 id 리스트 @type {number[]} */
   static roundClearList = []
+
+  /** 스탯 창에 표시할 버퍼 */
+  static statUiBuffer = new StatUIBuffer()
 
   /** 해당 라운드가 클리어되어있는지 살펴봅니다. */
   static getRoundClear (roundId = 0) {
@@ -407,8 +440,11 @@ export class userSystem {
   /** 현재 스킬의 프리셋 번호 */
   static skillPresetNumber = 0
 
-  /** 스킬 1세트의 개수 */
-  static SKILL_LIST_COUNT = 8
+  /** 스킬 1세트의 개수 (4 * 2 = 8개) */
+  static SKILL_LIST_TOTAL_COUNT = 8
+
+  /** 스킬 1슬롯의 개수 (4개) */
+  static SKILL_LIST_SLOT_COUNT = 4
 
   /** 프리셋의 최대 번호 (최대 개수가 아닙니다!) @deprecated */
   static PRESET_MAX_NUMBER = 4
@@ -470,7 +506,7 @@ export class userSystem {
 
   static inventory = userInventorySystem
 
-  static SlotData = class {
+  static SlotData = class SlotData {
     constructor () {
       /** 슬롯에 장착된 보석의 id */ this.id = 0
       /** 슬롯의 클래스 번호 */ this.classNumber = 0
@@ -807,30 +843,29 @@ export class userSystem {
     return this.expTable[this.lv]
   }
 
-  /** 유저에게 보여지는 스킬의 현재 상태 (참고: A슬롯과 B슬롯의 개념을 사용하지 않습니다.) */
-  static skillDisplayStat = [
-    { coolTime: 0, id: 0 },
-    { coolTime: 0, id: 0 },
-    { coolTime: 0, id: 0 },
-    { coolTime: 0, id: 0 }
-  ]
+  /** 유저에게 보여지는 스탯을 설정하는 함수 */
+  static setStatUiHpShield (hp = 0, shield = 0, shieldMax = 0) {
+    this.statUiBuffer.setHp(hp)
+    this.statUiBuffer.setShield(shield)
+    this.statUiBuffer.setShieldMax(shieldMax)
+  }
 
   /** 유저에게 보여지는 스킬을 설정하는 함수 */
-  static setSkillDisplayStat (slotNumber = 0, coolTime = 0, id = 0) {
-    this.skillDisplayStat[slotNumber].coolTime = coolTime
-    this.skillDisplayStat[slotNumber].id = id
+  static setStatUiSkill (slotNumber = 0, id = 0, coolTime = 0) {
+    this.statUiBuffer.setSkillId(slotNumber, id)
+    this.statUiBuffer.setSkillCoolTime(slotNumber, coolTime)
   }
 
   /** 현재 스킬 상태를 그대로 보여지게 하는 함수 */
   static setSkillDisplayStatDefaultFunction () {
-    for (let i = 0; i < this.skillDisplayStat.length; i++) {
-      this.skillDisplayStat[i].id = this.skillList[i]
+    for (let i = 0; i < this.SKILL_LIST_SLOT_COUNT; i++) {
+      this.statUiBuffer.setSkillId(i, this.skillList[i])
     }
   }
 
   static setSkillDisplayCooltimeZero () {
-    for (let data of this.skillDisplayStat) {
-      data.coolTime = 0
+    for (let i = 0; i < this.SKILL_LIST_SLOT_COUNT; i++) {
+      this.statUiBuffer.setSkillCoolTime(i, 0)
     }
   }
 
@@ -847,7 +882,7 @@ export class userSystem {
 
       // 스킬 설정과 동시에 유저에게 보여지는 스킬도 같이 변경
       for (let i = 0; i < 4; i++) {
-        this.setSkillDisplayStat(i, 0, skillListId[i])
+        this.setStatUiSkill(i, skillListId[i], 0)
       }
     }
   }
@@ -860,7 +895,7 @@ export class userSystem {
    * @returns {boolean}
    */
   static setSkill (skillSlotNumber = 0, skillId = 0) {
-    if (skillSlotNumber < 0 && skillSlotNumber > this.SKILL_LIST_COUNT) return false
+    if (skillSlotNumber < 0 && skillSlotNumber > this.SKILL_LIST_TOTAL_COUNT) return false
     if (skillId === 0) {
       // A슬롯(0 ~ 3번) 은 스킬을 제거할 수 없음
       if (skillSlotNumber <= 3) return false
@@ -899,15 +934,15 @@ export class userSystem {
     if (presetNumber === this.skillPresetNumber) return
 
     // 현재 값을 이전 프리셋에 저장합니다.
-    let prevArrayNumber = this.skillPresetNumber * this.SKILL_LIST_COUNT
-    for (let i = 0; i < this.SKILL_LIST_COUNT; i++) {
+    let prevArrayNumber = this.skillPresetNumber * this.SKILL_LIST_TOTAL_COUNT
+    for (let i = 0; i < this.SKILL_LIST_TOTAL_COUNT; i++) {
       let index = prevArrayNumber + i
       this.skillPresetList[index] = this.skillList[i]
     }
 
     // 그리고 다른 프리셋의 무기를 현재 무기로 재설정합니다.
-    let nextArrayNumber = presetNumber * this.SKILL_LIST_COUNT
-    for (let i = 0; i < this.SKILL_LIST_COUNT; i++) {
+    let nextArrayNumber = presetNumber * this.SKILL_LIST_TOTAL_COUNT
+    for (let i = 0; i < this.SKILL_LIST_TOTAL_COUNT; i++) {
       // 참고: 프리셋을 변경하는 과정에서 중복되는 무기는 삭제되거나 변형될 수 있음.
       let index = nextArrayNumber + i
       this.skillList[i] = this.skillPresetList[index]
@@ -1049,7 +1084,7 @@ export class userSystem {
    * exp 값을 직접 조정하지 마세요.
    * @param {number} value 경험치 값
    */
-  static plusExp (value) {
+  static addExp (value) {
     this.exp += value
     const maxLevel = StatUser.MAX_LEVEL
 
@@ -1070,14 +1105,14 @@ export class userSystem {
   }
 
   /** 현재 값만큼 유저의 골드를 더합니다. */
-  static plusGold (gold = 0) {
+  static addGold (gold = 0) {
     if (gold < 0) return
 
     this.gold += gold
   }
 
   /** 현재 값만큼 유저의 골드를 뺍니다. */
-  static minusGold (gold = 0) {
+  static subtractGold (gold = 0) {
     if (gold < 0) return
 
     this.gold -= gold
@@ -1125,7 +1160,6 @@ export class userSystem {
     } else {
       this.displayUserStatVer2()
     }
-
   }
 
   static getPlayTimeText () {
@@ -1157,7 +1191,7 @@ export class userSystem {
     gameFunction.imageObjectDisplay(statImageSrc, statImageData, statImageX, statImageY)
 
     // skill display
-    for (let i = 0; i < this.skillDisplayStat.length; i++) {
+    for (let i = 0; i < this.SKILL_LIST_SLOT_COUNT; i++) {
       const skillIconImage = imageSrc.system.skillIcon
       const AREA_WIDTH = 75 // 300 / 4 = 75
       const NUMBER_X = LAYERX
@@ -1172,10 +1206,13 @@ export class userSystem {
       const OUTPUT_SKILL_WIDTH = 40
       const OUTPUT_SKILL_HEIGHT = 20
 
+      const SKILL_ID = this.statUiBuffer.getSkillId(i)
+      const COOL_TIME = this.statUiBuffer.getSkillCoolTime(i)
+
       // skill number display
       const imgD = imageDataInfo.mainSystem
       let targetImgD = imageDataInfo.mainSystem.skillSlot1Available
-      let isAvailable = this.skillDisplayStat[i].coolTime <= 0
+      let isAvailable = COOL_TIME <= 0
       switch (i) {
         case 0: targetImgD = isAvailable ? imgD.skillSlot1Available : imgD.skillSlot1Disable; break
         case 1: targetImgD = isAvailable ? imgD.skillSlot2Available : imgD.skillSlot2Disable; break
@@ -1187,17 +1224,17 @@ export class userSystem {
       // 스킬 쿨타임이 남아있다면, 남은 시간이 숫자로 표시됩니다.
       // 스킬 쿨타임이 없다면, 스킬을 사용할 수 있으며, 스킬 아이콘이 표시됩니다.
       // 해당하는 스킬이 없다면, 스킬은 표시되지 않습니다.
-      if (this.skillDisplayStat[i].coolTime >= 1) {
-        if (this.skillDisplayStat[i].id !== 0) {
-          const skillNumber = this.skillDisplayStat[i].id - ID.playerSkill.skillNumberStart // 스킬의 ID는 15001부터 시작이라, 15000을 빼면, 스킬 번호값을 얻을 수 있음.
+      if (COOL_TIME >= 1) {
+        if (SKILL_ID !== 0) {
+          const skillNumber = SKILL_ID - ID.playerSkill.skillNumberStart // 스킬의 ID 시작값을 구해서 ID 순서 추론
           const skillXLine = skillNumber % 10
           const skillYLine = Math.floor(skillNumber / 10)
           game.graphic.imageDisplay(skillIconImage, skillXLine * SKILL_WIDTH, skillYLine * SKILL_HEIGHT, SKILL_WIDTH, SKILL_HEIGHT, OUTPUT_SKILL_X, LAYERY1, OUTPUT_SKILL_WIDTH, OUTPUT_SKILL_HEIGHT, 0, 0, 0.5)
         }
-        digitalDisplay(this.skillDisplayStat[i].coolTime + '', OUTPUT_TIME_X, OUTPUT_TIME_Y) // 스킬 쿨타임 시간
+        digitalDisplay(COOL_TIME + '', OUTPUT_TIME_X, OUTPUT_TIME_Y) // 스킬 쿨타임 시간
       } else {
-        if (this.skillDisplayStat[i].id !== 0) {
-          const skillNumber = this.skillDisplayStat[i].id - ID.playerSkill.skillNumberStart // 스킬의 ID는 15001부터 시작이라, 15000을 빼면, 스킬 번호값을 얻을 수 있음.
+        if (SKILL_ID !== 0) {
+          const skillNumber = SKILL_ID - ID.playerSkill.skillNumberStart // 스킬의 ID 시작값을 구해서 ID 순서 추론
           const skillXLine = skillNumber % 10
           const skillYLine = Math.floor(skillNumber / 10)
           game.graphic.imageDisplay(skillIconImage, skillXLine * SKILL_WIDTH, skillYLine * SKILL_HEIGHT, SKILL_WIDTH, SKILL_HEIGHT, OUTPUT_SKILL_X, LAYERY1, OUTPUT_SKILL_WIDTH, OUTPUT_SKILL_HEIGHT)
@@ -1206,7 +1243,12 @@ export class userSystem {
     }
 
     // hp + shield display
-    const hpPercent = this.hp / this.hpMax
+    const HP = this.statUiBuffer.getHp()
+    const HP_MAX = this.hpMax // 이것은 버퍼에 저장된 값이 없습니다. 그래서 직접 가져옵니다.
+    const SHIELD = this.statUiBuffer.getShield()
+    const SHIELD_MAX = this.statUiBuffer.getShieldMax()
+
+    const hpPercent = HP / this.hpMax
     const HP_WIDTH = Math.floor(LAYER_WIDTH / 2) * hpPercent
 
     // 참고로 체력게이지 바로 뒤에 쉴드 게이지를 표시하기 때문에, 좌표값 계산을 위하여 hp는 따로 퍼센트와 길이를 계산했습니다.
@@ -1214,19 +1256,19 @@ export class userSystem {
       let targetFrame = this.damageWarningFrame % H_COLORA.length
 
       // 체력 게이지 그라디언트
-      game.graphic.meterRect(LAYERX, LAYERY2, LAYER_WIDTH / 2, LAYER_HEIGHT, [H_COLORA[targetFrame], H_COLORB[targetFrame]], this.hp, this.hpMax)
+      game.graphic.meterRect(LAYERX, LAYERY2, LAYER_WIDTH / 2, LAYER_HEIGHT, [H_COLORA[targetFrame], H_COLORB[targetFrame]], HP, HP_MAX)
 
       // 쉴드 게이지 그라디언트
-      game.graphic.meterRect(LAYERX + HP_WIDTH, LAYERY2, LAYER_WIDTH / 2, LAYER_HEIGHT, [S_COLORA[targetFrame], S_COLORB[targetFrame]], this.shield, this.shieldMax)
+      game.graphic.meterRect(LAYERX + HP_WIDTH, LAYERY2, LAYER_WIDTH / 2, LAYER_HEIGHT, [S_COLORA[targetFrame], S_COLORB[targetFrame]], SHIELD, SHIELD_MAX)
     } else {
       // 체력 게이지 그라디언트 [파란색]
-      game.graphic.meterRect(LAYERX, LAYERY2, LAYER_WIDTH / 2, LAYER_HEIGHT, [H_COLORA[0], H_COLORB[0]], this.hp, this.hpMax)
+      game.graphic.meterRect(LAYERX, LAYERY2, LAYER_WIDTH / 2, LAYER_HEIGHT, [H_COLORA[0], H_COLORB[0]], HP, HP_MAX)
 
       // 쉴드 게이지 그라디언트 [하늘색]
-      game.graphic.meterRect(LAYERX + HP_WIDTH, LAYERY2, LAYER_WIDTH / 2, LAYER_HEIGHT, [S_COLORA[0], S_COLORB[0]], this.shield, this.shieldMax)
+      game.graphic.meterRect(LAYERX + HP_WIDTH, LAYERY2, LAYER_WIDTH / 2, LAYER_HEIGHT, [S_COLORA[0], S_COLORB[0]], SHIELD, SHIELD_MAX)
     }
 
-    const hpText = this.hp + ' + ' + this.shield + '/' + this.shieldMax
+    const hpText = HP + ' + ' + SHIELD + '/' + SHIELD_MAX
     digitalDisplay(hpText, LAYERX + 1, LAYERY2 + 1)
 
 
@@ -1413,7 +1455,7 @@ export class userSystem {
     if (weaponPreset != null && weaponPreset.length === presetCount * this.WEAPON_LIST_COUNT) {
       this.weaponPresetList = weaponPreset
     }
-    if (skillPreset != null && skillPreset.length === presetCount * this.SKILL_LIST_COUNT) {
+    if (skillPreset != null && skillPreset.length === presetCount * this.SKILL_LIST_TOTAL_COUNT) {
       this.skillPresetList = skillPreset
     }
 
