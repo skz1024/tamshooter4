@@ -175,7 +175,8 @@ class PlayerObject extends FieldData {
     const getData = userSystem.getPlayerObjectStat()
     this.currentLevel = getData.lv
     this.attack = getData.attack
-    this.setPlayerAttack(this.attack)
+    this.attackWaepon = userSystem.getAttackWeaponValue()
+    this.attackSkill = userSystem.getAttackSkillValue()
     this.hp = getData.hp
     this.hpMax = getData.hpMax
     this.shield = getData.shield
@@ -196,17 +197,6 @@ class PlayerObject extends FieldData {
      * 플레이어 개체는 영향을 받지 않음.
      */
     this.disable = false
-  }
-
-  /** 
-   * 플레이어의 공격력을 설정 
-   * @param {number} baseAttack 기준 공격력
-   */
-  setPlayerAttack (baseAttack) {
-    const WEAPON_VALUE = 0.28
-    const SKILL_VALUE = 0.18
-    this.attackWaepon = Math.floor(baseAttack * WEAPON_VALUE)
-    this.attackSkill = Math.floor(baseAttack * SKILL_VALUE)
   }
 
   /**
@@ -406,30 +396,6 @@ class PlayerObject extends FieldData {
       hp: hpDamage,
       shield: shieldDamage
     }
-  }
-
-  /** 플레이어에게 경험치를 추가합니다. */
-  addExp (score = 0) {
-    userSystem.addExp(score)
-  }
-
-  /** 플레이어에게 골드를 추가합니다. */
-  addGold (gold = 0) {
-    userSystem.addGold(gold)
-  }
-
-  subtractGold (gold = 0) {
-    userSystem.subtractGold(gold)
-  }
-
-  /** 플레이어에게 아이템을 추가합니다. (fieldSystem에서 간접적으로 사용함) */
-  addItem (id = 0, count = 0) {
-    userSystem.inventory.add(id, count)
-  }
-
-  /** 플레이어에게 아이템을 삭제합니다. (fieldSystem에서 간접적으로 사용함)  */
-  removeItem (id = 0, count = 0) {
-    userSystem.inventoryItemDeleteById(id, count)
   }
 
   process () {
@@ -1354,7 +1320,7 @@ export class fieldState {
     let item = targetEnemy.getItem()
     if (item.id === 0) return // 아이템이 없는 경우 무시
 
-    fieldSystem.requestAddItem(item.id, item.count) // 필드시스템에 아이템 추가
+    fieldSystem.fieldRequests.addItem(item.id, item.count) // 필드시스템에 아이템 추가
     let newEffect = new ItemDropEffect() // 이펙트 생성
     newEffect.setItemId(item.id)
     fieldState.createEffectObject(newEffect, targetEnemy.x, targetEnemy.y) // 이펙트 추가
@@ -1504,6 +1470,219 @@ export class fieldState {
       const currentSprite = this.spriteObject[i]
       currentSprite.display()
     }
+  }
+}
+
+/**
+ * 필드에서 유저한테 데이터 전송 또는 값을 얻어오기 위해 요청하는 함수들의 집합
+ * 
+ * 이 클래스 내 변수들은 오직 fieldSystem만 사용 가능하며, 외부에서의 접근을 금지합니다.
+ */
+class fieldRequestUser {
+  /** 토큰이 선점되어 있는지 여부, 한 번만 등록하면 바로 끝남. */
+  static #isTokenAcquired = false
+
+  /** @type {Symbol | null} 내부에서 관리하는 숨겨진 토큰, 일치 검사할 때 사용 */
+  static #token = null
+
+  /**
+   * 토큰 선점용 함수, 단 한번 호출되는 순간 토큰이 영구적으로 등록되며, 
+   * 다시 함수를 호출하여도 토큰이 바뀌지 않습니다.
+   * @param {Symbol} symbol 
+   */
+  static acquireToken (symbol) {
+    if (typeof symbol !== "symbol") return
+    if (this.#isTokenAcquired) return
+
+    this.#isTokenAcquired = true
+    this.#token = symbol
+  }
+
+  /**
+   * 플레이어의 특정 ID에 해당하는 아이템 개수를 가져오도록 요청합니다.
+   * @param {number} id 
+   */
+  static getItemCountById (id) {
+    return userSystem.inventory.getItemCountById(id)
+  }
+
+  /**
+   * 플레이어의 스킬이 잠금 해제되었는지 확인합니다.
+   * @param {number} id 
+   */
+  static isSkillUnlocked (id) {
+    return userSystem.getSkillUnlock(id)
+  }
+
+  /** 플레이어의 스킬을 잠금 해제합니다. 
+   * 
+   * 만약 외부에서 이 함수를 쓰고 싶다면, 차라리 fieldRequests를 사용해서 전달하세요.
+   * 
+   * 플레이어 수정은 오직 fieldSystem 권한입니다.
+   * @param {Symbol} symbol 
+  */
+  static unlockSkill (id = 0, symbol) {
+    if (symbol === this.#token) {
+      userSystem.addSkillUnlock(id)
+    }
+  }
+
+  /** 라운드가 클리어 되어 있는지를 확인합니다. */
+  static isRoundClear (roundId = 0) {
+    return userSystem.getRoundClear(roundId)
+  }
+
+  /** 플레이어의 골드를 가져옵니다. */
+  static getGold () {
+    return userSystem.gold
+  }
+
+  /** 
+   * 플레이어에게 경험치를 추가합니다. 
+   * @param {Symbol} symbol 
+  */
+  static addExp (score = 0, symbol) {
+    if (score > 0 && symbol === this.#token) {
+      userSystem.addExp(score)
+    }
+  }
+
+  /** 플레이어에게 골드를 추가합니다. 
+   * @param {Symbol} symbol 
+  */
+  static addGold (gold = 0, symbol) {
+    if (gold > 0 && symbol === this.#token) {
+      userSystem.addGold(gold)
+    }
+  }
+
+  /** 플레이어에게 골드를 뺍니다. 
+   * @param {Symbol} symbol 
+  */
+  static subtractGold (gold = 0, symbol) {
+    if (gold > 0 && symbol === this.#token) {
+      userSystem.subtractGold(gold)
+    }
+  }
+
+  /** 플레이어에게 아이템을 추가합니다.
+   * @param {Symbol} symbol
+  */
+  static addItem (id = 0, count = 0, symbol) {
+    if (symbol === this.#token) {
+      userSystem.inventory.add(id, count)
+    }
+  }
+
+  /** 플레이어에게 아이템을 삭제합니다.
+   * @param {Symbol} symbol 
+   */
+  static removeItem (id = 0, count = 0, symbol) {
+    if (symbol === this.#token) {
+      userSystem.inventoryItemDeleteById(id, count)
+    }
+  }
+}
+
+/** 외부 함수에서 필드 객체에 직접 요청하는 경우 */
+class FieldRequests {
+  /** 
+   * 필드에서 점수를 강제로 추가하도록 요청합니다. (단 점수를 감소할 수 없음)
+   * 
+   * 라운드 진행 상황에 따라 점수를 추가하고 싶다면, 다음 함수를 사용해주세요.
+   * 
+   * 주의: 필드 스코어 변수를 직접 수정하면 안됩니다. 점수가 추가되는 과정에서 플레이어의 경험치를 추가해야 하기 때문입니다.
+   */
+  static addScore (score = 0) {
+    if (score < 0) return
+
+    fieldSystem.fieldScore += score
+
+    // 이 변수는 플레이어의 경험치를 즉시 증가시켜야 하기 때문에, 플레이어에게 경험치를 추가하도록 요청합니다.
+    // 실제 경험치 처리는 fieldSystem 내에서 처리합니다.
+    fieldSystem.fieldRequestToPlayerScore += score
+  }
+
+  /** 
+   * 필드에 획득 골드를 추가합니다.
+   * 
+   * 참고: 이 골드 추가는 던전 진행이 끝나야만 처리되므로, 필드 중간에 플레이어의 골드를 저장하진 않습니다.
+   */
+  static addGold (gold = 0) {
+    if (gold > 0) {
+      fieldSystem.fieldGold += gold
+    }
+  }
+
+  /** 
+   * 필드에 획득 골드를 감소합니다.
+   * 
+   * 참고: 이 골드 감소는 던전 진행이 끝나야만 처리되므로, 필드 중간에 플레이어의 골드를 저장하진 않습니다.
+   */
+  static subtractGold (gold = 0) {
+    if (gold > 0) {
+      fieldSystem.fieldGold -= gold
+    }
+  }
+
+  /**
+   * 필드에 획득된 아이템을 추가하도록 요청합니다.
+   * 
+   * 이 요청을 받으면 리스트를 필드 목록에 쌓은 다음, 던전 진행이 끝난 후 (게임 오버, 중단을 포함) 아이템을 직접 추가합니다.
+   * @param {number} id 아이템의 id (id가 0인경우 무효)
+   * @param {number} count 아이템의 개수 (0이하는 무효)
+   */
+  static addItem (id, count) {
+    if (id === 0 || count <= 0) return
+
+    const index = fieldSystem.fieldItemIdList.indexOf(id)
+    if (index === -1) {
+      fieldSystem.fieldItemIdList.push(id)
+      fieldSystem.fieldItemCountList.push(count)
+    } else {
+      const resultCount = fieldSystem.fieldItemCountList[index] + count
+      if (resultCount !== 0) {
+        fieldSystem.fieldItemCountList[index] = resultCount
+      } else {
+        fieldSystem.fieldItemIdList.splice(index, 1)
+        fieldSystem.fieldItemCountList.splice(index, 1)
+      }
+    }
+  }
+
+  /**
+   * 플레이어에게 아이템을 삭제시키도록 요청
+   * 
+   * 참고: 만약, 삭제만 하고 획득을 하지 않았다면, 삭제된 아이템은 필드리스트에 따로 표시되지는 않습니다.
+   * (사실 코드구현하기 귀찮... 변수를 또 만들고 조사해야하므로...)
+   * 
+   * @param {number} id 아이템의 id (id가 0인경우 무효)
+   * @param {number} count 아이템의 개수 (음수값이면 전부 삭제, 0이면 무효)
+   */
+  static removeItem (id, count) {
+    if (id === 0 || count <= 0) return
+
+    const index = fieldSystem.fieldItemIdList.indexOf(id)
+
+    if (index === -1) {
+      // 아이템 개수가 0이면 처리가 취소되므로, 개수가 0이되는지는 조사하지 않습니다.
+      // 해당 인덱스가 없다면, 아이템이 없으므로 새로운 배열 데이터를 추가합니다.
+      fieldSystem.fieldItemIdList.push(id)
+      fieldSystem.fieldItemCountList.push(-count) // 음수로 넣어야 합니다! 개수잖아요!
+    } else {
+      const resultCount = fieldSystem.fieldItemCountList[index] - count
+      if (resultCount !== 0) {
+        fieldSystem.fieldItemCountList[index] = resultCount
+      } else {
+        fieldSystem.fieldItemIdList.splice(index, 1)
+        fieldSystem.fieldItemCountList.splice(index, 1)
+      }
+    }
+  }
+
+  /** 플레이어의 스킬을 잠금 해제하도록 필드에게 요청합니다. */
+  static requestUnlockSkill (id = 0) {
+    fieldSystem.requestPlayerUnlockSkill(id)
   }
 }
 
@@ -1666,8 +1845,15 @@ export class fieldSystem {
    */
   static round = undefined
 
-  /** 필드 저장 데이터 (export 용도) */
-  static fieldSave = fieldSave
+  /** 필드 저장 데이터 (export 용도) */ static fieldSave = fieldSave
+  /** 필드 시스템임을 증명하는 심볼 */ static #fieldSystemSymbol = Symbol()
+  static fieldRequestUser = fieldRequestUser
+  static fieldRequests = FieldRequests
+
+  static {
+    // 토큰을 등록시켜서, 다른 외부 함수가 userSystem에 직접 접근하는 것을 다 막아버립니다.
+    fieldRequestUser.acquireToken(this.#fieldSystemSymbol)
+  }
 
   /** 현재 상태값을 표시하는 ID */ static stateId = 0
   /** 일반적인 게임 진행 상태 */ static STATE_NORMAL = 0
@@ -1689,6 +1875,7 @@ export class fieldSystem {
   /** 총 점수 */ static totalScore = 0
   /** 필드 점수 (필드 내에서 획득한 모든 점수) */ static fieldScore = 0
   /** 필드 골드 (필드 내에서 획득한 모든 골드) */ static fieldGold = 0
+  /** 요청 점수 (필드 점수가 증가한 상황에서 플레이어의 점수를 즉시 올리기 위해 만든 간접 변수) */ static fieldRequestToPlayerScore = 0
 
   /** 필드 아이템 id 리스트 (필드 내에서 획득한 모든 아이템 목록) fieldItemCountList랑 같이 사용함 
    * @type {number[]} */ 
@@ -1732,136 +1919,8 @@ export class fieldSystem {
     REQUEST_SAVE: 'request:save'
   }
 
-  /** 
-   * 필드에서 점수를 강제로 추가하도록 요청합니다. (단 점수를 감소할 수 없음)
-   * 
-   * 라운드 진행 상황에 따라 점수를 추가하고 싶다면, 다음 함수를 사용해주세요.
-   * 
-   * 주의: 필드 스코어 변수를 직접 수정하면 안됩니다. 점수가 추가되는 과정에서 플레이어의 경험치를 추가해야 하기 때문입니다.
-   */
-  static requestAddScore (score = 0) {
-    if (score < 0) return
-
-    this.fieldScore += score
-    this.totalScore += score
-    fieldState.playerObject.addExp(score)
-  }
-
-  /** 
-   * 플레이어의 골드를 증가시키도록 요청
-   * 
-   * 참고: 이 골드 추가는 던전 진행이 끝나야만 처리되므로, 필드 중간에 플레이어의 골드를 저장하진 않습니다.
-   */
-  static requestAddGold (gold = 0) {
-    this.fieldGold += gold
-    fieldState.playerObject.addGold(gold)
-  }
-
-  /** 플레이어의 골드를 감소시키도록 요청
-   * 
-   * 이 함수는 매우 특수한 경우에만 사용됩니다.
-   * 
-   * round 2-4 같은 경우의 사용을 예정하고 있으나 코드가 구현되지 않음.
-   */
-  static requestSubtractGold (gold = 0) {
-    this.fieldGold -= gold
-    fieldState.playerObject.subtractGold(gold)
-  }
-
-  /**
-   * 플레이어에게 아이템을 추가시키도록 요청
-   * 
-   * 이 요청을 받으면 리스트를 필드 목록에 쌓은 다음, 던전 진행이 끝난 후 (게임 오버를 포함) 아이템을 직접 추가합니다.
-   * @param {number} id 아이템의 id (id가 0인경우 무효)
-   * @param {number} count 아이템의 개수 (0이하는 무효)
-   */
-  static requestAddItem (id, count) {
-    if (id === 0 || count <= 0) return
-
-    let index = this.fieldItemIdList.indexOf(id)
-    if (index === -1) {
-      this.fieldItemIdList.push(id)
-      this.fieldItemCountList.push(count)
-    } else {
-      this.fieldItemCountList[index] += count
-    }
-  }
-
-  /**
-   * 플레이어에게 아이템을 직접 추가합니다.
-   * 
-   * 이것은 던전이 끝난 후에 적용합니다.
-   */
-  static requestPlayerAddItem () {
-    for (let i = 0; i < this.fieldItemIdList.length; i++) {
-      fieldState.playerObject.addItem(this.fieldItemIdList[i], this.fieldItemCountList[i])
-    }
-  }
-
-  /**
-   * 플레이어에게 아이템을 삭제시키도록 요청
-   * 
-   * 참고: 만약, 삭제만 하고 획득을 하지 않았다면, 삭제된 아이템은 필드리스트에 따로 표시되지는 않습니다.
-   * (사실 코드구현하기 귀찮... 변수를 또 만들고 조사해야하므로...)
-   * 
-   * @param {number} id 아이템의 id (id가 0인경우 무효)
-   * @param {number} count 아이템의 개수 (음수값이면 전부 삭제, 0이면 무효)
-   */
-  static requestRemoveItem (id, count) {
-    if (id === 0 || count === 0) return
-
-    // 필드에서 얻은 아이템이 있는지를 조사
-    for (let i = 0; i < this.fieldItemIdList.length; i++) {
-      if (id === this.fieldItemIdList[i]) {
-        let resultCount = this.fieldItemCountList[i] - count
-        // 아이템을 삭제한 결과값의 예상이 음수인경우, 그 아이템은 제거하는것으로 처리됨
-        // 대신, 카운트가 0보다 커야함 (음수일 수도 있으므로)
-        if (resultCount > 0 && count > 0) {
-          this.fieldItemCountList[i] -= count
-        } else {
-          // 아이템 전면 삭제 (카운트가 0보다 작거나, 결과값이 0보다 작으면)
-          this.fieldItemIdList.splice(i, 1)
-          this.fieldItemCountList.splice(i, 1)
-        }
-
-        break // 아이템을 찾았다면 반복문 종료
-      }
-    }
-
-    // 필드에서 아이템을 얻었는지와 관계없이 해당 아이템은 삭제함
-    fieldState.playerObject.removeItem(id, count)
-  }
-
-  /**
-   * 플레이어의 아이템 개수를 가져오도록 요청합니다.
-   * @param {number} id 
-   */
-  static requestGetItemCount (id) {
-    // 여기서는 userSystem 전역 변수로 처리합니다.
-    // 이후 버전에서 playerObject에 request를 보내던 부분은 삭제할 겁니다.
-    return userSystem.inventory.getItemCount(id)
-  }
-
-  /**
-   * 플레이어의 스킬이 잠금 해제되었는지 확인합니다.
-   * @param {number} id 
-   */
-  static requestIsSkillUnlocked (id) {
-    return userSystem.getSkillUnlock(id)
-  }
-
-  /** 플레이어의 스킬을 잠금 해제합니다. */
-  static requestSkillUnlock (id = 0) {
-    userSystem.addSkillUnlock(id)
-  }
-
-  /** 라운드가 클리어 되어 있는지를 확인합니다. */
-  static requestIsRoundClear (roundId = 0) {
-    return userSystem.getRoundClear(roundId)
-  }
-
-  static requestGetUserGold () {
-    return userSystem.gold
+  static requestPlayerUnlockSkill (id = 0) {
+    this.fieldRequestUser.unlockSkill(id, this.#fieldSystemSymbol)
   }
 
   /** 라운드 오브젝트를 생성하고 이 객체을 리턴합니다. */
@@ -2081,12 +2140,32 @@ export class fieldSystem {
   /** 라운드 진행이 종료 대기 (클리어, 게임오버, 중단) 되었을 때 해당 함수를 실행합니다. 
    * 이후에 시간이 더 지나면 roundExit가 실행되어 라운드를 빠져나갑니다.
    * 
+   * 이 함수에서는 플레이어 변동을 직접 수행합니다. 아이템, 골드, 등이 이 시점에서 변경됩니다.
+   * 
    * 이 함수 자체는 라운드를 나가지 못합니다.
   */
   static roundEndWait () {
     this.message = this.messageList.REQUEST_SAVE // 강제 저장을 통해 필드 저장 데이터를 삭제하고, 메인화면으로 돌아가게끔 유도
-    this.requestAddGold(this.getRoundGoldCalculation()) // 골드 추가
-    this.requestPlayerAddItem() // 플레이어에게 아이템 추가
+    
+    // 골드 추가
+    this.fieldRequests.addGold(this.getRoundGoldCalculation()) // 라운드에 해당하는 골드 추가
+    if (this.fieldGold > 0) {
+      this.fieldRequestUser.addGold(this.fieldGold, this.#fieldSystemSymbol)
+    } else {
+      this.fieldRequestUser.subtractGold(Math.abs(this.fieldGold), this.#fieldSystemSymbol)
+    }
+
+    // 플레이어에게 아이템 추가 또는 삭제 처리
+    for (let i = 0; i < this.fieldItemIdList.length; i++) {
+      const id = this.fieldItemIdList[i]
+      const count = this.fieldItemCountList[i]
+
+      if (count > 0) {
+        this.fieldRequestUser.addItem(id, count, this.#fieldSystemSymbol)
+      } else {
+        this.fieldRequestUser.removeItem(id, Math.abs(count), this.#fieldSystemSymbol)
+      }
+    }
   }
 
   static processNormal () {
@@ -2297,7 +2376,7 @@ export class fieldSystem {
 
   static displayPlayerItem (positionX = 200, positionY = 300) {
     for (let i = 0; i < this.fieldItemIdList.length; i++) {
-      if (this.fieldItemCountList[i] <= 0) continue
+      if (this.fieldItemCountList[i] === 0) continue
 
       let targetItem = dataExportStatItem.get(this.fieldItemIdList[i])
       if (targetItem == null) continue
@@ -2310,7 +2389,9 @@ export class fieldSystem {
 
       const outputX = positionX + ((iconWidth + 10) * i)
       game.graphic.imageDisplay(src, iconSectionWidth * XLINE, iconSectionWidth * YLINE, iconWidth, iconWidth, outputX, positionY, iconWidth, iconWidth)
-      digitalDisplay('X' + this.fieldItemCountList[i], outputX, positionY + iconWidth)
+
+      const sign = this.fieldItemCountList[i] > 0 ? 'X' : ''
+      digitalDisplay(sign + '' + this.fieldItemCountList[i], outputX, positionY + iconWidth)
     }
   }
 
@@ -2365,8 +2446,8 @@ export class fieldSystem {
     fieldSave.array[fe.START_INDEX + fe.EXIT_DELAY_COUNT] = this.exitDelayCount
     for (let i = 0; i < this.fieldItemIdList.length && i < fe.MAX_LENGTH - 8; i++) {
       const FINDEX = fe.START_INDEX + fe.FIELD_ITEM_LIST + (i * 2)
-      fieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET]
-      fieldSave.array[FINDEX + fe.FIELD_ITEM_COUNT_OFFSET]
+      fieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET] = this.fieldItemIdList[i]
+      fieldSave.array[FINDEX + fe.FIELD_ITEM_COUNT_OFFSET] = this.fieldItemCountList[i]
     }
     
     //round

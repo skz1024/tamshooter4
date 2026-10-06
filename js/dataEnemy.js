@@ -485,7 +485,7 @@ export class EnemyData extends FieldData {
   }
 
   processDieDefault () {
-    fieldSystem.requestAddScore(this.score) // 점수 추가
+    fieldSystem.fieldRequests.addScore(this.score) // 점수 추가
 
     // 사운드 플레이
     if (this.dieSound != null) {

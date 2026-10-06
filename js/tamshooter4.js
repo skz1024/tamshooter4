@@ -2197,6 +2197,8 @@ class UIComponentDataSetting extends UIComponentBaseMenuObject {
       'level change to 10',
       'level change to 20',
       'level change to 26',
+      // 'add 1000 gold',
+      // 'ticker +100',
     ]
 
     for (let i = 0; i < boxText.length; i++) {
@@ -2221,6 +2223,8 @@ class UIComponentDataSetting extends UIComponentBaseMenuObject {
       case 2: userSystem.lv = 10; break
       case 3: userSystem.lv = 20; break
       case 4: userSystem.lv = 26; break
+      // case 5: userSystem.addGold(1000); break
+      // case 6: userSystem.inventory.add(ID.item.donggramiTicket, 100); break
     }
   }
 
@@ -5408,6 +5412,12 @@ class saveSystem {
     return true
   }
 
+  /** 특정 시점에서 강제 저장을 호출할 때 사용합니다. */
+  static forceSave () {
+    this.#isSaveEvent = true
+    this.saveDelayCount = this.SAVE_DELAY_MAIN
+  }
+
   /** 
    * 필드에서의 자동 저장 조건 확인, 이것은 이벤트 기반으로 동작하지 않습니다.
    * 
@@ -5721,16 +5731,15 @@ export class gameSystem {
       || fieldSystem.stateId === fieldSystem.STATE_LOADING_PAUSE)
     const isMainSave = saveSystem.processSaveConditionCheck()
     const isFieldAutoSave = saveSystem.processfieldAutoSaveConditionCheck()
+    const willSaveField = isFieldSave && (isMainSave || isFieldAutoSave)
 
-    if (isMainSave) {
+    if (isMainSave || willSaveField) {
       this.processSaveV055()
     }
 
-    if (isFieldSave) {
-      if (isMainSave || isFieldAutoSave) {
-        this.processSaveField()
-      }
-    } else {
+    if (willSaveField) {
+      this.processSaveField()
+    } else if (!isFieldSave) {
       localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
     }
   }
@@ -6329,7 +6338,10 @@ export class gameSystem {
     }
     
     this.userSystem.process()
-    if (this.stateId === this.STATE_MAIN) this.userSystem.showUserStat()
+    if (this.stateId === this.STATE_MAIN) {
+      this.userSystem.showUserStat()
+      this.processSyncUserStatUi()
+    }
 
 
     this.processUI() // 처리 순서 문제 때문에 UI를 앞에 배치함
@@ -6429,6 +6441,17 @@ export class gameSystem {
         gameVar.statLineText1.setStatLineText()
         gameVar.statLineText2.setStatLineText()
     }
+  }
+
+  /**
+   * 플레이어의 스탯을 화면 UI랑 동기화 시킵니다. (메인 화면 전용 함수)
+   * 
+   * 이 함수는 state = STATE_MAIN 상태에서만 호출해야 합니다.
+   */
+  static processSyncUserStatUi () {
+    if (this.stateId !== this.STATE_MAIN) return
+    userSystem.setStatUiHpShield(userSystem.hp, userSystem.shield, userSystem.shieldMax)
+    userSystem.setSkillDisplayStatDefaultFunction()
   }
 
   /**

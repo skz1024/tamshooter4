@@ -2442,6 +2442,12 @@ button 관련 input 함수의 동작 방식을 변경하였습니다.
 2. field의 playerObject에 있던 processUserStat 함수가 fieldSystem이 있는곳으로 이동합니다.
 
 
-2026/10/?? v0.57.11 - User-Field Communication Standard
-
-
+2026/10/06 v0.57.12 - User-Field Communication
+1. 필드가 자동 저장이 될 때 메인도 같이 저장합니다.
+2. 필드 진행 중 아이템 리스트와 개수가 저장하지 않은 오류 수정
+3. 필드 시스템이 유저를 조종할 독점 권한을 획득합니다.
+4. 외부(Round, Enemy 같은)에서 userSystem은 직접적으로 수정할 수 없도록 합니다.
+5. 상점 기능이 드디어 완전히 구현되었습니다.
+6. 필드 요청을 위한 클래스와 유저 데이터 요청을 위한 클래스 추가
+7. 더미데이터였던 이전 라운드 2-5 클리어 효과음 삭제
+8. Round, Field 함수 재배치 및 리펙토링 포함

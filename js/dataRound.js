@@ -1167,7 +1167,7 @@ class BaseField {
 
   /** 필드 시스템에 점수 추가를 요청합니다. */
   static addScore (score = 0) {
-    fieldSystem.requestAddScore(score)
+    fieldSystem.fieldRequests.addScore(score)
   }
 
   /**
@@ -1227,15 +1227,20 @@ class BaseField {
   }
 
   /** 
-   * 플레이어에게 아이템을 추가합니다. 
+   * 아이템을 추가하고, 추가된 아이템 아이콘을 이펙트로 처리하여 플레이어에게 유도시킵니다.
+   * 
+   * 참고: 이 함수는 아이템을 즉시 추가하는게 아니라, 필드에 아이템 추가를 요청하기만 합니다.
+   * 
+   * 실제 아이템 추가에 대해서는 필드 요청을 참고하세요.
+   * 
    * @param {number} id 아이템의 id
    * @param {number} [count=1] 아이템의 개수
    * @param {boolean} [isEffect=false] 이펙트 있음?
    * @param {number | undefined} [x=0] 생성 위치에 대한 x좌표 (단, isEffect가 true여야만 적용됨)
    * @param {number | undefined} [y=0] 생성 위치에 대한 y좌표 (단, isEffect가 true여야만 적용됨)
    */
-  static addPlayerItem (id, count = 1, isEffect = false, x = undefined, y = undefined) {
-    fieldSystem.requestAddItem(id, count)
+  static addItem (id, count = 1, isEffect = false, x = undefined, y = undefined) {
+    fieldSystem.fieldRequests.addItem(id, count)
     if (isEffect) {
       let effect = fieldState.createEffectItem(id) // 이펙트 추가 (이펙트가 있다면)
       if (effect != null) { // 이펙트가 null이 아니고, x와 y좌표가 존재할때만 해당 좌표 입력
@@ -1245,48 +1250,51 @@ class BaseField {
     }
   }
 
-  /** 플레이어에게 아이템을 삭제합니다. 
+  /** 
+   * 아이템을 삭제합니다. 아이템 목록은 필드에서만 관리합니다.
    * @param {number} id 아이템의 id
    * @param {number} [count=1] 삭제할 아이템의 개수
    */
-  static removePlayerItem (id, count = 1) {
-    fieldSystem.requestRemoveItem(id, count)
+  static removeItem (id, count = 1) {
+    fieldSystem.fieldRequests.removeItem(id, count)
   }
   
-  /** 플레이어에게 골드를 추가하도록 요청합니다. (필드에서만 UserSystem에 대하여 직접 접근이 가능합니다.) */
-  static requestAddGoldToPlayer (amount = 0) {
-    if (amount < 0) return
-    fieldSystem.requestAddGold(amount)
+  /** 골드를 추가합니다. 골드는 필드에서 관리합니다. */
+  static addGold (amount = 0) {
+    if (amount > 0) {
+      fieldSystem.fieldRequests.addGold(amount)
+    }
   }
 
-  /** 플레이어에게 골드를 제거하도록 요청합니다. (필드에서만 UserSystem에 대하여 직접 접근이 가능합니다.) */
-  static requestSubtractGoldToPlayer (amount = 0) {
-    if (amount < 0) return
-    fieldSystem.requestSubtractGold(amount)
+  /** 골드를 빼기합니다. 골드는 필드에서 관리합니다. */
+  static subtractGold (amount = 0) {
+    if (amount > 0) {
+      fieldSystem.fieldRequests.subtractGold(amount)
+    }
   }
 
   /** 플레이어의 아이템의 보유 개수가 얼마인지 확인합니다. */
-  static requestGetItemCount (id = 0) {
-    return fieldSystem.requestGetItemCount(id)
+  static getPlayerItemCount (id = 0) {
+    return fieldSystem.fieldRequestUser.getItemCountById(id)
   }
 
   /** 플레이어의 스킬이 언락되어있는지 확인합니다. */
-  static requestIsSkillUnlocked (id = 0) {
-    return fieldSystem.requestIsSkillUnlocked(id)
+  static getPlayerIsSkillUnlocked (id = 0) {
+    return fieldSystem.fieldRequestUser.isSkillUnlocked(id)
   }
 
   /** 해당 스킬을 언락하도록 요청 */
-  static requestSkillUnlock (id = 0) {
-    fieldSystem.requestSkillUnlock(id)
+  static skillUnlock (id = 0) {
+    fieldSystem.fieldRequests.requestUnlockSkill(id)
   }
 
   /** 특정 라운드가 클리어 되어 있는지 여부를 확인합니다. */
-  static requestGetRoundCleared (id = 0) {
-    return fieldSystem.requestIsRoundClear(id)
+  static getRoundCleared (id = 0) {
+    return fieldSystem.fieldRequestUser.isRoundClear(id)
   }
 
-  static requestGetUserGold () {
-    return fieldSystem.requestGetUserGold()
+  static getPlayerGold () {
+    return fieldSystem.fieldRequestUser.getGold()
   }
 }
 
@@ -4657,7 +4665,7 @@ class Round2_1 extends RoundData {
 
     if (this.timeCheckFrame(this.BOSSTIME + 1)) {
       this.sound.musicFadeOutLegacy(120)
-      this.field.addPlayerItem(ID.item.donggramiTicket, 1, false) // 이펙트 없이 아이템 추가
+      this.field.addItem(ID.item.donggramiTicket, 1, false) // 이펙트 없이 아이템 추가
     }
   }
 
@@ -5469,7 +5477,7 @@ class Round2_3 extends RoundData {
 
   /** 플레이어에게 동그라미 티켓 2장을 추가합니다. */
   addPlayerDonggramiTicket () {
-    this.field.addPlayerItem(ID.item.donggramiTicket, 2, true)
+    this.field.addItem(ID.item.donggramiTicket, 2, true)
   }
 
   /** 
@@ -8006,16 +8014,16 @@ class Round2_4 extends RoundData {
 
   /** 상점의 데이터를 초기화 합니다. 라운드 시작시 단 1번만 실행합니다. */
   initializeRoundShop () {
-    this.shop.hasSkillFirecracker = this.field.requestIsSkillUnlocked(ID.playerSkill.r2Firecracker)
-    this.shop.hasSkillToyhammer = this.field.requestIsSkillUnlocked(ID.playerSkill.r2Toyhammer)
-    this.shop.hasEquipmentDonggramiMugi = this.field.requestGetItemCount(ID.item.donggramiMugi) > 0
-    this.shop.hasItemDonggramiUSB = this.field.requestGetItemCount(ID.item.donggramiUSB) > 0
+    this.shop.hasSkillFirecracker = this.field.getPlayerIsSkillUnlocked(ID.playerSkill.r2Firecracker)
+    this.shop.hasSkillToyhammer = this.field.getPlayerIsSkillUnlocked(ID.playerSkill.r2Toyhammer)
+    this.shop.hasEquipmentDonggramiMugi = this.field.getPlayerItemCount(ID.item.donggramiMugi) > 0
+    this.shop.hasItemDonggramiUSB = this.field.getPlayerItemCount(ID.item.donggramiUSB) > 0
 
-    this.shop.isR2_5Clear = this.field.requestGetRoundCleared(ID.round.round2_5)
-    this.shop.isR3_12Clear = this.field.requestGetRoundCleared(ID.round.round3_12)
+    this.shop.isR2_5Clear = this.field.getRoundCleared(ID.round.round2_5)
+    this.shop.isR3_12Clear = this.field.getRoundCleared(ID.round.round3_12)
 
-    this.shop.userGold = this.field.requestGetUserGold()
-    this.shop.userItemDonggramiTicket = this.field.requestGetItemCount(ID.item.donggramiTicket)
+    this.shop.userGold = this.field.getPlayerGold()
+    this.shop.userItemDonggramiTicket = this.field.getPlayerItemCount(ID.item.donggramiTicket)
   }
 
   /** 상점에서 아이템을 구매합니다. */
@@ -8027,23 +8035,27 @@ class Round2_4 extends RoundData {
     switch (targetId) {
       case this.shop.ITEM_ID.SKILL_FIRECRACKER:
         this.shop.hasSkillFirecracker = true
-        this.field.requestSkillUnlock(this.shop.ITEM_ID.SKILL_FIRECRACKER)
-        this.field.requestSubtractGoldToPlayer(this.shop.ITEM_PRICE.SKILL_FIRECRACKER)
+        this.field.skillUnlock(this.shop.ITEM_ID.SKILL_FIRECRACKER)
+        this.field.subtractGold(this.shop.ITEM_PRICE.SKILL_FIRECRACKER)
+        this.shop.userGold -= this.shop.ITEM_PRICE.SKILL_FIRECRACKER
         break
       case this.shop.ITEM_ID.SKILL_TOYHAMMER:
         this.shop.hasSkillToyhammer = true
-        this.field.requestSkillUnlock(this.shop.ITEM_ID.SKILL_TOYHAMMER)
-        this.field.requestSubtractGoldToPlayer(this.shop.ITEM_PRICE.SKILL_TOYHAMMER)
+        this.field.skillUnlock(this.shop.ITEM_ID.SKILL_TOYHAMMER)
+        this.field.subtractGold(this.shop.ITEM_PRICE.SKILL_TOYHAMMER)
+        this.shop.userGold -= this.shop.ITEM_PRICE.SKILL_TOYHAMMER
         break
       case this.shop.ITEM_ID.EQUIPMENT_DONGGRAMI_MUGI:
         this.shop.hasEquipmentDonggramiMugi = true
-        this.field.addPlayerItem(this.shop.ITEM_ID.EQUIPMENT_DONGGRAMI_MUGI)
-        this.field.requestSubtractGoldToPlayer(this.shop.ITEM_PRICE.EQUIPMENT_DONGGRAMI_MUGI)
+        this.field.addItem(this.shop.ITEM_ID.EQUIPMENT_DONGGRAMI_MUGI)
+        this.field.subtractGold(this.shop.ITEM_PRICE.EQUIPMENT_DONGGRAMI_MUGI)
+        this.shop.userGold -= this.shop.ITEM_PRICE.EQUIPMENT_DONGGRAMI_MUGI
         break
       case this.shop.ITEM_ID.ITEM_DONGGRAMI_USB:
         this.shop.hasItemDonggramiUSB = true
-        this.field.addPlayerItem(this.shop.ITEM_ID.EQUIPMENT_DONGGRAMI_MUGI)
-        this.field.removePlayerItem(this.shop.ITEM_ID.TICKET_DONGGRAMI, this.shop.ITEM_PRICE.ITEM_DONGGRAMI_USB)
+        this.field.addItem(this.shop.ITEM_ID.ITEM_DONGGRAMI_USB)
+        this.field.removeItem(this.shop.ITEM_ID.TICKET_DONGGRAMI, this.shop.ITEM_PRICE.ITEM_DONGGRAMI_USB)
+        this.shop.userItemDonggramiTicket -= this.shop.ITEM_PRICE.ITEM_DONGGRAMI_USB
         break
     }
   }
@@ -8077,6 +8089,8 @@ class Round2_4 extends RoundData {
     this.extendedMemory[11] = this.shop.hasItemDonggramiUSB ? 1 : 0
     this.extendedMemory[12] = this.shop.hasSkillFirecracker ? 1 : 0
     this.extendedMemory[13] = this.shop.hasSkillToyhammer ? 1 : 0
+    this.extendedMemory[14] = this.shop.userGold
+    this.extendedMemory[15] = this.shop.userItemDonggramiTicket
   }
 
   readExtendedMemory () {
@@ -8097,6 +8111,8 @@ class Round2_4 extends RoundData {
     this.shop.hasItemDonggramiUSB = !!this.extendedMemory[11]
     this.shop.hasSkillFirecracker = !!this.extendedMemory[12]
     this.shop.hasSkillToyhammer = !!this.extendedMemory[13]
+    this.shop.userGold = this.extendedMemory[14] 
+    this.shop.userItemDonggramiTicket = this.extendedMemory[15]
 
     // 상점 동그라미 색 재설정
     this.shopDonggramiEntity.setDonggramiColorIndex(this.shop.talkType === this.shop.TALK_TYPE_A ? this.shop.COLOR_TYPE_A : this.shop.COLOR_TYPE_B)
@@ -8668,7 +8684,7 @@ class Round2_4 extends RoundData {
     // 이 격차는 약 3000점정도 이므로, 대충 3000점을 더 주는것으로 함
     // 뒤에 프레임 값이 붙은 이유는, pTime+34 초 상황에서 점수를 중복처리 막기 위함
     if (this.timeCheckFrame(pTime + 34, 42)) {
-      fieldSystem.requestAddScore(3000)
+      fieldSystem.fieldRequests.addScore(3000)
     }
   }
 
@@ -8743,7 +8759,7 @@ class Round2_4 extends RoundData {
     // 아이템을 임의의 시점에 즉시 추가하고, 이를 표시하지 않음
     // 이 구간에서 총 2장을 획득함
     if (this.timeCheckFrame(pTime + 2) || this.timeCheckFrame(pTime + 15)) {
-      this.field.addPlayerItem(ID.item.donggramiTicket, 1, true)
+      this.field.addItem(ID.item.donggramiTicket, 1, true)
     }
   }
 
@@ -9648,9 +9664,9 @@ class Round2_5 extends RoundData {
         let random = Math.floor(Math.random() * this.spriteDonggrami.length)
         let donggrami = this.spriteDonggrami[random]
         if (donggrami != null) {
-          this.field.addPlayerItem(ID.item.donggramiTicket, 1, true, donggrami.x, donggrami.y)
+          this.field.addItem(ID.item.donggramiTicket, 1, true, donggrami.x, donggrami.y)
         } else {
-          this.field.addPlayerItem(ID.item.donggramiTicket, 1, true)
+          this.field.addItem(ID.item.donggramiTicket, 1, true)
         }
       }
     }

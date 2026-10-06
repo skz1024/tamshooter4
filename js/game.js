@@ -193,7 +193,7 @@ class userInventorySystem {
    * 인벤토리의 아이템 개수를 반환
    * @param {number} id 
    */
-  static getItemCount (id) {
+  static getItemCountById (id) {
     for (let i = 0; i < this.itemList.length; i++) {
       // 아이디를 직접 다 찾아봄
       if (this.itemList[i].id === id) {
@@ -396,6 +396,9 @@ export class userSystem {
    * 
    * 그래서, 프레임당 기본값은 100/6000 회복입니다. (주의: 소수점 계산이 아닌 정수계산입니다.) */ 
   static SHIELD_RECOVERY_USING = 6000
+
+  static ATTACK_MULTIPLE_WEAPON = 0.16
+  static ATTACK_MULTIPLE_SKILL = 0.21
 
   /** 레벨, 직접적인 변경 금지 */ static lv = 1
   /** 경험치: 경험치 값은 addExp, setExp등을 통해 수정해주세요. */ static exp = 0
@@ -665,7 +668,7 @@ export class userSystem {
    * @param {number} itemId 
    */
   static getInventoryItemCount (itemId) {
-    this.inventory.getItemCount(itemId)
+    this.inventory.getItemCountById(itemId)
   }
 
   /** 무기 리스트(기본값), 0 ~ 3번까지만 있음. 4번은 무기를 사용하기 싫을 때 사용 따라서 무기가 지정되지 않음. */
@@ -1342,12 +1345,12 @@ export class userSystem {
 
   static getAttackWeaponValue () {
     this.processStat()
-    return Math.floor(this.attack * 0.28)
+    return Math.floor(this.attack * this.ATTACK_MULTIPLE_WEAPON)
   }
   
   static getAttackSkillValue () {
     this.processStat()
-    return Math.floor(this.attack * 0.18)
+    return Math.floor(this.attack * this.ATTACK_MULTIPLE_SKILL)
   }
 
   /**
