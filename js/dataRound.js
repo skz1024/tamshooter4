@@ -9706,6 +9706,7 @@ class Round2_5 extends RoundData {
     constructor () {
       super()
       this.entity = new DonggramiEntity()
+      this.setWidthHeight(this.entity.outputWidth, this.entity.outputHeight)
 
       /** 동그라미 1회 타격당 주는 데미지 */ this.BASEDPS = 5000
       this.entity.setDonggramiColor(DonggramiEntity.colorGroup.ALL)
@@ -9724,6 +9725,8 @@ class Round2_5 extends RoundData {
       this.getTargetAndSetSpeed()
       this.emojiType = Math.random() < 0.5 ? DonggramiEntity.EmojiList.HAPPY : DonggramiEntity.EmojiList.SMILE
       this.emojiDelay = new DelayData(60)
+
+      this.dieAfterDeleteDelay = new DelayData(120)
       
       this.TALKTYPE_A = 67
       this.TALKTYPE_B = 68
@@ -9928,8 +9931,19 @@ class Round2_5 extends RoundData {
       }
     }
 
+    process () {
+      super.process()
+      if (this.isDied) {
+        this.y += DonggramiEntity.DIE_FALL_SPEED
+        if (this.dieAfterDeleteDelay.check()) {
+          this.isDeleted = true
+        }
+      }
+    }
+
     display () {
       super.display()
+      this.entity.display(this.x, this.y)
       // 동그라미의 체력 표시
       graphicSystem.meterRect(this.x, this.y + this.height, this.width, 1, 'darkblue', this.hp, this.hpMax, true, 'skyblue')
     }

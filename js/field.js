@@ -1038,7 +1038,6 @@ export class fieldState {
     const GetClass = tamshooter4Data.getWeapon(typeId)
     if (GetClass == null) return
     
-    /** @type {WeaponData} */
     const inputData = new GetClass()
     inputData.createId = this.getNextCreateId()
     inputData.id = typeId
@@ -1095,16 +1094,13 @@ export class fieldState {
    * 더이상 사용하지 마세요.
    * 
    * 보스를 생성하는데, 해당 보스 적 객체의 데이터랑 연결할 수 있도록 return이 추가되었습니다.
-   * @param {any} option 
    * @deprecated
    */
-  static createEnemyBoss (typeId = 0, x = 0, y = 0, ...option) {
+  static createEnemyBoss (typeId = 0, x = 0, y = 0) {
     const GetClass = tamshooter4Data.getEnemy(typeId)
     if (GetClass == null) return
 
-    /** @type {EnemyData} */
-    //@ts-expect-error
-    const inputData = new GetClass(option)
+    const inputData = new GetClass()
     inputData.createId = this.getNextCreateId()
     inputData.id = typeId
     inputData.setPosition(x, y)
