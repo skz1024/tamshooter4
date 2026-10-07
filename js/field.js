@@ -77,10 +77,10 @@ class DamageObject {
   display () {
     if (!this.isUsing) return
 
-    DamageObject.displayNumber(this.attack + '', this.x, this.y, 10, 10)
+    DamageObject.displayNumber(this.attack, this.x, this.y, 10, 10)
   }
 
-  static displayNumber = game.graphic.createCustomNumberDisplay(imageSrc.system.damageFont, 12, 10)
+  static displayNumber = game.graphic.createCustomIntegerDisplay(imageSrc.system.damageFont, 12, 10)
 }
 
 /**

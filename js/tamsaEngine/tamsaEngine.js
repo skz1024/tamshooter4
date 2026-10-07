@@ -176,7 +176,7 @@ class BiosSystem {
       isBiosPossibleClose: true,
 
       /** 이미지 테스트에서 사용하는 현재 이미지에 관한 오브젝트 */
-      imageObject: {x: 0, y: 0, widthMultiple: 0, heightMultiple: 0, degree: 0, flip: 0, alpha: 1},
+      imageObject: {x: 0, y: 0, width: 0, height: 0, widthMultiple: 0, heightMultiple: 0, degree: 0, flip: 0, alpha: 1},
     }
 
     this.currentDevice = currentDevice
@@ -648,16 +648,20 @@ class BiosSystem {
   biosImageTest () {
     let imageList = Array.from(this.graphic.cacheImage.keys())
     let targetImage = imageList[this.bios.imageTestNumber]
+    let cacheImage = this.graphic.getCacheImage(targetImage)
     let imgO = this.bios.imageObject
-    if (targetImage != null) {
-      this.graphic.imageView(targetImage, imgO.x, imgO.y, undefined, undefined, imgO.flip, imgO.degree, imgO.alpha)
+    if (cacheImage != null && cacheImage.width !== 0) {
+      imgO.width = cacheImage.width
+      imgO.height = cacheImage.height
+      this.graphic.imageDisplay(targetImage, 0, 0, imgO.width, imgO.height, imgO.x, imgO.y, imgO.width, imgO.height, imgO.flip, imgO.degree, imgO.alpha)
     }
     
+    // 참고: 알파값은 소수로 출력하는데, 소수점 특성상 자리수가 과도하게 표시되므로, toFixed로 소수점 표시를 제한했습니다.
     this.bios.imageTest.textEdit([
       'IMAGE TEST',
       'image number: ' + this.bios.imageTestNumber + '/' + (imageList.length - 1),
       'x: ' + imgO.x + ', y: ' + imgO.y,
-      'flip: ' + imgO.flip + ', degree: ' + imgO.degree + '/360, alpha: ' + imgO.alpha], 
+      'flip: ' + imgO.flip + ', degree: ' + imgO.degree + '/360, alpha: ' + imgO.alpha.toFixed(1)], 
       [],
       ['L1, L2, R1, R2 button to image change',
       'arrow button to image move',
@@ -695,11 +699,13 @@ class BiosSystem {
     }
     if (this.bios.imageTestNumber >= imageList.length) this.bios.imageTestNumber = 0
     
-    // image move
-    if (buttonLeft) this.bios.imageObject.x -= 5
-    if (buttonRight) this.bios.imageObject.x += 5
-    if (buttonUp) this.bios.imageObject.y -= 5
-    if (buttonDown) this.bios.imageObject.y += 5
+    // image move 
+    // 이동이 좌표 기반이므로 실제 조작키랑 반대로 이동하기 때문에 이 값은 의도적으로 X축과 Y축이 반전시키기 위해 -1을 곱했습니다.
+    const moveSpeed = 5
+    if (buttonLeft) this.bios.imageObject.x -= moveSpeed * -1
+    if (buttonRight) this.bios.imageObject.x += moveSpeed * -1
+    if (buttonUp) this.bios.imageObject.y -= moveSpeed * -1
+    if (buttonDown) this.bios.imageObject.y += moveSpeed * -1
 
     if (buttonB) { // alpha change
       this.bios.imageObject.alpha += 0.1

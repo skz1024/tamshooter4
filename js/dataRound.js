@@ -5872,7 +5872,7 @@ class Round2_3 extends RoundData {
   }
 
   /** 동그라미 숫자를 표현하는 함수 */
-  donggramiNumberDisplay = game.graphic.createCustomNumberDisplay(imageSrc.number.round2_3_number, 30, 40)
+  donggramiNumberDisplay = game.graphic.createCustomIntegerDisplay(imageSrc.number.round2_3_number, 30, 40)
 
   getPhaseStartTime () {
     return this.phase.phaseTime[this.phase.getCurrentPhase()].startTime

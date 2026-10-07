@@ -11,3 +11,6 @@ sound/soundFileOriginal/*.wav
 # music폴더는 wav파일을 허용하지 않습니다. (음악은 ogg 또는 mp3이여야만 합니다.)
 # 이 프로젝트는 음악을 ogg파일만 사용하여 표현합니다.
 music/*.wav
+
+# VSCodeCounter 폴더는 단순히 라인 수를 확인하기 위한 폴더로, 데이터를 저장하는 용도가 아닙니다.
+.VSCodeCounter/

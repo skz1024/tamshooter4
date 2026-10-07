@@ -361,6 +361,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * 여기서 얻어온 객체를 이용해 bitmapDisplay를 쓰는것과 동일한 느낌으로 사용할 수 있습니다.
    * 
    * 주의: 아스키 코드의 위치를 기반으로 가로 세로를 계산합니다.
+   * 회전, 플립 기능은 사용자의 예상에 따른 동작을 보증하지 않습니다.
    * 
    * 따라서, 숫자만 사용할거면, CustomNumber를, 문자까지 추가하려면 이 함수를 사용하세요.
    * 
@@ -390,7 +391,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
       if (typeof inputText === 'number') inputText = inputText + ''
   
       const image = this.getCacheImage(imageSrc)
-      if (image == null) return
+      if (image == null || image.width === 0) return
 
       const BITMAP_WIDTH = baseWordWidth
       const BITMAP_HEIGHT = baseWordHeight
@@ -404,23 +405,21 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
         wordHeight = output.height
       }
   
+      // 비트맵에는 한줄당 최대 32개 글자 데이터가 있습니다.
       const firstWordPosition = ' '.charCodeAt(0)
-      const lineMaxXPostition = Math.floor(image.width / baseWordWidth) // 비트맵에는 한줄당 최대 32개 글자 데이터가 있습니다.
+      const lineMaxXPosition = Math.floor(image.width / baseWordWidth) 
+      const lineMaxYPosition = Math.floor(image.height / baseWordHeight)
   
       // 첫번째 글자부터 마지막글자까지 하나씩 출력합니다.
       for (let i = 0; i < inputText.length; i++) {
-        const word = inputText.charAt(i)
-        let wordPosition = -1 // 0 ~ 32
-        let wordLine = 0 // 0 ~ 3
+        let wordPosition = inputText.charCodeAt(i) - firstWordPosition
+        if (wordPosition < 0) continue
+
+        const wordLine = (wordPosition / lineMaxXPosition) | 0
+        if (wordLine >= lineMaxYPosition) continue
   
-        wordPosition = word.charCodeAt(0) - firstWordPosition
-  
-        // 워드포지션이 32를 넘어가면, 다른 줄로 변경해서 출력할 글자를 찾습니다.
-        if (wordPosition >= lineMaxXPostition) {
-          wordLine = Math.floor(wordPosition / lineMaxXPostition)
-          wordPosition = wordPosition % 32
-        }
-  
+        wordPosition -= wordLine * lineMaxXPosition
+
         if (wordPosition >= 0) {
           this.context.drawImage(
             image, 
@@ -431,7 +430,7 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
             x + (i * wordWidth), 
             y, 
             wordWidth - Math.floor(wordWidth / BITMAP_WIDTH), // 일부 길이 값을 빼는것은 확대/축소 했을 때 정확한 출력을 보정하기 위함
-            wordHeight - Math.floor(wordWidth / BITMAP_HEIGHT)
+            wordHeight - Math.floor(wordHeight / BITMAP_HEIGHT)
           )
         }
       }
@@ -444,22 +443,23 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
   }
 
   /**
-   * 이미지로 된 숫자를 출력할 수 있게 해주는 함수입니다.
+   * 이미지로 된 정수를 출력하는 함수입니다.  
+   * 주의: 0 이상의 정수만 정상적으로 출력하며, 소수점 또는 음수는 정상적인 출력이 불가합니다.
+   * 회전, 플립 기능은 사용자의 예상에 따른 동작을 보증하지 않습니다.
    * 
-   * 이 함수를 이용하여 이미지를 출력해주는 함수를 리턴받을 수 있습니다.
-   * 
+   * 이 함수를 이용하여 이미지를 출력해주는 함수를 리턴받을 수 있습니다.  
    * 참고: 이미지의 글자 순서는 0123456789 입니다.
    * @param {string} imageSrc 이미지 파일의 경로
    * @param {number} baseWordWidth 이미지의 가로너비
    * @param {number} baseWordHeight 이미지의 세로높이
    * @returns numberDisplay를 해줄 수 있는 함수(전용 함수 리턴)
    */
-  createCustomNumberDisplay (imageSrc, baseWordWidth, baseWordHeight) {
+  createCustomIntegerDisplay (imageSrc, baseWordWidth, baseWordHeight) {
     /**
      * 이미지로 된 숫자를 출력하는 함수
      * 
      * (bitmapDisplay 함수를 상속받았다 카더라)
-     * @param {number | string} inputNumber 출력할 숫자
+     * @param {number} inputNumber 출력할 숫자
      * @param {number} x x좌표
      * @param {number} y y좌표
      * @param {number} wordWidth 글자길이
@@ -467,9 +467,6 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
      */
     return (inputNumber, x, y, wordWidth = baseWordWidth, wordHeight = baseWordHeight) => {
       if (inputNumber == null) return
-
-      // 숫자가 들어올경우, string 형태로 변경 (그래야 조작하기 쉬움)
-      if (typeof inputNumber === 'number') inputNumber = inputNumber + ''
   
       const image = this.getCacheImage(imageSrc)
       if (image == null) return
@@ -485,10 +482,19 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
         wordWidth = output.width
         wordHeight = output.height
       }
+
+      // 자릿수 계산, 10보다 크면 1자리수씩 증가하여 자리수를 계산
+      let digits = 1
+      for (let t = inputNumber; t >= 10; t = (t / 10) | 0) digits++
+
+      // 큰 자리부터 그리기
+      // 최대 자리수 - 1부터 10단위로 제곱해서 맨 앞 자리수부터 지정
+      let divisor = 10 ** (digits - 1) 
   
-      // 첫번째 글자부터 마지막글자까지 하나씩 출력합니다.
-      for (let i = 0; i < inputNumber.length; i++) {
-        const word = Number(inputNumber.charAt(i))
+      // 그 다음 10배씩 낮춰가면서, 다음 자리의 나머지 몫으로 정수를 출력함
+      for (let i = 0; i < digits; i++) {
+        const word = ((inputNumber / divisor) | 0) % 10
+        divisor = (divisor / 10) | 0
         this.context.drawImage(
           image,
           BITMAP_WIDTH * word, 
@@ -511,104 +517,94 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
   }
 
   /**
-   * 이미지 출력 (imageDisplay보다 더 단순한 구성입니다.)
+   * 이미지 출력 (imageDisplay보다 더 단순한 구성입니다.)  
+   * 이미지의 스프라이트 자르기 같은 것이 없고 단순 출력만 할거라면, 이 함수를 사용해주세요.
    * 
-   * 만약 이미지의 일부를 잘라서 스프라이트처럼 사용하려면 imageDisplay 함수를 사용해주세요.
-   * 
-   * 자바스크립트는 오버로딩이 되지 않기 때문에, 9 ~ 12개의 인수를 기준으로 한 imageDisplay를 구분하기 위해 만들어졌습니다.
-   * (다만 내부적으로는 imageDisplay는 3, 5개의 인수도 처리할 수 있습니다. 왜냐하면 drawImage 함수가 그만큼의 인수를 지원하기 때문)
+   * 더이상 이 함수는 옵션을 지원하지 않습니다. 만약 회전, 알파, 뒤집기를 사용할 거라면, imageDisplay 함수를 써야 합니다.
+   * 또는 엔진에서 setFlip등의 값을 설정한 후, 이 함수를 호출할 수도 있습니다.
    * 
    * @param {string | HTMLImageElement | OffscreenCanvas | ImageBitmap} imageSrc 이미지의 경로 또는 이미지 객체
    * @param {number} x  x좌표
    * @param {number} y  y좌표
    * @param {number | null | undefined} width 이미지의 너비 (없을경우 해당 이미지의 기본 너비)
    * @param {number | null | undefined} height 이미지의 높이 (없을경우 해당 이미지의 기본 높이)
-   * @param {number[]} options 기타 옵션 (flip, rotate, alpha) 참고: 이값을 설정했다면, imageDisplay 함수를 사용합니다.
    */
-  imageView (imageSrc, x, y, width = undefined, height = undefined, ...options) {
+  imageView (imageSrc, x, y, width = undefined, height = undefined) {
     let getImage = typeof imageSrc === 'string' ? this.getCacheImage(imageSrc) : imageSrc
     if (getImage == null || getImage.width === 0) return
     
     // width, height 채우기 (함수 인수로 넣을 수도 있으나, image가 null일경우 에러가 발생하므로, 이렇게 처리함)
     if (width == null || width === 0) width = getImage.width
     if (height == null || height === 0) height = getImage.height
+    if (width === 0 || height === 0) return
 
-    if (options.length !== 0) {
-      this._imageExpandDisplay(getImage, 0, 0, getImage.width, getImage.height, x, y, width, height, ...options)
+    // 이미지 출력은 무조건 정수로 합니다.
+    if (this.checkTransform()) {
+      const output = this.canvasTransform(x, y, width, height)
+      this.context.drawImage(getImage, output.x | 0, output.y | 0, output.width | 0, output.height | 0)
+      this.restoreTransform()
     } else {
-      if (this.checkTransform()) {
-        const output = this.canvasTransform(arguments[1], arguments[2], width, height)
-        this.context.drawImage(getImage, output.x, output.y, output.width, output.height)
-        this.restoreTransform()
-      } else {
-        this.context.drawImage(getImage, x, y, width, height)
-      }
+      this.context.drawImage(getImage, x | 0, y | 0, width | 0, height | 0)
     }
   }
 
   /**
    * 이미지를 출력합니다. context.drawImage 함수랑 동일합니다.
    * 
-   * 인수를 3개 또는 5개만 넣으면, imageView 함수의 기능과 동일합니다.
+   * 입력하지 않은 인자는 기본값 처리되며, 이 함수는 엔진 설정과 독자적으로 적용합니다.  
+   * 만약 setFlip, setDegree 등을 한 경우, 이 함수를 사용하여도 해당 setFlip 같은 효과는 무시됩니다.
    * 
-   * 함수의 표시된 인수 목록은 9개 기준이며 최대 12개까지 지정 가능합니다.
-   * 인수가 10개 ~ 12개 사이일경우, 플립, 회전, 알파값을 추가로 수정할 수 있습니다. 옵션이 설정될경우, 캔버스의 설정값은 무시됩니다.
-   * (해당 이미지에만 적용)
+   * 기본적으로 인자는 전부 입력된다고 가정하지만, 일부만 입력한 경우 다음과 같이 처리합니다.  
+   * sliceWidth, sliceHeight, width, height가 전부 0이면 인수를 3개 이하라 가정하고 imageView 함수를 호출합니다.  
+   * width, height만 0인 경우, 인수를 5개 이하라 가정하고, imageView 함수를 호출합니다.  
+   * flip, degree, alpha는 기본값인지 아닌지만 확인하고, 기본값이라면 각 효과를 적용하지 않음.  
    * @param {string | HTMLImageElement | OffscreenCanvas | ImageBitmap} imageSrc 이미지의 경로 또는 이미지 객체
-   * @param {number} sliceX 이미지를 자르기 위한 이미지 내부의 x좌표
-   * @param {number} sliceY 이미지를 자르기 위한 이미지 내부의 y좌표
-   * @param {number} sliceWidth 이미지를 자르는 길이
-   * @param {number} sliceHeight 이미지를 자르는 높이
-   * @param {number} x 출력할 x좌표
-   * @param {number} y 출력할 y좌표
-   * @param {number} width 출력할 길이
-   * @param {number} height 출력할 높이
-   * @param {number[]} option 추가 옵션: flip(0: none, 1: X축방향, 2: Y축방향, 3:all), rotate(0 ~ 360), alpha(0 ~ 1)
+   * @param {number} [sliceX=0] 이미지를 자르기 위한 이미지 내부의 x좌표
+   * @param {number} [sliceY=0] 이미지를 자르기 위한 이미지 내부의 y좌표
+   * @param {number} [sliceWidth=0] 이미지를 자르는 길이, 0인 경우 출력 거부
+   * @param {number} [sliceHeight=0] 이미지를 자르는 높이, 0인 경우 출력 거부
+   * @param {number} [x=0] 출력할 x좌표
+   * @param {number} [y=0] 출력할 y좌표
+   * @param {number} [width=0] 출력할 길이, 0인 경우 출력 거부
+   * @param {number} [height=0] 출력할 높이, 0인 경우 출력 거부
+   * @param {number} [flip=0] 뒤집기 (0: none, 1: X축방향, 2: Y축방향, 3:all)
+   * @param {number} [rotate=0] 회전 (0 ~ 360)
+   * @param {number} [alpha=1] 알파값 (0 ~ 1)
    */
-  imageDisplay (imageSrc, sliceX = 0, sliceY = 0, sliceWidth, sliceHeight, x = 0, y = 0, width = 1, height = 1, ...option) {
+  imageDisplay (imageSrc, sliceX = 0, sliceY = 0, sliceWidth = 0, sliceHeight = 0, x = 0, y = 0, width = 0, height = 0, flip = 0, rotate = 0, alpha = 1) {
     let getImage = typeof imageSrc === 'string' ? this.getCacheImage(imageSrc) : imageSrc
 
     // 참고: 이미지의 크기가 0이면 이미지가 정상적으로 로드된게 아니므로, 이미지 출력을 무시합니다.
     if (getImage == null || getImage.width === 0) return
 
-    // 이미지가 화면 바깥으로 벗어나 있으면, 출력을 시도하지 않습니다.
-    // width, height 인수가 전달되지 않은 경우(인수 3개 등) 이미지 자체 크기 사용
-    const renderWidth = width || sliceWidth || getImage.width || 0;
-    const renderHeight = height || sliceHeight || getImage.height || 0;
-    
-    // 회전/뒤집기를 고려해 가로/세로 중 더 큰 값을 여유분(Padding)으로 사용
-    // 이 조건문의 일부는 AI를 사용하여 만들었습니다.
-    const pad = renderWidth > renderHeight ? renderWidth : renderHeight;
-    const drawX = x !== undefined ? x : sliceX;
-    const drawY = y !== undefined ? y : sliceY;
-
-    // 카메라/화면 밖 벗어남 판정 (카메라 좌표계 기준)
-    // 생각해보니, 이 코드는 카메라 좌표로 제안되어서, 내가 추가로 수정함
-    if (drawX + pad < 0 || 
-        drawX - pad > this.CANVAS_WIDTH ||
-        drawY + pad < 0  || 
-        drawY - pad > this.CANVAS_HEIGHT) {
-      return; // 여기서 즉시 탈출 (이하 모든 분기문 및 렌더링 스킵!)
+    // 이미지의 크기가 지정되지 않은 경우 출력 거부
+    // sliceWidth와 sliceHeight가 있고 width, height가 없다면, 인수를 5개로 가정하고 처리 (하위 호환 코드)
+    if (width <= 0 || height <= 0) {
+      if (sliceWidth > 0 && sliceHeight > 0) {
+        this.imageView(getImage, sliceX, sliceY, sliceWidth, sliceHeight)
+      } else {
+        this.imageView(getImage, sliceX, sliceY)
+      }
+      return
     }
 
-    // 이미지 출력 (만약, 인수의 수가 3개 또는 5개라면 imageView 함수로 대신 출력합니다. )
-    if (arguments.length === 3) {
-      this.imageView(getImage, sliceX, sliceY)
-    } else if (arguments.length === 5) {
-      this.imageView(getImage, sliceX, sliceY, sliceWidth, sliceHeight)
-    } else if (arguments.length === 9) {
-      if (this.checkTransform()) {
-        const output = this.canvasTransform(x, y, width, height)
-        this.context.drawImage(getImage, Math.floor(sliceX), Math.floor(sliceY), Math.floor(sliceWidth), Math.floor(sliceHeight), Math.floor(output.x), Math.floor(output.y), Math.floor(output.width), Math.floor(output.height))
-        this.restoreTransform()
-      } else {
-        this.context.drawImage(getImage, Math.floor(sliceX), Math.floor(sliceY), Math.floor(sliceWidth), Math.floor(sliceHeight), Math.floor(x), Math.floor(y), Math.floor(width), Math.floor(height))
-      }
-    } else if (arguments.length >= 10 && arguments.length <= 12) {
-      // 함수의 내용이 길어 따로 분리
-      this._imageExpandDisplay(getImage, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, ...option)
+    // 이미지가 화면 바깥으로 벗어나 있으면, 출력을 시도하지 않습니다.
+    // 회전각 크기를 고려하기 위해 pad에 배율을 추가했습니다.
+    const pad = width > height ? width * 1.5 : height * 1.5;
+    if (
+      x + pad < 0 || 
+      x - pad > this.CANVAS_WIDTH ||
+      y + pad < 0 || 
+      y - pad > this.CANVAS_HEIGHT
+    ) {
+      return
+    }
+
+    if (flip === 0 && rotate === 0 && alpha === 1) {
+      this.context.drawImage(getImage, Math.floor(sliceX), Math.floor(sliceY), Math.floor(sliceWidth), Math.floor(sliceHeight), Math.floor(x), Math.floor(y), Math.floor(width), Math.floor(height))
     } else {
-      throw new Error(GraphicSystem.errorMessage.IMAGE_DISPLAY_ARGUMENT_ERROR)
+      // 함수의 내용이 길어 따로 분리
+      this._imageExpandDisplay(getImage, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, flip, rotate, alpha)
     }
   }
 
@@ -628,86 +624,36 @@ imageDisplay function need to arguments only 3, 5, 9, 10 ~ 12.`
    * @param {number} y 출력할 y좌표
    * @param {number} width 출력할 길이
    * @param {number} height 출력할 높이
-   * @param {number[]} option 추가 옵션: flip(0: none, 1: vertical, 2: horizontal, 3:all), rotate(0 ~ 360), alpha(0 ~ 1)
-   */
-  _imageExpandDisplay (image, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, ...option) {
-    // 현재 캔버스의 상태를 저장. 이렇게 하는 이유는, 캔버스의 설정을 너무 많이 바꿔 현재 상태를 저장하지 않으면 원래대로 되돌리기 어렵기 때문
-    this.context.save()
-    let flip = 0
-    let rotate = 0
-    let alpha = 1
-    let outputX = x
-    let outputY = y
-    let outputWidth = width
-    let outputHeight = height
-
-    // 옵션에 값이 존재하는지를 확인합니다. 아무 값도 없다면 옵션의 길이는 없기 때문
-    // 그리고 각 옵션이 정해진 범위를 가지는지를 확인합니다.
-    if (option.length >= 1 && option[0] >= 0 && option[0] <= 3) {
-      flip = option[0]
-    } else {
-      flip = this._flip
+   * @param {number} flip 뒤집기 (0: none, 1: X축방향, 2: Y축방향, 3:all)
+   * @param {number} rotate 회전 (0 ~ 360)
+   * @param {number} alpha 알파값 (0 ~ 1)
+    */
+  _imageExpandDisplay (image, sliceX, sliceY, sliceWidth, sliceHeight, x, y, width, height, flip, rotate, alpha) {
+    // 플립 또는 회전이 없는 경우, 트랜스폼을 할 이유가 없으므로 적용하지 않고, 알파만 처리합니다.
+    if (flip === 0 && rotate === 0) {
+      const prevAlpha = this.context.globalAlpha
+      this.context.globalAlpha = alpha
+      this.context.drawImage(image, Math.floor(sliceX), Math.floor(sliceY), Math.floor(sliceWidth), Math.floor(sliceHeight), Math.floor(x), Math.floor(y), Math.floor(width), Math.floor(height))
+      this.context.globalAlpha = prevAlpha
+      return
     }
 
-    // rotate
-    if (option.length >= 2) {
-      rotate = option[1]
-      if (rotate >= 360 || rotate < -360) {
-        rotate = rotate % 360
-      }
-    } else {
-      rotate = this._rotateDegree
-    }
+    const FLIP_X = (flip === 1 || flip === 3) ? -1 : 1
+    const FLIP_Y = (flip === 2 || flip === 3) ? -1 : 1
+    const radian = rotate * Math.PI / 180
+    const cos = Math.cos(radian), sin = Math.sin(radian)
+    const prevAlpha = this.context.globalAlpha
+    this.context.globalAlpha = alpha
+    this.context.setTransform(cos * FLIP_X, sin * FLIP_X, -sin * FLIP_Y, cos * FLIP_Y, Math.floor(x) + width / 2, Math.floor(y) + height / 2)
+    this.context.drawImage(image,Math.floor(sliceX),Math.floor(sliceY),Math.floor(sliceWidth),Math.floor(sliceHeight),
+    Math.floor(-width / 2), Math.floor(-height / 2),Math.floor(width),Math.floor(height))
 
-    // alpha (없을 경우 글로벌 알파값 적용)
-    if (option.length >= 3 && option[2] >= 0 && option[2] <= 1) {
-      alpha = option[2]
-    } else {
-      alpha = this.context.globalAlpha
-    }
-
-    if (rotate !== 0) {
-      const centerX = x + (width / 2)
-      const centerY = y + (height / 2)
-      const radian = Math.PI / 180 * rotate
-      this.context.translate(centerX, centerY) // 회전할 객체의 중심 위치로 캔버스의 중심 좌표를 변경
-      this.context.rotate(radian) // 라디안 값만큼 회전(참고: 각도 값을 라디안으로 변환해야 함)
-
-      if (flip === 1) {
-        this.context.scale(-1, 1) // x축의 크기를 반대로
-      } else if (flip === 2) {
-        this.context.scale(1, -1) // y축의 크기를 반대로
-      } else if (flip === 3) {
-        this.context.scale(-1, -1) // x축 y축 다 반대로
-      }
-
-      // 회전이 중심축에서 이루어지고, translate로 캔버스의 원점이 객체의 중심으로 이동했기 때문에
-      // 그에 맞게 좌표를 수정해야 합니다. 좌표는 (-halfWidth, -halfHeight, width, height) 입니다.
-      outputX = -(width / 2)
-      outputY = -(height / 2)
-      outputWidth = width
-      outputHeight = height
-    } else {
-      if (flip === 1) { // flip 값이 vertical일경우
-        this.context.scale(-1, 1) // x축의 크기를 반대로
-        outputWidth = -width // x축을 반전시킨탓에, 실제 출력할때도 반대로 값을 넣어서 출력해야합니다. (양수와 음수가 서로 바뀌듯이)
-        outputX = -x // 출력 위치도 -x로 변환됩니다.
-      } else if (flip === 2) { // 이하 방향빼고 나머지 동일
-        this.context.scale(1, -1) // y축의 크기를 반대로
-        outputHeight = -height
-        outputY = -y
-      } else if (flip === 3) {
-        this.context.scale(-1, -1) // x축 y축 다 반대로
-        outputWidth = -width
-        outputX = -x
-        outputHeight = -height
-        outputY = -y
-      }
-    }
-
-    this.context.globalAlpha = alpha // 알파값 수정
-    this.context.drawImage(image, Math.floor(sliceX), Math.floor(sliceY), Math.floor(sliceWidth), Math.floor(sliceHeight), Math.floor(outputX), Math.floor(outputY), Math.floor(outputWidth), Math.floor(outputHeight))
-    this.context.restore() // 캔버스를 이전 상태로 복원
+    // 캔버스의 상태를 초기값으로 복구합니다.
+    // x축 방향 벡터를 (Ax, By) -> (1, 0), Y축 방향 벡터를 (Cx, Dy) -> (0, 1) 로 보내고
+    // 원점 이동 좌표를 (E, F) -> (0, 0) 으로 보내서, 캔버스를 원래 기본값 형태로 변경합니다.
+    // Gemini식 요약: 캔버스 변환 행렬을 기본값으로 초기화 (X축: 1,0 / Y축: 0,1 / 이동: 0,0)
+    this.context.setTransform(1, 0, 0, 1, 0, 0)
+    this.context.globalAlpha = prevAlpha
   }
 
   /**
