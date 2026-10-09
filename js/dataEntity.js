@@ -567,7 +567,19 @@ export class DonggramiEntity {
 }
 
 
-/** 박스형 엔티티, 충돌 구조를  */
-export class BoxEntity {
-  
+/** 라운드 내에서 적과의 통신을 위해 사용되는 메세지 목록 */
+export class RoundCommonMessages {
+  static COMMON_INDEXS = {
+    STATE: 0,
+  }
+
+  static ROUND1_4_JEMUL_BOSS = {
+    DIE: 17228,
+    STOP: 17229,
+  }
+  static ROUND3_8_GABUDAN_BOSS = {
+    MUSIC_START: 17228,
+    MUSIC_STOP: 17229,
+    NO_MESSAGE: 0,
+  }
 }

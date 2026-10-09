@@ -924,6 +924,75 @@ export class fieldState {
 
   static getEnemyObjectCount () { return this.enemyObject.length }
 
+  
+  /**
+   * 지정된 타입과 ID에 해당하는 가장 앞 순번 (객체가 배열로 관리되므로) 객체의
+   * messageBuffer에서 지정된 인덱스의 값을 반환합니다.
+   *
+   * 조회 대상이 없거나 버퍼가 없거나 인덱스가 유효하지 않으면
+   * null을 반환합니다.
+   *
+   * 메시지 버퍼의 공통 규칙은 아직 확정되지 않았으며,
+   * 현재는 일부 기능만 구현되어 있습니다.
+   * 
+   * 이 함수는 1개의 적만 판단하므로, 같은 ID의 여러개 적을 찾는 용도로 사용할 수 없습니다.
+   *
+   * @todo 메시지 버퍼의 공통 규칙 정의 필요
+   * @param {number} objectType
+   * @param {number} targetId
+   * @param {number} bufferIndex
+   * @returns {number | null}
+   */
+  static getMessage (objectType = 0, targetId = 0, bufferIndex = 0) {
+    if (objectType === FieldData.objectType.ENEMY) {
+      const enemy = this.enemyObject.find(
+        (target) => target.id === targetId
+      )
+
+      if (enemy == null || enemy.messageBuffer == null) {
+        return null
+      }
+
+      if (bufferIndex < 0 || bufferIndex >= enemy.messageBuffer.length) {
+        return null
+      }
+
+      return enemy.messageBuffer[bufferIndex]
+    }
+
+    return null
+  }
+
+  /**
+   * 메세지를 특정 오브젝트타입, 특정 ID에 일치하는 적 객체에 보냅니다.
+   * 
+   * 이 함수는 1개의 버퍼 값만 보낼 수 있습니다.
+   * 
+   * 아직 표준 규칙은 확정되지 않음.
+   * 
+   * @param {number} objectType 
+   * @param {number} targetId 
+   * @param {number} bufferIndex 
+   * @param {number} value
+   */
+  static sendMessage (objectType = 0, targetId = 0, bufferIndex = 0, value = 0) {
+    if (objectType === FieldData.objectType.ENEMY) {
+      const enemy = this.enemyObject.find(
+        (target) => target.id === targetId
+      )
+
+      if (enemy == null || enemy.messageBuffer == null) {
+        return
+      }
+
+      if (bufferIndex < 0 || bufferIndex >= enemy.messageBuffer.length) {
+        return
+      }
+
+      enemy.messageBuffer[bufferIndex] = value
+    }
+  }
+
   /**
    * 다음 생성할 오브젝트의 Id
    * 중복 구분 용도로 사용 (경고: 이 변수를 직접 대입하지 말고, getNextCreateId 함수를 사용하세요.)

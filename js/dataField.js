@@ -840,6 +840,16 @@ export class FieldData {
      * @type {Int32Array}
      */
     this.extendedMemory = new Int32Array(32)
+
+    /**
+     * Entity 간 통신에 사용하는 메시지 버퍼입니다.
+     * 버퍼의 존재 여부와 크기는 Entity의 용도에 따라 다릅니다.
+     *
+     * 메시지 인덱스와 각 인덱스의 의미는 아직 공통 표준이 확정되지 않았습니다.
+     *
+     * @type {Int32Array | null}
+     */
+    this.messageBuffer = null
   }
 
   /**

@@ -11,7 +11,7 @@ import { game, gameFunction, gameVar } from "./game.js"
 import { StatRound, dataExportStatRound } from "./dataStat.js"
 import { CustomEnemyBullet, EnemyBulletData, EnemyData, dataExportEnemy } from "./dataEnemy.js"
 import { WeaponData } from "./dataWeapon.js"
-import { DonggramiEntity } from "./dataEntity.js"
+import { DonggramiEntity, RoundCommonMessages } from "./dataEntity.js"
 
 let graphicSystem = game.graphic
 let soundSystem = game.sound
@@ -1168,6 +1168,20 @@ class BaseField {
   /** 필드 시스템에 점수 추가를 요청합니다. */
   static addScore (score = 0) {
     fieldSystem.fieldRequests.addScore(score)
+  }
+
+  /** 필드 객체의 특정 타입의 ID에 해당하는 메세지 버퍼를 얻어옵니다.
+   * 
+   * 자세한 규칙은 이 함수 내부에서 호출되는 함수를 타고 원본을 보세요.
+   * @returns {number | null} 해당하는 데이터의 값
+   */
+  static getMessage (objectType = 0, targetId = 0, bufferIndex = 0) {
+    return fieldState.getMessage(objectType, targetId, bufferIndex)
+  }
+
+  /** 필드 객체의 특정 타입의 ID에 해당하는 특정 메세지를 보냅니다.  */
+  static sendMessage (objectType = 0, targetId = 0, bufferIndex = 0, value = 0) {
+    fieldState.sendMessage(objectType, targetId, bufferIndex, value)
   }
 
   /**
@@ -3373,22 +3387,33 @@ class Round1_4 extends RoundData {
   roundPhase02BossCheck () {
     const phase2Time = this.phase.phaseTime[2].startTime
 
-    // 특정 보스의 데이터 얻어오기
-    let boss = this.field.getEnemyObjectById(ID.enemy.jemulEnemy.bossEye)
-    if (boss != null) {
-      if (this.timeCheckInterval(phase2Time)) {
-        // 보스의 모든 행동을 강제로 멈춤
-        boss.message = 'stop'
-      }
+    // 특정 보스에게 메세지를 보냅니다. 이 시점에서는 보스가 강제로 멈춥니다.
+    if (this.timeCheckInterval(phase2Time)) {
+      this.field.sendMessage(
+        FieldData.objectType.ENEMY,
+        ID.enemy.jemulEnemy.bossEye,
+        RoundCommonMessages.COMMON_INDEXS.STATE,
+        RoundCommonMessages.ROUND1_4_JEMUL_BOSS.STOP
+      )
+    }
 
-      if (this.timeCheckInterval(phase2Time + 20, phase2Time + 23, 30)) {
+    // 이펙트 생성을 위하여, 보스 좌표를 가져와서 이펙트 출력 좌표를 정합니다.
+    if (this.timeCheckInterval(phase2Time + 20, phase2Time + 23, 30)) {
+      let boss = this.field.getEnemyObjectById(ID.enemy.jemulEnemy.bossEye)
+      if (boss != null) {
         fieldState.createEffectObject(this.effectJemulstar.getObject(), boss.x - 50, boss.y - 50)
       }
+    }
 
-      if (this.timeCheckFrame(phase2Time + 25)) {
-        // 보스 죽이기 (그 때문에 플레이어도 일정 점수를 얻음.)
-        boss.message = 'die'
-      }
+    if (this.timeCheckFrame(phase2Time + 25)) {
+      // 보스가 강제로 사망하도록 연출하기 위해 메세지를 전송합니다.
+      // 이 메세지를 받은 보스는 스스로 죽습니다. 이에 따라 플레이어도 경험치를 얻습니다.
+      this.field.sendMessage(
+        FieldData.objectType.ENEMY,
+        ID.enemy.jemulEnemy.bossEye,
+        RoundCommonMessages.COMMON_INDEXS.STATE,
+        RoundCommonMessages.ROUND1_4_JEMUL_BOSS.DIE
+      )
     }
   }
 
@@ -14846,27 +14871,43 @@ class Round3_8 extends Round3Templete {
     if (this.timeCheckFrame(pEnd)) {
       this.sound.musicStop()
     }
-    
-    // 적에 대한 처리
-    if (!this.timeCheckInterval(pTime + 4, pEnd - 1)) return
-    
-    let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup5.gabudan)
-    if (enemy == null) return
 
-    // 이 메세지는 라운드와 적과의 통신용이며,
-    // 보스의 현재 상태를 확인하여, 음악을 변경합니다.
-    if (enemy.message === 'start') {
-      enemy.message = '' // 메세지 중복처리 방지용도
-      this.sound.musicFadeInLegacy(soundSrc.music.music17_down_tower_boss)
-    } else if (enemy.message === 'end') {
-      enemy.message = ''
-      this.sound.musicStop()
+    // 이 메세지는 보스의 현재 상태를 보고 음악 재생 여부를 결정합니다.
+    if (this.timeCheckInterval(pTime + 4, pEnd - 1, 20)) {
+      let message = this.field.getMessage(
+        FieldData.objectType.ENEMY,
+        ID.enemy.towerEnemyGroup5.gabudan,
+        RoundCommonMessages.COMMON_INDEXS.STATE
+      )
+
+      if (message === RoundCommonMessages.ROUND3_8_GABUDAN_BOSS.MUSIC_START) {
+        // 보스의 메세지가 음악 시작으로 변경되면, 연출상 음악 시작되고
+        // 대규모의 탄막이 쏟아진다.
+        this.sound.musicChange(2, 0)
+        this.field.sendMessage(
+          FieldData.objectType.ENEMY,
+          ID.enemy.towerEnemyGroup5.gabudan,
+          RoundCommonMessages.COMMON_INDEXS.STATE,
+          RoundCommonMessages.ROUND3_8_GABUDAN_BOSS.NO_MESSAGE
+        )
+      } else if (message === RoundCommonMessages.ROUND3_8_GABUDAN_BOSS.MUSIC_STOP) {
+        this.sound.musicStop()
+        // 하지만, 보스가 고장나 버려서 음악이 정지되어버림
+        this.field.sendMessage(
+          FieldData.objectType.ENEMY,
+          ID.enemy.towerEnemyGroup5.gabudan,
+          RoundCommonMessages.COMMON_INDEXS.STATE,
+          RoundCommonMessages.ROUND3_8_GABUDAN_BOSS.NO_MESSAGE
+        )
+      }
     }
 
-    // 보스가 죽은경우 시간을 일부 건너뜀
-    if (enemy.isDied) {
-      this.time.setCurrentTime(pEnd - 1)
-      this.sound.musicStop()
+    if (this.timeCheckInterval(pTime + 12, pEnd - 1)) {
+      // 보스가 죽은 경우, 시간을 일부 건너뛰도록 조정합니다.
+      if (this.field.getEnemyCount() <= 0) {
+        this.time.setCurrentTime(pEnd - 1)
+        this.sound.musicStop()
+      }
     }
   }
 

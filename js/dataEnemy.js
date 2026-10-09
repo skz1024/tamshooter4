@@ -8,7 +8,7 @@ import { ImageDataObject, imageDataInfo, imageSrc } from "./imageSrc.js"
 import { soundSrc } from "./soundSrc.js"
 import { game, gameFunction } from "./game.js"
 import { getDegreeByVector } from "./tamsaEngine/util.js"
-import { DonggramiEntity } from "./dataEntity.js"
+import { DonggramiEntity, RoundCommonMessages } from "./dataEntity.js"
 
 let graphicSystem = game.graphic
 let soundSystem = game.sound
@@ -2933,8 +2933,8 @@ class JemulEnemyBossEye extends JemulEnemyData {
     this.MOVE_SPEED = 4
 
     /** 메세지 전용, 외부 요소에서 메세지를 전달할 때 사용합니다. */
-    this.MESSAGE_STOP = 'stop'
-    this.MESSAGE_DIE = 'die'
+    this.MESSAGE_STOP = RoundCommonMessages.ROUND1_4_JEMUL_BOSS.STOP
+    this.MESSAGE_DIE = RoundCommonMessages.ROUND1_4_JEMUL_BOSS.DIE
     
     this.STATE_START = 10
     this.STATE_LASER = 11
@@ -2967,12 +2967,15 @@ class JemulEnemyBossEye extends JemulEnemyData {
     this.laserSound2 = soundSrc.enemyAttack.jemulBossAttack2
     this.laserSound3 = soundSrc.enemyAttack.jemulBossAttack3
 
+    this.messageBuffer = new Int32Array(16)
+
     // 사운드 로드
     soundSystem.createAudio(this.laserSound1)
     soundSystem.createAudio(this.laserSound2)
     soundSystem.createAudio(this.laserSound3)
   }
 
+  /** @deprecated 과거에만 쓰였고, v0.58이후 개편으로 안쓰입니다. */
   requestDie () {
     // this.state = this.STATE_DIE
   }
@@ -3031,9 +3034,10 @@ class JemulEnemyBossEye extends JemulEnemyData {
     }
 
     // 간접적인 전달을 위한 메세지 처리
-    if (this.message === this.MESSAGE_STOP) {
+    // 라운드 -> 보스 전달입니다.
+    if (this.messageBuffer[RoundCommonMessages.COMMON_INDEXS.STATE] === this.MESSAGE_STOP) {
       this.state = this.STATE_STOP
-    } else if (this.message === this.MESSAGE_DIE) {
+    } else if (this.messageBuffer[RoundCommonMessages.COMMON_INDEXS.STATE] === this.MESSAGE_DIE) {
       this.state = this.STATE_DIE
     }
 
@@ -14310,11 +14314,13 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
     this.state = TowerEnemyGroup5Gabudan.STATE_BLACK
 
     // 이 메세지들은, 보스의 패턴 시작과 끝을 알립니다. (라운드에서 보스 배경음을 재생해야 하므로...)
-    this.MESSAGE_START = 'start'
-    this.MESSAGE_END = 'end'
+    this.MESSAGE_START = RoundCommonMessages.ROUND3_8_GABUDAN_BOSS.MUSIC_START
+    this.MESSAGE_END = RoundCommonMessages.ROUND3_8_GABUDAN_BOSS.MUSIC_STOP
 
     /** 배경 이미지 경로 */ this.bgSrc = imageSrc.enemy.towerEnemyGroup5Gabudan
     /** 배경 이미지 데이터의 객체 리스트 */ this.bgData = imageDataInfo.towerEnemyGroup5Gabudan
+
+    this.messageBuffer = new Int32Array(1)
   }
 
   processAttack () {
@@ -14384,7 +14390,7 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
     if (this.state !== TowerEnemyGroup5Gabudan.STATE_KERNEL_DEAD && this.state !== TowerEnemyGroup5Gabudan.STATE_KERNEL_PANIC) {
       if (this.isDied) {
         this.state = TowerEnemyGroup5Gabudan.STATE_KERNEL_DEAD
-        this.message = this.MESSAGE_END
+        this.messageBuffer[RoundCommonMessages.COMMON_INDEXS.STATE] = this.MESSAGE_END
       }
     }
 
@@ -14397,8 +14403,9 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
     const FPS = 60
 
     // 보스 배경음을 재생시키기 위한 메세지 설정
-    if (this.elapsedFrame === FPS * 20) this.message = this.MESSAGE_START
-    else if (this.elapsedFrame === FPS * 44) this.message = this.MESSAGE_END
+    // 이 메세지는 Round에서 참조만 시도합니다.
+    if (this.elapsedFrame === FPS * 20) this.messageBuffer[RoundCommonMessages.COMMON_INDEXS.STATE] = this.MESSAGE_START
+    else if (this.elapsedFrame === FPS * 44) this.messageBuffer[RoundCommonMessages.COMMON_INDEXS.STATE] = this.MESSAGE_END
 
     // 사운드 재생
     if (this.elapsedFrame === FPS * 1) soundSystem.play(soundSrc.enemyAttack.towerGabudanBooting)
