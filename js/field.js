@@ -2493,8 +2493,6 @@ export class fieldSystem {
 
   static fieldSystemSaveDataV055 () {
     // header insert
-    // round data
-
     const hs = fieldSave.index.header
     const fe = fieldSave.index.field
     const pl = fieldSave.index.player
@@ -2727,12 +2725,13 @@ export class fieldSystem {
     this.totalScore = fieldSave.array[fe.START_INDEX + fe.TOTAL_SCORE]
     this.enimationFrame = fieldSave.array[fe.START_INDEX + fe.ENIMATION_FRAME]
     this.exitDelayCount = fieldSave.array[fe.START_INDEX + fe.EXIT_DELAY_COUNT]
-    for (let i = 0; i < this.fieldItemIdList.length && i < fe.MAX_LENGTH - 8; i++) {
+    for (let i = 0; i < fe.MAX_LENGTH - 8; i++) {
+      // 아이템 배열은 0부터 시작하므로, 로드한 이후 새로운 데이터를 삽입해서 추가해야 합니다.
       const FINDEX = fe.START_INDEX + fe.FIELD_ITEM_LIST + (i * 2)
       if (fieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET] === 0) continue
 
-      this.fieldItemIdList[i] = fieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET]
-      this.fieldItemCountList[i] = fieldSave.array[FINDEX + fe.FIELD_ITEM_COUNT_OFFSET]
+      this.fieldItemIdList.push(fieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET])
+      this.fieldItemCountList.push(fieldSave.array[FINDEX + fe.FIELD_ITEM_COUNT_OFFSET])
     }
 
     // 라운드 생성 및 시작, roundStart가 끝나면, round에 값이 할당됩니다.
