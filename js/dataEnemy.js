@@ -3615,6 +3615,9 @@ export class DonggramiEnemy extends EnemyData {
   process () {
     super.process()
     this.entity.process()
+
+    // message buffer input
+    this.messageBuffer[DonggramiEntity.BUFFER_INDEXS.STATE] = this.state
   }
 
   display () {
@@ -4166,37 +4169,38 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
    * 참고: 상태가 최초로 변경되었을 때만, 메세지가 출력됨
    */
   setTalkIndex () {
-    const INDEX_X = 3
-    const INDEX_Y_START = 5
-    const INDEX_Y_HAMMER = 9
-    const INDEX_Y_BOOST = 10
-    const INDEX_Y_EARTHQUAKE = 11
-
-    this.entity.talkIndex.x = INDEX_X // x인덱스는 고정값임
-
+    const INDEXS = DonggramiEntity.TALK_INDEXS
     if (this.elapsedFrame <= 180) {
-      // 240프레임 이전에는 어느 패턴이든 항상 첫 문장을 출력함
-      this.entity.talkIndex.y = INDEX_Y_START
-      this.entity.talkDelay.setDelay(180)
-      this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-    } else if (this.state === this.STATE_BOOST) {
-      this.entity.talkIndex.y = INDEX_Y_BOOST
-      this.entity.talkDelay.setDelay(75)
-      this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-    } else if (this.state === this.STATE_HAMMER) {
-      this.entity.talkIndex.y = INDEX_Y_HAMMER
-      this.entity.talkDelay.setDelay(120)
-      this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-    } else if (this.state === this.STATE_EARTHQUAKE_WAIT) {
-      this.entity.talkIndex.y = INDEX_Y_EARTHQUAKE
-      this.entity.talkDelay.setDelay(180)
-      this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-    } else if (this.state === this.STATE_END) {
-      this.#talkIndexStateEnd() // 처리가 복잡해서 함수로 분해
-      this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-      this.entity.talkDelay.setDelay(240)
-    } else {
-      this.entity.talkState = DonggramiEntity.TALK_STATES.NONE // 대화 없음
+      this.entity.setTalkIndexPosition(INDEXS.A1_START.X, INDEXS.A1_START.Y, INDEXS.A1_START.LEN)
+      this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 180)
+      return
+    }
+
+    switch (this.state) {
+      case this.STATE_BOOST:
+        this.entity.setTalkIndexPosition(INDEXS.A1_BOOST.X, INDEXS.A1_BOOST.Y, INDEXS.A1_BOOST.LEN)
+        this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 75)
+        break
+      case this.STATE_HAMMER:
+        this.entity.setTalkIndexPosition(INDEXS.A1_HAMMER.X, INDEXS.A1_HAMMER.Y, INDEXS.A1_HAMMER.LEN)
+        this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 120)
+        break
+      case this.STATE_EARTHQUAKE_WAIT:
+        this.entity.setTalkIndexPosition(INDEXS.A1_EARTHQUAKE.X, INDEXS.A1_EARTHQUAKE.Y, INDEXS.A1_EARTHQUAKE.LEN)
+        this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 180)
+        break
+      case this.STATE_END:
+        if (this.result === this.RESULT_WIN) {
+          this.entity.setTalkIndexPosition(INDEXS.A1_WIN.X, INDEXS.A1_WIN.Y, INDEXS.A1_WIN.LEN)
+        } else if (this.result === this.RESULT_DRAW) {
+          this.entity.setTalkIndexPosition(INDEXS.A1_DRAW.X, INDEXS.A1_DRAW.Y, INDEXS.A1_DRAW.LEN)
+        } else if (this.result === this.RESULT_LOSE) {
+          this.entity.setTalkIndexPosition(INDEXS.A1_LOSE.X, INDEXS.A1_LOSE.Y, INDEXS.A1_LOSE.LEN)
+        }
+        break
+      default:
+        this.entity.talkState = DonggramiEntity.TALK_STATES.NONE
+        break
     }
 
     // 대화 상태일때는 대화 딜레이 리셋 (안그러면 대화 지속시간이 더 짧아질 수 있음)
@@ -4205,25 +4209,9 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
     }
   }
 
-  #talkIndexStateEnd () {
-    const INDEX_Y_WIN = 6
-    const INDEX_Y_LOSE = 7
-    const INDEX_Y_DRAW = 8
-
-    // 참고: 이 함수를 실행하기 이전에 이미 talkIndex.x 좌표는 정해졌음
-    if (this.result === this.RESULT_WIN) {
-      this.entity.talkIndex.y = INDEX_Y_WIN
-    } else if (this.result === this.RESULT_LOSE) {
-      this.entity.talkIndex.y = INDEX_Y_LOSE
-    } else if (this.result === this.RESULT_DRAW) {
-      this.entity.talkIndex.y = INDEX_Y_DRAW
-    }
-  }
-
   processTalk () {
     // super는 호출하지 않음.
     // 대화 방식은, 일정시간이 지나면 자동삭제하는 방식
-
     if (this.entity.talkDelay.check()) {
       this.entity.talkState = DonggramiEntity.TALK_STATES.NONE
     }
@@ -4570,63 +4558,55 @@ class DonggramiEnemyB1Bounce extends DonggramiEnemyBounce {
   }
 
   setTalkIndex () {
-    const INDEX_X = 4
-    const INDEX_Y_TYPEA = 0
-    const INDEX_Y_TYPEA_LENGTH = 5
-    const INDEX_Y_TYPEB = 5
-    const INDEX_Y_TYPEB_LENGTH = 2
-    const INDEX_OUCH_X = 4
-    const INDEX_Y_OUCH1A = 16
-    // const INDEX_Y_OUCH1B = 17 B타입은 부딪혀도 아무말도 하지 않음...
-    const INDEX_Y_OUCH2A = 18
-    const INDEX_Y_OUCH2B = 19
+    const INDEXS = DonggramiEntity.TALK_INDEXS
+    const isOver5 = this.playerCollisionCount >= 5
+    const isTypeA = this.innerTalkType === this.INNER_TALK_TYPE_A
+    const STATES = DonggramiEntity.STATES
+    this.entity.talkDelay.countReset()
 
-    // 플레이어랑 충돌한 상태일때는 특정 대화 표시
-    if (this.state === DonggramiEntity.STATES.R2_3_PLAYER_COLLISION_PROCESSING) {
-      if (this.innerTalkType === this.INNER_TALK_TYPE_A) {
-        this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-        this.entity.talkIndex.x = INDEX_OUCH_X
-        if (this.playerCollisionCount >= 5) {
-          this.entity.talkIndex.y = INDEX_Y_OUCH2A
-          this.entity.talkDelay.setDelay(240)
+    switch (this.state) {
+      case STATES.R2_3_PLAYER_COLLISION_PROCESSING:
+        if (isTypeA) {
+          if (isOver5) {
+            this.entity.setTalkIndexPosition(INDEXS.B_SAD_A.X, INDEXS.B_SAD_A.Y, INDEXS.B_SAD_A.LEN)
+            this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 240)
+          } else {
+            this.entity.setTalkIndexPosition(INDEXS.B_OUCH_A.X, INDEXS.B_OUCH_A.Y, INDEXS.B_OUCH_A.LEN)
+            this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 60)
+          }
         } else {
-          this.entity.talkIndex.y = INDEX_Y_OUCH1A
-          this.entity.talkDelay.setDelay(30)
+          if (isOver5) {
+            this.entity.setTalkIndexPosition(INDEXS.B_SAD_B.X, INDEXS.B_SAD_B.Y, INDEXS.B_SAD_B.LEN)
+            this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 240)
+          }
         }
-      } else if (this.innerTalkType === this.INNER_TALK_TYPE_B) {
-        if (this.playerCollisionCount >= 5) {
-          this.entity.talkIndex.x = INDEX_OUCH_X
-          this.entity.talkIndex.y = INDEX_Y_OUCH2B
-          this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-          this.entity.talkDelay.setDelay(240)
+        break
+      case STATES.NORMAL: // 노멀 상태에서 30% 확률
+        if (Math.random() < 0.3) {
+          if (this.innerTalkType === this.INNER_TALK_TYPE_A) {
+            this.entity.setTalkIndexPosition(INDEXS.B1_A.X, INDEXS.B1_A.Y, INDEXS.B1_A.LEN)
+            this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK)
+          } else {
+            this.entity.setTalkIndexPosition(INDEXS.B1_B.X, INDEXS.B1_B.Y, INDEXS.B1_B.LEN)
+            this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK)
+          }
         }
-      }
-    } else if (this.state === DonggramiEntity.STATES.NORMAL && Math.random() < 0.3) { // 노멀 상태에서 30% 확률
-      if (this.innerTalkType === this.INNER_TALK_TYPE_A) {
-        this.entity.talkIndex.x = INDEX_X
-        this.entity.talkIndex.y = INDEX_Y_TYPEA + Math.floor(Math.random() * INDEX_Y_TYPEA_LENGTH)
-        this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-      } else if (this.innerTalkType === this.INNER_TALK_TYPE_B) {
-        this.entity.talkIndex.x = INDEX_X
-        this.entity.talkIndex.y = INDEX_Y_TYPEB + Math.floor(Math.random() * INDEX_Y_TYPEB_LENGTH)
-        this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-      }
-    } else {
-      this.entity.talkState = DonggramiEntity.TALK_STATES.NONE
+        break
+      default:
+        this.entity.talkState = DonggramiEntity.TALK_STATES.NONE
+        break
     }
   }
 
-  processTalk () {
-    if (this.state === DonggramiEntity.STATES.NORMAL) {
-      if (this.playerCollisionDelay.check()) {
-        if (this.playerCollisionCount > 1) {
-          this.playerCollisionCount--
-        }
-      }
-    }
+  processState () {
+    super.processState()
+    this.processTalk()
+  }
 
+  processTalk () {
     if (this.entity.talkDelay.check()) {
       this.entity.talkDelay.setDelay(this.entity.getTalkRandomDelay())
+      this.state = Math.random() < 0.5 ? DonggramiEntity.STATES.NORMAL : DonggramiEntity.STATES.NONE
       this.setTalkIndex()
     }
   }
@@ -4736,11 +4716,6 @@ class DonggramiEnemyB2Mini extends DonggramiEnemy {
     super()
     this.setEnemyStat(20000000, 0, 0)
 
-    // 충돌된경우, 서로 튕겨져 나갑니다.
-    this.STATE_COLLISION = 2
-    this.STATE_COLLLISON_PROCESSING = 3 // collision 중복 처리 방지용
-    this.STATE_NORMAL = 1
-
     this.autoMovePositionX = 0
     this.autoMovePositionY = 0
     this.movePositionFrame = 0
@@ -4761,73 +4736,64 @@ class DonggramiEnemyB2Mini extends DonggramiEnemy {
   }
 
   setTalkIndex () {
-    const INDEX_X = 4
-    const INDEX_Y_TYPEA = 8
-    const INDEX_Y_TYPEA_LENGTH = 5
-    const INDEX_Y_TYPEB = 13
-    const INDEX_Y_TYPEB_LENGTH = 2
-    const INDEX_OUCH_X = 4
-    const INDEX_Y_OUCH1A = 16
-    // const INDEX_Y_OUCH1B = 17 B타입은 부딪혀도 아무말도 하지 않음...
-    const INDEX_Y_OUCH2A = 18
-    const INDEX_Y_OUCH2B = 19
+    const INDEXS = DonggramiEntity.TALK_INDEXS
+    const isOver5 = this.playerCollisionCount >= 5
+    const isTypeA = this.innerTalkType === this.INNER_TALK_TYPE_A
+    const STATES = DonggramiEntity.STATES
+    this.entity.talkDelay.countReset()
 
-    if (this.state === this.STATE_COLLLISON_PROCESSING) {
-      if (this.innerTalkType === this.INNER_TALK_TYPE_A) {
-        this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-        this.entity.talkIndex.x = INDEX_OUCH_X
-        if (this.playerCollisionCount >= 5) {
-          this.entity.talkIndex.y = INDEX_Y_OUCH2A
-          this.entity.talkDelay.setDelay(240)
+    switch (this.state) {
+      case STATES.R2_3_PLAYER_COLLISION_PROCESSING:
+        if (isTypeA) {
+          if (isOver5) {
+            this.entity.setTalkIndexPosition(INDEXS.B_SAD_A.X, INDEXS.B_SAD_A.Y, INDEXS.B_SAD_A.LEN)
+            this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 240)
+          } else {
+            this.entity.setTalkIndexPosition(INDEXS.B_OUCH_A.X, INDEXS.B_OUCH_A.Y, INDEXS.B_OUCH_A.LEN)
+            this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 60)
+          }
         } else {
-          this.entity.talkIndex.y = INDEX_Y_OUCH1A
-          this.entity.talkDelay.setDelay(30)
+          if (isOver5) {
+            this.entity.setTalkIndexPosition(INDEXS.B_SAD_B.X, INDEXS.B_SAD_B.Y, INDEXS.B_SAD_B.LEN)
+            this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 240)
+          }
         }
-      } else if (this.innerTalkType === this.INNER_TALK_TYPE_B) {
-        if (this.playerCollisionCount >= 5) {
-          this.entity.talkIndex.x = INDEX_OUCH_X
-          this.entity.talkIndex.y = INDEX_Y_OUCH2B
-          this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-          this.entity.talkDelay.setDelay(240)
+        break
+      case STATES.NORMAL:
+        if (this.innerTalkType === this.INNER_TALK_TYPE_A) {
+          this.entity.setTalkIndexPosition(INDEXS.B2_A.X, INDEXS.B2_A.Y, INDEXS.B2_A.LEN)
+          this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK)
+        } else {
+          this.entity.setTalkIndexPosition(INDEXS.B2_B.X, INDEXS.B2_B.Y, INDEXS.B2_B.LEN)
+          this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK)
         }
-      }
-    } else if (this.state === this.STATE_NORMAL && Math.random() < 0.3) { // 30% 확률
-      if (this.innerTalkType === this.INNER_TALK_TYPE_A) {
-        this.entity.talkIndex.x = INDEX_X
-        this.entity.talkIndex.y = INDEX_Y_TYPEA + Math.floor(Math.random() * INDEX_Y_TYPEA_LENGTH)
-        this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-      } else if (this.innerTalkType === this.INNER_TALK_TYPE_B) {
-        this.entity.talkIndex.x = INDEX_X
-        this.entity.talkIndex.y = INDEX_Y_TYPEB + Math.floor(Math.random() * INDEX_Y_TYPEB_LENGTH)
-        this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-      }
-    } else {
-      this.entity.talkState = DonggramiEntity.TALK_STATES.NONE // 대화 없음
+        break
+      default:
+        this.entity.talkState = DonggramiEntity.TALK_STATES.NONE
+        break
     }
   }
 
-  processTalk () {
-    if (this.state === this.STATE_NORMAL) {
-      if (this.playerCollisionDelay.check()) {
-        if (this.playerCollisionCount > 1) {
-          this.playerCollisionCount--
-        }
-      }
-    }
+  processState () {
+    super.processState()
+    this.processTalk()
+  }
 
+  processTalk () {
     if (this.entity.talkDelay.check()) {
       this.entity.talkDelay.setDelay(this.entity.getTalkRandomDelay())
+      this.state = Math.random() < 0.5 ? DonggramiEntity.STATES.NORMAL : DonggramiEntity.STATES.NONE
       this.setTalkIndex()
     }
   }
 
   processMove () {
-    if (this.state === this.STATE_COLLISION) {
+    if (this.state === DonggramiEntity.STATES.R2_3_PLAYER_COLLISION) {
       let outMove = (Math.random() * 80) + 60
       this.autoMovePositionX = Math.random() < 0.5 ? this.x + outMove : this.x - outMove
       this.autoMovePositionY = Math.random() < 0.5 ? this.y + outMove : this.y - outMove
       this.movePositionFrame = 40
-      this.state = this.STATE_COLLLISON_PROCESSING
+      this.state = DonggramiEntity.STATES.R2_3_PLAYER_COLLISION_PROCESSING
       this.currentEffect = fieldState.createEffectObject(DonggramiEntity.exclamationMarkEffectShort, this.x, this.y - 40)
       this.playerCollisionCount++
       this.setTalkIndex()
@@ -4845,7 +4811,7 @@ class DonggramiEnemyB2Mini extends DonggramiEnemy {
     if (this.movePositionFrame > 0) {
       this.movePositionFrame--
     } else {
-      this.state = this.STATE_NORMAL
+      this.state = DonggramiEntity.STATES.NORMAL
     }
 
     if (this.movePositionFrame >= 1) {
@@ -4872,7 +4838,6 @@ class DonggramiEnemyA3Collector extends DonggramiEnemy {
     this.STATE_END = 3
     this.STATE_NORMAL = 1
     this.STATE_BOOST = 2
-    /** 이 상태는 제거됨  @deprecated */ this.STATE_STUN = 4
     this.state = this.STATE_NORMAL
     this.isPossibleExit = false
     this.stunFrame = 60 // 일시적인 기절 시간
@@ -4890,46 +4855,37 @@ class DonggramiEnemyA3Collector extends DonggramiEnemy {
   }
 
   setTalkIndex () {
-    // 설명은 DonggramiEnemyA1과 동일
-    const INDEX_X = 3
-    const INDEX_Y_START = 13
-    const INDEX_Y_BOOST = 17
-
-    this.entity.talkIndex.x = INDEX_X
+    const INDEXS = DonggramiEntity.TALK_INDEXS
     if (this.elapsedFrame <= 180) {
-      this.entity.talkIndex.y = INDEX_Y_START
-      this.entity.talkDelay.setDelay(180)
-      this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-    } else if (this.state === this.STATE_BOOST) {
-      this.entity.talkIndex.y = INDEX_Y_BOOST
-      this.entity.talkDelay.setDelay(180)
-      this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-    } else if (this.state === this.STATE_END) {
-      this.#talkIndexStateEnd()
-      this.entity.talkDelay.setDelay(240)
-      this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-    } else {
-      this.entity.talkState = DonggramiEntity.TALK_STATES.NONE
+      this.entity.setTalkIndexPosition(INDEXS.A3_START.X, INDEXS.A3_START.Y, INDEXS.A3_START.LEN)
+      this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 180)
+      return
     }
 
+    switch (this.state) {
+      case this.STATE_BOOST:
+        this.entity.setTalkIndexPosition(INDEXS.A3_BOOST.X, INDEXS.A3_BOOST.Y, INDEXS.A3_BOOST.LEN)
+        this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 180)
+        break
+      case this.STATE_END:
+        if (this.result === this.RESULT_WIN) {
+          this.entity.setTalkIndexPosition(INDEXS.A3_WIN.X, INDEXS.A3_WIN.Y, INDEXS.A3_WIN.LEN)
+        } else if (this.result === this.RESULT_DRAW) {
+          this.entity.setTalkIndexPosition(INDEXS.A3_DRAW.X, INDEXS.A3_DRAW.Y, INDEXS.A3_DRAW.LEN)
+        } else if (this.result === this.RESULT_LOSE) {
+          this.entity.setTalkIndexPosition(INDEXS.A3_LOSE.X, INDEXS.A3_LOSE.Y, INDEXS.A3_LOSE.LEN)
+        }
+
+        this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 240)
+        break
+      default:
+        this.entity.talkState = DonggramiEntity.TALK_STATES.NONE
+        break
+    }
+
+    // 대화 상태일때는 대화 딜레이 리셋 (안그러면 대화 지속시간이 더 짧아질 수 있음)
     if (this.entity.talkState === DonggramiEntity.TALK_STATES.TALK) {
       this.entity.talkDelay.countReset()
-    }
-  }
-
-  #talkIndexStateEnd () {
-    // 설명은 DonggramiEnemyA1과 동일
-    const INDEX_Y_WIN = 14
-    const INDEX_Y_LOSE = 15
-    const INDEX_Y_DRAW = 16
-
-    // 참고: 이 함수를 실행하기 이전에 이미 talkIndex.x 좌표는 정해졌음
-    if (this.result === this.RESULT_WIN) {
-      this.entity.talkIndex.y = INDEX_Y_WIN
-    } else if (this.result === this.RESULT_LOSE) {
-      this.entity.talkIndex.y = INDEX_Y_LOSE
-    } else if (this.result === this.RESULT_DRAW) {
-      this.entity.talkIndex.y = INDEX_Y_DRAW
     }
   }
 
@@ -4937,11 +4893,9 @@ class DonggramiEnemyA3Collector extends DonggramiEnemy {
     super.process()
     this.processCatch()
 
+    // 체력 무제한으로 적용
     if (this.hp <= this.hpMax - 1000000) {
-      this.hp = this.hpMax
-      this.stunFrame = 120
-      this.state = this.STATE_STUN
-      fieldState.createEffectObject(DonggramiEntity.exclamationMarkEffect, this.x, this.y - 40)
+      this.hp = this.hpMax  
     }
   }
 
@@ -4985,14 +4939,7 @@ class DonggramiEnemyA3Collector extends DonggramiEnemy {
   }
 
   processMove () {
-    if (this.state === this.STATE_STUN) {
-      // 아무것도 할 수 없음(이동불가, 다만 파워는 먹을 수도?)
-      this.stunFrame--
-      if (this.stunFrame <= 0) {
-        this.state = this.STATE_NORMAL
-      }
-      return
-    } else if (this.targetObject == null) {
+    if (this.targetObject == null) {
       return
     }
 
@@ -5045,21 +4992,8 @@ class DonggramiEnemyA3Collector extends DonggramiEnemy {
   processCatch () {
     if (this.targetObject == null) {
       let sprite = fieldState.getSpriteObject()
-      let lowDistance = 99999 // 일부러 큰 숫자를 지정해서, 첫번째 스프라이트를 비교했을 때 작은 수를 찾을 수 있도록 유도
       let random = Math.floor(Math.random() * sprite.length)
       this.targetObject = sprite[random]
-
-      // for (let i = 0; i < sprite.length; i++) {
-      //   let currentSprite = sprite[i]
-      //   // 적과 스프라이트의 x좌표 차이와 y좌표 차이의 합을 계산
-      //   let totalDistance = (this.x - currentSprite.x) + (this.y - currentSprite.y)
-
-      //   // 가장 가까운 거리 (단 떨어져있는 거리가 음수일수도 있으므로 절댓값을 사용해서 비교해야합니다.)
-      //   if (lowDistance > Math.abs(totalDistance)) {
-      //     lowDistance = Math.abs(totalDistance)
-      //     this.targetObject = currentSprite
-      //   }
-      // }
     } else {
       // 타겟 오브젝트가 있는 경우
       if (this.targetObject.isDeleted) {
@@ -5091,67 +5025,63 @@ class DonggramiEnemyB3Mini extends DonggramiEnemy {
   }
 
   afterInit () {
-    // 75%확률 A타입, 25%확률 B타입
-    this.innerTalkType = Math.random() < 0.75 ? this.INNER_TALK_TYPE_A : this.INNER_TALK_TYPE_B
+    // 각 확률에 따라 A, B 타입이 나눠짐
+    this.innerTalkType = Math.random() < 0.5 ? this.INNER_TALK_TYPE_A : this.INNER_TALK_TYPE_B
   }
 
   setTalkIndex () {
-    const INDEX_X = 5
-    const INDEX_Y_TYPEA = 0
-    const INDEX_Y_TYPEA_LENGTH = 5
-    const INDEX_Y_TYPEB = 5
-    const INDEX_Y_TYPEB_LENGTH = 2
-    const INDEX_OUCH_X = 4
-    const INDEX_Y_OUCH1A = 16
-    // const INDEX_Y_OUCH1B = 17 B타입은 부딪혀도 아무말도 하지 않음...
-    const INDEX_Y_OUCH2A = 18
-    const INDEX_Y_OUCH2B = 19
+    const INDEXS = DonggramiEntity.TALK_INDEXS
+    const isOver5 = this.playerCollisionCount >= 5
+    const isTypeA = this.innerTalkType === this.INNER_TALK_TYPE_A
+    const STATES = DonggramiEntity.STATES
+    this.entity.talkDelay.countReset()
 
-    if (this.state === DonggramiEntity.STATES.R2_3_PLAYER_COLLISION_PROCESSING || this.state === DonggramiEntity.STATES.R2_AUTOMOVE) {
-      if (this.innerTalkType === this.INNER_TALK_TYPE_A) {
-        this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-        this.entity.talkIndex.x = INDEX_OUCH_X
-        if (this.playerCollisionCount >= 5 && this.state === DonggramiEntity.STATES.R2_3_PLAYER_COLLISION_PROCESSING) {
-          this.entity.talkIndex.y = INDEX_Y_OUCH2A
-          this.entity.talkDelay.setDelay(240)
+    switch (this.state) {
+      case STATES.R2_3_OBJECT_COLLISION_PROCESSING:
+      case STATES.R2_3_PLAYER_COLLISION_PROCESSING:
+      case STATES.R2_AUTOMOVE:
+        if (isTypeA) {
+          if (isOver5 && this.state === STATES.R2_3_PLAYER_COLLISION_PROCESSING) {
+            this.entity.setTalkIndexPosition(INDEXS.B_SAD_A.X, INDEXS.B_SAD_A.Y, INDEXS.B_SAD_A.LEN)
+            this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 240)
+          } else if (this.state === STATES.R2_3_OBJECT_COLLISION_PROCESSING) {
+            this.entity.setTalkIndexPosition(INDEXS.B_BUMP_A.X, INDEXS.B_BUMP_A.Y, INDEXS.B_BUMP_A.LEN)
+            this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 60)
+          } else {
+            this.entity.setTalkIndexPosition(INDEXS.B_OUCH_A.X, INDEXS.B_OUCH_A.Y, INDEXS.B_OUCH_A.LEN)
+            this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 60)
+          }
         } else {
-          this.entity.talkIndex.y = INDEX_Y_OUCH1A
-          this.entity.talkDelay.setDelay(30)
+          if (isOver5) {
+            this.entity.setTalkIndexPosition(INDEXS.B_SAD_B.X, INDEXS.B_SAD_B.Y, INDEXS.B_SAD_B.LEN)
+            this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK, 240)
+          }
         }
-      } else if (this.innerTalkType === this.INNER_TALK_TYPE_B) {
-        if (this.playerCollisionCount >= 5 && this.state === DonggramiEntity.STATES.R2_3_PLAYER_COLLISION_PROCESSING) {
-          this.entity.talkIndex.x = INDEX_OUCH_X
-          this.entity.talkIndex.y = INDEX_Y_OUCH2B
-          this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-          this.entity.talkDelay.setDelay(240)
+        break
+      case STATES.NORMAL:
+        if (this.innerTalkType === this.INNER_TALK_TYPE_A) {
+          this.entity.setTalkIndexPosition(INDEXS.B3_A.X, INDEXS.B3_A.Y, INDEXS.B3_A.LEN)
+          this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK)
+        } else {
+          this.entity.setTalkIndexPosition(INDEXS.B3_B.X, INDEXS.B3_B.Y, INDEXS.B3_B.LEN)
+          this.entity.setTalkStateWithDelay(DonggramiEntity.TALK_STATES.TALK)
         }
-      }
-    } else if (this.state === DonggramiEntity.STATES.NORMAL && Math.random() < 0.3) { // 30% 확률
-      if (this.innerTalkType === this.INNER_TALK_TYPE_A) {
-        this.entity.talkIndex.x = INDEX_X
-        this.entity.talkIndex.y = INDEX_Y_TYPEA + Math.floor(Math.random() * INDEX_Y_TYPEA_LENGTH)
-        this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-      } else if (this.innerTalkType === this.INNER_TALK_TYPE_B) {
-        this.entity.talkIndex.x = INDEX_X
-        this.entity.talkIndex.y = INDEX_Y_TYPEB + Math.floor(Math.random() * INDEX_Y_TYPEB_LENGTH)
-        this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
-      }
-    } else {
-      this.entity.talkState = DonggramiEntity.TALK_STATES.NONE // 대화 없음
+        break
+      default:
+        this.entity.talkState = DonggramiEntity.TALK_STATES.NONE
+        break
     }
   }
 
-  processTalk () {
-    if (this.state === FieldData.state.NORMAL) {
-      if (this.playerCollisionDelay.check()) {
-        if (this.playerCollisionCount > 1) {
-          this.playerCollisionCount--
-        }
-      }
-    }
+  processState () {
+    super.processState()
+    this.processTalk()
+  }
 
+  processTalk () {
     if (this.entity.talkDelay.check()) {
       this.entity.talkDelay.setDelay(this.entity.getTalkRandomDelay())
+      this.state = DonggramiEntity.STATES.NORMAL
       this.setTalkIndex()
     }
   }
@@ -5160,7 +5090,9 @@ class DonggramiEnemyB3Mini extends DonggramiEnemy {
     if (this.state === FieldData.state.NORMAL) {
       super.processMove()
       this.message = ''
-    } else if (this.state === DonggramiEntity.STATES.R2_AUTOMOVE) { 
+    } else if (this.state === DonggramiEntity.STATES.R2_3_PLAYER_COLLISION_PROCESSING
+      || this.state === DonggramiEntity.STATES.R2_3_OBJECT_COLLISION_PROCESSING
+    ) { 
       let distanceX = (this.autoMovePositionX - this.x) / 12
       let distanceY = (this.autoMovePositionY - this.y) / 12
       this.x += distanceX
@@ -5170,11 +5102,22 @@ class DonggramiEnemyB3Mini extends DonggramiEnemy {
       } else {
         this.autoMoveFrame--
       }
-    } else if (this.state === DonggramiEntity.STATES.R2_3_PLAYER_COLLISION) {
+    } else if (this.state === DonggramiEntity.STATES.R2_3_PLAYER_COLLISION
+      || this.state === DonggramiEntity.STATES.R2_3_OBJECT_COLLISION
+    ) {
+      if (this.state === DonggramiEntity.STATES.R2_3_PLAYER_COLLISION) {
+        this.playerCollisionCount++
+        this.state = DonggramiEntity.STATES.R2_3_PLAYER_COLLISION_PROCESSING
+      } else {
+        if (Math.random() < 0.3) {
+          this.state = DonggramiEntity.STATES.R2_3_OBJECT_COLLISION_PROCESSING
+        }
+      }
+
+      this.setTalkIndex() // 여기서 대사를 강제 출력하도록 유도 안그러면, 대사가 안뜸
       this.autoMovePositionX = this.x + Math.floor(Math.random() * 400) - 200
       this.autoMovePositionY = this.y + Math.floor(Math.random() * 400) - 200
       this.autoMoveFrame = 30
-      this.state = DonggramiEntity.STATES.R2_AUTOMOVE
       this.currentEffect = fieldState.createEffectObject(DonggramiEntity.exclamationMarkEffectShort, this.x, this.y - 40)
     }
 

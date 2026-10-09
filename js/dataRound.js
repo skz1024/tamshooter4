@@ -5433,6 +5433,14 @@ class Round2_3 extends RoundData {
     return this.courseClearList.includes(courseNumber)
   }
 
+  /** 코스 클리어를 등록합니다. */
+  setCourseClear (courseNumber = 0) {
+    const INDEX = this.courseClearList.indexOf(-1)
+    if (INDEX >= 0 && INDEX <= this.courseClearList.length) {
+      this.courseClearList[INDEX] = courseNumber
+    }
+  }
+
   processCourseSelect () {
     if (!this.isCourseSelectMode) return
 
@@ -5892,7 +5900,7 @@ class Round2_3 extends RoundData {
     // 그리고 해당 코스를 클리어한것을 기록합니다.
     if ([this.resultList.COMPLETE, this.resultList.WIN, this.resultList.DRAW, this.resultList.LOSE].includes(resultValue)) {
       this.sound.musicStop()
-      this.courseClearList.push(this.courseCursorNumber)
+      this.setCourseClear(this.courseCursorNumber)
     }
   }
 
@@ -6211,7 +6219,7 @@ class Round2_3 extends RoundData {
     let enemyArray = this.field.getEnemyObject()
     let playerP = this.field.getPlayerObject()
     for (let i = 0; i < enemyArray.length; i++) {
-      let enemyC = enemyArray[i]
+      const enemyC = enemyArray[i]
       if (enemyC.state === DonggramiEntity.STATES.NORMAL && collision(playerP, enemyC)) {
         enemyC.state = DonggramiEntity.STATES.R2_3_PLAYER_COLLISION
         this.sound.play(soundSrc.round.r2_3_a1_damage)
@@ -6751,8 +6759,8 @@ class Round2_3 extends RoundData {
     let player = this.field.getPlayerObject()
     let enemyObject = this.field.getEnemyObject()
     for (let i = 0; i < enemyObject.length; i++) {
-      if (enemyObject[i].state === 1 && collision(player, enemyObject[i])) {
-        enemyObject[i].state = 2
+      if (enemyObject[i].state === DonggramiEntity.STATES.NORMAL && collision(player, enemyObject[i])) {
+        enemyObject[i].state = DonggramiEntity.STATES.R2_3_PLAYER_COLLISION
         player.setAutoMove(player.x + Math.random() * 200 - 100, player.y + Math.random() * 200 - 100, 20)
         this.sound.play(soundSrc.round.r2_3_a1_damage)
         this.areaStat.areaBcollisionCount++
@@ -7658,7 +7666,7 @@ class Round2_3 extends RoundData {
       for (let i = 0; i < enemy.length; i++) {
         let currentEnemy = enemy[i]
         if (currentEnemy.state === DonggramiEntity.STATES.NORMAL && collision(currentEnemy, this)) {
-          currentEnemy.state = DonggramiEntity.STATES.R2_3_PLAYER_COLLISION
+          currentEnemy.state = DonggramiEntity.STATES.R2_3_OBJECT_COLLISION
           soundSystem.play(soundSrc.round.r2_3_b3_move)
         }
       }
@@ -7689,7 +7697,7 @@ class Round2_3 extends RoundData {
       for (let i = 0; i < enemy.length; i++) {
         let currentEnemy = enemy[i]
         if (currentEnemy.state === DonggramiEntity.STATES.NORMAL && collision(currentEnemy, this)) {
-          currentEnemy.state = DonggramiEntity.STATES.R2_3_PLAYER_COLLISION
+          currentEnemy.state = DonggramiEntity.STATES.R2_3_OBJECT_COLLISION
           soundSystem.play(soundSrc.round.r2_3_b3_move)
         }
       }

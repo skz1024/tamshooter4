@@ -28,9 +28,49 @@ export class DonggramiEntity {
     EMOJICATCH: 75328
   }
 
+  /** 이 값은 이미지파일 ./image/enemy/donggramiEnemyTalkList.png 참고  
+   * 거기에 나와있는 텍스트 종류에 따라 적힌 값임 */
   static TALK_INDEXS = {
     /** talk index가 정의되어있지 않은 경우 */ NULL: -1,
     /** talk index가 사용되지 않는 경우 */ UNUSED: -2, 
+
+    // 이 그룹들은 A, B형을 따로 구분하지 않고 단순히 텍스트를 대입합니다.
+    // 그리고, 텍스트 수 차이 때문에 A형이 다수, B형이 소수가 됩니다.
+    NORMAL: {X: 0, Y: 0, LEN: 19},
+    SHOPPING: {X: 1, Y: 0, LEN: 15},
+    PARTY: {X: 2, Y: 0, LEN: 15},
+    RUIN: {X: 3, Y: 0, LEN: 4},
+    R2_4RUN: {X: 2, Y: 15, LEN: 1},
+    R3_GETLOST: {X: 5, Y: 8, LEN: 5},
+    R3_RETURN_TO: {X: 5, Y: 14, LEN: 6},
+
+    // 이 그룹들은 A형 B형이 서로 나뉩니다. 따라서 YA, YB로 구분되었습니다.
+    // 참고: 이것은 동그라미의 시점이며
+    // 플레이어 기준의 WIN, LOSE가 아닙니다.
+    A1_START: {X: 3, Y: 5, LEN: 1},
+    A1_WIN: {X: 3, Y: 6, LEN: 1},
+    A1_LOSE: {X: 3, Y: 7, LEN: 1},
+    A1_DRAW: {X: 3, Y: 8, LEN: 1},
+    A1_HAMMER: {X: 3, Y: 9, LEN: 1},
+    A1_BOOST: {X: 3, Y: 9, LEN: 1},
+    A1_EARTHQUAKE: {X: 3, Y: 11, LEN: 1},
+    A3_START: {X: 3, Y: 13, LEN: 1},
+    A3_WIN: {X: 3, Y: 14, LEN: 1},
+    A3_LOSE: {X: 3, Y: 15, LEN: 1},
+    A3_DRAW: {X: 3, Y: 16, LEN: 1},
+    A3_BOOST: {X: 3, Y: 17, LEN: 1},
+
+    // B구역에만 해당
+    B_OUCH_A: {X: 4, Y: 16, LEN: 1},
+    B_BUMP_A: {X: 4, Y: 17, LEN: 1},
+    B_SAD_A: {X: 4, Y: 18, LEN: 1},
+    B_SAD_B: {X: 4, Y: 19, LEN: 1},
+    B1_A: {X: 4, Y: 0, LEN: 5},
+    B1_B: {X: 4, Y: 5, LEN: 2},
+    B2_A: {X: 4, Y: 8, LEN: 5},
+    B2_B: {X: 4, Y: 13, LEN: 2},
+    B3_A: {X: 5, Y: 0, LEN: 5},
+    B3_B: {X: 5, Y: 5, LEN: 2},
   }
 
   /** 동그라미가 죽을 때 나오는 사운드 */
@@ -43,9 +83,12 @@ export class DonggramiEntity {
   static DIE_FALL_SPEED = 10
 
   static STATES = {
+    NONE: FieldData.state.NONE,
     NORMAL: FieldData.state.NORMAL,
     R2_3_PLAYER_COLLISION: 13742568,
     R2_3_PLAYER_COLLISION_PROCESSING: 13742593,
+    R2_3_OBJECT_COLLISION: 13743932,
+    R2_3_OBJECT_COLLISION_PROCESSING: 13743975,
     R2_AUTOMOVE: 14750826,
     SPEED_BOOST: 15672762,
     /** 느낌표 진행 상태 */ EXCLMATION_PROCESS: 30174266,
@@ -104,6 +147,7 @@ export class DonggramiEntity {
   static BUFFER_INDEXS = {
     STATE: 0,
     RESULT_MESSAGE: 1,
+    PLAYER_COLLISION_COUNT: 2,
   }
 
   static BUFFER_R2_3_STATES = {
@@ -161,60 +205,43 @@ export class DonggramiEntity {
     /** 이모지를 받은 상태와 관련한 딜레이 */ this.catchEmojiDelay = new DelayData(300)
   }
 
+  /** setTalkIndex의 하위 호환 때문에, 좌표 설정 함수를 따로 만들었습니다. */
+  setTalkIndexPosition (indexX = 0, indexY = 0, indexLength = 1) {
+    this.talkIndex.x = indexX
+    this.talkIndex.y = indexY + Math.floor(Math.random() * indexLength)
+  }
+
+  /** 상태 변경과 딜레이 재설정을 다시 합니다. */
+  setTalkStateWithDelay (changeState = 0, delay = this.talkDelay.delay) {
+    this.talkState = changeState
+    this.talkDelay.delay = delay
+  }
+
   /** 
    * 랜덤한 대화 인덱스를 지정합니다. this.talkType에 따라 결과가 달라짐
    * 
    * 일부 객체는 이 함수를 상속받고 다른 결과를 낼 수 있음.
    */
   setTalkIndex () {
+    const INDEXS = DonggramiEntity.TALK_INDEXS
+    const TYPES = DonggramiEntity.TalkTypeList
+
     // x축 값만 따지는 이유는, 어차피 한쪽만 unused되어도 출력을 못하기 때문
     // unused 상태라면, 아예 대화하지 않는다는 뜻이므로 그대로 적용
-    if (this.talkIndex.x === DonggramiEntity.TALK_INDEXS.UNUSED) return
+    if (this.talkIndex.x === INDEXS.UNUSED) return
 
-    // 이 값은 이미지파일 ./image/enemy/donggramiEnemyTalkList.png 참고
-    // 거기에 나와있는 텍스트 종류에 따라 적힌 값임
-    const INDEX_NORMAL_X = 0
-    const INDEX_SHOPPING_X = 1
-    const INDEX_PARTY_X = 2
-    const INDEX_RUIN_X = 3
-    const INDEX_NORMAL_LENGTH = 19
-    const INDEX_SHOPPING_LENGTH = 15
-    const INDEX_PARTY_LENGTH = 14
-    const INDEX_RUIN_LENGTH = 4
-    const INDEX_R2_4RUN_X = 2
-    const INDEX_R2_4RUN_Y = 15
-    const INDEX_R3_GETLOST_X = 5
-    const INDEX_R3_GETLOST_Y = 8
-    const INDEX_R3_GETLOST_LENGTH = 5
-    const INDEX_R3_RETURNTO_X = 5
-    const INDEX_R3_RETURNTO_Y = 14
-    const INDEX_R3_RETURNTO_LENGTH = 6
-
-    if (this.talkType === DonggramiEntity.TalkTypeList.NORMAL) {
-      this.talkIndex.x = INDEX_NORMAL_X
-      this.talkIndex.y = Math.floor(Math.random() * INDEX_NORMAL_LENGTH)
-    } else if (this.talkType === DonggramiEntity.TalkTypeList.SHOPPING) {
-      this.talkIndex.x = INDEX_SHOPPING_X
-      this.talkIndex.y = Math.floor(Math.random() * INDEX_SHOPPING_LENGTH)
-    } else if (this.talkType === DonggramiEntity.TalkTypeList.PARTY) {
-      this.talkIndex.x = INDEX_PARTY_X
-      this.talkIndex.y = Math.floor(Math.random() * INDEX_PARTY_LENGTH)
-    } else if (this.talkType === DonggramiEntity.TalkTypeList.R2_4RUN) {
-      this.talkIndex.x = INDEX_R2_4RUN_X
-      this.talkIndex.y = INDEX_R2_4RUN_Y
-    } else if (this.talkType === DonggramiEntity.TalkTypeList.RUIN) {
-      this.talkIndex.x = INDEX_RUIN_X
-      this.talkIndex.y = Math.floor(Math.random() * INDEX_RUIN_LENGTH)
-    } else if (this.talkType === DonggramiEntity.TalkTypeList.R3_GETLOST) {
-      this.talkIndex.x = INDEX_R3_GETLOST_X
-      this.talkIndex.y = INDEX_R3_GETLOST_Y + Math.floor(Math.random() * INDEX_R3_GETLOST_LENGTH)
-    } else if (this.talkType === DonggramiEntity.TalkTypeList.R3_RETURNTO)  {
-      this.talkIndex.x = INDEX_R3_RETURNTO_X
-      this.talkIndex.y = INDEX_R3_RETURNTO_Y + Math.floor(Math.random() * INDEX_R3_RETURNTO_LENGTH)
-    } else {
-      this.talkIndex.x = DonggramiEntity.TALK_INDEXS.UNUSED
-      this.talkIndex.y = DonggramiEntity.TALK_INDEXS.UNUSED
+    switch (this.talkType) {
+      case TYPES.NORMAL: this.setTalkIndexPosition(INDEXS.NORMAL.X, INDEXS.NORMAL.Y, INDEXS.NORMAL.LEN); break
+      case TYPES.SHOPPING: this.setTalkIndexPosition(INDEXS.SHOPPING.X, INDEXS.SHOPPING.Y, INDEXS.SHOPPING.LEN); break
+      case TYPES.PARTY: this.setTalkIndexPosition(INDEXS.PARTY.X, INDEXS.PARTY.Y, INDEXS.PARTY.LEN); break
+      case TYPES.RUIN: this.setTalkIndexPosition(INDEXS.RUIN.X, INDEXS.RUIN.Y, INDEXS.RUIN.LEN); break
+      case TYPES.R2_4RUN: this.setTalkIndexPosition(INDEXS.R2_4RUN.X, INDEXS.R2_4RUN.Y, INDEXS.R2_4RUN.LEN); break
+      case TYPES.R3_GETLOST: this.setTalkIndexPosition(INDEXS.R3_GETLOST.X, INDEXS.R3_GETLOST.Y, INDEXS.R3_GETLOST.LEN); break
+      case TYPES.R3_RETURNTO: this.setTalkIndexPosition(INDEXS.R3_RETURN_TO.X, INDEXS.R3_RETURN_TO.Y, INDEXS.R3_RETURN_TO.LEN); break
+      default: this.setTalkIndexPosition(INDEXS.UNUSED, INDEXS.UNUSED)
     }
+
+
   }
 
   getTalkRandomDelay () {
