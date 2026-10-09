@@ -101,6 +101,23 @@ export class DonggramiEntity {
     /** 생각중, 띵킹 */ THINKING: 8,
   }
 
+  static BUFFER_INDEXS = {
+    STATE: 0,
+    RESULT_MESSAGE: 1,
+  }
+
+  static BUFFER_R2_3_STATES = {
+    NO_MESSAGE: 0,
+    AREA_A_WIN: 15411,
+    AREA_A_LOSE: 15412,
+    AREA_A_DRAW: 15413,
+    AREA_A_END: 15414,
+    A1_NORMAL: 1,
+    A1_BOOST: 2,
+    A1_HAMMER: 3,
+    A1_EARTHQUAKE: 4,
+  }
+
   /** 
    * 동그라미 객체의 서브타입이 이모지임을 가리키는 타입 상수
    * 

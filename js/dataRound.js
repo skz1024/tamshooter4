@@ -5992,29 +5992,26 @@ class Round2_3 extends RoundData {
 
   /** 코스 1 결과가 나오고 적에 대한 처리 */
   coursePhaseA1ResultEnemy () {
-    // 적이 한마리 밖에 없으므로, 0번 적을 가져옴
-    let enemyList = this.field.getEnemyObject()
-    if (enemyList == null || enemyList.length < 1) return
-
-    let enemy = enemyList[0]
-    if (enemy == null) return
-
-    const DONGGRAMI_WIN = 'donggramiWin'
-    const DONGGRAMI_LOSE = 'donggramiLose'
-    const DONGGRAMI_DRAW = 'donggramiDraw'
-    const END = 'end'
+    // 동그라미에서 주고받는 메세지
+    const OBJ_TYPE = FieldData.objectType.ENEMY
+    const ENEMY_ID = ID.enemy.donggramiEnemy.a1_fighter
+    const BUFFER_INDEX = DonggramiEntity.BUFFER_INDEXS.RESULT_MESSAGE
+    const DONGGRAMI_WIN = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_WIN
+    const DONGGRAMI_LOSE = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_LOSE
+    const DONGGRAMI_DRAW = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_DRAW
+    const DONGGRAMI_END = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_END
 
     // 적에게 메세지를 보내는 방식으로
     // 간접적으로 상태를 변경해서 전투 종료를 처리(저 메세지를 받으면 적은 더이상 패턴을 사용하지 않음.)
     // 참고: 메세지 기준은 동그라미의 입장에서 진행됨
-    if (this.result === this.resultList.WIN) { // 플레이어의 승리일경우
-      enemy.message = DONGGRAMI_LOSE // 동그라미는 패배
-    } else if (this.result === this.resultList.LOSE) { // 플레이어의 패배일경우
-      enemy.message = DONGGRAMI_WIN // 동그라미는 승리
+    if (this.result === this.resultList.WIN) { // 플레이어의 승리일경우 동그라미는 패배
+      this.field.sendMessage(OBJ_TYPE, ENEMY_ID, BUFFER_INDEX, DONGGRAMI_LOSE)
+    } else if (this.result === this.resultList.LOSE) { // 플레이어의 패배일경우 동그라미는 승리
+      this.field.sendMessage(OBJ_TYPE, ENEMY_ID, BUFFER_INDEX, DONGGRAMI_WIN)
     } else if (this.result === this.resultList.DRAW) { // 무승부
-      enemy.message = DONGGRAMI_DRAW
+      this.field.sendMessage(OBJ_TYPE, ENEMY_ID, BUFFER_INDEX, DONGGRAMI_DRAW)
     } else {
-      enemy.message = END // 이 이외의 결과는 적의 행동을 강제 종료 처리
+      this.field.sendMessage(OBJ_TYPE, ENEMY_ID, BUFFER_INDEX, DONGGRAMI_END) // 이 이외의 결과는 적의 행동을 강제 종료 처리
     }
   }
 
@@ -6045,8 +6042,8 @@ class Round2_3 extends RoundData {
   /** 적 데미지를 처리하기 위한 함수 */
   coursePhaseA1EnemyDamage () {
     // 유저 공격력을 그대로 가져와 유저가 준 데미지를 dps로 변환함
-    // 기준값은 dps의 25% (따라서 공격력을 4로 나눔)
-    const downValue = (this.areaStat.a1UserAttack / 4)
+    // 기준값은 dps의 50% (따라서 공격력 100%로 가정하고 2로 나눠서 50%로 만듬)
+    const downValue = (this.areaStat.a1UserAttack / 2)
     let enemy = this.field.getEnemyObjectById(ID.enemy.donggramiEnemy.a1_fighter)
     if (enemy == null) return
 
@@ -6065,9 +6062,6 @@ class Round2_3 extends RoundData {
    * 적이 가지고 있는 좌표값에 임의의 값을 추가하여 비교한다. 그러나 적이 가진 상태에 따라, 판정을 다르게 해야 한다.
    */
   coursePhaseA1PlayerDamage () {
-    let enemy = this.field.getEnemyObjectById(ID.enemy.donggramiEnemy.a1_fighter)
-    if (enemy == null) return
-
     // 플레이어 무적 프레임이 남아있으면, 이 프레임을 감소시키고 함수 처리를 무효화함.
     // 이렇게하면, 플레이어와 적과의 연속 충돌을 막을 수 있음.
     if (this.areaStat.playerInvincibleFrame > 0) {
@@ -6075,13 +6069,18 @@ class Round2_3 extends RoundData {
       return
     }
 
-    let player = fieldState.getPlayerObject()
-
     // 해당 적이 가지고 있는 4가지 상태
-    const STATE_HAMMER = 3
-    const STATE_EARTHQUAKE = 4
-    const STATE_NORMAL = 1
-    const STATE_BOOST = 2
+    const OBJ_TYPE = FieldData.objectType.ENEMY
+    const ENEMY_ID = ID.enemy.donggramiEnemy.a1_fighter
+    const BUFFER_INDEX = DonggramiEntity.BUFFER_INDEXS.STATE
+    const STATE_HAMMER = DonggramiEntity.BUFFER_R2_3_STATES.A1_HAMMER
+    const STATE_EARTHQUAKE = DonggramiEntity.BUFFER_R2_3_STATES.A1_EARTHQUAKE
+    const STATE_NORMAL = DonggramiEntity.BUFFER_R2_3_STATES.A1_NORMAL
+    const STATE_BOOST = DonggramiEntity.BUFFER_R2_3_STATES.A1_BOOST
+    const enemyState = this.field.getMessage(OBJ_TYPE, ENEMY_ID, BUFFER_INDEX)
+    let enemy = this.field.getEnemyObjectById(ID.enemy.donggramiEnemy.a1_fighter)
+    let player = fieldState.getPlayerObject()
+    if (enemy == null || enemyState == null) return
 
     // 각각의 판정범위를 가지는 오브젝트
     let enemyObject = {x: enemy.x, y: enemy.y, width: enemy.width, height: enemy.height}
@@ -6091,13 +6090,13 @@ class Round2_3 extends RoundData {
 
     // 적의 상태에 따라 판정 범위가 달라지며, 충돌이 된경우 각 조건에 따라 데미지 추가
     let damage = 0
-    if (enemy.state === STATE_NORMAL && collision(player, enemyObject)) {
+    if (enemyState === STATE_NORMAL && collision(player, enemyObject)) {
       damage = 200
-    } else if (enemy.state === STATE_BOOST && collision(player, enemyObject)) {
+    } else if (enemyState === STATE_BOOST && collision(player, enemyObject)) {
       damage = 400
-    } else if (enemy.state === STATE_HAMMER && collision(player, hammerObject)) {
+    } else if (enemyState === STATE_HAMMER && collision(player, hammerObject)) {
       damage = 800
-    } else if (enemy.state === STATE_EARTHQUAKE) {
+    } else if (enemyState === STATE_EARTHQUAKE) {
       if (collision(player, earthQuakeObject) || collision(player, earthQuakeObject2)) {
         damage = 1200
       }
@@ -6506,17 +6505,18 @@ class Round2_3 extends RoundData {
     }
 
     // 플레이어 체력 감소 처리 (남은 체력에 따라 감소량이 달라짐)
+    // HP가 낮을수록 받는 데미지가 대폭 감소합니다.
     const hpRange75 = this.areaStat.A2_BASE_HP / 4 * 3
     const hpRange50 = this.areaStat.A2_BASE_HP / 2
     const hpRange25 = this.areaStat.A2_BASE_HP / 4
     if (this.areaStat.a2UserHp > hpRange75) {
       // 변동 없음
     } else if (this.areaStat.a2UserHp > hpRange50) {
-      damage /= 2 // 데미지를 2로 나눔
+      damage /= 2
     } else if (this.areaStat.a2UserHp > hpRange25) {
-      damage /= 4 // 데미지를 4로 나눔
+      damage /= 4
     } else {
-      damage /= 20 // 데미지를 10로 나눔
+      damage /= 20
     }
 
     this.areaStat.a2UserHp -= damage
@@ -6684,23 +6684,24 @@ class Round2_3 extends RoundData {
   }
 
   coursePhaseA3ResultEnemy () {
-    let enemy = this.field.getEnemyObjectById(ID.enemy.donggramiEnemy.a3_collector)
-    if (enemy == null) return
+    const OBJ_TYPE = FieldData.objectType.ENEMY
+    const ENEMY_ID = ID.enemy.donggramiEnemy.a3_collector
+    const BUFFER_INDEX = DonggramiEntity.BUFFER_INDEXS.RESULT_MESSAGE
+    const DONGGRAMI_WIN = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_WIN
+    const DONGGRAMI_LOSE = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_LOSE
+    const DONGGRAMI_DRAW = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_DRAW
+    const DONGGRAMI_END = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_END
 
-    const DONGGRAMI_WIN = 'donggramiWin'
-    const DONGGRAMI_LOSE = 'donggramiLose'
-    const DONGGRAMI_DRAW = 'donggramiDraw'
-    const END = 'end'
     // 적에게 메세지를 보내는 방식으로
     // 간접적으로 상태를 변경해서 전투 종료를 처리(저 메세지를 받으면 적은 더이상 패턴을 사용하지 않음.)
-    if (this.result === this.resultList.WIN) { // 플레이어의 승리일경우
-      enemy.message = DONGGRAMI_LOSE // 동그라미는 패배
-    } else if (this.result === this.resultList.LOSE) { // 플레이어의 패배일경우
-      enemy.message = DONGGRAMI_WIN // 동그라미는 승리
+    if (this.result === this.resultList.WIN) { // 플레이어의 승리일경우 동그라미는 패배
+      this.field.sendMessage(OBJ_TYPE, ENEMY_ID, BUFFER_INDEX, DONGGRAMI_LOSE)
+    } else if (this.result === this.resultList.LOSE) { // 플레이어의 패배일경우 동그라미는 승리
+      this.field.sendMessage(OBJ_TYPE, ENEMY_ID, BUFFER_INDEX, DONGGRAMI_WIN)
     } else if (this.result === this.resultList.DRAW) { // 무승부
-      enemy.message = DONGGRAMI_DRAW
+      this.field.sendMessage(OBJ_TYPE, ENEMY_ID, BUFFER_INDEX, DONGGRAMI_DRAW)
     } else {
-      enemy.message = END // 이 이외의 결과는 적의 행동을 강제 종료 처리
+      this.field.sendMessage(OBJ_TYPE, ENEMY_ID, BUFFER_INDEX, DONGGRAMI_END) // 이 이외의 결과는 적의 행동을 강제 종료 처리
     }
   }
 

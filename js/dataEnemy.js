@@ -3587,6 +3587,7 @@ export class DonggramiEnemy extends EnemyData {
     this.isExitToReset = true
     this.setRandomMoveSpeed(DonggramiEntity.BASE_SPEED, DonggramiEntity.BASE_SPEED, true)
     this.setWidthHeight(this.entity.imageData.width, this.entity.imageData.height)
+    this.messageBuffer = new Int32Array(10)
   }
 
   /**
@@ -4103,20 +4104,20 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
     this.setMoveDirection() // 이동방향 제거 (플레이어를 추적하는 알고리즘 때문)
 
     // 상태 값 종류: 4개 (문자값은 구분용도로만 사용하고 큰 의미는 없음)
-    this.STATE_NORMAL = 1
-    this.STATE_BOOST = 2
-    this.STATE_HAMMER = 3
-    this.STATE_EARTHQUAKE = 4
+    this.STATE_NORMAL = DonggramiEntity.BUFFER_R2_3_STATES.A1_NORMAL
+    this.STATE_BOOST = DonggramiEntity.BUFFER_R2_3_STATES.A1_BOOST
+    this.STATE_HAMMER = DonggramiEntity.BUFFER_R2_3_STATES.A1_HAMMER
+    this.STATE_EARTHQUAKE = DonggramiEntity.BUFFER_R2_3_STATES.A1_EARTHQUAKE
     this.STATE_EARTHQUAKE_WAIT = 5
-    this.STATE_END = 6
+    this.STATE_END = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_END
     this.state = this.STATE_NORMAL // 상태 기본값 지정
     this.stateDelay = new DelayData(120)
 
-    this.RESULT_WIN = 'win'
-    this.RESULT_LOSE = 'lose'
-    this.RESULT_DRAW = 'draw'
-    this.RESULT_END = 'end'
-    /** 동그라미 전투에 관한 결과 */ this.result = ''
+    this.RESULT_WIN = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_WIN
+    this.RESULT_LOSE = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_LOSE
+    this.RESULT_DRAW = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_DRAW
+    this.RESULT_END = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_END
+    /** 동그라미 전투에 관한 결과 */ this.result = 0
 
     /** 현재 상태를 계속 반복한 횟수 */
     this.stateRepeat = 0
@@ -4291,33 +4292,38 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
 
   processState () {
     this.processStateResult()
+
+    // 현재 상태를 라운드가 읽을 수 있도록 메세지로 등록
+    this.messageBuffer[DonggramiEntity.BUFFER_INDEXS.STATE] = this.state
   }
 
   processStateResult () {
     // 동그라미에서 주고받는 메세지
-    const DONGGRAMI_WIN = 'donggramiWin'
-    const DONGGRAMI_LOSE = 'donggramiLose'
-    const DONGGRAMI_DRAW = 'donggramiDraw'
-    const END = 'end'
+    const DONGGRAMI_WIN = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_WIN
+    const DONGGRAMI_LOSE = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_LOSE
+    const DONGGRAMI_DRAW = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_DRAW
+    const END = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_END
+    const message = this.messageBuffer[DonggramiEntity.BUFFER_INDEXS.RESULT_MESSAGE]
 
     // 저 위의 메세지 중 하나도 해당되지 않으면 무시
-    if (this.message !== DONGGRAMI_WIN && this.message !== DONGGRAMI_LOSE
-      && this.message !== DONGGRAMI_DRAW && this.message !== END) return
+    if (message !== DONGGRAMI_WIN && message !== DONGGRAMI_LOSE
+      && message !== DONGGRAMI_DRAW && message !== END) return
     
     // end 라고 적혀진 메세지를 받으면, 아무것도 하지 않도록 이 적의 상태를 변경함
-    if (this.message === DONGGRAMI_WIN) {
+    if (message === DONGGRAMI_WIN) {
       this.result = this.RESULT_WIN
-    } else if (this.message === DONGGRAMI_LOSE) {
+    } else if (message === DONGGRAMI_LOSE) {
       this.result = this.RESULT_LOSE
-    } else if (this.message === DONGGRAMI_DRAW) {
+    } else if (message === DONGGRAMI_DRAW) {
       this.result = this.RESULT_DRAW
-    } else if (this.message === END) {
+    } else if (message === END) {
       this.result = this.RESULT_END
     }
 
-    this.state = this.STATE_END // 상태 변경
-    this.message = '' // 메세지 초기화
-    this.setTalkIndex() // 메세지 설정
+    // 메세지의 중복 처리를 막기 위하여 메세지를 제거합니다.
+    this.messageBuffer[DonggramiEntity.BUFFER_INDEXS.RESULT_MESSAGE] = DonggramiEntity.BUFFER_R2_3_STATES.NO_MESSAGE
+    this.state = this.STATE_END
+    this.setTalkIndex() // 메세지를 재설정하기 위해 인덱스 함수 다시 호출
   }
 
   processMove () {
@@ -4493,6 +4499,9 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
 
     // 1초 이후는 상하로 매우 빠르게 이동
     if (this.stateDelay.count >= 60) {
+      // 대각선 이동 금지 버그를 위해 강제 수정
+      this.setMoveSpeed(0, this.moveSpeedY)
+
       // 카운트가 60이 되는 시점에서 속도 변경 (버그 방지용도)
       if (this.stateDelay.count === 60) this.setMoveSpeed(0, -96)
 
@@ -4948,29 +4957,31 @@ class DonggramiEnemyA3Collector extends DonggramiEnemy {
 
   processStateResult () {
     // 동그라미에서 주고받는 메세지
-    const DONGGRAMI_WIN = 'donggramiWin'
-    const DONGGRAMI_LOSE = 'donggramiLose'
-    const DONGGRAMI_DRAW = 'donggramiDraw'
-    const END = 'end'
+    const DONGGRAMI_WIN = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_WIN
+    const DONGGRAMI_LOSE = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_LOSE
+    const DONGGRAMI_DRAW = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_DRAW
+    const END = DonggramiEntity.BUFFER_R2_3_STATES.AREA_A_END
+    const MESSAGE = this.messageBuffer[DonggramiEntity.BUFFER_INDEXS.RESULT_MESSAGE]
 
     // 저 위의 메세지 중 하나도 해당되지 않으면 무시
-    if (this.message !== DONGGRAMI_WIN && this.message !== DONGGRAMI_LOSE
-      && this.message !== DONGGRAMI_DRAW && this.message !== END) return
+    if (MESSAGE !== DONGGRAMI_WIN && MESSAGE !== DONGGRAMI_LOSE
+      && MESSAGE !== DONGGRAMI_DRAW && MESSAGE !== END) return
     
     // end 라고 적혀진 메세지를 받으면, 아무것도 하지 않도록 이 적의 상태를 변경함
-    if (this.message === DONGGRAMI_WIN) {
+    if (MESSAGE === DONGGRAMI_WIN) {
       this.result = this.RESULT_WIN
-    } else if (this.message === DONGGRAMI_LOSE) {
+    } else if (MESSAGE === DONGGRAMI_LOSE) {
       this.result = this.RESULT_LOSE
-    } else if (this.message === DONGGRAMI_DRAW) {
+    } else if (MESSAGE === DONGGRAMI_DRAW) {
       this.result = this.RESULT_DRAW
-    } else if (this.message === END) {
+    } else if (MESSAGE === END) {
       this.result = this.RESULT_END
     }
 
-    this.state = this.STATE_END // 상태 변경
-    this.message = '' // 메세지 초기화
-    this.setTalkIndex() // 메세지 설정
+    // 메세지의 중복 처리를 막기 위하여 메세지를 제거합니다.
+    this.messageBuffer[DonggramiEntity.BUFFER_INDEXS.RESULT_MESSAGE] = DonggramiEntity.BUFFER_R2_3_STATES.NO_MESSAGE
+    this.state = this.STATE_END
+    this.setTalkIndex() // 메세지를 재설정하기 위해 인덱스 함수 다시 호출
   }
 
   processMove () {
