@@ -74,7 +74,7 @@ export class ID {
   }
 
   static playerWeapon = {
-    /** 사용되지 않는 id @deprecated */ unused: 0,
+    /** 사용되지 않는 id */ unused: 0,
     /** 무기 번호를 가져올 때 사용(서브웨폰은 엉뚱한 번호를 가져온다.) 
      * 지금은 목적이 바뀌어서 같은 값을 가진 또다른 변수를 만들었습니다.
      *  @deprecated */ weaponNumberStart: 10000,

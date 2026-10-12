@@ -2498,3 +2498,16 @@ Round <-> Enemy에서 통신용으로 사용해야 하는 메세지 전달 구�
 4. 라운드 2-3의 클리어한 코스가 세이브 되도록 다시 수정하였습니다.
 5. 동그라미 관련 일부 버그가 수정됨.
 6. 메세지 구조는 적용하지 않았습니다. 하위호환 코드로 대체합니다.
+
+
+2026/10/12 v0.58.4 - playerObject -> dataPlayer.js
+1. 이제부터는 deprecated된 코드는 제거 대상입니다. (세이브 코드는 다른 버전에서 제거 예정)
+2. playerObject의 의존성을 해결하기 위해 파일 위치를 변경했습니다.
+3. 이것은 enemyBullet을 dataField.js로 옮기기 전에 하는 작업니다.
+4. playerObject가 userSystem를 참조하는 구조는 그대로 유지합니다.
+5. ID.playerWeapon.unused의 deprecated 해제
+6. 이 버전부터 클래스를 대문자로 변경합니다. (눈에 보이는 대로)
+7. dataPlayer에 있는 skill, weapon이 이제 의존성을 제거하기 위해
+fieldState에서 직접 함수를 주입받는 형태로 변경합니다.
+8. 게임을 로드 할 때 roundStart함수가 먼저 실행되도록 변경하고, 기존에 구현했던 코드는 교체했습니다.
+나머지 로드 구조는 동일합니다.

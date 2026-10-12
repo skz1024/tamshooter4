@@ -1477,4 +1477,3 @@ export class FieldData {
 
   }
 }
-

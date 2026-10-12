@@ -6,7 +6,7 @@ import { CustomEditEffect, CustomEffect, EffectData } from './dataEffect.js'
 import { EnemyBulletData, EnemyData } from './dataEnemy.js'
 import { DelayData, EnimationData, FieldData } from './dataField.js'
 import { ID } from './dataId.js'
-import { PlayerSkillData, PlayerWeaponData } from './dataPlayer.js'
+import { PlayerObject, PlayerSkillData, PlayerWeaponData } from './dataPlayer.js'
 import { RoundData } from './dataRound.js'
 import { WeaponData } from './dataWeapon.js'
 import { imageDataInfo, ImageDataObject, imageSrc } from './imageSrc.js'
@@ -19,6 +19,8 @@ let digitalDisplay = gameFunction.digitalDisplay
 // import { systemText } from './text.js'
 
 /*
+참고: 구버전 (v0.55 이전) 설계이므로 지금과 다를 수 있습니다.
+
 오브젝트 목록
 1-1. FieldObject = 필드에서 사용하는 오브젝트
 1-2. WeaponObject = 무기 오브젝트 [플레이어, 적, 아군이 사용]
@@ -81,766 +83,6 @@ class DamageObject {
   }
 
   static displayNumber = game.graphic.createCustomIntegerDisplay(imageSrc.system.damageFont, 12, 10)
-}
-
-/**
- * 플레이어 오브젝트
- * 플레이어를 직접 조종합니다.
- * 이 객체는 필드 상태에서 직접 생성해 만드는 객체이기 때문에 data.js에서 플레이어 데이터를 받아오지 않습니다.
- */
-class PlayerObject extends FieldData {
-  /** 플레이어 이미지 (필드시스템에서 참조됨) */ playerImage = imageSrc.system.fieldSystem
-  playerImageData = imageDataInfo.fieldSystem.player
-  playerDamageEnimation = EnimationData.createEnimation(imageSrc.system.fieldSystem, imageDataInfo.fieldSystem.playerDamageEffect, 2, -1)
-  playerLevelupEnimation = EnimationData.createEnimation(imageSrc.system.fieldSystem, imageDataInfo.fieldSystem.playerLevelupEffect, 3, -1)
-  playerDieEnimation = EnimationData.createEnimation(imageSrc.system.fieldSystem, imageDataInfo.fieldSystem.playerDieEffect, 1, -1)
-
-  /**
-   * @typedef {{skill: PlayerSkillData | null, id: number, coolTimeFrame: number, repeatCount: number, delayCount: number}} SkillSlot 플레이어가 사용하는 스킬 슬롯의 오브젝트 구조
-   * @typedef {{weapon: PlayerWeaponData | null, id: number, delayCount: number}} WeaponSlot 무기 슬롯 (총 5개가 있으며, 0 ~3번 슬롯은 유저가 정한 무기를 사용하고, 4번 슬롯은 무기를 사용하지 않는 슬롯입니다.)
-   */
-
-  constructor () {
-    super() // 'player', 0, 300, 200
-    this.objectType = 'player'
-    this.width = this.playerImageData.width
-    this.height = this.playerImageData.height
-    this.playerDieEnimation.setOutputSize(this.width * 2, this.height * 2)
-
-    // 플레이어 전용 변수
-    // 일부 변수의 설명은 init 부분에 적혀있습니다. (참고: init함수는 다른 이름으로도 (initSkill, initWeapon등...) 여러개 있음.)
-    this.shield = 0
-    this.shieldMax = 0
-    /** 쉴드 회복 기준값 */ this.shieldRecovery = 0
-    /** 쉴드 회복값의 현재값 */ this.shieldRecoveryCurrentValue = 0
-    this.attackDelay = new DelayData(0)
-    this.attackDelayCount = 0
-    this.debug = false
-    this.dieAfterDelayCount = 0
-
-    /** 플레이어가 해당 라운드를 플레이할 때 사용하는 기준 공격력 (이 값은 내부적인 연산이 포함되어 있으므로, set함수를 사용해서 수정해야함) */
-    this.attack = 0
-
-    /** 데미지 감소 비율 (아직은 사용하지 않음. ) */
-    this.damageReduce = 0
-
-    this.damageEnimationCount = 0
-    this.levelupEnimationCount = 0
-    this.currentLevel = 0
-
-    this.weaponSlotNumber = 0
-    this.playerSubWeaponDelayCount = 0
-
-    this.autoMoveFrame = 0
-    this.autoMoveX = 0
-    this.autoMoveY = 0
-
-    /** 무기의 기준 공격력 */ this.attackWaepon = 0
-    /** 스킬의 기준 공격력 */ this.attackSkill = 0
-
-    /** 기준 이동속도 값 */ this.BASE_SPEED = 8
-
-    /** @type {SkillSlot[]} */ this.skillSlotA = []
-    /** @type {SkillSlot[]} */ this.skillSlotB = []
-    /** @type {WeaponSlot[]} */ this.weaponSlot = []
-    /** @type {WeaponSlot} */ this.subWeaponSlot = {weapon: null, id: 0, delayCount: 0}
-  }
-
-  /**
-   * 플레이어 정보 초기화 함수:
-   * 주의! 이 함수는 constructor 내부에서 사용할 수 없습니다.
-   * 왜냐하면 playerObject 데이터를 초기화 하지 않은 상태에서 불러오면 오류가 발생하기 때문입니다.
-   * 따라서, 이 함수는 보통 roundStart에서 호출합니다.
-   */
-  init () {
-    this.attackDelay.count = 0
-    this.attackDelayCount = 0
-    this.debug = false
-    this.dieAfterDelayCount = 0
-    this.isDied = false
-    this.moveSpeedX = 0
-    this.moveSpeedY = 0
-    this.autoMoveFrame = 0
-    this.autoMoveX = 0
-    this.autoMoveY = 0
-
-    this.x = 300
-    this.y = 200
-    this.centerX = this.x + (this.width / 2)
-    this.centerY = this.y + (this.height / 2)
-
-    this.damageEnimationCount = 0
-    this.levelupEnimationCount = 0
-
-    const getData = userSystem.getPlayerObjectStat()
-    this.currentLevel = getData.lv
-    this.attack = getData.attack
-    this.attackWaepon = userSystem.getAttackWeaponValue()
-    this.attackSkill = userSystem.getAttackSkillValue()
-    this.hp = getData.hp
-    this.hpMax = getData.hpMax
-    this.shield = getData.shield
-    this.shieldMax = getData.shieldMax
-    this.shieldRecovery = getData.shieldRecovery
-    
-    this.initSkill()
-    this.initWeapon()
-
-    /** 이동 가능 여부 (false일경우 조작 불가 - 적이나 라운드에서 사용할 수도 있음) 
-     * 하지만 해제하지 못하면 영원히 이동할 수 없으므로 주의 바람.*/ 
-    this.isMoveEnable = true
-
-    /** 
-     * 플레이어 자체 기능을 사용 불가상태로 처리
-     * 
-     * 이 경우, display/process도 되지 않으며, 다른 종류의 개체에서 플레이어를 인식하여도
-     * 플레이어 개체는 영향을 받지 않음.
-     */
-    this.disable = false
-  }
-
-  /**
-   * 무기 객체 초기화 작업
-   */
-  initWeapon () {
-    let userWapon = userSystem.getWeaponList()
-
-    /**
-     * @type {WeaponSlot[]}
-     */
-    this.weaponSlot = [
-      {weapon: null, id: userWapon[0], delayCount: 0},
-      {weapon: null, id: userWapon[1], delayCount: 0},
-      {weapon: null, id: userWapon[2], delayCount: 0},
-      {weapon: null, id: userWapon[3], delayCount: 0},
-      {weapon: null, id: ID.playerWeapon.unused, delayCount: 0},
-    ]
-
-    /**
-     * 서브 무기 슬롯 (현재는 사용되지 않음)
-     * 
-     * 게임 규칙 상, 이 무기는 성능과 효과가 고정되어있습니다.
-     * 무조건 유도성능을 가진 무기이며, 이 무기는 화면 바깥에 있는 적을 죽일 수 있게 하기 위한 무기입니다.
-     * (사용자가 적이 남아있는것을 눈치채게 하기 위해서 일부러 이렇게 만들었습니다.)
-     * 
-     * @deprecated
-     * @type {WeaponSlot}
-     */
-    this.subWeaponSlot = {
-      weapon: null, id: ID.playerWeapon.multyshot, delayCount: 0
-    }
-
-    /**
-     * 플레이어의 무기 슬롯 번호, 기본값은 0
-     */
-    this.weaponSlotNumber = 0
-    
-    // 무기 슬롯 데이터 입력합니다.
-    for (let i = 0; i < this.weaponSlot.length; i++) {
-      this.weaponSlot[i].weapon = tamshooter4Data.getPlayerWeapon(this.weaponSlot[i].id)
-    }
-  }
-
-  /**
-   * 스킬 정보 초기화
-   */
-  initSkill () {
-    /** 스킬 슬롯이 A인지 여부, 아닐경우 B로 처리 */ this.usingSkillSlotA = true
-    let getUserSkill = userSystem.getSkillList()
-
-    /**
-     * 스킬의 대한 정보를 저장하는 데이터
-     * 
-     * 스킬은 A슬롯과 B슬롯이 있으며, 최대 한번에 4개까지만 사용 가능하고, 같은 슬롯에 있는 쿨타임은 공유 개념처럼 사용
-     * @type {SkillSlot[]}
-     */
-    this.skillSlotA = [
-      { skill: null, id: getUserSkill[0], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-      { skill: null, id: getUserSkill[1], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-      { skill: null, id: getUserSkill[2], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-      { skill: null, id: getUserSkill[3], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 }
-    ]
-
-    /**
-     * @type {SkillSlot[]}
-     */
-    this.skillSlotB = [
-      { skill: null, id: getUserSkill[4], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-      { skill: null, id: getUserSkill[5], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-      { skill: null, id: getUserSkill[6], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 },
-      { skill: null, id: getUserSkill[7], coolTimeFrame: 0, repeatCount: 0, delayCount: 0 }
-    ]
-
-    this.skillClassInput()
-  }
-
-  skillClassInput () {
-    // 스킬 클래스 등록 (한번에 A, B 슬롯 두개를 등록하는건 귀찮아서...)
-    // 여기서는 널 체크를 하지 않습니다. (process에서만 널 체크 진행)
-    for (let i = 0; i < this.skillSlotA.length; i++) {
-      const getIdA = this.skillSlotA[i].id
-      const getIdB = this.skillSlotB[i].id
-      this.skillSlotA[i].skill = tamshooter4Data.getPlayerSkill(getIdA)
-      this.skillSlotB[i].skill = tamshooter4Data.getPlayerSkill(getIdB)
-    }
-  }
-
-  /**
-   * 플레이어가 데미지를 받으면 사운드를 출력합니다.
-   * @param {number} shieldDamageClac 쉴드 데미지
-   * @param {number} hpDamageCalc 체력 데미지
-   * @param {string} damageSoundSrc 기본 사운드 사용? 값이 false면 데미지 받아도 소리가 안남
-   */
-  damageSoundPlay (shieldDamageClac = 0, hpDamageCalc = 0, damageSoundSrc = '') {
-    // 임의 사운드가 지정된 경우, 다른 사운드가 출력됨
-    if (damageSoundSrc !== '') {
-      game.sound.play(damageSoundSrc)
-      return
-    }
-
-    // 데미지는 현재의 쉴드 상태에 따라 소리가 조금 달라짐, 소리의 기준은 쉴드 최대치값임
-    // 쉴드가 감소할때 쉴드량의 6% 이하(200기준 12데미지), 
-    // 6% 이상 12% 이하(200기준 24데미지), 12% 초과(200기준 24데미지 초과) 때마다 소리가 다름
-    // 체력이 같이 감소한경우,
-    // 4% 이하, 8% 이하 (8 ~ 16데미지), 8% 초과(17데미지) 으로만 구분됨
-
-    const LOW_DAMAGE = Math.floor(this.shieldMax * 0.06)
-    const MIDDLE_DAMAGE = Math.floor(this.shieldMax * 0.12)
-    const HP_LOW_DAMAGE = Math.floor(this.shieldMax * 0.04)
-    const HP_MIDDLE_DAMAGE = Math.floor(this.shieldMax * 0.08)
-
-    if (hpDamageCalc >= 1) {
-      if (hpDamageCalc <= HP_LOW_DAMAGE) {
-        game.sound.play(soundSrc.system.systemPlayerDamage)
-      } else if (hpDamageCalc <= HP_MIDDLE_DAMAGE) {
-        game.sound.play(soundSrc.system.systemPlayerDamageBig)
-      } else {
-        game.sound.play(soundSrc.system.systemPlayerDamageDanger)
-      }
-    } else {
-      if (shieldDamageClac <= LOW_DAMAGE) {
-        game.sound.play(soundSrc.system.systemPlayerDamage)
-      } else if (shieldDamageClac <= MIDDLE_DAMAGE) {
-        game.sound.play(soundSrc.system.systemPlayerDamageBig)
-      } else {
-        game.sound.play(soundSrc.system.systemPlayerDamageDanger)
-      }
-    }
-  }
-
-  /**
-   * 플레이어가 데미지를 받았을 때, 에니메이션을 출력합니다.
-   * @param {number} shieldDamage 쉴드 데미지
-   * @param {number} hpDamage 체력 데미지
-   */
-  damageEnimationSet (shieldDamage = 0, hpDamage = 0) {
-    let damagePercent = (shieldDamage + hpDamage) / (this.hpMax + this.shieldMax) * 100
-    let damageFrame = Math.floor(damagePercent * 12)
-    if (damageFrame > 180) {
-      damageFrame = 180
-    } else if (damageFrame < 10) {
-      damageFrame = 10
-    }
-
-    this.damageEnimationCount = damageFrame
-    userSystem.setDamageWarningFrame(damageFrame)
-  }
-
-  /**
-   * 플레이어가 받은 데미지를 추가합니다. (플레이어가 죽거나 데미지가 없으면 무효)
-   * @param {number} damage 
-   */
-  addDamage (damage = 0) {
-    if (this.isDied || damage === 0 || this.disable) return
-    let result = this.damageCalcuration(damage)
-
-    this.damageSoundPlay(result.shield, result.hp)
-    this.damageEnimationSet(result.shield, result.hp)
-  }
-
-  /**
-   * 플레이어가 받은 데미지를 추가하고 임의의 사운드를 같이 재생합니다. (플레이어가 죽거나 데미지가 없으면 무효)
-   * @param {number} damage 데미지 값 (정수)
-   * @param {string} soundSrc 사운드 경로
-   */
-  addDamageWithSound (damage, soundSrc) {
-    if (this.isDied || damage === 0 || this.disable) return
-    let result = this.damageCalcuration(damage)
-
-    this.damageSoundPlay(result.shield, result.hp, soundSrc)
-    this.damageEnimationSet(result.shield, result.hp)
-  }
-
-  /**
-   * 플레이어가 받은 데미지를 연산함 그리고 총 받은 데미지를 리턴 
-   * 
-   * (이 함수를 사용하면 유저의 실제 shield와 hp가 변경됩니다.)
-   * 
-   * (이 함수는 외부에서 사용할 수 없음)
-   * @param {number} damage 
-   */
-  damageCalcuration (damage) {
-    // Gemini의 도움을 받아 코드 수정
-    // 1. 쉴드가 흡수할 수 있는 데미지 계산 (현재 쉴드량과 총 데미지 중 작은 값)
-    const shieldDamage = Math.min(this.shield, damage)
-    
-    // 2. 흡수하고 남은 데미지가 HP로 들어감
-    const hpDamage = damage - shieldDamage;
-
-    // 3. 상태 업데이트
-    this.shield -= shieldDamage;
-    this.hp -= hpDamage;
-
-    // 총 데미지값 리턴
-    return {
-      hp: hpDamage,
-      shield: shieldDamage
-    }
-  }
-
-  process () {
-    if (this.disable) return 
-
-    if (!this.isDied) {
-      this.processButton()
-      this.processAttack()
-      this.processSubAttack()
-      this.processSkill()
-      this.processHpShield()
-      this.processDamage()
-      this.processLevelupCheck()
-      this.processMove()
-      this.processAutoMove()
-    }
-    this.processDie()
-  }
-
-  /** 플레이어가 레벨업을 했는지 확인 */
-  processLevelupCheck () {
-    if (this.currentLevel !== userSystem.lv) {
-      this.currentLevel = userSystem.lv
-      this.levelupEnimationCount = 120
-    }
-
-    if (this.levelupEnimationCount > 0) {
-      this.levelupEnimationCount--
-      this.playerLevelupEnimation.process()
-    }
-  }
-
-  /** 플레이어가 죽었는지 확인 */
-  processDie () {
-    if (this.hp <= 0 && !this.isDied) {
-      this.isDied = true
-      game.sound.play(soundSrc.system.systemPlayerDie)
-    }
-
-    if (this.isDied) {
-      this.playerDieEnimation.process()
-      this.dieAfterDelayCount++
-    }
-  }
-
-  /**
-   * 스킬을 사용합니다.
-   * @param {number} skillPosition 스킬의 위치(번호 0 ~ 3)
-   * @returns 
-   */
-  useSkill (skillPosition = 0) {
-    // 스킬 슬롯에 따라 해당 스킬을 찾기
-    let targetSkill = this.usingSkillSlotA ? this.skillSlotA[skillPosition] : this.skillSlotB[skillPosition]
-
-    // 스킬 클래스(데이터)가 없으면 함수를 실행하지 않음.
-    if (targetSkill.skill == null) return
-
-    // 쿨타임 계산해서, 쿨타임이 남아있으면, 무시
-    if (targetSkill.coolTimeFrame > 0) return
-
-    // 스킬 사용
-    // 스킬을 사용했을 때, 해당 스킬 만큼의 스킬 쿨타임이 증가합니다.
-    // 그리고 같은 번호의 다른 슬롯도 동시에 공유됩니다.
-    targetSkill.repeatCount += targetSkill.skill.repeatCount // 스킬 반복 횟수를 증가시켜 여러번 무기가 발사되게 처리
-    
-    this.skillSlotA[skillPosition].coolTimeFrame += targetSkill.skill.getCoolTimeFrame() // 쿨타임 추가 (단위가 프레임이므로, 쿨타임 시간에 60을 곱함)
-    this.skillSlotB[skillPosition].coolTimeFrame += targetSkill.skill.getCoolTimeFrame() // 슬롯 B에도 마찬가지로 쿨타임 추가
-
-    // 스킬에 사용된 무기가 즉시 발사되도록, 딜레이카운트를 채워줌(딜레이 이상이여야 무기 발사됨)
-    // 다만 beforeDelay가 있을경우, 미리 delayCount에서 해당 수치만큼 감소
-    targetSkill.delayCount += targetSkill.skill.delay - targetSkill.skill.beforeDelay
-
-    // 스킬 사운드 출력
-    targetSkill.skill.useSoundPlay()
-  }
-
-  processAutoMove () {
-    if (this.autoMoveFrame >= 1) {
-      this.autoMoveFrame--
-      // 참고: 플레이어는 autoMoveFrame이 있는 동안은 조작을 통해 이동할 수 없지만, 
-      // 예상 가능한 버그를 막기 위해서 isMoveEnable 설정을 하지 않습니다.
-
-      this.x += (this.autoMoveX - this.x) / 10
-      this.y += (this.autoMoveY - this.y) / 10
-    }
-  }
-
-  processDamage () {
-    if (this.damageEnimationCount > 0) {
-      this.damageEnimationCount--
-      this.playerDamageEnimation.process()
-    }
-  }
-
-  /** hp와 쉴드를 처리함 (쉴드 회복도 여기서 처리) */
-  processHpShield () {
-    const SHIELD_RECOVERY_BASE_VALUE = 6000
-    this.shieldRecoveryCurrentValue += this.shieldRecovery
-
-    // 쉴드 회복 처리
-    if (this.shieldRecoveryCurrentValue >= SHIELD_RECOVERY_BASE_VALUE) {
-      this.shield++
-      this.shieldRecoveryCurrentValue -= SHIELD_RECOVERY_BASE_VALUE
-    }
-
-    // 쉴드 최대치 초과 금지
-    if (this.shield > this.shieldMax) {
-      this.shield = this.shieldMax
-    }
-  }
-
-  processSkill () {
-    // 참고: null 체크는 processSkillLogic에서 검사합니다.
-
-    for (let i = 0; i < this.skillSlotA.length; i++) {
-      // 루프 i값에 따른 현재 스킬. 
-      // 스킬슬롯 A를 사용중이면, A슬롯의 스킬을 가져옵니다., B슬롯이라면, B슬롯에 있는 스킬을 가져옵니다.
-      this.processSkillLogic(this.skillSlotA[i])
-    }
-
-    for (let i = 0; i < this.skillSlotB.length; i++) {
-      this.processSkillLogic(this.skillSlotB[i])
-    }
-  }
-
-  /**
-   * 
-   * @param {SkillSlot} currentSkill
-   */
-  processSkillLogic (currentSkill) {
-    // 해당 스킬에 대한 데이터가 없으면 무시
-    if (currentSkill.skill == null) return
-
-    if (currentSkill.coolTimeFrame > 0) { // 스킬 쿨타임이 0보다 클 때
-      currentSkill.coolTimeFrame-- // 스킬 쿨타임프레임 감소
-    }
-
-    // 만약 스킬 반복횟수가 없다면, 스킬을 사용하지 않은것이므로 무시
-    if (currentSkill.repeatCount <= 0) return
-    if (currentSkill.skill == null) return // 스킬이 없다면 무시
-
-    currentSkill.delayCount++ // 스킬 딜레이카운트 증가
-    if (currentSkill.delayCount >= currentSkill.skill.delay) { // 딜레이카운트카 스킬 딜레이를 넘어가면 무기 생성
-      currentSkill.skill.create(this.attackSkill, this.centerX, this.centerY)
-      currentSkill.delayCount -= currentSkill.skill.delay // 스킬 딜레이카운트 감소
-      currentSkill.repeatCount-- // 반복횟수 1회 감소
-    }
-  }
-
-  processDebug () {
-    this.displayDebug()
-  }
-
-  displayDebug () {
-    if (fieldState.weaponObject[fieldState.weaponObject.length - 1] == null) return
-    game.graphic.fillText(fieldState.weaponObject[fieldState.weaponObject.length - 1].x + ', ' + fieldState.weaponObject[fieldState.weaponObject.length - 1].y, 0, 100)
-
-    if (fieldState.weaponObject[0].targetObject == null) return
-    // console.log(fieldState.weaponObject[0].x + ', ' + fieldState.weaponObject[0].y + ', ' + fieldState.weaponObject[0].targetObject.x + ', ' + fieldState.weaponObject[0].targetObject.y)
-  }
-
-
-
-  processMove () {
-    // 화면 영역에서 벗어나는거 금지
-    if (this.x < 0) this.x = 0
-    if (this.x > game.graphic.CANVAS_WIDTH - this.width) this.x = game.graphic.CANVAS_WIDTH - this.width
-    if (this.y < 0) this.y = 0
-    if (this.y > game.graphic.CANVAS_HEIGHT - this.height) this.y = game.graphic.CANVAS_HEIGHT - this.height
-
-    // 이동 가능하거나, autoMoveFrame이 없을 때만 이동 가능합니다.
-    if (!this.isMoveEnable || this.autoMoveFrame > 0) return
-
-    super.processMove()
-  }
-
-  processButton () {
-    // 버튼의 목록
-    const buttonLeft = game.control.getButtonDown(game.control.buttonIndex.LEFT)
-    const buttonRight = game.control.getButtonDown(game.control.buttonIndex.RIGHT)
-    const buttonUp = game.control.getButtonDown(game.control.buttonIndex.UP)
-    const buttonDown = game.control.getButtonDown(game.control.buttonIndex.DOWN)
-    const buttonA = game.control.getButtonInput(game.control.buttonIndex.A)
-    const buttonB = game.control.getButtonInput(game.control.buttonIndex.B)
-    const buttonSkill0 = game.control.getButtonInput(game.control.buttonIndex.L1)
-    const buttonSkill1 = game.control.getButtonInput(game.control.buttonIndex.L2)
-    const buttonSkill2 = game.control.getButtonInput(game.control.buttonIndex.R1)
-    const buttonSkill3 = game.control.getButtonInput(game.control.buttonIndex.R2)
-
-    // 이동 가능하거나, autoMoveFrame이 없을 때만 이동 가능합니다.
-    if (this.isMoveEnable && this.autoMoveFrame <= 0) {
-      // 버튼이 눌려있다면 이동속도 변경 
-      // (버튼을 여러개 눌러 중복처리되는것을 막기 위해 한쪽 방향을 누르면 반대방향 버튼은 입력이 무시됨)
-      if (buttonLeft && !buttonRight) this.moveSpeedX = -this.BASE_SPEED
-      if (buttonRight && !buttonLeft) this.moveSpeedX = this.BASE_SPEED
-      if (buttonDown && !buttonUp) this.moveSpeedY = this.BASE_SPEED
-      if (buttonUp && !buttonDown) this.moveSpeedY = -this.BASE_SPEED
-
-      // 버튼이 눌려져있지 않다면 속도를 원래대로 되돌림
-      if (!buttonLeft && !buttonRight) this.moveSpeedX = 0
-      if (!buttonDown && !buttonUp) this.moveSpeedY = 0
-    }
-
-    // 중앙 좌표값 설정
-    this.centerX = this.x + (this.width / 2)
-    this.centerY = this.y + (this.height / 2)
-
-    // 무기 교체 버튼
-    if (buttonA) {
-      this.weaponSlotNumber++
-      if (this.weaponSlotNumber >= this.weaponSlot.length) {
-        this.weaponSlotNumber = 0
-      }
-
-      // 만약 다음 무기를 선택했을 때, 다음 무기의 id가 0(무기가 없는경우)이면 다음 무기로 자동으로 건너뜁니다. 
-      // 이것을 반복하면 최종적으로 무기가 있는곳 또는 무기를 사용하지 않는 4번슬롯까지 자동으로 넘어갑니다.
-      // 루프가 반드시 4번슬롯에서 종료되므로, 무한루프는 없습니다.
-      const MAX_WEAPON = this.weaponSlot.length - 1
-      while (this.weaponSlotNumber >= 0 && this.weaponSlotNumber < MAX_WEAPON) {
-        if (this.weaponSlot[this.weaponSlotNumber].id !== 0) break
-        this.weaponSlotNumber++
-      }
-    }
-
-    // 스킬 슬롯 변경 버튼
-    if (buttonB) this.usingSkillSlotA = !this.usingSkillSlotA
-
-    // 스킬 사용 버튼
-    if (buttonSkill0) this.useSkill(0)
-    if (buttonSkill1) this.useSkill(1)
-    if (buttonSkill2) this.useSkill(2)
-    if (buttonSkill3) this.useSkill(3)
-  }
-
-  processAttack () {
-    /**
-     * @type {WeaponSlot}
-     */
-    const currentWeapon = this.weaponSlot[this.weaponSlotNumber]
-    if (currentWeapon.weapon == null) return
-
-    currentWeapon.delayCount++
-    if (currentWeapon.delayCount >= currentWeapon.weapon.delay) {
-      currentWeapon.weapon.create(this.attackWaepon, this.centerX, this.centerY)
-      currentWeapon.delayCount -= currentWeapon.weapon.delay
-    }
-  }
-
-  processSubAttack () {
-    return // 서브웨폰은 제거됨
-    // 무기를 사용하지 않는 상태일경우, 서브웨폰도 사용하지 않습니다.
-    // if (this.weaponSlot[this.weaponSlotNumber].id === ID.playerWeapon.unused) return
-    // if (this.subWeaponSlot.weapon == null) return
-
-    // this.subWeaponSlot.delayCount++
-    // if (this.subWeaponSlot.delayCount >= this.subWeaponSlot.weapon.delay) {
-    //   this.subWeaponSlot.weapon.create(this.attackWaepon, this.centerX, this.centerY)
-    //   this.subWeaponSlot.delayCount -= this.subWeaponSlot.weapon.delay
-    // }
-  }
-
-  display () {
-    if (this.disable) return
-
-    // 죽은 경우에는, 60프레임을 넘기기 전까지 죽음 애니메이션 재생
-    if (this.isDied && this.dieAfterDelayCount >= 61) return
-    if (this.isDied) {
-      this.playerDieEnimation.display(this.x, this.y)
-      return
-    }
-
-    if (this.damageEnimationCount > 0) {
-      this.playerDamageEnimation.display(this.x, this.y)
-    } else {
-      this.imageObjectDisplay(this.playerImage, this.playerImageData, this.x, this.y, this.width, this.height)
-    }
-
-    if (this.levelupEnimationCount > 0) {
-      let targetX = this.x - 15
-      let targetY = this.y + Math.floor(this.levelupEnimationCount / 4) - 10
-      this.playerLevelupEnimation.display(targetX, targetY)
-    }
-  }
-
-  /**
-   * player 데이터, 이 저장 데이터는 fieldData와 공식이 다릅니다.
-   */
-  //@ts-expect-error
-  fieldBaseSaveData () {
-    return {
-      // 좌표 값
-      x: this.x,
-      y: this.y,
-      
-      // 체력 및 쉴드
-      hp: this.hp,
-      shield: this.shield,
-      shieldMax: this.shieldMax,
-
-      // 딜레이
-      attackDelayCount: this.attackDelayCount,
-      dieAfterDelayCount: this.dieAfterDelayCount,
-
-      // 무기
-      weapon: this.getSaveWeaponData(),
-      weaponSlotNumber: this.weaponSlotNumber,
-
-      // 스킬
-      skill: this.getSaveSkillData(),
-      usingSkillSlotA: this.usingSkillSlotA,
-
-      // 기타
-      disable: this.disable
-    }
-  }
-
-  getSaveWeaponData () {
-    // id, id, id, id, id
-    // delayCount, delayCount, delayCount, delayCount
-    let data = []
-    for (let i = 0; i < this.weaponSlot.length; i++) {
-      data.push({id: this.weaponSlot[i].id, delayCount: this.weaponSlot[i].delayCount})
-    }
-
-    return data
-  }
-
-  getSaveSkillData () {
-    // 배열로 이루어진 오브젝트로 저장
-    // 슬롯A, 슬롯B 한번에 저장됨.
-    let data = []
-
-    for (let i = 0; i < this.skillSlotA.length; i++) {
-      data.push({
-        id: this.skillSlotA[i].id,
-        delayCount: this.skillSlotA[i].delayCount,
-        coolTimeFrame: this.skillSlotA[i].coolTimeFrame,
-        repeatCount: this.skillSlotA[i].repeatCount
-      })
-    }
-
-    for (let i = 0; i < this.skillSlotB.length; i++) {
-      data.push({
-        id: this.skillSlotB[i].id,
-        delayCount: this.skillSlotB[i].delayCount,
-        coolTimeFrame: this.skillSlotB[i].coolTimeFrame,
-        repeatCount: this.skillSlotB[i].repeatCount
-      })
-    }
-
-    return data
-  }
-
-  /**
-   * 저장되었던 플레이어 오브젝트를 불러옵니다.
-   * 
-   * 무기와 스킬도 같이 초기화되면서 불러와집니다.
-   * @param {Object} saveData 
-   */
-  fieldBaseLoadData (saveData) {
-    // for (let key in saveData) {
-    //   if (typeof saveData[key] === 'object') {
-    //     if (key === 'weapon') {
-    //       this.setLoadWeaponData(saveData[key])
-    //     } else if (key === 'skill') {
-    //       this.setLoadSkillData(saveData[key])
-    //     } else {
-    //       this[key] = saveData[key]
-    //     }
-    //   } else {
-    //     this[key] = saveData[key]
-    //   }
-    // }
-
-    // 로드 후, 유저 스탯을 다시 갱신함 (hpCalc를 간접 계산하는 것 때문에 바로 갱신이 안되어 강제로 갱신함)
-    // this.processSendUserStat() // 코드 취소됨
-  }
-
-  /** 로드 한 이후, 스킬과 무기를 재등록합니다. */
-  setLoadData () {
-    // 무기 슬롯 데이터 입력합니다.
-    for (let i = 0; i < this.weaponSlot.length; i++) {
-      this.weaponSlot[i].weapon = tamshooter4Data.getPlayerWeapon(this.weaponSlot[i].id)
-    }
-
-    this.skillClassInput()
-  }
-
-  /**
-   * 
-   * @param {WeaponSlot[]} data 
-   */
-  setLoadWeaponData (data) {
-    for (let i = 0; i < this.weaponSlot.length; i++) {
-      this.weaponSlot[i].delayCount = data[i].delayCount
-      this.weaponSlot[i].id = data[i].id
-    }
-
-    
-  }
-
-  /**
-   * 
-   * @param {SkillSlot[]} data 
-   */
-  setLoadSkillData (data) {
-    // 스킬은 슬롯에 상관없이 한번에 8개를 저장하기 때문에
-    // 슬롯B 값은 +4 인덱스를 해서 가져와야 합니다.
-    // 인덱스 초과 방지를 위해 skillSlotA.length로 배열 최대 길이 제한을 넣었습니다.
-    for (let i = 0; i < this.skillSlotA.length; i++) {
-      let indexA = i
-      let indexB = i + 4
-
-      this.skillSlotA[i].coolTimeFrame = data[indexA].coolTimeFrame
-      this.skillSlotA[i].delayCount = data[indexA].delayCount
-      this.skillSlotA[i].id = data[indexA].id
-      this.skillSlotA[i].repeatCount = data[indexA].repeatCount
-
-      this.skillSlotB[i].coolTimeFrame = data[indexB].coolTimeFrame
-      this.skillSlotB[i].delayCount = data[indexB].delayCount
-      this.skillSlotB[i].id = data[indexB].id
-      this.skillSlotB[i].repeatCount = data[indexB].repeatCount
-    }
-
-    // 스킬 불러온 후 스킬 다시 초기화
-    // 스킬 클래스 등록 (한번에 A, B 슬롯 두개를 등록하는건 귀찮아서...)
-    // 여기서는 널 체크를 하지 않습니다. (process에서만 널 체크 진행)
-    this.skillClassInput()
-  }
-
-  /**
-   * 플레이어를 특정 위치로 튕겨나가게 합니다.
-   * 
-   * autoMove가 적용되는 동안 플레이어는 이동 가능 여부와 상관없이 이동을 할 수 없습니다.
-   * 
-   * 주의: 플레이어의 좌표를 변경하고 싶다면, 이 함수를 사용하는것이 아니라 플레이어의 x 또는 y 좌표를 직접 수정해야 합니다.
-   * @param {number} finishX 도착지점의 x좌표
-   * @param {number} finishY 도착지점의 y좌표
-   * @param {number} totalFrame 도착지점까지 이동하는데 걸리는 시간
-   */
-  setAutoMove (finishX = 0, finishY = 0, totalFrame = 60) {
-    this.autoMoveX = finishX
-    this.autoMoveY = finishY
-    this.autoMoveFrame = totalFrame
-  }
 }
 
 /** 
@@ -1025,6 +267,37 @@ export class fieldState {
       this.damageObject[i].isUsing = false
     }
   }
+  
+  /** 플레이어가 등록해야 하는 핸들러 함수를 처리합니다.
+   * 주의: playerObject 가 초기화(init) 된 이후에 사용해야 합니다. 
+   안그러면 객체가 null이라 핸들러 함수기 적용되지 않습니다.* */
+  static bindPlayerHandlers () {
+    // 필드에서 플레이어오브젝트에게 함수 주입
+    for (let i = 0; i < fieldState.playerObject.weaponSlot.length; i++) {
+      const weapon = fieldState.playerObject.weaponSlot[i].weapon
+      if (weapon) {
+        weapon.setCreateHandler((selectId, x, y, shotAttack, option) => {
+          fieldState.createWeaponObject(selectId, x, y, shotAttack, option)
+        })
+      }
+    }
+
+    // 스킬도 마찬가지
+    for (let i = 0; i < fieldState.playerObject.skillSlotA.length; i++) {
+      const skillA = fieldState.playerObject.skillSlotA[i].skill
+      const skillB = fieldState.playerObject.skillSlotB[i].skill
+      if (skillA) {
+        skillA.setCreateHandler((selectId, x, y, shotAttack, option) => {
+          fieldState.createWeaponObject(selectId, x, y, shotAttack, option)
+        })
+      }
+      if (skillB) {
+        skillB.setCreateHandler((selectId, x, y, shotAttack, option) => {
+          fieldState.createWeaponObject(selectId, x, y, shotAttack, option)
+        })
+      }
+    }
+  }
 
   /** 모든 적을 삭제합니다. */
   static allEnemyDelete () {
@@ -1097,11 +370,7 @@ export class fieldState {
 
   /**
    * 무기 객체를 생성합니다. (플레이어가 사용하는 무기, 스킬이 해당 객체로 생성됨)
-   * @param {number} typeId 타입의 id
-   * @param {number} x
-   * @param {number} y
-   * @param {number} attack 공격력 (반드시 정수여야 함. Math.floor 연산 회피를 위해 여기서는 검사하지 않음.)
-   * @param {number} addOption 추가옵션 (무기 클래스에 추가로 입력할 ...매개변수)
+   * @type {import('./dataPlayer.js').CreateWeaponFieldObjectCallback}
    */
   static createWeaponObject (typeId, x = 0, y = 0, attack = 1, addOption = 0) {
     const GetClass = tamshooter4Data.getWeapon(typeId)
@@ -1918,6 +1187,8 @@ export class fieldSystem {
   static {
     // 토큰을 등록시켜서, 다른 외부 함수가 userSystem에 직접 접근하는 것을 다 막아버립니다.
     fieldRequestUser.acquireToken(this.#fieldSystemSymbol)
+
+    
   }
 
   /** 현재 상태값을 표시하는 ID */ static stateId = 0
@@ -2016,6 +1287,7 @@ export class fieldSystem {
     this.roundId = roundId
     this.message = this.messageList.STATE_FIELD
     fieldState.allObjectReset()
+    fieldState.bindPlayerHandlers() // 플레이어의 무기와 스킬 함수를 이 시점에서 등록
     this.stateId = this.STATE_LOADING // 로딩 먼저 시작하고, 이것이 완료되면 로딩 과정을 생략
     this.cursor = 0
     this.enimationFrame = 0
@@ -2719,6 +1991,15 @@ export class fieldSystem {
     if (fieldSave.array[rd.START_INDEX + rd.ID] === 0) return
     // 라운드 ID가 0이면 로드 진행 취소
 
+    // 라운드 생성 및 시작, roundStart가 끝나면, round에 값이 할당됩니다.
+    // 참고: 라운드 시작 함수는 라운드 필드 쵝화도 같이 담당하므로, 
+    // 로드할때도 roundStart 함수를 실행해야 합니다.
+    this.roundStart(fieldSave.array[rd.START_INDEX + rd.ID])
+
+    // this.roundStart(fieldSave.array[rd.START_INDEX + rd.ID])
+    if (this.round == null) return
+
+    // field data
     this.stateId = fieldSave.array[fe.START_INDEX + fe.STATEID]
     this.fieldScore = fieldSave.array[fe.START_INDEX + fe.FIELD_SCORE]
     this.fieldGold = fieldSave.array[fe.START_INDEX + fe.FIELD_GOLD]
@@ -2733,13 +2014,6 @@ export class fieldSystem {
       this.fieldItemIdList.push(fieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET])
       this.fieldItemCountList.push(fieldSave.array[FINDEX + fe.FIELD_ITEM_COUNT_OFFSET])
     }
-
-    // 라운드 생성 및 시작, roundStart가 끝나면, round에 값이 할당됩니다.
-    this.round = this.createRound(fieldSave.array[rd.START_INDEX + rd.ID])
-    fieldState.playerObject.init()
-
-    // this.roundStart(fieldSave.array[rd.START_INDEX + rd.ID])
-    if (this.round == null) return
 
     this.round.stat.id = fieldSave.array[rd.START_INDEX + rd.ID]
     this.round.state = fieldSave.array[rd.START_INDEX + rd.STATE]
