@@ -25,7 +25,6 @@ export class DonggramiEntity {
     NONE: 0,
     TALK: 73187,
     EMOJI: 74279,
-    EMOJICATCH: 75328
   }
 
   /** 이 값은 이미지파일 ./image/enemy/donggramiEnemyTalkList.png 참고  
@@ -40,7 +39,7 @@ export class DonggramiEntity {
     SHOPPING: {X: 1, Y: 0, LEN: 15},
     PARTY: {X: 2, Y: 0, LEN: 15},
     RUIN: {X: 3, Y: 0, LEN: 4},
-    R2_4RUN: {X: 2, Y: 15, LEN: 1},
+    R2_4RUN: {X: 2, Y: 17, LEN: 1},
     R3_GETLOST: {X: 5, Y: 8, LEN: 5},
     R3_RETURN_TO: {X: 5, Y: 14, LEN: 6},
 
@@ -76,7 +75,7 @@ export class DonggramiEntity {
   /** 동그라미가 죽을 때 나오는 사운드 */
   static DONGGRAMI_DIE_SOUND = soundSrc.enemyDie.enemyDieDonggrami
 
-  /** @deprecated 나중에 새로 변경됨 */
+  /** @deprecated 이모지를 받는 설정입니다. 하위호환 코드로 가정합니다. */
   static MESSAGE_EMOJICATCH = 'emojicatch'
 
   /** 동그라미가 죽으면 화면 밑으로 내려가는 속도 값 */
@@ -98,6 +97,11 @@ export class DonggramiEntity {
     /** 추적 상태 */ QUESTION_CHASE: 30205769,
     /** 멈춤 상태 */ QUESTION_STOP: 30227562,
     /** 이후 상태 */ QUESTION_AFTER: 30244672,
+
+    /** 파티 오브젝트 생성 */ CREATE: 40222018,
+    /** 파티 오브젝트 던지기 */ THROW: 40223556,
+    /** 파티 오브젝트 떨어트리기 */ DROP: 40224058,
+    /** 파티 오브젝트 먹기 */ EAT: 40226095,
   }
   
   /** 참고: 일부 적들은 이 타입을 사용하지 않고 함수를 상속받아서 임의로 구현함 */
@@ -401,31 +405,8 @@ export class DonggramiEntity {
   /** 물음표 이펙트 데이터 */
   static questionMarkEffect = new CustomEffect(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.questionMark, 40, 40, 5, 2)
 
-  /** 이모지를 받는 설정을 합니다. 이모지에 반응할 확률은 50% */
-  setCatchEmoji () {
-    // 대화타입이 일반, 파티, 쇼핑에만 영향을 끼침
-    const condition = this.talkType === this.TALK_TYPES.NORMAL
-      || this.talkType === this.TALK_TYPES.PARTY
-      || this.talkType === this.TALK_TYPES.SHOPPING
-    if (!condition) return // 그외는 해당사항 없음
-
-    let random = Math.floor(Math.random() * 100)
-    if (random < 50) {
-      this.talkDelay.countReset() // 카운트 리셋
-      this.talkState = DonggramiEntity.TALK_STATES.EMOJICATCH
-    }
-  }
-
   process () {
-    this.processMessage()
     this.processTalk()
-  }
-
-  processMessage () {
-    if (this.message === DonggramiEntity.MESSAGE_EMOJICATCH) {
-      this.message = '' // 메세지 제거
-      this.setCatchEmoji() // 그리고 강제로 이모지를 받는 설정
-    }
   }
 
   processTalk () {
@@ -573,7 +554,6 @@ export class DonggramiEntity {
         if (createIdCode === enemy[targetNumber].createId) {
           this.targetObject = fieldState.getPlayerObject()
         } else {
-          enemy[targetNumber].message = DonggramiEntity.MESSAGE_EMOJICATCH // 메세지 강제 전송
           this.targetObject = enemy[targetNumber]
         }
       } else {

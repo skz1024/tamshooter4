@@ -8940,8 +8940,8 @@ class Round2_4 extends RoundData {
       // 인사이드 코스의 경우, 적이 생성보다 빨리 죽을 수 있기 때문에 배경 깜빡임을 방지하기 위해
       // 보스 메세지 사운드가 나오는 시점부터 배경 강제 전환
       const pTime = this.phase.getCurrentPhaseStartTime()
-      const timeCondition = this.timeCheckInterval(pTime + 1 && pTime + 34)
-      const condition = this.field.getEnemyCount() === 0 || timeCondition 
+      const timeCondition = this.timeCheckInterval(pTime + 1, pTime + 34)
+      const condition = this.field.getEnemyCount() === 0 || !timeCondition 
       let targetColor = condition ? Round2_1.getMaeulGradientColor() : ['#1F1C2C', '#928DAB']
       this.bgLayer.setColor(targetColor)
 

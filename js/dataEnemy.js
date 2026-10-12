@@ -4566,6 +4566,12 @@ class DonggramiEnemyB1Bounce extends DonggramiEnemyBounce {
   }
 
   processTalk () {
+    if (this.playerCollisionCount >= 1 && this.playerCollisionDelay.check()) {
+      // 플레이어랑 충돌하고 시간이 지나면, 충돌 카운트를 감소시킵니다.
+      // 다만 다시 플레이어랑 충돌한 경우, 충돌 카운트는 다음 5초동안 변하지 않습니다.
+      this.playerCollisionCount--
+    }
+
     if (this.entity.talkDelay.check()) {
       this.entity.talkDelay.setDelay(this.entity.getTalkRandomDelay())
       this.state = Math.random() < 0.5 ? DonggramiEntity.STATES.NORMAL : DonggramiEntity.STATES.NONE
@@ -4583,6 +4589,7 @@ class DonggramiEnemyB1Bounce extends DonggramiEnemyBounce {
       this.currentEffect = fieldState.createEffectObject(DonggramiEntity.exclamationMarkEffectShort, this.x, this.y - 40)
       this.playerCollisionCount++
       this.setTalkIndex()
+      this.playerCollisionDelay.countReset()
     }
 
     if (this.currentEffect != null) {
@@ -4742,6 +4749,12 @@ class DonggramiEnemyB2Mini extends DonggramiEnemy {
   }
 
   processTalk () {
+    if (this.playerCollisionCount >= 1 && this.playerCollisionDelay.check()) {
+      // 플레이어랑 충돌하고 시간이 지나면, 충돌 카운트를 감소시킵니다.
+      // 다만 다시 플레이어랑 충돌한 경우, 충돌 카운트는 다음 5초동안 변하지 않습니다.
+      this.playerCollisionCount--
+    }
+
     if (this.entity.talkDelay.check()) {
       this.entity.talkDelay.setDelay(this.entity.getTalkRandomDelay())
       this.state = Math.random() < 0.5 ? DonggramiEntity.STATES.NORMAL : DonggramiEntity.STATES.NONE
@@ -4759,6 +4772,7 @@ class DonggramiEnemyB2Mini extends DonggramiEnemy {
       this.currentEffect = fieldState.createEffectObject(DonggramiEntity.exclamationMarkEffectShort, this.x, this.y - 40)
       this.playerCollisionCount++
       this.setTalkIndex()
+      this.playerCollisionDelay.countReset()
     }
 
     if (this.currentEffect != null) {
@@ -5041,6 +5055,12 @@ class DonggramiEnemyB3Mini extends DonggramiEnemy {
   }
 
   processTalk () {
+    if (this.playerCollisionCount >= 1 && this.playerCollisionDelay.check()) {
+      // 플레이어랑 충돌하고 시간이 지나면, 충돌 카운트를 감소시킵니다.
+      // 다만 다시 플레이어랑 충돌한 경우, 충돌 카운트는 다음 5초동안 변하지 않습니다.
+      this.playerCollisionCount--
+    }
+
     if (this.entity.talkDelay.check()) {
       this.entity.talkDelay.setDelay(this.entity.getTalkRandomDelay())
       this.state = DonggramiEntity.STATES.NORMAL
@@ -5070,6 +5090,7 @@ class DonggramiEnemyB3Mini extends DonggramiEnemy {
       if (this.state === DonggramiEntity.STATES.R2_3_PLAYER_COLLISION) {
         this.playerCollisionCount++
         this.state = DonggramiEntity.STATES.R2_3_PLAYER_COLLISION_PROCESSING
+        this.playerCollisionDelay.countReset()
       } else {
         if (Math.random() < 0.3) {
           this.state = DonggramiEntity.STATES.R2_3_OBJECT_COLLISION_PROCESSING
@@ -5114,13 +5135,6 @@ class DonggramiEnemyParty extends DonggramiEnemy {
     PARTY_PLATE: 53
   }
 
-  static stateList = {
-    NORMAL: 70,
-    CREATE: 71,
-    THROW: 72,
-    DROP: 73,
-    EAT: 74,
-  }
 
   /** DonggramiParty가 생성한 오브젝트를 표시하기 위해 만들어진 변수 (오브젝트 내에 있는 display 함수를 통해 표현)  */
   static iconList = {
@@ -5141,9 +5155,7 @@ class DonggramiEnemyParty extends DonggramiEnemy {
     this.entity.setDonggramiColor(DonggramiEntity.colorGroup.ALL)
     this.setEnemyByCpStat(20, 10)
 
-    this.state = DonggramiEnemyParty.stateList.NORMAL
-    this.stateList = DonggramiEnemyParty.stateList
-    this.subTypeList = DonggramiEnemyParty.subTypeList
+    this.state = DonggramiEntity.STATES.NORMAL
     this.stateDelay = new DelayData(60)
     this.delayChange()
 
@@ -5164,7 +5176,7 @@ class DonggramiEnemyParty extends DonggramiEnemy {
   }
 
   processMove () {
-    if (this.state !== this.stateList.DROP) {
+    if (this.state !== DonggramiEntity.STATES.DROP) {
       super.processMove()
     }
 
@@ -5173,13 +5185,13 @@ class DonggramiEnemyParty extends DonggramiEnemy {
     this.objX = this.x
     this.objY = this.y - 40
 
-    if (this.subType === this.subTypeList.PARTY_CANDLE) {
+    if (this.subType === DonggramiEnemyParty.subTypeList.PARTY_CANDLE) {
       this.objX = this.x - 12
       this.objY = this.y - 128
     }
 
     // 오브젝트를 먹는 상태이면, 오브젝트가 동그라미쪽에 붙게끔 처리
-    if (this.state === this.stateList.EAT) {
+    if (this.state === DonggramiEntity.STATES.EAT) {
       this.objX = this.x - 20
       this.objY = this.y - 20
     }
@@ -5187,11 +5199,11 @@ class DonggramiEnemyParty extends DonggramiEnemy {
 
   processState () {
     switch (this.state) {
-      case this.stateList.CREATE: this.processStateCreate(); break
-      case this.stateList.DROP: this.processStateDrop(); break
-      case this.stateList.EAT: this.processStateEat(); break
-      case this.stateList.NORMAL: this.processStateNormal(); break
-      case this.stateList.THROW: this.processStateThrow(); break
+      case DonggramiEntity.STATES.CREATE: this.processStateCreate(); break
+      case DonggramiEntity.STATES.DROP: this.processStateDrop(); break
+      case DonggramiEntity.STATES.EAT: this.processStateEat(); break
+      case DonggramiEntity.STATES.NORMAL: this.processStateNormal(); break
+      case DonggramiEntity.STATES.THROW: this.processStateThrow(); break
     }
 
   }
@@ -5202,7 +5214,7 @@ class DonggramiEnemyParty extends DonggramiEnemy {
   processStateNormal () {
     if (this.stateDelay.check()) {
       this.delayChange()
-      this.state = this.stateList.CREATE
+      this.state = DonggramiEntity.STATES.CREATE
     }
   }
 
@@ -5212,16 +5224,16 @@ class DonggramiEnemyParty extends DonggramiEnemy {
   processStateCreate () {
     if (this.stateDelay.check()) {
       this.delayChange()
-      if (this.state === this.subTypeList.PARTY_CANDLE) {
-        this.state = this.stateList.NORMAL
+      if (this.state === DonggramiEnemyParty.subTypeList.PARTY_CANDLE) {
+        this.state = DonggramiEntity.STATES.NORMAL
       } else {
-        this.state = Math.random() < 0.75 ? this.stateList.THROW : this.stateList.DROP
+        this.state = Math.random() < 0.75 ? DonggramiEntity.STATES.THROW : DonggramiEntity.STATES.DROP
       }
       return
     }
     
     switch (this.subType) {
-      case this.subTypeList.PARTY_CANDLE:
+      case DonggramiEnemyParty.subTypeList.PARTY_CANDLE:
         // 일정 시간 단위마다 촛불 생성
         if (this.stateDelay.divCheck(30)) {
           let candleBullet = new CustomEnemyBullet(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.candleFire, 12, 0, -4)
@@ -5282,11 +5294,11 @@ class DonggramiEnemyParty extends DonggramiEnemy {
   processStateThrow () {
     if (this.stateDelay.check()) {
       this.delayChange()
-      this.state = this.stateList.NORMAL
+      this.state = DonggramiEntity.STATES.NORMAL
       return
     }
 
-    if (this.subType === this.subTypeList.PARTY_PLATE) {
+    if (this.subType === DonggramiEnemyParty.subTypeList.PARTY_PLATE) {
       if (this.stateDelay.count === 1) {
         let plateBullet = new DonggramiEnemyParty.PlateBullet()
         plateBullet.moveSpeedX = Math.random() < 0.5 ? Math.random() * 4 + 2 : Math.random() * -4 - 2
@@ -5294,7 +5306,7 @@ class DonggramiEnemyParty extends DonggramiEnemy {
         fieldState.createEnemyBulletObject(plateBullet, this.objX, this.objY)
         soundSystem.play(soundSrc.donggrami.throw)
       }
-    } else if (this.subType === this.subTypeList.PARTY_FIRECRACKER) {
+    } else if (this.subType === DonggramiEnemyParty.subTypeList.PARTY_FIRECRACKER) {
       if (this.stateDelay.divCheck(20)) {
         fieldState.createEnemyBulletObject(new DonggramiEnemyParty.FirecrackerBullet(10, this.x + Math.random() * 200 - 100, this.y + Math.random() * 200 - 100), this.objX, this.objY)
       }
@@ -5307,7 +5319,7 @@ class DonggramiEnemyParty extends DonggramiEnemy {
   processStateDrop () {
     if (this.stateDelay.check()) {
       this.delayChange()
-      this.state = this.stateList.NORMAL
+      this.state = DonggramiEntity.STATES.NORMAL
       return
     }
 
@@ -5316,19 +5328,19 @@ class DonggramiEnemyParty extends DonggramiEnemy {
       const imgSrc = imageSrc.enemy.donggramiEnemy
       let imgD = imageDataInfo.donggramiEnemy.fruitRed
       switch (this.subType) {
-        case this.subTypeList.FRUIT_GREEN: imgD = imageDataInfo.donggramiEnemy.fruitGreen; break
-        case this.subTypeList.FRUIT_ORANGE: imgD = imageDataInfo.donggramiEnemy.fruitOrange; break
-        case this.subTypeList.FRUIT_PURPLE: imgD = imageDataInfo.donggramiEnemy.fruitPurple; break
-        case this.subTypeList.JUICE_COLA: imgD = imageDataInfo.donggramiEnemy.juiceCola; break
-        case this.subTypeList.JUICE_ORANGE: imgD = imageDataInfo.donggramiEnemy.juiceOrange; break
-        case this.subTypeList.JUICE_WATER: imgD = imageDataInfo.donggramiEnemy.juiceWater; break
-        case this.subTypeList.PARTY_CANDLE: imgD = imageDataInfo.donggramiEnemy.candle; break
-        case this.subTypeList.PARTY_FIRECRACKER: imgD = imageDataInfo.donggramiEnemy.firecracker; break
-        case this.subTypeList.PARTY_PLATE: imgD = imageDataInfo.donggramiEnemy.plate; break
+        case DonggramiEnemyParty.subTypeList.FRUIT_GREEN: imgD = imageDataInfo.donggramiEnemy.fruitGreen; break
+        case DonggramiEnemyParty.subTypeList.FRUIT_ORANGE: imgD = imageDataInfo.donggramiEnemy.fruitOrange; break
+        case DonggramiEnemyParty.subTypeList.FRUIT_PURPLE: imgD = imageDataInfo.donggramiEnemy.fruitPurple; break
+        case DonggramiEnemyParty.subTypeList.JUICE_COLA: imgD = imageDataInfo.donggramiEnemy.juiceCola; break
+        case DonggramiEnemyParty.subTypeList.JUICE_ORANGE: imgD = imageDataInfo.donggramiEnemy.juiceOrange; break
+        case DonggramiEnemyParty.subTypeList.JUICE_WATER: imgD = imageDataInfo.donggramiEnemy.juiceWater; break
+        case DonggramiEnemyParty.subTypeList.PARTY_CANDLE: imgD = imageDataInfo.donggramiEnemy.candle; break
+        case DonggramiEnemyParty.subTypeList.PARTY_FIRECRACKER: imgD = imageDataInfo.donggramiEnemy.firecracker; break
+        case DonggramiEnemyParty.subTypeList.PARTY_PLATE: imgD = imageDataInfo.donggramiEnemy.plate; break
       }
 
       let customBullet = new CustomEnemyBullet(imgSrc, imgD, 5, 0, 5)
-      if (this.subType === this.subTypeList.PARTY_PLATE) {
+      if (this.subType === DonggramiEnemyParty.subTypeList.PARTY_PLATE) {
         // 접시만 다른 알고리즘을 가진 총알을 사용하기 때문에 따로 생성함
         customBullet = new DonggramiEnemyParty.PlateBullet()
       }
@@ -5346,7 +5358,7 @@ class DonggramiEnemyParty extends DonggramiEnemy {
   /** 물건을 먹습니다. (주스, 과일 한정), 아무런 변화가 없습니다. (물건을 먹기 위해 물건이 90도 각도로 기울어지기만 합니다.) */
   processStateEat () {
     if (this.stateDelay.check()) {
-      this.state = this.stateList.NORMAL
+      this.state = DonggramiEntity.STATES.NORMAL
     }
 
     if (this.stateDelay.count === 1) {
@@ -5359,11 +5371,11 @@ class DonggramiEnemyParty extends DonggramiEnemy {
     let min = 0
     let max = 0
     switch (this.state) {
-      case this.stateList.NORMAL: min = 60; max = 60; break
-      case this.stateList.CREATE: min = 120; max = 180; break
-      case this.stateList.EAT: min = 120; max = 132; break
-      case this.stateList.THROW: min = 180; max = 188; break
-      case this.stateList.DROP: min = 180; max = 188; break
+      case DonggramiEntity.STATES.NORMAL: min = 60; max = 60; break
+      case DonggramiEntity.STATES.CREATE: min = 120; max = 180; break
+      case DonggramiEntity.STATES.EAT: min = 120; max = 132; break
+      case DonggramiEntity.STATES.THROW: min = 180; max = 188; break
+      case DonggramiEntity.STATES.DROP: min = 180; max = 188; break
     }
 
     this.stateDelay.delay = Math.floor(Math.random() * (max - min) + min)
@@ -5372,9 +5384,9 @@ class DonggramiEnemyParty extends DonggramiEnemy {
   display () {
     super.display()
     
-    if (this.state === this.stateList.CREATE || this.state === this.stateList.EAT) {
+    if (this.state === DonggramiEntity.STATES.CREATE || this.state === DonggramiEntity.STATES.EAT) {
       this.displayObject()
-    } else if (this.state === this.stateList.THROW && this.subType === this.subTypeList.PARTY_FIRECRACKER) {
+    } else if (this.state === DonggramiEntity.STATES.THROW && this.subType === DonggramiEnemyParty.subTypeList.PARTY_FIRECRACKER) {
       this.displayObject() // 폭죽 보여주기 위한 용도
     }
   }
@@ -5383,19 +5395,19 @@ class DonggramiEnemyParty extends DonggramiEnemy {
     const icon = DonggramiEnemyParty.iconList
     let target = icon.fruitRed
     switch (this.subType) {
-      case this.subTypeList.FRUIT_GREEN: target = icon.fruitGreen; break
-      case this.subTypeList.FRUIT_ORANGE: target = icon.fruitOrange; break
-      case this.subTypeList.FRUIT_PURPLE: target = icon.fruitPurple; break
-      case this.subTypeList.JUICE_COLA: target = icon.juiceCola; break
-      case this.subTypeList.JUICE_ORANGE: target = icon.juiceOrange; break
-      case this.subTypeList.JUICE_WATER: target = icon.juiceWater; break
-      case this.subTypeList.PARTY_CANDLE: target = icon.partyCandle; break
-      case this.subTypeList.PARTY_FIRECRACKER: target = icon.partyFirecracker; break
-      case this.subTypeList.PARTY_PLATE: target = icon.partyPlate; break
+      case DonggramiEnemyParty.subTypeList.FRUIT_GREEN: target = icon.fruitGreen; break
+      case DonggramiEnemyParty.subTypeList.FRUIT_ORANGE: target = icon.fruitOrange; break
+      case DonggramiEnemyParty.subTypeList.FRUIT_PURPLE: target = icon.fruitPurple; break
+      case DonggramiEnemyParty.subTypeList.JUICE_COLA: target = icon.juiceCola; break
+      case DonggramiEnemyParty.subTypeList.JUICE_ORANGE: target = icon.juiceOrange; break
+      case DonggramiEnemyParty.subTypeList.JUICE_WATER: target = icon.juiceWater; break
+      case DonggramiEnemyParty.subTypeList.PARTY_CANDLE: target = icon.partyCandle; break
+      case DonggramiEnemyParty.subTypeList.PARTY_FIRECRACKER: target = icon.partyFirecracker; break
+      case DonggramiEnemyParty.subTypeList.PARTY_PLATE: target = icon.partyPlate; break
     }
 
     let degree = 0
-    if (this.state === this.stateList.EAT) {
+    if (this.state === DonggramiEntity.STATES.EAT) {
       degree = this.stateDelay.count < 30 ? this.stateDelay.count * 3 : 90
     }
 
@@ -5413,8 +5425,6 @@ class DonggramiEnemyFruit extends DonggramiEnemyParty {
   constructor () {
     super()
     this.fruitChange()
-
-    this.stateList = DonggramiEnemyParty.stateList
     this.stateDelay = new DelayData(120)
     this.delayChange()
   }
@@ -5441,11 +5451,11 @@ class DonggramiEnemyFruit extends DonggramiEnemyParty {
       // 일정 확률에 따라 상태를 변경합니다.
       let random = Math.random()
       if (random < 0.15) {
-        this.state = this.stateList.EAT
+        this.state = DonggramiEntity.STATES.EAT
       } else if (random > 0.87) {
-        this.state = this.stateList.DROP
+        this.state = DonggramiEntity.STATES.DROP
       } else {
-        this.state = this.stateList.THROW
+        this.state = DonggramiEntity.STATES.THROW
       }
 
       this.delayChange()
@@ -5456,16 +5466,16 @@ class DonggramiEnemyFruit extends DonggramiEnemyParty {
     if (this.stateDelay.count === 1) {
       let bulletType
       switch (this.subType) {
-        case this.subTypeList.FRUIT_GREEN:
+        case DonggramiEnemyParty.subTypeList.FRUIT_GREEN:
           bulletType = DonggramiEnemyFruit.bulletFruitGreen
           break
-        case this.subTypeList.FRUIT_ORANGE:
+        case DonggramiEnemyParty.subTypeList.FRUIT_ORANGE:
           bulletType = DonggramiEnemyFruit.bulletFruitOrange
           break
-        case this.subTypeList.FRUIT_PURPLE:
+        case DonggramiEnemyParty.subTypeList.FRUIT_PURPLE:
           bulletType = DonggramiEnemyFruit.bulletFruitPurple
           break
-        case this.subTypeList.FRUIT_RED:
+        case DonggramiEnemyParty.subTypeList.FRUIT_RED:
           bulletType = DonggramiEnemyFruit.bulletFruitRed
           break
         default: return
@@ -5485,7 +5495,7 @@ class DonggramiEnemyFruit extends DonggramiEnemyParty {
     }
 
     if (this.stateDelay.check()) {
-      this.state = this.stateList.NORMAL
+      this.state = DonggramiEntity.STATES.NORMAL
     }
   }
 }
@@ -5510,22 +5520,22 @@ class DonggramiEnemyJuice extends DonggramiEnemyParty {
     if (this.stateDelay.check()) {
       let random = Math.random()
       if (random < 0.33) {
-        this.state = this.stateList.EAT
+        this.state = DonggramiEntity.STATES.EAT
         soundSystem.play(soundSrc.donggrami.juiceEat)
       } else if (random > 0.66) {
-        this.state = this.stateList.THROW
-        if (this.subType === this.subTypeList.JUICE_COLA) {
+        this.state = DonggramiEntity.STATES.THROW
+        if (this.subType === DonggramiEnemyParty.subTypeList.JUICE_COLA) {
           soundSystem.play(soundSrc.donggrami.juiceCola)
         }
       } else {
-        this.state = this.stateList.DROP
+        this.state = DonggramiEntity.STATES.DROP
       }
     }
   }
 
   processStateThrow () {
     let count = this.stateDelay.count
-    if (this.subType === this.subTypeList.JUICE_ORANGE && count === 1) {
+    if (this.subType === DonggramiEnemyParty.subTypeList.JUICE_ORANGE && count === 1) {
       let orangeBullet = new CustomEnemyBullet('', undefined, 5, 0, 9)
       orangeBullet.width = 50
       orangeBullet.height = 150
@@ -5534,7 +5544,7 @@ class DonggramiEnemyJuice extends DonggramiEnemyParty {
       }
       fieldState.createEnemyBulletObject(orangeBullet, this.objX, this.objY)
       soundSystem.play(soundSrc.donggrami.juiceThrow)
-    } else if (this.subType === this.subTypeList.JUICE_COLA && (count % 2 === 0 && count <= 60)) {
+    } else if (this.subType === DonggramiEnemyParty.subTypeList.JUICE_COLA && (count % 2 === 0 && count <= 60)) {
       let colaBullet = new CustomEnemyBullet('', undefined, 1)
       colaBullet.setMoveSpeed(Math.random() * 10 - 5, Math.random() * -6 - 6)
       colaBullet.display = function () {
@@ -5543,7 +5553,7 @@ class DonggramiEnemyJuice extends DonggramiEnemyParty {
         graphicSystem.fillEllipse(this.x + 2, this.y + 2, 6, 6, 0, '#85461e')
       }
       fieldState.createEnemyBulletObject(colaBullet, this.objX, this.objY)
-    } else if (this.subType === this.subTypeList.JUICE_WATER && count === 1) {
+    } else if (this.subType === DonggramiEnemyParty.subTypeList.JUICE_WATER && count === 1) {
       soundSystem.play(soundSrc.donggrami.throw)
       let juiceBullet = new CustomEnemyBullet(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.juiceWater, 17, Math.random() * 10 - 5, Math.random() * 10 - 5)
       fieldState.createEnemyBulletObject(juiceBullet, this.objX, this.objY)
@@ -5552,7 +5562,7 @@ class DonggramiEnemyJuice extends DonggramiEnemyParty {
     if (this.stateDelay.check()) {
       this.delayChange()
       this.fruitChange()
-      this.state = this.stateList.NORMAL
+      this.state = DonggramiEntity.STATES.NORMAL
     }
   }
 
@@ -5560,7 +5570,7 @@ class DonggramiEnemyJuice extends DonggramiEnemyParty {
     super.display()
 
     // 콜라만 예외적으로 던지기 상태일 때 오브젝트를 보여줌
-    if (this.state === this.stateList.THROW && this.subType === this.subTypeList.JUICE_COLA) {
+    if (this.state === DonggramiEntity.STATES.THROW && this.subType === DonggramiEnemyParty.subTypeList.JUICE_COLA) {
       this.displayObject()
     }
   }
@@ -8168,7 +8178,6 @@ class TowerEnemyPentaTemplete extends TowerEnemy {
 
   constructor () {
     super()
-    this.subTypeList = TowerEnemyPentaShadowTemplete.subTypeList
     this.moveDelay = new DelayData(120)
     this.moveDelay.setCountMax()
   }
@@ -9463,12 +9472,12 @@ class TowerEnemyPentaShadowTemplete extends TowerEnemyPentaTemplete {
 
     // 데이터 설정
     switch (subType) {
-      case this.subTypeList.PENTA_SHADOW: arrayData = [7, 12, false, imageDataInfo.towerEnemyGroup2.pentaShadow]; break
-      case this.subTypeList.PENTA_LIGHT: arrayData = [13, 12, true, imageDataInfo.towerEnemyGroup2.pentaLight]; break
-      case this.subTypeList.HEXA_SHADOW: arrayData = [7, 13, false, imageDataInfo.towerEnemyGroup2.hexaShadow]; break
-      case this.subTypeList.HEXA_LIGHT: arrayData = [14, 13, true, imageDataInfo.towerEnemyGroup2.hexaLight]; break
-      case this.subTypeList.OCTA_SHADOW: arrayData = [7, 14, false, imageDataInfo.towerEnemyGroup2.octaShadow]; break
-      case this.subTypeList.OCTA_LIGHT: arrayData = [15, 14, true, imageDataInfo.towerEnemyGroup2.octaLight]; break
+      case TowerEnemyPentaTemplete.subTypeList.PENTA_SHADOW: arrayData = [7, 12, false, imageDataInfo.towerEnemyGroup2.pentaShadow]; break
+      case TowerEnemyPentaTemplete.subTypeList.PENTA_LIGHT: arrayData = [13, 12, true, imageDataInfo.towerEnemyGroup2.pentaLight]; break
+      case TowerEnemyPentaTemplete.subTypeList.HEXA_SHADOW: arrayData = [7, 13, false, imageDataInfo.towerEnemyGroup2.hexaShadow]; break
+      case TowerEnemyPentaTemplete.subTypeList.HEXA_LIGHT: arrayData = [14, 13, true, imageDataInfo.towerEnemyGroup2.hexaLight]; break
+      case TowerEnemyPentaTemplete.subTypeList.OCTA_SHADOW: arrayData = [7, 14, false, imageDataInfo.towerEnemyGroup2.octaShadow]; break
+      case TowerEnemyPentaTemplete.subTypeList.OCTA_LIGHT: arrayData = [15, 14, true, imageDataInfo.towerEnemyGroup2.octaLight]; break
     }
 
     let targetDieSound = arrayData[2] ? soundSrc.enemyDie.enemyDieTowerPentaLight : soundSrc.enemyDie.enemyDieTowerPentaShadow
@@ -9481,15 +9490,15 @@ class TowerEnemyPentaShadowTemplete extends TowerEnemyPentaTemplete {
   /** 해당 객체가 죽었을 때 새로운 적을 다시 생성합니다. (단 라이트타입은 해당하지 않음) */
   createNewEnemy () {
     switch (this.subType) {
-      case this.subTypeList.PENTA_SHADOW: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.pentaLight, this.x, this.y); break
-      case this.subTypeList.HEXA_SHADOW: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.hexaLight, this.x, this.y); break
-      case this.subTypeList.OCTA_SHADOW: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.octaLight, this.x, this.y); break
+      case TowerEnemyPentaTemplete.subTypeList.PENTA_SHADOW: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.pentaLight, this.x, this.y); break
+      case TowerEnemyPentaTemplete.subTypeList.HEXA_SHADOW: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.hexaLight, this.x, this.y); break
+      case TowerEnemyPentaTemplete.subTypeList.OCTA_SHADOW: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.octaLight, this.x, this.y); break
     }
   }
 }
 
 class TowerEnemyGroup2PentaShadow extends TowerEnemyPentaShadowTemplete {
-  constructor () { super(); this.setAutoFigure(this.subTypeList.PENTA_SHADOW) }
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.PENTA_SHADOW) }
   getCollisionArea () {
     return [ this.getCollisionAreaCalcurationObject(0, 36, 119, 21),
       this.getCollisionAreaCalcurationObject(19, 17, 87, 88),
@@ -9497,10 +9506,10 @@ class TowerEnemyGroup2PentaShadow extends TowerEnemyPentaShadowTemplete {
   }
 }
 class TowerEnemyGroup2PentaLight extends TowerEnemyGroup2PentaShadow {
-  constructor () { super(); this.setAutoFigure(this.subTypeList.PENTA_LIGHT) }
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.PENTA_LIGHT) }
 }
 class TowerEnemyGroup2HexaShadow extends TowerEnemyPentaShadowTemplete {
-  constructor () { super(); this.setAutoFigure(this.subTypeList.HEXA_SHADOW) }
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.HEXA_SHADOW) }
   getCollisionArea () {
     return [ this.getCollisionAreaCalcurationObject(29, 2, 71, 105),
       this.getCollisionAreaCalcurationObject(18, 14, 97, 74),
@@ -9508,10 +9517,10 @@ class TowerEnemyGroup2HexaShadow extends TowerEnemyPentaShadowTemplete {
   }
 }
 class TowerEnemyGroup2HexaLight extends TowerEnemyGroup2HexaShadow {
-  constructor () { super(); this.setAutoFigure(this.subTypeList.HEXA_LIGHT) }
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.HEXA_LIGHT) }
 }
 class TowerEnemyGroup2OctaShadow extends TowerEnemyPentaShadowTemplete {
-  constructor () { super(); this.setAutoFigure(this.subTypeList.OCTA_SHADOW) }
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.OCTA_SHADOW) }
   getCollisionArea () {
     return [ this.getCollisionAreaCalcurationObject(0, 39, 148, 60),
       this.getCollisionAreaCalcurationObject(28, 0, 86, 39),
@@ -9519,7 +9528,7 @@ class TowerEnemyGroup2OctaShadow extends TowerEnemyPentaShadowTemplete {
   }
 }
 class TowerEnemyGroup2OctaLight extends TowerEnemyGroup2OctaShadow {
-  constructor () { super(); this.setAutoFigure(this.subTypeList.OCTA_LIGHT) }
+  constructor () { super(); this.setAutoFigure(TowerEnemyPentaTemplete.subTypeList.OCTA_LIGHT) }
 }
 
 class TowerEnemyGroup2BossBar extends TowerEnemy {
