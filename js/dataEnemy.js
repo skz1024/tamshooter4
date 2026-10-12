@@ -575,69 +575,63 @@ export class EnemyData extends FieldData {
 export class EnemyBulletData extends FieldData {
   constructor () {
     super()
-    this.isNotMoveOption = false
-    /** 
-     * 총알 타격 반복 횟수, 이 값이 0이되면 해당 총알은 삭제
-     * 무한대로 타격을 원한다면 임의의 높은 숫자값을 넣어주세요.
-     */ 
+    /**  총알 타격 반복 횟수, 이 값이 0이되면 해당 총알은 삭제
+     * 무한대로 타격을 원한다면 임의의 높은 숫자값을 넣어주세요. @type {number} */ 
     this.repeatCount = 1
 
-    // 충돌 딜레이
+    /** 적 총알에서 충돌 딜레이는, 재 공격이 가능한 총알에 한해서만 주로 사용합니다.
+     * 기본적으로는 적 총알은 1초당 1번만 연속 공격할 수 있슫니다.
+     * 단, 최초 타격 시에는 카운튿가 최대이므로 바로 플레이어를 공격할 수 있습니다. */
     this.collisionDelay = new DelayData(60)
     this.collisionDelay.setCountMax()
 
-    /** 
-     * 현재 충돌된 여부 
-     * 
-     * processCollision 함수를 사용한 후에, 이 변수를 확인하면, 충돌되었는지를 확인하여
-     * 다른 작업을 처리할 수 있습니다.
-     */ 
-    this.isCurrentCollision = false
+    /** 해당 총알이 플레이어랑 충돌할 수 있는지 살펴봅니다. */
+    this.isCollisionPossible = true
 
-    /** 최대 가동하는 프레임 수 (이 프레임을 초과하면 해당 객체는 자동으로 삭제됩니다.) */
+    /** 최대 가동하는 프레임 수 (이 프레임을 초과하면 해당 객체는 자동으로 삭제됩니다.)
+     * 표준 값은 10초입니다. 이 변수는 적 총알이 과도하게 쌓이는 것을 막기 위해 만들었습니다. */
     this.maxRunningFrame = 600
 
-    /** 충돌할경우 데미지 사운드 대신 다른 사운드 재생  */
+    /** 충돌할경우 플레이어 기본 데미지 사운드 대신 다른 사운드 재생  */
     this.collisionSoundSrc = ''
   }
 
   process () {
     super.process()
     this.processCollision()
+    this.processDelete()
+  }
 
-    if (this.outAreaCheck()) {
-      this.isDeleted = true
-    }
-
-    if (this.elapsedFrame >= this.maxRunningFrame) {
+  /** 총알이 특정 조건이 되면 삭제하는 변수를 활성화시킵니다. */
+  processDelete () {
+    if (this.outAreaCheck() || this.elapsedFrame >= this.maxRunningFrame || this.repeatCount <= 0) {
       this.isDeleted = true
     }
   }
 
-  /** 이 함수의 내용은 EnemyData랑 거의 동일함 */
+  /** 충돌 후, 어떻게 해야 할 지를 설정합니다. */
+  afterCollision () {
+
+  }
+
+  /** 충돌 처리 함수를 진행합니다. */
   processCollision () {
-    this.isCurrentCollision = false
-    if (this.attack === 0) return
+    if (!this.isCollisionPossible) return
 
     if (this.collisionDelay.check(false)) {
       const player = fieldState.getPlayerObject()
       const enemyArea = this.getCollisionArea()
 
       for (let i = 0; i < enemyArea.length; i++) {
-        if (this.degree === 0 && collision(enemyArea[i], player)
-         || this.degree !== 0 && collisionClass.collisionOBB(enemyArea[i], player)) {
+        const HIT = this.degree === 0 ? collision(enemyArea[i], player) : collisionClass.collisionOBB(enemyArea[i], player)
+        if (HIT) {
           this.repeatCount--
           this.collisionSoundSrc === '' ? player.addDamage(this.attack) : player.addDamageWithSound(this.attack, this.collisionSoundSrc)
           this.collisionDelay.countReset()
-          this.isCurrentCollision = true
+          this.afterCollision()
           break // 루프 종료 (여러 충돌객체중 하나만 충돌해야함, 중복 데미지 없음)
         }
       }
-
-    }
-
-    if (this.repeatCount <= 0) {
-      this.isDeleted = true
     }
   }
 
@@ -681,9 +675,6 @@ export class EnemyBulletData extends FieldData {
       height: this.height,
       degree: this.degree
     }]
-
-    // 이 함수는 아래 코드랑 동일
-    // return [this.getCollisionAreaCalcurationObject()]
   }
 
   /**
@@ -751,10 +742,11 @@ export class CustomEnemyBullet extends EnemyBulletData {
   }
 
   /**
-   * 해당 함수는 현재 데이터를 바탕으로 CustomEnemyBullet을 생성하지만
-   * 상속이 되지 않은 채로 불릿이 생성되므로, 불릿 자체의 특수기능같은것이 있다면
-   * 이 함수를 사용하지 말고, 대신 new 를 이용해 객체를 생성해야 합니다.
+   * 해당 함수는 이미지, 공격력, 이동 설정만 사용해 새 CustomEnemyBullet을 만듭니다.
+   * 그 외 속성이나 하위 클래스의 상태는 복사하지 않습니다.
    * 
+   * 불릿 자체의 특수기능같은것이 있다면
+   * 이 함수를 사용하지 말고, 대신 new 를 이용해 객체를 생성해야 합니다.  
    * 그러나 아직 일부 적들은 이 함수를 사용하기 때문에 완전한 deprecated는 아닙니다.
    * @deprecated
   */
@@ -1988,47 +1980,17 @@ class MeteoriteBombEnemyBullet extends EnemyBulletData {
     this.attack = 20
     this.width = MeteoriteEnemyBomb.BOMB_SIZE
     this.height = MeteoriteEnemyBomb.BOMB_SIZE
-    this.isNotMoveOption = true
-
     this.customEffect = new MeteoriteBombEnemyBulletEffect()
+    this.setMoveSpeed(0, 0)
   }
 
   process () {
     super.process()
-  }
 
-  // 스플래시 데미지 (아군이든 적군이든(...))
-  processCollision () {
-    // 플레이어 충돌
-    let player = fieldState.getPlayerObject()
-    if (collision(player, this)) {
-      player.addDamage(this.attack)
-    }
-
-    // 적도 충돌(?!)
-    let enemy = fieldState.getEnemyObject()
-    const MIN_DAMAGE = 2400
-    const MAX_DAMAGE = 16000
-    for (let i = 0; i < enemy.length; i++) {
-      let currentEnemy = enemy[i]
-      if (collision(currentEnemy, this)) {
-        let targetDamage = Math.floor(currentEnemy.hpMax * 0.2)
-        if (targetDamage < MIN_DAMAGE) {
-          targetDamage = MIN_DAMAGE
-        } else if (targetDamage > MAX_DAMAGE) {
-          targetDamage = MAX_DAMAGE
-        }
-        currentEnemy.hp -= targetDamage
-      }
-    }
-
-    // 한번만 발동하고, 이펙트 생성한 후 삭제
+    // 생성된 즉시 이펙트를 생성하고 소멸
+    // 충돌 검사는 진행하지만 1프레임만에 사라집니다.
     fieldState.createEffectObject(this.customEffect, this.x + (this.width / 2), this.y + (this.height / 2))
     this.isDeleted = true
-  }
-
-  display () {
-    graphicSystem.strokeRect(this.x, this.y, this.width, this.height, 'white')
   }
 }
 
@@ -5293,8 +5255,8 @@ class DonggramiEnemyParty extends DonggramiEnemy {
       super(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.firecrackerPrevEffect, damage, 0, 0)
       this.endPositionX = endPositionX
       this.endPositionY = endPositionY
-      this.bombDamage = damage
-      this.attack = 0
+      this.attack = damage
+      this.isCollisionPossible = false
     }
 
     process () {
@@ -5303,16 +5265,13 @@ class DonggramiEnemyParty extends DonggramiEnemy {
       this.moveSpeedY = (this.endPositionY - this.y) / 10
 
       if (this.elapsedFrame === 60) {
+        // 생성된 후 정확히 60프레임 일 때, 충돌 처리를 한 후, 충돌 결과와 관계없이 이펙트를 생성시킵니다.
+        // 아후 15프레임동안 공격이 가능하며, 그 이후에는 삭제됩니다.
+        this.isCollisionPossible = true
         let partyEffect = new CustomEffect(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.firecrackerEffect, 100, 100, 2)
         let partyObject = { x: this.x - 25, y: this.y - 25, width: 100, height: 100}
-        let player = fieldState.getPlayerObject()
-        if (collision(player, partyObject)) {
-          player.addDamage(this.bombDamage)
-        }
-
         fieldState.createEffectObject(partyEffect, partyObject.x, partyObject.y)
         soundSystem.play(soundSrc.donggrami.firecracker)
-        this.isDeleted = true
       } else if (this.elapsedFrame >= 75) {
         this.isDeleted = true
       }
@@ -5912,6 +5871,7 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
       this.state = FieldData.state.NORMAL
       this.moveDelay = new DelayData(1)
       this.attack = 6
+      this.maxRunningFrame = 240
     }
 
     static lineNumber = 0
@@ -5946,10 +5906,6 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
         }
       } else {
         super.processMove()
-      }
-
-      if (this.elapsedFrame >= 240) {
-        this.isDeleted = true
       }
     }
   }
@@ -6437,12 +6393,14 @@ class IntruderEnemyRendown extends IntruderEnemy {
   static EnergyBulletLeft = class extends CustomEnemyBullet {
     constructor () {
       super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.leverMissileLeft, 0, -2, 5)
+      this.isCollisionPossible = false
     }
 
     processMove () {
       super.processMove()
       this.degree += 4
 
+      // 바닥 밑에 닿고, 일정 시간이 지났다면 폭발하는 총알을 생성합니다.
       if (this.y + this.height >= graphicSystem.CANVAS_HEIGHT) {
         if (this.elapsedFrame >= 60) {
           let enemyBullet = new IntruderEnemyRendown.EnergyBombBullet()
@@ -6457,8 +6415,6 @@ class IntruderEnemyRendown extends IntruderEnemy {
         }
       }
     }
-
-    processCollision () {}
   }
 
   static EnergyBulletRight = class extends IntruderEnemyRendown.EnergyBulletLeft {
@@ -6468,35 +6424,25 @@ class IntruderEnemyRendown extends IntruderEnemy {
     }
   }
 
+  /** @type {typeof CustomEnemyBullet} */
   static EnergyBombBullet = class extends CustomEnemyBullet {
     constructor () {
       super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.leverMissileBomb, 5, 0, 0)
       this.setWidthHeight(this.width * 2, this.height * 2)
-      this.attackDelay = new DelayData(4)
+      this.attackDelay = new DelayData(6)
       this.customEffect = new CustomEffect(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.leverMissileBomb, this.width, this.height, 3)
       this.baseHeight = this.height
-
-      this.totalFrame = 0
+      this.collisionDelay.setDelay(6)
+      this.maxRunningFrame = 0
+      this.repeatCount = 16
       if (this.customEffect.frameDelay != null && this.customEffect.enimation != null) {
-        this.totalFrame = this.customEffect.frameDelay * this.customEffect.enimation?.frameCount
+        this.maxRunningFrame = this.customEffect.frameDelay * this.customEffect.enimation?.frameCount
       }
     }
 
     afterInit () {
       this.y = graphicSystem.CANVAS_HEIGHT - this.height
       fieldState.createEffectObject(this.customEffect, this.x, this.y)
-    }
-
-    processCollision () {
-      if (this.attackDelay.check()) {
-        super.processCollision()
-      }
-
-      if (this.elapsedFrame >= this.totalFrame) {
-        this.isDeleted = true
-      } else {
-        this.isDeleted = false
-      }
     }
 
     // 아무것도 출력하지 않습니다.
@@ -6560,19 +6506,8 @@ class IntruderEnemyLever extends IntruderEnemy {
     constructor () {
       super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.leverLaser, 3, 0, -20, 0, 0)
       this.setWidthHeight(imageDataInfo.intruderEnemy.leverImage.width, graphicSystem.CANVAS_HEIGHT)
-      this.attackDelay = new DelayData(5)
-    }
-
-    processCollision () {
-      if (this.attackDelay.check()) {
-        super.processCollision()
-      }
-      
-      if (this.elapsedFrame <= 120) {
-        this.isDeleted = false 
-      } else {
-        this.isDeleted = true
-      }
+      this.collisionDelay.setDelay(15)
+      this.maxRunningFrame = 120
     }
   }
 
@@ -7360,19 +7295,6 @@ class TowerEnemyGroup1Tapo extends TowerEnemy {
       super.processMove()
       this.setDegreeByVelocity()
     }
-
-    // 회전을 사용하기 때문에 충돌 방식이 다릅니다.
-    processCollision () {
-      if (this.attack === 0) return
-
-      let player = fieldState.getPlayerObject()
-      let playerSendXY = { x: player.x, y: player.y, width: player.width, height: player.height, degree: 0}
-      
-      if (collisionClass.collisionOBB(playerSendXY, this)) {
-        player.addDamage(this.attack)
-        this.isDeleted = true
-      }
-    }
   }
 
   constructor () {
@@ -8126,14 +8048,12 @@ class TowerEnemyGroup1X extends TowerEnemy {
       super(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.enemyDieX, 16, 0, 0)
       const imgD = imageDataInfo.towerEnemyGroup1.enemyDieX
       this.setWidthHeight(imgD.width * 2, imgD.height * 2)
+      this.maxRunningFrame = 60
     }
 
     process () {
       super.process()
       this.degree += 30
-      if (this.elapsedFrame >= 60) {
-        this.isDeleted = true
-      }
     }
   }
 
@@ -8637,18 +8557,23 @@ class TowerEnemyGroup1CrazyRobot extends TowerEnemy {
       super(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletBossRocket, 0)
     }
 
+    afterCollision () {
+      const bullet = new TowerEnemyGroup1CrazyRobot.RobotRocketBomb()
+      fieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
+      soundSystem.play(soundSrc.enemyAttack.towerAttackRocketBomb)
+      this.isDeleted = true
+    }
+
     processMove () {
       super.processMove()
       this.setDegreeByVelocity()
 
-      let player = fieldState.getPlayerObject()
+      // 벽에 부딪혀도 그것은 충돌함수를 실행한 결과와 동일합니다.
+      // 반복 횟수를 감소시키지 않으면 총알이 무한으로 때릴 수 있음을 주의하세요.
       if (this.y < 0 || this.y + this.height > graphicSystem.CANVAS_HEIGHT 
-        || this.x < 0 || this.x + this.width > graphicSystem.CANVAS_WIDTH + 20
-        || collisionClass.collisionOBB(this, player)) {
-        const bullet = new TowerEnemyGroup1CrazyRobot.RobotRocketBomb()
-        fieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
-        soundSystem.play(soundSrc.enemyAttack.towerAttackRocketBomb)
-        this.isDeleted = true
+        || this.x < 0 || this.x + this.width > graphicSystem.CANVAS_WIDTH + 20) {
+        this.afterCollision()
+        this.repeatCount--
       }
     }
   }
@@ -8679,25 +8604,10 @@ class TowerEnemyGroup1CrazyRobot extends TowerEnemy {
       super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.leverMissileBomb, 4)
       this.setAutoImageData(this.imageSrc, this.imageData, 4)
       this.attackDelay = new DelayData(10)
+      this.repeatCount = 10
+      this.collisionDelay.setDelay(10)
       this.setWidthHeight(this.width * 2, this.height * 2)
-    }
-
-    processCollision () {
-      if (this.attack === 0) return
-      if (!this.attackDelay.check()) return
-
-      let player = fieldState.getPlayerObject()
-      let playerSendXY = { x: player.x, y: player.y, width: player.width, height: player.height}
-      
-      if (collision(playerSendXY, this)) {
-        player.addDamage(this.attack)
-      }
-    }
-
-    processState () {
-      if (this.elapsedFrame >= 4 * imageDataInfo.intruderEnemy.leverMissileBomb.frame) {
-        this.isDeleted = true
-      }
+      this.maxRunningFrame = 4 * imageDataInfo.intruderEnemy.leverMissileBomb.frame
     }
   }
 }
@@ -13060,17 +12970,16 @@ class TowerEnemyGroup4AntijemulP3_1 extends TowerEnemy {
       this.collisionDelay.delay = 6
       this.repeatCount = 60
       this.setMoveSpeed(0, 0)
+      this.maxRunningFrame = 48
     }
 
     processState () {
       super.processState()
-      if (this.elapsedFrame >= 48) {
-        this.isDeleted = true
-      }
+      const halfFrame = this.maxRunningFrame / 2
 
       // 투명도 시간에 따라서 변경
-      if (this.elapsedFrame >= 24) {
-        this.alpha = (48 - this.elapsedFrame) / 24
+      if (this.elapsedFrame >= halfFrame) {
+        this.alpha = (this.maxRunningFrame - this.elapsedFrame) / halfFrame
       }
     }
 
@@ -13869,6 +13778,7 @@ class TowerEnemyGroup5Camera extends TowerEnemy {
       this.setMoveSpeed(0, 0)
       this.state = FieldData.state.NORMAL
       this.repeatCount = 15
+      this.isCollisionPossible = false
     }
 
     processState () {
@@ -13995,19 +13905,22 @@ class TowerEnemyGroup5Radio extends TowerEnemy {
       this.attack = 3
       this.repeatCount = 6
       this.collisionDelay.setDelay(12)
-      this.isCollision = false
+      this.isCollisionReflect = false
     }
 
     processState () {
-      if (this.elapsedFrame <= 60 || this.isCollision) return
+      // 이 총알은 60프레임 이전까지 총알을 반사하지 않으며, 반사는 단 1회만 진행합니다.
+      if (this.elapsedFrame <= 60 || this.isCollisionReflect) return
 
+      // 무전기에 해당하는 적들을 모두 가져옵니다.
       let list = fieldState.getEnemyObjectById(ID.enemy.towerEnemyGroup5.radio)
       if (list.length === 0) return
 
+      // 해당하는 무전기랑 이 총알이 충돌한 경우, 이동 속도를 전부 반대로 바꾸고, 더이상 반사되지 않게 합니다.
       for (let i = 0; i < list.length; i++) {
         if (collision(this, list[i])) {
-          this.setMoveSpeed(this.moveSpeedX * -1, this.moveSpeedY * -1) // 반대방향으로 변경
-          this.isCollision = true // 이후 다시 방향이 변경되지 않음
+          this.setMoveSpeed(this.moveSpeedX * -1, this.moveSpeedY * -1)
+          this.isCollisionReflect = true
           break
         }
       }
@@ -14233,6 +14146,7 @@ class TowerEnemyGroup5Helltell extends TowerEnemyHellTemplet {
     processMove () {
       super.processMove()
       if (this.moveDelay.check()) {
+        // 이동할수록 점점점 커진다!
         this.setWidthHeight(this.width + 1, this.height + 3)
       }
     }

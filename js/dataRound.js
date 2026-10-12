@@ -11569,19 +11569,23 @@ class Round3TempleteBossSprite extends FieldData {
       super(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.bulletBossRocket, 0)
     }
 
+    afterCollision () {
+      const bullet = new Round3TempleteBossSprite.RobotRocketBomb()
+      fieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
+      soundSystem.play(soundSrc.enemyAttack.towerAttackRocketBomb)
+    }
+
     processMove () {
       super.processMove()
       const atangent = Math.atan2(this.moveSpeedY, this.moveSpeedX)
       this.degree = atangent * (180 / Math.PI)
 
-      let player = fieldState.getPlayerObject()
+      // 벽에 부딪혀도 그것은 충돌함수를 실행한 결과와 동일합니다.
+      // 반복 횟수를 감소시키지 않으면 총알이 무한으로 때릴 수 있음을 주의하세요.
       if (this.y < 0 || this.y + this.height > graphicSystem.CANVAS_HEIGHT 
-        || this.x < 0 || this.x + this.width > graphicSystem.CANVAS_WIDTH
-        || collisionClass.collisionOBB(this, player)) {
-        const bullet = new Round3TempleteBossSprite.RobotRocketBomb()
-        fieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
-        soundSystem.play(soundSrc.enemyAttack.towerAttackRocketBomb)
-        this.isDeleted = true
+        || this.x < 0 || this.x + this.width > graphicSystem.CANVAS_WIDTH) {
+        this.afterCollision()
+        this.repeatCount--
       }
     }
   }
@@ -11628,6 +11632,7 @@ class Round3TempleteBossSprite extends FieldData {
       this.attack = 5
       this.setRandomMoveSpeed(3, 3, true)
       this.waveEnimation = EnimationData.createEnimation(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.antiRingBombWave, 3, -1)
+      this.maxRunningFrame = 120
     }
 
     processEnimation () {
@@ -11635,16 +11640,10 @@ class Round3TempleteBossSprite extends FieldData {
       this.waveEnimation.process()
     }
 
-    processState () {
-      if (this.elapsedFrame >= 120) {
-        this.isDeleted = true
-      }
-    }
+    processDelete () {
+      super.processDelete()
 
-    processCollision () {
-      super.processCollision()
-
-      // 무기가 삭제되었다면, 플레이어랑 충돌된 것이므로, 바로 폭발이 생성되도록 처리
+      // 총알이 삭제된 순간, 폭발을 발생시킵니다.
       if (this.isDeleted) {
         let bullet = new Round3TempleteBossSprite.AntiPhase3RingBombEffect()
         fieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
@@ -11687,17 +11686,16 @@ class Round3TempleteBossSprite extends FieldData {
       this.collisionDelay.delay = 10
       this.repeatCount = 60
       this.setMoveSpeed(0, 0)
+      this.maxRunningFrame = 48
     }
 
     processState () {
       super.processState()
-      if (this.elapsedFrame >= 48) {
-        this.isDeleted = true
-      }
+      const halfFrame = this.maxRunningFrame / 2
 
       // 투명도 시간에 따라서 변경
-      if (this.elapsedFrame >= 24) {
-        this.alpha = (48 - this.elapsedFrame) / 24
+      if (this.elapsedFrame >= halfFrame) {
+        this.alpha = (this.maxRunningFrame - this.elapsedFrame) / halfFrame
       }
     }
 

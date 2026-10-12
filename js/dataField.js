@@ -587,6 +587,7 @@ export class FieldData {
      * mainType과 다른 점이라면, 과거 mainType은 일종의 그룹을 나누는 역할을 하였지만, 지금은 사라졌습니다.
      * 
      * 현재는 하위호환 코드 또는 일부 구분 용도로만 간접적으로 사용합니다.
+     * 
      */
     this.subType = 0
 
