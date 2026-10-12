@@ -3,8 +3,8 @@
 
 import { tamshooter4Data } from './data.js'
 import { CustomEditEffect, CustomEffect, EffectData } from './dataEffect.js'
-import { EnemyBulletData, EnemyData } from './dataEnemy.js'
-import { DelayData, EnimationData, FieldData } from './dataField.js'
+import { EnemyData } from './dataEnemy.js'
+import { DelayData, EnemyBulletData, EnimationData, FieldData } from './dataField.js'
 import { ID } from './dataId.js'
 import { PlayerObject, PlayerSkillData, PlayerWeaponData } from './dataPlayer.js'
 import { RoundData } from './dataRound.js'
@@ -695,6 +695,7 @@ export class fieldState {
     for (let i = 0; i < this.enemyBulletObject.length; i++) {
       const currentEnemyBullet = this.enemyBulletObject[i]
       currentEnemyBullet.process()
+      currentEnemyBullet.playerCollision(this.playerObject)
     }
 
     // 조건에 따른 enemyBullet 삭제 (설명은 다른 객체들과 동일)
@@ -1529,6 +1530,14 @@ export class fieldSystem {
     fieldState.process()
 
     gameVar.statLineText2.setStatLineText(this.getFieldDataString(), this.round.time._currentTime, this.round.stat.finishTime, '#D5F5E3' ,'#33ff8c')
+
+    // 필드 요청 점수가 올라가면, 플레이어에게 즉시 점수를 추가하도록 합니다.
+    // 그 다음, 중복 점수 방지를 위해 다시 필드 요청 점수를 초기화합니다.
+    // 이것은 적을 죽여서 얻는 점수는 즉시 경험치를 얻도록 해야 하기 때문입니다.
+    if (this.fieldRequestToPlayerScore > 0) {
+      fieldRequestUser.addExp(this.fieldRequestToPlayerScore, this.#fieldSystemSymbol)
+      this.fieldRequestToPlayerScore = 0
+    }
   }
 
   /** 라운드 시간이 일시정지 되었을 때에 대한 메세지 출력 함수 */

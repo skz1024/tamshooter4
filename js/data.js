@@ -2,7 +2,7 @@
 //@ts-check
 
 import { dataExportPlayerSkill, dataExportPlayerWeapon, PlayerSkillData, PlayerWeaponData } from './dataPlayer.js'
-import { EnemyData, EnemyBulletData, dataExportEnemy } from './dataEnemy.js'
+import { EnemyData, dataExportEnemy } from './dataEnemy.js'
 import { CustomEffect, EffectData } from './dataEffect.js'
 import { dataExportRound, RoundData } from './dataRound.js'
 import { dataExportWeapon, WeaponData } from './dataWeapon.js'

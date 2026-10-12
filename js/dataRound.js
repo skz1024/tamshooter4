@@ -1,6 +1,6 @@
 //@ts-check
 
-import { DelayData, FieldData, EnimationData, collision, collisionClass, collisionBox as CollisionBox } from "./dataField.js"
+import { DelayData, FieldData, EnimationData, collision, collisionClass, CollisionBox, EnemyBulletData, CustomEnemyBullet } from "./dataField.js"
 import { EffectData, CustomEffect, CustomEditEffect } from "./dataEffect.js"
 import { ID } from "./dataId.js"
 import { stringText } from "./text.js"
@@ -9,7 +9,7 @@ import { fieldState, fieldSystem } from "./field.js"
 import { soundSrc } from "./soundSrc.js"
 import { game, gameFunction, gameVar } from "./game.js"
 import { StatRound, dataExportStatRound } from "./dataStat.js"
-import { CustomEnemyBullet, EnemyBulletData, EnemyData, dataExportEnemy } from "./dataEnemy.js"
+import { EnemyData, dataExportEnemy } from "./dataEnemy.js"
 import { WeaponData } from "./dataWeapon.js"
 import { DonggramiEntity, RoundCommonMessages } from "./dataEntity.js"
 
@@ -11594,20 +11594,9 @@ class Round3TempleteBossSprite extends FieldData {
     constructor () {
       super(imageSrc.enemy.intruderEnemy, imageDataInfo.intruderEnemy.leverMissileBomb, 4)
       this.setAutoImageData(this.imageSrc, this.imageData, 4)
-      this.attackDelay = new DelayData(10)
+      this.collisionDelay.setDelay(10)
+      this.repeatCount = 20
       this.setWidthHeight(this.width * 2, this.height * 2)
-    }
-
-    processCollision () {
-      if (this.attack === 0) return
-      if (!this.attackDelay.check()) return
-
-      let player = fieldState.getPlayerObject()
-      let playerSendXY = { x: player.x, y: player.y, width: player.width, height: player.height}
-      
-      if (collision(playerSendXY, this)) {
-        player.addDamage(this.attack)
-      }
     }
 
     processState () {

@@ -44,7 +44,7 @@ export function collision (objectA, objectB) {
 }
 
 /** 필드에서 사용하는 충돌 박스 영역 생성기, collision 함수를 통해서 충돌 체크 가능 */
-export class collisionBox {
+export class CollisionBox {
   constructor (x = 0, y = 0, width = 0, height = 0) {
     this.x = x
     this.y = y
@@ -1476,5 +1476,189 @@ export class FieldData {
   /** extendedMemory 데이터를 읽고 이를 fieldObject에 적용하는 함수 템플릿 */
   readExtendedMemory () {
 
+  }
+}
+
+
+export class EnemyBulletData extends FieldData {
+  constructor () {
+    super()
+    /**  총알 타격 반복 횟수, 이 값이 0이되면 해당 총알은 삭제
+     * 무한대로 타격을 원한다면 임의의 높은 숫자값을 넣어주세요. @type {number} */ 
+    this.repeatCount = 1
+
+    /** 적 총알에서 충돌 딜레이는, 재 공격이 가능한 총알에 한해서만 주로 사용합니다.
+     * 기본적으로는 적 총알은 1초당 1번만 연속 공격할 수 있슫니다.
+     * 단, 최초 타격 시에는 카운튿가 최대이므로 바로 플레이어를 공격할 수 있습니다. */
+    this.collisionDelay = new DelayData(60)
+    this.collisionDelay.setCountMax()
+
+    /** 해당 총알이 플레이어랑 충돌할 수 있는지 살펴봅니다. */
+    this.isCollisionPossible = true
+
+    /** 최대 가동하는 프레임 수 (이 프레임을 초과하면 해당 객체는 자동으로 삭제됩니다.)
+     * 표준 값은 10초입니다. 이 변수는 적 총알이 과도하게 쌓이는 것을 막기 위해 만들었습니다. */
+    this.maxRunningFrame = 600
+
+    /** 충돌할경우 플레이어 기본 데미지 사운드 대신 다른 사운드 재생  */
+    this.collisionSoundSrc = ''
+  }
+
+  process () {
+    super.process()
+    this.processDelete()
+  }
+
+  /** 총알이 특정 조건이 되면 삭제하는 변수를 활성화시킵니다. */
+  processDelete () {
+    if (this.outAreaCheck() || this.elapsedFrame >= this.maxRunningFrame || this.repeatCount <= 0) {
+      this.isDeleted = true
+    }
+  }
+
+  /** 충돌 후, 어떻게 해야 할 지를 설정합니다. */
+  afterCollision () {
+
+  }
+
+  /** 충돌 처리 함수를 진행합니다. 
+   * @param {import('./dataPlayer.js').PlayerObject} player 
+  */
+  playerCollision (player) {
+    if (!this.isCollisionPossible) return
+
+    if (this.collisionDelay.check(false)) {
+      const enemyArea = this.getCollisionArea()
+
+      for (let i = 0; i < enemyArea.length; i++) {
+        const HIT = this.degree === 0 ? collision(enemyArea[i], player) : collisionClass.collisionOBB(enemyArea[i], player)
+        if (HIT) {
+          this.repeatCount--
+          this.collisionSoundSrc === '' ? player.addDamage(this.attack) : player.addDamageWithSound(this.attack, this.collisionSoundSrc)
+          this.collisionDelay.countReset()
+          this.afterCollision()
+          break // 루프 종료 (여러 충돌객체중 하나만 충돌해야함, 중복 데미지 없음)
+        }
+      }
+    }
+  }
+
+  outAreaCheck () {
+    if (this.x + this.width < -graphicSystem.CANVAS_WIDTH / 2 ||
+      this.x > graphicSystem.CANVAS_WIDTH + (graphicSystem.CANVAS_WIDTH / 2) ||
+      this.y + this.height < -graphicSystem.CANVAS_HEIGHT / 2 ||
+      this.y > graphicSystem.CANVAS_HEIGHT + (graphicSystem.CANVAS_HEIGHT / 2)) {
+        return true
+      } else {
+        return false
+      }
+  }
+
+  /** 이동속도를 기준으로 자동으로 회전각도를 조정합니다. */
+  setAutoRotate () {
+    let speedX = this.moveDirectionX === FieldData.direction.RIGHT ? this.moveSpeedX : -this.moveSpeedX
+    let speedY = this.moveDirectionY === FieldData.direction.DOWN ? this.moveSpeedY : -this.moveSpeedY
+    let nextX = this.x + speedX
+    let nextY = this.y + speedY
+    let distanceX = nextX - this.x
+    let distanceY = nextY - this.y
+    this.degree = getDegreeByVector(distanceX, distanceY)
+  }
+
+  /**
+   * 이 함수는 EnemyData에서 복사됨
+   * 
+   * 적의 충돌 영역을 얻습니다. (충돌 영역은 여러개일 수도 있습니다.)
+   * 
+   * 만약 상속받아야 하는 경우, getCollisionAreaCalcurationObject 함수를 사용해서 충돌 영역을 계산해주세요.
+   * 임의로 설정하는 경우, 확대/축소 했을 때 충돌영역이 잘못된 계산을 할 수 있습니다.
+   * 
+   * @returns {OBBCollisionTarget[]}
+   */
+  getCollisionArea () {
+    return [{
+      x: this.x,
+      y: this.y,
+      width: this.width,
+      height: this.height,
+      degree: this.degree
+    }]
+  }
+
+  /**
+   * 이 함수는 EnemyData에서 복사됨
+   * 
+   * 충돌 영역 추가 계산 함수 (확대/축소에 대한 대응을 하기 위해 만들어졌습니다.)
+   * 
+   * 이미지 데이터를 기준으로 크기를 계산합니다. 절대로 imageDataClipWidth 같은 부분에 this.width, this.height값을 적용하지 마세요.
+   * 이 경우, 잘못된 데이터 출력이 될 수 있습니다.
+   * 
+   * @param {number} [plusX=0] 이미지를 기준으로 벗어난 x좌표 (원본 크기 기준, 확대 축소를 무시하고 값을 입력해야 합니다. 기본값 0)
+   * @param {number} [plusY=0] 이미지를 기준으로 벗어난 y좌표 (원본 크기 기준, 확대 축소를 무시하고 값을 입력해야 합니다. 기본값 0)
+   * @param {number} [imageDataClipWidth] 이미지 데이터에 있는 크기 중 일부에 대한 너비
+   * @param {number} [imageDataClipHeight] 이미지 데이터에 있는 크기 중 일부에 대한 높이
+   * 
+   * @returns {OBBCollisionTarget}
+   */
+  getCollisionAreaCalcurationObject (plusX = 0, plusY = 0, imageDataClipWidth = this.imageData.width, imageDataClipHeight = this.imageData.height) {
+    let mulX = this.width / this.imageData.width
+    let mulY = this.height / this.imageData.height
+    let plusXFinal = mulX === 0 ? plusX : Math.floor(plusX * mulX)
+    let plusYFinal = mulY === 0 ? plusY : Math.floor(plusY * mulY)
+    let currentX = this.x + plusXFinal
+    let currentY = this.y + plusYFinal
+    let currentWidth = mulX === 0 ? imageDataClipWidth : Math.floor(imageDataClipWidth * mulX)
+    let currentHeight = mulY === 0 ? imageDataClipHeight : Math.floor(imageDataClipHeight * mulY)
+
+    if (this.flip === 1) {
+      currentX = this.x + this.width - plusXFinal - currentWidth
+    } else if (this.flip === 2) {
+      currentY = this.y + this.height - plusYFinal - currentHeight
+    } else if (this.flip === 3) {
+      currentX = this.x + this.width - plusXFinal - currentWidth
+      currentY = this.y + this.height - plusYFinal - currentHeight
+    }
+
+    return {
+      x: currentX,
+      y: currentY,
+      width: currentWidth,
+      height: currentHeight,
+      degree: this.degree
+    }
+  }
+}
+
+/** 
+ * 커스텀 에너미 불릿. 이 클래스를 사용하여 적의 총알 객체를 구현합니다. 
+ * 이것으로 데이터를 생성한 다음, getCreateObject 함수를 사용해 새 객체를 얻어서 필드에서 사용하세요.
+ * 
+ * 참고: 클래스를 넘겨도 되고, 인스턴스(getCreateObject)를 통해 넘겨도 됩니다. 
+ * 
+ * 다만, 클래스 자체 수정(process, display함수를 수정한다던가) 이 필요하다면, 이 클래스를 상속받아야 합니다.
+ */
+export class CustomEnemyBullet extends EnemyBulletData {
+  /**
+   * @param {ImageDataObject} imageData 
+   */
+  constructor (imageSrc = '', imageData = imageDataInfo.default.unused, attack = 0, moveSpeedX = 0, moveSpeedY = 0, moveDirectionX = 0, moveDirectionY = 0) {
+    super()
+    this.setAutoImageData(imageSrc, imageData)
+    this.attack = attack
+    this.setMoveDirection(moveDirectionX, moveDirectionY)
+    this.setMoveSpeed(moveSpeedX, moveSpeedY)
+  }
+
+  /**
+   * 해당 함수는 이미지, 공격력, 이동 설정만 사용해 새 CustomEnemyBullet을 만듭니다.
+   * 그 외 속성이나 하위 클래스의 상태는 복사하지 않습니다.
+   * 
+   * 불릿 자체의 특수기능같은것이 있다면
+   * 이 함수를 사용하지 말고, 대신 new 를 이용해 객체를 생성해야 합니다.  
+   * 그러나 아직 일부 적들은 이 함수를 사용하기 때문에 완전한 deprecated는 아닙니다.
+   * @deprecated
+  */
+  getCreateObject () {
+    return new CustomEnemyBullet(this.imageSrc, this.imageData, this.attack, this.moveSpeedX, this.moveSpeedY, this.moveDirectionX, this.moveDirectionY)
   }
 }
