@@ -2120,7 +2120,6 @@ export class RoundData {
     this.processDebug()
     this.processTime()
     this.processMusic()
-    this.processSaveString()
     this.writeExtendedMemory()
   }
 
@@ -2224,94 +2223,6 @@ export class RoundData {
 
   }
 
-  /**
-   * 사용되지 않는 함수, 추후 제거 예정
-   * @deprecated
-   */
-  getSaveDataV055 () {
-    const isBgLayerUsing = this.bgLayer.getIsUsing()
-    const layer = this.bgLayer.getLayer()
-
-    /** @type {number[]} */
-    // const bgLayerArray = [
-    //   layer.length < 1 ? 
-    // ]
-
-    /** @type {number[]} */
-    const returnArray = [
-      this.stat.id ? this.stat.id : 0,
-      this.state,
-      this.time.currentTime,
-      this.time.currentTimeFrame,
-      this.time.currentTimeTotalFrame,
-      this.time.currentTimePaused ? 1 : 0,
-      this.time.plusTime,
-      this.time.plusTimeFrame,
-      0, // currentMusicIndex (temp)
-      Math.floor(game.sound.getMusicCurrentTime()),
-      //--- background
-      0, // backgroundIndexNumbeer
-      isBgLayerUsing ? this.bgLayer.getBackgroundPosition().x : this.bgLegacy.x,
-      isBgLayerUsing ? this.bgLayer.getBackgroundPosition().y : this.bgLegacy.y,
-      isBgLayerUsing ? this.bgLayer.getBackgroundSpeed().speedX : this.bgLegacy.backgroundSpeedX,
-      isBgLayerUsing ? this.bgLayer.getBackgroundSpeed().speedY : this.bgLegacy.backgroundSpeedY,
-      isBgLayerUsing ? this.bgLayer.getBackgroundWidthHeight().width : 0,
-      isBgLayerUsing ? this.bgLayer.getBackgroundWidthHeight().height : 0,
-      //--- bgLayer
-    ]
-  }
-
-  /**
-   * 사용되지 않는 함수, 추후 제거 예정
-   * @deprecated
-   */
-  baseRoundSaveData () {
-    let isBgLayerUsing = this.bgLayer.getIsUsing()
-
-    return {
-      id: this.stat.id,
-      state: this.state,
-      
-      // 배경화면
-      backgroundImageSrc: isBgLayerUsing ? '' : this.bgLegacy.imageSrc,
-      backgroundX: isBgLayerUsing ? this.bgLayer.getBackgroundPosition().x : this.bgLegacy.x,
-      backgroundY: isBgLayerUsing ? this.bgLayer.getBackgroundPosition().y : this.bgLegacy.y,
-      backgroundSpeedX: isBgLayerUsing ? this.bgLayer.getBackgroundSpeed().speedX : this.bgLegacy.backgroundSpeedX,
-      backgroundSpeedY: isBgLayerUsing ? this.bgLayer.getBackgroundSpeed().speedY : this.bgLegacy.backgroundSpeedY,
-      backgroundWidth: isBgLayerUsing ? this.bgLayer.getBackgroundWidthHeight().width : 0,
-      backgroundHeight: isBgLayerUsing ? this.bgLayer.getBackgroundWidthHeight().height : 0,
-      bgLayer: isBgLayerUsing ? this.bgLayer.getSaveLayerData() : '',
-
-      // 현재시간
-      currentTime: this.time.currentTime,
-      currentTimeFrame: this.time.currentTimeFrame,
-      currentTimeTotalFrame: this.time.currentTimeTotalFrame,
-      currentTimePaused: this.time.currentTimePaused,
-      plusTime: this.time.plusTime,
-      plusTimeFrame: this.time.plusTimeFrame,
-
-      // 음악 시간
-      loadCurrentMusicTime: game.sound.getMusicCurrentTime(),
-      currentMusicSrc: this.sound.currentMusicSrc,
-
-      // 특수한 경우
-      saveString: this.saveString,
-      saveList: this.saveList
-    }
-  }
-
-  /** 
-   * saveString 문자열을 어떻게 저장할 것인지에 대한 함수
-   * 
-   * (saveString을 조작하는 방식이 복잡할 수 있으므로, 함수로 따로 분리하였습니다.)
-   * 
-   * 사용되지 않는 함수, 추후 제거 예정
-   * @deprecated
-   */
-  processSaveString () {
-    
-  }
-
   /** 라운드 시작시에 대한 처리 */
   roundStart () {
     if (this.timeCheckFrame(0, 30)) { // 라운드 시작하자마자 음악 재생
@@ -2334,116 +2245,6 @@ export class RoundData {
     }
 
     this.sound.processFade() // 페이드 과정을 진행하고 다음 음악으로 교체하기 위한 작업
-  }
-
-  /**
-   * 불러온 데이터를 이용해 라운드 값을 설정합니다.
-   * 
-   * 더이상 사용되지 않음.
-   * @deprecated
-   * 
-   * @param {*} saveData 이 데이터의 정보는 getSaveData 가 return 하는 오브젝트를 참고해주세요.
-   */
-  baseRoundLoadData (saveData) {
-    // id 및 상태
-    this.stat.id = saveData.id
-    this.state = this.state
-    
-    // 배경화면
-    let isBgLayerUsing = this.bgLayer.getIsUsing()
-    if (isBgLayerUsing) {
-      this.bgLayer.setBackgroundPosition(saveData.backgroundX, saveData.backgroundY)
-      this.bgLayer.setBackgroundSpeed(saveData.backgroundSpeedX, saveData.backgroundSpeedY)
-      this.bgLayer.setBackgroundWidthHeight(saveData.backgroundWidth, saveData.backgroundHeight)
-
-      // 배경 레이어 (bgLayer 전용)
-      this.bgLayer.setLoadLayerData(saveData.bgLayer)
-    } else {
-      this.bgLegacy.imageSrc = saveData.backgroundImageSrc
-      this.bgLegacy.x = saveData.backgroundX
-      this.bgLegacy.y = saveData.backgroundY
-      this.bgLegacy.backgroundSpeedX = saveData.backgroundSpeedX
-      this.bgLegacy.backgroundSpeedY = saveData.backgroundSpeedY
-    }
-
-    // 라운드 시간
-    this.time._currentTime = saveData.currentTime
-    this.time.currentTimeFrame = saveData.currentTimeFrame
-    this.time.currentTimeTotalFrame = saveData.currentTimeTotalFrame
-    this.time.currentTimePaused = saveData.currentTimePaused
-    this.time.plusTime = saveData.plusTime
-    this.time.plusTimeFrame = saveData.plusTimeFrame
-
-    // 음악 시간
-    this.sound.loadCurrentMusicTime = saveData.loadCurrentMusicTime
-    this.sound.currentMusicSrc = saveData.currentMusicSrc
-
-    // 세이브 스트링, 세이브 리스트
-    this.saveString = saveData.saveString
-    this.saveList = saveData.saveList
-    this.loadProcess() // 반드시 세이브스트링과 세이브리스트를 불러온 후에 이 함수를 호출할 것
-  }
-
-  /** 
-   * 불러온 saveString, saveList 값을 이용해 추가적인 설정을 합니다.
-   * 이 함수의 내부 구현은 라운드마다 다를 수 있음.
-   * 
-   * 참고로 상속 구조라면, 만일을 위해 super.loadProcess도 같이 호출하세요. 간혹 상위에 있는 클래스가
-   * saveString, saveList를 통해 일부 내용을 참조할 수 있습니다.
-   * 
-   * 게임을 불러오는 과정에서 자동으로 이 함수를 호출하므로, 다른 process함수에서 이 함수를 호출하지 마세요.
-   * 
-   * 저장 형식 변경으로 이 함수가 더이상 사용되지 않습니다.
-   * @deprecated
-   */
-  loadProcess () {
-
-  }
-
-  /** 
-   * 라운드 내부에서 스프라이트를 사용할 경우, 이 함수를 통해 스프라이트 데이터를 재생성해야 합니다.
-   * 
-   * 스프라이트는 라운드에서만 생성하고 사용할 수 있습니다. 다른 객체들(적, 플레이어, 무기, 총알)은 스프라이트 처리에 접근할 수 없습니다.
-   * 
-   * 코드의 기본 템플릿은, 이 함수 내부에 있는 주석을 살펴보세요.
-   * 
-   * 이 함수는 fieldSystem에서 불러올 때 호출되며 사용자가 직접 호출하면 안됩니다.
-   * 
-   * 저장 형식 변경으로 이 함수가 더이상 사용되지 않습니다.
-   * @deprecated
-   */
-  loadProcessSprite () {
-    // 이것은 이 함수의 기본적인 코드의 구성을 설명하기 위해 만들어졌습니다.
-    // 내부적으로는 아무 동작도 하지 않으며, 사용자가 직접 구현해야 합니다.
-
-    // 스프라이트 데이터는 외부에서 loadSpriteData에 값을 집어넣어주므로, 해당 변수값을 그대로 가져오면 됩니다.
-    // let loadSpriteData = this.loadSpriteData
-    // for (let current of loadSpriteData) {
-      // 기본적으로 스프라이트도 FieldData를 상속받으므로, 구조는 FieldData와 동일합니다.
-      // 그러나 어떤 걸 생성하는지는 mainType, subType등으로 구분해야 합니다.
-      // id는 사용하지 않습니다. (라운드 내부에서 사용되는 데이터라 id를 사용하진 않습니다.)
-
-      // 따라서 if 조건문으로 스프라이트 타입을 확인한 뒤에,
-      // 해당 타입에 맞는 스프라이트를 생성하고, fieldBaseLoadData 함수를 실행시켜주세요.
-      // 그러면 해당 스프라이트는 거의 대부분 복구할 수 있습니다.
-      // if (current.mainType === '???') {
-      //   let newData = fieldState.createSpriteObject(FieldData, current.x, current.y)
-      //   if (newData != null) {
-      //     newData.fieldBaseLoadData(current)
-      //   }
-      // }
-    // }
-  }
-
-  /** 
-   * 외부에서 불러온 스프라이트 데이터를 설정합니다.
-   * 
-   * 저장 형식 변경으로 이 함수가 더이상 사용되지 않습니다.
-   * @deprecated
-   * @param {any} spriteData
-   */
-  setLoadSpriteData (spriteData) {
-    this.loadSpriteData = spriteData
   }
 
   /** 현재 적용되어있던 스프라이트 데이터를 삭제함 (잘못 사용되는 경우를 막기 위해서) */
@@ -5631,39 +5432,6 @@ class Round2_3 extends RoundData {
     this.areaStat.damageSoundDelayCount = this.extendedMemory[33]
 
     this.changeCourseBackground()
-  }
-
-  processSaveString () {
-    return
-
-    // 저장 방식
-    // 현재 맵, 선택모드, 현재 커서 값, 에리어 스탯, 결과값
-    // 참고: JSON 파싱 버그를 막기 위해 구분자는 |(막대기?) 로 사용합니다.
-    this.saveString = this.courseName 
-      + '|' + this.isCourseSelectMode 
-      + '|' + this.courseCursorNumber 
-      + '|' + JSON.stringify(this.areaStat) 
-      + '|' + this.result
-      + '|' + this.currentGradientColor[0]
-      + '|' + this.currentGradientColor[1]
-      + '|' + JSON.stringify(this.courseClearList)
-  }
-
-  loadProcess () {
-    return
-
-    let str = this.saveString.split('|')
-    this.courseName = str[0]
-    this.isCourseSelectMode = str[1] === 'true' ? true : false
-    this.courseCursorNumber = Number(str[2])
-    this.areaStat = JSON.parse(str[3])
-    this.result = str[4]
-
-    // 그라디언트 배경 불러오기 (b2 에서 그라디언트 값을 지속적으로 변경하기 때문에 해당 값도 따로 저장)
-    this.currentGradientColor[0] = str[5]
-    this.currentGradientColor[1] = str[6]
-
-    this.courseClearList = JSON.parse(str[7]) // 클리어 리스트 불러오기
   }
 
   roundPhase00 () {
@@ -10146,10 +9914,6 @@ class Round2_5 extends RoundData {
         fieldState.createEnemyObject(this.id, this.x, this.y)
       }
     }
-
-    getSaveIntruderData () {
-      return {id: this.id, x: this.x, y: this.y, z: this.z}
-    }
     
     display () {
       let imgSrc = imageSrc.enemy.intruderEnemy
@@ -10259,7 +10023,7 @@ class Round2_6 extends RoundData {
     }
   }
 
-  processSaveString () {
+  writeExtendedMemory () {
     this.extendedMemory[0] = this.spriteElevator.state
     this.extendedMemory[1] = this.spriteElevator.stateDelay.count
     this.extendedMemory[2] = this.spriteElevator.floorDelay.count
@@ -10270,7 +10034,7 @@ class Round2_6 extends RoundData {
     this.extendedMemory[7] = this.spriteElevator.y
   }
 
-  loadProcess () {
+  readExtendedMemory () {
     this.spriteElevator.state = this.extendedMemory[0]
     this.spriteElevator.stateDelay.count = this.extendedMemory[1]
     this.spriteElevator.floorDelay.count = this.extendedMemory[2]
@@ -10565,49 +10329,6 @@ class Round3TempletePlayerOption extends FieldData {
       case this.colorList.purple: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.purple, 3); break
       case this.colorList.khaki: this.setAutoImageData(this.imageSrc, imageDataInfo.round3_optionWeapon.khaki, 3); break
     }
-  }
-
-  /** 옵션의 정보를 저장하고 있는 문자열 데이터를 얻어옵니다. */
-  getSaveString () {
-    // let hasOption = this._hasOption ? 'T' : '' // 옵션이 있을경우 문자열로 값을 추가하고 없을경우 무시
-    // let str = '' + this._level + '|' + this._color + '|' + hasOption
-    // for (let i = 0; i < this.optionObject.length; i++) {
-    //   str += '|' + this.optionObject[i].color + ' ' + this.optionObject[i].x + ' ' + this.optionObject[i].y
-    // }
-
-    // return str
-
-    // new save system
-    // level
-    // color
-    // optionObject[0].color 
-    // optionObject[0].x // y좌표 저장하지 않습니다. (불러올 때 임의 값 지정됨)
-    // optionObject[1].color
-    // optionObject[1].x // y좌표 저장하지 않습니다. (불러올 때 임의 값 지정됨)
-    
-  }
-
-  /**
-   * 옵션의 정보를 저장하고 있는 문자열을 사용하여 재설정하는 함수
-   * 
-   * 저장 형식은 getSaveString 함수 내부 참조
-   * @param {string} str 
-   */
-  setLoadString (str) {
-    // let text = str.split('|')
-    // this._level = Number(text[0])
-    // this._color = text[1]
-    // this._hasOption = text[2] !== '' // 해당 텍스트에 값이 있으면 true, 아니면 false
-    // for (let i = 3; i < text.length; i++) {
-    //   let split = text[i].split(' ')
-    //   let option = new Round3TempletePlayerOption.OptionObject(split[0])
-    //   option.x = Number(split[1])
-    //   option.y = Number(split[2])
-    //   this.optionObject.push(option)
-    // }
-    
-    // this.setColor(this._color)
-    // this.processMove() // 옵션 위치가 플레이어 근처로 이동하도록 조정
   }
 
   /** 현재 옵션의 정보를 현재 레벨에 맞추어 가져옵니다. (현재 색에 따라 얻어오는 정보는 달라짐) */
@@ -11139,25 +10860,6 @@ class Round3TempleteBossWarning extends FieldData {
     this.addText = addText
   }
 
-  getSaveString () {
-    return '' + this._isCreateWarning + '|' + this.baseText + '|' + this.baseTextViewLength + '|' + this.addText + '|' + this.displayCount
-
-    // new save System
-    // isCreateWarning
-    // baseTextViewLength
-    // addText
-    // displayCount
-  }
-
-  setLoadString (text = '') {
-    let str = text.split('|')
-    this._isCreateWarning = str[0] === 'true' ? true : false
-    this.baseText = str[1]
-    this.baseTextViewLength = Number(str[2])
-    this.addText = str[3]
-    this.displayCount = Number(str[4])
-  }
-
   process () {
     if (this._isCreateWarning) {
       if (this.baseTextDelay.check() && this.baseTextViewLength < this.baseText.length) {
@@ -11321,40 +11023,6 @@ class Round3TempleteBossSprite extends FieldData {
     this.setMoveSpeed(0, 0)
     this.alpha = 1
     this.degree = 0
-  }
-
-  getSaveString () {
-    // if (this.subType === '') {
-    //   return ''
-    // } else {
-    //   return JSON.stringify(this)
-    // }
-  }
-
-  setLoadString (text = '') {
-    // if (text === '') return
-
-    // let str = JSON.parse(text)
-    // if (str.state != null) this.state = str.state
-    // if (str.degree != null) this.degree = Number(str.degree)
-    // if (str.subType != null) this.subType = str.subType
-    // if (str.moveSpeedX != null) this.moveSpeedX = Number(str.moveSpeedX)
-    // if (str.moveSpeedY != null) this.moveSpeedY = Number(str.moveSpeedY)
-    // if (str.x != null) this.x = Number(str.x)
-    // if (str.y != null) this.y = Number(str.y)
-    // if (str.elapsedFrame != null) this.elapsedFrame = Number(str.elapsedFrame)
-    // if (str.width != null) this.width = Number(str.width)
-    // if (str.height != null) this.height = Number(str.height)
-
-    // // image 재등록 (로드가 완료된 이후, 타입은 무엇인지 알지만, 이미지가 무엇인지 몰라 출력되지 않습니다.)
-    // if (this.subType === this.TYPE_ROBOT) {
-    //   this.setAutoImageData(imageSrc.enemy.towerEnemyGroup1, imageDataInfo.towerEnemyGroup1.crazyRobot, 0)
-    // } else if (this.subType === this.TYPE_DASU) {
-    //   this.setAutoImageData(imageSrc.enemy.towerEnemyGroup3, imageDataInfo.towerEnemyGroup3.bossDasu, 0)
-    // } else if (this.subType === this.TYPE_ANTI_PHASE2 || this.subType === this.TYPE_ANTI_PHASE3 || this.subType === this.TYPE_ANTI_PHASE4) {
-    //   this.setAutoImageData(imageSrc.enemy.towerEnemyGroup4, imageDataInfo.towerEnemyGroup4.anti, 3)
-    //   this.setWidthHeight(this.width * 2, this.height * 2)
-    // }
   }
 
   processMove () {
@@ -11756,16 +11424,6 @@ class Round3Templete extends RoundData {
     this.meter.bossHpUserStyle(enemyId, 10, 10, graphicSystem.CANVAS_WIDTH - 20, 30, text, ['#ffe5fd', '#ffee80'], ['#afafaf'], 2)
   }
 
-  processSaveString () {
-    // let saveData = {
-    //   option: this.playerOption.getSaveString(),
-    //   bossWarning: this.bossWarning.getSaveString(),
-    //   bossSprite: this.bossSprite.getSaveString(),
-    // }
-
-    // this.saveString = JSON.stringify(saveData)
-  }
-
   writeExtendedMemory () {
     // option
     this.extendedMemory[0] = this.playerOption._level
@@ -11833,13 +11491,6 @@ class Round3Templete extends RoundData {
     this.bossSprite.alpha = this.extendedMemory[17] / 100  // 알파값 (0 ~ 1), 100배해서 저장
     this.bossSprite.state = this.extendedMemory[18]
     this.bossSprite.spriteRecoveryImage() // 스프리아트 이미지 복원
-  }
-
-  loadProcess () {
-    // let saveData = JSON.parse(this.saveString)
-    // this.playerOption.setLoadString(saveData.option)
-    // this.bossWarning.setLoadString(saveData.bossWarning)
-    // this.bossSprite.setLoadString(saveData.bossSprite)
   }
 
   process () {
@@ -14062,33 +13713,6 @@ class Round3_6 extends Round3Templete {
     let targetX = graphicSystem.CANVAS_WIDTH + tornado.width
     let targetY = Math.random() * (graphicSystem.CANVAS_HEIGHT - tornado.height)
     fieldState.createEnemyBulletObject(tornado, targetX, targetY)
-  }
-
-  processSaveString () {
-    super.processSaveString()
-    // this.saveList.areaPhase2 = JSON.stringify(this.areaPhase2)
-  }
-
-  loadProcess () {
-    super.loadProcess()
-    // this.areaPhase2 = JSON.parse(this.saveList.areaPhase2)
-  }
-
-  loadProcessSprite () {
-    for (let current of this.loadSpriteData) {
-      let target = null
-      switch (current.mainType) {
-        case Round3_6.spriteList.TORNADO_PHASE2_1: target = new Round3_6.BlackSpaceTornadoPhase2_1(); break
-        case Round3_6.spriteList.TORNADO_PHASE2_2: target = new Round3_6.BlackSpaceTornadoPhase2_2(); break
-        case Round3_6.spriteList.GREENUP: target = new Round3_6.BlackSpaceBulletGreenTileUp(); break
-        case Round3_6.spriteList.GREENDOWN: target = new Round3_6.BlackSpaceBulletGreenTileDown(); break
-        case Round3_6.spriteList.PREYELLOW: target = new Round3_6.BlackSpacePreBulletYellow(); break
-        default: continue
-      }
-
-      target.fieldBaseLoadData(current)
-      this.field.createSprite(target, target.x, target.y)
-    }
   }
 
   processDebug () {

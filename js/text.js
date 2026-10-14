@@ -1,3 +1,4 @@
+//@ts-check
 // string js 작업은 나중에 할 예정
 
 /**
@@ -87,6 +88,7 @@ export class systemText {
     FIELD_ERROR2: 'START 버튼을 눌러 메인 화면으로 이동하세요.',
     FIELD_ERROR3: 'An error has occurred in the field. The game cannot proceed.',
     FIELD_ERROR4: 'Press the START button to move to the main screen.',
+    FIELD_NOT_SUPPORT_VERISON: 'NOT SUPPORT FILED VERSION. 필드 버전이 지원되지 않습니다.',
   }
 
   static fieldError = {

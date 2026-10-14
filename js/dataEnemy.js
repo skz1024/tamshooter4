@@ -545,21 +545,6 @@ export class EnemyData extends FieldData {
       this.isDeleted = true
     }
   }
-
-  fieldBaseSaveData () {
-    let saveData = super.fieldBaseSaveData()
-    let addData = {
-      dieAfterDeleteDelay: this.dieAfterDeleteDelay,
-      collisionDelay: this.collisionDelay,
-      outAreaDeleteDelay: this.outAreaDeleteDelay,
-      isPossibleExit: this.isPossibleExit,
-      isExitToReset: this.isExitToReset,
-      itemIdList: this.itemId,
-      itemCountList: this.itemCount,
-    }
-
-    return Object.assign(saveData, addData)
-  }
 }
 
 class TestAttackEnemy extends EnemyData {
@@ -2905,6 +2890,7 @@ class JemulEnemyBossEye extends JemulEnemyData {
     const G_HEIGHT = graphicSystem.CANVAS_HEIGHT
 
     if (this.laserDelay.count === 0 || this.laserDelay.count % 150 == 0) {
+      // 안전한 공간을 랜덤으로 지정합니다.
       let saveArea = Math.floor(Math.random() * ((G_HEIGHT - 12) / 10)) * 10
       let saveAreaY1 = saveArea - 60
       let saveAreaY2 = saveArea + 60
@@ -12321,12 +12307,12 @@ class TowerEnemyGroup4AntijemulP3_1 extends TowerEnemy {
     }
   }
 
-  saveProcess () {
-    this.saveList.patternCount = this.patternCount
+  writeExtendedMemory () {
+    this.extendedMemory[0] = this.patternCount
   }
 
-  loadProcess () {
-    this.patternCount = this.saveList.patternCount
+  readExtendedMemory () {
+    this.patternCount = this.extendedMemory[0]
   }
 
   processAttack () {
@@ -12842,18 +12828,15 @@ class TowerEnemyGroup4AntijemulP3_1 extends TowerEnemy {
       this.y -= (changeHeight / 2)
     }
 
-    saveProcess () {
-      this.saveString = '' + this.fallPositionX + '|' + this.fallPositionY
-      // this.saveList.shadowObject = this.shadowObject
+    writeExtendedMemory () {
+      this.extendedMemory[0] = this.fallPositionX
+      this.extendedMemory[1] = this.fallPositionY
     }
 
-    loadProcess () {
-      let str = this.saveString.split('|')
-      this.fallPositionX = Number(str[0])
-      this.fallPositionY = Number(str[1])
-
-      // this.shadowObject = this.saveList.shadowObject
-    }
+    readExtendedMemory () {
+      this.fallPositionX = this.extendedMemory[0]
+      this.fallPositionY = this.extendedMemory[1]
+    } 
 
     afterInit () {
       this.fallPositionX = Math.random() * (graphicSystem.CANVAS_WIDTH - this.width)
@@ -14614,14 +14597,6 @@ class TowerEnemyGroup5VaccumCleaner extends TowerEnemy {
     // 호스 길이 설정
     this.objectList.distance.v = 120
     this.objectList.distance.h = 60
-  }
-
-  saveProcess () {
-    // this.saveList = this.objectList
-  }
-
-  loadProcess () {
-    // this.objectList = this.saveList
   }
 
   processState () {

@@ -946,7 +946,7 @@ export class PlayerObject extends FieldData {
 
   constructor () {
     super() // 'player', 0, 300, 200
-    this.objectType = 'player'
+    this.objectType = FieldData.objectType.PLAYER
     this.width = this.playerImageData.width
     this.height = this.playerImageData.height
     this.playerDieEnimation.setOutputSize(this.width * 2, this.height * 2)
@@ -1475,100 +1475,6 @@ export class PlayerObject extends FieldData {
       let targetY = this.y + Math.floor(this.levelupEnimationCount / 4) - 10
       this.playerLevelupEnimation.display(targetX, targetY)
     }
-  }
-
-  /**
-   * player 데이터, 이 저장 데이터는 fieldData와 공식이 다릅니다.
-   */
-  //@ts-expect-error
-  fieldBaseSaveData () {
-    return {
-      // 좌표 값
-      x: this.x,
-      y: this.y,
-      
-      // 체력 및 쉴드
-      hp: this.hp,
-      shield: this.shield,
-      shieldMax: this.shieldMax,
-
-      // 딜레이
-      attackDelayCount: this.attackDelayCount,
-      dieAfterDelayCount: this.dieAfterDelayCount,
-
-      // 무기
-      weapon: this.getSaveWeaponData(),
-      weaponSlotNumber: this.weaponSlotNumber,
-
-      // 스킬
-      skill: this.getSaveSkillData(),
-      usingSkillSlotA: this.usingSkillSlotA,
-
-      // 기타
-      disable: this.disable
-    }
-  }
-
-  getSaveWeaponData () {
-    // id, id, id, id, id
-    // delayCount, delayCount, delayCount, delayCount
-    let data = []
-    for (let i = 0; i < this.weaponSlot.length; i++) {
-      data.push({id: this.weaponSlot[i].id, delayCount: this.weaponSlot[i].delayCount})
-    }
-
-    return data
-  }
-
-  getSaveSkillData () {
-    // 배열로 이루어진 오브젝트로 저장
-    // 슬롯A, 슬롯B 한번에 저장됨.
-    let data = []
-
-    for (let i = 0; i < this.skillSlotA.length; i++) {
-      data.push({
-        id: this.skillSlotA[i].id,
-        delayCount: this.skillSlotA[i].delayCount,
-        coolTimeFrame: this.skillSlotA[i].coolTimeFrame,
-        repeatCount: this.skillSlotA[i].repeatCount
-      })
-    }
-
-    for (let i = 0; i < this.skillSlotB.length; i++) {
-      data.push({
-        id: this.skillSlotB[i].id,
-        delayCount: this.skillSlotB[i].delayCount,
-        coolTimeFrame: this.skillSlotB[i].coolTimeFrame,
-        repeatCount: this.skillSlotB[i].repeatCount
-      })
-    }
-
-    return data
-  }
-
-  /**
-   * 저장되었던 플레이어 오브젝트를 불러옵니다.
-   * 
-   * 무기와 스킬도 같이 초기화되면서 불러와집니다.
-   * @param {Object} saveData 
-   */
-  fieldBaseLoadData (saveData) {
-    // for (let key in saveData) {
-    //   if (typeof saveData[key] === 'object') {
-    //     if (key === 'weapon') {
-    //       this.setLoadWeaponData(saveData[key])
-    //     } else if (key === 'skill') {
-    //       this.setLoadSkillData(saveData[key])
-    //     } else {
-    //       this[key] = saveData[key]
-    //     }
-    //   } else {
-    //     this[key] = saveData[key]
-    //   }
-    // }
-
-    // 로드 후, 유저 스탯을 다시 갱신함 (hpCalc를 간접 계산하는 것 때문에 바로 갱신이 안되어 강제로 갱신함)
-    // this.processSendUserStat() // 코드 취소됨
   }
 
   /** 로드 한 이후, 스킬과 무기를 재등록합니다. */

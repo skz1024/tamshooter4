@@ -277,19 +277,6 @@ class userInventorySystem {
     this.itemList.splice(this.itemList.length - spaceCount, spaceCount)
   }
 
-  /** 인벤토리 데이터를 저장하는 값들을 불러옴. */
-  static saveData () {
-    return this.itemList
-  }
-
-  /**
-   * 인벤토리 데이터를 불러옵니다.
-   * @param {InventoryItem[]} itemList 
-   */
-  static loadData (itemList) {
-    this.itemList = itemList
-  }
-
   /**
    * 아이템을 얻어옵니다.
    * @param {number} index 배열의 인덱스
@@ -331,6 +318,7 @@ class userInventorySystem {
  */
 
 /**
+ * @deprecated
  * 유저 세이브 데이터 타입
  * @typedef UserSaveData
  * @property {number} lv
@@ -1355,7 +1343,10 @@ export class userSystem {
 
   /**
    * 저장 형식 (버전에 따라 변경될 수 있음.)
-   * 
+   * 하위 호환 함수로만 제공
+   * v0.55 에서도 이 함수를 호출하는 것으로 확인되므로 이 함수는 유지됩니다.  
+   * 단, 추후에 이 함수는 변경될 수 있습니다.
+   save 권한이 gameSystem으로 이동했기 때문입니다.
    * @returns {UserSaveData} 세이브데이터의 문자열
    */
   static getSaveData () {
@@ -1382,6 +1373,9 @@ export class userSystem {
 
   /**
    * 현재 버전에 대한 유저 데이터 로드
+   * 
+   * 하위호환 함수
+   * 
    * @param {UserSaveData} saveData 저장 성공 여부
    * @returns {boolean}
    */

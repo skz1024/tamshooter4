@@ -609,36 +609,6 @@ export class WeaponData extends FieldData {
       this.moveSpeedY = 0
     }
   }
-
-  /**
-   * 무기 객체의 저장할 데이터를 가져옵니다.
-   * 
-   * 필드 객체보다 더 많은 데이터를 저장합니다.
-   */
-  fieldBaseSaveData () {
-    let saveData = super.fieldBaseSaveData()
-    let addData = {
-      // 추적 여부
-      chaseMissCount: this.chaseMissCount,
-      chaseLimit: this.chaseMissLimit,
-      isChaseType: this.isChaseType,
-      isLineChase: this.isLineChase,
-
-      // 반복
-      repeatCount: this.repeatCount,
-      repeatDelay: this.repeatDelay,
-
-      // 사용 횟수
-      useCount: this.useCount,
-      useMaxCount: this.useMaxCount,
-
-      // 멀티 타겟
-      isMultiTarget: this.isMultiTarget,
-      maxTarget: this.maxTarget
-    }
-
-    return Object.assign(saveData, addData)
-  }
 }
 
 class MultyshotData extends WeaponData {

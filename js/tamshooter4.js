@@ -2113,10 +2113,6 @@ class UIComponentOption extends UIComponentBaseMenuObject {
     }
   }
 
-  getSaveData () {
-    return this.optionValue
-  }
-
   /** 옵션의 값을 실제 게임에 적용하는 함수 */
   optionEnable () {
     // 필드에게 옵션 값 전달
@@ -2490,10 +2486,6 @@ class OptionSystem extends MenuSystem {
     }
 
     this.backgroundColor = ['#ffc494', '#ffd2a8']
-  }
-
-  getSaveData () {
-    return this.optionValue
   }
 
   /** 옵션을 선택했을 때, 해당 인덱스에 맞춰서 설정값을 적용합니다. */
@@ -5508,68 +5500,6 @@ class saveSystem {
   }
 
   /**
-   * 특정 숫자를 임의의 코드로 암호화합니다. (소수점은 암호화 불가능, 강제로 정수로 변환됩니다.)
-   * 
-   * 이 함수는 레스터 매개변수를 통해 데이터를 받으므로, 배열을 자료로 전달할 것이라면, ...Array 형태의 문법을 사용해주세요.
-   * 
-   * 주의: 15자리를 초과하는 숫자를 넣으면, 해당 결과는 정상적으로 보존되지 않고 망가질 수 있음.
-   *
-   * 0.55.7 버전 이후 사용되지 않습니다.
-   *  
-   * @deprecated
-   * 
-   * @param  {string[] | number[]} saveNumber 
-   * @returns {string} JSON문자열
-   */
-  static saveNumberEncode (...saveNumber) {
-    /** 인코드 결과 문자열 */ let result = ''
-
-    // 형식 변환
-    /** @type {string[]} */ let saveString = []
-    for (let str of saveNumber) {
-      saveString.push('' + str)
-    }
-
-    // saveString의 배열을 한 문장으로 합침
-    for (let i = 0; i < saveString.length; i++) {
-      let len = saveString[i].length // 문자열의 길이
-      let digit = 1 // 문자열의 길이에 대한 자리수 (1 ~ 9: 1, 10 ~ 99: 2, 100 ~ 999: 3, 1000 ~ 9999: 4, 그 이상은 처리 불가능)
-
-      if (len >= 10 && len <= 99) digit = 2
-      else if (len >= 100 && len <= 999) digit = 3
-      else if (len >= 1000) digit = 4
-
-      // saveString 정보에 따라 해당 정보를 결과 문장에 합침
-      let str = '' + digit + len + saveString[i]
-      result += str
-    }
-
-    // 암호의 키는 8자리 숫자로 만들기 위해 10000000 ~ 99999999 범위를 가짐
-    let getKeyOdd = Math.floor(Math.random() * 89999999) + 10000000
-    let getKeyEven = Math.floor(Math.random() * 89999999) + 10000000
-
-    // 총 2개의 키를 저장하며, 홀수키는 앞에, 짝수키는 뒤에 배치한다.
-    // getKeyOdd가 홀수인경우 getKeyOdd를 사용하고, 아닌경우 getKeyEven을 사용한다.
-    let getKeyTarget = getKeyOdd % 2 === 1 ? getKeyOdd : getKeyEven
-
-    // 각 문자열을 8자리 숫자로 분해
-    // 한번 반복문을 거칠때마다 8의 배수 단위로 문자열을 잘라서 배열에 넣습니다.
-    /** @type {number[]} */ let arrayNumber = []
-    for (let i = 0; i < Math.ceil(result.length / 8); i++) {
-      // 8자리 단위로 입력해야 되기 때문에 만약 빈 공간이 있을경우, '0'을 집어넣습니다.
-      let digit8 = Number(result.slice(i * 8, i * 8 + 8).padEnd(8, '0'))
-      arrayNumber[i] = digit8 ^ getKeyTarget
-    }
-
-    // 암호화된 키를 양쪽에 추가 (나중에 해독에 필요함)
-    arrayNumber.unshift(getKeyOdd)
-    arrayNumber.push(getKeyEven)
-
-    // 최종 결과를 JSON으로 형식화해서 다시 문자열로 리턴함
-    return JSON.stringify(arrayNumber)
-  }
-
-  /**
    * encode로 변환하였던 문자열을 다시 원래의 숫자 배열로 변환시킵니다.
    * 
    * 0.55.7 버전 이후 사용되지 않습니다.
@@ -5660,7 +5590,6 @@ export class gameSystem {
   /** 상태: 스토리 */ static STATE_STORY = 9
   /** 상태: 필드(게임 진행중) */ static STATE_FIELD = 12
   /** 상태: 오류 발생 */ static STATE_ERROR = 13
-  /** 게임에서 저장된 데이터가 있는지 확인하는 localStorage 키 이름 @deprecated */ static SAVE_FLAG = 'saveFlag'
 
   // 일부 시스템은 static을 사용하기 때문에 new를 이용해 인스턴스를 생성하지 않습니다.
   /** 유저 시스템 */ static userSystem = userSystem
@@ -5891,83 +5820,6 @@ export class gameSystem {
   }
 
   /**
-   * 저장 기능은, 1초에 한번씩 진행됩니다. 달래아 - 지연(프레임)
-   * 이 게임 내에서는, 지연 시간을 딜레이란 단어로 표기합니다.
-   * 
-   * 이 버전은 V043을 기준으로 작성되어있습니다. 현재는 사용되지 않습니다.
-   * 
-   * @deprecated
-   * @param {boolean} [forceSave=false] 강제 세이브 여부 (딜레이를 무시함) 특정 상황에서만 이 변수의 값을 true로 설정해주세요.
-   */
-  static processSaveV043 (forceSave = false) {
-    // 세이브 데이터를 저장하는 조건이 맞아야만 저장됩니다. 자세한 내용은 함수 내부를 살펴보세요.
-    if (!saveSystem.processSaveConditionCheck()) return
-
-    // header
-
-    // 저장 시간 (참고: getMonth는 0부터 시작하기 때문에 +1을 해야합니다.)
-    const saveDate = new Date()
-    const saveDateString = saveDate.getFullYear() + ',' + (saveDate.getMonth() + 1) + ',' + saveDate.getDate() + ',' + saveDate.getHours() + ',' + saveDate.getMinutes() + ',' + saveDate.getSeconds()
-
-    // 유저의 첫 시작 시간
-    const startDate = this.userSystem.startDate
-    const startDateString = startDate.year + ',' + startDate.month + ',' + startDate.day + ',' + startDate.hour + ',' + startDate.minute + ',' + startDate.second
-
-    // 플레이 타임 저장
-    const playTime = this.userSystem.playTime
-    const playTimeString = playTime.hour + ',' + playTime.minute + ',' + playTime.second
-
-    // 모든 옵션 값들 저장
-    const optionValue = this.optionSystem.optionValue
-
-    // 유저의 데이터
-    const userData = this.userSystem.getSaveData()
-
-    // sramDataList (간접 저장 정보)
-    // sram0: lv, exp, gold
-    // sram1: inventoryIdList
-    // sram2: inventoryCount
-    // sram3: inventoryUpgradeLevel
-    // sram4: weaponUnlockList
-    // sram5: skillUnlockList
-    // sram6: roundClearList
-    // sram7: specialFlagList
-    let sramData = [
-      saveSystem.saveNumberEncode(userData.lv, userData.exp, userData.gold),
-      saveSystem.saveNumberEncode(...userData.inventoryItemIdList),
-      saveSystem.saveNumberEncode(...userData.inventoryItemCountList),
-      saveSystem.saveNumberEncode(...userData.inventoryItemUpgardeLevel),
-      saveSystem.saveNumberEncode(...userData.weaponUnlockList),
-      saveSystem.saveNumberEncode(...userData.skillUnlockList),
-      saveSystem.saveNumberEncode(...userData.roundClearList),
-      saveSystem.saveNumberEncode(...userData.specialFlagList)
-    ]
-
-    let saveData = {
-      saveFlag: saveSystem.saveFlagList.level1V0a43,
-      saveDate: saveDateString,
-      startDate: startDateString,
-      playTime: playTimeString,
-      option: optionValue,
-      userData: userData,
-      sramData: sramData
-    }
-
-    let jsonString = JSON.stringify(saveData)
-    localStorage.setItem(saveSystem.getCurrentSaveKey(), jsonString)
-    localStorage.setItem(saveSystem.getCurrentSaveKeyBackup(), jsonString)
-
-    // 필드 저장 데이터는, 필드 상태에서, 게임이 진행 중일 때에만 저장됩니다. 클리어, 게임오버, 탈출상태가 되면 저장하지 않습니다.
-    if (this.stateId === this.STATE_FIELD && (fieldSystem.stateId === fieldSystem.STATE_NORMAL || fieldSystem.stateId === fieldSystem.STATE_PAUSE) ) {
-      const fieldSaveData = fieldSystem.fieldSystemSaveData()
-      localStorage.setItem(saveSystem.getCurrentSaveKeyField(), JSON.stringify(fieldSaveData))
-    } else {
-      // 필드 상태가 아니면, 필드 저장 데이터는 삭제
-      localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
-    }
-  }
-
-  /**
    * 해당 키로 데이터 로드 작업을 진행합니다.
    * 
    * @param {string} key 불러올 데이터의 키 값
@@ -6144,7 +5996,7 @@ export class gameSystem {
       if (fieldData != null) {
         let numberArray = fieldData.split(',').map(Number)
         fieldSystem.fieldSave.array.set(numberArray)
-        fieldSystem.fieldSystemLoadData(null) // 필드 시스템에서 데이터를 로드합니다. (null은 의미 없지만 임시로 넣음)
+        fieldSystem.fieldSystemLoadData() // 필드 시스템에서 데이터를 로드합니다.
         this.stateId = this.STATE_FIELD // 필드를 강제로 진행하도록 상태 변경
       }
     } catch (e) {
@@ -6295,22 +6147,15 @@ export class gameSystem {
       }
     }
     
-    // 모든 데이터를 불러온 후 필드 데이터가 있으면 필드 데이터를 불러옴
+    // 필드가 존재한다면, 해당 규격으로 불러오지 못하고 오류를 발생시키도록 합니다.
     try {
       const fieldSaveData = localStorage.getItem(saveSystem.getCurrentSaveKeyField())
-      if (fieldSaveData != null) {
-        // 경고: localStoarge 특성상 string값으로 비교해야 합니다.
-        // 필드 저장 데이터가 있다면, state를 필드 데이터로 이동
-        // 참고로 필드 데이터는 JSON으로 저장되므로, 이걸 JSON.parse 해야합니다.
-        this.stateId = this.STATE_FIELD
-        fieldSystem.fieldSystemLoadData(JSON.parse(fieldSaveData))
-        game.setBiosDisplayPossible(false)
+      if (fieldSaveData) {
+        throw new Error('!')
       }
     } catch (e) {
-      alert(systemText.gameError.FILED_LOAD_ERROR)
-      localStorage.removeItem(saveSystem.getCurrentSaveKeyField())
-      this.stateId = this.STATE_MAIN
-      game.setBiosDisplayPossible(true)
+      //@ts-ignore
+      this.errorSystem.setErrorCatch(e, this.errorSystem.errorTypeList.FIELDERROR, systemText.gameError.FIELD_NOT_SUPPORT_VERISON)
     }
   }
 
