@@ -2396,18 +2396,6 @@ class MainSystem extends MenuSystem {
     // 유저 스탯 강제 재조정
     UserSystem.processStat()
 
-    // switch (this.cursorPosition) {
-    //   case this.MENU_ROUND_SELECT: gameSystem.stateId = gameSystem.STATE_ROUND_SELECT; break
-    //   case this.MENU_WEAPON_SELECT: gameSystem.stateId = gameSystem.STATE_WEAPON_SELECT; break
-    //   case this.MENU_SKILL_SELECT: gameSystem.stateId = gameSystem.STATE_SKILL_SELECT; break
-    //   case this.MENU_UPGRADE: gameSystem.stateId = gameSystem.STATE_UPGRADE; break
-    //   case this.MENU_OPTION: gameSystem.stateId = gameSystem.STATE_OPTION; break
-    //   case this.MENU_DATA_SETTING: gameSystem.stateId = gameSystem.STATE_DATA_SETTING; break
-    //   case this.MENU_ETC: gameSystem.stateId = gameSystem.STATE_ETC; break
-    //   case this.MENU_INVENTORY: gameSystem.stateId = gameSystem.STATE_INVENTORY; break
-    //   case this.MENU_STORY: gameSystem.stateId = gameSystem.STATE_STORY; break
-    // }
-
     // 모든 UI창을 닫은 후, 실행한 창을 다시 염
     GameSystem.allUIClose()
 

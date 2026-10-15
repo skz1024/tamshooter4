@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tamshooter4 standard</title>
+<style>
+  body { font-family: sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; line-height: 1.7; color: #222; }
+  h1 { border-bottom: 3px solid #333; padding-bottom: .3rem; }
+  h2 { margin-top: 2.5rem; border-bottom: 1px solid #aaa; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid #bbb; padding: .4rem .7rem; text-align: left; }
+  th { background: #eee; }
+  code { background: #f0f0f0; padding: 0 .3rem; border-radius: 3px; }
+  pre { background: #f6f6f6; padding: 1rem; overflow-x: auto; }
+  .note { background: #fff8d6; border-left: 4px solid #e0b800; padding: .5rem 1rem; margin: 1rem 0; }
+
+  /* 여러 색상 표준을 클래스로 정의, 목록은 많아질 수도 있음. */
+  .color-stat-shield { color: #8155C6; }
+  .color-stat-exp { color: #CF8BF3; }
+  .color-stat-prohibited { color: red; }
+  .color-stat-reserved { color: #708090; }
+
+  .color-round-finish { color: rgb(39, 138, 0); }
+
+  /* 오른족으로 들여쓰기 양을 줄임 */
+  ol ul { padding-left: 20px; }
+</style>
+</head>
+<body>
+
+<h1>tamshooter4 standard. 탐슈터 4 표준</h1>
+<p>version v0.59 / last edit: 2026/10/15</p>
+
+<!-- 목차: href의 #id가 아래 섹션의 id와 연결됨 -->
+<nav>
+  <h2>목차</h2>
+  <ol>
+    <li><a href="#game-spec">게임 규격</a></li>
+    <li><a href="#user-stats">유저 스탯 목록</a></li>
+    <li><a href="#stat-mechanics">스탯 처리 메카닉스</a></li> <!-- 메카닉스는, 게임의 규칙, 규격을 설명하는 올바른 단어입니다. 메커니즘으로 바꾸지 마세요. -->
+    <li><a href="#round">라운드</a></li>
+    <li><a href="#weapon">무기</a></li>
+    <li><a href="#skills">스킬</a></li>
+    <li><a href="#field">필드</a></li>
+    <li><a href="#extend"></a>표준은 계속 확장될 것이다.</li>
+  </ol>
+  <ol>
+    <li><a href="statView.html">무기, 스킬, 라운드, 레벨 등의 수치 표</a></li>
+  </ol>
+</nav>
+
+<section id="game-spec">
+  <h2>1. 게임 규격</h2>
+  <ul>
+    <li>장르: 2D 슛뎀업 (Shoot 'em up)</li>
+    <li>해상도: 800x600</li>
+    <li>FPS: 60 고정형</li>
+    <li>엔진: tamsaEngine (자체 제작)</li>
+    <li>프로그래밍 언어: javascript</li>
+    <li>개발 환경: VS Code + ts-check</li>
+  </ul>
+</section>
+
+<section id="user-stats">
+  <h2>2. 유저 스탯 목록</h2>
+  <ul>
+    <li>attack 공격력: 플레이어의 DPS</li>
+    <li class="color-stat-shield">shield 실드: 적의 공격을 받으면 체력보다 먼저 감소</li>
+    <li class="color-stat-shield">shield recovery 실드 회복: 일정량을 모으면 실드를 1 회복한다.</li>
+    <li>hp 체력: 실드가 받을 수 있는 데미지 보다 크면 감소한다.</li>
+    <li class="color-stat-exp">exp 라운드를 진행하면서 얻는 경험치</li>
+    <li class="color-stat-exp">lv 레벨: 컨텐츠 제한 용도로 사용</li>
+    <li>gold 골드: 라운드를 진행하면서 얻는 자원</li>
+    <li class="color-stat-reserved">Damage Reduction Rate 데미지 감소 비율: 예약된 스탯, 현재는 사용 안함</li>
+    <li class="color-stat-prohibited">defense 방어력: 사용 불가, 더미 데이터</li>
+  </ul>
+</section>
+
+<section id="stat-mechanics">
+  <h2>3. 스탯의 처리 규칙</h2>
+  <!-- 들여쓰기가 너무 심해서 극단적으로 코드를 압축하여 표현-->
+  <ul>
+    <li>공격력<ol>
+      <li>무기는 공격력의 16%, 스킬은 공격력의 21%의 비율로 공격한다.</li>
+      <li>스킬은 총 4종류를 동시 사용할 수 있으므로 이론상 dps는 무기와 스킬을 다 합쳐서 100%로 간주한다.</li>
+      <li>가변 공격력을 만들 수 있는 크리티컬, 범위 공격력 같은 요소는 금지한다.</li>
+    </ol></li>
+    <li class="color-stat-shield">체력, 실드, 실드회복<ol>
+      <li class="color-stat-shield">피해를 받으면 실드(shield)가 먼저 감소한다.</li>
+      <li class="color-stat-shield">실드가 피해량을 전부 감당하지 못하면, 남은 피해량만큼 체력(hp)이 감소한다.</li>
+      <li class="color-stat-shield">체력이 실드보다 먼저 감소하는 경우는 없다.</li>
+      <li class="color-stat-shield">체력(hp)이 0이 되면 게임 오버가 발생한다.</li>
+      <li class="color-stat-shield">실드 회복의 기본 값은 100/6000이며 매 프레임 마다 상승한다.</li>
+      <li class="color-stat-shield">게임의 FPS가 60이므로 기본값 기준 1초에 1씩 실드를 회복한다.</li>
+      <li class="color-stat-shield">실드 회복은 0.5초보다 더 짧은 간격으로 회복되지 않는다. (예약됨)</li>
+    </ol></li>
+  </ul>
+</section>
+
+<section id="round">
+  <h2>4. 라운드</h2>
+  <ul>
+    <li>라운드 입장 조건<ol>
+      <li>정해진 레벨과 기준 값 이상의 공격력이 필요하다.</li>
+      <li>제한 수치는 라운드에 커서를 갖다 대면 알 수 있다.</li>
+      <li>레벨 또는 공격력이 정해진 값 보다 부족하면 입장 할 수 없다.</li>
+    </ol></li>
+    <li class="color-round-finish">라운드 종료 규칙<ol>
+      <li class="color-round-finish">클리어 조건: 진행 시간이 정해진 값 이상이고 플레이어가 생존해 있을 때, 이 때는 클리어 보너스 경험치를 얻는다.</li>
+      <li class="color-round-finish">게임오버 조건: 플레이어의 체력이 0 이하가 되고 1초가 흘렀을 때</li>
+      <li class="color-round-finish">나가기 조건: 시작 버튼을 눌러 메뉴를 호출한 후 나가기를 선택했을 때</li>
+      <li class="color-round-finish">라운드가 종료되면 지금까지 진행한 결과를 반영한다. (아이템, 골드, 클리어 여부에 해당)</li>
+    </ol></li>
+    <li>라운드 진행 규칙<ol>
+      <li>보스전 이라고 간주되면 보스의 체력과 이름을 반드시 공개한다.</li>
+      <li>적이 남아있는 동안은 진행 시간이 특정 시점에서 멈출 수 있다. (일부 라운드는 예외)</li>
+      <li>일반적인 특징이 없다면 기준 시간은 180초로 한다. 이 규칙은 권장이며 강제하진 않습니다.</li>
+    </ol></li>
+  </ul>
+</section>
+
+<section id="weapon">
+  <h2>5. 무기의 표준</h2>
+  <ul>
+    <li>무기 사용 규칙<ol>
+      <li>무기는 서로 다른 종류 4개를 선택해야 합니다.</li>
+      <li>무기마다 공격 방식은 개별적으로 처리합니다.</li>
+      <li>사용자의 무기는 자동으로 발사합니다.</li>
+      <li>무기 교체 버튼 (기본 A)를 누르면 무기 종류를 바꿀 수 있습니다.</li>
+      <li>필드에서 5번째 슬롯을 선택하면 무기를 사용하지 않는 것으로 간주합니다.</li>
+    </ol></li>
+    <li>표준 밸런스 배울 표 및 규칙<ol>
+      <li>spalsh: 0.5 (0.4 ~ 0.5), 1개체가 적을 여러 개 타격 할 수 있는 경우</li>
+      <li>chase: 1.0, 모든 발사체가 적을 추적하는 경우 (추적에 실패하여도 이 배율을 적용)</li>
+      <li>shot-reflect: 1.04 ~ 1.08, 1개체가 벽을 반사하는 경우</li>
+      <li>shot-front: 1.6, 1개체는 반드시 전방을 향해 나아감</li>
+      <li>shot-Xway: 1.2 ~ 1.6, 1개체는 전방 어떤 방향이든 날라감 (수직 방향 포함)</li>
+      <li>shot-back: +0.4, 1개체가 후방에 날라가는 경우 해당 배율을 추가로 더함 (수직 방향 제외)</li>
+      <li>mixed: 각 무기 형태의 비율을 독립적으로 곱하여 근사치 추정</li>
+    </ol></li>
+    <li>밸런스 타입 정의 기준<ol>
+      <li>splash 해당 무기의 모든 개체가 splash 공격이어야 한다. 다른 타입과 혼합 불가</li>
+      <li>chase	모든 발사체가 적을 추적하는 경우. 추적에 실패해도 적용</li>
+      <li>shot 모든 발사체가 단일 형태의 shot 서브타입 종류를 가진 경우</li>
+      <li>mixed 발사체의 타입이 섞인 경우 (단 splash는 제외)</li>
+    </ol></li>
+    <li>무기 리스트<ol>
+      <li>멀티샷: 1.33 = (front 2/6 + chase 2/6 + 2way) = (0.333 * 1.6) + (0.333) + (0.333 * 1.4)</li>
+      <li>미사일: 0.5 = splash</li>
+      <li>애로우: 1.04 = shot-reflect</li>
+      <li>레이저: 1.2 = (front 2/4 + chase 2/4) = (1.4 * 0.5) + (1.0 * 0.5)</li>
+      <li>사피아: 1.0 = chase</li>
+      <li>파라포: 0.48 = spalsh v2</li>
+      <li>블래스터: 1.52 = 2way front</li>
+      <li>사이드웨이브: 1.46 = (3way front + 2way back) = (0.6 * 1.3) + (0.4 * 1.7)</li>
+      <li>링: 1.8 = 8way (360 degree divide 8 -&gt; 5way front, 3way back 으로 해석) = (0.625 * 1.5) + (0.375 * 1.9) = 1.7975 -&gt; 1.8로 간주</li>
+      <li>래피드: 1.6 = front</li>
+      <li>선단일: 1.0 = chase</li>
+      <li>부메랑: 1.55 = shot - special movement (임의 지정됨)</li>
+      <li>칼날: 1.0 = chase</li>
+      <li>코그휠: 1.7 = front - penetration</li>
+      <li>연사이: 1.8 = (50% front + 50% back) = (0.5 * 1.6) + (0.5 * 2)</li>
+      <li>사방탄: 0.5 = splash</li>
+      <li>타워핑크: 1.0 = chase</li>
+      <li>타워퍼플: 1.04 = shot-reflect</li>
+      <li>헬전: 1.3 = (50% front + 50% chase) = (0.5 * 1.6) + (0.5 * 1.0)</li>
+    </ol></li>
+  </ul>
+</section>
+
+<section id="skill">
+  <h2>6. 스킬의 표준</h2>
+  <ul>
+    <li>스킬 기본 규칙<ol>
+      <li>스킬의 쿨타임은 20초, 24초, 28초 입니다.</li>
+      <li>스킬의 dps는 (쿨타임 × 배율 × 0.21)로 결정합니다.</li>
+      <li>스킬은 A슬롯 4종류, B슬롯 4종류로 총 8종류를 사용할 수 있습니다.</li>
+      <li>같은 슬롯 번호 끼리 쿨타임을 공유하므로, 동시에 사용할 수 있는 스킬 수는 4개입니다.</li>
+    </ol></li>
+    <li>쿨타임 규칙<ol>
+      <li>splash, area 타입은 최소 24초의 쿨타임이 지정됩니다.</li>
+      <li>나머지는 쿨타임의 제약이 없습니다.</li>
+    </ol></li>
+    <li>타입 배율 표준 규칙<ol>
+      <li>chase: 1.0, 모든 개체는 적을 추적함. (추적 실패 여부 무시)</li>
+      <li>splash: 0.4 ~ 0.5, 모든 개체 및 타격은 스플래시 공격을 함. 예외 없음.</li>
+      <li>shot-front: 1.2, 모든 개체가 전방 방향으로 나아갈 때</li>
+      <li>shot-Xway: 1.02 ~ 1.2, 샷의 방향이 여러 방향일 때, 이 범위 이내 적용</li>
+      <li>area-splash: 0.3 ~ 0.6, 특정 영역 내의 적 전부를 타격할 때 (영역이 넓을 수록 배율 감소)</li>
+      <li>area-attack: 0.7 ~ 1.2, 특정 영역 내의 적을 전부 타격하지만 그 최대 수의 제약이 강한 경우</li>
+      <li>formula: 1.0 ~ 1.2, 무기 자체가 임의 공식을 쓰는 경우 (최대 1.2배 이상을 초과할 수 없음)</li>
+      <li>28초 쿨타임을 가진 스킬은 +0.1배율을 보너스로 추가합니다.</li>
+    </ol></li>
+    <li>타입 세부 설정 규칙<ol>
+      <li>splash 모든 발사체로 인한 타격이 스플래시 형태일 때 적용한다. (타격 수 범위: 최소 20 ~ 최대 50)</li>
+      <li>area-splash 특정 영역을 지정하여 여러 개체에게 공격을 수행할 때 적용한다. (타격 수 범위: 최소 12 ~ 최대 50)</li>
+      <li>area-attack 특정 영역을 지정하여 공격하지만 개체 수 제한이 강함 (타격 수 범위: 2 ~ 6)</li>
+      <li>chase 스플래시가 아니며 모든 개체가 적을 추적하믄 경우 지정됨</li>
+      <li>shot-xway chase, splash, area가 아니고 shot-front가 아닌 경우 적용합니다.</li>
+      <li>formula: 아예 다른 무언가인 경우 (shot 방식도 아니란 뜻)</li>
+    </ol></li>
+    <li>스킬 리스트 (그룹 1)<ol>
+      <li>멀티샷: chase 1, c20</li>
+      <li>미사일: splash 0.5, maxTarget: 20, c24</li>
+      <li>애로우: shot-reflect 1.04, c20</li>
+      <li>레이저: area-splash 0.5, maxTarget: 14. c24</li>
+      <li>사피아: area-attack 0.88, maxTarget: 4. c24</li>
+      <li>파라포: splash 0.44, c24</li>
+      <li>블래스터: shot-front: 1.2, c24</li>
+      <li>사이드웨이브: shot-Xways: 1.08, c20</li>
+      <li>소드: chase 1, c24</li>
+      <li>하이퍼: chase 1, c20</li>
+      <li>크리티컬체이서: splash 0.6 (0.5+0.1), maxTarget: 35, c28</li>
+      <li>파일벙커: area-attack 1.3 (1.2+0.1), maxTarget: 3, c28</li>
+      <li>산탄수: area-divide 0.3, maxTarget: 50, c24</li>
+      <li>화이트플래시: area-splash 0.6, maxTarget: 22, c24</li>
+      <li>링: shot-Xway 1.04, 8way</li>
+      <li>래피드: shot-front 1.2, c20</li>
+      <li>선단일: chase 1.1(1.0+0.1), c28</li>
+      <li>한주먹: splash 0.57 (0.47+0.1), c28, maxTarget: 26</li>
+      <li>부메랑: area-attack 0.86, c24, maxTarget: 4, c24</li>
+      <li>문: forumla, 1.1(1.0+0.1) c28, maxTarget: 100</li>
+    </ol></li>
+    <li>스킬 리스트 (그룹 2)<ol>
+      <li>칼날: shot-reflect, 1.08, c20</li>
+      <li>코그휠: area-attack, 1.11, c24, maxTarget: 3</li>
+      <li>연사이: shot-Xways: 1.07, c20</li>
+      <li>사방탄: splash 0.48, c24</li>
+      <li>하비란트: chase 1, c24</li>
+      <li>아이스체이서: splash 0.6 (0.5+0.1), c28</li>
+      <li>칼리버: chase 1, c24</li>
+      <li>수직파: area-splash</li>
+    </ol></li>
+  </ul>
+
+</section>
+
+<section id="field">
+  <h2>7. 필드의 표준</h2>
+  <ul>
+    <li>모든 필드 개체는 FieldData를 상속받아야 한다. (Round는 필드 개체가 아닙니다.)</li>
+    <li>필드 개체에 접근하려면 process, display 함수로만 접근해야 한다.<br>
+    단, 필드에서 주입이 필요한 요소는 제외한다.</li>
+    <li>FieldData를 상속 받은 다른 파일 끼리 순환 참조를 하는 것은 금지된다.</li>
+    <li>FieldData의 공통 속성 또는 함수로 참조하는 것은 허용되나, 자제하는 것을 권장.</li>
+    <li>Enemy, Round, Weapon, Sprite등은 표준 함수를 제외한 서로의 함수를 모른다고 가정한다.</li>
+    <li>Round에서 Player를 조작할 수 밖에 없다면 Player에 대한 직접 참조를 허용한다.</li>
+  </ul>
+  <ul>
+    <li>상속 관계<ol>
+      <li>제일 낮은 층은 FieldData이다. 어떠한 필드 객체도 재참조 하지 않는다.</li>
+      <li>그 다음 층은 Enemy, Round, Weapon, Player 이다. 이들은 서로를 참조하진 않는다.</li>
+      <li>그 다음 층은 FieldState, FieldSystem 입니다.</li>
+      <li>필드는 메인 시스템을 참고할 수 없습니다.</li>
+      <li>필드는 유저 시스템을 참고할 수 있습니다.</li>
+    </ol></li>
+  </ul>
+</section>
+
+<!-- 밑은 필요하다면 사용하는 일종의 틀 같은거임 -->
+
+<!-- 코드 복사용 -->
+<li><ol>
+  <li></li>
+</ol></li>
+<section id="purpose">
+  <h2>여기서부터는 틀 복사용으로 남겨둔 것임 1. 목적과 범위</h2>
+  <p>이 문서는 <strong>표준을 작성하는 방법</strong>을 정의한다.</p>
+  <ul>
+    <li>순서가 필요 없는 항목은 ul + li</li>
+    <li>순서가 필요하면 ol + li</li>
+  </ul>
+  <div class="note">강조하고 싶은 주의사항은 이런 박스로 표시한다.</div>
+</section>
+
+<section id="rules">
+  <h2>2. 규칙 목록</h2>
+  <table>
+    <thead>
+      <tr><th>번호</th><th>규칙</th><th>비고</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>R-001</td><td>규칙 내용</td><td>-</td></tr>
+      <tr><td>R-002</td><td>규칙 내용</td><td>-</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="example">
+  <h2>3. 코드 예시</h2>
+  <p>문장 안의 짧은 코드는 <code>player.speed</code>처럼 쓴다.</p>
+  <pre><code>// 여러 줄 코드는 pre + code
+function update() {
+  // ...
+}</code></pre>
+</section>
+
+<section id="changelog">
+  <h2>4. 변경 이력</h2>
+  <table>
+    <tr><th>날짜</th><th>내용</th></tr>
+    <tr><td>2026-10-15</td><td>초안 작성</td></tr>
+  </table>
+</section>
+
+</body>
+</html>
