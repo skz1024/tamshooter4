@@ -2,31 +2,21 @@
 
 import { StatItem, StatPlayerSkill, StatPlayerWeapon, StatUser, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, dataExportStatWeapon } from "./js/dataStat.js"
 
-/** 현재에 해당하는 스킬 값을 얻어옴 */
-const getSkillColor = (balance = '', coolTime = 20) => {
+/** 타입에 해당하는 클래스 값을 얻어옵니다. 이 값은 css 선택자로 활용합니다. */
+const getTypeColorClass = (balance = '') => {
   const balanceType = StatPlayerSkill.balanceTypeList
-  let color = 'white'
-  // 쿨타임 20초: 밝은색, 24초: 진한색, 28초: 회색계통
-  if (balance === balanceType.CHASE) {
-    // 체이스타입, 노란색 표시
-    color = '#ffe598'
-  } else if (balance === balanceType.SPLASH) {
-    // 스플래시타입, 파란색 표시
-    color = '#9cd9ff'
-  } else if (balance === balanceType.AREA_ATTACK) {
-    // 에리어 타입
-    color = '#ffbffc'
-  } else if (balance === balanceType.AREA_SPLASH) {
-    color = '#d4b9ff'
-  } else if (balance === balanceType.SHOT_FRONT) {
-    color = '#baffbe'
-  } else if (balance === balanceType.SHOT_XWAY) {
-    color = '#d9ffb6'
-  } else if (balance === balanceType.SHOT_REFLECT) {
-    color = '#cab7ca'
+  switch (balance) {
+    case balanceType.SPLASH: return 'type-splash'
+    case balanceType.AREA_ATTACK: return 'type-area-attack'
+    case balanceType.AREA_SPLASH: return 'type-area-splash'
+    case balanceType.CHASE: return 'type-chase'
+    case balanceType.SHOT_FRONT: return 'type-shot-front'
+    case balanceType.SHOT_XWAY: return 'type-shot-xway'
+    case balanceType.SHOT_ANOTHER: return 'type-shot-another'
+    case balanceType.MIXED: return 'type-mixed'
+    case balanceType.FORMULA: return 'type-formula'
+    default: return 'white'
   }
-
-  return color
 }
 
 
@@ -54,8 +44,7 @@ dataExportStatPlayerSkill.forEach((value) => {
   let weaponAttack = ('' + value.weaponAttack).padEnd(6, ' ') + '|'
   let isMultiTarget = ('' + (weaponData != null ? weaponData.isMultiTarget : false)).padEnd(7, ' ') + '|'
   
-  // color를 얻어올 때, value.xxx 하는 이유는, 일반 변수를 넣으면 중간에 string 변형이 일어나기 때문에, 원본과 값이 다를 수 있음.
-  let color = getSkillColor(value.balance, value.coolTime)
+  let color = getTypeColorClass(value.balance)
 
   // 일부 잘못된 밸런스 규칙이 있는지 검사합니다. 스플래시는 여러 개체를 동시에 공격할 수 있어야 합니다.
   if (balance === StatPlayerSkill.balanceTypeList.SPLASH && weaponData?.isMultiTarget === false) {
@@ -66,7 +55,7 @@ dataExportStatPlayerSkill.forEach((value) => {
 
   let element = document.createElement('pre')
   element.style.margin = '0'
-  element.style.background = color
+  element.className = color
   element.style.color = 'black'
   element.style.width = '800px'
   element.textContent = name + group + balance + coolTime + delay + attackMultiple + maxTarget + shotCount + repeatCount + attackCount + weaponAttack + isMultiTarget
@@ -78,24 +67,6 @@ dataExportStatPlayerSkill.forEach((value) => {
   })
   pre?.appendChild(element)
 })
-
-/** 무기의 색을 얻습니다. 밸런스 타입에 따라 다름 */
-const getWeaponColor = (balance = '') => {
-  let color = 'white'
-  const balanceList = StatPlayerWeapon.balanceTypeList
-  switch (balance) {
-    case balanceList.CHASE: color = '#89FEC9'; break // 추적: 청록
-    case balanceList.FRONT: color = '#99F08D'; break // 전방: 초록
-    case balanceList.MULTYSHOT: color = '#FED589'; break // 멀티샷: 주황
-    case balanceList.PENETRATION: color = '#FFFFBF'; break // 관통: 노랑
-    case balanceList.REFLECT: color = '#EAD2EA'; break // 반사: 보라
-    case balanceList.SIDEWAVE: color = '#E8FFCC'; break // 사이드: 연두
-    case balanceList.SPLASH: color = '#B5CEFF'; break // 스플래시: 파랑
-    case balanceList.UNIQUE: color = '#DEDEDE'; break // 유니크: 회색
-  }
-
-  return color
-}
 
 let element2 = document.createElement('pre')
 element2.id = 'playerWeaponList'
@@ -120,11 +91,11 @@ dataExportStatPlayerWeapon.forEach((value) => {
   // let splashTarget = weaponData.isMultiTarget ? ('' + weaponData.maxTarget).padEnd(6, ' ') + '|' : '1'.padEnd(6, ' ') + '|'
   let splashTarget = ''
 
-  let color = getWeaponColor(value.balance)
+  let color = getTypeColorClass(value.balance)
 
   let element = document.createElement('pre')
   element.style.margin = '0'
-  element.style.background = color
+  element.className = color
   element.style.width = '800px'
   element.style.color = 'black'
   element.textContent = name + group + balance + delay + shotCount + repeatCount + attackMultiple + splashTarget + weaponAttack

@@ -1,0 +1,22 @@
+:root {
+  --color-splash: #9fdafc;
+  --color-area-attack: #f8c1d5;
+  --color-area-splash: #e0bbf1;
+  --color-chase: #FFE5A0;
+  --color-shot-front: #d2f8a5;
+  --color-shot-xway: #80df8d;
+  --color-shot-another: #a5e9cd;
+  --color-mixed: #bbbbbb;
+  --color-formula: #eaf3f5;
+}
+body { color:black }
+
+.type-splash { background-color: var(--color-splash); }
+.type-area-attack { background-color: var(--color-area-attack); }
+.type-area-splash { background-color: var(--color-area-splash); }
+.type-chase { background-color: var(--color-chase); }
+.type-shot-front { background-color: var(--color-shot-front); }
+.type-shot-xway { background-color: var(--color-shot-xway); }
+.type-shot-another { background-color: var(--color-shot-another);}
+.type-mixed { background-color: var(--color-mixed); }
+.type-formula { background-color: var(--color-formula);}

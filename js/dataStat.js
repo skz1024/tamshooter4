@@ -135,23 +135,19 @@ export class StatPlayerWeapon {
 
   /** 
    * 밸런스 타입 리스트
-   * 밸런스 규칙에 대한 내용은 statView.html 참고
+   * 밸런스 규칙에 대한 내용은 standard.html 참고
    */
   static balanceTypeList = {
-    /** 유니크/고유 (다른 무기와 달리 고유한 특징을 가지고 있음) @deprecated */ UNIQUE: 'unique',
-    /** 멀티샷 (무기 발사 개체가 혼합형태, 단 스플래시는 아님) -> 믹스드로 대체 @deprecated */ MULTYSHOT: 'multyshot',
-    /** 믹스드 (shot, chase의 혼합형인 경우, 단 스플래시는 포함할 수 없음) */ MIXED: 'mixed',
     /** 스플래시 (무기 1회 공격시에, 동시에 여러 적을 공격할 수 있는 경우, 다른 그룹보다 우선순위 높음) */ SPLASH: 'splash',
-    /** 리플렉트/반사 (무기가 벽에게 튕겨나갈 수 있는 경우, 적도 튕길 수 있으나 해당하는 무기는 거의 없음) @deprecated  */ REFLECT: 'reflect',
-    /** 페네트레이션/관통 (무기가 공격횟수가 남았을 때, 지속적으로 남은 적을 추가 공격할 수 있음.) @deprecated  */ PENETRATION: 'penetration',
+    /** 에리어, 특정 영역 범위에 다수 타격, 스플래시랑은 다름 */ AREA_SPLASH: 'area-splash',
+    /** 에리어 공격, 특정 영역 범위에 다수 타격, 다만 최대 개체 제한이 엄격함 */ AREA_ATTACK: 'area-attack',
     /** 체이스/추적 (무기가 적을 무조건 추적만 하는 경우, 단 스플래시는 해당하지 않음.) */ CHASE: 'chase',
-    /** 프론트/전방 (무기는 반드시 플레이어의 기준 방향 으로만 발사됨, 따라서 위,아래만 발사하면 front가 아님) @deprecated  */ FRONT: 'front',
-    /** 사이드웨이브 (무기 발사체는 여러방향을 띔, 멀티샷과는 다르게 성향은 1개, 방향은 여러개임) */ SIDEWAVE: 'sidewave',
-    /** 샷계열 - 벽 반사형, 최소 3회 이상 반사 필요: 배율 1.04 ~ 1.08 */ SHOT_REFLECT: 'shot-reflect',
-    /** 샷계열 - Xways, 밸런스 배율 상으로 전후방을 구분하지만, 같은 타입으로 관리됨 */ SHOT_XWAYS: 'shot-Xways',
-    /** 샷계열 - penetration, 관통형으로 나아가는 경우, 배율 임의 지정 */ SHOT_PENETRATION: 'shot-penetration',
-    /** 샷계열 - front/back, 샷이 직선 방향으로만 나아가는 경우, 반대 방향 또한 포함 */ SHOT_FRONTBACK: 'shot-frontback',
-    /** 샷계열 - unique, 특이한 이동방식을 가지고 있을 경우, 즉 왔다갔다 하거나 이리저리 돌아다니면 */ SHOT_UNIQUE: 'shot-unique'
+    /** 샷계열 - Xways, 밸런스 배율 상으로 전후방을 구분하지만, 같은 타입으로 관리됨 */ SHOT_XWAY: 'shot-xway',
+    /** 샷계열 - front/back, 샷이 직선 방향으로만 나아가는 경우, 반대 방향 또한 포함 */ SHOT_FRONT: 'shot-front',
+    /** 추적하지 않지만, 방향이 다소 독자적인 패턴인 경우 */ SHOT_ANOTHER: 'shot-another',
+    /** 믹스드 (shot, chase의 혼합형인 경우, 단 스플래시는 포함할 수 없음) */ MIXED: 'mixed',
+    /** 공식 자체가 해당 무기 또는 스킬의 자체 공식인 경우 (스킬에서만 사용되는 타입) */ FORMULA: 'formula',
+    
   }
 
   /** 무기의 그룹 타입, 이 타입들은 해당 무기 잠금에 영향을 줄 수 있음. (스킬하고도 그룹 타입은 공유) */
@@ -236,19 +232,7 @@ export class StatPlayerSkill {
   static groupTypeList = StatPlayerWeapon.groupTypeList
   static getUnlockCondition = StatPlayerWeapon.getUnlockCondition
 
-  static balanceTypeList = {
-    SPLASH: 'splash',
-    /** @deprecated */ AREA: 'area',
-    CHASE: 'chase',
-    /** @deprecated */ SHOT: 'shot',
-    SHOT_REFLECT: 'shot-reflect',
-    SHOT_XWAY: 'shot-Xway',
-    SHOT_FRONT: 'shot-front',
-    AREA_SPLASH: 'area-splash',
-    AREA_DIVIED: 'area-divied',
-    AREA_ATTACK: 'area-attack',
-    FORMULA: 'formula',
-  }
+  static balanceTypeList = StatPlayerWeapon.balanceTypeList
 
   /** 
    * 스킬 id에 따른 아이콘 번호를 얻어옵니다. 
@@ -565,7 +549,7 @@ dataExportStatWeapon.set(ID.weapon.skillRapid, new StatWeapon(Tskill, 'rapid'))
 dataExportStatWeapon.set(ID.weapon.skillSeondanil, new StatWeapon(Tskill, 'seondanil', 50, 3))
 dataExportStatWeapon.set(ID.weapon.skillSeondanilMini, new StatWeapon(TskillSub, 'seondanilmini', 1, 3))
 dataExportStatWeapon.set(ID.weapon.skillHanjumeok, new StatWeapon(Tskill, 'hanjumoek', 30, 5, false, true, 26))
-dataExportStatWeapon.set(ID.weapon.skillBoomerang, new StatWeapon(Tskill, 'boomerang', 30, 3, false, true, 3))
+dataExportStatWeapon.set(ID.weapon.skillBoomerang, new StatWeapon(Tskill, 'boomerang', 30, 8, false, true, 4))
 dataExportStatWeapon.set(ID.weapon.skillMoon, new StatWeapon(Tskill, 'moon', 30, 3, false, true, 100))
 dataExportStatWeapon.set(ID.weapon.skillKalnal, new StatWeapon(Tskill, 'kalnal', 6, 8, false, false, 2))
 dataExportStatWeapon.set(ID.weapon.skillCogwheel, new StatWeapon(Tskill, 'cogwheel', 30, 6, false, true, 6))
@@ -604,22 +588,22 @@ const pWeapon = StatPlayerWeapon
 DXweapon.set(IDweapon.unused, new pWeapon(wGroup.GROUP1, 'unused', wBalance.CHASE, 0, 0, 0, [ID.weapon.unused]))
 DXweapon.set(IDweapon.multyshot, new pWeapon(wGroup.GROUP1, 'multyshot', wBalance.MIXED, 10, 1.33, 6, [ID.weapon.multyshot]))
 DXweapon.set(IDweapon.missile, new pWeapon(wGroup.GROUP1, 'missile', wBalance.SPLASH, 30, 0.5, 4, [ID.weapon.missile, ID.weapon.missileRocket]))
-DXweapon.set(IDweapon.arrow, new pWeapon(wGroup.GROUP1, 'arrow', wBalance.SHOT_REFLECT, 10, 1.04, 2, [ID.weapon.arrow]))
+DXweapon.set(IDweapon.arrow, new pWeapon(wGroup.GROUP1, 'arrow', wBalance.SHOT_ANOTHER, 10, 1.04, 2, [ID.weapon.arrow]))
 DXweapon.set(IDweapon.laser, new pWeapon(wGroup.GROUP1, 'laser', wBalance.MIXED, 12, 1.2, 4, [ID.weapon.laser, ID.weapon.laserBlue]))
 DXweapon.set(IDweapon.sapia, new pWeapon(wGroup.GROUP1, 'sapia', wBalance.CHASE, 10, 1, 1, [ID.weapon.sapia]))
 DXweapon.set(IDweapon.parapo, new pWeapon(wGroup.GROUP1, 'parapo', wBalance.SPLASH, 30, 0.48, 3, [ID.weapon.parapo]))
-DXweapon.set(IDweapon.blaster, new pWeapon(wGroup.GROUP1, 'blaster', wBalance.SHOT_XWAYS, 6, 1.52, 2, [ID.weapon.blaster, ID.weapon.blasterMini]))
-DXweapon.set(IDweapon.sidewave, new pWeapon(wGroup.GROUP1, 'sidewave', wBalance.SIDEWAVE, 15, 1.46, 8, [ID.weapon.sidewave]))
-DXweapon.set(IDweapon.ring, new pWeapon(wGroup.GROUP1, 'ring', wBalance.SIDEWAVE, 30, 1.8, 8, [ID.weapon.ring]))
-DXweapon.set(IDweapon.rapid, new pWeapon(wGroup.GROUP1, 'rapid', wBalance.SHOT_FRONTBACK, 4, 1.6, 3, [ID.weapon.rapid]))
+DXweapon.set(IDweapon.blaster, new pWeapon(wGroup.GROUP1, 'blaster', wBalance.SHOT_XWAY, 6, 1.52, 2, [ID.weapon.blaster, ID.weapon.blasterMini]))
+DXweapon.set(IDweapon.sidewave, new pWeapon(wGroup.GROUP1, 'sidewave', wBalance.SHOT_XWAY, 15, 1.46, 8, [ID.weapon.sidewave]))
+DXweapon.set(IDweapon.ring, new pWeapon(wGroup.GROUP1, 'ring', wBalance.SHOT_XWAY, 30, 1.8, 8, [ID.weapon.ring]))
+DXweapon.set(IDweapon.rapid, new pWeapon(wGroup.GROUP1, 'rapid', wBalance.SHOT_FRONT, 4, 1.6, 3, [ID.weapon.rapid]))
 DXweapon.set(IDweapon.seondanil, new pWeapon(wGroup.GROUP1, 'seondanil', wBalance.CHASE, 30, 1.0, 5, [ID.weapon.seondanil]))
-DXweapon.set(IDweapon.boomerang, new pWeapon(wGroup.GROUP1, 'boomerang', wBalance.SHOT_UNIQUE, 20, 1.55, 3, [ID.weapon.boomerang]))
+DXweapon.set(IDweapon.boomerang, new pWeapon(wGroup.GROUP1, 'boomerang', wBalance.SHOT_ANOTHER, 20, 1.55, 3, [ID.weapon.boomerang]))
 DXweapon.set(IDweapon.kalnal, new pWeapon(wGroup.GROUP2, 'kalnal', wBalance.CHASE, 20, 1.0, 2, [ID.weapon.kalnal]))
-DXweapon.set(IDweapon.cogwheel, new pWeapon(wGroup.GROUP2, 'cogwheel', wBalance.SHOT_PENETRATION, 40, 1.7, 1, [ID.weapon.cogwheel]))
-DXweapon.set(IDweapon.yeonsai, new pWeapon(wGroup.GROUP2, 'yeonsai', wBalance.SIDEWAVE, 6, 1.8, 6, [ID.weapon.yeonsai]))
+DXweapon.set(IDweapon.cogwheel, new pWeapon(wGroup.GROUP2, 'cogwheel', wBalance.SHOT_ANOTHER, 40, 1.7, 1, [ID.weapon.cogwheel]))
+DXweapon.set(IDweapon.yeonsai, new pWeapon(wGroup.GROUP2, 'yeonsai', wBalance.SHOT_XWAY, 6, 1.8, 6, [ID.weapon.yeonsai]))
 DXweapon.set(IDweapon.sabangtan, new pWeapon(wGroup.GROUP2, 'sabangtan', wBalance.SPLASH, 30, 0.5, 4, [ID.weapon.sabangtan]))
 DXweapon.set(IDweapon.r3TowerPink, new pWeapon(wGroup.R3_TOWER, 'towerpink', wBalance.CHASE, 15, 1, 1, [ID.weapon.r3TowerPink]))
-DXweapon.set(IDweapon.r3TowerPurple, new pWeapon(wGroup.R3_TOWER, 'towerpurple', wBalance.SHOT_REFLECT, 10, 1.04, 2, [ID.weapon.r3TowerPurple]))
+DXweapon.set(IDweapon.r3TowerPurple, new pWeapon(wGroup.R3_TOWER, 'towerpurple', wBalance.SHOT_ANOTHER, 10, 1.04, 2, [ID.weapon.r3TowerPurple]))
 DXweapon.set(IDweapon.r3Helljeon, new pWeapon(wGroup.R3_TOWER, 'helljeon', wBalance.MIXED, 10, 1.3, 4, [ID.weapon.r3Helljeon]))
 
 /**
@@ -632,10 +616,10 @@ const IDskill = ID.playerSkill
 const sGroup = StatPlayerSkill.groupTypeList
 const sBalance = StatPlayerSkill.balanceTypeList
 const pSkill = StatPlayerSkill
-DXskill.set(IDskill.unused, new pSkill(sGroup.GROUP1, 'unused', sBalance.SHOT, 0, 0, 0, 0, 0, [ID.weapon.unused]))
+DXskill.set(IDskill.unused, new pSkill(sGroup.GROUP1, 'unused', sBalance.FORMULA, 0, 0, 0, 0, 0, [ID.weapon.unused]))
 DXskill.set(IDskill.multyshot, new pSkill(sGroup.GROUP1, 'multyshot', sBalance.CHASE, 20, 6, 1, 5, 30, [ID.weapon.skillMultyshot]))
 DXskill.set(IDskill.missile, new pSkill(sGroup.GROUP1, 'missile', sBalance.SPLASH, 24, 20, 0.5, 2, 4, [ID.weapon.skillMissile]))
-DXskill.set(IDskill.arrow, new pSkill(sGroup.GROUP1, 'arrow', sBalance.SHOT_REFLECT, 20, 9, 1.04, 2, 20, [ID.weapon.skillArrow]))
+DXskill.set(IDskill.arrow, new pSkill(sGroup.GROUP1, 'arrow', sBalance.SHOT_ANOTHER, 20, 9, 1.04, 2, 20, [ID.weapon.skillArrow]))
 DXskill.set(IDskill.laser, new pSkill(sGroup.GROUP1, 'laser', sBalance.AREA_SPLASH, 20, 0, 0.5, 1, 1, [ID.weapon.skillLaser]))
 DXskill.set(IDskill.sapia, new pSkill(sGroup.GROUP1, 'sapia', sBalance.AREA_ATTACK, 24, 60, 1, 4, 4, [ID.weapon.skillSapia]))
 DXskill.set(IDskill.parapo, new pSkill(sGroup.GROUP1, 'parapo', sBalance.SPLASH, 24, 10, 0.44, 1, 24, [ID.weapon.skillParapo]))
@@ -651,9 +635,9 @@ DXskill.set(IDskill.ring, new pSkill(sGroup.GROUP1, 'ring', sBalance.SHOT_XWAY, 
 DXskill.set(IDskill.rapid, new pSkill(sGroup.GROUP1, 'rapid', sBalance.SHOT_FRONT, 20, 4, 1.2, 4, 40, [ID.weapon.skillRapid]))
 DXskill.set(IDskill.seondanil, new pSkill(sGroup.GROUP1, 'seondanil', sBalance.CHASE, 28, 0, 1.1, 1, 1, [ID.weapon.skillSeondanil]))
 DXskill.set(IDskill.hanjumoek, new pSkill(sGroup.GROUP1, 'hanjumeok', sBalance.SPLASH, 28, 0, 0.57, 1, 1, [ID.weapon.skillHanjumeok]))
-DXskill.set(IDskill.boomerang, new pSkill(sGroup.GROUP1, 'boomerang', sBalance.AREA_ATTACK, 24, 0, 0.86, 3, 1, [ID.weapon.skillBoomerang]))
+DXskill.set(IDskill.boomerang, new pSkill(sGroup.GROUP1, 'boomerang', sBalance.AREA_ATTACK, 24, 0, 0.93, 1, 1, [ID.weapon.skillBoomerang]))
 DXskill.set(IDskill.moon, new pSkill(sGroup.GROUP1, 'moon', sBalance.FORMULA, 28, 1, 1.1, 1, 1, [ID.weapon.skillMoon]))
-DXskill.set(IDskill.kalnal, new pSkill(sGroup.GROUP2, 'kalnal', sBalance.SHOT_REFLECT, 20, 20, 1.08, 2, 6, [ID.weapon.skillKalnal]))
+DXskill.set(IDskill.kalnal, new pSkill(sGroup.GROUP2, 'kalnal', sBalance.SHOT_ANOTHER, 20, 20, 1.08, 2, 6, [ID.weapon.skillKalnal]))
 DXskill.set(IDskill.cogwheel, new pSkill(sGroup.GROUP2, 'cogwheel', sBalance.AREA_ATTACK, 20, 0, 1.11, 1, 1, [ID.weapon.skillCogwheel]))
 DXskill.set(IDskill.yeonsai, new pSkill(sGroup.GROUP2, 'yeonsai', sBalance.SHOT_XWAY, 20, 5, 1.07, 10, 30, [ID.weapon.skillYeonsai]))
 DXskill.set(IDskill.sabangtan, new pSkill(sGroup.GROUP2, 'sabangtan', sBalance.SPLASH, 24, 15, 0.48, 6, 5, [ID.weapon.skillSabangtan]))
@@ -666,7 +650,7 @@ DXskill.set(IDskill.eomukggochi, new pSkill(sGroup.GROUP2, 'eomukggochi', sBalan
 DXskill.set(IDskill.r2Firecracker, new pSkill(sGroup.DONGGRAMI, 'firecracker', sBalance.SPLASH, 24, 12, 0.5, 1, 15, [ID.weapon.skillR2Firecraker]))
 DXskill.set(IDskill.r2Toyhammer, new pSkill(sGroup.DONGGRAMI, 'toyhammer', sBalance.CHASE, 24, 1, 1, 1, 1, [ID.weapon.skillR2Toyhammer]))
 DXskill.set(IDskill.r3Xkill, new pSkill(sGroup.R3_TOWER, 'Xkill', sBalance.CHASE, 24, 0, 1, 1, 1, [ID.weapon.skillR3Xkill]))
-DXskill.set(IDskill.r3Xshot, new pSkill(sGroup.R3_TOWER, 'Xshot', sBalance.SHOT, 24, 0, 1.05, 1, 1, [ID.weapon.skillR3Xshot]))
+DXskill.set(IDskill.r3Xshot, new pSkill(sGroup.R3_TOWER, 'Xshot', sBalance.SHOT_ANOTHER, 24, 0, 1.05, 1, 1, [ID.weapon.skillR3Xshot]))
 DXskill.set(IDskill.r3Xbeam, new pSkill(sGroup.R3_TOWER, 'Xbeam', sBalance.AREA_ATTACK, 24, 0, 0.94, 1, 1, [ID.weapon.skillR3Xbeam]))
 DXskill.set(IDskill.r3Xboom, new pSkill(sGroup.R3_TOWER, 'Xboom', sBalance.SPLASH, 24, 0, 0.5, 1, 1, [ID.weapon.skillR3Xboom]))
 DXskill.set(IDskill.r3Helljeon, new pSkill(sGroup.R3_TOWER, 'helljeon', sBalance.CHASE, 20, 5, 1, 2, 30, [ID.weapon.skillR3Helljeon]))

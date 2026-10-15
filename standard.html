@@ -24,8 +24,11 @@
   .color-round-finish { color: rgb(39, 138, 0); }
 
   /* 오른족으로 들여쓰기 양을 줄임 */
-  ol ul { padding-left: 20px; }
+  ol { padding-left: 20px; }
+  ul { padding-left: 20px; }
+  
 </style>
+<link rel="stylesheet" href="standard.css">
 </head>
 <body>
 
@@ -130,20 +133,24 @@
       <li>무기 교체 버튼 (기본 A)를 누르면 무기 종류를 바꿀 수 있습니다.</li>
       <li>필드에서 5번째 슬롯을 선택하면 무기를 사용하지 않는 것으로 간주합니다.</li>
     </ol></li>
-    <li>표준 밸런스 배울 표 및 규칙<ol>
-      <li>spalsh: 0.5 (0.4 ~ 0.5), 1개체가 적을 여러 개 타격 할 수 있는 경우</li>
-      <li>chase: 1.0, 모든 발사체가 적을 추적하는 경우 (추적에 실패하여도 이 배율을 적용)</li>
-      <li>shot-reflect: 1.04 ~ 1.08, 1개체가 벽을 반사하는 경우</li>
-      <li>shot-front: 1.6, 1개체는 반드시 전방을 향해 나아감</li>
-      <li>shot-Xway: 1.2 ~ 1.6, 1개체는 전방 어떤 방향이든 날라감 (수직 방향 포함)</li>
-      <li>shot-back: +0.4, 1개체가 후방에 날라가는 경우 해당 배율을 추가로 더함 (수직 방향 제외)</li>
-      <li>mixed: 각 무기 형태의 비율을 독립적으로 곱하여 근사치 추정</li>
+    <li>표준 밸런스 배율 표 및 규칙<ol>
+      <li class="type-splash">splash: 0.4 ~ 0.5, 1개체가 적 다수를 타격 할 수 있는 경우</li>
+      <li class="type-chase">chase: 1.0, 모든 발사체가 적을 추적하는 경우. (추적 실패 여부 무관)</li>
+      <li class="type-shot-front">shot-front: 1.6, 1개체는 반드시 직선 전방 또는 후방으로 나아감 (기준은 플레이어가 보는 방향 축)</li>
+      <li class="type-shot-xway">shot-xway: 1.2 ~ 1.6, 방향이 여러 갈래지만, 직선으로 나아감 (수직 방향 포함)</li>
+      <li>shot-back: +0.4, (shot-front, shot-xway에만 해당)<br>
+        1개체가 후방에 날아가는 경우 해당 배율을 추가로 더함 (수직 방향 제외)</li>
+      <li class="type-shot-another">shot-another: 1.05 ~ 1.15, 추적하지 않고 궤적이 직선이 아닌 독자적 구조 (현재는 벽 반사 무기만 해당)</li>
+      <li class="type-mixed">mixed: 각 무기 형태의 비율을 독립적으로 곱하여 근사치 추정</li>
     </ol></li>
     <li>밸런스 타입 정의 기준<ol>
-      <li>splash 해당 무기의 모든 개체가 splash 공격이어야 한다. 다른 타입과 혼합 불가</li>
-      <li>chase	모든 발사체가 적을 추적하는 경우. 추적에 실패해도 적용</li>
-      <li>shot 모든 발사체가 단일 형태의 shot 서브타입 종류를 가진 경우</li>
-      <li>mixed 발사체의 타입이 섞인 경우 (단 splash는 제외)</li>
+      <li>우선순위: splash -> chase -> shot-front -> shot-xway -> shot-another -> type-mixed (여기가 마지막)</li>
+      <li class="type-splash">splash: 스플래시 공격을 하는 무기는 모든 개체가 스플래시여야만 한다. 다른 타입과 섞일 수 없다.</li>
+      <li class="type-chase">chase: 모든 발사체가 적을 추적하는 경우. (추적 실패 여부 무관)</li>
+      <li class="type-shot-front">shot-front: 모든 발사체가 반드시 직선 전방 또는 후방으로 나아갈 경우 (발사 위치, 이동 범위는 상관없음)</li>
+      <li class="type-shot-xway">shot-xway: 모든 발사체가 임의 방향으로만 나아갈 경우 (발사 위치, 이동 범위는 상관없음)</li>
+      <li class="type-shot-another">shot-another: 특정 방향에 의존하지 않는 독자적 구조의 발사체 (추적 기능 없음, 현재는 벽 반사 무기만 해당)</li>
+      <li class="type-mixed">mixed: 위 타입 중 splash를 제외한 나머지가 2종류 이상 섞인 경우</li>
     </ol></li>
     <li>무기 리스트<ol>
       <li>멀티샷: 1.33 = (front 2/6 + chase 2/6 + 2way) = (0.333 * 1.6) + (0.333) + (0.333 * 1.4)</li>
@@ -173,32 +180,40 @@
   <h2>6. 스킬의 표준</h2>
   <ul>
     <li>스킬 기본 규칙<ol>
-      <li>스킬의 쿨타임은 20초, 24초, 28초 입니다.</li>
-      <li>스킬의 dps는 (쿨타임 × 배율 × 0.21)로 결정합니다.</li>
+      <li>스킬의 쿨타임은 20초, 24초, 28초 중 하나입니다.</li>
+      <li>스킬의 dps는 (쿨타임 x 배율 x 0.21)로 결정합니다.</li>
       <li>스킬은 A슬롯 4종류, B슬롯 4종류로 총 8종류를 사용할 수 있습니다.</li>
       <li>같은 슬롯 번호 끼리 쿨타임을 공유하므로, 동시에 사용할 수 있는 스킬 수는 4개입니다.</li>
     </ol></li>
     <li>쿨타임 규칙<ol>
-      <li>splash, area 타입은 최소 24초의 쿨타임이 지정됩니다.</li>
+      <li>splash, area-attack, area-splash 타입은 최소 24초의 쿨타임이 지정됩니다.</li>
       <li>나머지는 쿨타임의 제약이 없습니다.</li>
     </ol></li>
     <li>타입 배율 표준 규칙<ol>
-      <li>chase: 1.0, 모든 개체는 적을 추적함. (추적 실패 여부 무시)</li>
-      <li>splash: 0.4 ~ 0.5, 모든 개체 및 타격은 스플래시 공격을 함. 예외 없음.</li>
-      <li>shot-front: 1.2, 모든 개체가 전방 방향으로 나아갈 때</li>
-      <li>shot-Xway: 1.02 ~ 1.2, 샷의 방향이 여러 방향일 때, 이 범위 이내 적용</li>
-      <li>area-splash: 0.3 ~ 0.6, 특정 영역 내의 적 전부를 타격할 때 (영역이 넓을 수록 배율 감소)</li>
-      <li>area-attack: 0.7 ~ 1.2, 특정 영역 내의 적을 전부 타격하지만 그 최대 수의 제약이 강한 경우</li>
-      <li>formula: 1.0 ~ 1.2, 무기 자체가 임의 공식을 쓰는 경우 (최대 1.2배 이상을 초과할 수 없음)</li>
+      <li>스킬 배율은 어떠한 이유를 불문하고 1.2배를 초과할 수 없습니다. (28초 쿨타임 보너스 배율 제외)</li>
       <li>28초 쿨타임을 가진 스킬은 +0.1배율을 보너스로 추가합니다.</li>
+      <li class="type-chase">chase: 1.0, 모든 발사체가 적을 추적하는 경우. (추적 실패 여부 무관)</li>
+      <li class="type-splash">splash: 0.4 ~ 0.5, 스플래시 공격을 하는 무기는 모든 개체가 스플래시여야만 한다.</li>
+      <li class="type-area-splash">area-splash: 0.3 ~ 0.6, 특정 영역 내의 적 전부를 타격할 때 (영역이 넓을수록 배율 감소)</li>
+      <li class="type-area-attack">area-attack: 0.7 ~ 1.2, 특정 영역 내의 적을 전부 타격하지만 그 최대 수의 제약이 강한 경우</li>
+      <li class="type-shot-front">shot-front: 1.2, 모든 개체가 전방 방향으로 나아갈 때</li>
+      <li class="type-shot-xway">shot-xway: 1.02 ~ 1.2, 샷의 방향이 여러 방향일 때, 이 범위 이내 적용</li>
+      <li class="type-shot-another">shot-another: 1.04 ~ 1.08, 샷의 방향이 벽에 반사되는 등의 다른 방향성을 가질 수 있을 때</li>
+      <li class="type-formula">formula: 1.0 ~ 1.2, 무기 자체가 임의 공식을 쓰는 경우 (스킬 배율은 1.2배를 초과할 수 없음)</li>
     </ol></li>
     <li>타입 세부 설정 규칙<ol>
-      <li>splash 모든 발사체로 인한 타격이 스플래시 형태일 때 적용한다. (타격 수 범위: 최소 20 ~ 최대 50)</li>
-      <li>area-splash 특정 영역을 지정하여 여러 개체에게 공격을 수행할 때 적용한다. (타격 수 범위: 최소 12 ~ 최대 50)</li>
-      <li>area-attack 특정 영역을 지정하여 공격하지만 개체 수 제한이 강함 (타격 수 범위: 2 ~ 6)</li>
-      <li>chase 스플래시가 아니며 모든 개체가 적을 추적하믄 경우 지정됨</li>
-      <li>shot-xway chase, splash, area가 아니고 shot-front가 아닌 경우 적용합니다.</li>
-      <li>formula: 아예 다른 무언가인 경우 (shot 방식도 아니란 뜻)</li>
+      <li>각 스킬 타입은 서로 섞일 수 없습니다. 스플래시, 에리어는 절대 섞일 수 없으며, shot끼리는 섞일 경우 하위 등급으로 분류가 됩니다.</li>
+      <li>우선순위: splash, area-splash, area-attack -> chase -> shot-front -> shot-xway -> shot-another</li>
+      <li>formula는 우선순위가 없으며 아예 독자적인 무언가입니다.</li>
+      <li>각 타입마다 최대 타격 수 제한이 있습니다. 이것은 타입에 따라 임의 지정됩니다.</li>
+      <li class="type-splash">splash: 모든 발사체가 스플래시 공격을 하는 경우. 다른 타입과 섞일 수 없다. (타격 수 범위: 최소 20 ~ 최대 50)</li>
+      <li class="type-area-splash">area-splash: 특정 영역을 지정하여 여러 개체에게 공격을 수행할 때 적용한다. (타격 수 범위: 최소 12 ~ 최대 50)</li>
+      <li class="type-area-attack">area-attack: 특정 영역을 지정하여 공격하지만 개체 수 제한이 강함 (타격 수 범위: 2 ~ 6)</li>
+      <li class="type-chase">chase: 스플래시가 아니며 모든 개체가 적을 추적하는 경우 지정됨</li>
+      <li class="type-shot-front">shot-front: 모든 발사체가 반드시 직선 전방 또는 후방으로 나아갈 경우 (발사 위치, 이동 범위는 상관없음)</li>
+      <li class="type-shot-xway">shot-xway: 모든 발사체가 임의 방향으로만 나아갈 경우 (발사 위치, 이동 범위는 상관없음)</li>
+      <li class="type-shot-another">shot-another: 특정 방향에 의존하지 않는 독자적 구조의 발사체 (추적 기능 없음)</li>
+      <li class="type-formula">formula: 아예 다른 무언가인 경우. 스킬 내부적인 알고리즘 규칙을 따름. 다른 타입과 호환되지 않음</li>
     </ol></li>
     <li>스킬 리스트 (그룹 1)<ol>
       <li>멀티샷: chase 1, c20</li>
@@ -219,7 +234,7 @@
       <li>래피드: shot-front 1.2, c20</li>
       <li>선단일: chase 1.1(1.0+0.1), c28</li>
       <li>한주먹: splash 0.57 (0.47+0.1), c28, maxTarget: 26</li>
-      <li>부메랑: area-attack 0.86, c24, maxTarget: 4, c24</li>
+      <li>부메랑: area-attack 0.93, c24, maxTarget: 4, c24</li>
       <li>문: forumla, 1.1(1.0+0.1) c28, maxTarget: 100</li>
     </ol></li>
     <li>스킬 리스트 (그룹 2)<ol>

@@ -975,58 +975,6 @@ class Sapia extends WeaponData {
   }
 }
 
-/**
- * 과거 코드의 잔재로 추정되며, 무기 밸런스가 변경이 되었는데도 이 부분을 확인하지 못했습니다.
- * 
- * @deprecated
- */
-class SapiaShot extends Sapia {
-  /**
-   * 옵션: 배열의 순서대로
-   * 1. targetX(타겟의 X좌표), 2. targetY(타겟의 Y좌표)
-   */
-  constructor (option = [0, 0]) {
-    super()
-    this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.sapiaShot)
-    this.id = ID.weapon.sapiaShot
-
-    this.SUBTYPE_SHOT = 493
-    this.subType = this.SUBTYPE_SHOT
-    this.targetX = option.length >= 1 ? option[0] : 0
-    this.targetY = option.length >= 2 ? option[1] : 0
-    
-    this.tempInit = false // 임시 초기화 변수 (사피아샷에서만 사용)
-    this.repeatCount = 1 // 사피아샷은 반복 공격할 수 없음.
-  }
-
-  processMove () {
-    // 이동 속도 강제 지정
-    // 생성자에서 하지 않는 이유는, 현재 좌표값을 생성 당시에는 모르기 때문
-    // 대신에, moveSpeedX와 moveSpeedY를 0으로 초기화한 것으로, 이동 속도가 없을 때,
-    // 적과 사피아샷의 위치를 기준으로 이동속도 설정
-    if (!this.tempInit) { // 초기화 진행
-      this.tempInit = true
-      this.moveSpeedX = (this.targetX - this.x) / 20
-      this.moveSpeedY = (this.targetY - this.y) / 20
-      const minSpeed = 10 // 최소 이동속도(절댓값, 부호 무시)
-
-      // 만약 한쪽 방향이라도 속도가 minSpeed이하라면 (절댓값으로 계산, 부호 무시)
-      if (Math.abs(this.moveSpeedX) <= minSpeed || Math.abs(this.moveSpeedY) <= minSpeed) {
-        // 두개 모두 속도가 3 이상이 될 때까지, 나누기 속도값을 1씩 내려서 반복하여 계산
-        // 다만, diviedSpeed가 1 이하면, 그냥 대충 대입하고 끝냄 (? 1나누기면 어차피 직접 적에게 닿는거 아님?)
-        for (let divideSpeed = 20; divideSpeed >= 2; divideSpeed--) {
-          this.moveSpeedX = (this.targetX - this.x) / divideSpeed
-          this.moveSpeedY = (this.targetY - this.y) / divideSpeed
-          if (Math.abs(this.moveSpeedX) > minSpeed || Math.abs(this.moveSpeedY) > minSpeed) break
-        }
-      }
-    }
-
-    // 실제 이동 처리
-    super.processMove()
-  }
-}
-
 class Parapo extends WeaponData {
   constructor () {
     super()
@@ -1563,23 +1511,9 @@ class R3Helljeon extends WeaponData {
   }
 }
 
-/**
- * 사용되지 않는 것으로 보임
- * @deprecated
- */
-class SubMultyshot extends WeaponData {
-  constructor () {
-    super()
-    // 멀티샷 grey를 서브웨폰으로 취급하기로 변경되었습니다. (2022/12/05)
-    // 이유는 서브웨폰 모양이 마음에 안들었고, 새로 무기를 만드는것은 귀찮기 때문입니다.
-    this.setAutoImageData(imageSrc.weapon.weapon, imageDataInfo.weapon.multyshotGrey)
-  }
-}
-
 class SkillMultyshot extends WeaponData {
   constructor () {
-    // 기본적으로 skillMultyshot은 적을 추적함.
-    // 다만 그외의 다른 특징 없음
+    // 기본적으로 skillMultyshot은 적을 추적함. 다만 그외의 다른 특징 없음
     super()
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.multyshot)
   }
@@ -2448,7 +2382,13 @@ class SkillBoomerang extends WeaponData {
   constructor () {
     super()
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.boomerang)
-    this.setWidthHeight(this.width * 3, this.height * 3)
+    this.setWidthHeight(this.width * 4, this.height * 4)
+  }
+
+  processAttack () {
+    if (this.repeatDelay.check()) {
+      this.processHitObject()
+    }
   }
 
   processMove () {
@@ -2459,10 +2399,12 @@ class SkillBoomerang extends WeaponData {
     } else if (this.elapsedFrame <= 90) {
       this.moveSpeedX -= 0
     } else if (this.elapsedFrame <= 120) {
-      this.moveSpeedX -= 0.07
+      this.moveSpeedX -= 0.14
     } else if (this.elapsedFrame >= 150) {
-      this.moveSpeedX -= 0.21
+      this.moveSpeedX -= 0.28
     }
+
+    console.log(this.moveSpeedX, this.elapsedFrame, this.repeatCount)
 
     this.degree += 10
     super.processMove()
@@ -3499,9 +3441,7 @@ dataExportWeapon.set(ID.weapon.multyshot, MultyshotData)
 dataExportWeapon.set(ID.weapon.parapo, Parapo)
 dataExportWeapon.set(ID.weapon.parapoShockWave, ParapoShockwave)
 dataExportWeapon.set(ID.weapon.sapia, Sapia)
-dataExportWeapon.set(ID.weapon.sapiaShot, SapiaShot)
 dataExportWeapon.set(ID.weapon.sidewave, Sidewave)
-// dataExportWeapon.set(ID.weapon.subMultyshot, SubMultyshot)
 dataExportWeapon.set(ID.weapon.rapid, Rapid)
 dataExportWeapon.set(ID.weapon.ring, Ring)
 dataExportWeapon.set(ID.weapon.seondanil, Seondanil)

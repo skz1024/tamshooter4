@@ -779,7 +779,7 @@ class PlayerSkillBoomerang extends PlayerSkillData {
     super()
     this.setAutoPlayerSkill(ID.playerSkill.boomerang)
     this.setSound(soundSrc.skill.skillBoomerang, null)
-    this.option = [{x: 0, y: -300}, {x: 0, y: -100}, {x: 0, y: 200}]
+    this.option = [{x: 0, y: -100}]
   }
 }
 
