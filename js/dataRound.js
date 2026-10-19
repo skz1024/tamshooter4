@@ -10643,8 +10643,9 @@ class Round3TempletePlayerOption extends FieldData {
 
     constructor () {
       super()
-      this.isChaseType = true
-      this.setMultiTarget(10) // 다수 타겟 타격 설정 가능 -> 스플래시 데미지
+      this.isChase = true
+      this.isSplash = true
+      this.maxTarget = 10 // 다수 타겟 타격 설정 가능 -> 스플래시 데미지
       this.setAutoImageData(imageSrc.round.round3_playerOption, imageDataInfo.round3_optionWeapon.skyblueShot)
     }
 

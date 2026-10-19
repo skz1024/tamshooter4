@@ -24,32 +24,43 @@ let pre = document.getElementById('pre')
 let element = document.createElement('pre')
 element.id = 'playerSkillList'
 element.textContent = '-player skillList-\n' 
-+ 'name      |group       |balance       |cool|delay|attack  |max   |shot |repeat|attack|weapon|isMulti|\n' 
-+ '          |            |type          |time|     |multiple|target|count|count |count |attack|Target |\n'
++ 'group     |name           |balance     |attack  |cool|■|shot |repeat|repeat|weapon|weapon|weapon|splash|max   |\n' 
++ '          |               |type        |multiple|time|■|count|count |delay |repeat|delay |attack|      |target|\n'
 pre?.appendChild(element)
 
 dataExportStatPlayerSkill.forEach((value) => {
-  const weaponData = dataExportStatWeapon.get(value.weaponIdList[0])
-  let name = '' + value.name.padEnd(10, ' ').slice(0, 10) + '|'
-  let group = '' + value.group.padEnd(12, ' ').slice(0, 12) + '|'
-  let balance = '' + value.balance.padEnd(14, ' ').slice(0, 14) + '|'
+  const weaponData = dataExportStatWeapon.get(value.weaponId)
+  let name = '' + value.name.padEnd(15, ' ').slice(0, 15) + '|'
+  let group = '' + value.group.padEnd(10, ' ').slice(0, 10) + '|'
+  let balance = '' + value.balance.padEnd(12, ' ').slice(0, 12) + '|'
+  let multiple = ('' + value.multiple).padEnd(8, ' ') + '|'
   let coolTime = ('' + value.coolTime).padEnd(4, ' ') + '|'
-  let delay = ('' + value.delay).padEnd(5, ' ') + '|'
-  let attackMultiple = ('' + value.multiple).padEnd(8, ' ') + '|'
-  const maxTargetNumber = (weaponData != null && weaponData.isMultiTarget) ? weaponData.maxTarget : 1
+  let shotCount = ('' + value.shotCount).padEnd(5, ' ') + '|'
+  let repeatCount = ('' + value.repeatCount).padEnd(6, ' ') + '|'
+  let weaponRepeat = '-1'.padEnd(6, ' ') + '|'
+  let wepaonDelay = '-1'.padEnd(6, ' ') + '|'
+  if (value.weapon) {
+    // 만약 repeatCount, subCount가 있으면 (r x s) 형태로 표시되고
+    // 아니라면, r 깂민 표시합니다.
+    const r = value.weapon.repeatCount
+    const s = value.weapon.subCount
+    weaponRepeat = s > 0 ? (r + 'x' + s).padEnd(6, ' ') + '|' : (r + '').padEnd(6, ' ') + '|'
+
+    const d = value.weapon.repeatDelay
+    wepaonDelay = (d + '').padEnd(6, ' ') + '|'
+  }
+  let repeatDelay = ('' + value.delay).padEnd(6, ' ') + '|'
+  let baseAttack = ('' + value.getCurrentAttack()).padEnd(6, ' ') + '|'
+  const maxTargetNumber = (weaponData != null && weaponData.isSplash) ? weaponData.maxTarget : 1
   let maxTarget = ('' + maxTargetNumber).padEnd(6, ' ') + '|'
-  let shotCount = ('' + value.shot).padEnd(5, ' ') + '|'
-  let repeatCount = ('' + value.repeat).padEnd(6, ' ') + '|'
-  let attackCount = ('' + value.hit).padEnd(6, ' ') + '|'
-  let weaponAttack = ('' + value.weaponAttack).padEnd(6, ' ') + '|'
-  let isMultiTarget = ('' + (weaponData != null ? weaponData.isMultiTarget : false)).padEnd(7, ' ') + '|'
+  let isSplash = ('' + (weaponData != null ? weaponData.isSplash : false)).padEnd(6, ' ') + '|'
   
   let color = getTypeColorClass(value.balance)
 
   // 일부 잘못된 밸런스 규칙이 있는지 검사합니다. 스플래시는 여러 개체를 동시에 공격할 수 있어야 합니다.
-  if (balance === StatPlayerSkill.balanceTypeList.SPLASH && weaponData?.isMultiTarget === false) {
+  if (balance === StatPlayerSkill.balanceTypeList.SPLASH && weaponData?.isSplash === false) {
     color = '#FF0000'
-  } else if (balance === StatPlayerSkill.balanceTypeList.AREA_SPLASH && weaponData?.isMultiTarget === false) {
+  } else if (balance === StatPlayerSkill.balanceTypeList.AREA_SPLASH && weaponData?.isSplash === false) {
     color = '#FF0000'
   }
 
@@ -58,7 +69,7 @@ dataExportStatPlayerSkill.forEach((value) => {
   element.className = color
   element.style.color = 'black'
   element.style.width = '800px'
-  element.textContent = name + group + balance + coolTime + delay + attackMultiple + maxTarget + shotCount + repeatCount + attackCount + weaponAttack + isMultiTarget
+  element.textContent = group + name + balance + multiple + coolTime + '■|' + shotCount + repeatCount + repeatDelay + weaponRepeat + wepaonDelay+ baseAttack + isSplash + maxTarget
   element.addEventListener('mouseenter', () => {
     element.style.outline = '3px solid black'
   })
@@ -71,22 +82,37 @@ dataExportStatPlayerSkill.forEach((value) => {
 let element2 = document.createElement('pre')
 element2.id = 'playerWeaponList'
 element2.textContent = '-player weaponList- (60frame = 1second), (delay = frame)\n'
-+ 'name      |group   |balance         |delay|shot |repeat|attack  |weapon|\n'
-+ '          |        |type            |     |count|count |multiple|attack|'
++ 'group     |name           |balance     |attack  |■|shot |repeat|repeat|weapon|weapon|weapon|spalsh|max   |\n' 
++ '          |               |type        |multiple|■|count|count |delay |repeat|delay |attack|      |target|\n'
 pre?.appendChild(element2)
 
 dataExportStatPlayerWeapon.forEach((value) => {
-  let name = '' + value.name.padEnd(10, ' ').slice(0, 10) + '|'
-  let group = '' + value.group.padEnd(8, ' ').slice(0, 8) + '|'
-  let balance = '' + value.balance.padEnd(16, ' ').slice(0, 16) + '|'
-  let delay = ('' + value.delay).padEnd(5, ' ') + '|'
+  let name = '' + value.name.padEnd(15, ' ').slice(0, 15) + '|'
+  let group = '' + value.group.padEnd(10, ' ').slice(0, 10) + '|'
+  let balance = '' + value.balance.padEnd(12, ' ').slice(0, 12) + '|'
+  let multiple = ('' + value.multiple).padEnd(8, ' ') + '|'
   let shotCount = ('' + value.shotCount).padEnd(5, ' ') + '|'
-  let attackMultiple = ('' + value.attackMultiple).padEnd(8, ' ') + '|'
+  let repeatCount = ('' + value.repeatCount).padEnd(6, ' ') + '|'
+  let weaponRepeat = ('').padEnd(6, ' ') + '|'
+  let wepaonDelay = '-1'.padEnd(6, ' ') + '|'
+  if (value.weapon) {
+    // 만약 repeatCount, subCount가 있으면 (r x s) 형태로 표시되고
+    // 아니라면, r 깂민 표시합니다.
+    const r = value.weapon.repeatCount
+    const s = value.weapon.subCount
+    weaponRepeat = s > 0 ? (r + 'x' + s).padEnd(6, ' ') + '|' : (r + '').padEnd(6, ' ') + '|'
+
+    const d = value.weapon.repeatDelay
+    wepaonDelay = (d + '').padEnd(6, ' ') + '|'
+  }
+  let delay = ('' + value.delay).padEnd(6, ' ') + '|'
   
-  let weaponData = dataExportStatWeapon.get(value.weaponIdList[0])
+  let weaponData = dataExportStatWeapon.get(value.weaponId)
   if (weaponData == null) return
-  let repeatCount = ('' + weaponData.repeatCount).padEnd(6, ' ') + '|'
-  let weaponAttack = ('' + value.getCurrentAttack(10000, Number(weaponData.repeatCount))).padEnd(6, ' ') + '|'
+  let weaponAttack = ('' + value.getCurrentAttack()).padEnd(6, ' ') + '|'
+  const maxTargetNumber = (weaponData != null && weaponData.isSplash) ? weaponData.maxTarget : 1
+  let maxTarget = ('' + maxTargetNumber).padEnd(6, ' ') + '|'
+  let isSplash = ('' + (weaponData != null ? weaponData.isSplash : false)).padEnd(6, ' ') + '|'
 
   // let splashTarget = weaponData.isMultiTarget ? ('' + weaponData.maxTarget).padEnd(6, ' ') + '|' : '1'.padEnd(6, ' ') + '|'
   let splashTarget = ''
@@ -98,7 +124,7 @@ dataExportStatPlayerWeapon.forEach((value) => {
   element.className = color
   element.style.width = '800px'
   element.style.color = 'black'
-  element.textContent = name + group + balance + delay + shotCount + repeatCount + attackMultiple + splashTarget + weaponAttack
+  element.textContent = group + name + balance + multiple + '■|' + shotCount + repeatCount + delay + weaponRepeat + wepaonDelay + splashTarget + weaponAttack + isSplash + maxTarget
   element.addEventListener('mouseenter', () => {
     element.style.outline = '3px solid black'
   })

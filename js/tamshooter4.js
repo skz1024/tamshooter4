@@ -1361,7 +1361,7 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
   }
 
   getPlayerWeaponIconNumber (weaponId = 0) {
-    return StatPlayerWeapon.getIconNumber(weaponId)
+    return StatPlayerWeapon.getWeaponIconNumber(weaponId)
   }
 
   displayWeaponIcon () {
@@ -1745,7 +1745,7 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
 
     for (let i = 0; i < this.skillBox.length; i++) {
       const skillId = this.skillIdList[i]
-      const iconNumber = StatPlayerSkill.getIconNumber(skillId)
+      const iconNumber = StatPlayerSkill.getSkillIconNumber(skillId)
       const x = iconNumber % 10
       const y = Math.floor(iconNumber / 10)
       const w = imageDataInfo.system.weaponSkillIcon.width
@@ -1758,7 +1758,7 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
     let iconList = UserSystem.getSkillList()
     for (let i = 0; i < this.userSelectBox.length; i++) {
       const src = imageSrc.system.skillIcon
-      const iconNumber = StatPlayerSkill.getIconNumber(iconList[i])
+      const iconNumber = StatPlayerSkill.getSkillIconNumber(iconList[i])
       const x = iconNumber % 10
       const y = Math.floor(iconNumber / 10)
       const w = imageDataInfo.system.weaponSkillIcon.width
@@ -1798,12 +1798,12 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
       || getSkill.balance === StatPlayerSkill.balanceTypeList.AREA_SPLASH
       || getSkill.balance === StatPlayerSkill.balanceTypeList.AREA_ATTACK
 
-    let splashText = isSplash ? '  max ' + getSkill.currentWeapon?.maxTarget +'' : ''
+    let splashText = isSplash ? '  max ' + getSkill.weapon?.maxTarget +'' : ''
     let skillName = `${getSkill.name} (${getSkill.balance}${splashText})`
 
     let text1A = skillName + ', CoolTime: ' + getSkill.coolTime
     let text2A = 'attack: ' + getPlayerSkill.getShotAttack(UserSystem.getAttackSkillValue())
-    let text2B = ', shot: (' + getSkill.shot + 'x' + getSkill.repeat + ')x' + getSkill.hit
+    let text2B = ', shot: (' + getSkill.shotCount + 'x' + getSkill.repeatCount + ')x'
 
     digitalDisplay(text1A, this.x, this.y + this.height - 40)
     digitalDisplay(text2A + text2B, this.x, this.y + this.height - 20)

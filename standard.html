@@ -46,10 +46,11 @@
     <li><a href="#weapon">무기</a></li>
     <li><a href="#skills">스킬</a></li>
     <li><a href="#field">필드</a></li>
+    <li><a href="#weapon-object">무기 오브젝트, 플레이어 무기, 플레이어 스킬</a></li>
     <li><a href="#extend"></a>표준은 계속 확장될 것이다.</li>
   </ol>
   <ol>
-    <li><a href="statView.html">무기, 스킬, 라운드, 레벨 등의 수치 표</a></li>
+    <li><a href="#statView.html">무기, 스킬, 라운드, 레벨 등의 수치 표</a></li>
   </ol>
 </nav>
 
@@ -192,10 +193,10 @@
     <li>타입 배율 표준 규칙<ol>
       <li>스킬 배율은 어떠한 이유를 불문하고 1.2배를 초과할 수 없습니다. (28초 쿨타임 보너스 배율 제외)</li>
       <li>28초 쿨타임을 가진 스킬은 +0.1배율을 보너스로 추가합니다.</li>
-      <li class="type-chase">chase: 1.0, 모든 발사체가 적을 추적하는 경우. (추적 실패 여부 무관)</li>
       <li class="type-splash">splash: 0.4 ~ 0.5, 스플래시 공격을 하는 무기는 모든 개체가 스플래시여야만 한다.</li>
       <li class="type-area-splash">area-splash: 0.3 ~ 0.6, 특정 영역 내의 적 전부를 타격할 때 (영역이 넓을수록 배율 감소)</li>
       <li class="type-area-attack">area-attack: 0.7 ~ 1.2, 특정 영역 내의 적을 전부 타격하지만 그 최대 수의 제약이 강한 경우</li>
+      <li class="type-chase">chase: 1.0, 모든 발사체가 적을 추적하는 경우. (추적 실패 여부 무관)</li>
       <li class="type-shot-front">shot-front: 1.2, 모든 개체가 전방 방향으로 나아갈 때</li>
       <li class="type-shot-xway">shot-xway: 1.02 ~ 1.2, 샷의 방향이 여러 방향일 때, 이 범위 이내 적용</li>
       <li class="type-shot-another">shot-another: 1.04 ~ 1.08, 샷의 방향이 벽에 반사되는 등의 다른 방향성을 가질 수 있을 때</li>
@@ -269,6 +270,54 @@
       <li>그 다음 층은 FieldState, FieldSystem 입니다.</li>
       <li>필드는 메인 시스템을 참고할 수 없습니다.</li>
       <li>필드는 유저 시스템을 참고할 수 있습니다.</li>
+    </ol></li>
+  </ul>
+</section>
+
+<section id="weapon-object">
+  <h2>8. 스탯: 무기 오브젝트, 플레이어 무기, 플레이어 스킬</h2>
+  <ul>
+    <li>기본 정보<ol>
+      <li>이 항목은 이들의 스탯 값에 대한 설명입니다.</li>
+      <li>데이터 참조 순서: PlayerWeapon, PlayerSkill -> Weapon (참조 대상)</li>
+      <li>Weapon: 필드에서 사용하는 무기 오브젝트의 스탯을 정의합니다.</li>
+      <li>PlayerWeapon: 플레이어가 사용하는 무기 종류에 대한 스탯을 정의합니다.</li>
+      <li>PlayerSkill: 플레이어가 사용하는 스킬 종류에 대한 스탯을 지정합니다.</li>
+    </ol></li>
+    <li>Weapon<ol>
+      <li>repeatCount: 1개체가 가능한 공격 횟수</li>
+      <li>repeatDelay: 1개체가 다음 공격을 반복하는데 걸리는 지연 시간, 무기 알고리즘에 따라 적용 방식은 다를 수 있습니다.</li>
+      <li>subCount: 무기가 서브 무기를 재생성 하는 수</li>
+      <li>subId: 서브무기에 해당하는 ID</li>
+      <li>isChase: 대상을 추적하는 경우</li>
+      <li>isSplash: 1개체가 1번 공격할 때 다수 개체를 타격할 수 있는 경우</li>
+      <li>maxTarget: 다수 개체를 타격할 수 있을 때, 타격 가능한 최대 개체 수</li>
+    </ol></li>
+    <li>PlayerWeapon<ol>
+      <li>스탯 값의 기준은 1회 로직이 발동되었을 때 어떤 일이 벌어지는가를 표현합니다.</li>
+      <li>group: 그룹 (해금용도로 사용될 수 있음)</li>
+      <li>name: 무기의 이름 (문자열로 설정)</li>
+      <li>balanceType: 해당 무기에 적용되는 기준 밸런스 타입</li>
+      <li>multiple: 해당 무기에 적용되는 배율 값. 1은 100%를 의미.</li>
+      <li>shotCount: 로직이 실행되고 1회 반복될 때 동시 발사되는 개수</li>
+      <li>repeatCount: 로직을 연속적으로 반복하는 횟수</li>
+      <li>repeatDelay: 다음 반복까지의 지연 프레임</li>
+      <li>weaponRepeat: 무기 개체가 공격하는 횟수. (무기 개체의 repeatCount와 동일)</li>
+      <li>weaponDelay: 무기 개체는 다음 공격을 반복하기 위한 프레임 (무기 개체의 repeatDelay)</li>
+      <li>weaponSubCount: 무기 개체가 서브 무기를 생성할 수 있는 개수</li>
+    </ol></li>
+    <li>PlayerSkill<ol>
+      <li>PlayerWeapon과 구조는 동일하지만, 스킬은 다음 옵션도 사용합니다.</li>
+      <li>coolTime: 해당 스킬을 사용한 후 다시 사용할 수 있을 때까지 걸리는 대기 시간(초 단위, 쿨다운).</li>
+    </ol></li>
+    <li>데미지 공식<ol>
+      <li>무기 1개체 데미지 공식 = 전체 데미지 / 나누기 수</li>
+      <li>weaponAttack = totalDamage / divideCount </li>
+      <li>totalDamage(weapon):delay / 60 * 0.16 * multiple </li>
+      <li>totalDamage(skill): coolTime * 0.21 * (multiple + C)</li>
+      <li>C: coolTime이 28 이상일 때 0.1 아닐 경우 0</li>
+      <li>divideCount: shotCount * repeatCount * weaponRepeat * subCount</li>
+      <li>divideCount를 구성하는 각 변수가 0 이하일 경우, 해당 변수를 1로 치환합니다. 이는 0 나누기를 방지하기 위한 처리입니다.</li>
     </ol></li>
   </ul>
 </section>

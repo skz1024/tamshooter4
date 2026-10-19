@@ -427,26 +427,6 @@ export class fieldState {
   }
 
   /**
-   * 해당 함수는 createEnemyObject랑 똑같은 기능을 수행하기 때문에 제외되었습니다.
-   * 
-   * 더이상 사용하지 마세요.
-   * 
-   * 보스를 생성하는데, 해당 보스 적 객체의 데이터랑 연결할 수 있도록 return이 추가되었습니다.
-   * @deprecated
-   */
-  static createEnemyBoss (typeId = 0, x = 0, y = 0) {
-    const GetClass = tamshooter4Data.getEnemy(typeId)
-    if (GetClass == null) return
-
-    const inputData = new GetClass()
-    inputData.createId = this.getNextCreateId()
-    inputData.id = typeId
-    inputData.setPosition(x, y)
-    this.enemyObject.push(inputData)
-    return inputData // 보스로 생성된 적 객체는 리턴해서 객체를 가져올 수 있음.
-  }
-
-  /**
    * 이펙트를 생성합니다.
    * 
    * 이펙트에 상세한 요소를 넣고싶다면, 아예 CustomEffect 또는 CustomEditEffect를 상속받아서 구현하세요.
@@ -1024,6 +1004,12 @@ class FieldRequests {
 class fieldSave {
   /** 필드에 저장할 int32 객체, 총 256 * 64 * 4바이트 = 65536바이트 */
   static array = new Int32Array(256 * 64)
+
+  /** 필드 저장 데이터 리셋 */
+  static reset () {
+    fieldSave.array.fill(0)
+  }
+
   static HEADER_OFFSET = 0
   static HEADER_LENGTH = 16
   static FIELD_OFFSET = 16
@@ -1285,6 +1271,7 @@ export class fieldSystem {
     // 이 과정에서 필드 데이터에 대해 초기화가 진행됩니다.
     this.roundImageSoundLoad() // 라운드 데이터 로드
 
+    
     this.roundId = roundId
     this.message = this.messageList.STATE_FIELD
     fieldState.allObjectReset()
@@ -1788,12 +1775,12 @@ export class fieldSystem {
     fieldSave.array[fe.START_INDEX + fe.TOTAL_SCORE] = this.totalScore
     fieldSave.array[fe.START_INDEX + fe.ENIMATION_FRAME] = this.enimationFrame == null ? 0 : this.enimationFrame
     fieldSave.array[fe.START_INDEX + fe.EXIT_DELAY_COUNT] = this.exitDelayCount
-    for (let i = 0; i < this.fieldItemIdList.length && i < fe.MAX_LENGTH - 8; i++) {
+    for (let i = 0; i < this.fieldItemIdList.length && i < (fe.MAX_LENGTH - fe.FIELD_ITEM_LIST) / 2; i++) {
       const FINDEX = fe.START_INDEX + fe.FIELD_ITEM_LIST + (i * 2)
       fieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET] = this.fieldItemIdList[i]
       fieldSave.array[FINDEX + fe.FIELD_ITEM_COUNT_OFFSET] = this.fieldItemCountList[i]
     }
-    
+
     //round
     if (this.round == null) {
       fieldSave.array[rd.START_INDEX + rd.ID] = 0
@@ -1932,6 +1919,11 @@ export class fieldSystem {
     this.fieldSystemSaveDataV055()
   }
 
+  /** 필드 상태를 불러옵니다. */
+  static fieldSystemLoadData () {
+    this.fieldSystemLoadDataV055()
+  }
+
   static fieldSystemLoadDataV055 () {
     const hs = fieldSave.index.header
     const pl = fieldSave.index.player
@@ -1957,12 +1949,12 @@ export class fieldSystem {
     this.totalScore = fieldSave.array[fe.START_INDEX + fe.TOTAL_SCORE]
     this.enimationFrame = fieldSave.array[fe.START_INDEX + fe.ENIMATION_FRAME]
     this.exitDelayCount = fieldSave.array[fe.START_INDEX + fe.EXIT_DELAY_COUNT]
-    for (let i = 0; i < fe.MAX_LENGTH - 8; i++) {
+    for (let i = 0; i < (fe.MAX_LENGTH - fe.FIELD_ITEM_LIST) / 2; i++) {
       // 아이템 배열은 0부터 시작하므로, 로드한 이후 새로운 데이터를 삽입해서 추가해야 합니다.
       const FINDEX = fe.START_INDEX + fe.FIELD_ITEM_LIST + (i * 2)
       if (fieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET] === 0) continue
 
-      this.fieldItemIdList.push(fieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET])
+      this.fieldItemIdList.push(fieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET])                                                               
       this.fieldItemCountList.push(fieldSave.array[FINDEX + fe.FIELD_ITEM_COUNT_OFFSET])
     }
 
@@ -2120,10 +2112,5 @@ export class fieldSystem {
 
     // 라운드의 일부 요소를 처리하기 위해서 1프레임 강제 진행
     this.round.process() 
-  }
-
-  /** 필드 상태를 불러옵니다. */
-  static fieldSystemLoadData () {
-    this.fieldSystemLoadDataV055()
   }
 }

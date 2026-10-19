@@ -1,7 +1,7 @@
 //@ts-check
 
 import { ID } from "./dataId.js"
-import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon } from "./dataStat.js"
+import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatWeapon, StatPlayerWeapon } from "./dataStat.js"
 import { dataExportWeapon, WeaponData } from "./dataWeapon.js"
 import { soundSrc } from "./soundSrc.js"
 import { game, userSystem } from "./game.js"
@@ -32,18 +32,24 @@ let graphicSystem = game.graphic
  */
  export class PlayerWeaponData {
   constructor () {
-    /** 사용하는 플레이어무기의 id */
-    this.playerWeaponId = 0
+    /** 사용하는 플레이어무기의 id */ this.playerWeaponId = 0
 
-    /**
-     * 샷 한번 발사에 지연시간(프레임)
-     * 해당 프레임만큼 지연 후 다음 무기를 발사 할 수 있음.
-     * 
+    /** 샷 한번 발사에 지연시간(프레임). 해당 프레임만큼 지연 후 다음 무기를 발사 할 수 있음.  
      * 참고사항 (딜레이 D - 초당 발사 횟수와의 관계 S) D3이하는 잘 사용하지 않음.
      * 
-     * D60 - S1, D30 - S2, D20 - S3, D15 - S4, D12 - S5, D10 - S6, D6 - S10, D5 - S12, D4 - S15
-     */
+     * D60 - S1, D30 - S2, D20 - S3, D15 - S4, D12 - S5, D10 - S6, D6 - S10, D5 - S12, D4 - S15 */
     this.delay = 60
+
+    /**
+     * 스킬의 쿨타임 (무기에서는 값은 있지만 사용하진 않습니다.)
+     * 참고: 스킬들은 쿨타임 시간만큼의 초당 데미지를 수 초내에 주는 방식입니다.
+     * 예를들어, 20초짜리 스킬은 20초분량의 데미지를 줍니다. 다만, 스킬 지속시간이 굉장히 짧으므로
+     * 순간적으로 주는 데미지가 많습니다.
+     * 스킬 시간과 쿨타임의 관계의 기준은 이렇습니다. (일부 무기는 예외)
+     * 쿨타임: 20초, 24초, 28초
+     * 유지시간: 2~4초, 3~5초, 3~6초
+     */
+    this.coolTime = 20
 
     /**
      * 한번 무기를 발사할 때 동시에 발사되는 개수
@@ -60,59 +66,46 @@ let graphicSystem = game.graphic
      * 
      * 참고: 최종 공격력은 소수점 버림하여 계산합니다.
      */
-    this.attackMultiple = 1
-
-    /**
-     * (모든 무기는 1회 발사한다고 가정됨)
-     * 
-     * 무기에 따른 공격횟수 (발사 횟수랑 다르고, 무기 객체가 공격하는 횟수임.)
-     * (명시적인 수치이나, 제작자의 실수로 로직과 다른 값이 명시될 수 있음.)
-     * 
-     * 지금은 왠만하면 무기 객체를 직접 참고하기 때문에, 해당하는 실수는 가능성이 낮음.
-     * 
-     * @deprecated 
-     */
-    this.attackCount = 1
+    this.multiple = 1
 
     /** 
      * 추가로 입력할 옵션. 일부 무기는 옵션을 넣을 수 있기 때문에 이 값이 필요.  
      * 
      * 이 값은 배열 순회를 하며, 한개의 값을 입력하면 여러개의 샷이 그 한개의 옵션만 적용한 상태가 됩니다.
-     * @type {any[]}
+     * @type {number[]}
      */
     this.option = []
 
     /** 
-     * 추가로 입력할 위치(상대값), 무기를 특정 위치에 발사하고 싶을 때 사용
-     * 
-     * 이 값은 배열 순회를 하며, 한개의 값을 입력하면 여러개의 샷이 한개의 위치로만 발사됩니다.
-     * 
+     * 추가로 입력할 위치(상대값), 무기를 특정 위치에 발사하고 싶을 때 사용  
+     * 이 값은 배열 순회를 하며, 한개의 값을 입력하면 여러개의 샷이 한개의 위치로만 발사됩니다.  
      * 아무것도 입력되지 않으면, 기본적으로 위에서 아래로 배치됩니다.
      * @type {{x: number, y: number}[]}
      */
     this.position = []
 
-    /**
-     * 해당하는 무기의 idList 각 idList마다 교차적으로 반복하면서 사용
-     * @type {number[]}
-     */
-    this.weaponIdList = []
+    /** 해당하는 무기의 ID, 기존에는 여러개의 ID를 사용했으나, 이젠 option값으로 대체되어
+     * 더이상 여러 개의 ID를 사용하지 않습니다. @type {number} */
+    this.weaponId = 0
 
-    /**
-     * 각 샷별로, 공격력 배율을 다르게 하고 싶다면, 이 배열에 값을 입력하세요. 아무것도 없다면 1로 간주합니다.
-     * 
-     * 이 값은 각 배열마다 교차적으로 반복하면서 사용됨.
-     * @type {number[]}
-     */
-    this.shotMultiple = []
+    /** @type {WeaponData | null} */
+    this.weapon = null
+
+    /** 무기가 서브 무기를 생성하는 개수, 데미지 계산에 사용됨 */
+    this.weaponSubCount = 0
+
+    /** @type {StatPlayerWeapon | null} */
+    this.statPlayerWeapon = null
+
+    /** 1개체 무기의 로직 반복 횟수 @type {number} */
+    this.repeatCount = 0
   }
 
   /**
    * 무기 생성 함수: 이 로직에서만 무기를 생성해 주세요.
    * 그리고 무기 생성은 fieldState.createWeaponObject 함수를 사용합니다.
-   * 경고: 이 함수를 한번 사용했을 때 attackMultiple만큼 공격력을 가진 무기 객체가 발사되어야 합니다.
-   * 즉 create함수가 무기를 1개 생성한다면, 생성한 무기의 공격력의 %는 100%가 되어야 합니다.
    * 
+   * 참고: repeatCount에 대한 반복 소환은 Field에서 처리해야 합니다.  
    * 참고: 이 함수는 더이상 재구성할 필요가 없습니다. 무기 발사에 대한 변수를 넣고 싶다면
    * insertOption, position 변수를 변경해주세요.
    *
@@ -125,7 +118,6 @@ let graphicSystem = game.graphic
     for (let i = 0; i < this.shotCount; i++) {
       let insertX = 0
       let insertY = 0
-      const currentShotAttack = this.shotMultiple.length === 0 ? shotAttack : Math.floor(shotAttack * this.shotMultiple[i % this.shotMultiple.length])
 
       if (this.position.length >= 1) {
         insertX = this.position[i % this.position.length].x
@@ -134,13 +126,13 @@ let graphicSystem = game.graphic
         insertY = Math.floor((-100 / 2) + (100 / this.shotCount * i))
       }
 
-      let option = null
+      let optionValue = undefined
       if (this.option.length >= 1) {
-        option = this.option[i % this.option.length]
+        optionValue = this.option[i % this.option.length]
       }
 
-      let selectId = this.weaponIdList[i % this.weaponIdList.length]
-      this.createFieldObject(selectId, x + insertX, y + insertY, currentShotAttack, option)
+      let selectId = this.weaponId
+      this.createFieldObject(selectId, x + insertX, y + insertY, shotAttack, optionValue)
     }
   }
 
@@ -159,31 +151,28 @@ let graphicSystem = game.graphic
   }
 
   /** 
-   * 해당 무기에서 사용하는 새로운 무기를 추가합니다. 
-   * 
+   * 무기 ID를 기준으로 플레이어 무기 스탯과 무기 데이터를 설정합니다.  
    * 해당 함수는 반드시 실행해야 합니다.
-   * @param {number} playerWeaponId 무기의 ID (ID 클래스 참고)
+   * @param {number} weaponId 무기의 ID (ID 클래스 참고)
    */
-  setAutoPlayerWeapon (playerWeaponId) {
-    this.playerWeaponId = playerWeaponId
-
-    let stat = dataExportStatPlayerWeapon.get(playerWeaponId)
+  setAuto (weaponId) {
+    const stat = dataExportStatPlayerWeapon.get(weaponId)
     if (stat == null) return
     
-    this.delay = stat.delay
-    this.shotCount = stat.shotCount
-    this.attackMultiple = stat.attackMultiple
-    this.weaponIdList = stat.weaponIdList
-
-    const wepaonData = dataExportWeapon.get(stat.weaponIdList[0])
+    const wepaonData = dataExportWeapon.get(stat.weaponId)
     if (wepaonData == null) return
 
-    /** 
-     * 첫번째 무기는 무기의 기본 객체로 지정됩니다.
-     * @type {WeaponData} 
-     */
-    this.weapon = new wepaonData()
-    this.weapon.id = stat.weaponIdList[0] // 무기의 id 입력
+    this.playerWeaponId = weaponId
+    
+    this.statPlayerWeapon = stat
+    this.repeatCount = stat.repeatCount
+    this.delay = stat.delay
+    this.shotCount = stat.shotCount
+    this.multiple = stat.multiple
+    this.weaponId = stat.weaponId
+
+    this.weapon = new wepaonData() // 무기 데이터가 존재하면 신규 무기를 생성
+    this.weapon.id = stat.weaponId // 무기의 id 입력
     this.weapon.inputStat() // 무기에 해당하는 스탯 입력
   }
 
@@ -204,14 +193,10 @@ let graphicSystem = game.graphic
    * @param {number} multiple 배율 (최종 공격력의 배율)
    */
   getShotAttack (baseAttack, multiple = 1) {
-    let repeatCount = this.weapon != null ? this.weapon.repeatCount : 1
-    if (repeatCount <= 0) repeatCount = 1 // 0 나누기 금지 
+    if (this.statPlayerWeapon == null) return
+    if (this.weapon == null) return
 
-    const secondPerCount = 60 / this.delay
-    const totalDivied = this.shotCount * this.attackCount * repeatCount
-    const totalMultiple = this.attackMultiple * multiple
-    const resultAttack = (baseAttack * totalMultiple) / (secondPerCount * totalDivied)
-    return Math.floor(resultAttack)
+    return this.statPlayerWeapon.getCurrentAttack(baseAttack * multiple)
   }
 }
 
@@ -219,7 +204,7 @@ let graphicSystem = game.graphic
 class PlayerMultyshot extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.multyshot)
+    this.setAuto(ID.playerWeapon.multyshot)
     this.option = [0, 1, 2, 3, 4, 5]
     this.position = [{x: 0, y: 10}, {x: 0, y: -10}, {x: 0, y: -5}, {x: 0, y: 5}, {x: -15, y: -15}, {x: -15, y: 15}]
   }
@@ -229,15 +214,7 @@ class PlayerMultyshot extends PlayerWeaponData {
 class PlayerMissile extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.missile)
-    // 편의상 weaponListID를 다시 이렇게 변경했습니다.
-    let setIdList = [
-      this.weaponIdList[0],
-      this.weaponIdList[0],
-      this.weaponIdList[1],
-      this.weaponIdList[1]
-    ]
-    this.weaponIdList = setIdList
+    this.setAuto(ID.playerWeapon.missile)
 
     // -1은 다른 타입이 옵션을 사용하기 때문에 구분을 위해 넣은 값이며 숫자 자체에는 의미가 없습니다.
     this.option = [-1, -1, 0, 1]
@@ -251,7 +228,7 @@ class PlayerMissile extends PlayerWeaponData {
 class PlayerArrow extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.arrow)
+    this.setAuto(ID.playerWeapon.arrow)
     this.position = [{x: 0, y: -10}, {x: 0, y: -10}]
     this.option = [0, 1]
   }
@@ -263,16 +240,8 @@ class PlayerArrow extends PlayerWeaponData {
 class PlayerLaser extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.laser)
-    
-    // 편의상 id 구조를 변경
-    let setId = [
-      this.weaponIdList[0],
-      this.weaponIdList[0],
-      this.weaponIdList[1],
-      this.weaponIdList[1]
-    ]
-    this.weaponIdList = setId
+    this.setAuto(ID.playerWeapon.laser)
+    this.option = [0, 0, 1, 1]
   }
 
   create (attack = 0, x = 0, y = 0) {
@@ -288,7 +257,7 @@ class PlayerLaser extends PlayerWeaponData {
 class PlayerSapia extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.sapia)
+    this.setAuto(ID.playerWeapon.sapia)
   }
 }
 
@@ -296,7 +265,7 @@ class PlayerSapia extends PlayerWeaponData {
 class PlayerParapo extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.parapo)
+    this.setAuto(ID.playerWeapon.parapo)
   }
 }
 
@@ -304,9 +273,10 @@ class PlayerParapo extends PlayerWeaponData {
 class PlayerBlaster extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.blaster)
+    this.setAuto(ID.playerWeapon.blaster)
     this.position = [{x: 0, y: -18}, {x: 0, y: 0}]
     this.shotMultiple = [1.2, 0.8]
+    this.option = [0, 1]
   }
 }
 
@@ -314,7 +284,7 @@ class PlayerBlaster extends PlayerWeaponData {
 class PlayerSidewave extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.sidewave)
+    this.setAuto(ID.playerWeapon.sidewave)
     this.option = [0, 1, 2, 3, 4, 5, 6, 7]
     this.position = [{x: 0, y: 12 - 30}, {x: 0, y: 8 - 30}, {x: 0, y: 4 - 30}, {x: 0, y: -4 - 30},
      {x: 0, y: -8 - 30}, {x: 0, y: -12 - 30}, {x: 0, y: + 4}, {x: 0, y: -4 - 30}]
@@ -324,7 +294,7 @@ class PlayerSidewave extends PlayerWeaponData {
 class PlayerRapid extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.rapid)
+    this.setAuto(ID.playerWeapon.rapid)
     this.position = [{x: 0, y: -11}, {x: 0, y: 0}, {x: 0, y: + 11}]
   }
 }
@@ -332,7 +302,7 @@ class PlayerRapid extends PlayerWeaponData {
 class PlayerRing extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.ring)
+    this.setAuto(ID.playerWeapon.ring)
     this.option = [0, 1, 2, 3, 4, 5, 6, 7]
   }
 }
@@ -340,35 +310,35 @@ class PlayerRing extends PlayerWeaponData {
 class PlayerSeondanil extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.seondanil)
+    this.setAuto(ID.playerWeapon.seondanil)
   }
 }
 
 class PlayerBoomerang extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.boomerang)
+    this.setAuto(ID.playerWeapon.boomerang)
   }
 }
 
 class PlayerKalnal extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.kalnal)
+    this.setAuto(ID.playerWeapon.kalnal)
   }
 }
 
 class PlayerCogwheel extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.cogwheel)
+    this.setAuto(ID.playerWeapon.cogwheel)
   }
 }
 
 class PlayerYeonsai extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.yeonsai)
+    this.setAuto(ID.playerWeapon.yeonsai)
     this.option = [0, 1, 2, 3, 4, 5]
     this.position = [{x: -40, y: -20}, {x: -40, y: 0}, {x: -40, y: 20}, {x: -20, y: -20}, {x: -20, y: 0}, {x: -20, y: 20}]
   }
@@ -377,7 +347,7 @@ class PlayerYeonsai extends PlayerWeaponData {
 class PlayerSabangtan extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.sabangtan)
+    this.setAuto(ID.playerWeapon.sabangtan)
     this.option = [0, 1, 2, 3]
     this.position = [{x: -10, y: -20}, {x: -10, y: -20}, {x: -10, y: -20}, {x: -10, y: -20}]
   }
@@ -386,21 +356,21 @@ class PlayerSabangtan extends PlayerWeaponData {
 class PlayerR3_towerPink extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.r3TowerPink)
+    this.setAuto(ID.playerWeapon.r3TowerPink)
   }
 }
 
 class PlayerR3_towerPurple extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.r3TowerPurple)
+    this.setAuto(ID.playerWeapon.r3TowerPurple)
   }
 }
 
 class PlayerR3_towerHelljeon extends PlayerWeaponData {
   constructor () {
     super()
-    this.setAutoPlayerWeapon(ID.playerWeapon.r3Helljeon)
+    this.setAuto(ID.playerWeapon.r3Helljeon)
     this.option = [1, 0, 0, 1] // 0번 노멀, 1번 유도
   }
 }
@@ -408,44 +378,9 @@ class PlayerR3_towerHelljeon extends PlayerWeaponData {
 /**
  * 플레이어 스킬 데이터
  */
-export class PlayerSkillData {
+export class PlayerSkillData extends PlayerWeaponData {
   constructor () {
-    /**
-     * 스킬의 공격력 배율 (기본값 1)
-     * 이 배율이 높을수록 해당 스킬은 더 높은 데미지를 줄 수 있음.
-     */
-    this.attackMultiple = 1
-
-    /**
-     * 스킬을 사용하고 스킬에 대한 무기 발사를 1회 반복할 때, 동시에 발사되는 개수
-     */
-    this.shotCount = 1
-
-    /**
-     * 스킬을 사용하고, 무기 발사를 반복하는 횟수
-     */
-    this.repeatCount = 1
-
-    /**
-     * 각 무기당 공격 횟수 (일부 무기는 적을 여러번 공격할 수 있음.)
-     */
-    this.attackCount = 1
-
-    /**
-     * 스킬의 쿨타임
-     * 참고: 스킬들은 쿨타임 시간만큼의 초당 데미지를 수 초내에 주는 방식입니다.
-     * 예를들어, 20초짜리 스킬은 20초분량의 데미지를 줍니다. 다만, 스킬 지속시간이 굉장히 짧으므로
-     * 순간적으로 주는 데미지가 많습니다.
-     * 스킬 시간과 쿨타임의 관계의 기준은 이렇습니다. (일부 무기는 예외)
-     * 쿨타임: 20초, 24초, 25초, 28초, 30초
-     * 유지시간: 2~3초, 3~4초, 3~4초, 4~5초, 4~5초
-     */
-    this.coolTime = 20
-
-    /**
-     * 스킬을 사용하고, 무기가 반복적으로 작업하기까지의 지연프레임
-     */
-    this.delay = 60
+    super()
 
     /**
      * 스킬이 바로 나가는게 아니라, 대기 시간 이후에 나간다면, 이 값을 설정해주세요. 단위는 프레임입니다.
@@ -465,19 +400,11 @@ export class PlayerSkillData {
      */
     this.shotSound = null
 
-    /**
-     * 해당 스킬에서 사용하는 무기의 idList 이 값이 없으면 무기는 발사되지 않습니다.
-     * 
-     * 배열 순회방식으로 교차하여 반복 (배열 개수가 2개라면, 2개를 번갈아가면서 발사한다는 뜻)
-     * @type {number[]}
-     */
-    this.weaponIdList = []
-
     /** 
      * 추가로 입력할 옵션. 일부 무기는 옵션을 넣을 수 있기 때문에 이 값이 필요.  
      * 
      * 이 값은 배열 순회를 하며, 한개의 값을 입력하면 여러개의 샷이 그 한개의 옵션만 적용한 상태가 됩니다.
-     * @type {any[]}
+     * @type {number[]}
      */
      this.option = []
 
@@ -493,7 +420,8 @@ export class PlayerSkillData {
   }
 
   /**
-   * 스킬을 사용할 때 무기를 생성하는 함수
+   * 스킬을 사용할 때 무기를 생성하는 함수  
+   * 참고: repeatCount에 대한 반복 소환은 Field에서 처리해야 합니다.  
    * @param {number} attack 플레이어의 공격력
    * @param {number} x 스킬의 x좌표
    * @param {number} y 스킬의 y좌표
@@ -512,45 +440,36 @@ export class PlayerSkillData {
         insertY = Math.floor((-100 / 2) + (100 / this.shotCount * i))
       }
 
-      let option = null
+      let option = 0
       if (this.option.length >= 1) {
         option = this.option[i % this.option.length]
       }
 
-      let selectId = this.weaponIdList[i % this.weaponIdList.length]
-      this.createFieldObject(selectId, x + insertX, y + insertY, shotAttack, option)
+      this.createFieldObject(this.weaponId, x + insertX, y + insertY, shotAttack, option)
     }
   }
 
-  /** 무기를 필드에 생성시켜주는 역할을 하는 핸들러 함수입니다.
-   * 생성 함수를 주입하기 전 까지 사용할 수 없습니다.
-   * @type {CreateWeaponFieldObjectCallback} */
-  createFieldObject() {
-    throw new Error('이 함수는 필드 시스템에서 함수를 주입받기 전 까지 사용할 수 없습니다!');
-  }
-
-  /** 필드의 생성 함수를 이 핸들러에 주입시켜주세요
-   *  @param {CreateWeaponFieldObjectCallback} fn */
-  setCreateHandler(fn) {
-    this.createFieldObject = fn;
-  }
-
-  /**
-   * 플레이어 스킬을 자동 설정합니다. (이 함수는 반드시 실행해야 합니다.)
-   * @param {number} playerSkillId 플레이어스킬의 id
+  /** 
+   * 무기 ID를 기준으로 플레이어 무기 스탯과 무기 데이터를 설정합니다.  
+   * 해당 함수는 반드시 실행해야 합니다.
+   * @param {number} weaponId 무기의 ID (ID 클래스 참고)
    */
-  setAutoPlayerSkill(playerSkillId) {
-    let stat = dataExportStatPlayerSkill.get(playerSkillId)
+  setAuto (weaponId) {
+    const stat = dataExportStatPlayerSkill.get(weaponId)
+    if (stat == null) return
 
-    if (stat != null) {
-      this.coolTime = stat.coolTime
-      this.attackCount = stat.hit
-      this.attackMultiple = stat.multiple
-      this.delay = stat.delay
-      this.repeatCount = stat.repeat
-      this.shotCount = stat.shot
-      this.weaponIdList = stat.weaponIdList
-    }
+    const wepaonData = dataExportWeapon.get(stat.weaponId)
+    if (wepaonData == null) return
+
+    this.playerWeaponId = weaponId
+    
+    this.statPlayerWeapon = stat
+    this.delay = stat.delay
+    this.shotCount = stat.shotCount
+    this.repeatCount = stat.repeatCount
+    this.multiple = stat.multiple
+    this.weaponId = stat.weaponId
+    this.weapon = new wepaonData()
   }
 
   /**
@@ -561,26 +480,6 @@ export class PlayerSkillData {
   setSound (useSound = null, shotSound = null) {
     this.useSound = useSound
     this.shotSound = shotSound
-  }
-
-  /**
-   * 한 발당 샷의 공격력을 얻습니다. 공격력 계산의 최종 결과값은 소수점 버림
-   * 참고: 무기랑 공격 계산식이 약간 다릅니다.(자세한건 코드 주석 참고)
-   * @param {number} baseAttack 유저의 공격력
-   * @param {number} multiple 무기 공격이 여러종류가 합쳐질때, 배율 비중을 나눠주기 위해 사용하는 변수
-   * @returns
-   */
-  getShotAttack (baseAttack, multiple = 1) {
-    // 기본 공식 (최종 결과값은 소수점 버림)
-    // 최종 공격력 = (유저 공격력 / (샷 횟수 * 반복 횟수)) * (공격력 배율 * 쿨타임 * 기본 배율 0.8)
-    // totalDivied = 샷 횟수 * 반복횟수 // 유저 공격력을 나눠야 하는 값
-    // totalMultiple = 공격배율 * 배율 * 기본배율 * 쿨타임 // 총 배율 값입니다.
-    // resultAttack = (유저 공격력 * 총 배율) / 나누는 값
-
-    const totalDivied = this.shotCount * this.repeatCount * this.attackCount
-    const totalMultiple = this.attackMultiple * multiple * this.coolTime
-    const resultAttack = (baseAttack * totalMultiple) / totalDivied
-    return Math.floor(resultAttack)
   }
 
   /**
@@ -613,7 +512,7 @@ export class PlayerSkillData {
 class PlayerSkillMultyshot extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.multyshot)
+    this.setAuto(ID.playerSkill.multyshot)
     this.setSound(soundSrc.skill.skillMultyshotUse, soundSrc.skill.skillMultyshotShot)
     this.beforeDelay = 30
   }
@@ -623,7 +522,7 @@ class PlayerSkillMultyshot extends PlayerSkillData {
 class PlayerSkillMissile extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.missile)
+    this.setAuto(ID.playerSkill.missile)
     this.setSound(null, soundSrc.skill.skillMissileShot)
   }
 }
@@ -632,7 +531,7 @@ class PlayerSkillMissile extends PlayerSkillData {
 class PlayerSkillArrow extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.arrow)
+    this.setAuto(ID.playerSkill.arrow)
     this.option = [0, 1]
     this.setSound(null, soundSrc.skill.skillArrowShot)
   }
@@ -642,7 +541,7 @@ class PlayerSkillArrow extends PlayerSkillData {
 class PlayerSkillLaser extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.laser)
+    this.setAuto(ID.playerSkill.laser)
     this.setSound(null, soundSrc.skill.skillLaserShot)
   }
 }
@@ -651,7 +550,7 @@ class PlayerSkillLaser extends PlayerSkillData {
 class PlayerSkillSapia extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.sapia)
+    this.setAuto(ID.playerSkill.sapia)
     this.setSound(soundSrc.skill.skillSapiaWeapon, null)
   }
 }
@@ -662,7 +561,7 @@ class PlayerSkillSapia extends PlayerSkillData {
 class PlayerSkillParapo extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.parapo)
+    this.setAuto(ID.playerSkill.parapo)
   }
 }
 
@@ -672,7 +571,7 @@ class PlayerSkillParapo extends PlayerSkillData {
 class PlayerSkillBlaster extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.blaster)
+    this.setAuto(ID.playerSkill.blaster)
     this.setSound(null, soundSrc.skill.skillBlasterShot)
   }
 }
@@ -683,7 +582,7 @@ class PlayerSkillBlaster extends PlayerSkillData {
 class PlayerSkillSidewave extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.sidewave)
+    this.setAuto(ID.playerSkill.sidewave)
     this.option = [0, 1, 2]
     this.position = [{x: 0, y: -70}]
     this.setSound(null, soundSrc.skill.skillSidewaveShot)
@@ -693,7 +592,7 @@ class PlayerSkillSidewave extends PlayerSkillData {
 class PlayerSkillSword extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.sword)
+    this.setAuto(ID.playerSkill.sword)
     this.setSound(null, soundSrc.skill.skillSword)
   }
 }
@@ -701,7 +600,7 @@ class PlayerSkillSword extends PlayerSkillData {
 class PlayerSkillHyperBall extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.hyperBall)
+    this.setAuto(ID.playerSkill.hyperBall)
     this.setSound(null, soundSrc.skill.skillHyperBall)
     this.position = [{x: 0, y: -50}, {x: 0, y: 50}]
   }
@@ -710,7 +609,7 @@ class PlayerSkillHyperBall extends PlayerSkillData {
 class PlayerSkillCriticalChaser extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.critcalChaser)
+    this.setAuto(ID.playerSkill.critcalChaser)
     this.setSound(null, soundSrc.skill.skillCriticalChaser)
     this.position = [{x: -30, y: -30}, {x: 30, y: 30}]
   }
@@ -719,7 +618,7 @@ class PlayerSkillCriticalChaser extends PlayerSkillData {
 class PlayerSkillPileBunker extends PlayerSkillData { 
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.pileBunker)
+    this.setAuto(ID.playerSkill.pileBunker)
     this.setSound(null, soundSrc.skill.skillPileBunker)
   }
 }
@@ -727,7 +626,7 @@ class PlayerSkillPileBunker extends PlayerSkillData {
 class PlayerSkillSantansu extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.santansu)
+    this.setAuto(ID.playerSkill.santansu)
     this.option = [0, 1, 2, 3, 4]
   }
 }
@@ -735,7 +634,7 @@ class PlayerSkillSantansu extends PlayerSkillData {
 class PlayerSkillWhiteflash extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.whiteflash)
+    this.setAuto(ID.playerSkill.whiteflash)
     this.setSound(soundSrc.skill.skillWhiteflash, null)
   }
 }
@@ -743,7 +642,7 @@ class PlayerSkillWhiteflash extends PlayerSkillData {
 class PlayerSkillRapid extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.rapid)
+    this.setAuto(ID.playerSkill.rapid)
     this.setSound(null, soundSrc.skill.skillRapid)
     this.position = [{x: 0, y: -15}, {x: 0, y: -5}, {x: 0, y: 5}, {x: 0, y: 15}]
   }
@@ -752,7 +651,7 @@ class PlayerSkillRapid extends PlayerSkillData {
 class PlayerSkillRing extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.ring)
+    this.setAuto(ID.playerSkill.ring)
     this.setSound(null, soundSrc.skill.skillRing)
     this.option = [0, 1, 2, 3, 4, 5, 6, 7]
   }
@@ -761,7 +660,7 @@ class PlayerSkillRing extends PlayerSkillData {
 class PlayerSkillSeondanil extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.seondanil)
+    this.setAuto(ID.playerSkill.seondanil)
     this.setSound(soundSrc.skill.skillSeondanil, null)
   }
 }
@@ -769,7 +668,7 @@ class PlayerSkillSeondanil extends PlayerSkillData {
 class PlayerSkillHanjumeok extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.hanjumoek)
+    this.setAuto(ID.playerSkill.hanjumoek)
     this.setSound(soundSrc.skill.skillHanjumeok, null)
   }
 }
@@ -777,16 +676,16 @@ class PlayerSkillHanjumeok extends PlayerSkillData {
 class PlayerSkillBoomerang extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.boomerang)
+    this.setAuto(ID.playerSkill.boomerang)
     this.setSound(soundSrc.skill.skillBoomerang, null)
-    this.option = [{x: 0, y: -100}]
+    this.position = [{x: 0, y: -100}]
   }
 }
 
 class PlayerSkillMoon extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.moon)
+    this.setAuto(ID.playerSkill.moon)
     this.setSound(soundSrc.skill.skillMoon, null)
   }
 }
@@ -794,7 +693,7 @@ class PlayerSkillMoon extends PlayerSkillData {
 class PlayerSkillKalnal extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.kalnal)
+    this.setAuto(ID.playerSkill.kalnal)
     this.setSound('', soundSrc.skill.skillKalnal)
   }
 }
@@ -802,7 +701,7 @@ class PlayerSkillKalnal extends PlayerSkillData {
 class PlayerSkillCogwheel extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.cogwheel)
+    this.setAuto(ID.playerSkill.cogwheel)
     this.setSound(soundSrc.skill.skillCogwheel, '')
     this.position = [{x: 0, y: -200}]
   }
@@ -811,7 +710,7 @@ class PlayerSkillCogwheel extends PlayerSkillData {
 class PlayerSkillYeonsai extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.yeonsai)
+    this.setAuto(ID.playerSkill.yeonsai)
     this.setSound('', soundSrc.skill.skillYeonsai)
     this.option = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     this.position = [{x: 20, y: -40}, {x: 20, y: -20}, {x: 20, y: 0}, {x: 20, y: 20}, {x: 20, y: 40}, 
@@ -822,7 +721,7 @@ class PlayerSkillYeonsai extends PlayerSkillData {
 class PlayerSkillSabangtan extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.sabangtan)
+    this.setAuto(ID.playerSkill.sabangtan)
     this.setSound('', soundSrc.skill.skillSabangtanShot)
     this.option = [0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3]
   }
@@ -831,7 +730,7 @@ class PlayerSkillSabangtan extends PlayerSkillData {
 class PlayerSkillHabirant extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.habirant)
+    this.setAuto(ID.playerSkill.habirant)
     this.setSound(soundSrc.skill.skillHabirant, '')
   }
 }
@@ -839,7 +738,7 @@ class PlayerSkillHabirant extends PlayerSkillData {
 class PlayerSkillIcechaser extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.icechaser)
+    this.setAuto(ID.playerSkill.icechaser)
     this.setSound('', soundSrc.skill.skillIceChaser)
   }
 }
@@ -847,7 +746,7 @@ class PlayerSkillIcechaser extends PlayerSkillData {
 class PlayerSkillCalibur extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.calibur)
+    this.setAuto(ID.playerSkill.calibur)
     this.setSound(soundSrc.skill.skillCalibur, '')
   }
 }
@@ -855,7 +754,7 @@ class PlayerSkillCalibur extends PlayerSkillData {
 class PlayerSkillSujikpa extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.sujikpa)
+    this.setAuto(ID.playerSkill.sujikpa)
     this.setSound('', soundSrc.skill.skillSujikpa)
   }
 }
@@ -863,14 +762,14 @@ class PlayerSkillSujikpa extends PlayerSkillData {
 class PlayerSkillSpeaker extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.speaker)
+    this.setAuto(ID.playerSkill.speaker)
   }
 }
 
 class PlayerSkillEomukggochi extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.eomukggochi)
+    this.setAuto(ID.playerSkill.eomukggochi)
     this.position = [{x: 0, y: 15}]
   }
 }
@@ -878,49 +777,49 @@ class PlayerSkillEomukggochi extends PlayerSkillData {
 class PlayerSkillR2Firecracker extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.r2Firecracker)
+    this.setAuto(ID.playerSkill.r2Firecracker)
   }
 }
 
 class PlayerSkillR2Toyhammer extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.r2Toyhammer)
+    this.setAuto(ID.playerSkill.r2Toyhammer)
   }
 }
 
 class PlayerSkillR3Xkill extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.r3Xkill)
+    this.setAuto(ID.playerSkill.r3Xkill)
   }
 }
 
 class PlayerSkillR3Xshot extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.r3Xshot)
+    this.setAuto(ID.playerSkill.r3Xshot)
   }
 }
 
 class PlayerSkillR3Xbeam extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.r3Xbeam)
+    this.setAuto(ID.playerSkill.r3Xbeam)
   }
 }
 
 class PlayerSkillR3Xboom extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.r3Xboom)
+    this.setAuto(ID.playerSkill.r3Xboom)
   }
 }
 
 class PlayerSkillR3Helljeon extends PlayerSkillData {
   constructor () {
     super()
-    this.setAutoPlayerSkill(ID.playerSkill.r3Helljeon)
+    this.setAuto(ID.playerSkill.r3Helljeon)
     this.setSound('', soundSrc.skill.skillHelljeonShot)
     this.position = [{x: 0, y: -20}, {x: 0, y: 20}]
   }
@@ -1449,7 +1348,9 @@ export class PlayerObject extends FieldData {
 
     currentWeapon.delayCount++
     if (currentWeapon.delayCount >= currentWeapon.weapon.delay) {
-      currentWeapon.weapon.create(this.attackWaepon, this.centerX, this.centerY)
+      for (let i = 0; i < currentWeapon.weapon.repeatCount; i++) {
+        currentWeapon.weapon.create(this.attackWaepon, this.centerX, this.centerY)
+      }
       currentWeapon.delayCount -= currentWeapon.weapon.delay
     }
   }

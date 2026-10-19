@@ -254,6 +254,9 @@ export class DelayData {
   }
 
   /**
+   * 의도를 명확하게 하기 위해 check가 아닌 다른 함수의 사용을 추천합니다.  
+   * 단, 카운터 리셋, 카운트 증가를 동시에 하고 싶다면, 기본 함수인 이 함수를 사용하세요.
+   * 
    * 지연시간 확인 함수, 이 함수가 실행될 때마다 delayCount가 1씩 증가하고,
    * 지연시간 카운트가 지연시간 이상인지 확인해 그 결과를 리턴합니다.
    * 참고로, 카운트가 다 차면 카운트는 0으로 리셋됩니다.
@@ -261,20 +264,23 @@ export class DelayData {
    * 만약 카운터를 증가시키기 싫다면, countUp 변수에 false 값을 넣어주세요.
    * @param {boolean} reset 카운터 리셋?, 기본값 true
    * @param {boolean} countUp 카운터 증가?, 기본값 true
+   * @returns {boolean}
    */
   check (reset = true, countUp = true) {
-    if (countUp) {
-      this.count++
-    }
+    if (countUp) this.count++
+    if (this.count < this.delay) return false
+    if (reset) this.count = 0
+    return true
+  }
 
-    if (this.count >= this.delay) {
-      if (reset) {
-        this.count = 0
-      }
-      return true
-    } else {
-      return false
-    }
+  /**
+   * 카운트를 리셋시키지 않고 카운트를 증가시칸 다음, count가 delay 이상인지 에 대한 결과를 리턴합니다.
+   * @param {boolean} countUp 카운터 증가?, 기본값 true
+   * @returns {boolean}
+   */
+  checkWithoutReset (countUp = true) {
+    if (countUp) this.count++
+    return this.count >= this.delay
   }
 
   /**
@@ -298,18 +304,6 @@ export class DelayData {
     } else {
       return false
     }
-  }
-
-  /**
-   * 데이터를 불러오기 했을 때 딜레이를 수정하는 용도
-   * 넓값인 경우 설정할 수 없음.
-   * @param {DelayData} delayObjectString
-   */
-  setLoadDataDelay (delayObjectString) {
-    if (delayObjectString == null) return
-
-    this.delay = delayObjectString.delay
-    this.count = delayObjectString.count
   }
 
   /** 
@@ -577,7 +571,6 @@ export class FieldData {
      * 이 정보는 개체 알고리즘 내부에서, 특정 적을 구분하기 위한 용도로 만들어졌으나, 게임에서 자주 사용되지는 않습니다.
      * 
      * 현재는 하위호환 코드로만 남겨졌습니다.
-     * @deprecated
      */ 
     this.mainType = 0
 
@@ -881,9 +874,12 @@ export class FieldData {
 
     this.isAfterInited = true
 
-    // 초기화 작업 수행
+    // 기본 초기화 함수를 먼저 사용합니다.
+    // 그래야, 사용자가 원하는 값으로 문제 없이 덮어 쓰기가 가능합니다.
+    // 이 문제는 2026/10/19일날 수정되었으며, 
+    // 기본적으로는 기본 초기화 함수 이후 사용자 초기화 함수가 동작하는 것이 원칙입니다.
+    this.afterInitDefault() 
     this.afterInit()
-    this.afterInitDefault()
   }
 
   /**
