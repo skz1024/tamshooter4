@@ -885,7 +885,7 @@ class fieldRequestUser {
   */
   static addItem (id = 0, count = 0, symbol) {
     if (symbol === this.#token) {
-      userSystem.inventory.add(id, count)
+      userSystem.inventory.addItem(id, count)
     }
   }
 

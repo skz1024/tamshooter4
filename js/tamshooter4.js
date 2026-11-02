@@ -1858,14 +1858,14 @@ class UIComponentStatUpgrade extends UIComponentObject {
 
   displayEquipment () {
     const text6 = 'EQUIPMENT'
-    const equipment = UserSystem.equipment
-    const equipmentData = UserSystem.getEquipmentItemInfo()
-    const equipmentInventory = UserSystem.getInventoryEquipmentStatus(equipment.itemIndex)
+    const equipmentData = UserSystem.getEquipmentItemData()
+    const equipmentInventory = UserSystem.getInventoryEquipmentValues(UserSystem.equipmentIndex)
+    const equipmentValues = UserSystem.getInventoryEquipmentValues()
     const x = this.x + 10
     const y = this.y + 180
     digitalDisplay(text6, x, y)
 
-    if (equipmentData != null && equipmentInventory != null) {
+    if (equipmentData != null && equipmentInventory != null && equipmentValues != null) {
       const src = imageSrc.system.itemIcon
       const iconSectionWidth = imageDataInfo.system.itemIconSection.width
       const sliceX = (equipmentData.iconNumber % 10) * imageDataInfo.system.itemIconSection.width
@@ -1876,13 +1876,13 @@ class UIComponentStatUpgrade extends UIComponentObject {
       game.graphic.fillRect(x, y + 20, iconSectionWidth, iconSectionWidth, '#CCCCCC', 0.8)
       game.graphic.imageDisplay(src, sliceX, sliceY, iconWidth, iconHeight, x, y + 20, iconWidth, iconHeight)
 
-      game.graphic.fillText('' + equipmentData.name + ' +' + equipment.upgradeLevel, x + 120, y)
-      digitalDisplay('ATTACK: ' + equipment.attack, x + 80, y + 20)
-      if (equipmentData.equipment.plusHp !== 0 || equipmentData.equipment.plusShield !== 0) {
-        digitalDisplay('HP +' + equipmentData.equipment.plusHp + ', SHIELD +' + equipmentData.equipment.plusShield, x + 80, y + 40)
+      game.graphic.fillText('' + equipmentData.name + ' +' + equipmentValues.upgradeLevel, x + 120, y)
+      digitalDisplay('ATTACK: ' + equipmentValues.attack, x + 80, y + 20)
+      if (equipmentData.hp !== 0 || equipmentData.shield !== 0) {
+        digitalDisplay('HP +' + equipmentData.hp + ', SHIELD +' + equipmentData.shield, x + 80, y + 40)
       }
-      if (equipmentData.equipment.plusShieldRecovery !== 0) {
-        digitalDisplay('SHIELD RECOVERY +' + equipmentData.equipment.plusShieldRecovery, x + 80, y + 60)
+      if (equipmentData.shieldRecovery !== 0) {
+        digitalDisplay('SHIELD RECOVERY +' + equipmentData.shieldRecovery, x + 80, y + 60)
       }
     }
   }
@@ -1952,10 +1952,10 @@ class UIComponentInventory extends UIComponentBaseMenuObject {
       const sliceY = iconSectionSize * Math.floor(itemData.iconNumber / 10)
       game.graphic.imageDisplay(src, sliceX, sliceY, iconSize, iconSize, this.boxList[i].x, this.boxList[i].y, iconSize, iconSize)
 
-      if (itemData.type === UserSystem.inventory.itemType.ITEM) {
-        let countText = 'X' + inven.count
-        if (inven.count >= 1000 && inven.count <= 9999) countText = (inven.count / 1000).toFixed(1) + 'K'
-        else if (inven.count >= 10000) countText = '9K+'
+      if (itemData.type === UserSystem.inventory.TYPES.ITEM) {
+        let countText = 'X' + inven.countValue
+        if (inven.countValue >= 1000 && inven.countValue <= 9999) countText = (inven.countValue / 1000).toFixed(1) + 'K'
+        else if (inven.countValue >= 10000) countText = '9K+'
         digitalDisplay(countText, this.boxList[i].x, this.boxList[i].y + this.boxList[i].height)
       }
     }
@@ -1970,8 +1970,8 @@ class UIComponentInventory extends UIComponentBaseMenuObject {
     if (data == null) return
 
     // info display
-    let typeText = data.type === UserSystem.inventory.itemType.EQUIPMENT ? 'EQUIPMENT' : 'ITEM'
-    let firstLineText = data.type === UserSystem.inventory.itemType.ITEM ? ', count:' + item.count : ', require Level: ' + data.equipment.requireLevel
+    let typeText = data.typeString
+    let firstLineText = data.type === UserSystem.inventory.TYPES.ITEM ? ', count:' + item.countValue : ', require Level: ' + data.requireLevel
 
     const x = this.x
     const y = this.y + this.height - 60
@@ -3180,7 +3180,7 @@ export class GameSystem {
     buffer[offset++] = userData.weaponPresetNumber;
     for (let i = 0; i < userData.skillPreset.length; i++) buffer[offset++] = userData.skillPreset[i];
     buffer[offset++] = userData.skillPresetNumber;
-    buffer[offset++] = userData.equipment.itemIndex;
+    buffer[offset++] = userData.equipmentIndex;
     const group3Length = offset - group3Index;
 
     // --- 5. GROUP 4: 가변 길이 유저 데이터 ---
@@ -3512,8 +3512,8 @@ export class GameSystem {
     this.userSystem.skillPresetNumber = group3[I3.SKILL_PRESET_NUMBER]
 
     // 인벤토리 인덱스를 불러온 후, 자기가 불러온 인덱스로 아이템을 강제 장착시킴
-    this.userSystem.equipment.itemIndex = group3[I3.EQUIPMENT_INVENTORY_INDEX]
-    this.userSystem.setEquipment(this.userSystem.equipment.itemIndex)
+    this.userSystem.equipmentIndex = group3[I3.EQUIPMENT_INVENTORY_INDEX]
+    this.userSystem.setEquipment(this.userSystem.equipmentIndex)
 
 
     // 그룹 4 데이터
@@ -3540,7 +3540,7 @@ export class GameSystem {
 
     if (invSubId != null && invSubItem != null && invSubUp != null) {
       for (let i = 0; i < invSubId.length; i++) {
-        this.userSystem.inventory.add(invSubId[i], invSubItem[i], invSubUp[i])
+        this.userSystem.inventory.addItem(invSubId[i], invSubItem[i], invSubUp[i])
       }
     }
 

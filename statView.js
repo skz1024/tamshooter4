@@ -179,24 +179,17 @@ dataExportStatRound.forEach((value, keyId) => {
 let element4 = document.createElement('pre')
 element4.id = 'upgradeCostList'
 element4.textContent = '-upgradeCost-\n'
-+ 'level|attack      |cost   |totalcost|refund |totalcost            |\n'
-+ '     |percent|plus|percent|percent  |percent|refund   |diff |prev |\n'
++ 'level|attack      |cost   |totalcost|\n'
++ '     |percent|plus|percent|percent  |\n'
 pre?.appendChild(element4)
 
-for (let i = 0; i <= StatItem.UPGRADE_LEVEL_MAX; i++) {
+for (let i = 0; i <= StatItem.EQUIPMENT_UPGRADE_MAX_LEVEL; i++) {
   let level = ('' + i).padEnd(5, ' ') + '|'
-  let attackPercent = ('' + StatItem.upgradeAttackPercentTable[i]).padEnd(7, ' ') + '|'
-  let attackDiffValue = i === 0 ? 0 : StatItem.upgradeAttackPercentTable[i] - StatItem.upgradeAttackPercentTable[i - 1]
+  let attackPercent = ('' + StatItem.equipmentUpgradeAttackPercentTable[i]).padEnd(7, ' ') + '|'
+  let attackDiffValue = i === 0 ? 0 : StatItem.equipmentUpgradeAttackPercentTable[i] - StatItem.equipmentUpgradeAttackPercentTable[i - 1]
   let attackDifferent = ('' + attackDiffValue).padEnd(4, ' ') + '|'
-  let costPercent = ('' + StatItem.upgradeCostPercentTable[i]).padEnd(7, ' ') + '|'
-  let totalCostPercentString = ('' + StatItem.upgradeCostTotalPercentTable[i]).padEnd(9, ' ') + '|'
-  let refundPercent = ('' + StatItem.upgradeRefundPercentTable[i]).padEnd(7, ' ') + '|'
-  let totalCostRefund = ('' + StatItem.upgradeCostTotalRefundTable[i]).padEnd(9, ' ') + '|'
-
-  let totalCostDiffValue = i === 0 ? 0 : StatItem.upgradeCostTotalPercentTable[i] - StatItem.upgradeCostTotalRefundTable[i]
-  let totalCostPrevValue = i === 0 ? 0 : StatItem.upgradeCostTotalPercentTable[i - 1] - StatItem.upgradeCostTotalRefundTable[i - 1]
-  let totalCostDifferent = ('' + (totalCostDiffValue)).padEnd(5, ' ') + '|'
-  let totalCostPrevDiff = ('' + (totalCostDiffValue - totalCostPrevValue)).padEnd(5, ' ') + '|'
+  let costPercent = ('' + StatItem.equipmentUpgradeCostPercentTable[i]).padEnd(7, ' ') + '|'
+  let totalCostPercentString = ('' + StatItem.equipmentUpgradeCostTotalPercentTable[i]).padEnd(9, ' ') + '|'
 
   let color = 'white'
   if (i === 14) color = 'GreenYellow'
@@ -211,7 +204,7 @@ for (let i = 0; i <= StatItem.UPGRADE_LEVEL_MAX; i++) {
   element.style.background = color
   element.style.color = 'black'
   element.style.width = '800px'
-  element.textContent = level + attackPercent + attackDifferent + costPercent + totalCostPercentString + refundPercent + totalCostRefund + totalCostDifferent + totalCostPrevDiff
+  element.textContent = level + attackPercent + attackDifferent + costPercent + totalCostPercentString
   element.addEventListener('mouseenter', () => {
     element.style.background = 'skyblue'
   })

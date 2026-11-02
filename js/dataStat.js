@@ -398,114 +398,132 @@ export class StatRoundBalance {
 
 export class StatItem {
   /**
-   * 아이템의 정보를 생성 (아이템 기능의 구현은 다른곳에서 처리해야함)
+   * 아이템의 스탯 정보를 생성합니다.
+   * 
+   * 주의: 아이템 기능의 구현은, 게임 내에서 직접 구현해야 하며, 아이템 스탯 단독으로는 기능이 없습니다.
    * @param {number} iconNumber 아이콘 번호 (-1인경우, 없음)
-   * @param {string} type 아이템 타입 (equipment, item)
+   * @param {number} type 아이템 타입 (주의: 아이템 타입에 따라 아이템을 사용했을 때의 기능이 결정합니다.)
    * @param {string} name 이름
-   * @param {number} price 가격 (참고: 판매가격은 비용의 1/10임)
-   * @param {string} info 정보
    */
-  constructor (iconNumber = -1, type, name = '', price = 1000, info = '') {
+  constructor (iconNumber = -1, type, name = '') {
     /** 아이콘 번호 */ this.iconNumber = iconNumber
     /** 아이템 타입 */ this.type = type
+    /** UI에 표시할 아이템 타입의 문자열. 타입 구분용으로 사용 금지 */ this.typeString = ''
     /** 아이템의 이름 */ this.name = name
-    /** 아이템의 기본 가격 */ this.price = price
-    /** 아이템의 정보 */ this.info = info
+    /** 아이템의 정보 */ this.info = ''
+    /** 아이템 사용 레벨 제한 (일부 타입에서 사용) */ this.requireLevel = 0
+    /** 아이템 내부 기본 공격력 (일부 타입에서 사용) */ this.attack = 0
+    /** 아이템 업그레이드 비용 (일부 타입에서 사용) */ this.upgradeCost = 0
+    /** 아이템 실드 값 (일부 타입에서 사용) */ this.shield = 0
+    /** 아이템 체력 값 (일부 타입에서 사용) */ this.hp = 0
+    /** 아이템 실드 회복 값 (일부 타입에서 사용) */ this.shieldRecovery = 0
+    /** 스택 가능? (즉, 여러개를 가질 수 있는가?) */ this.isStackable = false
 
-    /** 장비 정보 (참고: plus접두어가 붙은것은 강화 효과를 무시함) */ 
-    this.equipment = {
-      /** 장비 아이템 착용 제한 레벨 */ requireLevel: 0,
-      /** 장비의 공격력 */ attack: 0,
-      /** 장비의 업그레이드 비용 */ upgradeCost: 0,
-      /** 업그레이드 가능 여부 (단, 골드로 강화가 안되는것이지 코드에 따른 임의레벨조정은 가능함) */ isUpgardeBlock: false,
-      /** 장비의 추가 공격력 (강화 효과 무시) */ plusAttack: 0,
-      /** 장비의 추가쉴드 (강화 효과 무시) */ plusShield: 0,
-      /** 장비의 추가체력 (강화 효과 무시) */ plusHp: 0,
-      /** 서브웨폰의 id (이 값이 유효하면, 보조무기를 생성함) */ subWeaponId: 0,
-      /** 장비의 쉴드회복 (강화 효과 무시), (쉴드 회복값은 매 프레임 당 value/6000 으로 증가함, 주의: 나눗셈연산이 아니고 정수연산임) 
-       * 
-       * 이 말을 해석하면 쉴드회복이 200/6000이면, 대략 30프레임당 1회복임 */ plusShieldRecovery: 0,
+    // 타입에 따른 스택 가능 여부 설정
+    if (this.type === StatItem.TYPES.ITEM || this.type === StatItem.TYPES.CRAFTING_HELLGI) {
+      this.isStackable = true
     }
+
+    switch (this.type) {
+      case StatItem.TYPES.BOSEOK: this.typeString = 'BOSEOK'; break
+      case StatItem.TYPES.USB: this.typeString = 'USB'; break
+      case StatItem.TYPES.CRAFTING_HELLGI: this.typeString = 'CRAFTING_HELLGI'; break
+      case StatItem.TYPES.EQUIPMENT: this.typeString = 'EQUIPMENT'; break
+      default: this.typeString = 'ITEM'; break
+    }
+
+    return this
   }
 
-  /**
-   * 장비에 대한 기본적인 정보 (장비 아이템이 아니면 접근 불가)
+  /** (장비에 주로 사용) 아이템의 스탯을 설정합니다. */
+  setStat (attack = 0, hp = 0, shield = 0, shieldRecovery = 0) {
+    this.attack = attack
+    this.hp = hp
+    this.shield = shield
+    this.shieldRecovery = shieldRecovery
+
+    return this
+  }
+
+  /** 필요 요구 사항 함수 */
+  setRequire (requireLevel = 0) {
+    this.requireLevel = requireLevel
+
+    return this
+  }
+
+  /** 아이템 업그레이드 비용 설정 (장비에 주로 사용) */
+  setUpgradeCost (upgradeCost = 0) {
+    this.upgradeCost = upgradeCost
+
+    return this
+  }
+
+  /** 아이템의 타입. 이 타입이 아이템 기능 구현을 결정합니다.  
+   * 단, 구현은 외부에서 진행하고, 아이템 스탯은 아이템 구현 기능이 없습니다. 
    * 
-   * @param {number} requireLevel 장비를 장착하기 위해 필요한 레벨
-   * @param {number} attack 장비의 공격력
-   * @param {number} upgradeCost 장비의 업그레이드 기본 비용 (음수값이면 강화불가로 처리함)
-   * @param {number} plusAttack 추가 공격력 (강화 효과 무시)
-   * @param {number} plusHp 추가 체력 (강화 효과 무시)
-   * @param {number} plusShield 추가 쉴드 (강화 효과 무시)
-   * @param {number} plusShieldRecovery 추가 회복(프레임 당 기준) (강화 효과 무시), 주의: 이 값은 x/6000으로 회복함. 그리고 나눗셈연산하지 않음 (정수단위임)
-
-   */
-  setEquipmentInfo (requireLevel, attack, upgradeCost, plusAttack = 0, plusHp = 0, plusShield = 0, plusShieldRecovery = 0) {
-    this.equipment.requireLevel = requireLevel
-    this.equipment.attack = attack
-    this.equipment.upgradeCost = upgradeCost
-    this.equipment.plusAttack = plusAttack
-    this.equipment.plusHp = plusHp
-    this.equipment.plusShield = plusShield
-    this.equipment.plusShieldRecovery = plusShieldRecovery
+   * 절 대 규 칙: 아이템 타입만 수량있음.
+   * */
+  static TYPES = {
+    /** 일반 아이템, 수량 설정 가능 */ ITEM: 0,
+    /** 장비 아이템, 강화 및 장착 설정 가능 */ EQUIPMENT: 1,
+    /** 보석 아이템, 신규 UI를 염*/ BOSEOK: 2,
+    /** USB 아이템, 사용하면 운영 체제를 등록하여 가동 */ USB: 3,
+    /** 제작 아이템, 사용하면 헬기 부품 전용 UI를 염 */ CRAFTING_HELLGI: 21,
   }
-
-  /**
-   * 서브웨폰 id 설정 (참고: dps의 10%로 자동적으로 공격력이 결정됨)
-   * @param {number} subWeaponId 서브웨폰의 id (무기의 id를 입력해야 합니다.)
-   */
-  setSubweaponId (subWeaponId) {
-    this.equipment.subWeaponId = subWeaponId
-  }
-
-  static TYPE_ITEM = 'item'
-  static TYPE_EQUIPMENT = 'equipment'
 
   /** 장비에 대한 업그레이드 최대레벨 */
-  static UPGRADE_LEVEL_MAX = 13
+  static EQUIPMENT_UPGRADE_MAX_LEVEL = 10
 
   /** 장비에 대한 업그레이드 시 공격력의 기준 퍼센트 */
-  static upgradeAttackPercentTable = [
-    100, 140, 180, 220, 280, 340, 400, 480, 560, 640,
-    720, 800, 900, 1000
+  static equipmentUpgradeAttackPercentTable = [
+    100, 140, 180, 220, 260, 300, 340, 380, 420, 460, 500
   ]
 
   /** 장비에 대한 업그레이드 시 비용의 기준 퍼센트 */
-  static upgradeCostPercentTable = [
-    0, 100, 120, 140, 180, 220, 280, 340, 420, 500,
-    560, 640, 700, 800
+  static equipmentUpgradeCostPercentTable = [
+    100, 120, 120, 140, 140, 160, 160, 180, 180, 200, 0
   ]
 
-  /** 장비를 판매할 때 환수되는 비용의 비율 */
-  static upgradeRefundPercentTable = [
-    20, 20, 20, 20, 20, 22, 24, 26, 28, 30,
-    30, 30, 30, 30,
-  ]
+  /** 
+   * 장비 업그레이드 비용을 가져옵니다.
+   * @param {number} [baseCost=1000] 해당 장비의 기본 비용
+   * @param {number} [upgradeLevel=0] 해당 장비의 현재 강화 레벨
+   */
+  static getEquipmentUpgradeCost (baseCost = 1000, upgradeLevel = 0) {
+    const costArray = this.equipmentUpgradeCostPercentTable
 
-  static #getUpgradeCostTotalPercentTable () {
+    if (upgradeLevel < 0) upgradeLevel = 1
+    else if (upgradeLevel >= costArray.length) upgradeLevel = costArray.length - 1
+
+    return Math.floor(baseCost * costArray[upgradeLevel] / 100)
+  }
+
+  /**
+   * 장비 업그레이드 공격력을 가져옵니다.
+   * @param {number} baseAttack 해당 장비의 기본 공격력
+   * @param {number} upgradeLevel 해당 장비의 현재 강화 레벨
+   */
+  static getEquipmentAttack (baseAttack = 1000, upgradeLevel = 0) {
+    const attackArray = this.equipmentUpgradeAttackPercentTable
+
+    if (upgradeLevel < 0) upgradeLevel = 1
+    else if (upgradeLevel >= attackArray.length) upgradeLevel = attackArray.length - 1
+
+    return Math.floor(baseAttack * attackArray[upgradeLevel] / 100)
+  }
+
+  /** 업그레이드 비용 총합 비율에 대한 표를 작성합니다. */
+  static equipmentUpgradeCostTotalPercentTable = (() => {
     let table = []
     let total = 0
-    for (let i = 0; i < this.upgradeCostPercentTable.length; i++) {
-      total += this.upgradeCostPercentTable[i]
+    for (let i = 0; i < this.equipmentUpgradeCostPercentTable.length; i++) {
+      total += this.equipmentUpgradeCostPercentTable[i]
       table.push(total)
     }
     
     return table
-  }
-
-  static upgradeCostTotalPercentTable = this.#getUpgradeCostTotalPercentTable()
-
-  static #getUpgradeCostTotalRefundTable () {
-    let table = []
-    for (let i = 0; i < this.upgradeCostTotalPercentTable.length; i++) {
-      let result = this.upgradeCostTotalPercentTable[i] / 100 * this.upgradeRefundPercentTable[i]
-      table.push(Math.floor(result))
-    }
-    
-    return table
-  }
-
-  static upgradeCostTotalRefundTable = this.#getUpgradeCostTotalRefundTable()
+  })()
 }
 
 /**
@@ -582,86 +600,91 @@ dataExportStatWeapon.set(ID.weapon.skillR3Helljeon, new StatWeapon(1, 1, true))
 
 
 
-// 파라포 알고리즘 수정 필요 (4개 개체가 공격하는 형태인지 볼 필요가 있음)
+
 /**
  * 외부에서 사용하기 위한 플레이어 웨폰 스탯
  * @type {Map<number, StatPlayerWeapon>}
  */
 export const dataExportStatPlayerWeapon = new Map()
-const DXweapon = dataExportStatPlayerWeapon
-const IDweapon = ID.playerWeapon
-const wGroup = StatPlayerWeapon.groupTypeList
-const wBalance = StatPlayerWeapon.balanceTypeList
-const pWeapon = StatPlayerWeapon
-DXweapon.set(IDweapon.unused, new pWeapon(wGroup.GROUP1, 'unused', wBalance.CHASE, 1).setConfig(0, 0, 0).setIdList(ID.weapon.multyshot))
-DXweapon.set(IDweapon.multyshot, new pWeapon(wGroup.GROUP1, 'multyshot', wBalance.MIXED, 1.33).setConfig(6, 1, 10).setIdList(ID.weapon.multyshot))
-DXweapon.set(IDweapon.missile, new pWeapon(wGroup.GROUP1, 'missile', wBalance.SPLASH, 0.5).setConfig(4, 2, 30).setIdList(ID.weapon.missile))
-DXweapon.set(IDweapon.arrow, new pWeapon(wGroup.GROUP1, 'arrow', wBalance.SHOT_ANOTHER, 1.04).setConfig(2, 1, 10).setIdList(ID.weapon.arrow))
-DXweapon.set(IDweapon.laser, new pWeapon(wGroup.GROUP1, 'laser', wBalance.MIXED, 1.2).setConfig(4, 1, 12).setIdList(ID.weapon.laser))
-DXweapon.set(IDweapon.sapia, new pWeapon(wGroup.GROUP1, 'sapia', wBalance.CHASE, 1).setConfig(3, 1, 60).setIdList(ID.weapon.sapia))
-DXweapon.set(IDweapon.parapo, new pWeapon(wGroup.GROUP1, 'parapo', wBalance.SPLASH, 0.48).setConfig(3, 1, 30).setIdList(ID.weapon.parapo))
-DXweapon.set(IDweapon.blaster, new pWeapon(wGroup.GROUP1, 'blaster', wBalance.SHOT_XWAY, 1.52).setConfig(2, 1, 6).setIdList(ID.weapon.blaster))
-DXweapon.set(IDweapon.sidewave, new pWeapon(wGroup.GROUP1, 'sidewave', wBalance.SHOT_XWAY, 1.46).setConfig(8, 1, 15).setIdList(ID.weapon.sidewave))
-DXweapon.set(IDweapon.ring, new pWeapon(wGroup.GROUP1, 'ring', wBalance.SHOT_XWAY, 1.8).setConfig(8, 1, 30).setIdList(ID.weapon.ring))
-DXweapon.set(IDweapon.rapid, new pWeapon(wGroup.GROUP1, 'rapid', wBalance.SHOT_FRONT, 1.6).setConfig(3, 1, 4).setIdList(ID.weapon.rapid))
-DXweapon.set(IDweapon.seondanil, new pWeapon(wGroup.GROUP1, 'seondanil', wBalance.CHASE, 1.0).setConfig(5, 1, 30).setIdList(ID.weapon.seondanil))
-DXweapon.set(IDweapon.boomerang, new pWeapon(wGroup.GROUP1, 'boomerang', wBalance.SHOT_ANOTHER, 1.22).setConfig(3, 1, 20).setIdList(ID.weapon.boomerang))
-DXweapon.set(IDweapon.kalnal, new pWeapon(wGroup.GROUP2, 'kalnal', wBalance.CHASE, 1).setConfig(2, 1, 20).setIdList(ID.weapon.kalnal))
-DXweapon.set(IDweapon.cogwheel, new pWeapon(wGroup.GROUP2, 'cogwheel', wBalance.SHOT_ANOTHER, 1.35).setConfig(1, 1,  40).setIdList(ID.weapon.cogwheel))
-DXweapon.set(IDweapon.yeonsai, new pWeapon(wGroup.GROUP2, 'yeonsai', wBalance.SHOT_XWAY, 1.8).setConfig(6, 1, 6).setIdList(ID.weapon.yeonsai))
-DXweapon.set(IDweapon.sabangtan, new pWeapon(wGroup.GROUP2, 'sabangtan', wBalance.SPLASH, 0.5).setConfig(4, 1, 30).setIdList(ID.weapon.sabangtan))
-DXweapon.set(IDweapon.r3TowerPink, new pWeapon(wGroup.R3_TOWER, 'towerpink', wBalance.CHASE, 1).setConfig(1, 5, 15).setIdList(ID.weapon.r3TowerPink))
-DXweapon.set(IDweapon.r3TowerPurple, new pWeapon(wGroup.R3_TOWER, 'towerpurple', wBalance.SHOT_ANOTHER, 1.04).setConfig(2, 1, 10).setIdList(ID.weapon.r3TowerPurple))
-DXweapon.set(IDweapon.r3Helljeon, new pWeapon(wGroup.R3_TOWER, 'helljeon', wBalance.MIXED, 1.3).setConfig(4, 1, 10).setIdList(ID.weapon.r3Helljeon))
 
 /**
  * 외부에서 사용하기 위한 플레이어 스킬 스탯
  * @type {Map<number, StatPlayerSkill>}
  */
 export const dataExportStatPlayerSkill = new Map()
-const DXskill = dataExportStatPlayerSkill
-const IDskill = ID.playerSkill
-const sGroup = StatPlayerSkill.groupTypeList
-const sBalance = StatPlayerSkill.balanceTypeList
-const pSkill = StatPlayerSkill
-DXskill.set(IDskill.unused, new pSkill(sGroup.GROUP1, 'unused', sBalance.FORMULA, 1, 20).setConfig(1, 1, 0).setIdList(IDweapon.unused))
-DXskill.set(IDskill.multyshot, new pSkill(sGroup.GROUP1, 'multyshot', sBalance.CHASE, 1, 20).setConfig(5, 30, 6).setIdList(ID.weapon.skillMultyshot))
-DXskill.set(IDskill.missile, new pSkill(sGroup.GROUP1, 'missile', sBalance.SPLASH, 0.5, 24).setConfig(2, 4, 20).setIdList(ID.weapon.skillMissile))
-DXskill.set(IDskill.arrow, new pSkill(sGroup.GROUP1, 'arrow', sBalance.SHOT_ANOTHER, 1.04, 20).setConfig(2, 20, 9).setIdList(ID.weapon.skillArrow))
-DXskill.set(IDskill.laser, new pSkill(sGroup.GROUP1, 'laser', sBalance.AREA_SPLASH, 0.5, 20).setConfig(1, 1, 0).setIdList(ID.weapon.skillLaser))
-DXskill.set(IDskill.sapia, new pSkill(sGroup.GROUP1, 'sapia', sBalance.AREA_ATTACK, 1, 24).setConfig(4, 4, 60).setIdList(ID.weapon.skillSapia))
-DXskill.set(IDskill.parapo, new pSkill(sGroup.GROUP1, 'parapo', sBalance.SPLASH, 0.44, 24).setConfig(1, 24, 10).setIdList(ID.weapon.skillParapo))
-DXskill.set(IDskill.blaster, new pSkill(sGroup.GROUP1, 'blaster', sBalance.SHOT_FRONT, 1.2, 24).setConfig(2, 40, 4).setIdList(ID.weapon.skillBlaster))
-DXskill.set(IDskill.sidewave, new pSkill(sGroup.GROUP1, 'sidewave', sBalance.SHOT_XWAY, 1.08, 20).setConfig(3, 24, 7).setIdList(ID.weapon.skillSidewave))
-DXskill.set(IDskill.sword, new pSkill(sGroup.GROUP1, 'sword', sBalance.CHASE, 1, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillSword))
-DXskill.set(IDskill.hyperBall, new pSkill(sGroup.GROUP1, 'hyperball', sBalance.CHASE, 1, 20).setConfig(2, 12, 15).setIdList(ID.weapon.skillHyperBall))
-DXskill.set(IDskill.critcalChaser, new pSkill(sGroup.GROUP1, 'criticalchaser', sBalance.SPLASH, 0.6, 28).setConfig(2, 12, 10).setIdList(ID.weapon.skillCriticalChaser))
-DXskill.set(IDskill.pileBunker, new pSkill(sGroup.GROUP1, 'pilebunker', sBalance.AREA_ATTACK, 1.3, 28).setConfig(1, 1, 60).setIdList(ID.weapon.skillPileBunker))
-DXskill.set(IDskill.santansu, new pSkill(sGroup.GROUP1, 'santansu', sBalance.AREA_SPLASH, 0.3, 24).setConfig(5, 5, 30).setIdList(ID.weapon.skillSantansu))
-DXskill.set(IDskill.whiteflash, new pSkill(sGroup.GROUP1, 'whiteflash', sBalance.AREA_SPLASH, 0.6, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillWhiteflash))
-DXskill.set(IDskill.ring, new pSkill(sGroup.GROUP1, 'ring', sBalance.SHOT_XWAY, 1.04, 20).setConfig(8, 12, 12).setIdList(ID.weapon.skillRing))
-DXskill.set(IDskill.rapid, new pSkill(sGroup.GROUP1, 'rapid', sBalance.SHOT_FRONT, 1.2, 20).setConfig(4, 40, 4).setIdList(ID.weapon.skillRapid))
-DXskill.set(IDskill.seondanil, new pSkill(sGroup.GROUP1, 'seondanil', sBalance.CHASE, 1.1, 28).setConfig(1, 1, 0).setIdList(ID.weapon.skillSeondanil))
-DXskill.set(IDskill.hanjumoek, new pSkill(sGroup.GROUP1, 'hanjumeok', sBalance.SPLASH, 0.57, 28).setConfig(1, 1, 0).setIdList(ID.weapon.skillHanjumeok))
-DXskill.set(IDskill.boomerang, new pSkill(sGroup.GROUP1, 'boomerang', sBalance.AREA_ATTACK, 0.93, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillBoomerang))
-DXskill.set(IDskill.moon, new pSkill(sGroup.GROUP1, 'moon', sBalance.FORMULA, 1.1, 28).setConfig(1, 1, 0).setIdList(ID.weapon.skillMoon))
-DXskill.set(IDskill.kalnal, new pSkill(sGroup.GROUP2, 'kalnal', sBalance.SHOT_ANOTHER, 1.08, 20).setConfig(2, 6, 20).setIdList(ID.weapon.skillKalnal))
-DXskill.set(IDskill.cogwheel, new pSkill(sGroup.GROUP2, 'cogwheel', sBalance.AREA_ATTACK, 1.11, 20).setConfig(1, 1, 0).setIdList(ID.weapon.skillCogwheel))
-DXskill.set(IDskill.yeonsai, new pSkill(sGroup.GROUP2, 'yeonsai', sBalance.SHOT_XWAY, 1.07, 20).setConfig(10, 30, 5).setIdList(ID.weapon.skillYeonsai))
-DXskill.set(IDskill.sabangtan, new pSkill(sGroup.GROUP2, 'sabangtan', sBalance.SPLASH, 0.48, 24).setConfig(6, 5, 15).setIdList(ID.weapon.skillSabangtan))
-DXskill.set(IDskill.habirant, new pSkill(sGroup.GROUP2, 'habirant', sBalance.CHASE, 1, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillHabirant))
-DXskill.set(IDskill.icechaser, new pSkill(sGroup.GROUP2, 'icechaser', sBalance.SPLASH, 0.6, 28).setConfig(2, 12, 10).setIdList(ID.weapon.skillIcechaser))
-DXskill.set(IDskill.calibur, new pSkill(sGroup.GROUP2, 'calibur', sBalance.CHASE, 1, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillCalibur))
-DXskill.set(IDskill.sujikpa, new pSkill(sGroup.GROUP2, 'sujikpa', sBalance.AREA_SPLASH, 0.55, 24).setConfig(1, 8, 20).setIdList(ID.weapon.skillSujikpa))
-DXskill.set(IDskill.speaker, new pSkill(sGroup.GROUP2, 'speaker', sBalance.AREA_ATTACK, 0.9, 24).setConfig(1, 1, 1).setIdList(ID.weapon.skillSpeaker))
-DXskill.set(IDskill.eomukggochi, new pSkill(sGroup.GROUP2, 'eomukggochi', sBalance.CHASE, 1, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillEomukggochi))
-DXskill.set(IDskill.r2Firecracker, new pSkill(sGroup.DONGGRAMI, 'firecracker', sBalance.SPLASH, 0.5, 24).setConfig(1, 15, 12).setIdList(ID.weapon.skillR2Firecraker))
-DXskill.set(IDskill.r2Toyhammer, new pSkill(sGroup.DONGGRAMI, 'toyhammer', sBalance.CHASE, 1, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillR2Toyhammer))
-DXskill.set(IDskill.r3Xkill, new pSkill(sGroup.R3_TOWER, 'Xkill', sBalance.CHASE, 1, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillR3Xkill))
-DXskill.set(IDskill.r3Xshot, new pSkill(sGroup.R3_TOWER, 'Xshot', sBalance.SHOT_ANOTHER, 1.05, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillR3Xshot))
-DXskill.set(IDskill.r3Xbeam, new pSkill(sGroup.R3_TOWER, 'Xbeam', sBalance.AREA_ATTACK, 0.94, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillR3Xbeam))
-DXskill.set(IDskill.r3Xboom, new pSkill(sGroup.R3_TOWER, 'Xboom', sBalance.SPLASH, 0.5, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillR3Xboom))
-DXskill.set(IDskill.r3Helljeon, new pSkill(sGroup.R3_TOWER, 'helljeon', sBalance.CHASE, 1, 20).setConfig(2, 30, 5).setIdList(ID.weapon.skillR3Helljeon))
+
+const DX = {
+  /** PW: 플레이어 스탯 웨폰 (player weapon = pw) */ PW: dataExportStatPlayerWeapon,
+  /** PWID: 플레이어 무기의 ID */ PWID: ID.playerWeapon,
+  /** PWGR: 플레이어 무기의 그룹 (group) */ PWGR: StatPlayerWeapon.groupTypeList,
+  /** PWBAL: 플레이어 무기 밸런스 (balance) */ PWBAL: StatPlayerWeapon.balanceTypeList,
+  /** PWCLA: 플레이어 무기 클래스 (class) */ PWCLA: StatPlayerWeapon,
+  /** SK: 플레이어 스킬 (skill = SK) */ SK: dataExportStatPlayerSkill,
+  /** SKID: 플레이어 스킬의 ID */ SKID: ID.playerSkill,
+  /** SKGR: 플레이어 스킬의 그룹 */ SKGR: StatPlayerSkill.groupTypeList,
+  /** SKBAL: 플레이어 스킬의 밸런스 */ SKBAL: StatPlayerSkill.balanceTypeList,
+  /** SKCLA: 플레이어 스킬의 클래스 */ SKCLA: StatPlayerSkill
+}
+
+DX.PW.set(DX.PWID.unused, new DX.PWCLA(DX.PWGR.GROUP1, 'unused', DX.PWBAL.CHASE, 1).setConfig(0, 0, 0).setIdList(ID.weapon.multyshot))
+DX.PW.set(DX.PWID.multyshot, new DX.PWCLA(DX.PWGR.GROUP1, 'multyshot', DX.PWBAL.MIXED, 1.33).setConfig(6, 1, 10).setIdList(ID.weapon.multyshot))
+DX.PW.set(DX.PWID.missile, new DX.PWCLA(DX.PWGR.GROUP1, 'missile', DX.PWBAL.SPLASH, 0.5).setConfig(4, 2, 30).setIdList(ID.weapon.missile))
+DX.PW.set(DX.PWID.arrow, new DX.PWCLA(DX.PWGR.GROUP1, 'arrow', DX.PWBAL.SHOT_ANOTHER, 1.04).setConfig(2, 1, 10).setIdList(ID.weapon.arrow))
+DX.PW.set(DX.PWID.laser, new DX.PWCLA(DX.PWGR.GROUP1, 'laser', DX.PWBAL.MIXED, 1.2).setConfig(4, 1, 12).setIdList(ID.weapon.laser))
+DX.PW.set(DX.PWID.sapia, new DX.PWCLA(DX.PWGR.GROUP1, 'sapia', DX.PWBAL.CHASE, 1).setConfig(3, 1, 60).setIdList(ID.weapon.sapia))
+DX.PW.set(DX.PWID.parapo, new DX.PWCLA(DX.PWGR.GROUP1, 'parapo', DX.PWBAL.SPLASH, 0.48).setConfig(3, 1, 30).setIdList(ID.weapon.parapo))
+DX.PW.set(DX.PWID.blaster, new DX.PWCLA(DX.PWGR.GROUP1, 'blaster', DX.PWBAL.SHOT_XWAY, 1.52).setConfig(2, 1, 6).setIdList(ID.weapon.blaster))
+DX.PW.set(DX.PWID.sidewave, new DX.PWCLA(DX.PWGR.GROUP1, 'sidewave', DX.PWBAL.SHOT_XWAY, 1.46).setConfig(8, 1, 15).setIdList(ID.weapon.sidewave))
+DX.PW.set(DX.PWID.ring, new DX.PWCLA(DX.PWGR.GROUP1, 'ring', DX.PWBAL.SHOT_XWAY, 1.8).setConfig(8, 1, 30).setIdList(ID.weapon.ring))
+DX.PW.set(DX.PWID.rapid, new DX.PWCLA(DX.PWGR.GROUP1, 'rapid', DX.PWBAL.SHOT_FRONT, 1.6).setConfig(3, 1, 4).setIdList(ID.weapon.rapid))
+DX.PW.set(DX.PWID.seondanil, new DX.PWCLA(DX.PWGR.GROUP1, 'seondanil', DX.PWBAL.CHASE, 1.0).setConfig(5, 1, 30).setIdList(ID.weapon.seondanil))
+DX.PW.set(DX.PWID.boomerang, new DX.PWCLA(DX.PWGR.GROUP1, 'boomerang', DX.PWBAL.SHOT_ANOTHER, 1.22).setConfig(3, 1, 20).setIdList(ID.weapon.boomerang))
+DX.PW.set(DX.PWID.kalnal, new DX.PWCLA(DX.PWGR.GROUP2, 'kalnal', DX.PWBAL.CHASE, 1).setConfig(2, 1, 20).setIdList(ID.weapon.kalnal))
+DX.PW.set(DX.PWID.cogwheel, new DX.PWCLA(DX.PWGR.GROUP2, 'cogwheel', DX.PWBAL.SHOT_ANOTHER, 1.35).setConfig(1, 1,  40).setIdList(ID.weapon.cogwheel))
+DX.PW.set(DX.PWID.yeonsai, new DX.PWCLA(DX.PWGR.GROUP2, 'yeonsai', DX.PWBAL.SHOT_XWAY, 1.8).setConfig(6, 1, 6).setIdList(ID.weapon.yeonsai))
+DX.PW.set(DX.PWID.sabangtan, new DX.PWCLA(DX.PWGR.GROUP2, 'sabangtan', DX.PWBAL.SPLASH, 0.5).setConfig(4, 1, 30).setIdList(ID.weapon.sabangtan))
+DX.PW.set(DX.PWID.r3TowerPink, new DX.PWCLA(DX.PWGR.R3_TOWER, 'towerpink', DX.PWBAL.CHASE, 1).setConfig(1, 5, 15).setIdList(ID.weapon.r3TowerPink))
+DX.PW.set(DX.PWID.r3TowerPurple, new DX.PWCLA(DX.PWGR.R3_TOWER, 'towerpurple', DX.PWBAL.SHOT_ANOTHER, 1.04).setConfig(2, 1, 10).setIdList(ID.weapon.r3TowerPurple))
+DX.PW.set(DX.PWID.r3Helljeon, new DX.PWCLA(DX.PWGR.R3_TOWER, 'helljeon', DX.PWBAL.MIXED, 1.3).setConfig(4, 1, 10).setIdList(ID.weapon.r3Helljeon))
+
+DX.SK.set(DX.SKID.unused, new DX.SKCLA(DX.SKGR.GROUP1, 'unused', DX.SKBAL.FORMULA, 1, 20).setConfig(1, 1, 0).setIdList(DX.PWID.unused))
+DX.SK.set(DX.SKID.multyshot, new DX.SKCLA(DX.SKGR.GROUP1, 'multyshot', DX.SKBAL.CHASE, 1, 20).setConfig(5, 30, 6).setIdList(ID.weapon.skillMultyshot))
+DX.SK.set(DX.SKID.missile, new DX.SKCLA(DX.SKGR.GROUP1, 'missile', DX.SKBAL.SPLASH, 0.5, 24).setConfig(2, 4, 20).setIdList(ID.weapon.skillMissile))
+DX.SK.set(DX.SKID.arrow, new DX.SKCLA(DX.SKGR.GROUP1, 'arrow', DX.SKBAL.SHOT_ANOTHER, 1.04, 20).setConfig(2, 20, 9).setIdList(ID.weapon.skillArrow))
+DX.SK.set(DX.SKID.laser, new DX.SKCLA(DX.SKGR.GROUP1, 'laser', DX.SKBAL.AREA_SPLASH, 0.5, 20).setConfig(1, 1, 0).setIdList(ID.weapon.skillLaser))
+DX.SK.set(DX.SKID.sapia, new DX.SKCLA(DX.SKGR.GROUP1, 'sapia', DX.SKBAL.AREA_ATTACK, 1, 24).setConfig(4, 4, 60).setIdList(ID.weapon.skillSapia))
+DX.SK.set(DX.SKID.parapo, new DX.SKCLA(DX.SKGR.GROUP1, 'parapo', DX.SKBAL.SPLASH, 0.44, 24).setConfig(1, 24, 10).setIdList(ID.weapon.skillParapo))
+DX.SK.set(DX.SKID.blaster, new DX.SKCLA(DX.SKGR.GROUP1, 'blaster', DX.SKBAL.SHOT_FRONT, 1.2, 24).setConfig(2, 40, 4).setIdList(ID.weapon.skillBlaster))
+DX.SK.set(DX.SKID.sidewave, new DX.SKCLA(DX.SKGR.GROUP1, 'sidewave', DX.SKBAL.SHOT_XWAY, 1.08, 20).setConfig(3, 24, 7).setIdList(ID.weapon.skillSidewave))
+DX.SK.set(DX.SKID.sword, new DX.SKCLA(DX.SKGR.GROUP1, 'sword', DX.SKBAL.CHASE, 1, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillSword))
+DX.SK.set(DX.SKID.hyperBall, new DX.SKCLA(DX.SKGR.GROUP1, 'hyperball', DX.SKBAL.CHASE, 1, 20).setConfig(2, 12, 15).setIdList(ID.weapon.skillHyperBall))
+DX.SK.set(DX.SKID.critcalChaser, new DX.SKCLA(DX.SKGR.GROUP1, 'criticalchaser', DX.SKBAL.SPLASH, 0.6, 28).setConfig(2, 12, 10).setIdList(ID.weapon.skillCriticalChaser))
+DX.SK.set(DX.SKID.pileBunker, new DX.SKCLA(DX.SKGR.GROUP1, 'pilebunker', DX.SKBAL.AREA_ATTACK, 1.3, 28).setConfig(1, 1, 60).setIdList(ID.weapon.skillPileBunker))
+DX.SK.set(DX.SKID.santansu, new DX.SKCLA(DX.SKGR.GROUP1, 'santansu', DX.SKBAL.AREA_SPLASH, 0.3, 24).setConfig(5, 5, 30).setIdList(ID.weapon.skillSantansu))
+DX.SK.set(DX.SKID.whiteflash, new DX.SKCLA(DX.SKGR.GROUP1, 'whiteflash', DX.SKBAL.AREA_SPLASH, 0.6, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillWhiteflash))
+DX.SK.set(DX.SKID.ring, new DX.SKCLA(DX.SKGR.GROUP1, 'ring', DX.SKBAL.SHOT_XWAY, 1.04, 20).setConfig(8, 12, 12).setIdList(ID.weapon.skillRing))
+DX.SK.set(DX.SKID.rapid, new DX.SKCLA(DX.SKGR.GROUP1, 'rapid', DX.SKBAL.SHOT_FRONT, 1.2, 20).setConfig(4, 40, 4).setIdList(ID.weapon.skillRapid))
+DX.SK.set(DX.SKID.seondanil, new DX.SKCLA(DX.SKGR.GROUP1, 'seondanil', DX.SKBAL.CHASE, 1.1, 28).setConfig(1, 1, 0).setIdList(ID.weapon.skillSeondanil))
+DX.SK.set(DX.SKID.hanjumoek, new DX.SKCLA(DX.SKGR.GROUP1, 'hanjumeok', DX.SKBAL.SPLASH, 0.57, 28).setConfig(1, 1, 0).setIdList(ID.weapon.skillHanjumeok))
+DX.SK.set(DX.SKID.boomerang, new DX.SKCLA(DX.SKGR.GROUP1, 'boomerang', DX.SKBAL.AREA_ATTACK, 0.93, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillBoomerang))
+DX.SK.set(DX.SKID.moon, new DX.SKCLA(DX.SKGR.GROUP1, 'moon', DX.SKBAL.FORMULA, 1.1, 28).setConfig(1, 1, 0).setIdList(ID.weapon.skillMoon))
+DX.SK.set(DX.SKID.kalnal, new DX.SKCLA(DX.SKGR.GROUP2, 'kalnal', DX.SKBAL.SHOT_ANOTHER, 1.08, 20).setConfig(2, 6, 20).setIdList(ID.weapon.skillKalnal))
+DX.SK.set(DX.SKID.cogwheel, new DX.SKCLA(DX.SKGR.GROUP2, 'cogwheel', DX.SKBAL.AREA_ATTACK, 1.11, 20).setConfig(1, 1, 0).setIdList(ID.weapon.skillCogwheel))
+DX.SK.set(DX.SKID.yeonsai, new DX.SKCLA(DX.SKGR.GROUP2, 'yeonsai', DX.SKBAL.SHOT_XWAY, 1.07, 20).setConfig(10, 30, 5).setIdList(ID.weapon.skillYeonsai))
+DX.SK.set(DX.SKID.sabangtan, new DX.SKCLA(DX.SKGR.GROUP2, 'sabangtan', DX.SKBAL.SPLASH, 0.48, 24).setConfig(6, 5, 15).setIdList(ID.weapon.skillSabangtan))
+DX.SK.set(DX.SKID.habirant, new DX.SKCLA(DX.SKGR.GROUP2, 'habirant', DX.SKBAL.CHASE, 1, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillHabirant))
+DX.SK.set(DX.SKID.icechaser, new DX.SKCLA(DX.SKGR.GROUP2, 'icechaser', DX.SKBAL.SPLASH, 0.6, 28).setConfig(2, 12, 10).setIdList(ID.weapon.skillIcechaser))
+DX.SK.set(DX.SKID.calibur, new DX.SKCLA(DX.SKGR.GROUP2, 'calibur', DX.SKBAL.CHASE, 1, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillCalibur))
+DX.SK.set(DX.SKID.sujikpa, new DX.SKCLA(DX.SKGR.GROUP2, 'sujikpa', DX.SKBAL.AREA_SPLASH, 0.55, 24).setConfig(1, 8, 20).setIdList(ID.weapon.skillSujikpa))
+DX.SK.set(DX.SKID.speaker, new DX.SKCLA(DX.SKGR.GROUP2, 'speaker', DX.SKBAL.AREA_ATTACK, 0.9, 24).setConfig(1, 1, 1).setIdList(ID.weapon.skillSpeaker))
+DX.SK.set(DX.SKID.eomukggochi, new DX.SKCLA(DX.SKGR.GROUP2, 'eomukggochi', DX.SKBAL.CHASE, 1, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillEomukggochi))
+DX.SK.set(DX.SKID.r2Firecracker, new DX.SKCLA(DX.SKGR.DONGGRAMI, 'firecracker', DX.SKBAL.SPLASH, 0.5, 24).setConfig(1, 15, 12).setIdList(ID.weapon.skillR2Firecraker))
+DX.SK.set(DX.SKID.r2Toyhammer, new DX.SKCLA(DX.SKGR.DONGGRAMI, 'toyhammer', DX.SKBAL.CHASE, 1, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillR2Toyhammer))
+DX.SK.set(DX.SKID.r3Xkill, new DX.SKCLA(DX.SKGR.R3_TOWER, 'Xkill', DX.SKBAL.CHASE, 1, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillR3Xkill))
+DX.SK.set(DX.SKID.r3Xshot, new DX.SKCLA(DX.SKGR.R3_TOWER, 'Xshot', DX.SKBAL.SHOT_ANOTHER, 1.05, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillR3Xshot))
+DX.SK.set(DX.SKID.r3Xbeam, new DX.SKCLA(DX.SKGR.R3_TOWER, 'Xbeam', DX.SKBAL.AREA_ATTACK, 0.94, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillR3Xbeam))
+DX.SK.set(DX.SKID.r3Xboom, new DX.SKCLA(DX.SKGR.R3_TOWER, 'Xboom', DX.SKBAL.SPLASH, 0.5, 24).setConfig(1, 1, 0).setIdList(ID.weapon.skillR3Xboom))
+DX.SK.set(DX.SKID.r3Helljeon, new DX.SKCLA(DX.SKGR.R3_TOWER, 'helljeon', DX.SKBAL.CHASE, 1, 20).setConfig(2, 30, 5).setIdList(ID.weapon.skillR3Helljeon))
 
 
 /**
@@ -708,23 +731,12 @@ dataExportStatRound.set(ID.round.round3_12, new StatRound(32, '3-12', 26, 69000,
  * @type {Map<number, StatItem>}
  */
 export const dataExportStatItem = new Map()
-const inputExportStatItemEquipment = () => {
-  const EQUIP001 = new StatItem(0, StatItem.TYPE_EQUIPMENT, '스탠다드 플러스 C1 블루', 1000, '표준적인 장비. \n 공격력을 증가시킨다.')
-  EQUIP001.setEquipmentInfo(0, 3000, 1000)
-  dataExportStatItem.set(ID.item.standardPlusC1Blue, EQUIP001)
-  
-  const EQUIP002 = new StatItem(1, StatItem.TYPE_EQUIPMENT, '동그라미 장난감', 1500, '동그라미 마을에서 만든 장난감이에요.\n성능이 약하지만 어쩔 수 없어요 흑흑 ㅠㅠ\n대신 쉴드 회복과 쉴드량을 늘려준답니다. 히힛~')
-  EQUIP002.setEquipmentInfo(0, 2400, 1120, 600, 0, 50, 50)
-  dataExportStatItem.set(ID.item.donggramiMugi, EQUIP002)
-  
-  const EQUIP003 = new StatItem(2, StatItem.TYPE_EQUIPMENT, '헬기(hellgi) 장비(jangbi)', 1300, '다운타워에서 돌아다니는 헬기들의 부품을 모아 만든 특수장비.\n 서브웨폰 헬전을 사용할 수 있다.')
-  EQUIP003.setEquipmentInfo(0, 2100, 1040, 1100)
-}
-inputExportStatItemEquipment() // 아이템 정보를 등록한 함수 실행
-
-dataExportStatItem.set(ID.item.donggramiTicket, new StatItem(3, StatItem.TYPE_ITEM, '동그라미 마을 티켓', 100, '동그라미 마을에서 여러가지 용도로 사용하는 티켓'))
-dataExportStatItem.set(ID.item.donggramiUSB, new StatItem(4, StatItem.TYPE_ITEM, '동그라미 운영체제 USB', 2000, '동그라미 마을에서 만들어진 재미난 운영체제 파일이 담겨있는 부팅 USB'))
-dataExportStatItem.set(ID.item.hellgiComponent, new StatItem(5, StatItem.TYPE_ITEM, '헬기(hellgi) 부품(component)', 60, '다운타워에서 등장하는 헬기들이 부서지고 남은 부품들'))
-dataExportStatItem.set(ID.item.upgradeStone, new StatItem(6, StatItem.TYPE_ITEM, '강화석', 100, '강화할 때 필요한 아이템'))
-dataExportStatItem.set(ID.item.boseokTest, new StatItem(7, StatItem.TYPE_ITEM, '보석 테스트', 0, '보석 테스트 용도 아이템'))
+dataExportStatItem.set(ID.item.standardPlusC1Blue, new StatItem(0, StatItem.TYPES.EQUIPMENT, '스탠다스 플러스 C1 블루').setStat(3000, 0, 0, 0).setUpgradeCost(1000).setRequire(30))
+dataExportStatItem.set(ID.item.donggramiMugi, new StatItem(1, StatItem.TYPES.EQUIPMENT, '동그라미 장난감').setStat(2400, 50, 50, 50).setUpgradeCost(1200).setRequire(15))
+dataExportStatItem.set(ID.item.hellgiComponent, new StatItem(2, StatItem.TYPES.ITEM, '헬기(hellgi) 장비(jangbi)'))
+dataExportStatItem.set(ID.item.donggramiTicket, new StatItem(3, StatItem.TYPES.ITEM, '동그라미 마을 티켓'))
+dataExportStatItem.set(ID.item.donggramiUSB, new StatItem(4, StatItem.TYPES.USB, '동그라미 운영체제 USB'))
+dataExportStatItem.set(ID.item.hellgiComponent, new StatItem(5, StatItem.TYPES.ITEM, '헬기(hellgi) 부품(component)'))
+dataExportStatItem.set(ID.item.upgradeStone, new StatItem(6, StatItem.TYPES.ITEM, '강화석'))
+dataExportStatItem.set(ID.item.boseokTest, new StatItem(7, StatItem.TYPES.ITEM, '보석 테스트'))
 

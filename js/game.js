@@ -131,73 +131,104 @@ for (const src of Object.values(soundSrc.skill)) {
 
 class InventoryItem {
   /**
-   * 인벤토리에 저장되는 정보
+   * 인벤토리에 저장되는 정보 (아이템 타입은 캐시데이터이며, 게임 저장 용도로는 활용하지 않습니다.)
    * @param {number} id 아이디
-   * @param {string} itemType 아이템 타입
-   * @param {number} count 개수 (장비의 경우 무시됨)
-   * @param {number} upgradeLevel 레벨 (장비의 경우 강화레벨)
+   * @param {number} itemType 아이템 타입 (참고: 잘못된 값을 입력하면 해석하지 않습니다.)
+   * @param {number} countValue 개수 카운터: 아이템이 NORMAL 타입이 아니라면, 이 값의 의미는 타입에 따라 달라집니다.
+   * @param {number} customValue 커스텀 카운터: 이 값의 의미는 타입에 따라 달라집니다. NORMAL 타입은 이 값을 사용하지 않습니다.
    */
-  constructor (id = 0, itemType = userInventorySystem.itemType.ITEM, count = 1, upgradeLevel = 0) {
+  constructor (id = 0, itemType = InventorySystem.TYPES.ITEM, countValue = 1, customValue = 0) {
     this.id = id
     this.itemType = itemType
-    this.count = count
-    this.upgradeLevel = upgradeLevel
-
-    // 아이템이 생성될 때 장비 개수는 무조건 1로 고정
-    if (this.itemType === userInventorySystem.itemType.EQUIPMENT) {
-      this.count = 1
-    }
-    
-    // 아이템 타입 기본값 지정 (잘못된 값은 강제로 변경됨)
-    if (this.itemType !== userInventorySystem.itemType.ITEM 
-      && this.itemType !== userInventorySystem.itemType.EQUIPMENT) {
-      this.itemType = userInventorySystem.itemType.ITEM
-    }
+    this.countValue = countValue
+    this.customValue = customValue
   }
 }
 
-class userInventorySystem {
-  static itemType = {
-    ITEM: 'item',
-    EQUIPMENT: 'equipment',
-  }
+class InventorySystem {
+  static TYPES = StatItem.TYPES
 
   /** @type {InventoryItem[]} */
   static itemList = []
 
-  /**
-   * 인벤토리에 아이템 추가
-   * @param {number} id 아이디
-   * @param {number} count 개수 (장비의 경우 무시됨)
-   * @param {number} upLevel 레벨 (장비의 경우 강화레벨)
-   */
-  static add (id, count = 1, upLevel = 0) {
-    let targetItem = dataExportStatItem.get(id)
-    if (targetItem == null) return
+  /** 아이템을 추가합니다. 이 함수는 스택 가능 아닌 것은 중복하여 추가하지 않습니다. 
+   * @param {number} [countValue=1] 카운트 값, 아이템의 특성에 따라 설정해주세요.
+   * @param {number} customValue 커스텀 값, 아이템의 특성에 따라 설정해주세요.
+  */
+  static addItem (id = 0, countValue = 1, customValue = 0) {
+    const data = dataExportStatItem.get(id)
+    if (data == null) return
 
-    if (targetItem.type === userInventorySystem.itemType.ITEM) {
-      for (let i = 0; i < this.itemList.length; i++) {
-        // 아이디가 같은 아이템은 그만큼 개수를 더함
-        if (this.itemList[i].id === id) {
-          this.itemList[i].count += count
-          return
-        }
+    const index = this.getIndexById(id)
+    // 아이템이 스택 가능할 때는, 해당 ID가 인벤토리에 있다면 개수를 더합니다.
+    if (data.isStackable) {
+      if (countValue <= 0) return
+
+      if (index !== -1) {
+        this.itemList[index].countValue += countValue
+        return
+      }
+    } else if (index !== -1) {
+      // 아니라면, 개수 기반으로 작동하지 않으므로, 아이템을 추가하지 않습니다.
+      // 중복된 아이템은 추가할 수 없습니다.
+      return
+    }
+    
+    // 아이템이 존재하지 않은 경우, 해당 아이템을 정상적으로 추가합니다.
+    this.itemList.push(new InventoryItem(id, data.type, countValue, customValue))
+  }
+
+  /** 아이템 타입이 아닌 아이템도 중복으로 강제로 추가합니다! 특수한 용도로 사용되는 함수!  
+   * 이 함수를 임의로 호출하지 마세요.  */
+  static addForceItem (id = 0, countValue = 0, customValue = 0) {
+    const data = dataExportStatItem.get(id)
+    if (data == null) return
+
+    const index = this.getIndexById(id)
+    // 아이템 타입인 경우, 기존과 역할은 동일합니다.
+    if (data.isStackable && index !== -1) {
+      if (countValue < 1) return
+
+      this.itemList[index].countValue += countValue
+      return
+    }
+
+    // 만약 아이템이 존재하지 않는데 아이템 타입을 강제로 추가해야 한다면
+    // countValue가 1이 되도록 조정합니다.
+    if (data.type === StatItem.TYPES.ITEM && countValue <= 0) {
+      countValue = 1
+    }
+
+    // 아이템을 강제로 추가합니다. 강제 추가이므로 추가 조사를 하지 않습니다.
+    this.itemList.push(new InventoryItem(id, data.type, countValue, customValue))
+  }
+
+
+  static checkDuplicate (id = 0) {
+    for (let i = 0; i < this.itemList.length; i++) {
+      if (this.itemList[i].id === id) {
+        return true
       }
     }
 
-    // 그 외는 그냥 추가 (장비는 중복 불가능, 해당 아이템이 없으면 새로 추가)
-    this.itemList.push(new InventoryItem(id, targetItem.type, count, upLevel))
+    return false
   }
 
   /**
-   * 인벤토리의 아이템 개수를 반환
+   * 해당 ID를 가진 아이템이 있다면, 개수를 리턴받음
+   * 
+   * 아이템 타입이 아닌 경우, 1 또는 0만 리턴됨  
+   * 주의: 아이템 타입이 아닌 중복된 아이템의 개수를 조사하지 않습니다.
    * @param {number} id 
    */
   static getItemCountById (id) {
     for (let i = 0; i < this.itemList.length; i++) {
-      // 아이디를 직접 다 찾아봄
       if (this.itemList[i].id === id) {
-        return this.itemList[i].count
+        if (this.itemList[i].itemType === StatItem.TYPES.ITEM) {
+          return this.itemList[i].countValue
+        } else {
+          return 1
+        }
       }
     }
 
@@ -207,7 +238,6 @@ class userInventorySystem {
   /** 인벤토리의 아이템에 해당하는 id를 기반으로 아이템이 있는 인덱스 값을 가져옵니다. */
   static getIndexById (id = 0) {
     for (let i = 0; i < this.itemList.length; i++) {
-      // 아이디를 직접 다 찾아봄
       if (this.itemList[i].id === id) {
         return i
       }
@@ -216,65 +246,55 @@ class userInventorySystem {
     return -1
   }
 
+
   /**
-   * 인벤토리의 아이템 삭제 (참고: 해당 슬롯은 삭제되는게 아닌, 데이터만 사라집니다.)
+   * 해당하는 ID의 아이템을 삭제합니다.
    * 
-   * 주의: 장비아이템은, 인벤토리데이터랑 연동되어있어, 이 함수를 사용하면 장비의 인덱스를 갱신할 수 없음.
-   * 따라서, userSystem의 함수를 호출해주세요.
-   * 
-   * 다른곳에서는 사용하면 안됩니다.
-   * 
-   * @deprecated
-   * @param {number} index 인덱스 번호
-   * @param {number} deleteCount 개수 (참고: 0을 지정하거나 모든 개수가 사라지면 해당 아이템은 삭제됨, 장비 아이템은 남은 개수를 무시)
+   * 아이템 타입인 경우, 해당 개수만큼 줄어들며, 개수가 0 이하인 경우 제거합니다.  
+   * 아이템 타입이 아닌 경우, 해당 아이템은 무조건 제거됩니다.
+   * @param {number} countValue 개수
    */
-  static delete (index, deleteCount = 0) {
-    if (index >= this.itemList.length) return
+  static removeItem (id = 0, countValue = 1) {
+    const index = this.getIndexById(id)
+    if (index === -1) return false
 
-    let target = this.itemList[index]
-    let isDeleted = false
-    if (target.itemType === this.itemType.EQUIPMENT) {
-      isDeleted = true
-    } else if (target.itemType === this.itemType.ITEM) {
-      // 아이템의 개수가 삭제 개수보다 많으면 그 개수만큼 삭제, 적으면 전부 삭제
-      if (target.count > deleteCount) target.count -= deleteCount
+    const data = dataExportStatItem.get(this.itemList[index].id)
+    if (data == null) return false
 
-      // 삭제 개수가 0이하이면 전부 삭제
-      if (deleteCount <= 0) isDeleted = true
+    // 아이템 타입인 경우 남은 개수를 조사해서, 
+    // 해당 개수 초과면 아이템을 유지하고 개수만 변동합니다.
+    if (data.isStackable) {
+      // 카운트 개수가 1이상으로 정의되지 않으면 이 함수의 처리는 무효입니다.
+      if (countValue <= 0) return false
+
+      if (this.itemList[index].countValue > countValue) {
+        this.itemList[index].countValue -= countValue
+        return false
+      }
     }
 
-    // 아이템 삭제 작업
-    if (isDeleted) this.itemList.splice(index, 1)
+    this.itemList.splice(index, 1)
+    return true
+  }
+
+  /** 해당 인덱스의 아이템을 삭제합니다. 남은 개수에 상관없이 제거합니다. */
+  static removeItemByIndex (index = -1) {
+    if (index < 0) return false
+
+    this.itemList.splice(index, 1) 
+    return true
   }
 
   /** 인벤토리 공간을 변경합니다. */
   static swap (index1 = 0, index2 = 1) {
     // 배열 공간을 초과하거나 두개의 인덱스가 같으면 무시
-    if (index1 < 0 && index1 >= this.itemList.length) return
-    if (index2 < 0 && index2 >= this.itemList.length) return
+    if (index1 < 0 || index1 >= this.itemList.length) return
+    if (index2 < 0 || index2 >= this.itemList.length) return
     if (index1 === index2) return
 
-    let prev = this.itemList[index1]
-    let next = this.itemList[index2]
-
-    this.itemList[index1] = next
+    const prev = this.itemList[index1]
+    this.itemList[index1] = this.itemList[index2]
     this.itemList[index2] = prev
-  }
-
-  /** 비어있는 공간 삭제 (사용자가 직접 함수를 호출해야 비어있는 공간이 사라짐) */
-  static spaceDelete () {
-    // 비어있는 공간이 있으면, 이전 위치로 계속 스왑
-    let spaceCount = 0
-    for (let i = 1; i < this.itemList.length; i++) {
-      let current = this.itemList[i]
-      if (current.id === 0) {
-        this.swap(i, spaceCount)
-        spaceCount++
-      }
-    }
-
-    // 나머지 뒤의 공간은 전부 삭제 (어차피 비어있으므로)
-    this.itemList.splice(this.itemList.length - spaceCount, spaceCount)
   }
 
   /**
@@ -294,8 +314,8 @@ class userInventorySystem {
     for (let i = 0; i < this.itemList.length; i++) {
       let current = this.itemList[i]
       idList.push(current.id)
-      countList.push(current.count)
-      upgradeLevel.push(current.upgradeLevel)
+      countList.push(current.countValue)
+      upgradeLevel.push(current.customValue)
     }
 
     return {
@@ -306,24 +326,13 @@ class userInventorySystem {
   }
 }
 
-/** 
- * 장비 데이터
- * @typedef UserEquipment
- * @property {number} itemIndex
- * @property {number} attack
- * @property {number} baseCost
- * @property {number} upgradeCost
- * @property {number} id
- * @property {number} upgradeLevel
- */
-
 /**
- * @deprecated
  * 유저 세이브 데이터 타입
  * @typedef UserSaveData
  * @property {number} lv
  * @property {number} exp
  * @property {number} gold
+ * @property {number} equipmentIndex
  * @property {number[]} weaponList
  * @property {number[]} skillList
  * @property {number[]} weaponPreset
@@ -333,7 +342,6 @@ class userInventorySystem {
  * @property {number[]} inventoryItemIdList
  * @property {number[]} inventoryItemCountList
  * @property {number[]} inventoryItemUpgardeLevel
- * @property {UserEquipment} equipment
  * @property {number[]} weaponUnlockList
  * @property {number[]} skillUnlockList
  * @property {number[]} roundClearList
@@ -341,6 +349,9 @@ class userInventorySystem {
  */
 
 
+/**
+ * StatUIBuffer
+ */
 class StatUIBuffer {
   static INDEXS = {
     HP: 0,
@@ -375,7 +386,7 @@ class StatUIBuffer {
 /** 유저 정보 (static 클래스) */
 export class userSystem {
   /** 최대 레벨 */ static MAX_LEVEL = StatUser.MAX_LEVEL
-  /** 아이템의 강화 최대 레벨 */ static UPGRADE_LEVEL_MAX = StatItem.UPGRADE_LEVEL_MAX
+  /** 아이템의 강화 최대 레벨 */ static UPGRADE_LEVEL_MAX = StatItem.EQUIPMENT_UPGRADE_MAX_LEVEL
   /** 유저 체력 기본값 */ static HP_DEFAULT = 300
   /** 유저 쉴드 기본값 */ static SHIELD_DEFAULT = 200
   /** 쉴드 회복 기본값 */ static SHIELD_RECOVERY_DEFAULT = 100
@@ -399,7 +410,7 @@ export class userSystem {
   /** 레벨업 이펙트 프레임 */ static levelUpEffectFrame = 0
   /** 골드 (플레이어의 자원) */ static gold = 0
 
-  /** 스페셜 플래그 (특수한 용도로 사용됨) */ static specialFlagList = [0]
+  /** 스페셜 플래그 (특수한 용도로 사용됨) @type {number[]} */ static specialFlagList = []
 
   /** 라운드 클리어 id 리스트 @type {number[]} */
   static roundClearList = []
@@ -437,9 +448,6 @@ export class userSystem {
   /** 스킬 1슬롯의 개수 (4개) */
   static SKILL_LIST_SLOT_COUNT = 4
 
-  /** 프리셋의 최대 번호 (최대 개수가 아닙니다!) @deprecated */
-  static PRESET_MAX_NUMBER = 4
-
   /** 프리셋의 최대 개수 */
   static PRESET_MAX_COUNT = 5
 
@@ -475,27 +483,7 @@ export class userSystem {
     }
   }
 
-  /** 유저가 장착한 장비의 데이터 (캐시용도로 사용됨) @type {UserEquipment} */
-  static equipment = {
-    itemIndex: -1,
-
-    // cache data
-    attack: 0,
-    baseCost: 0,
-    upgradeCost: 0,
-    id: ID.equipment.unused,
-    upgradeLevel: 0,
-  }
-
-  static getEquipmentItemInfo () {
-    let item = this.inventory.get(this.equipment.itemIndex)
-    if (item == null) return
-
-    let data = dataExportStatItem.get(item.id)
-    return data
-  }
-
-  static inventory = userInventorySystem
+  static inventory = InventorySystem
 
   static SlotData = class SlotData {
     constructor () {
@@ -507,6 +495,16 @@ export class userSystem {
   }
   static slot = [new userSystem.SlotData(), new userSystem.SlotData(), new userSystem.SlotData(), new userSystem.SlotData()]
 
+  static equipmentIndex = -1
+
+  static getEquipmentItemData () {
+    let item = this.inventory.get(this.equipmentIndex)
+    if (item == null) return
+
+    let data = dataExportStatItem.get(item.id)
+    return data
+  }
+
   /**
    * 장비를 설정합니다.
    * @param {number} itemIndex 
@@ -514,149 +512,123 @@ export class userSystem {
    */
   static setEquipment (itemIndex) {
     // 같은 인덱스의 장비라면 장착하지 않고 리턴
-    if (this.equipment.itemIndex === itemIndex) return false
+    if (this.equipmentIndex === itemIndex) return false
 
     // 인벤토리에서 장비를 가져옴, 장비 타입이 아니면 리턴
     let currentItem = this.inventory.get(itemIndex)
     if (currentItem == null) return false
-    if (currentItem.itemType !== this.inventory.itemType.EQUIPMENT) return false
+    if (currentItem.itemType !== this.inventory.TYPES.EQUIPMENT) return false
 
     // 인벤토리에 있는 아이템의 데이터를 가져옴
     let itemData = dataExportStatItem.get(currentItem.id)
     if (itemData == null) return false
 
     // 레벨이 낮으면 장착 불가
-    if (this.lv < itemData.equipment.requireLevel) return false
+    if (this.lv < itemData.requireLevel) return false
 
     // 장비 교체 (이전 장비는 인벤토리에 남아있음.) 및 데이터 등록
-    this.equipment.itemIndex = itemIndex
-    this.equipment.attack = itemData.equipment.attack
-    this.equipment.upgradeCost = itemData.equipment.upgradeCost
-    this.equipment.upgradeLevel = currentItem.upgradeLevel
+    this.equipmentIndex = itemIndex
     return true
   }
 
-  /** 현재 장비를 업그레이드 합니다. (단, 골드가 충분히 있어야 함) @deprecated */
+  /** 현재 장비를 업그레이드 합니다. */
   static upgradeEquipment () {
-    let upgradeCostPercent = StatItem.upgradeCostPercentTable[this.equipment.upgradeLevel]
-    let cost = Math.floor(this.equipment.upgradeCost * upgradeCostPercent / 100)
-    if (this.gold < cost) return false
-
-    this.gold -= cost
-    // 인벤토리에 있는 아이템의 레벨을 업그레이드 (실제 정보는 인벤토리에 있음)
-    let item = this.inventory.get(this.equipment.itemIndex)
-    if (item == null) return false
-
-    item.upgradeLevel++
-    return true
+    return this.inventoryItemEquipmentUpgrade(this.equipmentIndex)
   }
 
-  /** 인벤토리에 있는 아이템을 업그레이드 합니다. (장비아이템 한정) */
-  static inventoryItemUpgrade (itemIndex = 0) {
-    let current = this.inventory.get(itemIndex)
-    if (current == null) return false
+  /** 인벤토리에 있는 아이템을 업그레이드 합니다. (장비아이템 한정) 
+   * @param {number} itemIndex 아이템의 인덱스 */
+  static inventoryItemEquipmentUpgrade (itemIndex) {
+    if (itemIndex < 0 || itemIndex >= this.inventory.itemList.length) return false
 
-    let itemData = dataExportStatItem.get(current.id)
+    const currentItem = this.inventory.itemList[itemIndex]
+    const itemData = dataExportStatItem.get(currentItem.id)
     if (itemData == null) return false
+    if (itemData.type !== this.inventory.TYPES.EQUIPMENT) return false
+    if (currentItem.customValue >= StatItem.EQUIPMENT_UPGRADE_MAX_LEVEL) return false
 
-    if (itemData.type !== this.inventory.itemType.EQUIPMENT) return false
-    if (current.upgradeLevel >= StatItem.UPGRADE_LEVEL_MAX) return false
-
-    let upgradeCostPercent = StatItem.upgradeCostPercentTable[current.upgradeLevel]
-    let cost = Math.floor(itemData.equipment.upgradeCost * upgradeCostPercent / 100)
-    
+    const cost = StatItem.getEquipmentUpgradeCost(itemData.upgradeCost, currentItem.customValue)
     if (this.gold < cost) return false
 
     // 장비 업그레이드
-    current.upgradeLevel++
+    currentItem.customValue++
     this.gold -= cost
-
-    // 장착된 장비인경우, 장착된 장비의 정보를 갱신
-    if (itemIndex === this.equipment.itemIndex) {
-      let getData = this.getInventoryEquipmentStatus(itemIndex)
-      if (getData != null) {
-        this.equipment.attack = getData.attack
-        this.equipment.upgradeCost = getData.cost
-        this.equipment.upgradeLevel = current.upgradeLevel
-      }
-    }
-
     return true
   }
 
-  /** 현재 아이템의 강화 비용 */
-  static getUpgradeCost (itemIndex = 0) {
-    let current = this.inventory.get(itemIndex)
-    if (current == null) return 0
+  /** 현재 아이템의 강화 비용
+   * @param {number} itemIndex 아이템의 인덱스 */
+  static getUpgradeCost (itemIndex) {
+    if (itemIndex < 0 || itemIndex >= this.inventory.itemList.length) return 0
 
-    let itemData = dataExportStatItem.get(current.id)
+    const currentItem = this.inventory.itemList[itemIndex]
+    const itemData = dataExportStatItem.get(currentItem.id)
     if (itemData == null) return 0
+    if (itemData.type !== this.inventory.TYPES.EQUIPMENT) return 0
+    if (currentItem.customValue >= StatItem.EQUIPMENT_UPGRADE_MAX_LEVEL) return 0
 
-    let upgradeCostPercent = StatItem.upgradeCostPercentTable[current.upgradeLevel]
-    let cost = Math.floor(itemData.equipment.upgradeCost * upgradeCostPercent / 100)
-    return cost
+    return StatItem.getEquipmentUpgradeCost(itemData.upgradeCost, currentItem.customValue)
   }
 
-  static getInventoryEquipmentStatus (itemIndex = 0) {
-    let current = this.inventory.get(itemIndex)
-    if (current == null) return
+  /** 인벤토리에 있는 아이템의 값들 (공격력, 강화 비용 등)을 얻어옵니다. */
+  static getInventoryEquipmentValues (itemIndex = 0) {
+    const currentItem = this.inventory.get(itemIndex)
+    if (currentItem == null) return
 
-    let itemData = dataExportStatItem.get(current.id)
+    const itemData = dataExportStatItem.get(currentItem.id)
     if (itemData == null) return
+    if (itemData.type !== this.inventory.TYPES.EQUIPMENT) return
 
-    let attack = Math.floor(StatItem.upgradeAttackPercentTable[current.upgradeLevel] * itemData.equipment.attack / 100)
-    let cost = Math.floor(StatItem.upgradeCostPercentTable[current.upgradeLevel] * itemData.equipment.upgradeCost / 100)
-    let refund = Math.floor(StatItem.upgradeCostTotalRefundTable[current.upgradeLevel] * itemData.equipment.upgradeCost / 100)
-    let nextLevelAttack = 0
-    if (current.upgradeLevel < StatItem.UPGRADE_LEVEL_MAX) {
-      nextLevelAttack = Math.floor(StatItem.upgradeAttackPercentTable[current.upgradeLevel + 1] * itemData.equipment.attack / 100)
-    }
+    const attack = StatItem.getEquipmentAttack(itemData.attack, currentItem.customValue)
+    const cost = StatItem.getEquipmentUpgradeCost(itemData.upgradeCost, currentItem.customValue)
+    const nextLevelCost = StatItem.getEquipmentUpgradeCost(itemData.upgradeCost, currentItem.customValue + 1)
+    const upgradeLevel = currentItem.customValue
 
     return {
       attack,
       cost,
-      refund,
-      nextLevelAttack,
+      nextLevelCost,
+      upgradeLevel
     }
   }
 
   /**
-   * 인벤토리 데이터 아이템을 삭제합니다. 이것은 itemId를 기반으로 합니다.
+   * 인벤토리 데이터 아이템을 삭제합니다. 이것은 itemId를 기반으로 합니다.  
+   * (장비아이템과의 연동을 위해, 이 함수를 사용해서 아이템을 제거하세요.)
    * @param {number} itemId 아이템의 id
    */
   static inventoryItemDeleteById (itemId, count = 0) {
     const index = this.inventory.getIndexById(itemId)
-    this.inventoryItemDelete(index, count)
+    if (index < 0) return
+    
+    const isSuccess = this.inventory.removeItem(itemId, count)
+
+    // 아이템 삭제가 성공하면, 인벤토리 내부 인덱스가 변화하므로, 장비 인덱스를 다시 보정합니다.
+    // splice로 뒤쪽 배열이 삭제되므로 인덱스는 1 감소합니다.
+    if (isSuccess && this.equipmentIndex > index) {
+      this.equipmentIndex--
+    } else if (index === this.equipmentIndex) {
+      this.equipmentIndex = -1
+    }
   }
 
   /**
-   * 인벤토리 데이터 아이템을 삭제합니다. (장비아이템과의 연동을 위해, 이 함수를 사용해서 아이템을 제거하세요.)
+   * 인벤토리 데이터 아이템을 삭제합니다. 이것은 인덱스 기반입니다.  
+   * (장비아이템과의 연동을 위해, 이 함수를 사용해서 아이템을 제거하세요.)
    * @param {number} itemIndex 아이템의 인덱스
-   * @param {number} count 개수
    */
-  static inventoryItemDelete (itemIndex, count = 0) {
+  static inventoryItemDeleteByIndex (itemIndex) {
     let current = this.inventory.get(itemIndex)
     if (current == null) return
 
-    // 장착된 장비 아이템이 삭제된경우, 해당 장비와 인벤토리와의 연결을 삭제하고, 초기화
-    if (itemIndex === this.equipment.itemIndex) {
-      this.equipment.id = 0
-      this.equipment.itemIndex = -1
-      this.equipment.attack = 0
-      this.equipment.baseCost = 0
-      this.equipment.upgradeLevel = 0
-      this.equipment.upgradeCost = 0
+    const isSuccess = this.inventory.removeItemByIndex(itemIndex)
+    if (!isSuccess) return
+
+    if (this.equipmentIndex > itemIndex) {
+      this.equipmentIndex--
+    } else if (itemIndex === this.equipmentIndex) {
+      this.equipmentIndex = -1
     }
-
-    this.inventory.delete(itemIndex, count)
-  }
-
-  /**
-   * 인벤토리에 있는 ID에 해당하는 아이템 개수를 가져옵니다.
-   * @param {number} itemId 
-   */
-  static getInventoryItemCount (itemId) {
-    this.inventory.getItemCountById(itemId)
   }
 
   /** 무기 리스트(기본값), 0 ~ 3번까지만 있음. 4번은 무기를 사용하기 싫을 때 사용 따라서 무기가 지정되지 않음. */
@@ -921,7 +893,7 @@ export class userSystem {
    * @param {number} presetNumber 프리셋 번호 (0 ~ 4)
    */
   static changePresetSkill (presetNumber = 0) {
-    if (presetNumber < 0 && presetNumber > this.PRESET_MAX_NUMBER) return
+    if (presetNumber < 0 && presetNumber >= this.PRESET_MAX_COUNT) return
     if (presetNumber === this.skillPresetNumber) return
 
     // 현재 값을 이전 프리셋에 저장합니다.
@@ -1286,15 +1258,15 @@ export class userSystem {
     // 공격력 결정
     this.attack = this.attackLevelTable[this.lv] + attackValue.equipment + attackValue.slot + attackValue.stat
 
-    const equipmentData = this.getEquipmentItemInfo()
+    const equipmentData = this.getEquipmentItemData()
 
     if (equipmentData != null) {
       // 장비가 있다면, 체력 쉴드를 그만큼 추가 (단, 장비에 해당 스탯값이 없으면, 기본값 0으로 처리됨)
-      this.hp = this.HP_DEFAULT + equipmentData.equipment.plusHp
-      this.hpMax = this.HP_DEFAULT + equipmentData.equipment.plusHp
-      this.shield = this.SHIELD_DEFAULT + equipmentData.equipment.plusShield
-      this.shieldMax = this.SHIELD_DEFAULT + equipmentData.equipment.plusShield
-      this.shieldRecovery = this.SHIELD_RECOVERY_DEFAULT + equipmentData.equipment.plusShieldRecovery
+      this.hp = this.HP_DEFAULT + equipmentData.hp
+      this.hpMax = this.HP_DEFAULT + equipmentData.hp
+      this.shield = this.SHIELD_DEFAULT + equipmentData.shield
+      this.shieldMax = this.SHIELD_DEFAULT + equipmentData.shield
+      this.shieldRecovery = this.SHIELD_RECOVERY_DEFAULT + equipmentData.shieldRecovery
     } else {
       // 체력과 쉴드에 초기값 부여
       this.hp = this.HP_DEFAULT
@@ -1307,7 +1279,7 @@ export class userSystem {
 
   /** 공격력 조합 값들을 가져옵니다. */
   static getAttackValue () {
-    const equipment = this.getInventoryEquipmentStatus(this.equipment.itemIndex)
+    const equipment = this.getInventoryEquipmentValues(this.equipmentIndex)
     return {
       level: this.attackLevelTable[this.lv],
       equipment: equipment != null ? equipment.attack : 0,
@@ -1350,20 +1322,22 @@ export class userSystem {
    * @returns {UserSaveData} 세이브데이터의 문자열
    */
   static getSaveData () {
+    const inventory = this.inventory.getSaveData()
+
     return {
       lv: this.lv,
       exp: this.exp,
       gold: this.gold,
+      equipmentIndex: this.equipmentIndex,
       weaponList: this.weaponList,
       skillList: this.skillList,
       weaponPreset: this.weaponPresetList,
       weaponPresetNumber: this.weaponPresetNumber,
       skillPreset: this.skillPresetList,
       skillPresetNumber: this.skillPresetNumber,
-      inventoryItemIdList: this.inventory.getSaveData().idList,
-      inventoryItemCountList: this.inventory.getSaveData().countList,
-      inventoryItemUpgardeLevel: this.inventory.getSaveData().upgradeLevel,
-      equipment: this.equipment,
+      inventoryItemIdList: inventory.idList,
+      inventoryItemCountList: inventory.countList,
+      inventoryItemUpgardeLevel: inventory.upgradeLevel,
       weaponUnlockList: this.weaponUnlockList,
       skillUnlockList: this.skillUnlockList,
       roundClearList: this.roundClearList,
@@ -1386,7 +1360,9 @@ export class userSystem {
     if (saveData.lv) this.lv = saveData.lv
     if (saveData.exp) this.exp = saveData.exp
     if (saveData.gold) this.gold = saveData.gold
-    if (saveData.equipment) this.equipment = saveData.equipment
+
+    //@ts-ignore
+    if (saveData.equipment) this.equipmentIndex = saveData.equipment
 
     // 무기 설정
     if (saveData.weaponList) {
@@ -1410,7 +1386,7 @@ export class userSystem {
 
       // 아이템 추가 (만약 문제가 발생하면, 해당 아이템은 소멸될 수 있음.)
       for (let i = 0; i < itemList.length; i++) {
-        this.inventory.add(itemList[i], countList[i], upgardeLevelList[i])
+        this.inventory.addItem(itemList[i], countList[i], upgardeLevelList[i])
       }
     }
 
