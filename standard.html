@@ -39,7 +39,7 @@
 <nav>
   <h2>목차</h2>
   <ol>
-    <li><a href="#game-spec">게임 규격</a></li>
+    <li><a href="#game-spec">게임 규격 및 키 규칙</a></li>
     <li><a href="#user-stats">유저 스탯 목록</a></li>
     <li><a href="#stat-mechanics">스탯 처리 메카닉스</a></li> <!-- 메카닉스는, 게임의 규칙, 규격을 설명하는 올바른 단어입니다. 메커니즘으로 바꾸지 마세요. -->
     <li><a href="#round">라운드</a></li>
@@ -50,19 +50,35 @@
     <li><a href="#extend"></a>표준은 계속 확장될 것이다.</li>
   </ol>
   <ol>
-    <li><a href="#statView.html">무기, 스킬, 라운드, 레벨 등의 수치 표</a></li>
+    <li><a href="statView.html">무기, 스킬, 라운드, 레벨 등의 수치 표</a></li>
   </ol>
 </nav>
 
 <section id="game-spec">
-  <h2>1. 게임 규격</h2>
+  <h2>1. 게임 규격 및 키 규칙</h2>
   <ul>
-    <li>장르: 2D 슛뎀업 (Shoot 'em up)</li>
-    <li>해상도: 800x600</li>
-    <li>FPS: 60 고정형</li>
-    <li>엔진: tamsaEngine (자체 제작)</li>
-    <li>프로그래밍 언어: javascript</li>
-    <li>개발 환경: VS Code + ts-check</li>
+    <li>게임 규격<ol>
+      <li>장르: 2D 슛뎀업 (Shoot 'em up)</li>
+      <li>해상도: 800x600</li>
+      <li>FPS: 60 고정형</li>
+      <li>엔진: tamsaEngine (자체 제작)</li>
+      <li>프로그래밍 언어: javascript</li>
+      <li>개발 환경: VS Code + ts-check</li>
+    </ol></li>
+    <li>키 규칙 (메인 화면)<ol>
+      <li>ArrowKey: 이동</li>
+      <li>A, START: 결정, 메뉴 선택</li>
+      <li>B: 취소, 메뉴 닫기 (ESC키를 취소로 처리하진 않음.)</li>
+    </ol></li>
+    <li>키 규칙 (필드 화면)<ol>
+      <li>ArrowKey: 이동</li>
+      <li>A: 무기 변경, 특정 상황에서의 결정 역할</li>
+      <li>B: 스킬 변경</li>
+      <li>L1, L2, R1, R2: 스킬 사용</li>
+      <li>X, Y: 할당되지 않음</li>
+      <li>START: 필드 일시정지, 필드 메뉴 호출</li>
+      <li>SELECT: 테스트 메뉴 전용</li>
+    </ol></li>
   </ul>
 </section>
 
