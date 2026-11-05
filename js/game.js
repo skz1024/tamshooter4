@@ -1,7 +1,7 @@
 //@ts-check
 
 import { ID } from "./dataId.js"
-import { StatItem, StatUser, dataExportStatItem } from "./dataStat.js"
+import { StatItem, StatUser, dataExportStatItem, dataExportStatPlayerSkill, dataExportStatPlayerWeapon } from "./dataStat.js"
 import { ImageDataObject, imageDataInfo, imageSrc } from "./imageSrc.js"
 import { soundSrc } from "./soundSrc.js"
 import { TamsaEngine } from "./tamsaEngine/tamsaEngine.js"
@@ -531,7 +531,11 @@ export class userSystem {
     return true
   }
 
-  /** 현재 장비를 업그레이드 합니다. */
+  /** 
+   * 현재 장착된 장비를 업그레이드 합니다.
+   * 
+   * 주의: 이 함수는 장착된 장비가 기준이므로, UI에서는 inventoryItemEquipment... 함수를 호출하세요.
+   */
   static upgradeEquipment () {
     return this.inventoryItemEquipmentUpgrade(this.equipmentIndex)
   }
@@ -552,7 +556,26 @@ export class userSystem {
 
     // 장비 업그레이드
     currentItem.customValue++
-    this.gold -= cost
+    this.subtractGold(cost)
+    return true
+  }
+
+  /** 인벤토리에 있는 아이템을 다운그레이드 합니다. (장비아이템 한정)  
+   * 이 기능은, 해당 장비의 강화 레벨을 -1 합니다.
+   * @param {number} itemIndex 아이템의 인덱스 */
+  static inventoryItemEquipmentDowngrade (itemIndex) {
+    if (itemIndex < 0 || itemIndex >= this.inventory.itemList.length) return false
+
+    const currentItem = this.inventory.itemList[itemIndex]
+    const itemData = dataExportStatItem.get(currentItem.id)
+    if (itemData == null) return false
+    if (itemData.type !== this.inventory.TYPES.EQUIPMENT) return false
+    if (currentItem.customValue <= 0) return false
+
+    // 장비 업그레이드 비용 환불
+    const refund = StatItem.getEquipmentDownRefund(itemData.upgradeCost, currentItem.customValue)
+    currentItem.customValue--
+    this.addGold(refund)
     return true
   }
 
@@ -579,16 +602,24 @@ export class userSystem {
     if (itemData == null) return
     if (itemData.type !== this.inventory.TYPES.EQUIPMENT) return
 
+    const name = itemData.name
     const attack = StatItem.getEquipmentAttack(itemData.attack, currentItem.customValue)
     const cost = StatItem.getEquipmentUpgradeCost(itemData.upgradeCost, currentItem.customValue)
     const nextLevelCost = StatItem.getEquipmentUpgradeCost(itemData.upgradeCost, currentItem.customValue + 1)
     const upgradeLevel = currentItem.customValue
+    const nextAttack = StatItem.getEquipmentAttack(itemData.attack, currentItem.customValue + 1)
+    const downRefund = StatItem.getEquipmentDownRefund(itemData.upgradeCost, currentItem.customValue)
+    const id = currentItem.id
 
     return {
+      name,
       attack,
+      nextAttack,
       cost,
       nextLevelCost,
-      upgradeLevel
+      upgradeLevel,
+      downRefund,
+      id
     }
   }
 
@@ -859,6 +890,9 @@ export class userSystem {
    */
   static setSkill (skillSlotNumber = 0, skillId = 0) {
     if (skillSlotNumber < 0 && skillSlotNumber > this.SKILL_LIST_TOTAL_COUNT) return false
+    const skill = dataExportStatPlayerSkill.get(skillId)
+    if (skill == null) return false
+
     if (skillId === 0) {
       // A슬롯(0 ~ 3번) 은 스킬을 제거할 수 없음
       if (skillSlotNumber <= 3) return false
@@ -940,6 +974,9 @@ export class userSystem {
   static setWeapon (slotNumber = 0, weaponId = 0) {
     if (slotNumber < 0 || slotNumber > this.WEAPON_LIST_COUNT) return false
     if (weaponId !== 0 && weaponId < ID.playerWeapon.weaponNumberStart) return false
+    const weapon = dataExportStatPlayerWeapon.get(weaponId)
+    if (weapon == null) return false
+
     if (weaponId === 0) {
       let valid = 0
       for (let i = 0; i < this.weaponList.length; i++) {
@@ -971,15 +1008,6 @@ export class userSystem {
 
     this.weaponList[slotNumber] = weaponId
     return true // 무기 변경 성공
-  }
-
-  /**
-   * 무기의 리스트를 설정합니다.
-   * @param {number[]} weaponList 무기의 id 4개
-   * @deprecated setWeapon을 대신 사용해주세요. 이 무기 리스트는 무기의 중복을 검사하지 않습니다.
-   */
-  static setWeaponList (weaponList = []) {
-    this.weaponList = weaponList
   }
 
   /**

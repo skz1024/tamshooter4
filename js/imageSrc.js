@@ -829,30 +829,30 @@ export class imageDataInfo {
     skillSlot2Disable: new ImageDataObject(20, 120, 20, 20),
     skillSlot3Disable: new ImageDataObject(40, 120, 20, 20),
     skillSlot4Disable: new ImageDataObject(60, 120, 20, 20),
-    inventoryPrevPage: new ImageDataObject(0, 150, 100, 60),
-    inventoryNextPage: new ImageDataObject(100, 150, 100, 60),
-    inventoryBack: new ImageDataObject(200, 150, 100, 60),
-    inventoryUpgrade: new ImageDataObject(300, 150, 100, 60),
-    inventoryEquip: new ImageDataObject(0, 210, 100, 60),
-    inventoryDelete: new ImageDataObject(100, 210, 100, 60),
-    inventoryUserEquipIcon: new ImageDataObject(320, 90, 60, 60),
-    inventoryHelp: new ImageDataObject(200, 210, 100, 60),
-    statBack: new ImageDataObject(0, 270, 100, 40),
-    statEquipmentUpgrade: new ImageDataObject(100, 270, 100, 40),
-    statHelp: new ImageDataObject(200, 270, 100, 40),
 
     /** 무기 또는 스킬이 잠금되어있는경우 */ weaponSkillLock: new ImageDataObject(350, 60, 40, 20),
     /** 라운드 레벨, 공격력 조건이 맞지 않음 */ roundConditionLevelAttackReject: new ImageDataObject(80, 90, 60, 60),
     /** 라운드 요구 조건의 일부가 맞지 않음 (클리어 등등...) */ roundConditionLock: new ImageDataObject(140, 90, 60, 60),
     /** 라운드를 플레이 하고 클리어한경우 */ roundPlayAfterClear: new ImageDataObject(200, 90, 60, 60),
     /** 라운드가 아직 표시되지 않은 상태 */ roundDisplayQuestionMark: new ImageDataObject(260, 90, 60, 60),
+    /** 인벤토리 또는 장비창에서 장착된 아이템 */ inventoryEquipment: new ImageDataObject(320, 90, 60, 60),
 
-    /** 창 X 닫기 UI */ uiClose: new ImageDataObject(300, 210, 40, 40),
-    /** 무기 선택 창 프리셋 1 */ uiWeaponSelectPreset1: new ImageDataObject(0, 310, 40, 40),
-    /** 무기 선택 창 프리셋 2 */ uiWeaponSelectPreset2: new ImageDataObject(40, 310, 40, 40),
-    /** 무기 선택 창 프리셋 3 */ uiWeaponSelectPreset3: new ImageDataObject(80, 310, 40, 40),
-    /** 무기 선택 창 프리셋 4 */ uiWeaponSelectPreset4: new ImageDataObject(120, 310, 40, 40),
-    /** 무기 선택 창 프리셋 5 */ uiWeaponSelectPreset5: new ImageDataObject(160, 310, 40, 40),
+    /** 창 X 닫기 UI */ uiClose: new ImageDataObject(200, 150, 40, 40),
+    /** 무기 선택 창 프리셋 1 */ uiWeaponSelectPreset1: new ImageDataObject(0, 150, 40, 40),
+    /** 무기 선택 창 프리셋 2 */ uiWeaponSelectPreset2: new ImageDataObject(40, 150, 40, 40),
+    /** 무기 선택 창 프리셋 3 */ uiWeaponSelectPreset3: new ImageDataObject(80, 150, 40, 40),
+    /** 무기 선택 창 프리셋 4 */ uiWeaponSelectPreset4: new ImageDataObject(120, 150, 40, 40),
+    /** 무기 선택 창 프리셋 5 */ uiWeaponSelectPreset5: new ImageDataObject(160, 150, 40, 40),
+    /** 이전 페이지 */ prevPage: new ImageDataObject(240, 150, 40, 40),
+    /** 다음 페이지 */ nextPage: new ImageDataObject(280, 150, 40, 40),
+    /** 다음 페이지 */ currentPage: new ImageDataObject(320, 150, 40, 40),
+    
+    /** 장비창 - 뒤로 */ equipmentBack: new ImageDataObject(0, 190, 100, 50),
+    /** 장비창 - 장착/해제 */ equipmentEquip: new ImageDataObject(100, 190, 100, 50),
+    /** 장비창 - 업그레이드 */ equipmentUpgarde: new ImageDataObject(200, 190, 100, 50),
+    /** 장비창 - 다운그레이드 */ equipmentDowngarde: new ImageDataObject(300, 190, 100, 50),
+
+    /** 크래프팅 - 체크 표시 */ craftingCheck: new ImageDataObject(0, 240, 50, 50)
   }
 
   static enemyDieEffectList = {
@@ -1084,7 +1084,11 @@ export class imageDataInfo {
     story: new ImageDataObject(0, 200, 200, 40),
     option: {x: 0, y: 240, width: 200, height: 40, frame: 1},
     data: {x: 0, y: 280, width: 200, height: 40, frame: 1},
-    etc: {x: 0, y: 320, width: 200, height: 40, frame: 1}
+    etc: {x: 0, y: 320, width: 200, height: 40, frame: 1},
+    // layer 2
+    equipmentUpgarde: new ImageDataObject(200, 120, 200, 40),
+    itemCrafting: new ImageDataObject(200, 160, 200, 40),
+    boseokGrowth: new ImageDataObject(200, 200, 200, 40),
   }
 
   static system = {
@@ -1095,8 +1099,8 @@ export class imageDataInfo {
     skillInfoPurpleBlueTitle: {x: 0, y: 80, width: 800, height: 20, frame: 1},
     skillInfoPurpleBlue: {x: 0, y: 100, width: 800, height: 20, frame: 1},
 
-    itemIcon: new ImageDataObject(0, 0, 50, 50),
-    itemIconSection: new ImageDataObject(0, 0, 60, 60),
+    /** 아이콘의 실제 크기 */ itemIcon: new ImageDataObject(0, 0, 50, 50),
+    /** 아이콘 영역 + 여백을 포함한 셀 크기 */ itemIconSection: new ImageDataObject(0, 0, 60, 60),
 
     /** 무기 또는 스킬의 아이콘 기본 사이즈 */ weaponSkillIcon: new ImageDataObject(0, 0, 80, 40),
     /** 무기의 아이콘의 사이즈 2배값 @deprecated */ weaponIconDoubleSize: new ImageDataObject(0, 0, 80, 20),

@@ -19,8 +19,10 @@ export class soundSrc {
     systemSkillSelect: './sound/systemSkillSelect.wav',
     systemEquip: './sound/systemEquip.ogg',
     systemEquipmentUpgrade: './sound/systemEquipmentUpgrade.ogg',
+    systemEquipmentDowngrade: './sound/systemEquipmentDowngrade.ogg',
     systemItemDelete: './sound/systemItemDelete.ogg',
     systemItemGet: './sound/systemItemGet.ogg',
+    systemItemCrafting: './sound/systemItemCrafting.ogg'
   }
 
   static skill = {

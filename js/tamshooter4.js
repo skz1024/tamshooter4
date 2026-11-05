@@ -2,10 +2,10 @@
 "use strict"
 
 import { imageSrc, imageDataInfo, ImageDataObject } from "./imageSrc.js";
-import { dataExportStatItem, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, StatItem, StatPlayerSkill, StatPlayerWeapon, StatRound } from "./dataStat.js";
+import { dataExportStatItem, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, StatItem, StatPlayerSkill, StatPlayerWeapon, StatRound, StatWeapon } from "./dataStat.js";
 import { soundSrc } from "./soundSrc.js";
 import { ID } from "./dataId.js";
-import { gameVar, userSystem as UserSystem } from "./game.js";
+import { gameVar, userSystem, userSystem as UserSystem } from "./game.js";
 import { fieldSystem as FieldSystem } from "./field.js";
 import { game, gameFunction } from "./game.js";
 import { stringText, systemText } from "./text.js";
@@ -64,6 +64,7 @@ game.display = () => {
 
 class BoxObject {
   /** 기본으로 사용하는 강조 색 */ static DEFAULT_FOCUS_COLOR = 'blue'
+  /** 기본으로 사용하는 강조 색이지만 조금 더 밝음 */ static DEFAULT_FOCUS_LIGHT_COLOR = 'lightblue'
   /** 커서가 다른 부분에 위치했을 때, 다른 상자를 강조할 때 사용하는 색 */ static FOCUS_COLOR_WAIT_CURSOR = 'orange'
   /** 상자의 기본 색 */ static DEFAULT_BOX_COLOR = 'silver'
 
@@ -95,6 +96,22 @@ class BoxObject {
     this.focusColor = focusColor
 
     /** 숨김 옵션. 이 옵션이 켜져있을경우, 출력, 포커스, 클릭이 전부 무효가 됨 */ this.hidden = false
+
+    /** 이미지 파일의 경로 */
+    this.imageSrc = ''
+
+    /** 이미지데이터 (imageDataInfo 클래스 참고) @type {ImageDataObject} */
+    this.imageData = imageDataInfo.default.unused
+  }
+
+  /**
+   * 이미지 데이터를 설정합니다.
+   * @param {string} imageSrc 
+   * @param {ImageDataObject} imageData 
+   */
+  setAutoImageData (imageSrc, imageData) {
+    this.imageSrc = imageSrc
+    this.imageData = imageData
   }
 
   /**
@@ -104,6 +121,8 @@ class BoxObject {
    * @returns
    */
   collision (mouseX, mouseY) {
+    if (this.hidden) return false
+
     if ((this.x <= mouseX && this.x + this.width >= mouseX) &&
     (this.y <= mouseY && this.y + this.height >= mouseY)) {
       return true
@@ -126,6 +145,12 @@ class BoxObject {
     }
   }
 
+  displayImage () {
+    if (this.imageSrc !== '') {
+      game.graphic.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height)
+    }
+  }
+
   displayFocus () {
     if (this.focus) {
       game.graphic.fillRect(this.x, this.y, this.width, this.height, this.focusColor, 0.5)
@@ -143,6 +168,7 @@ class BoxObject {
     if (this.hidden) return
 
     this.displayBackGround()
+    this.displayImage()
     this.displayFocus()
     this.displayText()
   }
@@ -161,17 +187,122 @@ class BoxObject {
       this.clicked = false
     }
   }
+}
 
-  /** 마우스의 위치와 충돌되었습니까?, 마우스 좌표를 입력하면 마우스와 이 박스가 충돌되었는지를 검사합니다. */
-  getCollision (mouseX = 0, mouseY = 0) {
-    if (this.collision(mouseX, mouseY)) {
-      return true
-    } else {
-      return false
-    }
+/**
+ * 클릭 가능한 BoxObject지만, 이미지를 사용합니다.
+ */
+class BoxImageObject extends BoxObject {
+  /**
+   * 새로운 박스 이미지 생성
+   * @param {string} imageSrc 이미지의 경로
+   * @param {ImageDataObject} imageData 이미지데이터
+   */
+  constructor (x = 0, y = 0, width = 0, height = 0, text = '', imageSrc = '', imageData) {
+    super(x, y, width, height, text)
+    this.imageSrc = imageSrc
+
+    /** @type {ImageDataObject} */ this.imageData = imageData
+
+    if (width === 0) this.width = imageData.width
+    if (height === 0) this.height = imageData.height 
   }
 }
 
+class UIIconDisplay {
+  /**
+   * 아이콘 이미지를 출력합니다.
+   * @param {string} src 이미지 소스
+   * @param {number} iconNumber 아이콘 번호
+   * @param {number} iconWidth 아이콘 너비
+   * @param {number} iconHeight 아이콘 높이
+   * @param {number} outputWidth 출력 너비
+   * @param {number} outputHeight 출력 높이
+   * @param {number} x 출력 X 좌표
+   * @param {number} y 출력 Y 좌표
+   */
+  static displayIconImage (src, iconNumber, x, y, iconWidth, iconHeight,
+     outputWidth = iconWidth, outputHeight = iconHeight) {
+    const sliceX = iconWidth * (iconNumber % 10)
+    const sliceY = iconHeight * Math.floor(iconNumber / 10)
+
+    game.graphic.imageDisplay(
+      src,
+      sliceX, sliceY, iconWidth, iconHeight,
+      x, y, outputWidth, outputHeight
+    )
+  }
+
+  /**
+   * 아이콘 이미지를 여백이 포함된 패턴으로 출력합니다.  
+   * 이 것은 item의 크기가 여백을 포함한 크기로 배치되었기 때문에 만든 함수입니다.
+   * @param {string} src 이미지 소스
+   * @param {number} iconNumber 아이콘 번호
+   * @param {number} iconWidth 아이콘 너비
+   * @param {number} iconHeight 아이콘 높이
+   * @param {number} sectionWidth 해당 구역의 너비
+   * @param {number} sectionHeight 해당 구역의 높이
+   * @param {number} outputWidth 출력 너비
+   * @param {number} outputHeight 출력 높이
+   * @param {number} x 출력 X 좌표
+   * @param {number} y 출력 Y 좌표
+   */
+  static displayIconImageWithSection (src, iconNumber, x, y, iconWidth, iconHeight,
+    sectionWidth, sectionHeight, outputWidth = iconWidth, outputHeight = iconHeight) {
+    const sliceX = sectionWidth * (iconNumber % 10)
+    const sliceY = sectionHeight * Math.floor(iconNumber / 10)
+
+    game.graphic.imageDisplay(
+      src,
+      sliceX, sliceY, iconWidth, iconHeight,
+      x, y, outputWidth, outputHeight
+    )
+  }
+
+  /**
+   * 무기 아이콘을 출력합니다.
+   * @param {number} iconNumber 무기의 아이콘 번호
+   * @param {number} x 
+   * @param {number} y 
+   */
+  static displayIconWeapon (iconNumber, x = 0, y = 0) {
+    if (iconNumber < 0) return
+    const src = imageSrc.system.weaponIcon
+    const width = imageDataInfo.system.weaponSkillIcon.width
+    const height = imageDataInfo.system.weaponSkillIcon.height
+    this.displayIconImage(src, iconNumber, x, y, width, height)
+  }
+
+  /**
+   * 스킬 아이콘을 출력합니다.
+   * @param {number} iconNumber 스킬의 아이콘 번호
+   * @param {number} x 
+   * @param {number} y 
+   */
+  static displayIconSkill (iconNumber, x, y) {
+    if (iconNumber < 0) return
+    const src = imageSrc.system.skillIcon
+    const width = imageDataInfo.system.weaponSkillIcon.width
+    const height = imageDataInfo.system.weaponSkillIcon.height
+    this.displayIconImage(src, iconNumber, x, y, width, height)
+  }
+
+  /**
+   * 아이템 아이콘을 출력합니다.
+   * @param {number} iconNumber 아이템의 아이콘 번호
+   * @param {number} x 
+   * @param {number} y 
+   */
+  static displayIconItem (iconNumber, x, y) {
+    if (iconNumber < 0) return
+    const src = imageSrc.system.itemIcon
+    const width = imageDataInfo.system.itemIcon.width
+    const height = imageDataInfo.system.itemIcon.height
+    const sectionWidth = imageDataInfo.system.itemIconSection.width
+    const sectionHeight = imageDataInfo.system.itemIconSection.height
+    this.displayIconImageWithSection(src, iconNumber, x, y, width, height, sectionWidth, sectionHeight)
+  }
+}
 
 class UIComponentObject {
   static BASE_X = 250
@@ -179,8 +310,31 @@ class UIComponentObject {
   static BASE_WIDTH = 500
   static BASE_HEIGHT = 350
 
+  /** 수평, 가로 방향 */ static GRID_HORIZONTAL = 0
+  /** 수직, 세로 방향 */ static GRID_VERTICAL = 1
+  /** 2차원 그리드 */ static GRID_2D = 2
+  /** 사용자 정의 (이 경우, 기본 함수의 지원을 받을 수 없음) */ static GRID_CUSTOM = 3
+
+  /** 마우스 이동 입력 지연 프레임 */ static MOUSE_MOVE_THROTTLE_FRAME = 3
+
   /** 마우스 조작 시에, 일정 프레임동안 다시 판정하는 것을 막기 위한 타이머 */
   #throttleFrame = 0
+
+  /**
+   * throttle 조건에 도달하면 true로 설정합니다.
+   * 모든 처리가 끝난 뒤 throttle 프레임을 0으로 초기화합니다.
+   * 같은 프레임에 부모·하위 처리 모두 throttle 검사를 통과하도록
+   * 즉시 초기화하지 않고 요청 상태로 기록합니다.
+   *
+   * process()는 오버라이드하지 말고, processContent() 등 확장용 함수를 사용하세요.
+   */
+  #throttleReset = false
+
+  /** 최대 페이지 번호 (이 값은 특수한 함수로만 변경 가능하고, 일반적인 조작은 불가능) */
+  #maxPage = 0
+
+  /** 최대 페이지 번호를 얻는 함수 (?) */
+  get maxPage () { return this.#maxPage }
 
   constructor () {
     /** 
@@ -205,11 +359,223 @@ class UIComponentObject {
     this.width = UIComponentObject.BASE_WIDTH
     this.height = UIComponentObject.BASE_HEIGHT
 
-    this.tilteImageSrc = imageSrc.system.menuList
-    this.tilteImageObject = imageDataInfo.menuList.roundSelect
+    this.titleImageSrc = imageSrc.system.menuList
+    this.titleImageObject = imageDataInfo.menuList.roundSelect
     
     let uiWidth = imageDataInfo.mainSystem.uiClose.width
     this.uiCloseBox = new BoxImageObject(this.x + this.width - uiWidth, this.y, uiWidth, imageDataInfo.mainSystem.uiClose.height, '', imageSrc.system.mainSystem, imageDataInfo.mainSystem.uiClose)
+    this.uiCloseBox.focusColor = BoxObject.DEFAULT_FOCUS_LIGHT_COLOR
+
+    this.cursor = {
+      /** 커서가 지정되어 있는 페이지 값. 커서의 페이지와 현재 페이지(this.page)가 다른지 확인하는 용도   
+       * 페이지 변경은 this.page로 사용 해야 합니다. */ page: 0,
+      /** boxList 인덱스 */ index: 0,
+      /** 메인라운드 (roundSelect 전용) */ mainRound: 0,
+      /** 서브라운드 (roundSelect 전용) */ subRound: 0,
+      /** 프리셋 번호 */ preset: 0,
+      /** 유저 선택 번호 (weaponSelect, skillSelect) */ userSelect: 0,
+      /** 한 UI 내부를 기준으로 한 레이어 번호, 이름 혼동 가능성 있으므로 추후 이름 변경 예정 (weaponSelect, skillSelect, roundSelect) 
+       * 레이어 번호, 0일 경우 메인 라운드, 1일 경우 서브 라운드
+       * */ layerNumber: 0,
+    }
+
+    /** 아이템 박스 리스트 (기본형)  
+     * 주의: 이 아이템은 단일 박스 리스트이므로, 여러 박스 종류를 사용할가면, 사용자가
+     * 새로운 박스를 만들어야 합니다!
+     * @type {BoxObject[]} */
+    this.boxList = []
+
+    /** 타이틀 박스 리스트 (타이틀 화면에 적용)  
+     * 주의: 임의 생성 시 오류 위험. create 함수로 정의된 몇몇 함수로만 이것을 컨트롤하세요!
+     * @type {BoxObject[]}
+     */
+    this.titleBoxList = []
+
+    this.grid = {
+      /** 가로 축 개수 */ xCount: 0,
+      /** 세로 축 개수 */ yCount: 1,
+      /** 그리드 타입 (주의: 커스텀 타입을 사용할 생각이라면, 
+       * 이 타입 값을) UIComponentObject.GRID 라고 적힌 특정 상수를 사용해주세요. */ 
+      type: UIComponentObject.GRID_HORIZONTAL
+    }
+
+    /** 현재 페이지 번호 */ this.page = 0
+  }
+
+  /**
+   * 박스 오브젝트를 그리드 형태로 생성합니다.  
+   * 경고: 여러 번 사용하게 되면, 기본 함수가 지원을 제대로 할 수 없음.  
+   * 커스텀 그리드는 사용자가 grid.type값을 수동으로 지정시켜야 합니다.  
+   * @param {number} xCount 행 (가로 방향)
+   * @param {number} yCount 열 (세로 방향)
+   * @param {number} x 
+   * @param {number} y 
+   * @param {number} width 
+   * @param {number} height 
+   * @param {number} marginX 각 공간마다의 여백
+   * @param {number} marginY 각 공간마다의 여백
+   */
+  createGrid2DBox (xCount, yCount, x = 1, y = 1, width = 1, height = 1, marginX = 0, marginY = 0) {
+    if (xCount <= 0 || yCount <= 0) return
+    if (xCount > 50 || yCount > 50) {
+      console.warn('너무 많은 요청 개수는 과도한 배열을 생성시킵니다.')
+      return
+    }
+    
+    for (let i = 0; i < xCount; i++) {
+      for (let j = 0; j < yCount; j++) {
+        const newBox = new BoxObject(x + (i * (width + marginX)), y + (j * (height + marginY)), width, height)
+
+        // 0 1 2 3 4
+        // 5 6 7 8 9
+        // 형태의 인덱스에 맞추도록 배치시킴
+        this.boxList[j * xCount + i] = newBox
+      }
+    }
+
+    // 그리드 정보 설정
+    this.grid.xCount = xCount
+    this.grid.yCount = yCount
+
+    // 그리드 크기에 따라 타입을 자동으로 결정
+    if (this.grid.xCount === 1) {
+      // X축 개수가 1개로 고정된 경우, Y축 으로만 숫자가 늘어나므로, 수직 방향입니다.
+      this.grid.type = UIComponentObject.GRID_VERTICAL
+    } else if (this.grid.yCount === 1) {
+      // Y축 개수가 1개로 고정된 경우, X축 으로만 숫자가 늘어나므로, 수평 방향입니다.
+      this.grid.type = UIComponentObject.GRID_HORIZONTAL
+    } else {
+      // X축 Y축 모두 2개 이상인 경우: 2차원 그리드
+      this.grid.type = UIComponentObject.GRID_2D
+    }
+  }
+
+  /** 수직 (세로) 방향의 박스를 생성합니다. 이 함수는 createGrid2DBox의 편의 함수입니다. */
+  createGridVerticalBox (count = 0, x = 1, y = 1, width = 1, height = 1, marginX = 0, marginY = 0) {
+    if (count <= 0) return
+    this.createGrid2DBox(1, count, x, y, width, height, marginX, marginY)
+  }
+
+  /** 수평 (가로) 방향의 박스를 생성합니다. 이 함수는 createGrid2DBox의 편의 함수입니다. */
+  createGridHorizontalBox (count = 0, x = 1, y = 1, width = 1, height = 1, marginX = 0, marginY = 0) {
+    if (count <= 0) return
+    this.createGrid2DBox(count, 1, x, y, width, height, marginX, marginY)
+  }
+
+  /**
+   * 새로운 최대 페이지를 만듭니다. 페이지 버튼은 타이틀 영역에 추가합니다. (단, 마우스 전용)  
+   * 키보드로는, 화살표키로 페이지를 오고갈 수 있습니다.
+   * @param {number} maxPage 최대 페이지 번호, 0 이하 처리 무시 (의미가 없으므로)
+   */
+  createPage (maxPage = 1) {
+    if (maxPage <= 0) return
+
+    this.#maxPage = maxPage
+    const x = this.x + this.titleImageObject.width
+    const src = imageSrc.system.mainSystem
+    const iconWidth = imageDataInfo.mainSystem.currentPage.width
+    const imgD = imageDataInfo.mainSystem
+    const imgDList = [imgD.prevPage, imgD.nextPage, imgD.currentPage]
+    for (let i = 0; i < imgDList.length; i++) {
+      const newBox = new BoxImageObject(x + (i * iconWidth), this.y, iconWidth, iconWidth, '', src, imgDList[i])
+      this.titleBoxList.push(newBox)
+    }
+  }
+
+  /** 
+   * 최대 페이지를 재설정합니다. 그러나, createPage를 먼저 사용해야 이 함수가 제대로 적용합니다.
+   * @param {number} maxPage 최대 페이지 번호, 단 최소 1이상 설정해야 함.
+   */
+  setMaxPage (maxPage = 1) {
+    if (maxPage < 1) return
+    if (this.#maxPage === 0) {
+      console.warn('페이지가 없는데 왜 페이지를 설정하는거죠? 그러지 마세요.')
+      return
+    }
+
+    this.#maxPage = maxPage
+    if (this.page > maxPage) {
+      this.page = maxPage
+    }
+  }
+
+  /**
+   * 현재 가지고 있는 모든 박스리스트에 대하여 색을 일괄적으로 변경합니다.
+   * @param {string} color 
+   * @param {string} endColor 
+   * @param {string} focusColor 
+   */
+  setAllBoxColor (color = '', endColor = '', focusColor = '') {
+    for (let i = 0; i < this.boxList.length; i++) {
+      this.boxList[i].color = color
+      this.boxList[i].endColor = endColor
+      this.boxList[i].focusColor = focusColor
+    }
+  }
+
+
+  /** 커서를 해당 위치로 변경합니다. */
+  changeCursor (value = 0) {
+    // 참고: 이 함수는 사운드 출력까지 담당하기 때문에
+    // 중복된 선택을 한 경우 (마우스로 인하여) 에는 커서 변경을 취소합니다.
+    // 페이지가 다른 경우에는, 페이지를 변경했으므로, 커서 변경이 일어나지 않아도 사운드는 출력됩니다.
+    if (value === this.cursor.index && this.cursor.page === this.page) return
+
+    // 유효 범위 검사
+    if (value < 0 || value >= this.boxList.length) return
+
+    this.cursor.page = this.page
+    this.cursor.index = value
+    game.sound.play(soundSrc.system.systemCursor)
+    this.changeBoxFocus()
+  }
+
+  /** 박스 내에 있는 포커스를 다른 포커스로 변경합니다. */
+  changeBoxFocus () {
+    for (let i = 0; i < this.boxList.length; i++) {
+      // focus의 값은 true or false이므로, 조건식을 바로 대입하여 결과가 나옴
+      this.boxList[i].focus = i === this.cursor.index
+    }
+  }
+
+  /** 현재 커서의 X축 번호값을 얻어옵니다. 단 CUSTOM의 경우 0을 돌려받습니다. */
+  getCursorX (index = this.cursor.index) {
+      // GRID_CUSTOM은 0의 값만 리턴합니다.
+    if (this.grid.type === UIComponentObject.GRID_CUSTOM) return 0
+
+    if (this.grid.type === UIComponentObject.GRID_VERTICAL) return 0
+    if (this.grid.type === UIComponentObject.GRID_HORIZONTAL) return index
+    if (this.grid.type === UIComponentObject.GRID_2D) {
+      if (this.grid.xCount <= 0) return 0
+      return index % this.grid.xCount
+    }
+
+    return 0
+  }
+
+  /** 현재 커서의 Y축 번호값을 얻어옵니다. 단 CUSTOM의 경우 0을 돌려받습니다. */
+  getCursorY (index = this.cursor.index) {
+    // GRID_CUSTOM은 0의 값만 리턴합니다.
+    if (this.grid.type === UIComponentObject.GRID_CUSTOM) return 0
+
+    if (this.grid.type === UIComponentObject.GRID_HORIZONTAL) return 0
+    if (this.grid.type === UIComponentObject.GRID_VERTICAL) return index
+    if (this.grid.type === UIComponentObject.GRID_2D) {
+      if (this.grid.xCount <= 0) return 0
+      return Math.floor(index / this.grid.xCount)
+    }
+
+    return 0
+  }
+
+  /** 페이지를 고려한 인덱스 값을 얻어옵니다. */
+  getCurrentIndex () {
+    return this.page * this.boxList.length + this.cursor.index
+  }
+
+  /** 현재 페이지를 고려한 시작 인덱스 값을 얻어옵니다. */
+  getStartIndex () {
+    return this.page * this.boxList.length
   }
 
   /** 어떤 버튼이 눌렸는지를 오브젝트로 확인합니다. 버튼이 눌린것은 boolean값으로 확인해야합니다. */
@@ -253,11 +619,12 @@ class UIComponentObject {
 
   /**
    * 마우스를 조작할 때, 일정 프레임이 지나기 전까지 다시 판정하지 않습니다.
-   * @param {number} frame 최소 지연 프레임
+   * 
+   * 주의: 이 함수에 다른 인자 값을 넣지 마세요. 함수가 정상적으로 동작하지 않습니다.
    */
-  throttleCheck (frame = 5) {
-    if (frame < this.#throttleFrame) {
-      this.#throttleFrame = 0
+  throttleCheck () {
+    if (this.#throttleFrame >= UIComponentObject.MOUSE_MOVE_THROTTLE_FRAME) {
+      this.#throttleReset = true
       return true
     } else {
       return false
@@ -271,11 +638,17 @@ class UIComponentObject {
 
     this.processButton()
     this.processMouse()
-    this.processSelect()
-    this.processCancel()
     this.processContent()
-    this.processClose()
+
     this.#throttleFrame++
+    if (this.#throttleReset) {
+      this.#throttleFrame = 0
+      this.#throttleReset = false
+    }
+
+    if (!this.isOpen) {
+      this.processClose()
+    }
   }
 
   /** 프로세스 컨텐츠 영역 (이 함수를 오버라이드 하세요) */
@@ -283,24 +656,16 @@ class UIComponentObject {
 
   }
 
-  /** 선택을 했을 때 (마우스 클릭, 또는 A버튼) */
-  processSelect () {
-
-  }
-
-  /** 취소를 했을 때 (마우스 클릭 위치가 X표시 부분, 또는 B버튼) */
-  processCancel () {
-
-  }
-
-  /** 창을 닫아야 하거나 닫았을 때 처리 */
+  /** 창을 닫아야 하거나 닫았을 때 추가적인 처리 목적으로 실행합니다.
+   * 창 닫히는 명령이 실행된다고, 창은 즉시 닫히지 않습니다. 모든 처리가 끝난 후 닫힙니다.*/
   processClose () {
-    
+
   }
 
   /** 창을 엽니다. */
   open () {
     this.isOpen = true
+    this.changeBoxFocus()
   }
 
   /** 창을 닫습니다. */
@@ -308,21 +673,171 @@ class UIComponentObject {
     this.isOpen = false
   }
 
+  /** 페이지를 변경합니다. 1페이지 단위로만 변경할 수 있습니다.
+   * @param {number} relativeValue 음수, 양수, 0만 사용 가능
+   */
+  changePage (relativeValue) {
+    const nextPage = this.page + relativeValue
+
+    if (nextPage < 0 || nextPage > this.#maxPage) return
+
+    this.page = nextPage
+    this.changeCursor(this.cursor.index)
+  }
+
   /** 버튼을 눌렀을 때 */
   processButton () {
     let button = this.getButtonObject()
     if (button.buttonB) {
-      game.sound.play(soundSrc.system.systemBack)
+      this.processButtonCancel()
+    } else if (button.buttonA) {
+      this.processButtonSelect()
+    } else if (button.buttonSkill0 || button.buttonSkill1) {
+      this.changePage(-1)
+    } else if (button.buttonSkill2 || button.buttonSkill3) {
+      this.changePage(1)
+    }
+
+    this.processButtonMoveCursor()
+  }
+
+  /** 화살표키를 눌렀을 때의 커서의 이동 처리 */
+  processButtonMoveCursor () {
+    let button = this.getButtonObject()
+    if (this.grid.type === UIComponentObject.GRID_VERTICAL) {
+      if (button.buttonUp) {
+        this.changeCursor(this.cursor.index - 1)
+      } else if (button.buttonDown) {
+        this.changeCursor(this.cursor.index + 1)
+      }
+
+      // 페이지가 0만 있는 경우는 페이지를 변경할 필요가 없으므로, 페이지 변경이 없습니다.
+      // 페이지가 변동할 경우, 사운드 출력을 위하여 changeCursor 함수를 사용합니다.
+      if (button.buttonLeft && this.page > 0) {
+        this.changePage(-1)
+      } else if (button.buttonRight && this.page < this.#maxPage) {
+        this.changePage(1)
+      }
+    } else if (this.grid.type === UIComponentObject.GRID_HORIZONTAL) {
+      if (button.buttonLeft) {
+        this.changeCursor(this.cursor.index - 1)
+      } else if (button.buttonRight) {
+        this.changeCursor(this.cursor.index + 1)
+      }
+
+      // 페이지가 0만 있는 경우는 페이지를 변경할 필요가 없으므로, 페이지 변경이 없습니다.
+      if (button.buttonUp && this.page > 0) {
+        this.changePage(-1)
+      } else if (button.buttonDown && this.page < this.#maxPage) {
+        this.changePage(1)
+      }
+    } else if (this.grid.type === UIComponentObject.GRID_2D) {
+      const x = this.getCursorX()
+      const y = this.getCursorY()
+      const { xCount, yCount } = this.grid
+
+      if (button.buttonLeft) {
+        if (x > 0) {
+          this.changeCursor(this.cursor.index - 1)
+        } else if (x === 0 && this.page > 0) {
+          // 페이지가 1 감소 후, X축 방향 끝에서 X축 반대 끝으로 이동하고
+          // Y축은 변동하지 않습니다. 따라서 1을 감소하고 X축 전체값을 올립니다.
+          this.page--
+          this.changeCursor(this.cursor.index - 1 + xCount)
+        }
+      } else if (button.buttonRight) {
+        if (x < xCount - 1) {
+          this.changeCursor(this.cursor.index + 1)
+        } else if (x === xCount - 1 && this.page < this.#maxPage) {
+          this.page++
+          this.changeCursor(this.cursor.index + 1 - xCount)
+        }
+      } else if (button.buttonUp) {
+        if (y > 0) {
+          this.changeCursor(this.cursor.index - xCount)
+        }
+      } else if (button.buttonDown) {
+        if (y < yCount - 1) {
+          this.changeCursor(this.cursor.index + xCount)
+        }
+      }
+    }
+  }
+
+  /** 선택을 했을 때 (마우스 클릭, 또는 A버튼)
+   * 만약, 시스템 선택 사운드를 끄고 싶다면, 이 super함수를 호출하지 마세요.
+   */
+  processButtonSelect () {
+    game.sound.play(soundSrc.system.systemSelect)
+  }
+
+  /** 취소를 했을 때 (마우스 클릭 위치가 X표시 부분, 또는 B버튼) */
+  processButtonCancel () {
+    game.sound.play(soundSrc.system.systemBack)
+    if (this.layerLevel <= 0) {
       this.close()
+      this.layerLevel = 0
+    } else {
+      this.layerLevel--
     }
   }
 
   /** 마우스를 움직이거나 클릭했을 때 */
   processMouse () {
+    const mouseX = game.control.getMouseX()
+    const mouseY = game.control.getMouseY()
+
     if (game.control.getMouseClick()) {
       if (this.uiCloseBox.collision(game.control.mouseX, game.control.mouseY)) {
-        game.sound.play(soundSrc.system.systemBack)
-        this.close()
+        this.processButtonCancel()
+      }
+
+      for (let i = 0; i < this.boxList.length; i++) {
+        if (this.boxList[i].collision(mouseX, mouseY)) {
+          this.changeCursor(i)
+          this.processButtonSelect()
+          break
+        }
+      }
+
+      for (let i = 0; i < this.titleBoxList.length; i++) {
+        if (this.titleBoxList[i].collision(mouseX, mouseY)) {
+          if (this.titleBoxList[i].imageData === imageDataInfo.mainSystem.prevPage) {
+            if (this.page > 0) {
+              this.page--
+              this.changeCursor(this.cursor.index)
+            }
+          } else if (this.titleBoxList[i].imageData === imageDataInfo.mainSystem.nextPage) {
+            if (this.page < this.#maxPage) {
+              this.page++
+              this.changeCursor(this.cursor.index)
+            }
+          }
+        }
+      }
+    }
+
+    if (game.control.isMouseMove && this.throttleCheck()) {
+      for (let i = 0; i < this.boxList.length; i++) {
+        if (this.boxList[i].collision(mouseX, mouseY)) {
+          this.changeCursor(i)
+        }
+      }
+
+      for (let i = 0; i < this.titleBoxList.length; i++) {
+        if (this.titleBoxList[i].imageData === imageDataInfo.mainSystem.currentPage) continue
+
+        if (this.titleBoxList[i].collision(mouseX, mouseY)) {
+          this.titleBoxList[i].focus = true
+        } else {
+          this.titleBoxList[i].focus = false
+        }
+      }
+
+      if (this.uiCloseBox.collision(mouseX, mouseY)) {
+        this.uiCloseBox.focus = true
+      } else {
+        this.uiCloseBox.focus = false
       }
     }
   }
@@ -336,132 +851,42 @@ class UIComponentObject {
     if (!this.isOpen) return
 
     this.#displayTopClass()
+    this.displayBox()
     this.displayContent()
   }
 
   #displayTopClass () {
     this.displayBackground()
-    gameFunction.imageObjectDisplay(this.tilteImageSrc, this.tilteImageObject, this.x, this.y)
+    gameFunction.imageObjectDisplay(this.titleImageSrc, this.titleImageObject, this.x, this.y)
     this.uiCloseBox.display()
-  }
 
-  displayContent () {
-    
-  }
-
-  displayBox () {
-
-  }
-
-  displayBackground () {
-    game.graphic.gradientRect(this.x, this.y, this.width, this.height, this.backgroundColor)
-    game.graphic.gradientRect(this.x, this.y, this.width, this.TITLE_HEIGHT, this.titleBackground)
-  }
-}
-
-
-/** 
- * 이 클래스는 단일 itemBox를 통한 메뉴를 구현할 때 사용합니다.  
- * 
- * 이 함수는 box를 1종류만 사용하는 것을 전제로 합니다.
- * (weapon, skill, round) 같은 경우, 이 클래스를 사용하지 않습니다.
- */
-class UIComponentBaseMenuObject extends UIComponentObject {
-  constructor () {
-    super()
-
-    /** @type {BoxObject[]} */
-    this.boxList = []
-
-    /** 커서 값 (참고: cursor는 객체로 가정합니다.) */
-    this.cursor = { value: 0 }
-  }
-
-  /** 커서를 해당 위치로 변경합니다. */
-  changeCursor (value = 0) {
-    // 참고: 이 함수는 사운드 출력까지 담당하기 때문에
-    // 중복된 선택을 한 경우 (마우스로 인하여) 에는 커서 변경을 취소합니다.
-    if (value === this.cursor.value) return
-
-    // 유효 범위 검사
-    if (value < 0 || value >= this.boxList.length) return
-
-    this.cursor.value = value
-    game.sound.play(soundSrc.system.systemCursor)
-    this.changeFocus()
-  }
-
-  open () {
-    super.open()
-    this.changeFocus()
-  }
-
-  /** 박스 내에 있는 포커스를 다른 포커스로 변경합니다. */
-  changeFocus () {
-    for (let i = 0; i < this.boxList.length; i++) {
-      // focus의 값은 true or false이므로, 조건식을 바로 대입하여 결과가 나옴
-      this.boxList[i].focus = i === this.cursor.value
-    }
-  }
-
-  processButton () {
-    super.processButton()
-    let button = this.getButtonObject()
-
-    if (button.buttonDown) {
-      this.changeCursor(this.cursor.value + 1)
-    } else if (button.buttonUp) {
-      this.changeCursor(this.cursor.value - 1)
-    }
-  }
-
-  processMouse () {
-    super.processMouse()
-    if (game.control.isMouseMove && this.throttleCheck(4)) {
-      const mouseX = game.control.getMouseX()
-      const mouseY = game.control.getMouseY()
-
-      for (let i = 0; i < this.boxList.length; i++) {
-        if (this.boxList[i].collision(mouseX, mouseY)) {
-          this.changeCursor(i)
+    for (let i = 0; i < this.titleBoxList.length; i++) {
+      this.titleBoxList[i].display()
+      if (this.titleBoxList[i].imageData === imageDataInfo.mainSystem.currentPage) {
+        // 한글자와 두글자의 X축 출력 위치를 다르게 해서 가운데에 출력되는 효과를 부여함
+        if (this.page <= 9) {
+          digitalDisplay(this.page, this.titleBoxList[i].x + 15, this.titleBoxList[i].y + 5)
+        } else {
+          digitalDisplay(this.page, this.titleBoxList[i].x + 9, this.titleBoxList[i].y + 5)
         }
       }
     }
   }
 
+  /** 필요하다면, 이 함수를 오버라이드해서 구현해주세요. */
   displayContent () {
+    
+  }
+
+  displayBox () {
     for (let i = 0; i < this.boxList.length; i++) {
       this.boxList[i].display()
     }
   }
 
-}
-
-
-/**
- * 클릭 가능한 BoxObject지만, 이미지를 사용합니다.
- */
-class BoxImageObject extends BoxObject {
-  /**
-   * 새로운 박스 이미지 생성
-   * @param {string} imageSrc 이미지의 경로
-   * @param {ImageDataObject} imageData 이미지데이터
-   */
-  constructor (x = 0, y = 0, width = 0, height = 0, text = '', imageSrc = '', imageData) {
-    super(x, y, width, height, text)
-    this.imageSrc = imageSrc
-
-    /** @type {ImageDataObject} */ this.imageData = imageData
-
-    if (width === 0) this.width = imageData.width
-    if (height === 0) this.height = imageData.height 
-  }
-
-  displayBackGround () {
-    super.displayBackGround()
-
-    if (this.imageSrc == null || this.imageData == null) return
-    game.graphic.imageDisplay(this.imageSrc, this.imageData.x, this.imageData.y, this.imageData.width, this.imageData.height, this.x, this.y, this.width, this.height)
+  displayBackground () {
+    game.graphic.gradientRect(this.x, this.y, this.width, this.height, this.backgroundColor)
+    game.graphic.gradientRect(this.x, this.y, this.width, this.TITLE_HEIGHT, this.titleBackground)
   }
 }
 
@@ -688,6 +1113,297 @@ class MenuSystem {
 }
 
 
+
+class UIComponentEquipmentUpgrade extends UIComponentObject {
+  constructor () {
+    super()
+    this.backgroundColor = ['#8db1a4', '#71a392']
+    this.MENU_BOX_MAX = 2
+    this.setPosition(UIComponentObject.BASE_X + 50, UIComponentObject.BASE_Y + 50)
+    this.setWidthHeight(UIComponentObject.BASE_WIDTH - 100, UIComponentObject.BASE_HEIGHT - 100)
+    this.titleImageObject = imageDataInfo.menuList.equipmentUpgarde
+
+    this.enimationFrame = 0
+
+    const src = imageSrc.system.mainSystem
+    const imgD = imageDataInfo.mainSystem
+    const width = imageDataInfo.mainSystem.equipmentBack.width
+    const height = imageDataInfo.mainSystem.equipmentBack.height
+
+    this.createGridHorizontalBox(4, this.x, this.y + this.height - 50, width, height)
+    const list = [
+      imgD.equipmentBack,
+      imgD.equipmentEquip,
+      imgD.equipmentUpgarde,
+      imgD.equipmentDowngarde,
+    ]
+
+    for (let i = 0; i < this.boxList.length; i++) {
+      this.boxList[i].imageSrc = src
+      this.boxList[i].imageData = list[i]
+    }
+
+    /** 업그레이드 대상의 인벤토리 인덱스 */
+    this.targetInventoryIndex = 4
+  }
+
+  processContent () {
+    if (this.enimationFrame > 0) {
+      this.enimationFrame--
+    }
+  }
+
+  processButtonSelect () {
+    switch (this.cursor.index) {
+      case 0: break // back
+      case 1: userSystem.setEquipment(this.targetInventoryIndex); break // equip/unequip
+      case 2:
+        const isSuccess = userSystem.inventoryItemEquipmentUpgrade(this.targetInventoryIndex)
+        if (isSuccess) {
+          game.sound.play(soundSrc.system.systemEquipmentUpgrade)
+          this.enimationFrame = 60
+          // 저장 요청
+          SaveSystem.requestSave()
+        }
+        else game.sound.play(soundSrc.system.systemBuzzer)
+        break
+      case 3:
+        const isSuccessDown = userSystem.inventoryItemEquipmentDowngrade(this.targetInventoryIndex)
+        if (isSuccessDown) {
+          game.sound.play(soundSrc.system.systemEquipmentDowngrade)
+          this.enimationFrame = 60
+          // 저장 요청
+          SaveSystem.requestSave()
+        }
+        else game.sound.play(soundSrc.system.systemBuzzer)
+        break
+    }
+  }
+
+  displayContent () {
+    // display equipment option
+    // if equippend
+    const equipment = userSystem.getInventoryEquipmentValues(this.targetInventoryIndex)
+    if (equipment == null) return
+
+    // icon display
+    const itemData = dataExportStatItem.get(equipment.id)
+    if (itemData == null) return
+
+    const src = imageSrc.system.itemIcon
+    const iconSize = imageDataInfo.system.itemIcon.width
+    const iconSectionSize = imageDataInfo.system.itemIconSection.width
+    const sliceX = iconSectionSize * (itemData.iconNumber % 10)
+    const sliceY = iconSectionSize * Math.floor(itemData.iconNumber / 10)
+    game.graphic.imageDisplay(src, sliceX, sliceY, iconSize, iconSize, this.x + this.width - 80, this.y + 50, iconSize, iconSize)
+
+    if (this.targetInventoryIndex === userSystem.equipmentIndex) {
+      const mainSrc = imageSrc.system.mainSystem
+      const equipImgD = imageDataInfo.mainSystem.inventoryEquipment
+      gameFunction.imageObjectDisplay(mainSrc, equipImgD, this.x + this.width - 80, this.y + 50, iconSize, iconSize)
+    }
+
+    // 이것은, 텍스트를 깜빡거리기 위한 효과를 위해 처리한 코드입니다.
+    // 업그레이드, 다운 그레이드에 성공하면 3프레임에 1번씩 깜빡거립니다.
+    if (this.enimationFrame % 6 === 5) return
+
+    // text display
+    const levelText = 'LEVEL: ' + equipment.upgradeLevel
+    const attackText = 'ATTACK: ' + equipment.attack + ' -> ' + equipment.nextAttack
+    const upgradeCostText = 'UPGRADE COST: ' + equipment.cost
+    const downgradeRefundText = 'DOWNGRADE REFUND: ' + equipment.downRefund
+    const goldText = 'GOLD: ' + userSystem.gold
+    const textList = [
+      levelText, attackText, '---', upgradeCostText, downgradeRefundText, goldText
+    ]
+
+    game.graphic.fillText('NAME: ' + equipment.name, this.x + 10, this.y + 50)
+    for (let i = 0; i < textList.length; i++) {
+      digitalDisplay(textList[i], this.x + 10, this.y + 50 + 20 + (i * 20))
+    }
+  }
+}
+
+class UIComponentItemCrafting extends UIComponentObject {
+  constructor () {
+    super()
+    this.backgroundColor = ['#3c95da', '#6ebffd']
+    this.MENU_BOX_MAX = 6
+    this.setPosition(UIComponentObject.BASE_X + 50, UIComponentObject.BASE_Y + 40)
+    this.setWidthHeight(UIComponentObject.BASE_WIDTH - 50, UIComponentObject.BASE_HEIGHT - 40)
+    this.titleImageObject = imageDataInfo.menuList.itemCrafting
+
+    this.createGridVerticalBox(5, this.x, this.y + 50, 400, 50)
+    this.setAllBoxColor(BoxObject.DEFAULT_BOX_COLOR, '', '#aaf9ff')
+
+    this.createPage(1)
+
+    /** @type {number[][]} */
+    this.INDEXSLIST = [
+      [ID.playerWeapon.r3Helljeon, ID.item.hellgiComponent, 15],
+      [ID.playerWeapon.r3TowerPink, ID.item.hellgiComponent, 20],
+      [ID.playerWeapon.r3TowerPurple, ID.item.hellgiComponent, 20],
+      [ID.playerSkill.r3Helljeon, ID.item.hellgiComponent, 40],
+      [ID.playerSkill.r3Xkill, ID.item.hellgiComponent, 60],
+      [ID.playerSkill.r3Xshot, ID.item.hellgiComponent, 60],
+      [ID.playerSkill.r3Xboom, ID.item.hellgiComponent, 60],
+      [ID.playerSkill.r3Xbeam, ID.item.hellgiComponent, 60],
+    ]
+
+    /** INDEXLIST 기준, 해당 요소가 lock인지 unlock인지를 캐시하는 데이터
+     * 아이템을 만들거나 창을 열 때마다 unlockArray는 재갱신함
+     * @type {boolean[]} */
+    this.unlockArray = new Array(this.INDEXSLIST.length).fill(false)
+  }
+
+  /**
+   * 자동으로 배열의 unlock 상태를 변경합니다.
+   * 주의: userSystem의 세이브 데이터가 로드된 이후 실행해야 합니다.
+   */
+  #autoChangeUnlockArray () {
+    for (let i = 0; i < this.INDEXSLIST.length; i++) {
+      const currentId = this.INDEXSLIST[i][0]
+      const type = ID.getType(currentId)
+      if (type === ID.type.PLAYER_WEAPON) {
+        this.unlockArray[i] = userSystem.getWeaponUnlock(currentId)
+      } else if (type === ID.type.PLAYER_SKILL) {
+        this.unlockArray[i] = userSystem.getSkillUnlock(currentId)
+      }
+    }
+  }
+
+  open () {
+    super.open()
+    this.#autoChangeUnlockArray()
+  }
+
+  /** 재료 확인 */
+  meterialCheck () {
+    const currentIndex = this.getCurrentIndex()
+    if (currentIndex >= this.INDEXSLIST.length) return false
+
+    const current = this.INDEXSLIST[currentIndex]
+
+    for (let j = 1; j < current.length; j += 2) {
+      const meterialId = current[j]
+      const cost = current[j + 1]
+      const itemCount = userSystem.inventory.getItemCountById(meterialId)
+
+      // 재료가 1개라도 부족하다면, 재료 확인 실패로 처리
+      if (itemCount < cost) return false
+    }
+
+    return true
+  }
+
+  processButtonSelect () {
+    const currentIndex = this.getCurrentIndex()
+    if (currentIndex >= this.INDEXSLIST.length) {
+      game.sound.play(soundSrc.system.systemBuzzer)
+      return 
+    }
+
+    if (!this.unlockArray[currentIndex]) {
+      const currentId = this.INDEXSLIST[currentIndex][0]
+      const type = ID.getType(currentId)
+
+      // 조건을 살펴봄
+      const isMeterial = this.meterialCheck()
+
+      // 재료가 없으면 선택을 무효로 함
+      if (!isMeterial) {
+        game.sound.play(soundSrc.system.systemBuzzer)
+        return 
+      }
+
+      if (type === ID.type.PLAYER_WEAPON) {
+        userSystem.addWeaponUnlock(currentId)
+      } else if (type === ID.type.PLAYER_SKILL) {
+        userSystem.addSkillUnlock(currentId)
+      }
+
+      // 언락을 한 후, 다시 갱신
+      this.#autoChangeUnlockArray()
+      game.sound.play(soundSrc.system.systemItemCrafting)
+    }
+  }
+
+  displayContent () {
+    this.displayItemResult()
+    this.displayItemMeterial()
+  }
+
+  displayItemResult () {
+    const startIndex = this.getStartIndex()
+    for (let i = 0; i < this.boxList.length; i++) {
+      const currentIndex = i + startIndex
+      if (currentIndex >= this.INDEXSLIST.length) continue
+
+      const resultId = this.INDEXSLIST[currentIndex][0]
+      const type = ID.getType(resultId)
+      const isUnlock = this.unlockArray[currentIndex]
+      let iconNumber = 0
+      switch (type) {
+        case ID.type.PLAYER_SKILL:
+          iconNumber = StatPlayerWeapon.getSkillIconNumber(resultId)
+          UIIconDisplay.displayIconSkill(iconNumber, this.boxList[i].x, this.boxList[i].y)
+          break
+        case ID.type.PLAYER_WEAPON:
+          iconNumber = StatPlayerWeapon.getWeaponIconNumber(resultId)
+          UIIconDisplay.displayIconWeapon(iconNumber, this.boxList[i].x, this.boxList[i].y)
+          break
+        case ID.type.ITEM:
+          const targetItem = dataExportStatItem.get(resultId)
+          if (targetItem == null) continue
+
+          iconNumber = targetItem.iconNumber
+          UIIconDisplay.displayIconItem(iconNumber, this.boxList[i].x, this.boxList[i].y)
+          break
+      }
+
+      if (isUnlock) {
+        gameFunction.imageObjectDisplay(imageSrc.system.mainSystem, imageDataInfo.mainSystem.craftingCheck, this.boxList[i].x, this.boxList[i].y)
+      }
+    }
+  }
+
+  displayItemMeterial () {
+    const startIndex = this.getStartIndex()
+    for (let i = 0; i < this.boxList.length; i++) {
+      // 참고: 재료는 배열 1번부터 시작하여, 2칸씩 늘어나 조사하는 형태입니다.
+      for (let j = 1; j < this.INDEXSLIST[i].length; j += 2) {
+        const currentIndex = i + startIndex
+        if (currentIndex >= this.INDEXSLIST.length) continue
+
+        const targetId = this.INDEXSLIST[currentIndex][j + 0]
+        const count = this.INDEXSLIST[currentIndex][j + 1]
+        const subIndex = Math.floor((j - 1) / 2) + 1
+
+        const targetItem = dataExportStatItem.get(targetId)
+        if (targetItem == null) continue
+
+        const positionX = this.boxList[i].x + 50 + (subIndex * 50)
+        const positionY = this.boxList[i].y + this.boxList[i].height - 20
+        UIIconDisplay.displayIconItem(targetItem.iconNumber, positionX, this.boxList[i].y)
+        digitalDisplay(count, positionX + 20, positionY)
+      }
+    }
+  }
+}
+
+class UIComponentBoseokGrowth extends UIComponentObject {
+  constructor () {
+    super()
+    this.backgroundColor = ['#ceb0df', '#b179d1']
+    this.MENU_BOX_MAX = 2
+    this.setPosition(UIComponentObject.BASE_X + 50, UIComponentObject.BASE_Y + 50)
+    this.setWidthHeight(UIComponentObject.BASE_WIDTH - 50, UIComponentObject.BASE_HEIGHT - 100)
+    this.titleImageObject = imageDataInfo.menuList.boseokGrowth
+  }
+}
+
+
+
 class UIComponentRoundSelect extends UIComponentObject {
   constructor () {
     super()
@@ -695,20 +1411,15 @@ class UIComponentRoundSelect extends UIComponentObject {
     /** 메인 라운드 박스의 최대 개수 */ this.MAIN_ROUND_BOX_MAX = 4
     /** 서브 라운드 박스의 최대 개수 */ this.SUB_ROUND_BOX_MAX = 20
     /** 서브 라운드가 1열에 들어갈 수 있는 개수 */ this.SUB_ROUND_COLUMN_COUNT = 5
-    this.LAYER_NUMBER_MAIN = 0
+    this.LAYER_NUMBER_MAIN = 0 
     this.LAYER_NUMBER_SUB = 1
 
     this.setPosition(UIComponentObject.BASE_X - 25, UIComponentObject.BASE_Y - 50)
     this.setWidthHeight(UIComponentObject.BASE_WIDTH + 25, UIComponentObject.BASE_HEIGHT + 100)
 
-    this.tilteImageObject = imageDataInfo.menuList.roundSelect
+    this.titleImageObject = imageDataInfo.menuList.roundSelect
 
     this.selectMainRound = 0
-    this.cursor = {
-      mainRound: 0,
-      subRound: 0,
-      /** 레이어 번호, 0일 경우 메인 라운드, 1일 경우 서브 라운드 */ layerNumber: 0,
-    }
 
     /** 라운드의 개수 */
     this.roundCount = [0, 6, 6, 12]
@@ -746,14 +1457,6 @@ class UIComponentRoundSelect extends UIComponentObject {
     super.processButton()
     let button = this.getButtonObject()
 
-    if (button.buttonA) {
-      if (this.cursor.layerNumber === this.LAYER_NUMBER_MAIN) {
-        this.selectMainRound = this.cursor.mainRound
-      } else if (this.cursor.layerNumber === this.LAYER_NUMBER_SUB) {
-        this.roundStart()
-      }
-    }
-
     if (button.buttonLeft) {
       if (this.cursor.layerNumber === this.LAYER_NUMBER_SUB) {
         const positionX = this.cursor.subRound % this.SUB_ROUND_COLUMN_COUNT
@@ -781,6 +1484,15 @@ class UIComponentRoundSelect extends UIComponentObject {
       } else if (this.cursor.layerNumber === this.LAYER_NUMBER_SUB) {
         this.changeCursor(undefined, this.cursor.subRound + this.SUB_ROUND_COLUMN_COUNT, undefined)
       }
+    }
+  }
+
+  processButtonSelect () {
+    super.processButtonSelect()
+    if (this.cursor.layerNumber === this.LAYER_NUMBER_MAIN) {
+      this.selectMainRound = this.cursor.mainRound
+    } else if (this.cursor.layerNumber === this.LAYER_NUMBER_SUB) {
+      this.roundStart()
     }
   }
 
@@ -833,6 +1545,7 @@ class UIComponentRoundSelect extends UIComponentObject {
 
     // 마우스 클릭 시 서브 라운드 커서 상태면 커서가 서브 라운드 내부에 있는지 확인하고, 맞게 있으면 라운드 시작
     // 이렇게 하는 이유는, 다른 공간을 클릭했는데 라운드를 시작하는 현상이 있었기 때문
+    // 서브 박스 충돌을 기준으로 라운드가 시작되므로, 서브 박스 충돌 알고리즘을 작성해야 합니다.
     if (game.control.getMouseClick() && this.cursor.layerNumber === this.LAYER_NUMBER_SUB) {
       const mouseX = game.control.getMouseX()
       const mouseY = game.control.getMouseY()
@@ -1015,8 +1728,8 @@ class UIComponentRoundSelect extends UIComponentObject {
 class UIComponentWeaponSkillGridObject extends UIComponentObject {
   constructor () {
     super()
-    this.setPosition(UIComponentObject.BASE_X - 40, this.y - 60)
-    this.setWidthHeight(UIComponentObject.BASE_WIDTH + 80, UIComponentObject.BASE_HEIGHT + 120)
+    this.setPosition(UIComponentObject.BASE_X - 40, this.y - 70)
+    this.setWidthHeight(UIComponentObject.BASE_WIDTH + 80, UIComponentObject.BASE_HEIGHT + 140)
     this.COLUMN_COUNT = 7
 
     /** 해당 목록에서 사용할 타겟(무기 또는 스킬)의 id List */
@@ -1028,35 +1741,29 @@ class UIComponentWeaponSkillGridObject extends UIComponentObject {
     this.LAYER_WEAPON = 0
     this.LAYER_PRESET = 1
     this.LAYER_USER_SELECT = 2
-    this.cursor = {
-      preset: 0,
-      weapon: 0,
-      userSelect: 0,
-      layerNumber: 0,
-    }
 
     /** 커서 사운드가 켜져있는지 여부 */
     this.isCursorSound = true
 
     const MAX_PRESET = UserSystem.PRESET_MAX_COUNT
     this.presetBox = []
+    let presetImageDataList = [
+      imageDataInfo.mainSystem.uiWeaponSelectPreset1,
+      imageDataInfo.mainSystem.uiWeaponSelectPreset2,
+      imageDataInfo.mainSystem.uiWeaponSelectPreset3,
+      imageDataInfo.mainSystem.uiWeaponSelectPreset4,
+      imageDataInfo.mainSystem.uiWeaponSelectPreset5,
+    ]
+
     for (let i = 0; i < MAX_PRESET; i++) {
       let presetSrc = imageSrc.system.mainSystem
       const presetWidth = imageDataInfo.mainSystem.uiWeaponSelectPreset1.width
-      let presetImageDataList = [
-        imageDataInfo.mainSystem.uiWeaponSelectPreset1,
-        imageDataInfo.mainSystem.uiWeaponSelectPreset2,
-        imageDataInfo.mainSystem.uiWeaponSelectPreset3,
-        imageDataInfo.mainSystem.uiWeaponSelectPreset4,
-        imageDataInfo.mainSystem.uiWeaponSelectPreset5,
-      ]
-      let box = new BoxImageObject(this.x + this.tilteImageObject.width + (presetWidth * i), this.y, undefined, undefined, '', presetSrc, presetImageDataList[i])
+      // 참고로 page 아이콘은 title 0번부터 배치되기 때문에, x의 위치는 page아이콘 다음 부분에 배치됩니다.
+      // 그리고 page 아이콘은 preset 아이콘과 크기가 동일합니다.
+      const positionX = this.x + this.titleImageObject.width + (presetWidth * i) + (presetWidth * 3)
+      let box = new BoxImageObject(positionX, this.y, undefined, undefined, '', presetSrc, presetImageDataList[i])
       this.presetBox.push(box)
     }
-  }
-
-  changeFocus () {
-
   }
 
   displayContent () {
@@ -1065,7 +1772,7 @@ class UIComponentWeaponSkillGridObject extends UIComponentObject {
     }
   }
 
-  /** 커서 사운드를 끕니다. */
+  /** 커서 사운드를 끕니다. 소리가 다른 효과음과 겹칠 경우 이 커서 사운드를 켜고 끄는 것으로 대응합니다. */
   cursorSoundMute () {
     this.isCursorSound = false
   }
@@ -1079,7 +1786,7 @@ class UIComponentWeaponSkillGridObject extends UIComponentObject {
 class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
   constructor () {
     super()
-    this.tilteImageObject = imageDataInfo.menuList.weaponSelect
+    this.titleImageObject = imageDataInfo.menuList.weaponSelect
     this.backgroundColor = ['#B993D6', '#8CA6DB']
 
     /** 해당 목록에서 사용할 타겟(무기 또는 스킬)의 id List */
@@ -1088,16 +1795,17 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
     const weaponWidth = imageDataInfo.default.weaponIcon.width
     const weaponHeight = imageDataInfo.default.weaponIcon.height
 
-    const LAYER_Y_USER_WEAPON = this.y + 80
-    const LAYER_Y_WEAPON_LIST = this.y + 150
+    const LAYER_Y_USER_WEAPON = this.y + 70
+    const LAYER_Y_WEAPON_LIST = this.y + 140
 
-    this.weaponBox = []
-    for (let i = 0; i < 50; i++) {
-      const weaponX = i % this.COLUMN_COUNT
-      const weaponY = Math.floor(i / this.COLUMN_COUNT)
-      let box = new BoxObject(this.x + (weaponX * weaponWidth), LAYER_Y_WEAPON_LIST + (weaponY * weaponHeight), weaponWidth, weaponHeight, '', BoxObject.DEFAULT_BOX_COLOR)
-      this.weaponBox.push(box)
-    }
+    this.createGrid2DBox(
+      this.COLUMN_COUNT,
+      this.COLUMN_COUNT,
+      this.x,
+      LAYER_Y_WEAPON_LIST,
+      weaponWidth,
+      weaponHeight
+    )
 
     const userWeaponWidth = weaponWidth + 20
     this.userSelectBox = []
@@ -1105,6 +1813,8 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
       let box = new BoxObject(this.x + (userWeaponWidth * i), LAYER_Y_USER_WEAPON, userWeaponWidth, weaponHeight, 'user' + i, BoxObject.DEFAULT_BOX_COLOR)
       this.userSelectBox.push(box)
     }
+
+    this.createPage(1)
   }
 
   changeWeaponPreset () {
@@ -1117,10 +1827,17 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
   }
 
   changeWeapon () {
-    if (this.cursor.layerNumber === this.LAYER_WEAPON && this.cursor.weapon !== 0) {
-      // 참고: 무기 리스트 중 0 번은 비어있는 무기를 뜻하지만, 지금은 그 기능을 사용할 수 없도록 막았습니다.
+    const currentWeaponIndex = this.getCurrentIndex()
 
-      let success = UserSystem.setWeapon(this.cursor.userSelect, this.weaponIdList[this.cursor.weapon])
+    // 참고: 무기 리스트 중 0 번은 비어있는 무기를 뜻하지만, 지금은 그 기능을 사용할 수 없도록 막았습니다.
+    if (this.cursor.layerNumber === this.LAYER_WEAPON && currentWeaponIndex !== 0) {
+      // 유효한 인덱스가 아니면 취소시킴 (무기 아이디 리스트 만큼이 유효한 인덱스임)
+      if (currentWeaponIndex >= this.weaponIdList.length) {
+        game.sound.play(soundSrc.system.systemBuzzer)
+        return
+      }
+
+      let success = UserSystem.setWeapon(this.cursor.userSelect, this.weaponIdList[currentWeaponIndex])
       game.sound.play(success ? soundSrc.system.systemSkillSelect : soundSrc.system.systemBuzzer)
 
       if (success) {
@@ -1131,8 +1848,8 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
         // 그리고, 임시적으로 커서 사운드를 껐다가 켭니다.
         // 소리가 다른 효과음과 겹쳤기 때문입니다.
         this.cursorSoundMute()
-        this.changeCursor(this.LAYER_USER_SELECT, nextNumber)
-        this.changeCursor(this.LAYER_WEAPON, this.cursor.weapon)
+        this.changeCursorCustom(this.LAYER_USER_SELECT, nextNumber)
+        this.changeCursorCustom(this.LAYER_WEAPON, this.cursor.index)
         this.#changeFocus()
         this.cursorSoundUnMute()
 
@@ -1142,76 +1859,87 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
     }
   }
 
-  
-
-  processButton () {
+  processButtonMoveCursor () {
     let button = this.getButtonObject()
     
-    if (button.buttonA) {
-      if (this.cursor.layerNumber === this.LAYER_PRESET) {
-        this.changeWeaponPreset()
-      } else if (this.cursor.layerNumber === this.LAYER_WEAPON) {
-        this.changeWeapon()
-      }
-    } else if (button.buttonB) {
-      this.close()
-    }
+    // 이동한 거리를 상대좌표로 표현
+    let moveX = 0
+    let moveY = 0
+    
+    // 이동 방향에 따라 좌표 변경
+    if (button.buttonLeft) moveX = -1
+    else if (button.buttonRight) moveX = 1
+    else if (button.buttonUp) moveY = -1
+    else if (button.buttonDown) moveY = 1
 
-    // 참고사항: UI 구조상, +7, -7칸이 이동 가능한 건 무기밖에 없습니다.
-    // 그래서 커서 레이어 구분을 하위 함수에서 합쳐서 진행함.
-    if (button.buttonLeft) {
-      this.#buttonArrayKeyMovePosition(-1)
-    } else if (button.buttonRight) {
-      this.#buttonArrayKeyMovePosition(1)
-    } else if (button.buttonDown) {
-      this.#buttonArrayKeyMovePosition(this.COLUMN_COUNT)
-    } else if (button.buttonUp) {
-      this.#buttonArrayKeyMovePosition(-this.COLUMN_COUNT)
-    }
-  }
+    // 이동하지 않은 경우 방향키 이동 취소
+    if (moveX === 0 && moveY === 0) return
 
-  /** 
-   * 화살표키를 눌렀을 때, 자동으로 커서를 조작해줌 
-   * @param {number} relativePosition 상대적인 위치값 (마이너스 숫자 가능)
-   */
-  #buttonArrayKeyMovePosition (relativePosition = 0) {
-    if (Math.abs(relativePosition) <= 1) {
-      if (this.cursor.layerNumber === this.LAYER_PRESET) {
-        this.changeCursor(this.cursor.layerNumber, this.cursor.preset + relativePosition)
-      } else if (this.cursor.layerNumber === this.LAYER_USER_SELECT) {
-        this.changeCursor(this.cursor.layerNumber, this.cursor.userSelect + relativePosition)
-      } else if (this.cursor.layerNumber === this.LAYER_WEAPON) {
-        this.changeCursor(this.cursor.layerNumber, this.cursor.weapon + relativePosition)
-      }
-    } else if (Math.abs(relativePosition) === this.COLUMN_COUNT) {
-      if (this.cursor.layerNumber === this.LAYER_PRESET && relativePosition > 0) {
-        // movePosition의 값은 이동할 레이어에 기존에 입력되어 있었던 값을 사용함.
-        this.changeCursor(this.LAYER_USER_SELECT, this.cursor.userSelect)
-      } else if (this.cursor.layerNumber === this.LAYER_USER_SELECT) {
-        if (relativePosition > 0) {
-          this.changeCursor(this.LAYER_WEAPON, this.cursor.weapon)
-        } else {
-          this.changeCursor(this.LAYER_PRESET, this.cursor.preset)
-        }
-      } else if (this.cursor.layerNumber === this.LAYER_WEAPON) {
-        // 여기서는 먼저 음수이고, 커서가 일정 값 보다 작은지 확인해서
-        // 작으면 이전 레이어로 보냄, 아니면 마이너스 일정 칸
-        if (relativePosition < 0) {
-          if (this.cursor.weapon < this.COLUMN_COUNT) {
-            this.changeCursor(this.LAYER_USER_SELECT, this.cursor.userSelect)
-          } else {
-            this.changeCursor(this.LAYER_WEAPON, this.cursor.weapon + relativePosition)
-          }
-        } else {
-          this.changeCursor(this.LAYER_WEAPON, this.cursor.weapon + relativePosition)
-        }
-      }
+    if (this.cursor.layerNumber === this.LAYER_PRESET) {
+      this.#movePresetCursor(moveX, moveY)
+    } else if (this.cursor.layerNumber === this.LAYER_USER_SELECT) {
+      this.#moveUserSelectCursor(moveX, moveY)
+    } else if (this.cursor.layerNumber === this.LAYER_WEAPON) {
+      this.#moveWeaponCursor(moveX, moveY)
     }
   }
 
+  processButtonSelect () {
+    if (this.cursor.layerNumber === this.LAYER_PRESET) {
+      this.changeWeaponPreset()
+    } else if (this.cursor.layerNumber === this.LAYER_WEAPON) {
+      this.changeWeapon()
+    }
+  }
+
+  #movePresetCursor (moveX = 0, moveY = 0) {
+    if (moveX !== 0) {
+      this.changeCursorCustom(this.LAYER_PRESET, this.cursor.preset + moveX)
+    } else if (moveY > 0) {
+      this.changeCursorCustom(this.LAYER_USER_SELECT, this.cursor.userSelect)
+    }
+  }
+
+  #moveUserSelectCursor (moveX = 0, moveY = 0) {
+    if (moveX !== 0) {
+      this.changeCursorCustom(this.LAYER_USER_SELECT, this.cursor.userSelect + moveX)
+    } else if (moveY < 0) {
+      this.changeCursorCustom(this.LAYER_PRESET, this.cursor.preset)
+    } else if (moveY > 0) {
+      this.changeCursorCustom(this.LAYER_WEAPON, this.cursor.index)
+    }
+  }
+
+  #moveWeaponCursor (moveX = 0, moveY = 0) {
+    if (moveX === -1) { // 왼쪽 이동
+      if (this.cursor.index % this.COLUMN_COUNT === 0 && this.page > 0) {
+        // 페이지가 이전 구간으로 이동하고, X축은 끝으로 가야하는데, X축 끝이 COLUMN - 1 이므로 해당 위치로 이동
+        this.page--
+        this.changeCursorCustom(this.LAYER_WEAPON, this.cursor.index + this.COLUMN_COUNT - 1)
+      } else if (this.cursor.index % this.COLUMN_COUNT !== 0) {
+        this.changeCursorCustom(this.LAYER_WEAPON, this.cursor.index + moveX)
+      }
+    } else if (moveX === 1) { // 오른쪽 이동
+      if (this.cursor.index % this.COLUMN_COUNT === this.COLUMN_COUNT - 1 && this.page < this.maxPage) {
+        this.page++
+        this.changeCursorCustom(this.LAYER_WEAPON, this.cursor.index - this.COLUMN_COUNT + 1)
+      } else if (this.cursor.index % this.COLUMN_COUNT !== this.COLUMN_COUNT - 1) {
+        this.changeCursorCustom(this.LAYER_WEAPON, this.cursor.index + moveX)
+      }
+    } else if (moveY < 0) {
+      if (this.cursor.index < this.COLUMN_COUNT) {
+        this.changeCursorCustom(this.LAYER_USER_SELECT, this.cursor.userSelect)
+      } else {
+        this.changeCursorCustom(this.LAYER_WEAPON, this.cursor.index - this.COLUMN_COUNT)
+      }
+    } else if (moveY > 0) {
+      this.changeCursorCustom(this.LAYER_WEAPON, this.cursor.index + this.COLUMN_COUNT)
+    }
+  }
 
   processMouse () {
     super.processMouse()
+
     if (game.control.isMouseMove && this.throttleCheck()) {
       const mouseX = game.control.getMouseX() 
       const mouseY = game.control.getMouseY()
@@ -1219,21 +1947,21 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
       for (let i = 0; i < this.presetBox.length; i++) {
         if (this.presetBox[i].collision(mouseX, mouseY)) {
           // change preset
-          this.changeCursor(this.LAYER_PRESET, i)
+          this.changeCursorCustom(this.LAYER_PRESET, i)
         }
       }
 
-      for (let i = 0; i < this.weaponBox.length; i++) {
-        if (this.weaponBox[i].collision(mouseX, mouseY)) {
+      for (let i = 0; i < this.boxList.length; i++) {
+        if (this.boxList[i].collision(mouseX, mouseY)) {
           // change weapon cursor
-          this.changeCursor(this.LAYER_WEAPON, i)
+          this.changeCursorCustom(this.LAYER_WEAPON, i)
         }
       }
 
       for (let i = 0; i < this.userSelectBox.length; i++) {
         if (this.userSelectBox[i].collision(mouseX, mouseY)) {
           // cursor move user weapon box
-          this.changeCursor(this.LAYER_USER_SELECT, i)
+          this.changeCursorCustom(this.LAYER_USER_SELECT, i)
         }
       }
     }
@@ -1247,17 +1975,7 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
           this.changeWeaponPreset()
         }
       }
-
-      for (let i = 0; i < this.weaponBox.length; i++) {
-        if (i >= this.weaponIdList.length) return
-        // 무기 id리스트가 없다면, 해당 박스는 존재해도 처리하지 않음.
-
-        if (this.weaponBox[i].collision(mouseX, mouseY)) {
-          this.changeWeapon()
-        }
-      }
     }
-
   }
 
   open () {
@@ -1270,34 +1988,31 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
    * @param {number} layerNumber 레이어 번호 (상수값으로 사용)
    * @param {number} movePosition 이동할 위치 (좌표를 입력하는것이 아니라 순서 번호입니다.)
    */
-  changeCursor (layerNumber, movePosition) {
+  changeCursorCustom (layerNumber, movePosition) {
     const CONL1 = layerNumber === this.LAYER_PRESET
     const CONL2 = layerNumber === this.LAYER_WEAPON
     const CONL3 = layerNumber === this.LAYER_USER_SELECT
 
     let con1 = layerNumber === this.cursor.layerNumber
     let con2 = CONL1 && this.cursor.preset === movePosition
-    let con3 = CONL2 && this.cursor.weapon === movePosition
+    let con3 = CONL2 && this.cursor.index === movePosition
     let con4 = CONL3 && this.cursor.userSelect === movePosition
 
     // 조건: layerNumber가 같고, movePosition이 같은 경우 early return
     if (con1 && (con2 || con3 || con4)) return
-
-    // 조건: 무기 선택한 위치가 무기 ID리스트의 배열 길이를 초과할 때 (초과하면 무기가 없으므로)
-    let con5 = CONL2 && movePosition >= this.weaponIdList.length
 
     // 조건, layerNumber 가 userWeapon이고, 입력된 값 범위가 제한된 값인지 확인
     let con6 = CONL3 && (movePosition < 0 || movePosition >= this.userSelectBox.length)
 
     // 조건, preset 아까랑 마찬가지로 범위 조건 확인
     let con7 = CONL1 && (movePosition < 0 || movePosition >= this.presetBox.length)
-    if (con5 || con6 || con7) return
+    if (con6 || con7) return
 
     this.cursor.layerNumber = layerNumber
     if (layerNumber === this.LAYER_USER_SELECT) {
       this.cursor.userSelect = movePosition
     } else if (layerNumber === this.LAYER_WEAPON) {
-      this.cursor.weapon = movePosition
+      this.cursor.index = movePosition
     } else if (layerNumber === this.LAYER_PRESET) {
       this.cursor.preset = movePosition
     }
@@ -1310,7 +2025,6 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
 
   /** 포커스 변경, changeCursor를 사용한 경우에만 동작함 */
   #changeFocus () {
-    
     for (let i = 0; i < this.presetBox.length; i++) {
       this.presetBox[i].focus = false
 
@@ -1347,11 +2061,11 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
       }
     }
 
-    for (let i = 0; i < this.weaponBox.length; i++) {
-      this.weaponBox[i].focus = false
+    for (let i = 0; i < this.boxList.length; i++) {
+      this.boxList[i].focus = false
 
-      if (this.cursor.layerNumber === this.LAYER_WEAPON && this.cursor.weapon === i) {
-        this.weaponBox[i].focus = true
+      if (this.cursor.layerNumber === this.LAYER_WEAPON && this.cursor.index === i) {
+        this.boxList[i].focus = true
       }
     }
   }
@@ -1365,32 +2079,30 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
   }
 
   displayWeaponIcon () {
-    for (let i = 0; i < this.weaponIdList.length; i++) {
-      this.weaponBox[i].display()
-    }
+    const startIndex = this.getStartIndex()
+    for (let i = 0; i < this.boxList.length; i++) {
+      const currentIndex = startIndex + i
+      if (currentIndex >= this.weaponIdList.length) continue
 
-    const src = imageSrc.system.weaponIcon
-    for (let i = 0; i < this.weaponIdList.length; i++) {
-      const iconNumber = this.getPlayerWeaponIconNumber(this.weaponIdList[i])
-      const x = iconNumber % 10
-      const y = Math.floor(iconNumber / 10)
-      const w = imageDataInfo.system.weaponSkillIcon.width
-      const h = imageDataInfo.system.weaponSkillIcon.height
-      game.graphic.imageDisplay(src, x * w, h * y, w, h, this.weaponBox[i].x, this.weaponBox[i].y, w, h)
+      const iconNumber = this.getPlayerWeaponIconNumber(this.weaponIdList[currentIndex])
+      UIIconDisplay.displayIconWeapon(
+        iconNumber,
+        this.boxList[i].x,
+        this.boxList[i].y
+      )
     }
   }
 
   displayUserWeaponIcon () {
     let iconList = UserSystem.getWeaponList()
     for (let i = 0; i < this.userSelectBox.length; i++) {
-      let iconArrayNumber = i
-      const src = imageSrc.system.weaponIcon
-      const iconNumber = this.getPlayerWeaponIconNumber(iconList[iconArrayNumber])
-      const x = iconNumber % 10
-      const y = Math.floor(iconNumber / 10)
-      const w = imageDataInfo.system.weaponSkillIcon.width
-      const h = imageDataInfo.system.weaponSkillIcon.height
-      game.graphic.imageDisplay(src, x * w, h * y, w, h, this.userSelectBox[i].x, this.userSelectBox[i].y, w, h)
+      const iconNumber = this.getPlayerWeaponIconNumber(iconList[i])
+
+      UIIconDisplay.displayIconWeapon(
+        iconNumber,
+        this.userSelectBox[i].x,
+        this.userSelectBox[i].y
+      )
     }
   }
 
@@ -1415,7 +2127,10 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
       const weaponUserIdList = UserSystem.getWeaponList()
       weaponId = weaponUserIdList[this.cursor.userSelect]
     } else {
-      weaponId = this.weaponIdList[this.cursor.weapon]
+      const currentIndex = this.getCurrentIndex()
+      if (currentIndex >= this.weaponIdList.length) return
+
+      weaponId = this.weaponIdList[currentIndex]
     }
 
     let getWeapon = dataExportStatPlayerWeapon.get(weaponId)
@@ -1439,22 +2154,23 @@ class UIComponentWeaponSelect extends UIComponentWeaponSkillGridObject {
 class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
   constructor () {
     super()
-    this.tilteImageObject = imageDataInfo.menuList.skillSelect
+    this.titleImageObject = imageDataInfo.menuList.skillSelect
     this.backgroundColor = ['#6190E8', '#A7BFE8']
 
     const skillWidth = imageDataInfo.default.weaponIcon.width
     const skillHeight = imageDataInfo.default.weaponIcon.height
 
     const LAYER_Y_USER_SKILL = this.y + 50
-    const LAYER_Y_SKILL_LIST = this.y + 150
+    const LAYER_Y_SKILL_LIST = this.y + 140
     
-    this.skillBox = []
-    for (let i = 0; i < this.skillIdList.length; i++) {
-      const skillX = i % this.COLUMN_COUNT
-      const skillY = Math.floor(i / this.COLUMN_COUNT)
-      let box = new BoxObject(this.x + (skillX * skillWidth), LAYER_Y_SKILL_LIST + (skillY * skillHeight), skillWidth, skillHeight, '', BoxObject.DEFAULT_BOX_COLOR)
-      this.skillBox.push(box)
-    }
+    this.createGrid2DBox(
+      this.COLUMN_COUNT,
+      this.COLUMN_COUNT,
+      this.x,
+      LAYER_Y_SKILL_LIST,
+      skillWidth,
+      skillHeight
+    )
     
     this.userSelectBox = []
     const userSkillWidth = skillWidth + 40
@@ -1465,6 +2181,8 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
       let box = new BoxObject(LEFT_BORDER + this.x + (userSkillWidth * x), LAYER_Y_USER_SKILL + (skillHeight * line), userSkillWidth, skillHeight, '', BoxObject.DEFAULT_BOX_COLOR)
       this.userSelectBox.push(box)
     }
+
+    this.createPage(1)
   }
 
   /**
@@ -1472,51 +2190,43 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
    * @param {number} layerNumber 레이어 번호 (상수값으로 사용)
    * @param {number} movePosition 이동할 위치 (좌표를 입력하는것이 아니라 순서 번호입니다.)
    */
-  changeCursor (layerNumber, movePosition) {
+  changeCursorCustom (layerNumber, movePosition) {
     const CONL1 = layerNumber === this.LAYER_PRESET
     const CONL2 = layerNumber === this.LAYER_WEAPON
     const CONL3 = layerNumber === this.LAYER_USER_SELECT
 
     let con1 = layerNumber === this.cursor.layerNumber
     let con2 = CONL1 && this.cursor.preset === movePosition
-    let con3 = CONL2 && this.cursor.weapon === movePosition
+    let con3 = CONL2 && this.cursor.index === movePosition
     let con4 = CONL3 && this.cursor.userSelect === movePosition
 
     // 조건: layerNumber가 같고, movePosition이 같은 경우 early return
     if (con1 && (con2 || con3 || con4)) return
-
-    // 조건: 무기 선택한 위치가 무기 ID리스트의 배열 길이를 초과할 때 (초과하면 무기가 없으므로)
-    let con5 = CONL2 && movePosition >= this.skillIdList.length
 
     // 조건, layerNumber 가 userWeapon이고, 입력된 값 범위가 제한된 값인지 확인
     let con6 = CONL3 && (movePosition < 0 || movePosition >= this.userSelectBox.length)
 
     // 조건, preset 아까랑 마찬가지로 범위 조건 확인
     let con7 = CONL1 && (movePosition < 0 || movePosition >= this.presetBox.length)
-    if (con5 || con6 || con7) return
+    if (con6 || con7) return
 
     this.cursor.layerNumber = layerNumber
     if (layerNumber === this.LAYER_USER_SELECT) {
       this.cursor.userSelect = movePosition
     } else if (layerNumber === this.LAYER_WEAPON) {
-      this.cursor.weapon = movePosition
+      this.cursor.index = movePosition
     } else if (layerNumber === this.LAYER_PRESET) {
       this.cursor.preset = movePosition
     }
 
-    this.changeFocus()
+    this.changeBoxFocus()
     if (this.isCursorSound) {
       game.sound.play(soundSrc.system.systemCursor)
     }
   }
 
-  open () {
-    super.open()
-    this.changeFocus()
-  }
-
   /** 포커스 변경, changeCursor를 사용한 경우에만 동작함 */
-  changeFocus () {
+  changeBoxFocus () {
     
     for (let i = 0; i < this.presetBox.length; i++) {
       this.presetBox[i].focus = false
@@ -1554,11 +2264,11 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
       }
     }
 
-    for (let i = 0; i < this.skillBox.length; i++) {
-      this.skillBox[i].focus = false
+    for (let i = 0; i < this.boxList.length; i++) {
+      this.boxList[i].focus = false
 
-      if (this.cursor.layerNumber === this.LAYER_WEAPON && this.cursor.weapon === i) {
-        this.skillBox[i].focus = true
+      if (this.cursor.layerNumber === this.LAYER_WEAPON && this.cursor.index === i) {
+        this.boxList[i].focus = true
       }
     }
   }
@@ -1568,15 +2278,21 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
     if (this.cursor.layerNumber === this.LAYER_PRESET && this.cursor.preset !== UserSystem.skillPresetNumber) {
       UserSystem.changePresetSkill(this.cursor.preset)
       game.sound.play(soundSrc.system.systemSelect)
-      this.changeFocus()
+      this.changeBoxFocus()
     }
   }
 
   changeSkill () {
-    if (this.cursor.layerNumber === this.LAYER_WEAPON && this.cursor.weapon !== 0) {
-      // 참고: 무기 리스트 중 0 번은 비어있는 것를 뜻하지만, 지금은 그 기능을 사용할 수 없도록 막았습니다.
+    const currentIndex = this.getCurrentIndex()
 
-      let success = UserSystem.setSkill(this.cursor.userSelect, this.skillIdList[this.cursor.weapon])
+    // 참고: 무기 리스트 중 0 번은 비어있는 것를 뜻하지만, 지금은 그 기능을 사용할 수 없도록 막았습니다.
+    if (this.cursor.layerNumber === this.LAYER_WEAPON && currentIndex !== 0) {
+      if (currentIndex >= this.skillIdList.length) {
+        game.sound.play(soundSrc.system.systemBuzzer)
+        return
+      }
+
+      let success = UserSystem.setSkill(this.cursor.userSelect, this.skillIdList[currentIndex])
       game.sound.play(success ? soundSrc.system.systemSkillSelect : soundSrc.system.systemBuzzer)
 
       if (success) {
@@ -1587,9 +2303,9 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
         // 그리고, 임시적으로 커서 사운드를 껐다가 켭니다.
         // 소리가 다른 효과음과 겹쳤기 때문입니다.
         this.cursorSoundMute()
-        this.changeCursor(this.LAYER_USER_SELECT, nextNumber)
-        this.changeCursor(this.LAYER_WEAPON, this.cursor.weapon)
-        this.changeFocus()
+        this.changeCursorCustom(this.LAYER_USER_SELECT, nextNumber)
+        this.changeCursorCustom(this.LAYER_WEAPON, this.cursor.index)
+        this.changeBoxFocus()
         this.cursorSoundUnMute()
 
         // 저장 요청
@@ -1598,19 +2314,8 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
     }
   }
 
-  processButton () {
-    super.processButton()
+  processButtonMoveCursor () {
     let button = this.getButtonObject()
-
-    if (button.buttonA) {
-      if (this.cursor.layerNumber === this.LAYER_PRESET) {
-        this.changeSkillPreset()
-      } else if (this.cursor.layerNumber === this.LAYER_WEAPON) {
-        this.changeSkill()
-      }
-    } else if (button.buttonB) {
-      this.close()
-    }
 
     if (button.buttonLeft) {
       this.moveGrid(-1, 0)
@@ -1623,31 +2328,57 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
     }
   }
 
+  processButtonSelect () {
+    if (this.cursor.layerNumber === this.LAYER_PRESET) {
+      this.changeSkillPreset()
+    } else if (this.cursor.layerNumber === this.LAYER_WEAPON) {
+      this.changeSkill()
+    }
+  }
+
   /**
    * 그리드를 이동시킵니다.
    */
-  moveGrid (relativeX = 0, relativeY = 0) {
+  moveGrid (moveX = 0, moveY = 0) {
     let position = this.getGridPosition()
 
     // 커서 레이어 변화가 일어나는지를 확인
     // Y가 0 ~ 2 사이일 때, relativeY가 변화하면 처리
-    if (position.y === 0 && relativeX === 0) {
-      if (relativeY > 0) {
+    if (position.y === 0 && moveX === 0) {
+      if (moveY > 0) {
         position.x = this.cursor.userSelect // 포지션X를 userSelect 커서로 재변경
       }
-    } else if (position.y === 1 && relativeX === 0) {
-      if (relativeY > 0) {
-        position.x = this.cursor.weapon
-      } else if (relativeY < 0) {
+    } else if (position.y === 1 && moveX === 0) {
+      if (moveY > 0) {
+        position.x = this.cursor.index
+      } else if (moveY < 0) {
         position.x = this.cursor.preset
       }
-    } else if (position.y === 2 && relativeX === 0) {
-      if (relativeY < 0) {
+    } else if (position.y >= 2) {
+      if (moveX === -1) {
+        if (position.x === 0 && this.page > 0) {
+          this.page--
+          position.x = this.COLUMN_COUNT - 1
+          moveX = 0 // 페이지를 이동했기 때문에 정확한 설정을 위해 이동 값은 0으로 처리
+        } else if (position.x === 0) {
+          moveX = 0 // X가 0이고 PAGE가 0이면 이동할 수 없으므로 이동 처리 취소시킴
+        }
+      } else if (moveX === 1) {
+        if (position.x === this.COLUMN_COUNT - 1 && this.page < this.maxPage) {
+          this.page++
+          position.x = 0
+          moveX = 0
+        } else if (position.x === this.COLUMN_COUNT - 1) {
+          moveX = 0
+        }
+      }
+
+      if (moveY < 0) {
         position.x = this.cursor.userSelect
       }
     }
 
-    this.setGridPosition(position.x + relativeX, position.y + relativeY)
+    this.setGridPosition(position.x + moveX, position.y + moveY)
   }
 
   getGridPosition () {
@@ -1659,7 +2390,7 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
     } else if (this.cursor.layerNumber === this.LAYER_USER_SELECT) {
       y = 1
     } else if (this.cursor.layerNumber === this.LAYER_WEAPON) {
-      let line = Math.floor(this.cursor.weapon / this.COLUMN_COUNT)
+      let line = Math.floor(this.cursor.index / this.COLUMN_COUNT)
       y = 2 + line
     }
 
@@ -1668,7 +2399,7 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
     } else if (this.cursor.layerNumber === this.LAYER_USER_SELECT) {
       x = this.cursor.userSelect
     } else if (this.cursor.layerNumber === this.LAYER_WEAPON) {
-      x = this.cursor.weapon % this.COLUMN_COUNT
+      x = this.cursor.index % this.COLUMN_COUNT
     }
 
     return {x, y}
@@ -1680,15 +2411,14 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
     // 그리드의 위치를 제공하면, 그에 맞게 재배치시킴 (get과 원리는 구조적으로 동일)
 
     if (y === 0) {
-      this.changeCursor(this.LAYER_PRESET, x)
+      this.changeCursorCustom(this.LAYER_PRESET, x)
     } else if (y === 1) {
-      this.changeCursor(this.LAYER_USER_SELECT, x)
+      this.changeCursorCustom(this.LAYER_USER_SELECT, x)
     } else if (y >= 2) {
       const lineY = (y - 2) * this.COLUMN_COUNT
-      this.changeCursor(this.LAYER_WEAPON, lineY + x)
+      this.changeCursorCustom(this.LAYER_WEAPON, lineY + x)
     }
   }
-
 
   processMouse () {
     super.processMouse()
@@ -1699,21 +2429,21 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
       for (let i = 0; i < this.presetBox.length; i++) {
         if (this.presetBox[i].collision(mouseX, mouseY)) {
           // change preset
-          this.changeCursor(this.LAYER_PRESET, i)
+          this.changeCursorCustom(this.LAYER_PRESET, i)
         }
       }
 
-      for (let i = 0; i < this.skillBox.length; i++) {
-        if (this.skillBox[i].collision(mouseX, mouseY)) {
+      for (let i = 0; i < this.boxList.length; i++) {
+        if (this.boxList[i].collision(mouseX, mouseY)) {
           // change weapon cursor
-          this.changeCursor(this.LAYER_WEAPON, i)
+          this.changeCursorCustom(this.LAYER_WEAPON, i)
         }
       }
 
       for (let i = 0; i < this.userSelectBox.length; i++) {
         if (this.userSelectBox[i].collision(mouseX, mouseY)) {
           // cursor move user weapon box
-          this.changeCursor(this.LAYER_USER_SELECT, i)
+          this.changeCursorCustom(this.LAYER_USER_SELECT, i)
         }
       }
     }
@@ -1727,43 +2457,28 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
           this.changeSkillPreset()
         }
       }
-
-      for (let i = 0; i < this.skillBox.length; i++) {
-        if (i >= this.skillIdList.length) return
-        // 무기 id리스트가 없다면, 해당 박스는 존재해도 처리하지 않음.
-
-        if (this.skillBox[i].collision(mouseX, mouseY)) {
-          this.changeSkill()
-        }
-      }
     }
 
   }
 
   displaySkillIcon () {
-    const src = imageSrc.system.skillIcon
+    const startIndex = this.getStartIndex()
 
-    for (let i = 0; i < this.skillBox.length; i++) {
-      const skillId = this.skillIdList[i]
+    for (let i = 0; i < this.boxList.length; i++) {
+      if (startIndex + i >= this.skillIdList.length) continue
+
+      const currentIndex = startIndex + i
+      const skillId = this.skillIdList[currentIndex]
       const iconNumber = StatPlayerSkill.getSkillIconNumber(skillId)
-      const x = iconNumber % 10
-      const y = Math.floor(iconNumber / 10)
-      const w = imageDataInfo.system.weaponSkillIcon.width
-      const h = imageDataInfo.system.weaponSkillIcon.height
-      game.graphic.imageDisplay(src, x * w, h * y, w, h, this.skillBox[i].x, this.skillBox[i].y, w, h)
+      UIIconDisplay.displayIconSkill(iconNumber, this.boxList[i].x, this.boxList[i].y)
     }
   }
 
   displayUserSkillIcon () {
     let iconList = UserSystem.getSkillList()
     for (let i = 0; i < this.userSelectBox.length; i++) {
-      const src = imageSrc.system.skillIcon
       const iconNumber = StatPlayerSkill.getSkillIconNumber(iconList[i])
-      const x = iconNumber % 10
-      const y = Math.floor(iconNumber / 10)
-      const w = imageDataInfo.system.weaponSkillIcon.width
-      const h = imageDataInfo.system.weaponSkillIcon.height
-      game.graphic.imageDisplay(src, x * w, h * y, w, h, this.userSelectBox[i].x, this.userSelectBox[i].y, w, h)
+      UIIconDisplay.displayIconSkill(iconNumber, this.userSelectBox[i].x, this.userSelectBox[i].y)
 
       let getSkill = dataExportStatPlayerSkill.get(iconList[i])
       if (getSkill != null) {
@@ -1781,15 +2496,20 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
 
   displaySkillText () {
     let skillId = 0
+    
     if (this.cursor.layerNumber === this.LAYER_USER_SELECT) {
       const skillUserIdList = UserSystem.getSkillList()
       skillId = skillUserIdList[this.cursor.userSelect]
     } else {
-      skillId = this.skillIdList[this.cursor.weapon]
+      const currentIndex = this.getStartIndex() + this.cursor.index
+      if (currentIndex >= this.skillIdList.length) return
+
+      skillId = this.skillIdList[currentIndex]
     }
 
     let getSkill = dataExportStatPlayerSkill.get(skillId)
     if (getSkill == null) return
+    if (getSkill.weapon == null) return
 
     let getPlayerSkill = dataExportPlayerSkill.get(skillId)
     if (getPlayerSkill == null) return
@@ -1798,22 +2518,25 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
       || getSkill.balance === StatPlayerSkill.balanceTypeList.AREA_SPLASH
       || getSkill.balance === StatPlayerSkill.balanceTypeList.AREA_ATTACK
 
-    let splashText = isSplash ? '  max ' + getSkill.weapon?.maxTarget +'' : ''
-    let skillName = `${getSkill.name} (${getSkill.balance}${splashText})`
+    let splashText = isSplash ? 'max target: ' + getSkill.weapon.maxTarget + '' : ''
+    let skillName = `${getSkill.name} (${getSkill.balance})`
 
-    let text1A = skillName + ', CoolTime: ' + getSkill.coolTime
-    let text2A = 'attack: ' + getPlayerSkill.getShotAttack(UserSystem.getAttackSkillValue())
-    let text2B = ', shot: (' + getSkill.shotCount + 'x' + getSkill.repeatCount + ')x'
+    let text1A = skillName + ', ' + splashText
+    let text2A = 'CoolTime: ' + getSkill.coolTime + ', attack: ' + getPlayerSkill.getShotAttack(UserSystem.getAttackSkillValue())
+    let text2B = ', shot: (' + getSkill.shotCount + 'x' + getSkill.repeatCount + ')x' 
+    let text2C = getSkill.weapon.subCount > 0 
+      ? '(' + getSkill.weapon.repeatCount + 'x' + getSkill.weapon.subCount +')'
+      : getSkill.weapon.repeatCount
 
     digitalDisplay(text1A, this.x, this.y + this.height - 40)
-    digitalDisplay(text2A + text2B, this.x, this.y + this.height - 20)
+    digitalDisplay(text2A + text2B + text2C, this.x, this.y + this.height - 20)
   }
 
   displayContent () {
     super.displayContent()
 
-    for (let i = 0; i < this.skillBox.length; i++) {
-      this.skillBox[i].display()
+    for (let i = 0; i < this.boxList.length; i++) {
+      this.boxList[i].display()
     }
     
     for (let i = 0; i < this.userSelectBox.length; i++) {
@@ -1830,7 +2553,7 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
 class UIComponentStatUpgrade extends UIComponentObject {
   constructor () {
     super()
-    this.tilteImageObject = imageDataInfo.menuList.upgrade 
+    this.titleImageObject = imageDataInfo.menuList.upgrade 
     this.backgroundColor = ['#b7ffad', '#d9ffd6']
     
   }
@@ -1894,51 +2617,32 @@ class UIComponentStatUpgrade extends UIComponentObject {
 }
 
 
-class UIComponentInventory extends UIComponentBaseMenuObject {
+class UIComponentInventory extends UIComponentObject {
   constructor () {
     super()
     // 임시 기능
 
-    this.tilteImageObject = imageDataInfo.menuList.inventory
+    this.titleImageObject = imageDataInfo.menuList.inventory
     this.backgroundColor = ['#93b4b3', '#b6ece6']
 
     this.setWidthHeight(UIComponentObject.BASE_WIDTH + 60, UIComponentObject.BASE_HEIGHT + 40)
     this.setPosition(UIComponentObject.BASE_X - 30, UIComponentObject.BASE_Y - 20)
 
-    this.cursor = { value: 0 }
+    // 힌트용 주석
+    // const x = i % 10
+    // const y = Math.floor(i / 10)
+    // const w = 50
+    // const h = 50
+    this.createGrid2DBox(10, 3, this.x + 5, this.y + 50, 50, 50, 5, 40)
 
-    for (let i = 0; i < 30; i++) {
-      const x = i % 10
-      const y = Math.floor(i / 10)
-      const w = 50
-      const h = 50
-      const box = new BoxObject(this.x + 5 + (x * (w + 5)), this.y + 50 + (y * (h + 40)), w, h, '?')
-      this.boxList.push(box)
-    }
-  }
-
-  processButton () {
-    super.processButton()
-    let button = this.getButtonObject()
-
-    if (button.buttonLeft) {
-      this.changeCursor(this.cursor.value - 1)
-    } else if (button.buttonRight) {
-      this.changeCursor(this.cursor.value + 1)
-    }
-
-    // 참고: super.processButton에서 1칸을 이미 이동해버렸기 때문에
-    // 10칸을 이동하려면 9칸을 더 움직여야 함. 10칸을 움직이면 11칸을 이동하게 됨
-    if (button.buttonDown) {
-      this.changeCursor(this.cursor.value + 9)
-    } else if (button.buttonUp) {
-      this.changeCursor(this.cursor.value - 9)
-    }
+    this.createPage(1)
   }
 
   displayIcon () {
+    const startIndex = this.getStartIndex()
     for (let i = 0; i < this.boxList.length; i++) {
-      let inven = UserSystem.inventory.get(i)
+      const currentIndex = i + startIndex
+      let inven = UserSystem.inventory.get(currentIndex)
       if (inven == null) continue
 
       let itemData = dataExportStatItem.get(inven.id)
@@ -1962,7 +2666,7 @@ class UIComponentInventory extends UIComponentBaseMenuObject {
   }
 
   displayInfo () {
-    let index = this.cursor.value
+    let index = this.getCurrentIndex()
     let item = UserSystem.inventory.get(index)
     if (item == null) return
 
@@ -1976,7 +2680,7 @@ class UIComponentInventory extends UIComponentBaseMenuObject {
     const x = this.x
     const y = this.y + this.height - 60
 
-    digitalDisplay('INDEX: ' + this.cursor.value + ', type: ' + typeText + firstLineText, x, y)
+    digitalDisplay('INDEX: ' + this.cursor.index + ', type: ' + typeText + firstLineText, x, y)
     game.graphic.fillText(data.name, x, y + 20)
     game.graphic.fillText(data.info, x, y + 40)
   }
@@ -1988,7 +2692,7 @@ class UIComponentInventory extends UIComponentBaseMenuObject {
   }
 }
 
-class UIComponentOption extends UIComponentBaseMenuObject {
+class UIComponentOption extends UIComponentObject {
   /** 옵션 목록의 리스트 */
   optionList = {
     MENU_SOUND_ON: 0,
@@ -2012,13 +2716,11 @@ class UIComponentOption extends UIComponentBaseMenuObject {
 
   constructor () {
     super()
-    this.tilteImageObject = imageDataInfo.menuList.option
+    this.titleImageObject = imageDataInfo.menuList.option
     this.backgroundColor = ['#ffc494', '#ffd2a8']
     const startColor = '#ffcd75'
     const endColor = '#ffcd75'
     const focusColor = '#432e0a'
-
-    this.cursor = { value: 0 }
 
     const boxText = [
       'sound on',
@@ -2030,43 +2732,45 @@ class UIComponentOption extends UIComponentBaseMenuObject {
       'show damage',
     ]
 
-    for (let i = 0; i < 8; i++) {
-      const y = this.y + 50 + (i * 25)
-      const box = new BoxObject(this.x, y, 300, 25, boxText[i], startColor, endColor, focusColor)
-      this.boxList.push(box)
+    this.createGridVerticalBox(boxText.length, this.x, this.y + 50, 300, 25)
+
+    for (let i = 0; i < boxText.length; i++) {
+      this.boxList[i].text = boxText[i]
     }
+
+    this.setAllBoxColor(startColor, endColor, focusColor)
   }
 
   processButton () {
     super.processButton()
     let button = this.getButtonObject()
 
-    if (button.buttonA) {
-      this.optionChange()
-    }
-
     if (button.buttonLeft) {
-      if (this.cursor.value === this.optionList.MENU_SOUND_VOLUME) {
+      if (this.cursor.index === this.optionList.MENU_SOUND_VOLUME) {
         this.optionChange(-2)
-      } else if (this.cursor.value === this.optionList.MENU_MUSIC_VOLUME) {
+      } else if (this.cursor.index === this.optionList.MENU_MUSIC_VOLUME) {
         this.optionChange(-2)
       }
     } else if (button.buttonRight) {
-      if (this.cursor.value === this.optionList.MENU_SOUND_VOLUME) {
+      if (this.cursor.index === this.optionList.MENU_SOUND_VOLUME) {
         this.optionChange(2)
-      } else if (this.cursor.value === this.optionList.MENU_MUSIC_VOLUME) {
+      } else if (this.cursor.index === this.optionList.MENU_MUSIC_VOLUME) {
         this.optionChange(2)
       }
     }
+  }
+
+  processButtonSelect () {
+    this.optionChange()
   }
 
   /** 옵션의 값을 변화합니다. true/false의 경우 어떤 값을 넣어도 이전 값을 반전하기만 합니다. */
   optionChange (relativeValue = 0) {
     let volumeTable = [0, 20, 40, 60, 80, 100]
 
-    if (this.cursor.value === this.optionList.MENU_SOUND_ON) {
+    if (this.cursor.index === this.optionList.MENU_SOUND_ON) {
       this.optionValue.soundOn = !this.optionValue.soundOn
-    } else if (this.cursor.value === this.optionList.MENU_SOUND_VOLUME) {
+    } else if (this.cursor.index === this.optionList.MENU_SOUND_VOLUME) {
       if (relativeValue === 0) {
         // 마우스 클릭 형태로 간주, 다음 배열 번호로 이동
         // 배열에 있는 다음 값보다 작으면 다음 값으로 이동하게 됩니다.
@@ -2076,9 +2780,9 @@ class UIComponentOption extends UIComponentBaseMenuObject {
         this.optionValue.soundVolume += relativeValue
       }
       game.sound.play(soundSrc.system.systemCursor)
-    } else if (this.cursor.value === this.optionList.MENU_MUSIC_ON) {
+    } else if (this.cursor.index === this.optionList.MENU_MUSIC_ON) {
       this.optionValue.musicOn = !this.optionValue.musicOn
-    } else if (this.cursor.value === this.optionList.MENU_MUSIC_VOLUME) {
+    } else if (this.cursor.index === this.optionList.MENU_MUSIC_VOLUME) {
       if (relativeValue === 0) {
         // 마우스 클릭 형태로 간주, 다음 배열 번호로 이동
         // 배열에 있는 다음 값보다 작으면 다음 값으로 이동하게 됩니다.
@@ -2087,30 +2791,15 @@ class UIComponentOption extends UIComponentBaseMenuObject {
       } else {
         this.optionValue.musicVolume += relativeValue
       }
-    } else if (this.cursor.value === this.optionList.MENU_RESULT_AUTO_SKIP) {
+    } else if (this.cursor.index === this.optionList.MENU_RESULT_AUTO_SKIP) {
       this.optionValue.resultAutoSkip = !this.optionValue.resultAutoSkip
-    } else if (this.cursor.value === this.optionList.MENU_SHOW_ENEMY_HP) {
+    } else if (this.cursor.index === this.optionList.MENU_SHOW_ENEMY_HP) {
       this.optionValue.showEnemyHp = !this.optionValue.showEnemyHp
-    } else if (this.cursor.value === this.optionList.MENU_SHOW_DAMAGE) {
+    } else if (this.cursor.index === this.optionList.MENU_SHOW_DAMAGE) {
       this.optionValue.showDamage = !this.optionValue.showDamage
     }
 
     this.optionEnable()
-  }
-
-  processMouse () {
-    super.processMouse()
-
-    if (game.control.getMouseClick()) {
-      const mouseX = game.control.getMouseX()
-      const mouseY = game.control.getMouseY()
-
-      for (let i = 0; i < this.boxList.length; i++) {
-        if (this.boxList[i].collision(mouseX, mouseY)) {
-          this.optionChange()
-        }
-      }
-    }
   }
 
   /** 옵션의 값을 실제 게임에 적용하는 함수 */
@@ -2182,10 +2871,10 @@ class UIComponentOption extends UIComponentBaseMenuObject {
   }
 }
 
-class UIComponentDataSetting extends UIComponentBaseMenuObject {
+class UIComponentDataSetting extends UIComponentObject {
   constructor () {
     super()
-    this.tilteImageObject = imageDataInfo.menuList.data
+    this.titleImageObject = imageDataInfo.menuList.data
     this.backgroundColor = ['#E0AC00', '#B2F641']
     const boxText = [
       'debug menu',
@@ -2197,24 +2886,17 @@ class UIComponentDataSetting extends UIComponentBaseMenuObject {
       // 'ticker +100',
     ]
 
+    this.createGridVerticalBox(boxText.length, this.x, this.y + 50, 300, 25)
+
     for (let i = 0; i < boxText.length; i++) {
-      const y = this.y + 50 + (i * 25)
-      const box = new BoxObject(this.x, y, 300, 25, boxText[i], '#E0AC00', '#B2F641')
-      this.boxList.push(box)
+      this.boxList[i].text = boxText[i]
     }
+
+    this.setAllBoxColor('#E0AC00', '#B2F641', '#17251b')
   }
 
-  processButton () {
-    super.processButton()
-    let button = this.getButtonObject()
-
-    if (button.buttonA) {
-      this.menuSelect()
-    }
-  }
-
-  menuSelect () {
-    switch (this.cursor.value) {
+  processButtonSelect () {
+    switch (this.cursor.index) {
       case 1: UserSystem.lv = 0; break
       case 2: UserSystem.lv = 10; break
       case 3: UserSystem.lv = 20; break
@@ -2224,26 +2906,12 @@ class UIComponentDataSetting extends UIComponentBaseMenuObject {
     }
   }
 
-  processMouse () {
-    super.processMouse()
-
-    if (game.control.getMouseClick()) {
-      const mouseX = game.control.getMouseX()
-      const mouseY = game.control.getMouseY()
-
-      for (let i = 0; i < this.boxList.length; i++) {
-        if (this.boxList[i].collision(mouseX, mouseY)) {
-          this.menuSelect()
-        }
-      }
-    }
-  }
 }
 
-class UIComponentMisc extends UIComponentBaseMenuObject {
+class UIComponentMisc extends UIComponentObject {
   constructor () {
     super()
-    this.tilteImageObject = imageDataInfo.menuList.etc
+    this.titleImageObject = imageDataInfo.menuList.etc
     this.backgroundColor = ['#bbb695', '#cbcd7a']
 
     const boxText = [
@@ -2255,39 +2923,17 @@ class UIComponentMisc extends UIComponentBaseMenuObject {
       'bios menu',
     ]
 
-    this.cursor = { value: 0 }
-
     const startColor = '#e9d7be'
     const endColor = '#e9d7be'
-    const focusColor = '#4e4841'
+    const focusColor = '#24211d'
+
+    this.createGridVerticalBox(boxText.length, this.x, this.y + 50, 300, 25)
 
     for (let i = 0; i < boxText.length; i++) {
-      const y = this.y + 50 + (i * 25)
-      const box = new BoxObject(this.x, y, 300, 25, boxText[i], startColor, endColor, focusColor)
-      this.boxList.push(box)
-    }
-  }
-
-  menuSelect () {
-    switch (this.cursor.value) {
-      case 0: this.roundStart(ID.round.test1Enemy); break
-      case 1: this.roundStart(ID.round.test2Background); break
-      case 2: this.roundStart(ID.round.test3Round3DownTower); break
-      case 3: this.roundStart(ID.round.test4Sound); break
+      this.boxList[i].text = boxText[i]
     }
 
-    if (this.cursor.value === 4) {
-      let a = document.createElement('a')
-      a.href = './statView.html'
-      a.click() // 다른 html 파일로 이동
-    } else if (this.cursor.value === 5) {
-      game.runBiosMode()
-
-      // 바이오스를 빠져나가면 메인화면으로 이동
-      GameSystem.stateId = GameSystem.STATE_MAIN 
-    }
-
-    this.close()
+    this.setAllBoxColor(startColor, endColor, focusColor)
   }
 
   /**
@@ -2302,28 +2948,26 @@ class UIComponentMisc extends UIComponentBaseMenuObject {
     }
   }
 
-  processButton () {
-    super.processButton()
-    let button = this.getButtonObject()
-
-    if (button.buttonA) {
-      this.menuSelect()
+  processButtonSelect () {
+    switch (this.cursor.index) {
+      case 0: this.roundStart(ID.round.test1Enemy); break
+      case 1: this.roundStart(ID.round.test2Background); break
+      case 2: this.roundStart(ID.round.test3Round3DownTower); break
+      case 3: this.roundStart(ID.round.test4Sound); break
     }
-  }
 
-  processMouse () {
-    super.processMouse()
+    if (this.cursor.index === 4) {
+      let a = document.createElement('a')
+      a.href = './statView.html'
+      a.click() // 다른 html 파일로 이동
+    } else if (this.cursor.index === 5) {
+      game.runBiosMode()
 
-    if (game.control.getMouseClick()) {
-      const mouseX = game.control.getMouseX()
-      const mouseY = game.control.getMouseY()
-
-      for (let i = 0; i < this.boxList.length; i++) {
-        if (this.boxList[i].collision(mouseX, mouseY)) {
-          this.menuSelect()
-        }
-      }
+      // 바이오스를 빠져나가면 메인화면으로 이동
+      GameSystem.stateId = GameSystem.STATE_MAIN 
     }
+
+    this.close()
   }
 }
 
@@ -3051,6 +3695,16 @@ export class GameSystem {
   static uiOption = new UIComponentOption()
   static uiDataSetting = new UIComponentDataSetting()
   static uiMisc = new UIComponentMisc()
+  static uiEquipmentUpgrade = new UIComponentEquipmentUpgrade()
+  static uiItemCrafting = new UIComponentItemCrafting()
+  static uiBoseokGrowth = new UIComponentBoseokGrowth()
+
+  static {
+    // debug 용도
+    // this.uiItemCrafting.isOpen = true
+    // this.uiInventroy.isOpen = true
+    // this.uiStatUpgarde.isOpen = true
+  }
 
   /** 모든 UI 창을 닫습니다. */
   static allUIClose () {
@@ -3062,12 +3716,16 @@ export class GameSystem {
     this.uiOption.close()
     this.uiDataSetting.close()
     this.uiMisc.close()
+
+    //
+    this.uiEquipmentUpgrade.close()
+    this.uiItemCrafting.close()
+    this.uiBoseokGrowth.close()
   }
 
   /** ui가 1개 이상 열려있는지를 확인함 */
   static uiOpenCheck () {
     const value = this.uiRoundSelect.isOpen
-      || this.uiWeaponSelect.isOpen
       || this.uiWeaponSelect.isOpen
       || this.uiSkillSelect.isOpen
       || this.uiStatUpgarde.isOpen
@@ -3075,6 +3733,9 @@ export class GameSystem {
       || this.uiOption.isOpen
       || this.uiMisc.isOpen
       || this.uiDataSetting.isOpen
+      || this.uiEquipmentUpgrade.isOpen
+      || this.uiItemCrafting.isOpen
+      || this.uiBoseokGrowth.isOpen
 
     return value
   }
@@ -3642,6 +4303,10 @@ export class GameSystem {
     this.uiWeaponSelect.process()
     this.uiOption.process()
     this.uiDataSetting.process()
+
+    this.uiEquipmentUpgrade.process()
+    this.uiItemCrafting.process()
+    this.uiBoseokGrowth.process()
   }
 
   static fieldProcess () {
@@ -3764,6 +4429,11 @@ export class GameSystem {
     this.uiStatUpgarde.display()
     this.uiWeaponSelect.display()
     this.uiDataSetting.display()
+
+    // layer 2
+    this.uiEquipmentUpgrade.display()
+    this.uiItemCrafting.display()
+    this.uiBoseokGrowth.display()
   }
 
   static displayStatLine () {

@@ -524,6 +524,25 @@ export class StatItem {
     
     return table
   })()
+
+  /** 
+   * 장비 다운그레이드 환불 비용을 가져옵니다.
+   * @param {number} [baseCost=1000] 해당 장비의 기본 비용
+   * @param {number} [upgradeLevel=0] 해당 장비의 현재 강화 레벨
+   */
+  static getEquipmentDownRefund (baseCost = 1000, upgradeLevel = 0) {
+    const currentCost = this.getEquipmentUpgradeCost(baseCost, upgradeLevel - 1)
+
+    // 5레벨 이하 수수료 없음, 따라서 강화값 그대로 리턴
+    // 0레벨인 경우, 환불 대상도 아니므로 0골드
+    if (upgradeLevel <= 0) return 0
+    if (upgradeLevel <= 5) return currentCost
+
+    const levelFee = upgradeLevel - 5 // 레벨 6부터, 레벨 1당 1씩 추가
+    const costFee = Math.floor(currentCost / 1000) <= 0 ? 1 : Math.floor(currentCost / 1000)
+
+    return currentCost - levelFee - costFee
+  }
 }
 
 /**
@@ -733,7 +752,7 @@ dataExportStatRound.set(ID.round.round3_12, new StatRound(32, '3-12', 26, 69000,
 export const dataExportStatItem = new Map()
 dataExportStatItem.set(ID.item.standardPlusC1Blue, new StatItem(0, StatItem.TYPES.EQUIPMENT, '스탠다스 플러스 C1 블루').setStat(3000, 0, 0, 0).setUpgradeCost(1000).setRequire(30))
 dataExportStatItem.set(ID.item.donggramiMugi, new StatItem(1, StatItem.TYPES.EQUIPMENT, '동그라미 장난감').setStat(2400, 50, 50, 50).setUpgradeCost(1200).setRequire(15))
-dataExportStatItem.set(ID.item.hellgiComponent, new StatItem(2, StatItem.TYPES.ITEM, '헬기(hellgi) 장비(jangbi)'))
+dataExportStatItem.set(ID.item.hellgiJangbi, new StatItem(2, StatItem.TYPES.ITEM, '헬기(hellgi) 장비(jangbi)'))
 dataExportStatItem.set(ID.item.donggramiTicket, new StatItem(3, StatItem.TYPES.ITEM, '동그라미 마을 티켓'))
 dataExportStatItem.set(ID.item.donggramiUSB, new StatItem(4, StatItem.TYPES.USB, '동그라미 운영체제 USB'))
 dataExportStatItem.set(ID.item.hellgiComponent, new StatItem(5, StatItem.TYPES.ITEM, '헬기(hellgi) 부품(component)'))
