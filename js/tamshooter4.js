@@ -5,7 +5,7 @@ import { imageSrc, imageDataInfo, ImageDataObject } from "./imageSrc.js";
 import { dataExportStatItem, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, StatItem, StatPlayerSkill, StatPlayerWeapon, StatRound, StatWeapon } from "./dataStat.js";
 import { soundSrc } from "./soundSrc.js";
 import { ID } from "./dataId.js";
-import { gameVar, userSystem, userSystem as UserSystem } from "./game.js";
+import { gameVar, UserSystem } from "./game.js";
 import { fieldSystem as FieldSystem } from "./field.js";
 import { game, gameFunction } from "./game.js";
 import { stringText, systemText } from "./text.js";
@@ -1156,9 +1156,9 @@ class UIComponentEquipmentUpgrade extends UIComponentObject {
   processButtonSelect () {
     switch (this.cursor.index) {
       case 0: break // back
-      case 1: userSystem.setEquipment(this.targetInventoryIndex); break // equip/unequip
+      case 1: UserSystem.setEquipment(this.targetInventoryIndex); break // equip/unequip
       case 2:
-        const isSuccess = userSystem.inventoryItemEquipmentUpgrade(this.targetInventoryIndex)
+        const isSuccess = UserSystem.inventoryItemEquipmentUpgrade(this.targetInventoryIndex)
         if (isSuccess) {
           game.sound.play(soundSrc.system.systemEquipmentUpgrade)
           this.enimationFrame = 60
@@ -1168,7 +1168,7 @@ class UIComponentEquipmentUpgrade extends UIComponentObject {
         else game.sound.play(soundSrc.system.systemBuzzer)
         break
       case 3:
-        const isSuccessDown = userSystem.inventoryItemEquipmentDowngrade(this.targetInventoryIndex)
+        const isSuccessDown = UserSystem.inventoryItemEquipmentDowngrade(this.targetInventoryIndex)
         if (isSuccessDown) {
           game.sound.play(soundSrc.system.systemEquipmentDowngrade)
           this.enimationFrame = 60
@@ -1183,7 +1183,7 @@ class UIComponentEquipmentUpgrade extends UIComponentObject {
   displayContent () {
     // display equipment option
     // if equippend
-    const equipment = userSystem.getInventoryEquipmentValues(this.targetInventoryIndex)
+    const equipment = UserSystem.getInventoryEquipmentValues(this.targetInventoryIndex)
     if (equipment == null) return
 
     // icon display
@@ -1197,7 +1197,7 @@ class UIComponentEquipmentUpgrade extends UIComponentObject {
     const sliceY = iconSectionSize * Math.floor(itemData.iconNumber / 10)
     game.graphic.imageDisplay(src, sliceX, sliceY, iconSize, iconSize, this.x + this.width - 80, this.y + 50, iconSize, iconSize)
 
-    if (this.targetInventoryIndex === userSystem.equipmentIndex) {
+    if (this.targetInventoryIndex === UserSystem.equipmentIndex) {
       const mainSrc = imageSrc.system.mainSystem
       const equipImgD = imageDataInfo.mainSystem.inventoryEquipment
       gameFunction.imageObjectDisplay(mainSrc, equipImgD, this.x + this.width - 80, this.y + 50, iconSize, iconSize)
@@ -1212,7 +1212,7 @@ class UIComponentEquipmentUpgrade extends UIComponentObject {
     const attackText = 'ATTACK: ' + equipment.attack + ' -> ' + equipment.nextAttack
     const upgradeCostText = 'UPGRADE COST: ' + equipment.cost
     const downgradeRefundText = 'DOWNGRADE REFUND: ' + equipment.downRefund
-    const goldText = 'GOLD: ' + userSystem.gold
+    const goldText = 'GOLD: ' + UserSystem.gold
     const textList = [
       levelText, attackText, '---', upgradeCostText, downgradeRefundText, goldText
     ]
@@ -1258,16 +1258,16 @@ class UIComponentItemCrafting extends UIComponentObject {
 
   /**
    * 자동으로 배열의 unlock 상태를 변경합니다.
-   * 주의: userSystem의 세이브 데이터가 로드된 이후 실행해야 합니다.
+   * 주의: UserSystem의 세이브 데이터가 로드된 이후 실행해야 합니다.
    */
   #autoChangeUnlockArray () {
     for (let i = 0; i < this.INDEXSLIST.length; i++) {
       const currentId = this.INDEXSLIST[i][0]
       const type = ID.getType(currentId)
       if (type === ID.type.PLAYER_WEAPON) {
-        this.unlockArray[i] = userSystem.getWeaponUnlock(currentId)
+        this.unlockArray[i] = UserSystem.getWeaponUnlock(currentId)
       } else if (type === ID.type.PLAYER_SKILL) {
-        this.unlockArray[i] = userSystem.getSkillUnlock(currentId)
+        this.unlockArray[i] = UserSystem.getSkillUnlock(currentId)
       }
     }
   }
@@ -1278,16 +1278,16 @@ class UIComponentItemCrafting extends UIComponentObject {
   }
 
   /** 재료 확인 */
-  meterialCheck () {
+  materialCheck () {
     const currentIndex = this.getCurrentIndex()
     if (currentIndex >= this.INDEXSLIST.length) return false
 
     const current = this.INDEXSLIST[currentIndex]
 
     for (let j = 1; j < current.length; j += 2) {
-      const meterialId = current[j]
+      const materialId = current[j]
       const cost = current[j + 1]
-      const itemCount = userSystem.inventory.getItemCountById(meterialId)
+      const itemCount = UserSystem.inventory.getItemCountById(materialId)
 
       // 재료가 1개라도 부족하다면, 재료 확인 실패로 처리
       if (itemCount < cost) return false
@@ -1308,18 +1308,18 @@ class UIComponentItemCrafting extends UIComponentObject {
       const type = ID.getType(currentId)
 
       // 조건을 살펴봄
-      const isMeterial = this.meterialCheck()
+      const ismaterial = this.materialCheck()
 
       // 재료가 없으면 선택을 무효로 함
-      if (!isMeterial) {
+      if (!ismaterial) {
         game.sound.play(soundSrc.system.systemBuzzer)
         return 
       }
 
       if (type === ID.type.PLAYER_WEAPON) {
-        userSystem.addWeaponUnlock(currentId)
+        UserSystem.addWeaponUnlock(currentId)
       } else if (type === ID.type.PLAYER_SKILL) {
-        userSystem.addSkillUnlock(currentId)
+        UserSystem.addSkillUnlock(currentId)
       }
 
       // 언락을 한 후, 다시 갱신
@@ -1330,7 +1330,7 @@ class UIComponentItemCrafting extends UIComponentObject {
 
   displayContent () {
     this.displayItemResult()
-    this.displayItemMeterial()
+    this.displayItemmaterial()
   }
 
   displayItemResult () {
@@ -1367,7 +1367,7 @@ class UIComponentItemCrafting extends UIComponentObject {
     }
   }
 
-  displayItemMeterial () {
+  displayItemmaterial () {
     const startIndex = this.getStartIndex()
     for (let i = 0; i < this.boxList.length; i++) {
       // 참고: 재료는 배열 1번부터 시작하여, 2칸씩 늘어나 조사하는 형태입니다.
@@ -1396,9 +1396,177 @@ class UIComponentBoseokGrowth extends UIComponentObject {
     super()
     this.backgroundColor = ['#ceb0df', '#b179d1']
     this.MENU_BOX_MAX = 2
-    this.setPosition(UIComponentObject.BASE_X + 50, UIComponentObject.BASE_Y + 50)
-    this.setWidthHeight(UIComponentObject.BASE_WIDTH - 50, UIComponentObject.BASE_HEIGHT - 100)
+    this.setPosition(UIComponentObject.BASE_X + 50, UIComponentObject.BASE_Y)
+    this.setWidthHeight(UIComponentObject.BASE_WIDTH - 80, UIComponentObject.BASE_HEIGHT - 0)
     this.titleImageObject = imageDataInfo.menuList.boseokGrowth
+
+    this.boseokIdList = UserSystem.boseok.idList
+    this.boseokBox = []
+    
+    const margin = 10
+    const colorList = ['#98b9f0', '#f4dbc3', '#bff5d8', '#f6e188']
+    this.materailBox = new BoxObject(this.x + this.width - 120 - margin, this.y + 210, 120, 50, '', '#eddef6')
+    for (let i = 0; i < 4; i++) {
+      const x = margin + this.x + (100 * i)
+      const box = new BoxObject(x, this.y + 50, 100, 100, '', colorList[i])
+      this.boseokBox.push(box)
+    }
+
+    /** @type {{attack: number, hp: number, shield: number, shieldRecovery: number}} */
+    this.boseokStat = {
+      attack: 0, hp: 0, shield: 0, shieldRecovery: 0
+    }
+
+    const button = imageDataInfo.mainSystem.boseokLevelupBlue
+    const src = imageSrc.system.mainSystem
+    const imgD = [
+      imageDataInfo.mainSystem.boseokLevelupBlue,
+      imageDataInfo.mainSystem.boseokLevelupBrown,
+      imageDataInfo.mainSystem.boseokLevelupGreen,
+      imageDataInfo.mainSystem.boseokLevelupYellow,
+    ]
+    this.createGridHorizontalBox(4, this.x + margin, this.y + this.height - button.height - margin, button.width, button.height)
+
+    for (let i = 0; i < this.boxList.length; i++) {
+      this.boxList[i].imageSrc = src
+      this.boxList[i].imageData = imgD[i]
+    }
+
+    // 강화 성공 시 이펙트 출력을 위한 변수
+    this.animation = {
+      runningFrame: 40,
+      src: imageSrc.system.mainSystem,
+      number: -1,
+      frame: 0,
+      imageDataSuccess: imageDataInfo.mainSystem.boseokLevelupSuccess,
+      imageDataFail: imageDataInfo.mainSystem.boseokLevelupFail,
+      /** 성공 여부 */ isSuccess: false
+    }
+  }
+
+  processContent () {
+    // 보석 이펙트 처리
+    if (this.animation.frame <= 0) {
+      this.animation.number = -1
+    } else {
+      this.animation.frame--
+    }
+  }
+
+  processButtonSelect () {
+    this.processButtonSelectBoseokLevelUp()
+  }
+
+  processButtonSelectBoseokLevelUp () {
+    const boseokNumber = this.cursor.index
+    const canUpgrade = UserSystem.boseokCanUpgrade(boseokNumber)
+    if (!canUpgrade) {
+      game.sound.play(soundSrc.system.systemBuzzer)
+      return
+    }
+
+    const result = UserSystem.boseokUpgrade(boseokNumber)
+    if (result) {
+      game.sound.play(soundSrc.system.systemBoseok)
+      this.animation.isSuccess = true
+      this.boseokStat = UserSystem.getBoseokStat()
+    } else {
+      this.animation.isSuccess = false
+      game.sound.play(soundSrc.system.systemBoseokFail)
+    }
+    
+    this.animation.number = boseokNumber
+    this.animation.frame = this.animation.runningFrame
+  }
+
+  displayContent () {
+    this.displayBoseok()
+    this.displayTotalStat()
+    this.displayUpgradeInfo()
+    this.displayMaterial()
+  }
+
+  open () {
+    super.open()
+    UserSystem.autoBoseokSearch()
+    this.boseokStat = UserSystem.getBoseokStat()
+  }
+
+  displayBoseok () {
+    for (let i = 0; i < this.boseokBox.length; i++) {
+      this.boseokBox[i].display()
+
+      const boseokId = this.boseokIdList[i]
+      const level = UserSystem.boseok.getLevel(i)
+      const attack = UserSystem.boseok.getAttack(i)
+      if (level < 0) continue
+
+      const item = dataExportStatItem.get(boseokId)
+      if (item == null) continue
+
+      const margin = 5
+      const halfFrame = this.animation.runningFrame / 2
+      const successAlpha = 1 - Math.abs(halfFrame - this.animation.frame) / halfFrame
+
+      // 이펙트
+      if (this.animation.frame >= 1 && this.animation.number === i) {
+        const effectD = this.animation.isSuccess ? this.animation.imageDataSuccess : this.animation.imageDataFail
+        gameFunction.imageObjectDisplay(this.animation.src, effectD, this.boseokBox[i].x, this.boseokBox[i].y, undefined, undefined, undefined, undefined, successAlpha)
+      }
+
+      UIIconDisplay.displayIconItem(item.iconNumber, this.boseokBox[i].x + margin, this.boseokBox[i].y + margin)
+      digitalDisplay('L ' + level, this.boseokBox[i].x + margin, this.boseokBox[i].y + margin + 54)
+      digitalDisplay('A ' + attack, this.boseokBox[i].x + margin, this.boseokBox[i].y + margin + 74)
+    }
+  }
+
+  displayTotalStat () {
+    digitalDisplay('TOTAL ATTACK: ' + this.boseokStat.attack, this.x + 10, this.y + 160)
+    digitalDisplay(`HP: ${this.boseokStat.hp}, SHIELD: ${this.boseokStat.shield}, SR: ${this.boseokStat.shieldRecovery}`, this.x + 10, this.y + 180)
+  }
+
+  displayUpgradeInfo () {
+    const boseokNumber = this.cursor.index
+    const level = UserSystem.boseok.getLevel(boseokNumber)
+    if (level < 0) return
+
+    const gauge = UserSystem.boseok.getGauge(boseokNumber)
+    const pity = UserSystem.boseok.getBoseokBasePityGauge(level)
+    const cost = UserSystem.boseok.getCost(boseokNumber)
+    const success = UserSystem.boseok.getProbability(boseokNumber)
+    
+    // Pity 계산은 실제 누적 게이지(gauge / pity)를 기준으로 합니다.
+    // 단, UI 미터는 현재 구간(sectionPity)의 3배 범위를 표시합니다.
+    //
+    // 표시 범위가 실제 목표 게이지(pity)를 초과하지 않도록
+    // meterRange는 두 값 중 작은 값으로 제한합니다.
+    //
+    // meterStart: 미터 표시가 시작되는 누적 게이지 지점
+    // meterValue: 표시 구간에서 현재까지 채워진 게이지
+    const sectionPity = UserSystem.boseok.getSectionPity(boseokNumber)
+    const meterRange = Math.min(sectionPity * 3, pity)
+    const meterStart = pity - meterRange
+    const meterValue = Math.max(0, Math.min(gauge - meterStart, meterRange))
+
+    game.graphic.fillRect(this.x, this.y + 200, this.width, 2, 'black')
+    digitalDisplay('LEVEL COST: ' + cost, this.x + 10, this.y + 210)
+    digitalDisplay('SUCCESS: ' + success + '%', this.x + 10, this.y + 230)
+    digitalDisplay('GAUGE: ' + gauge + '/' + pity, this.x + 10, this.y + 250)
+
+    // 막대는 주황색으로 표시합니다.
+    game.graphic.meterRect(this.x, this.y + 270, this.width, 15, '#F0A34B', meterValue, meterRange, true, '#40332C', 2)
+  }
+
+  displayMaterial () {
+    this.materailBox.display()
+    const itemData = dataExportStatItem.get(UserSystem.boseok.materialId)
+    if (itemData == null) return
+
+    const materialCount = UserSystem.inventory.getItemCountById(UserSystem.boseok.materialId)
+
+    // digitalDisplay('MATERIAL: ', this.x + this.width - 180, this.y + 210)
+    UIIconDisplay.displayIconItem(itemData.iconNumber, this.materailBox.x, this.materailBox.y)
+    digitalDisplay(materialCount, this.materailBox.x + 50, this.materailBox.y + 30)
   }
 }
 
@@ -2567,7 +2735,7 @@ class UIComponentStatUpgrade extends UIComponentObject {
     const text4 = 'GOLD: ' + UserSystem.gold
 
     const textAA = 'ATTATK: ' + UserSystem.attack
-    const attackValue = [v.level, v.equipment, v.slot, v.stat].filter(value => value !== 0).join('+')
+    const attackValue = [v.level, v.equipment, v.boseok, v.stat].filter(value => value !== 0).join('+')
     const textAC = ' (' + attackValue + ')'
 
     const x = this.x + 10
@@ -2656,7 +2824,7 @@ class UIComponentInventory extends UIComponentObject {
       const sliceY = iconSectionSize * Math.floor(itemData.iconNumber / 10)
       game.graphic.imageDisplay(src, sliceX, sliceY, iconSize, iconSize, this.boxList[i].x, this.boxList[i].y, iconSize, iconSize)
 
-      if (itemData.type === UserSystem.inventory.TYPES.ITEM) {
+      if (itemData.isStackable) {
         let countText = 'X' + inven.countValue
         if (inven.countValue >= 1000 && inven.countValue <= 9999) countText = (inven.countValue / 1000).toFixed(1) + 'K'
         else if (inven.countValue >= 10000) countText = '9K+'
@@ -2675,7 +2843,7 @@ class UIComponentInventory extends UIComponentObject {
 
     // info display
     let typeText = data.typeString
-    let firstLineText = data.type === UserSystem.inventory.TYPES.ITEM ? ', count:' + item.countValue : ', require Level: ' + data.requireLevel
+    let firstLineText = data.isStackable ? ', count:' + item.countValue : ', require Level: ' + data.requireLevel
 
     const x = this.x
     const y = this.y + this.height - 60
@@ -2901,8 +3069,8 @@ class UIComponentDataSetting extends UIComponentObject {
       case 2: UserSystem.lv = 10; break
       case 3: UserSystem.lv = 20; break
       case 4: UserSystem.lv = 26; break
-      // case 5: userSystem.addGold(1000); break
-      // case 6: userSystem.inventory.add(ID.item.donggramiTicket, 100); break
+      // case 5: UserSystem.addGold(1000); break
+      // case 6: UserSystem.inventory.add(ID.item.donggramiTicket, 100); break
     }
   }
 
@@ -3681,7 +3849,7 @@ export class GameSystem {
   /** 상태: 오류 발생 */ static STATE_ERROR = 13
 
   // 일부 시스템은 static을 사용하기 때문에 new를 이용해 인스턴스를 생성하지 않습니다.
-  /** 유저 시스템 */ static userSystem = UserSystem
+  /** 유저 시스템 */ static UserSystem = UserSystem
   /** 필드 시스템 */ static fieldSystem = FieldSystem
   /** 메인 시스템 */ static mainSystem = new MainSystem()
   /** 스텟(게임, 필드 스탯) 표시 시스템 */ static statSystem = new StatSystem()
@@ -3704,6 +3872,7 @@ export class GameSystem {
     // this.uiItemCrafting.isOpen = true
     // this.uiInventroy.isOpen = true
     // this.uiStatUpgarde.isOpen = true
+    // this.uiBoseokGrowth.open()
   }
 
   /** 모든 UI 창을 닫습니다. */
@@ -3792,8 +3961,8 @@ export class GameSystem {
     // --- 2. GROUP 1: 날짜/시간/옵션 (고정 길이) ---
     const group1Index = offset;
     const saveDate = new Date();
-    const startDate = this.userSystem.startDate;
-    const playTime = this.userSystem.playTime;
+    const startDate = this.UserSystem.startDate;
+    const playTime = this.UserSystem.playTime;
     const opt = this.uiOption.optionValue;
 
     buffer[offset++] = saveDate.getFullYear();
@@ -3823,7 +3992,7 @@ export class GameSystem {
     // --- 3. GROUP 2: 인코드 데이터 (고정 길이) ---
     const group2Index = offset;
     // 기존 인코드 함수를 buffer와 offset을 인자로 받아 직접 대입하도록 개선 권장
-    // 예: offset = saveSystem.encodeToBuffer(buffer, offset, [userSystem.lv, userSystem.exp, userSystem.gold]);
+    // 예: offset = saveSystem.encodeToBuffer(buffer, offset, [UserSystem.lv, UserSystem.exp, UserSystem.gold]);
     const encodedData = SaveSystem.numberArrayEncodeV055([UserSystem.lv, UserSystem.exp, UserSystem.gold]);
     for (let i = 0; i < encodedData.length; i++) {
       buffer[offset++] = encodedData[i];
@@ -3945,12 +4114,12 @@ export class GameSystem {
 
     if (loadData.playTime) {
       const playTime = loadData.playTime.split(',')
-      this.userSystem.setPlayTime(playTime[0], playTime[1], playTime[2])
+      this.UserSystem.setPlayTime(playTime[0], playTime[1], playTime[2])
     }
 
     if (loadData.startDate) {
       const startDate = loadData.startDate.split(',')
-      this.userSystem.setStartDate(Number(startDate[0]), startDate[1], startDate[2], startDate[3], startDate[4], startDate[5])
+      this.UserSystem.setStartDate(Number(startDate[0]), startDate[1], startDate[2], startDate[3], startDate[4], startDate[5])
     }
 
     if (loadData.option) {
@@ -4032,7 +4201,7 @@ export class GameSystem {
         if (decode7) insertUserData.specialFlagList = decode7
       }
 
-      let isSuccessUserData = this.userSystem.setLoadData(insertUserData)
+      let isSuccessUserData = this.UserSystem.setLoadData(insertUserData)
       if (!isSuccessUserData) {
         return false
       }
@@ -4129,14 +4298,14 @@ export class GameSystem {
 
     // 이제 시작 인덱스 순서에 맞춰서 다시 배열 데이터를 집어넣음
     const I1 = SaveSystem.index.group1OptionData
-    this.userSystem.setStartDate(
+    this.UserSystem.setStartDate(
       group1[I1.SAVE_DATE_YEAR + 0], 
       group1[I1.SAVE_DATE_YEAR + 1], 
       group1[I1.SAVE_DATE_YEAR + 2], 
       group1[I1.SAVE_DATE_YEAR + 3], 
       group1[I1.SAVE_DATE_YEAR + 4], 
       group1[I1.SAVE_DATE_YEAR + 5])
-    this.userSystem.setPlayTime(
+    this.UserSystem.setPlayTime(
       group1[I1.PLAY_TIME_HOUR + 0],
       group1[I1.PLAY_TIME_HOUR + 1],
       group1[I1.PLAY_TIME_HOUR + 2]
@@ -4152,31 +4321,30 @@ export class GameSystem {
 
     const I2 = SaveSystem.index.group2EncodeData
     if (group2 != null) {
-      this.userSystem.lv = group2[I2.LV]
-      this.userSystem.exp = group2[I2.EXP]
-      this.userSystem.gold = group2[I2.GOLD]
+      this.UserSystem.lv = group2[I2.LV]
+      this.UserSystem.exp = group2[I2.EXP]
+      this.UserSystem.gold = group2[I2.GOLD]
     }
 
 
     const I3 = SaveSystem.index.group3UserData
-    this.userSystem.weaponList = Array.from(group3.subarray(I3.WEAPON_LIST, I3.WEAPON_LIST + 4))
-    this.userSystem.skillList = Array.from(group3.subarray(I3.SKILL_LIST, I3.SKILL_LIST + 8))
+    this.UserSystem.weaponList = Array.from(group3.subarray(I3.WEAPON_LIST, I3.WEAPON_LIST + 4))
+    this.UserSystem.skillList = Array.from(group3.subarray(I3.SKILL_LIST, I3.SKILL_LIST + 8))
 
-    for (let i = 0; i < this.userSystem.weaponPresetList.length; i++) {
-      this.userSystem.weaponPresetList[i] = group3[I3.WEAPON_PRESET + i]
+    for (let i = 0; i < this.UserSystem.weaponPresetList.length; i++) {
+      this.UserSystem.weaponPresetList[i] = group3[I3.WEAPON_PRESET + i]
     }
-    this.userSystem.weaponPresetNumber = group3[I3.WEAPON_PRESET_NUMBER]
+    this.UserSystem.weaponPresetNumber = group3[I3.WEAPON_PRESET_NUMBER]
 
-    for (let i = 0; i < this.userSystem.skillPresetList.length; i++) {
-      this.userSystem.skillPresetList[i] = group3[I3.SKILL_PRESET + i]
+    for (let i = 0; i < this.UserSystem.skillPresetList.length; i++) {
+      this.UserSystem.skillPresetList[i] = group3[I3.SKILL_PRESET + i]
     }
-    this.userSystem.skillPresetNumber = group3[I3.SKILL_PRESET_NUMBER]
+    this.UserSystem.skillPresetNumber = group3[I3.SKILL_PRESET_NUMBER]
 
     // 인벤토리 인덱스를 불러온 후, 자기가 불러온 인덱스로 아이템을 강제 장착시킴
-    this.userSystem.equipmentIndex = group3[I3.EQUIPMENT_INVENTORY_INDEX]
-    this.userSystem.setEquipment(this.userSystem.equipmentIndex)
-
-
+    this.UserSystem.equipmentIndex = group3[I3.EQUIPMENT_INVENTORY_INDEX]
+    this.UserSystem.setEquipment(this.UserSystem.equipmentIndex)
+    
     // 그룹 4 데이터
     // 그룹 4는 가변데이터 기반이므로, 인덱스 값을 잘 추적해야 함
     const I4 = SaveSystem.index.group4UserData
@@ -4201,14 +4369,17 @@ export class GameSystem {
 
     if (invSubId != null && invSubItem != null && invSubUp != null) {
       for (let i = 0; i < invSubId.length; i++) {
-        this.userSystem.inventory.addItem(invSubId[i], invSubItem[i], invSubUp[i])
+        this.UserSystem.inventory.addItem(invSubId[i], invSubItem[i], invSubUp[i])
       }
     }
 
-    this.userSystem.weaponUnlockList = Array.from(group4.subarray(unlockWeaponIndex, unlockWeaponIndex + unlockWeaponCount))
-    this.userSystem.skillUnlockList = Array.from(group4.subarray(unlockSkillIndex, unlockSkillIndex + unlockSkillCount))
-    this.userSystem.roundClearList = Array.from(group4.subarray(roundClearIndex, roundClearIndex + roundClearCount))
-    this.userSystem.specialFlagList = Array.from(group4.subarray(specialFlagIndex, specialFlagIndex + specialFlagCount))
+    this.UserSystem.weaponUnlockList = Array.from(group4.subarray(unlockWeaponIndex, unlockWeaponIndex + unlockWeaponCount))
+    this.UserSystem.skillUnlockList = Array.from(group4.subarray(unlockSkillIndex, unlockSkillIndex + unlockSkillCount))
+    this.UserSystem.roundClearList = Array.from(group4.subarray(roundClearIndex, roundClearIndex + roundClearCount))
+    this.UserSystem.specialFlagList = Array.from(group4.subarray(specialFlagIndex, specialFlagIndex + specialFlagCount))
+
+    // 보석 시스템 처리 (인벤토리 데이터 불러온 이후에 처리 가능)
+    this.UserSystem.autoBoseokSearch()
   }
 
   /** 
@@ -4274,9 +4445,9 @@ export class GameSystem {
       return
     }
     
-    this.userSystem.process()
+    this.UserSystem.process()
     if (this.stateId === this.STATE_MAIN) {
-      this.userSystem.showUserStat()
+      this.UserSystem.showUserStat()
       this.processSyncUserStatUi()
     }
 
@@ -4358,8 +4529,8 @@ export class GameSystem {
       case this.STATE_MAIN:
       case this.STATE_OPTION:
         gameVar.statLineText1.setStatLineText('fps: ' + game.currentFps)
-        gameVar.statLineText2.setStatLineText(this.userSystem.getPlayTimeText())
-        this.userSystem.setSkillDisplayCooltimeZero()
+        gameVar.statLineText2.setStatLineText(this.UserSystem.getPlayTimeText())
+        this.UserSystem.setSkillDisplayCooltimeZero()
         break
       case this.STATE_FIELD:
         // 필드에서는 필드 객체가 대신 이 값을 수정합니다.
@@ -4413,7 +4584,7 @@ export class GameSystem {
     }
 
     if (this.stateId === this.STATE_MAIN || this.stateId === this.STATE_FIELD) {
-      this.userSystem.display()
+      this.UserSystem.display()
       this.displayStatLine()
     }
     

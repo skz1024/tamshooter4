@@ -420,7 +420,9 @@ export class StatItem {
     /** 스택 가능? (즉, 여러개를 가질 수 있는가?) */ this.isStackable = false
 
     // 타입에 따른 스택 가능 여부 설정
-    if (this.type === StatItem.TYPES.ITEM || this.type === StatItem.TYPES.CRAFTING_HELLGI) {
+    if (this.type === StatItem.TYPES.ITEM 
+      || this.type === StatItem.TYPES.CRAFTING_HELLGI
+      || this.type === StatItem.TYPES.BOSOEK_ITEM) {
       this.isStackable = true
     }
 
@@ -429,6 +431,7 @@ export class StatItem {
       case StatItem.TYPES.USB: this.typeString = 'USB'; break
       case StatItem.TYPES.CRAFTING_HELLGI: this.typeString = 'CRAFTING_HELLGI'; break
       case StatItem.TYPES.EQUIPMENT: this.typeString = 'EQUIPMENT'; break
+      case StatItem.TYPES.BOSOEK_ITEM: this.typeString = 'BOSEOK_ITEM'; break
       default: this.typeString = 'ITEM'; break
     }
 
@@ -467,8 +470,9 @@ export class StatItem {
   static TYPES = {
     /** 일반 아이템, 수량 설정 가능 */ ITEM: 0,
     /** 장비 아이템, 강화 및 장착 설정 가능 */ EQUIPMENT: 1,
-    /** 보석 아이템, 신규 UI를 염*/ BOSEOK: 2,
+    /** 보석 아이템, 보석 UI 기능*/ BOSEOK: 2,
     /** USB 아이템, 사용하면 운영 체제를 등록하여 가동 */ USB: 3,
+    /** 보석 재료 아이템, 보석 UI를 열 수 있고, 개수 스택이 가능 (boseok은 개수 스택 불가) */ BOSOEK_ITEM: 4,
     /** 제작 아이템, 사용하면 헬기 부품 전용 UI를 염 */ CRAFTING_HELLGI: 21,
   }
 
@@ -542,6 +546,153 @@ export class StatItem {
     const costFee = Math.floor(currentCost / 1000) <= 0 ? 1 : Math.floor(currentCost / 1000)
 
     return currentCost - levelFee - costFee
+  }
+
+  static Boseok = class Boseok {
+    static idList = [ID.item.boseokBlue, ID.item.boseokBrown, ID.item.boseokGreen, ID.item.boseokYellow]
+    static materialId = ID.item.boseokMaterial
+
+    /** 보석 레벨에 따른 공격력 */
+    static attack = [
+      1000, 1100, 1200, 1300, 1400,
+      1500, 1610, 1730, 1860, 2000,
+      2150, 2300, 2450, 2600, 2750,
+      2910, 3080, 3260, 3450, 3650,
+      3870, 4090, 4310, 4530, 4750,
+      4990, 5250, 5530, 5830, 6150,
+      6500, 7100, 7750, 8450, 9200,
+      10000
+    ]
+
+    /** 보석아 해당 레벨에 도달하기 위한 강화 비용 
+     * 참고: 1레벨의 강화 비용은 0에서 1로 강화 시도를 하는 비용과 동일합니다.  
+     * 혼동 방지를 위해 getUpgardeCost를 사용해주세요. */
+    static cost = [
+      0, 100, 100, 100, 100,
+      104, 108, 112, 116, 120,
+      120, 120, 120, 120, 120,
+      124, 128, 132, 136, 140,
+      160, 160, 160, 160, 160,
+      172, 184, 196, 208, 220,
+      220, 800, 900, 1000, 1100,
+      1200
+    ]
+
+    /** 보석이 해당 레벨에 도달하기 위한 강화 성공률, 구조는 cost랑 동일 */
+    static upgradeProbability = [
+      0, 20, 20, 20, 20,
+      14, 14, 14, 14, 14,
+      20, 20, 20, 20, 20,
+      17, 14, 11, 10, 10,
+      14, 14, 14, 14, 14,
+      11, 9, 7, 6, 5,
+      5, 10, 10, 10, 10,
+      10,
+    ]
+
+    /** 정가 기준이 되는 수치 */
+    static pityGauge = [
+      0,
+      600, 1200, 1800, 2400,
+      3200, 4000, 4800, 5600, 6400,
+      7000, 7600, 8200, 8800, 9400,
+      10200, 11000, 11800, 12600, 13400,
+      14400, 15400, 16400, 17400, 18400,
+      20000, 22000, 24000, 26000, 28000,
+      30000, 38000, 47000, 57000, 68000,
+      80000
+    ]
+
+    static sectionPity = [
+      0,
+      600, 600, 600, 600,
+      800, 800, 800, 800, 800,
+      600, 600, 600, 600, 600,
+      800, 800, 800, 800, 800,
+      1000, 1000, 1000, 1000, 1000,
+      2000, 2000, 2000, 2000, 2000,
+      8000, 9000, 10000, 11000, 12000,
+      12000
+    ]
+
+    /** 보석을 수집한 경우의 효과입니다. */
+    static collectEffect = [
+      {hp: 0, shield: 50, shieldRecovery: 0}, // blue
+      {hp: 100, shield: 0, shieldRecovery: 0}, // brown
+      {hp: 0, shield: 0, shieldRecovery: 50}, // green
+      {hp: 100, shield: 50, shieldRecovery: 50}, // yellow
+    ]
+
+    /** 현재 보석 레벨에 따라 강화 비용을 얻어옵니다.  
+     * 참고: 이 함수는 강화 시도를 하는 레벨이 기준입니다. 따라서 cost배열과 1칸 차이가 있습니다.
+     * 즉, 현재 레벨에서 시도 비용을 얻고 싶을 때 이 함수를 사용하세요. */
+    static getCost (currentLevel = 0) {
+      // 최대 레벨 = 36칸의 배열 (0 ~ 35까지) 인데, 35레벨이 최대이므로
+      // 배열 최대 칸수에서 1을 뺌
+      const MAX_LEVEL = this.cost.length - 1
+      if (currentLevel < 0 || currentLevel >= MAX_LEVEL) {
+        return 0
+      }
+
+      return this.cost[currentLevel + 1]
+    }
+
+    /** 현재 보석 레벨에 따라 보석 비용을 얻어옵니다. */
+    static getAttack (currentLevel = 0) {
+      if (currentLevel < 0 || currentLevel >= this.attack.length) {
+        return 0
+      }
+
+      return this.attack[currentLevel]
+    }
+
+    /** 현재 보석 레벨에 따라 시도하는 강화 성공률을 얻어옵니다. 이 함수의 구조는 getCost랑 동일 */
+    static getUpgradeProbability (currentLevel = 0) {
+      const MAX_LEVEL = this.upgradeProbability.length - 1
+      if (currentLevel < 0 || currentLevel >= MAX_LEVEL) {
+        return 0
+      }
+
+      return this.upgradeProbability[currentLevel + 1]
+    }
+
+    /** 현재 보석 레벨에 따라 정의된 피티 게이지 기준값을 얻어옵니다. 이 함수의 구조는 getCost랑 동일 */
+    static getPityGauge (currentLevel = 0) {
+      const MAX_LEVEL = this.pityGauge.length - 1
+      if (currentLevel < 0 || currentLevel >= MAX_LEVEL) {
+        return 0
+      }
+
+      return this.pityGauge[currentLevel + 1]
+    }
+
+    /** 업그레이드를 시도했을 때, 그 결과를 리턴합니다.  
+     * 단, 리턴한 값을 처리하는 건 유저의 몫입니다. */
+    static getUpgradeResult (currentLevel = 0) {
+      const MAX_LEVEL = this.cost.length - 1
+      if (currentLevel < 0 || currentLevel >= MAX_LEVEL) {
+        return false
+      }
+
+      const randomValue = Math.floor(Math.random() * 100)
+      const successValue = this.getUpgradeProbability(currentLevel)
+      return randomValue < successValue
+    }
+
+    static getSectionPity (currentLevel = 0) {
+      const MAX_LEVEL = this.cost.length - 1
+      if (currentLevel < 0 || currentLevel >= MAX_LEVEL) {
+        return 0
+      }
+
+      return this.sectionPity[currentLevel + 1]
+    }
+
+    /** 업그레이드 가능 여부를 살펴봅니다. */
+    static canUpgrade(level = 0) {
+      if (level < 0 || level >= this.cost.length) return false
+      return true
+    }
   }
 }
 
@@ -758,4 +909,9 @@ dataExportStatItem.set(ID.item.donggramiUSB, new StatItem(4, StatItem.TYPES.USB,
 dataExportStatItem.set(ID.item.hellgiComponent, new StatItem(5, StatItem.TYPES.ITEM, '헬기(hellgi) 부품(component)'))
 dataExportStatItem.set(ID.item.upgradeStone, new StatItem(6, StatItem.TYPES.ITEM, '강화석'))
 dataExportStatItem.set(ID.item.boseokTest, new StatItem(7, StatItem.TYPES.ITEM, '보석 테스트'))
+dataExportStatItem.set(ID.item.boseokBlue, new StatItem(10, StatItem.TYPES.BOSEOK, '보석 블루 (boseok blue)'))
+dataExportStatItem.set(ID.item.boseokBrown, new StatItem(11, StatItem.TYPES.BOSEOK, '보석 브라운 (boseok brown)'))
+dataExportStatItem.set(ID.item.boseokGreen, new StatItem(12, StatItem.TYPES.BOSEOK, '보석 그린 (boseok green)'))
+dataExportStatItem.set(ID.item.boseokYellow, new StatItem(13, StatItem.TYPES.BOSEOK, '보석 옐로우 (boseok yellow)'))
+dataExportStatItem.set(ID.item.boseokMaterial, new StatItem(14, StatItem.TYPES.BOSOEK_ITEM, '보석 재료 (boseok material)'))
 

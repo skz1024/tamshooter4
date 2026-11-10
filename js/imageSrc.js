@@ -852,7 +852,14 @@ export class imageDataInfo {
     /** 장비창 - 업그레이드 */ equipmentUpgarde: new ImageDataObject(200, 190, 100, 50),
     /** 장비창 - 다운그레이드 */ equipmentDowngarde: new ImageDataObject(300, 190, 100, 50),
 
-    /** 크래프팅 - 체크 표시 */ craftingCheck: new ImageDataObject(0, 240, 50, 50)
+    /** 크래프팅 - 체크 표시 */ craftingCheck: new ImageDataObject(0, 240, 50, 50),
+
+    /** 보석창 - 보석레벨업 블루 */ boseokLevelupBlue: new ImageDataObject(0, 290, 100, 50),
+    /** 보석창 - 보석레벨업 브라운 */ boseokLevelupBrown: new ImageDataObject(100, 290, 100, 50),
+    /** 보석창 - 보석레벨업 그린 */ boseokLevelupGreen: new ImageDataObject(200, 290, 100, 50),
+    /** 보석창 - 보석레벨업 옐로우 */ boseokLevelupYellow: new ImageDataObject(300, 290, 100, 50),
+    /** 보석창 - 보석레벨업 성공 이펙트 */ boseokLevelupSuccess: new ImageDataObject(0, 340, 60, 60),
+    /** 보석창 - 보석레벨업 성공 이펙트 */ boseokLevelupFail: new ImageDataObject(60, 340, 60, 60),
   }
 
   static enemyDieEffectList = {

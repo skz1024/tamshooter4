@@ -4,7 +4,7 @@ import { ID } from "./dataId.js"
 import { dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatWeapon, StatPlayerWeapon } from "./dataStat.js"
 import { dataExportWeapon, WeaponData } from "./dataWeapon.js"
 import { soundSrc } from "./soundSrc.js"
-import { game, userSystem } from "./game.js"
+import { game, UserSystem } from "./game.js"
 import { DelayData, EnimationData, FieldData } from "./dataField.js"
 import { imageDataInfo, imageSrc } from "./imageSrc.js"
 import { tamshooter4Data } from "./data.js"
@@ -913,11 +913,11 @@ export class PlayerObject extends FieldData {
     this.damageEnimationCount = 0
     this.levelupEnimationCount = 0
 
-    const getData = userSystem.getPlayerObjectStat()
+    const getData = UserSystem.getPlayerObjectStat()
     this.currentLevel = getData.lv
     this.attack = getData.attack
-    this.attackWaepon = userSystem.getAttackWeaponValue()
-    this.attackSkill = userSystem.getAttackSkillValue()
+    this.attackWaepon = UserSystem.getAttackWeaponValue()
+    this.attackSkill = UserSystem.getAttackSkillValue()
     this.hp = getData.hp
     this.hpMax = getData.hpMax
     this.shield = getData.shield
@@ -944,7 +944,7 @@ export class PlayerObject extends FieldData {
    * 무기 객체 초기화 작업
    */
   initWeapon () {
-    let userWapon = userSystem.getWeaponList()
+    let userWapon = UserSystem.getWeaponList()
 
     /**
      * @type {WeaponSlot[]}
@@ -971,7 +971,7 @@ export class PlayerObject extends FieldData {
    */
   initSkill () {
     /** 스킬 슬롯이 A인지 여부, 아닐경우 B로 처리 */ this.usingSkillSlotA = true
-    let getUserSkill = userSystem.getSkillList()
+    let getUserSkill = UserSystem.getSkillList()
 
     /**
      * 스킬의 대한 정보를 저장하는 데이터
@@ -1068,7 +1068,7 @@ export class PlayerObject extends FieldData {
     }
 
     this.damageEnimationCount = damageFrame
-    userSystem.setDamageWarningFrame(damageFrame)
+    UserSystem.setDamageWarningFrame(damageFrame)
   }
 
   /**
@@ -1141,8 +1141,8 @@ export class PlayerObject extends FieldData {
 
   /** 플레이어가 레벨업을 했는지 확인 */
   processLevelupCheck () {
-    if (this.currentLevel !== userSystem.lv) {
-      this.currentLevel = userSystem.lv
+    if (this.currentLevel !== UserSystem.lv) {
+      this.currentLevel = UserSystem.lv
       this.levelupEnimationCount = 120
     }
 

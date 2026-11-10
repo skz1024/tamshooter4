@@ -250,3 +250,40 @@ for (let i = 0; i < StatUser.expTable.length; i++) {
   })
   pre?.appendChild(element)
 }
+
+
+let element6 = document.createElement('pre')
+element6.id = 'boseokUpgrade'
+element6.textContent = '-boseokUpgrade-\n'
++ 'level|attack|cost|   %|pityGauge|section|■|avgCost|totalAvg|\n'
+pre?.appendChild(element6)
+let boseokAvgCost = 0
+for (let i = 0; i < StatItem.Boseok.attack.length; i++) {
+  let level = (i + '').padEnd(5, ' ') + '|'
+  let attack = (StatItem.Boseok.attack[i] + '').padEnd(6) + '|'
+  let costString = (StatItem.Boseok.cost[i] + '').padEnd(4, ' ') + '|'
+  const probability = StatItem.Boseok.upgradeProbability[i]
+  const cost = StatItem.Boseok.cost[i]
+  let avgCost = (probability === 0 ? 0 : cost / (probability / 100))
+    .toFixed(1).padEnd(7, ' ') + '|'
+  let probabilityString = (StatItem.Boseok.upgradeProbability[i] + '%').padEnd(4, ' ') + '|'
+  let pityGauge = (StatItem.Boseok.pityGauge[i] + '').padEnd(9, ' ') + '|'
+  let sectionPity = (StatItem.Boseok.sectionPity[i] + '').padEnd(7, ' ') + '|'
+  boseokAvgCost += (probability === 0 ? 0 : cost / (probability / 100))
+  let totalAvg = (boseokAvgCost.toFixed(1) + '').padEnd(8) + '|'
+
+  let color = i % 2 === 0 ? '#F5FFF1' : '#DDE8D9'
+  let element = document.createElement('pre')
+  element.style.margin = '0'
+  element.style.background = color
+  element.style.width = '800px'
+  element.style.color = 'black'
+  element.textContent = level + attack + costString + probabilityString + pityGauge + sectionPity + '■|' + avgCost + totalAvg
+  element.addEventListener('mouseenter', () => {
+    element.style.background = 'skyblue'
+  })
+  element.addEventListener('mouseleave', () => {
+    element.style.background = color
+  })
+  pre?.appendChild(element)
+}

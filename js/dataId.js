@@ -515,6 +515,11 @@ export class ID {
     hellgiComponent: 36002,
     upgradeStone: 36003,
     boseokTest: 36004,
+    boseokBlue: 36005,
+    boseokBrown: 36006,
+    boseokGreen: 36007,
+    boseokYellow: 36008,
+    boseokMaterial: 36009,
   }
 }
 deepFreeze(ID) // 절대로 ID를 수정하지 마

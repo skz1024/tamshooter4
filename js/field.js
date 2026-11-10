@@ -11,7 +11,7 @@ import { RoundData } from './dataRound.js'
 import { WeaponData } from './dataWeapon.js'
 import { imageDataInfo, ImageDataObject, imageSrc } from './imageSrc.js'
 import { soundSrc } from './soundSrc.js'
-import { gameVar, userSystem, game, gameFunction } from './game.js'
+import { gameVar, UserSystem, game, gameFunction } from './game.js'
 import { dataExportStatItem } from './dataStat.js'
 
 let digitalDisplay = gameFunction.digitalDisplay
@@ -577,9 +577,9 @@ export class fieldState {
     this.playerObject.process()
 
     if (this.playerObject.y > game.graphic.CANVAS_HEIGHT - 80) {
-      userSystem.hideUserStat()
+      UserSystem.hideUserStat()
     } else {
-      userSystem.showUserStat()
+      UserSystem.showUserStat()
     }
   }
 
@@ -818,7 +818,7 @@ class fieldRequestUser {
    * @param {number} id 
    */
   static getItemCountById (id) {
-    return userSystem.inventory.getItemCountById(id)
+    return UserSystem.inventory.getItemCountById(id)
   }
 
   /**
@@ -826,7 +826,7 @@ class fieldRequestUser {
    * @param {number} id 
    */
   static isSkillUnlocked (id) {
-    return userSystem.getSkillUnlock(id)
+    return UserSystem.getSkillUnlock(id)
   }
 
   /** 플레이어의 스킬을 잠금 해제합니다. 
@@ -838,18 +838,18 @@ class fieldRequestUser {
   */
   static unlockSkill (id = 0, symbol) {
     if (symbol === this.#token) {
-      userSystem.addSkillUnlock(id)
+      UserSystem.addSkillUnlock(id)
     }
   }
 
   /** 라운드가 클리어 되어 있는지를 확인합니다. */
   static isRoundClear (roundId = 0) {
-    return userSystem.getRoundClear(roundId)
+    return UserSystem.getRoundClear(roundId)
   }
 
   /** 플레이어의 골드를 가져옵니다. */
   static getGold () {
-    return userSystem.gold
+    return UserSystem.gold
   }
 
   /** 
@@ -858,7 +858,7 @@ class fieldRequestUser {
   */
   static addExp (score = 0, symbol) {
     if (score > 0 && symbol === this.#token) {
-      userSystem.addExp(score)
+      UserSystem.addExp(score)
     }
   }
 
@@ -867,7 +867,7 @@ class fieldRequestUser {
   */
   static addGold (gold = 0, symbol) {
     if (gold > 0 && symbol === this.#token) {
-      userSystem.addGold(gold)
+      UserSystem.addGold(gold)
     }
   }
 
@@ -876,7 +876,7 @@ class fieldRequestUser {
   */
   static subtractGold (gold = 0, symbol) {
     if (gold > 0 && symbol === this.#token) {
-      userSystem.subtractGold(gold)
+      UserSystem.subtractGold(gold)
     }
   }
 
@@ -885,7 +885,7 @@ class fieldRequestUser {
   */
   static addItem (id = 0, count = 0, symbol) {
     if (symbol === this.#token) {
-      userSystem.inventory.addItem(id, count)
+      UserSystem.inventory.addItem(id, count)
     }
   }
 
@@ -894,7 +894,7 @@ class fieldRequestUser {
    */
   static removeItem (id = 0, count = 0, symbol) {
     if (symbol === this.#token) {
-      userSystem.inventoryItemDeleteById(id, count)
+      UserSystem.inventoryItemDeleteById(id, count)
     }
   }
 }
@@ -1429,10 +1429,10 @@ export class fieldSystem {
     if (this.exitDelayCount === 0 && this.round != null) {
       let clearSoundSrc = this.round.clearSoundSrc !== '' ? this.round.clearSoundSrc : soundSrc.system.systemRoundClear
       game.sound.play(clearSoundSrc)
-      userSystem.addExp(this.round.stat.clearBonusScore)
+      UserSystem.addExp(this.round.stat.clearBonusScore)
       this.totalScore = this.fieldScore + this.round.stat.clearBonusScore
       this.roundEndWait()
-      userSystem.addRoundClear(this.roundId) // 라운드 클리어 ID 추가
+      UserSystem.addRoundClear(this.roundId) // 라운드 클리어 ID 추가
     }
 
     this.scoreSound()
@@ -1551,12 +1551,12 @@ export class fieldSystem {
    */
   static processSendUserStat () {
     const player = fieldState.getPlayerObject()
-    userSystem.setStatUiHpShield(player.hp, player.shield, player.shieldMax)
+    UserSystem.setStatUiHpShield(player.hp, player.shield, player.shieldMax)
 
     const skillSlot = player.usingSkillSlotA ? player.skillSlotA : player.skillSlotB
-    for (let i = 0; i < userSystem.SKILL_LIST_SLOT_COUNT; i++) {
+    for (let i = 0; i < UserSystem.SKILL_LIST_SLOT_COUNT; i++) {
       const coolTime = Math.round(skillSlot[i].coolTimeFrame / 60)
-      userSystem.setStatUiSkill(i, skillSlot[i].id, coolTime)
+      UserSystem.setStatUiSkill(i, skillSlot[i].id, coolTime)
     }
   }
 

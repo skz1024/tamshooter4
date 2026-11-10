@@ -218,13 +218,16 @@ class InventorySystem {
    * 해당 ID를 가진 아이템이 있다면, 개수를 리턴받음
    * 
    * 아이템 타입이 아닌 경우, 1 또는 0만 리턴됨  
-   * 주의: 아이템 타입이 아닌 중복된 아이템의 개수를 조사하지 않습니다.
+   * 주의: 스택을 쌓을 수 있는 것이 아닌 중복된 아이템의 개수를 조사하지 않습니다.
    * @param {number} id 
    */
   static getItemCountById (id) {
     for (let i = 0; i < this.itemList.length; i++) {
       if (this.itemList[i].id === id) {
-        if (this.itemList[i].itemType === StatItem.TYPES.ITEM) {
+        const itemData = dataExportStatItem.get(id)
+        if (itemData == null) {
+          return 0
+        } else if (itemData.isStackable) {
           return this.itemList[i].countValue
         } else {
           return 1
@@ -250,8 +253,8 @@ class InventorySystem {
   /**
    * 해당하는 ID의 아이템을 삭제합니다.
    * 
-   * 아이템 타입인 경우, 해당 개수만큼 줄어들며, 개수가 0 이하인 경우 제거합니다.  
-   * 아이템 타입이 아닌 경우, 해당 아이템은 무조건 제거됩니다.
+   * 스택 가능한 타입인 경우, 해당 개수만큼 줄어들며, 개수가 0 이하인 경우 제거합니다.  
+   * 스택 가능이 아닌 경우, 해당 아이템은 무조건 제거됩니다.
    * @param {number} countValue 개수
    */
   static removeItem (id = 0, countValue = 1) {
@@ -303,6 +306,17 @@ class InventorySystem {
    * @returns {InventoryItem | undefined}
    */
   static get (index) {
+    return this.itemList[index]
+  }
+
+  /**
+   * 아이템을 인덱스 기반으로 얻어옵니다.
+   * @param {number} id 
+   * @returns {InventoryItem | undefined}
+   */
+  static getById (id) {
+    const index = this.getIndexById(id)
+    if (index === -1) return undefined
     return this.itemList[index]
   }
 
@@ -382,9 +396,118 @@ class StatUIBuffer {
   getSkillCoolTime (slotNumber = 0) { return this.#buffer[StatUIBuffer.INDEXS.SKILL1_COOLTIME + (slotNumber * 2)] }
 }
 
+/** 유저 보석 클래스 (보석 데이터 저장용) */
+class UserBoseok {
+  /** 
+   * 데이터 규칙 (보석 데이터는 저장되지 않으며, 인벤토리 데이터를 참고해 처리합니다.)  
+   * [A1, A2, B1, B2, C1, C2, D1, D2] 
+   * 
+   * A1 ~ D1 = boseokLevel  
+   * A2 ~ D2 = boseokGauge  
+   * 
+   * 참고: 값이 -1이면, 해당 값은 비어있다는 뜻입니다.
+   */
+  static data = new Int32Array(8).fill(-1)
+
+  /** 보석 번호(0~3) 순서에 해당하는 아이템 ID입니다. */
+  static idList = StatItem.Boseok.idList
+
+  /** 보석의 레벨을 올리는 데 사용되는 재료 아이템의 ID입니다. */
+  static materialId = StatItem.Boseok.materialId
+
+  /**
+   * 보석 번호(0~3)에 해당하는 레벨 데이터 인덱스
+   * 0=A, 1=B, 2=C, 3=D
+   */
+  static getLevelIndex (boseokNumber = 0) {
+    if (boseokNumber < 0 || boseokNumber > 3) return -1
+    return boseokNumber * 2
+  }
+
+  /** 보석 번호(0~3)에 해당하는 게이지 데이터 인덱스 */
+  static getGaugeIndex (boseokNumber = 0) {
+    const levelIndex = this.getLevelIndex(boseokNumber)
+    if (levelIndex === -1) return -1
+    return levelIndex + 1
+  }
+
+  static getLevel (boseokNumber = 0) {
+    const index = this.getLevelIndex(boseokNumber)
+    if (index === -1) return -1
+    return this.data[index]
+  }
+
+  /**
+   * @param {number} boseokNumber 
+   * @param {number} value 
+   * @returns 
+   */
+  static setLevel (boseokNumber = 0, value = 0) {
+    const index = this.getLevelIndex(boseokNumber)
+    if (index === -1) return false
+    this.data[index] = value
+    return true
+  }
+
+  static getGauge (boseokNumber = 0) {
+    const index = this.getGaugeIndex(boseokNumber)
+    if (index === -1) return -1
+    return this.data[index]
+  }
+
+  /**
+   * @param {number} boseokNumber 
+   * @param {number} value 
+   * @returns 
+   */
+  static setGauge (boseokNumber = 0, value = 0) {
+    const index = this.getGaugeIndex(boseokNumber)
+    if (index === -1) return false
+    this.data[index] = value
+    return true
+  }
+
+  /** 모든 보석 데이터를 -1로 초기화합니다. */
+  static reset () {
+    this.data.fill(-1)
+  }
+
+  static getCostByLevel (currentLevel = 0) {
+    return StatItem.Boseok.getCost(currentLevel)
+  }
+
+  static getCost (boseokNumber = 0) {
+    const level = this.getLevel(boseokNumber)
+    if (level === -1) return 0
+    else return StatItem.Boseok.getCost(level)
+  }
+
+  static getBoseokBasePityGauge (currentLevel = 0) {
+    return StatItem.Boseok.getPityGauge(currentLevel)
+  }
+
+  static getAttack (boseokNumber = 0) {
+    const level = this.getLevel(boseokNumber)
+    if (level === -1) return 0
+    else return StatItem.Boseok.getAttack(level)
+  }
+
+  static getProbability (boseokNumber = 0) {
+    const level = this.getLevel(boseokNumber)
+    if (level === -1) return 0
+    else return StatItem.Boseok.getUpgradeProbability(level)
+  }
+
+  static getSectionPity (boseokNumber = 0) {
+    const level = this.getLevel(boseokNumber)
+    if (level === -1) return 0
+    else return StatItem.Boseok.getSectionPity(level)
+  }
+}
+
 
 /** 유저 정보 (static 클래스) */
-export class userSystem {
+export class UserSystem {
   /** 최대 레벨 */ static MAX_LEVEL = StatUser.MAX_LEVEL
   /** 아이템의 강화 최대 레벨 */ static UPGRADE_LEVEL_MAX = StatItem.EQUIPMENT_UPGRADE_MAX_LEVEL
   /** 유저 체력 기본값 */ static HP_DEFAULT = 300
@@ -417,6 +540,9 @@ export class userSystem {
 
   /** 스탯 창에 표시할 버퍼 */
   static statUiBuffer = new StatUIBuffer()
+
+  /** 보석 데이터 관리 클래스 */
+  static boseok = UserBoseok
 
   /** 해당 라운드가 클리어되어있는지 살펴봅니다. */
   static getRoundClear (roundId = 0) {
@@ -493,7 +619,7 @@ export class userSystem {
       /** 슬롯의 공격력 값 */ this.slotAttack = 0
     }
   }
-  static slot = [new userSystem.SlotData(), new userSystem.SlotData(), new userSystem.SlotData(), new userSystem.SlotData()]
+  static slot = [new UserSystem.SlotData(), new UserSystem.SlotData(), new UserSystem.SlotData(), new UserSystem.SlotData()]
 
   static equipmentIndex = -1
 
@@ -1284,25 +1410,32 @@ export class userSystem {
     const attackValue = this.getAttackValue()
 
     // 공격력 결정
-    this.attack = this.attackLevelTable[this.lv] + attackValue.equipment + attackValue.slot + attackValue.stat
+    this.attack = attackValue.level + attackValue.equipment + attackValue.boseok + attackValue.stat
 
+    // 기본 스탯 초기화
+    this.hp = this.HP_DEFAULT
+    this.hpMax = this.HP_DEFAULT
+    this.shield = this.SHIELD_DEFAULT
+    this.shieldMax = this.SHIELD_DEFAULT
+    this.shieldRecovery = this.SHIELD_RECOVERY_DEFAULT
+
+    // 장비 스탯 추가
     const equipmentData = this.getEquipmentItemData()
-
     if (equipmentData != null) {
-      // 장비가 있다면, 체력 쉴드를 그만큼 추가 (단, 장비에 해당 스탯값이 없으면, 기본값 0으로 처리됨)
-      this.hp = this.HP_DEFAULT + equipmentData.hp
-      this.hpMax = this.HP_DEFAULT + equipmentData.hp
-      this.shield = this.SHIELD_DEFAULT + equipmentData.shield
-      this.shieldMax = this.SHIELD_DEFAULT + equipmentData.shield
-      this.shieldRecovery = this.SHIELD_RECOVERY_DEFAULT + equipmentData.shieldRecovery
-    } else {
-      // 체력과 쉴드에 초기값 부여
-      this.hp = this.HP_DEFAULT
-      this.hpMax = this.HP_DEFAULT
-      this.shield = this.SHIELD_DEFAULT
-      this.shieldMax = this.SHIELD_DEFAULT
-      this.shieldRecovery = this.SHIELD_RECOVERY_DEFAULT
+      this.hp += equipmentData.hp
+      this.hpMax += equipmentData.hp
+      this.shield += equipmentData.shield
+      this.shieldMax += equipmentData.shield
+      this.shieldRecovery += equipmentData.shieldRecovery
     }
+
+    // 보석 스탯 추가
+    const boseokStat = this.getBoseokStat()
+    this.hp += boseokStat.hp
+    this.hpMax += boseokStat.hp
+    this.shield += boseokStat.shield
+    this.shieldMax += boseokStat.shield
+    this.shieldRecovery += boseokStat.shieldRecovery
   }
 
   /** 공격력 조합 값들을 가져옵니다. */
@@ -1311,9 +1444,33 @@ export class userSystem {
     return {
       level: this.attackLevelTable[this.lv],
       equipment: equipment != null ? equipment.attack : 0,
-      slot: 0,
+      boseok: this.getBoseokStat().attack,
       stat: 0,
     }
+  }
+
+  /** 보석 스탯 조합 값들을 얻어옵니다. */
+  static getBoseokStat () {
+    let attack = 0
+    let hp = 0
+    let shield = 0
+    let shieldRecovery = 0
+
+    // 값 입력 전에보석 데이터를 찾아야 하므로 검색 시킴
+    this.autoBoseokSearch() 
+
+    for (let i = 0; i < this.boseok.idList.length; i++) {
+      const targetId = this.boseok.idList[i]
+      const inven = this.inventory.getById(targetId)
+      if (inven == null) continue
+
+      attack += this.boseok.getAttack(i)
+      hp += StatItem.Boseok.collectEffect[i].hp
+      shield += StatItem.Boseok.collectEffect[i].shield
+      shieldRecovery += StatItem.Boseok.collectEffect[i].shieldRecovery
+    }
+
+    return { attack, hp, shield, shieldRecovery}
   }
 
   /** 플레이어의 스탯을 재측정하고, 해당 플레이어 정보를 리턴합니다. */
@@ -1339,6 +1496,89 @@ export class userSystem {
   static getAttackSkillValue () {
     this.processStat()
     return Math.floor(this.attack * this.ATTACK_MULTIPLE_SKILL)
+  }
+
+  /** 
+   * 유저가 해당 보석을 업그레이드 할 수 있는지 알아봅니다.
+   * @param {number} boseokNumber 
+   */
+  static boseokCanUpgrade (boseokNumber) {
+    if (boseokNumber < 0 || boseokNumber > 3) return false
+
+    // 참고: 보석이 존재하지 않으면 -1이 리턴되므로 결과적으로 return false가 됩니다.
+    const level = this.boseok.getLevel(boseokNumber)
+    if (!StatItem.Boseok.canUpgrade(level)) return false
+    
+    // 재료가 충분한지 검사하고, 재료가 부족하다면 강화 취소
+    const cost = this.boseok.getCost(boseokNumber)
+    const material = this.inventory.getItemCountById(this.boseok.materialId)
+    if (material < cost) return false
+
+    return true
+  }
+
+  /**
+   * 보석 강화를 시도합니다.
+   * @param {number} boseokNumber 강화할 보석 번호 (0 ~ 3번 허용, 나머지 무효)
+   */
+  static boseokUpgrade (boseokNumber) {
+    // 보석이 업그레이드 가능한지 먼저 살펴봅니다. 
+    // (이 함수를 실행하기 전 살펴보았을 수도 있으나 안전을 위해 가드 패턴을 사용함.)
+    // 보석 번호 검사도 밑 함수에서 바로 처리하므로, 이 함수에는 작성하지 않습니다.
+    if (!this.boseokCanUpgrade(boseokNumber)) return false
+
+    // 인벤토리에 유효한 보석이 있는지 확인합니다.
+    const currentId = this.boseok.idList[boseokNumber]
+    const inven = this.inventory.getById(currentId)
+    if (inven == null) return false
+
+    // 업그레이드에 필요한 비용과 골드를 가져옴
+    const level = this.boseok.getLevel(boseokNumber)
+    const cost = this.boseok.getCost(boseokNumber)
+    const material = this.inventory.getItemCountById(this.boseok.materialId)
+    const pity = this.boseok.getBoseokBasePityGauge(level)
+
+    // 비용이 충분한지 검사하고, 비용이 부족하다면 강화 취소
+    if (material < cost) return false
+
+    // 재료를 소모시키고, 강화 성공 여부를 판정합니다.
+    this.inventory.removeItem(this.boseok.materialId, cost)
+    const isSuccess = StatItem.Boseok.getUpgradeResult(level)
+
+    // 강화 성공 여부에 관계없이 사용된 비용 만큼의 피티게이지가 증가합니다.
+    // countValue는 pityGauge 값을 저장합니다.
+    // 피티게이지는 강화 여부에 관계없이 모든 값을 누적합니다.
+    inven.countValue += cost
+    const isPity = inven.countValue >= pity
+
+    // 강화가 성공했다면, inventory의 데이터에서 customValue을 1 증가시켜야 합니다.
+    if (isSuccess || isPity) {
+      inven.customValue++
+    }
+
+    // 강화 종료 후, 보석의 데이터를 다시 조회합니다.
+    this.autoBoseokSearch()
+
+    // 강화 성공 여부를 그대로 리턴
+    return isSuccess || isPity
+  }
+
+  static autoBoseokSearch () {
+    // 보석 데이터를 초기화합니다.
+    this.boseok.reset()
+
+    for (let i = 0; i < this.boseok.idList.length; i++) {
+      // 보석이 있는지 없는지 살펴봅니다.
+      const targetId = this.boseok.idList[i]
+      const inven = this.inventory.getById(targetId)
+      if (inven == null) continue
+
+      // 보석을 가져오는 데 성공했다면, 보석에 입력된 인벤토리의 값들은 이렇게 해석합니다.
+      // countValue = pityGauge (gauge랑 동일하게 취급)
+      // customValue = level (0 ~ 35까지 있음)
+      this.boseok.setGauge(i, inven.countValue)
+      this.boseok.setLevel(i, inven.customValue)
+    }
   }
 
   /**

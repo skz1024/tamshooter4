@@ -22,7 +22,11 @@ export class soundSrc {
     systemEquipmentDowngrade: './sound/systemEquipmentDowngrade.ogg',
     systemItemDelete: './sound/systemItemDelete.ogg',
     systemItemGet: './sound/systemItemGet.ogg',
-    systemItemCrafting: './sound/systemItemCrafting.ogg'
+    systemItemCrafting: './sound/systemItemCrafting.ogg',
+    systemBoseok: './sound/systemBoseok.ogg',
+    systemBoseokClass: './sound/systemBoseokClass.ogg',
+    systemBoseokFail: './sound/systemBoseokFail.ogg',
+    systemBoseokActivate: './sound/systemBoseokActivate.ogg',
   }
 
   static skill = {
