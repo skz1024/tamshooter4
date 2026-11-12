@@ -762,7 +762,6 @@ class Laser extends WeaponData {
   }
 
   setOption (number = 0) {
-    number = 1
     if (number === 1) {
       this.subType = Laser.BLUE
     }

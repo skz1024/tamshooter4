@@ -1798,13 +1798,12 @@ export class fieldSystem {
       fieldSave.array[rd.START_INDEX + rd.BACKGROUND_INDEX_NUMBER] = 0 // backgroundIndexNumber
 
       // background layer
-      const isBgLayerUsing = this.round.bgLayer.getIsUsing()
-      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_X] = isBgLayerUsing ? this.round.bgLayer.getBackgroundPosition().x : this.round.bgLegacy.x
-      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_Y] = isBgLayerUsing ? this.round.bgLayer.getBackgroundPosition().y : this.round.bgLegacy.y
-      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDX] = isBgLayerUsing ? this.round.bgLayer.getBackgroundSpeed().speedX : this.round.bgLegacy.backgroundSpeedX
-      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDY] = isBgLayerUsing ? this.round.bgLayer.getBackgroundSpeed().speedY : this.round.bgLegacy.backgroundSpeedY
-      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_WIDTH] = isBgLayerUsing ? this.round.bgLayer.getBackgroundWidthHeight().width : 0
-      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_HEIGHT] = isBgLayerUsing ? this.round.bgLayer.getBackgroundWidthHeight().height : 0
+      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_X] = this.round.bgLayer.getBackgroundPosition().x
+      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_Y] = this.round.bgLayer.getBackgroundPosition().y
+      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDX] = this.round.bgLayer.getBackgroundSpeed().speedX
+      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDY] = this.round.bgLayer.getBackgroundSpeed().speedY
+      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_WIDTH] = this.round.bgLayer.getBackgroundWidthHeight().width
+      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_HEIGHT] = this.round.bgLayer.getBackgroundWidthHeight().height
 
       // bgLayer
       const layer = this.round.bgLayer.getLayer()
@@ -1970,35 +1969,26 @@ export class fieldSystem {
     this.round.sound.loadCurrentMusicTime = fieldSave.array[rd.START_INDEX + rd.CURRENT_MUSIC_TIME]
     // background index number
     // background layer
-    let isBgLayerUsing = this.round.bgLayer.getIsUsing()
-    if (isBgLayerUsing) {
-      this.round.bgLayer.setBackgroundPosition(fieldSave.array[rd.START_INDEX + rd.BACKGROUND_X], fieldSave.array[rd.START_INDEX + rd.BACKGROUND_Y])
-      this.round.bgLayer.setBackgroundSpeed(fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDX], fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDY])
-      this.round.bgLayer.setBackgroundWidthHeight(fieldSave.array[rd.START_INDEX + rd.BACKGROUND_WIDTH], fieldSave.array[rd.START_INDEX + rd.BACKGROUND_HEIGHT])
+    this.round.bgLayer.setBackgroundPosition(fieldSave.array[rd.START_INDEX + rd.BACKGROUND_X], fieldSave.array[rd.START_INDEX + rd.BACKGROUND_Y])
+    this.round.bgLayer.setBackgroundSpeed(fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDX], fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDY])
+    this.round.bgLayer.setBackgroundWidthHeight(fieldSave.array[rd.START_INDEX + rd.BACKGROUND_WIDTH], fieldSave.array[rd.START_INDEX + rd.BACKGROUND_HEIGHT])
 
-      // 배경 레이어 (bgLayer 전용)
-      let layer = this.round.bgLayer.getLayer()
-      for (let i = 0; i < 10 && i < layer.length; i++) {
-        const LINDEX = rd.START_INDEX + rd.BGLAYER_OFFSET_START + (i * rd.BGLAYER_OFFSET_COUNT)
-        layer[i].x = fieldSave.array[LINDEX + rd.BGLAYER_X]
-        layer[i].y = fieldSave.array[LINDEX + rd.BGLAYER_Y]
-        layer[i].speedX = fieldSave.array[LINDEX + rd.BGLAYER_SPEEDX]
-        layer[i].speedY = fieldSave.array[LINDEX + rd.BGLAYER_SPEEDY]
+    // 배경 레이어 (bgLayer 전용)
+    let layer = this.round.bgLayer.getLayer()
+    for (let i = 0; i < 10 && i < layer.length; i++) {
+      const LINDEX = rd.START_INDEX + rd.BGLAYER_OFFSET_START + (i * rd.BGLAYER_OFFSET_COUNT)
+      layer[i].x = fieldSave.array[LINDEX + rd.BGLAYER_X]
+      layer[i].y = fieldSave.array[LINDEX + rd.BGLAYER_Y]
+      layer[i].speedX = fieldSave.array[LINDEX + rd.BGLAYER_SPEEDX]
+      layer[i].speedY = fieldSave.array[LINDEX + rd.BGLAYER_SPEEDY]
 
-        // 알파값은 100배해서 저장했기 때문에, 다시 100으로 나눠 복원
-        // 참고로, 알파는 setAlpha를 통해 수정해야 정상적인 형태로 적용합니다.
-        layer[i].setAlpha(fieldSave.array[LINDEX + rd.BGLAYER_ALPHAEND] / 100) 
-        layer[i].isSynchronized = fieldSave.array[LINDEX + rd.BGLAYER_ISSYNCHRONIZED] ? true : false
-      }
-
-      this.round.bgLayer.process()
-    } else {
-      // this.round.bgLegacy.imageSrc = saveData.backgroundImageSrc
-      this.round.bgLegacy.x = fieldSave.array[rd.START_INDEX + rd.BACKGROUND_X]
-      this.round.bgLegacy.y = fieldSave.array[rd.START_INDEX + rd.BACKGROUND_Y]
-      this.round.bgLegacy.backgroundSpeedX = fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDX]
-      this.round.bgLegacy.backgroundSpeedY = fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDY]
+      // 알파값은 100배해서 저장했기 때문에, 다시 100으로 나눠 복원
+      // 참고로, 알파는 setAlpha를 통해 수정해야 정상적인 형태로 적용합니다.
+      layer[i].setAlpha(fieldSave.array[LINDEX + rd.BGLAYER_ALPHAEND] / 100) 
+      layer[i].isSynchronized = fieldSave.array[LINDEX + rd.BGLAYER_ISSYNCHRONIZED] ? true : false
     }
+
+    this.round.bgLayer.process()
 
     // round extendedmemory
     for (let i = 0; i < this.round.extendedMemory.length; i++) {

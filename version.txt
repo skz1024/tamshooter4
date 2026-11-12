@@ -2727,3 +2727,13 @@ processButtonMoveCursor 함수로 작성해야 합니다.
 1. 버전을 표시하는 기준 텍스트의 파일이 추가되었습니다.
 - 위 텍스트는 tamshooter4.js, standard.html, statView.html 에서 공유됩니다.
 - 내부 파일의 버전이 아닌, 게임 자체의 버전을 가리킵니다.
+
+
+
+2026/11/13 v0.59.9 - Round legacy code delete
+1. bgLayer가 color가 1개의 문자열 값을 받았을 때, 색 출력을 하지 않던 문제를 수정하였습니다.
+2. bgLegacy를 전부 제거하고, 전부 bgLayer 데이터로 교체했습니다.
+bgLegacy와 bgLayer를 구분하는 데이터를 삭제하고, 필드 저장 데이터도 전부 bgLayer로 통일했습니다.
+3. 과거 방식으로 음악을 출력하던 코드는 모두 새로운 코드로 교체되었습니다.
+4. deprecated 상태가 된 함수와 변수들도 제거되었습니다.
+5. 레이저의 색상 중 노란색이 나오지 않은 버그 수정
