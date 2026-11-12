@@ -902,11 +902,11 @@ dataExportStatRound.set(ID.round.round3_12, new StatRound(32, '3-12', 26, 69000,
  */
 export const dataExportStatItem = new Map()
 dataExportStatItem.set(ID.item.standardPlusC1Blue, new StatItem(0, StatItem.TYPES.EQUIPMENT, '스탠다스 플러스 C1 블루').setStat(3000, 0, 0, 0).setUpgradeCost(1000).setRequire(30))
-dataExportStatItem.set(ID.item.donggramiMugi, new StatItem(1, StatItem.TYPES.EQUIPMENT, '동그라미 장난감').setStat(2400, 50, 50, 50).setUpgradeCost(1200).setRequire(15))
+dataExportStatItem.set(ID.item.donggramiMugi, new StatItem(1, StatItem.TYPES.EQUIPMENT, '동그라미 장난감').setStat(2400, 0, 0, 0).setUpgradeCost(1200).setRequire(15))
 dataExportStatItem.set(ID.item.hellgiJangbi, new StatItem(2, StatItem.TYPES.ITEM, '헬기(hellgi) 장비(jangbi)'))
 dataExportStatItem.set(ID.item.donggramiTicket, new StatItem(3, StatItem.TYPES.ITEM, '동그라미 마을 티켓'))
 dataExportStatItem.set(ID.item.donggramiUSB, new StatItem(4, StatItem.TYPES.USB, '동그라미 운영체제 USB'))
-dataExportStatItem.set(ID.item.hellgiComponent, new StatItem(5, StatItem.TYPES.ITEM, '헬기(hellgi) 부품(component)'))
+dataExportStatItem.set(ID.item.hellgiComponent, new StatItem(5, StatItem.TYPES.CRAFTING_HELLGI, '헬기(hellgi) 부품(component)'))
 dataExportStatItem.set(ID.item.upgradeStone, new StatItem(6, StatItem.TYPES.ITEM, '강화석'))
 dataExportStatItem.set(ID.item.boseokTest, new StatItem(7, StatItem.TYPES.ITEM, '보석 테스트'))
 dataExportStatItem.set(ID.item.boseokBlue, new StatItem(10, StatItem.TYPES.BOSEOK, '보석 블루 (boseok blue)'))

@@ -306,6 +306,8 @@ class InventorySystem {
    * @returns {InventoryItem | undefined}
    */
   static get (index) {
+    if (index < 0 || index >= this.itemList.length) return
+
     return this.itemList[index]
   }
 
@@ -657,6 +659,11 @@ export class UserSystem {
     return true
   }
 
+  /** 현재 장비를 장착하고 있다면 이를 해제합니다. */
+  static unequipEquipment () {
+    this.equipmentIndex = -1
+  }
+
   /** 
    * 현재 장착된 장비를 업그레이드 합니다.
    * 
@@ -959,7 +966,7 @@ export class UserSystem {
   /**
    * 현재 레벨에 모아야 하는 경험치를 리턴합니다.
    */
-  static getExpMax () {
+  static getCurrentExpMax () {
     return this.expTable[this.lv]
   }
 
@@ -1392,9 +1399,9 @@ export class UserSystem {
     // lv + exp display
     if (this.levelUpEffectFrame > 0) {
       let targetFrame = this.levelUpEffectFrame % EXP_COLORA.length
-      game.graphic.meterRect(LAYERX, LAYERY3, LAYER_WIDTH, LAYER_HEIGHT, [EXP_COLORA[targetFrame], EXP_COLORB[targetFrame]], this.exp, this.getExpMax())
+      game.graphic.meterRect(LAYERX, LAYERY3, LAYER_WIDTH, LAYER_HEIGHT, [EXP_COLORA[targetFrame], EXP_COLORB[targetFrame]], this.exp, this.getCurrentExpMax())
     } else {
-      game.graphic.meterRect(LAYERX, LAYERY3, LAYER_WIDTH, LAYER_HEIGHT, [EXP_COLORA[0], EXP_COLORB[0]], this.exp, this.getExpMax())
+      game.graphic.meterRect(LAYERX, LAYERY3, LAYER_WIDTH, LAYER_HEIGHT, [EXP_COLORA[0], EXP_COLORB[0]], this.exp, this.getCurrentExpMax())
     }
 
     const lvText = 'Lv.' + this.lv + ' ' + this.exp + '/' + this.expTable[this.lv]

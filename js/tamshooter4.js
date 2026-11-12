@@ -354,6 +354,9 @@ class UIComponentObject {
     /** 이 창이 열려있는가?, 창을 닫아야 할 때를 알아내기 위해 만든 변수 */
     this.isOpen = false
 
+    /** 이 창을 닫도록 요청하였는가? true일경우, 시스템에서 이 창을 강제로 닫게합니다. */
+    this.isRequestClose = false
+
     this.x = UIComponentObject.BASE_X
     this.y = UIComponentObject.BASE_Y
     this.width = UIComponentObject.BASE_WIDTH
@@ -665,12 +668,25 @@ class UIComponentObject {
   /** 창을 엽니다. */
   open () {
     this.isOpen = true
+    this.isRequestClose = false
     this.changeBoxFocus()
+  }
+
+  /** 
+   * 창을 염과 동시에 파라미터 값을 전달합니다.  
+   * 이 함수도 open과 동일한 기능을 수행하지만, 인자를 전달할 수 있습니다.
+   * 
+   * 이 함수의 세부 구현은 UI 내부에서 따로 처리하며, 기본적인 동작은 open과 동일합니다.
+   * @param {number} [number=0] 
+   */
+  openParameter (number = 0) {
+    this.open()
   }
 
   /** 창을 닫습니다. */
   close () {
     this.isOpen = false
+    this.isRequestClose = true
   }
 
   /** 페이지를 변경합니다. 1페이지 단위로만 변경할 수 있습니다.
@@ -887,6 +903,12 @@ class UIComponentObject {
   displayBackground () {
     game.graphic.gradientRect(this.x, this.y, this.width, this.height, this.backgroundColor)
     game.graphic.gradientRect(this.x, this.y, this.width, this.TITLE_HEIGHT, this.titleBackground)
+  }
+
+  /** 이것은, 포커스를 잃었을 때, 회색 배경을 덧씌워서, 
+   * 해당 UI가 focus가 없다는 것을 간접적으로 나타내게 합니다. */
+  displayGrayWindow () {
+    game.graphic.fillRect(this.x, this.y, this.width, this.height, 'grey', 0.6)
   }
 }
 
@@ -1127,12 +1149,11 @@ class UIComponentEquipmentUpgrade extends UIComponentObject {
 
     const src = imageSrc.system.mainSystem
     const imgD = imageDataInfo.mainSystem
-    const width = imageDataInfo.mainSystem.equipmentBack.width
-    const height = imageDataInfo.mainSystem.equipmentBack.height
+    const width = imageDataInfo.mainSystem.equipmentBlank.width
+    const height = imageDataInfo.mainSystem.equipmentBlank.height
 
-    this.createGridHorizontalBox(4, this.x, this.y + this.height - 50, width, height)
+    this.createGridHorizontalBox(3, this.x, this.y + this.height - 50, width, height)
     const list = [
-      imgD.equipmentBack,
       imgD.equipmentEquip,
       imgD.equipmentUpgarde,
       imgD.equipmentDowngarde,
@@ -1144,7 +1165,15 @@ class UIComponentEquipmentUpgrade extends UIComponentObject {
     }
 
     /** 업그레이드 대상의 인벤토리 인덱스 */
-    this.targetInventoryIndex = 4
+    this.inventoryIndex = 4
+  }
+
+  /**
+   * @param {number} itemIndex 강화할 장비의 아이템 인덱스
+   */
+  openParameter (itemIndex = 0) {
+    super.openParameter()
+    this.inventoryIndex = itemIndex
   }
 
   processContent () {
@@ -1155,10 +1184,23 @@ class UIComponentEquipmentUpgrade extends UIComponentObject {
 
   processButtonSelect () {
     switch (this.cursor.index) {
-      case 0: break // back
-      case 1: UserSystem.setEquipment(this.targetInventoryIndex); break // equip/unequip
-      case 2:
-        const isSuccess = UserSystem.inventoryItemEquipmentUpgrade(this.targetInventoryIndex)
+      case 0: 
+        // 장비 장착 및 해제 기능
+        // 인덱스 -1은 장비가 없는 것으로 간주합니다.
+        // 주의: 장비를 해제한 경우 다시 실행하면, 이전 장비는 기억하지 못합니다.
+        if (UserSystem.equipmentIndex === -1) {
+          const success = UserSystem.setEquipment(this.inventoryIndex)
+          if (success) {
+            game.sound.play(soundSrc.system.systemEquip)
+          } else {
+            game.sound.play(soundSrc.system.systemBuzzer)
+          }
+        } else {
+          UserSystem.unequipEquipment()
+        }
+        break
+      case 1:
+        const isSuccess = UserSystem.inventoryItemEquipmentUpgrade(this.inventoryIndex)
         if (isSuccess) {
           game.sound.play(soundSrc.system.systemEquipmentUpgrade)
           this.enimationFrame = 60
@@ -1167,8 +1209,8 @@ class UIComponentEquipmentUpgrade extends UIComponentObject {
         }
         else game.sound.play(soundSrc.system.systemBuzzer)
         break
-      case 3:
-        const isSuccessDown = UserSystem.inventoryItemEquipmentDowngrade(this.targetInventoryIndex)
+      case 2:
+        const isSuccessDown = UserSystem.inventoryItemEquipmentDowngrade(this.inventoryIndex)
         if (isSuccessDown) {
           game.sound.play(soundSrc.system.systemEquipmentDowngrade)
           this.enimationFrame = 60
@@ -1183,7 +1225,7 @@ class UIComponentEquipmentUpgrade extends UIComponentObject {
   displayContent () {
     // display equipment option
     // if equippend
-    const equipment = UserSystem.getInventoryEquipmentValues(this.targetInventoryIndex)
+    const equipment = UserSystem.getInventoryEquipmentValues(this.inventoryIndex)
     if (equipment == null) return
 
     // icon display
@@ -1197,7 +1239,7 @@ class UIComponentEquipmentUpgrade extends UIComponentObject {
     const sliceY = iconSectionSize * Math.floor(itemData.iconNumber / 10)
     game.graphic.imageDisplay(src, sliceX, sliceY, iconSize, iconSize, this.x + this.width - 80, this.y + 50, iconSize, iconSize)
 
-    if (this.targetInventoryIndex === UserSystem.equipmentIndex) {
+    if (this.inventoryIndex === UserSystem.equipmentIndex) {
       const mainSrc = imageSrc.system.mainSystem
       const equipImgD = imageDataInfo.mainSystem.inventoryEquipment
       gameFunction.imageObjectDisplay(mainSrc, equipImgD, this.x + this.width - 80, this.y + 50, iconSize, iconSize)
@@ -1418,19 +1460,9 @@ class UIComponentBoseokGrowth extends UIComponentObject {
     }
 
     const button = imageDataInfo.mainSystem.boseokLevelupBlue
-    const src = imageSrc.system.mainSystem
-    const imgD = [
-      imageDataInfo.mainSystem.boseokLevelupBlue,
-      imageDataInfo.mainSystem.boseokLevelupBrown,
-      imageDataInfo.mainSystem.boseokLevelupGreen,
-      imageDataInfo.mainSystem.boseokLevelupYellow,
-    ]
     this.createGridHorizontalBox(4, this.x + margin, this.y + this.height - button.height - margin, button.width, button.height)
 
-    for (let i = 0; i < this.boxList.length; i++) {
-      this.boxList[i].imageSrc = src
-      this.boxList[i].imageData = imgD[i]
-    }
+    this.#autoButtonImageInput()
 
     // 강화 성공 시 이펙트 출력을 위한 변수
     this.animation = {
@@ -1441,6 +1473,25 @@ class UIComponentBoseokGrowth extends UIComponentObject {
       imageDataSuccess: imageDataInfo.mainSystem.boseokLevelupSuccess,
       imageDataFail: imageDataInfo.mainSystem.boseokLevelupFail,
       /** 성공 여부 */ isSuccess: false
+    }
+  }
+
+  #autoButtonImageInput () {
+    const src = imageSrc.system.mainSystem
+    const imgD = [
+      imageDataInfo.mainSystem.boseokLevelupBlue,
+      imageDataInfo.mainSystem.boseokLevelupBrown,
+      imageDataInfo.mainSystem.boseokLevelupGreen,
+      imageDataInfo.mainSystem.boseokLevelupYellow,
+    ]
+
+    // 보석 없으면 이미지 넣지마
+    for (let i = 0; i < this.boxList.length; i++) {
+      const itemId = UserSystem.boseok.idList[i]
+      if (UserSystem.inventory.getItemCountById(itemId) <= 0) continue
+
+      this.boxList[i].imageSrc = src
+      this.boxList[i].imageData = imgD[i]
     }
   }
 
@@ -1490,6 +1541,7 @@ class UIComponentBoseokGrowth extends UIComponentObject {
     super.open()
     UserSystem.autoBoseokSearch()
     this.boseokStat = UserSystem.getBoseokStat()
+    this.#autoButtonImageInput()
   }
 
   displayBoseok () {
@@ -1523,6 +1575,7 @@ class UIComponentBoseokGrowth extends UIComponentObject {
   displayTotalStat () {
     digitalDisplay('TOTAL ATTACK: ' + this.boseokStat.attack, this.x + 10, this.y + 160)
     digitalDisplay(`HP: ${this.boseokStat.hp}, SHIELD: ${this.boseokStat.shield}, SR: ${this.boseokStat.shieldRecovery}`, this.x + 10, this.y + 180)
+    game.graphic.fillRect(this.x, this.y + 200, this.width, 2, 'black')
   }
 
   displayUpgradeInfo () {
@@ -1548,7 +1601,6 @@ class UIComponentBoseokGrowth extends UIComponentObject {
     const meterStart = pity - meterRange
     const meterValue = Math.max(0, Math.min(gauge - meterStart, meterRange))
 
-    game.graphic.fillRect(this.x, this.y + 200, this.width, 2, 'black')
     digitalDisplay('LEVEL COST: ' + cost, this.x + 10, this.y + 210)
     digitalDisplay('SUCCESS: ' + success + '%', this.x + 10, this.y + 230)
     digitalDisplay('GAUGE: ' + gauge + '/' + pity, this.x + 10, this.y + 250)
@@ -1592,7 +1644,6 @@ class UIComponentRoundSelect extends UIComponentObject {
     /** 라운드의 개수 */
     this.roundCount = [0, 6, 6, 12]
 
-    let r = ID.round
     this.roundSelectGridTable = StatRound.world.roundSelectGridTable
 
     /** 메인 라운드의 박스 */
@@ -1621,8 +1672,7 @@ class UIComponentRoundSelect extends UIComponentObject {
     }
   }
 
-  processButton () {
-    super.processButton()
+  processButtonMoveCursor () {
     let button = this.getButtonObject()
 
     if (button.buttonLeft) {
@@ -2721,64 +2771,123 @@ class UIComponentSkillSelect extends UIComponentWeaponSkillGridObject {
 class UIComponentStatUpgrade extends UIComponentObject {
   constructor () {
     super()
-    this.titleImageObject = imageDataInfo.menuList.upgrade 
-    this.backgroundColor = ['#b7ffad', '#d9ffd6']
-    
+    this.titleImageObject = imageDataInfo.menuList.statUpgrade 
+    this.backgroundColor = ['#c7fcc1', '#e4fae2']
+
+    const imgD = imageDataInfo.mainSystem.statUpgradeBoseok
+    const src = imageSrc.system.mainSystem
+    this.createGridHorizontalBox(2, this.x + 5, this.y + this.height - imgD.height - 5, imgD.width, imgD.height)
+
+    const imgDList = [
+      imageDataInfo.mainSystem.statUpgradeEquipment,
+      imageDataInfo.mainSystem.statUpgradeBoseok,
+    ]
+    for (let i = 0; i < this.boxList.length; i++) {
+      this.boxList[i].imageSrc = src
+      this.boxList[i].imageData = imgDList[i]
+    }
+
+    this.statBoxList = []
+    for (let i = 0; i < 4; i++) {
+      this.statBoxList.push(new BoxObject(this.x + 5, this.y + 50 + i * 25, this.width - 10, 25, ''))
+    }
+
+    this.statBoxList[2].color = '#EFEFEF'
+    this.statBoxList[3].color = 'gold'
+    this.statBoxList.push(new BoxObject(this.x + 5, this.y + 150, this.width - 10, 50, '', '#ffe0e0'))
+
+
+    UserSystem.getEquipmentItemData
+
+    // 보더 라인 제거
+    for (let i = 0; i < this.statBoxList.length; i++) {
+      this.statBoxList[i].borderWidth = 0
+    }
+  }
+
+  processButtonSelect () {
+    super.processButtonSelect()
+
+    switch (this.cursor.index) {
+      case 0: GameSystem.requestOpenUI(UISystem.IDLIST.equipmentUpgrade, UserSystem.equipmentIndex); break
+      case 1: GameSystem.requestOpenUI(UISystem.IDLIST.boseokGrowth); break
+    }
+  }
+
+  open () {
+    super.open()
+    UserSystem.processStat() // 스탯을 보여주기 전 연산을 한 번 해야 함
   }
 
   displayBaseStat () {
-    UserSystem.processStat() // 스탯을 보여주기 전 연산을 한 번 해야 함
+    UserSystem.processStat()
     const v = UserSystem.getAttackValue()
-    const text1 = 'LV: ' + UserSystem.lv + ', EXP: ' + UserSystem.exp + '/' + UserSystem.getExpMax()
+    const text1 = 'LV: ' + UserSystem.lv + ', EXP: ' + UserSystem.exp + '/' + UserSystem.getCurrentExpMax()
     const text2 = 'HP: ' + UserSystem.hpMax + ', SHIELD: ' + UserSystem.shieldMax
     const text3 = 'SHIELD RECOVERY: ' + UserSystem.shieldRecovery + '/' + UserSystem.SHIELD_RECOVERY_USING
     const text4 = 'GOLD: ' + UserSystem.gold
 
     const textAA = 'ATTATK: ' + UserSystem.attack
     const attackValue = [v.level, v.equipment, v.boseok, v.stat].filter(value => value !== 0).join('+')
-    const textAC = ' (' + attackValue + ')'
+    const textAC = '(' + attackValue + ')'
 
-    const x = this.x + 10
-    const y = this.y + 50
-    digitalDisplay(text1, x, y + 0)
-    digitalDisplay(text2, x, y + 20)
-    digitalDisplay(text3, x, y + 40)
-    digitalDisplay(text4, x, y + 60)
-    digitalDisplay(textAA + textAC, x, y + 80)
+    const x = this.statBoxList[0].x + 10
+    const textMargin = 3
+    digitalDisplay(text1, x, this.statBoxList[0].y + textMargin)
+    digitalDisplay(text2, x, this.statBoxList[1].y + textMargin)
+    digitalDisplay(text3, x, this.statBoxList[2].y + textMargin)
+    digitalDisplay(text4, x, this.statBoxList[3].y + textMargin)
+    digitalDisplay(textAA, x, this.statBoxList[4].y + textMargin)
+    digitalDisplay(textAC, x, this.statBoxList[4].y + textMargin + 20)
   }
 
   displayEquipment () {
-    const text6 = 'EQUIPMENT'
+    const text6 = 'EQUIPMENT INDEX: ' + UserSystem.equipmentIndex
     const equipmentData = UserSystem.getEquipmentItemData()
-    const equipmentInventory = UserSystem.getInventoryEquipmentValues(UserSystem.equipmentIndex)
-    const equipmentValues = UserSystem.getInventoryEquipmentValues()
     const x = this.x + 10
-    const y = this.y + 180
+    const y = this.y + this.height - 140
     digitalDisplay(text6, x, y)
 
-    if (equipmentData != null && equipmentInventory != null && equipmentValues != null) {
-      const src = imageSrc.system.itemIcon
-      const iconSectionWidth = imageDataInfo.system.itemIconSection.width
-      const sliceX = (equipmentData.iconNumber % 10) * imageDataInfo.system.itemIconSection.width
-      const sliceY = Math.floor(equipmentData.iconNumber / 10) * imageDataInfo.system.itemIconSection.height
-      const iconWidth = imageDataInfo.system.itemIcon.width
-      const iconHeight = imageDataInfo.system.itemIcon.height
+    if (equipmentData != null) {
+      UIIconDisplay.displayIconItem(equipmentData.iconNumber, x, y + 20)
+    }
+  }
 
-      game.graphic.fillRect(x, y + 20, iconSectionWidth, iconSectionWidth, '#CCCCCC', 0.8)
-      game.graphic.imageDisplay(src, sliceX, sliceY, iconWidth, iconHeight, x, y + 20, iconWidth, iconHeight)
+  displayStatBox () {
+    for (let i = 0; i < this.statBoxList.length; i++) {
+      const box = this.statBoxList[i]
+      box.display()
 
-      game.graphic.fillText('' + equipmentData.name + ' +' + equipmentValues.upgradeLevel, x + 120, y)
-      digitalDisplay('ATTACK: ' + equipmentValues.attack, x + 80, y + 20)
-      if (equipmentData.hp !== 0 || equipmentData.shield !== 0) {
-        digitalDisplay('HP +' + equipmentData.hp + ', SHIELD +' + equipmentData.shield, x + 80, y + 40)
-      }
-      if (equipmentData.shieldRecovery !== 0) {
-        digitalDisplay('SHIELD RECOVERY +' + equipmentData.shieldRecovery, x + 80, y + 60)
+      switch (i) {
+        case 0: 
+          game.graphic.meterRect(box.x, box.y,box.width, box.height, '#CF8BF3', UserSystem.exp, UserSystem.getCurrentExpMax())
+          break
+        case 1:
+          game.graphic.fillRect(box.x, box.y, box.width, box.height, '#8155C6')
+          game.graphic.meterRect(box.x, box.y, box.width, box.height, '#A7C6FF', UserSystem.hpMax, UserSystem.hpMax + UserSystem.shieldMax)
+          break
+        case 4:
+          // 공격력은 여러 줄로 표시합니다.
+          // 현재는 3줄 (레벨, 장비, 보석) 만 유효합니다.
+          const attackValue = UserSystem.getAttackValue()
+
+          // 미터 방식은 한 번에 한 종류만 표현이 가능하기 때문에
+          // 가장 오른쪽에 표시되는 순서로 역순으로 구현합니다.
+          // 나머지 미터는 각 값들의 합으로 구현합니다.
+          const attack1 = attackValue.level
+          const attack2 = attackValue.level + attackValue.equipment
+          const attack3 = attackValue.level + attackValue.equipment + attackValue.boseok
+
+          game.graphic.meterRect(box.x, box.y, box.width, box.height, '#ffd8fa', attack3, UserSystem.attack)
+          game.graphic.meterRect(box.x, box.y, box.width, box.height, '#a1ffa9', attack2, UserSystem.attack)
+          game.graphic.meterRect(box.x, box.y, box.width, box.height, '#ffdbdb', attack1, UserSystem.attack)
+        break
       }
     }
   }
 
   displayContent () {
+    this.displayStatBox()
     this.displayBaseStat()
     this.displayEquipment()
   }
@@ -2793,8 +2902,8 @@ class UIComponentInventory extends UIComponentObject {
     this.titleImageObject = imageDataInfo.menuList.inventory
     this.backgroundColor = ['#93b4b3', '#b6ece6']
 
-    this.setWidthHeight(UIComponentObject.BASE_WIDTH + 60, UIComponentObject.BASE_HEIGHT + 40)
-    this.setPosition(UIComponentObject.BASE_X - 30, UIComponentObject.BASE_Y - 20)
+    this.setWidthHeight(UIComponentObject.BASE_WIDTH + 60, UIComponentObject.BASE_HEIGHT + 80)
+    this.setPosition(UIComponentObject.BASE_X - 30, UIComponentObject.BASE_Y - 40)
 
     // 힌트용 주석
     // const x = i % 10
@@ -2806,16 +2915,66 @@ class UIComponentInventory extends UIComponentObject {
     this.createPage(1)
   }
 
+  processButtonSelect () {
+    const inven = UserSystem.inventory.get(this.cursor.index)
+    if (inven == null) return
+
+    const itemData = dataExportStatItem.get(inven.id)
+    if (itemData == null) return
+
+    if (itemData.type === StatItem.TYPES.ITEM) {
+      // 아이템 자체는 아무 역할도 하지 못하므로, 함수 처리를 종료합니다.
+      return
+    }
+
+    // 아이템이 다른 기능을 실행할 때만 사운드 출력 유도
+    super.processButtonSelect()
+
+    switch (itemData.type) {
+      case StatItem.TYPES.BOSEOK:
+      case StatItem.TYPES.BOSOEK_ITEM:
+        GameSystem.requestOpenUI(UISystem.IDLIST.boseokGrowth)
+        break
+      case StatItem.TYPES.CRAFTING_HELLGI:
+        GameSystem.requestOpenUI(UISystem.IDLIST.itemCrafting)
+        break
+      case StatItem.TYPES.EQUIPMENT:
+        GameSystem.requestOpenUI(UISystem.IDLIST.equipmentUpgrade, this.cursor.index)
+        break
+    }
+  }
+
   displayIcon () {
     const startIndex = this.getStartIndex()
     for (let i = 0; i < this.boxList.length; i++) {
+      // 우선 박스의 색을 기본색으로 변경합니다.
+      // 그 다음, 특정 타입이 왔다면, 그 때 박스의 색을 다시 변경합니다.
+      this.boxList[i].color = BoxObject.DEFAULT_BOX_COLOR
+
       const currentIndex = i + startIndex
       let inven = UserSystem.inventory.get(currentIndex)
+
       if (inven == null) continue
 
       let itemData = dataExportStatItem.get(inven.id)
       if (itemData == null) continue
       if (itemData.iconNumber === -1) continue
+
+      switch (itemData.type) {
+        case StatItem.TYPES.BOSEOK:
+        case StatItem.TYPES.BOSOEK_ITEM:
+          this.boxList[i].color = '#ceb0df'
+          break
+        case StatItem.TYPES.CRAFTING_HELLGI:
+          this.boxList[i].color = '#85adcb'
+          break
+        case StatItem.TYPES.EQUIPMENT:
+          this.boxList[i].color = '#96b0a7'
+          break
+        case StatItem.TYPES.USB:
+          this.boxList[i].color = '#ffffff'
+          break
+      }
 
       const src = imageSrc.system.itemIcon
       const iconSize = imageDataInfo.system.itemIcon.width
@@ -2829,6 +2988,12 @@ class UIComponentInventory extends UIComponentObject {
         if (inven.countValue >= 1000 && inven.countValue <= 9999) countText = (inven.countValue / 1000).toFixed(1) + 'K'
         else if (inven.countValue >= 10000) countText = '9K+'
         digitalDisplay(countText, this.boxList[i].x, this.boxList[i].y + this.boxList[i].height)
+      }
+
+      if (i === UserSystem.equipmentIndex) {
+        const equipSrc = imageSrc.system.mainSystem
+        const equipImgD = imageDataInfo.mainSystem.inventoryEquipment
+        gameFunction.imageObjectDisplay(equipSrc, equipImgD, this.boxList[i].x, this.boxList[i].y, iconSize, iconSize)
       }
     }
   }
@@ -2846,11 +3011,27 @@ class UIComponentInventory extends UIComponentObject {
     let firstLineText = data.isStackable ? ', count:' + item.countValue : ', require Level: ' + data.requireLevel
 
     const x = this.x
-    const y = this.y + this.height - 60
+    const y = this.y + this.height - 100
 
     digitalDisplay('INDEX: ' + this.cursor.index + ', type: ' + typeText + firstLineText, x, y)
     game.graphic.fillText(data.name, x, y + 20)
     game.graphic.fillText(data.info, x, y + 40)
+
+    let titleimgD = undefined
+    switch (data.type) {
+      case StatItem.TYPES.BOSEOK:
+      case StatItem.TYPES.BOSOEK_ITEM:
+        titleimgD = imageDataInfo.menuList.boseokGrowth
+        break
+      case StatItem.TYPES.EQUIPMENT: titleimgD = imageDataInfo.menuList.equipmentUpgarde; break
+      case StatItem.TYPES.CRAFTING_HELLGI: titleimgD = imageDataInfo.menuList.itemCrafting; break
+      case StatItem.TYPES.USB: titleimgD = imageDataInfo.menuList.usbExecute; break
+    }
+
+    if (titleimgD) {
+      const src = imageSrc.system.menuList
+      gameFunction.imageObjectDisplay(src, titleimgD, this.x, this.y + this.height - 40)
+    }
   }
 
   displayContent () {
@@ -2870,16 +3051,6 @@ class UIComponentOption extends UIComponentObject {
     MENU_RESULT_AUTO_SKIP: 4,
     MENU_SHOW_ENEMY_HP: 5,
     MENU_SHOW_DAMAGE: 6,
-  }
-
-  optionValue = {
-    soundOn: true,
-    musicOn: true,
-    soundVolume: 100,
-    musicVolume: 100,
-    resultAutoSkip: true,
-    showEnemyHp: true,
-    showDamage: true
   }
 
   constructor () {
@@ -2937,67 +3108,37 @@ class UIComponentOption extends UIComponentObject {
     let volumeTable = [0, 20, 40, 60, 80, 100]
 
     if (this.cursor.index === this.optionList.MENU_SOUND_ON) {
-      this.optionValue.soundOn = !this.optionValue.soundOn
+      GameOptionSystem.optionValue.soundOn = !GameOptionSystem.optionValue.soundOn
     } else if (this.cursor.index === this.optionList.MENU_SOUND_VOLUME) {
       if (relativeValue === 0) {
         // 마우스 클릭 형태로 간주, 다음 배열 번호로 이동
         // 배열에 있는 다음 값보다 작으면 다음 값으로 이동하게 됩니다.
-        let next = volumeTable.find(step => step > this.optionValue.soundVolume)
-        this.optionValue.soundVolume = next === undefined ? volumeTable[0] : next
+        let next = volumeTable.find(step => step > GameOptionSystem.optionValue.soundVolume)
+        GameOptionSystem.optionValue.soundVolume = next === undefined ? volumeTable[0] : next
       } else {
-        this.optionValue.soundVolume += relativeValue
+        GameOptionSystem.optionValue.soundVolume += relativeValue
       }
       game.sound.play(soundSrc.system.systemCursor)
     } else if (this.cursor.index === this.optionList.MENU_MUSIC_ON) {
-      this.optionValue.musicOn = !this.optionValue.musicOn
+      GameOptionSystem.optionValue.musicOn = !GameOptionSystem.optionValue.musicOn
     } else if (this.cursor.index === this.optionList.MENU_MUSIC_VOLUME) {
       if (relativeValue === 0) {
         // 마우스 클릭 형태로 간주, 다음 배열 번호로 이동
         // 배열에 있는 다음 값보다 작으면 다음 값으로 이동하게 됩니다.
-        let next = volumeTable.find(step => step > this.optionValue.musicVolume)
-        this.optionValue.musicVolume = next === undefined ? volumeTable[0] : next
+        let next = volumeTable.find(step => step > GameOptionSystem.optionValue.musicVolume)
+        GameOptionSystem.optionValue.musicVolume = next === undefined ? volumeTable[0] : next
       } else {
-        this.optionValue.musicVolume += relativeValue
+        GameOptionSystem.optionValue.musicVolume += relativeValue
       }
     } else if (this.cursor.index === this.optionList.MENU_RESULT_AUTO_SKIP) {
-      this.optionValue.resultAutoSkip = !this.optionValue.resultAutoSkip
+      GameOptionSystem.optionValue.resultAutoSkip = !GameOptionSystem.optionValue.resultAutoSkip
     } else if (this.cursor.index === this.optionList.MENU_SHOW_ENEMY_HP) {
-      this.optionValue.showEnemyHp = !this.optionValue.showEnemyHp
+      GameOptionSystem.optionValue.showEnemyHp = !GameOptionSystem.optionValue.showEnemyHp
     } else if (this.cursor.index === this.optionList.MENU_SHOW_DAMAGE) {
-      this.optionValue.showDamage = !this.optionValue.showDamage
+      GameOptionSystem.optionValue.showDamage = !GameOptionSystem.optionValue.showDamage
     }
 
-    this.optionEnable()
-  }
-
-  /** 옵션의 값을 실제 게임에 적용하는 함수 */
-  optionEnable () {
-    // 필드에게 옵션 값 전달
-    FieldSystem.option.resultAutoSkip = this.optionValue.resultAutoSkip
-    FieldSystem.option.showEnemyHp = this.optionValue.showEnemyHp
-    FieldSystem.option.showDamage = this.optionValue.showDamage
-    FieldSystem.option.musicOn = this.optionValue.musicOn
-    FieldSystem.option.soundOn = this.optionValue.soundOn
-
-    // 최대 최소 제한
-    if (this.optionValue.soundVolume < 0) this.optionValue.soundVolume = 0
-    if (this.optionValue.soundVolume > 100) this.optionValue.soundVolume = 100
-    if (this.optionValue.musicVolume < 0) this.optionValue.musicVolume = 0
-    if (this.optionValue.musicVolume > 100) this.optionValue.musicVolume = 100
-
-    // 사운드가 켜져있으면, 현재 볼륨값으로 설정하고 아닐경우 0으로 설정
-    // 주의: 사운드 게인은 0 ~ 1 사이의 범위입니다.
-    let soundValue = this.optionValue.soundOn ? this.optionValue.soundVolume / 100 : 0
-    game.sound.setGain(soundValue)
-    game.sound.soundOn = this.optionValue.soundOn
-
-    let musicValue = this.optionValue.musicOn ? this.optionValue.musicVolume / 100 : 0
-    game.sound.setMusicGain(musicValue)
-    game.sound.musicOn = this.optionValue.musicOn
-
-    // 저장 요청
-    // 다만 2초 단위로만 저장하고, 2초가 지나기 전 까지는 저장을 대기합니다.
-    SaveSystem.requestSave()
+    GameOptionSystem.optionEnable()
   }
 
   displayContent () {
@@ -3007,13 +3148,13 @@ class UIComponentOption extends UIComponentObject {
 
   displayValue () {
     const value = [
-      this.optionValue.soundOn,
-      this.optionValue.soundVolume,
-      this.optionValue.musicOn,
-      this.optionValue.musicVolume,
-      this.optionValue.resultAutoSkip,
-      this.optionValue.showEnemyHp,
-      this.optionValue.showDamage,
+      GameOptionSystem.optionValue.soundOn,
+      GameOptionSystem.optionValue.soundVolume,
+      GameOptionSystem.optionValue.musicOn,
+      GameOptionSystem.optionValue.musicVolume,
+      GameOptionSystem.optionValue.resultAutoSkip,
+      GameOptionSystem.optionValue.showEnemyHp,
+      GameOptionSystem.optionValue.showDamage,
     ]
 
     let optionImageSrc = imageSrc.system.mainSystem
@@ -3162,7 +3303,7 @@ class MainSystem extends MenuSystem {
     imageDataInfo.menuList.roundSelect,
     imageDataInfo.menuList.weaponSelect,
     imageDataInfo.menuList.skillSelect,
-    imageDataInfo.menuList.upgrade,
+    imageDataInfo.menuList.statUpgrade,
     imageDataInfo.menuList.inventory,
     imageDataInfo.menuList.story,
     imageDataInfo.menuList.option,
@@ -3183,7 +3324,7 @@ class MainSystem extends MenuSystem {
   }
 
   processButton () {
-    if (GameSystem.uiOpenCheck()) {
+    if (GameSystem.uiSystem.uiOpenCheck()) {
       return
     }
 
@@ -3209,19 +3350,22 @@ class MainSystem extends MenuSystem {
     UserSystem.processStat()
 
     // 모든 UI창을 닫은 후, 실행한 창을 다시 염
-    GameSystem.allUIClose()
+    GameSystem.uiSystem.closeAll()
 
+    let openId = -1
     switch (this.cursorPosition) {
-      case this.MENU_ROUND_SELECT: GameSystem.uiRoundSelect.open(); break
-      case this.MENU_WEAPON_SELECT: GameSystem.uiWeaponSelect.open(); break
-      case this.MENU_SKILL_SELECT: GameSystem.uiSkillSelect.open(); break
-      case this.MENU_UPGRADE: GameSystem.uiStatUpgarde.open(); break
-      case this.MENU_OPTION: GameSystem.uiOption.open(); break
-      case this.MENU_DATA_SETTING: GameSystem.uiDataSetting.open(); break
-      case this.MENU_ETC: GameSystem.uiMisc.open(); break
-      case this.MENU_INVENTORY: GameSystem.uiInventroy.open(); break
+      case this.MENU_ROUND_SELECT: openId = UISystem.IDLIST.roundSelect; break
+      case this.MENU_WEAPON_SELECT: openId = UISystem.IDLIST.weaponSelect; break
+      case this.MENU_SKILL_SELECT: openId = UISystem.IDLIST.skillSelect; break
+      case this.MENU_UPGRADE: openId = UISystem.IDLIST.statUpgrade; break
+      case this.MENU_OPTION: openId = UISystem.IDLIST.option; break
+      case this.MENU_DATA_SETTING: openId = UISystem.IDLIST.dataSetting; break
+      case this.MENU_ETC: openId = UISystem.IDLIST.misc; break
+      case this.MENU_INVENTORY: openId = UISystem.IDLIST.inventory; break
       case this.MENU_STORY: break // 아직 아무것도 없음
     }
+
+    GameSystem.uiSystem.open(openId)
 
     // 사운드 출력
     game.sound.play(soundSrc.system.systemSelect)
@@ -3825,6 +3969,195 @@ class SaveSystem {
 }
 
 
+class UISystem {
+  static IDLIST = {
+    roundSelect: 0,
+    weaponSelect: 1,
+    skillSelect: 2,
+    statUpgrade: 3,
+    inventory: 4,
+    option: 6,
+    dataSetting: 7,
+    misc: 8,
+    equipmentUpgrade: 11,
+    itemCrafting: 12,
+    boseokGrowth: 13,
+  }
+
+  constructor () {
+    this.layerNumber = -1
+    this.layerList = new Int32Array(10).fill(-1)
+
+    /** @type {Map<number, UIComponentObject>} */
+    this.data = new Map()
+
+    this.data.set(UISystem.IDLIST.roundSelect, new UIComponentRoundSelect)
+    this.data.set(UISystem.IDLIST.weaponSelect, new UIComponentWeaponSelect)
+    this.data.set(UISystem.IDLIST.skillSelect, new UIComponentSkillSelect)
+    this.data.set(UISystem.IDLIST.statUpgrade, new UIComponentStatUpgrade)
+    this.data.set(UISystem.IDLIST.inventory, new UIComponentInventory)
+    this.data.set(UISystem.IDLIST.option, new UIComponentOption)
+    this.data.set(UISystem.IDLIST.dataSetting, new UIComponentDataSetting)
+    this.data.set(UISystem.IDLIST.misc, new UIComponentMisc)
+    this.data.set(UISystem.IDLIST.equipmentUpgrade, new UIComponentEquipmentUpgrade)
+    this.data.set(UISystem.IDLIST.itemCrafting, new UIComponentItemCrafting)
+    this.data.set(UISystem.IDLIST.boseokGrowth, new UIComponentBoseokGrowth)
+  }
+
+  /**
+   * 특정한 UI를 엽니다. 
+   * @param {number} id 
+   * @param {number} parameterNumber 파리미터 번호, 특정한 UI에게 전달하기 위한 번호
+   */
+  open (id, parameterNumber = 0) {
+    if (id < 0) return
+
+    const ui = this.data.get(id)
+    if (!ui) {
+      console.warn('잘못된 UI가 호출됨')
+      return
+    }
+
+    ui.openParameter(parameterNumber)
+    this.layerNumber++
+    this.layerList[this.layerNumber] = id
+  }
+
+  /** 가장 마지막에 열린 UI를 닫습니다. */
+  close () {
+    const id = this.layerList[this.layerNumber]
+    const ui = this.data.get(id)
+    if (!ui) {
+      console.warn('잘못된 UI가 호출됨')
+      return
+    }
+
+    ui.close()
+    this.layerList[this.layerNumber] = -1
+    this.layerNumber--
+  }
+
+  /** 모든 UI를 닫습니다. */
+  closeAll () {
+    for (let ui of this.data.values()) {
+      ui.close()
+    }
+
+    // 모든 UI를 닫게 된 경우, layerList에 있는 ui는 전부 제거되고
+    // 레이어 번호도 -1로 초기화합니다.
+    this.layerList.fill(-1)
+    this.layerNumber = -1
+  }
+
+  /**
+   * UI를 얻어옵니다.
+   * @param {number} id 
+   */
+  getUI (id) {
+    return this.data.get(id)
+  }
+
+  process () {
+    if (this.layerNumber <= -1) return
+
+    const currentLayer = this.layerList[this.layerNumber]
+    for (const [id, ui] of this.data.entries()) {
+      // 현재 적용된 레이어만 프로세스를 실행시킵니다.
+      // 다른 UI의 연속 처리를 막기 위해, UI 작업을 처리한 후 즉시 반복문을 벗어납니다.
+      if (id === currentLayer) {
+        ui.process()
+        break
+      }
+    }
+
+    // 만약 UI에서 isOpen이 해제된 경우, UISystem이 이를 감지하고 자동으로 창을 닫도록 합니다.
+    for (let i = this.layerNumber; i >= 0; i--) {
+      const ui = this.data.get(this.layerList[i])
+      if (ui && ui.isRequestClose) {
+        this.close()
+      }
+    }
+  }
+
+  display () {
+    if (this.layerNumber <= -1) return
+
+    for (const [id, ui] of this.data.entries()) {
+      if (!ui.isOpen) continue
+
+      const currentLayer = this.layerList[this.layerNumber]
+      ui.display()
+
+      // 현재 레이어가 아니라면, 포커스를 잃은 상태이므로 회색 배경을 덧칠합니다.
+      if (id !== currentLayer) {
+        ui.displayGrayWindow()
+      }
+    }
+
+    // debug
+    // digitalDisplay('LAYER NUMBER: ' + this.layerNumber, 400, 0)
+    // digitalDisplay('LAYER LIST: ' + this.layerList[0] + ', ' + this.layerList[1], 400, 20)
+  }
+
+  /** 아무 UI나 열려있는지 확인합니다. */
+  uiOpenCheck () {
+    return this.layerNumber >= 0
+  }
+
+  /** 모든 UI중 1개 이상이 열려있는지를 직접적으로 확인합니다. */
+  uiOpenCheckAllUI () {
+    for (let ui of this.data.values()) {
+      if (ui.isOpen) {
+        return true
+      }
+    }
+
+    return false
+  }
+}
+
+class GameOptionSystem {
+  static optionValue = {
+    soundOn: true,
+    musicOn: true,
+    soundVolume: 100,
+    musicVolume: 100,
+    resultAutoSkip: true,
+    showEnemyHp: true,
+    showDamage: true
+  }
+
+  /** 옵션의 값을 실제 게임에 적용하는 함수 */
+  static optionEnable () {
+    // 필드에게 옵션 값 전달
+    FieldSystem.option.resultAutoSkip = GameOptionSystem.optionValue.resultAutoSkip
+    FieldSystem.option.showEnemyHp = GameOptionSystem.optionValue.showEnemyHp
+    FieldSystem.option.showDamage = GameOptionSystem.optionValue.showDamage
+    FieldSystem.option.musicOn = GameOptionSystem.optionValue.musicOn
+    FieldSystem.option.soundOn = GameOptionSystem.optionValue.soundOn
+
+    // 최대 최소 제한
+    if (GameOptionSystem.optionValue.soundVolume < 0) GameOptionSystem.optionValue.soundVolume = 0
+    if (GameOptionSystem.optionValue.soundVolume > 100) GameOptionSystem.optionValue.soundVolume = 100
+    if (GameOptionSystem.optionValue.musicVolume < 0) GameOptionSystem.optionValue.musicVolume = 0
+    if (GameOptionSystem.optionValue.musicVolume > 100) GameOptionSystem.optionValue.musicVolume = 100
+
+    // 사운드가 켜져있으면, 현재 볼륨값으로 설정하고 아닐경우 0으로 설정
+    // 주의: 사운드 게인은 0 ~ 1 사이의 범위입니다.
+    let soundValue = GameOptionSystem.optionValue.soundOn ? GameOptionSystem.optionValue.soundVolume / 100 : 0
+    game.sound.setGain(soundValue)
+    game.sound.soundOn = GameOptionSystem.optionValue.soundOn
+
+    let musicValue = GameOptionSystem.optionValue.musicOn ? GameOptionSystem.optionValue.musicVolume / 100 : 0
+    game.sound.setMusicGain(musicValue)
+    game.sound.musicOn = GameOptionSystem.optionValue.musicOn
+
+    // 저장 요청
+    // 다만 2초 단위로만 저장하고, 2초가 지나기 전 까지는 저장을 대기합니다.
+    SaveSystem.requestSave()
+  }
+}
+
 /**
  * 게임 시스템 (거의 모든 로직을 처리), 경고: new 키워드로 인스턴스를 생성하지 마세요.
  * 이건 단일 클래스입니다.
@@ -3854,18 +4187,7 @@ export class GameSystem {
   /** 메인 시스템 */ static mainSystem = new MainSystem()
   /** 스텟(게임, 필드 스탯) 표시 시스템 */ static statSystem = new StatSystem()
   /** error 시스템 */ static errorSystem = new ErrorSystem()
-
-  static uiRoundSelect = new UIComponentRoundSelect()
-  static uiWeaponSelect = new UIComponentWeaponSelect()
-  static uiSkillSelect = new UIComponentSkillSelect()
-  static uiStatUpgarde = new UIComponentStatUpgrade()
-  static uiInventroy = new UIComponentInventory()
-  static uiOption = new UIComponentOption()
-  static uiDataSetting = new UIComponentDataSetting()
-  static uiMisc = new UIComponentMisc()
-  static uiEquipmentUpgrade = new UIComponentEquipmentUpgrade()
-  static uiItemCrafting = new UIComponentItemCrafting()
-  static uiBoseokGrowth = new UIComponentBoseokGrowth()
+  /** ui 시스템 */ static uiSystem = new UISystem()
 
   static {
     // debug 용도
@@ -3873,45 +4195,27 @@ export class GameSystem {
     // this.uiInventroy.isOpen = true
     // this.uiStatUpgarde.isOpen = true
     // this.uiBoseokGrowth.open()
-  }
 
-  /** 모든 UI 창을 닫습니다. */
-  static allUIClose () {
-    this.uiRoundSelect.close()
-    this.uiWeaponSelect.close()
-    this.uiSkillSelect.close()
-    this.uiStatUpgarde.close()
-    this.uiInventroy.close()
-    this.uiOption.close()
-    this.uiDataSetting.close()
-    this.uiMisc.close()
-
-    //
-    this.uiEquipmentUpgrade.close()
-    this.uiItemCrafting.close()
-    this.uiBoseokGrowth.close()
-  }
-
-  /** ui가 1개 이상 열려있는지를 확인함 */
-  static uiOpenCheck () {
-    const value = this.uiRoundSelect.isOpen
-      || this.uiWeaponSelect.isOpen
-      || this.uiSkillSelect.isOpen
-      || this.uiStatUpgarde.isOpen
-      || this.uiInventroy.isOpen
-      || this.uiOption.isOpen
-      || this.uiMisc.isOpen
-      || this.uiDataSetting.isOpen
-      || this.uiEquipmentUpgrade.isOpen
-      || this.uiItemCrafting.isOpen
-      || this.uiBoseokGrowth.isOpen
-
-    return value
+    // debug, user 조작은, 데이터 로드 이후에 해야 정상 적용됨
+    // setTimeout(() => {
+    //   UserSystem.inventory.removeItem(ID.item.boseokBrown)
+    //   UserSystem.inventory.removeItem(ID.item.boseokGreen)
+    //   UserSystem.inventory.removeItem(ID.item.boseokYellow)
+    // }, 1000)
   }
 
   /** 현재 게임의 옵션 데이터를 가져옵니다. */
   static getGameOption () {
-    return this.uiOption.optionValue
+    return GameOptionSystem.optionValue
+  }
+
+  /**
+   * 새로운 UI를 열도록 요청합니다.
+   * @param {number} uiSystemID UISystem에 정의되어 있는 ID
+   * @param {number} parameterNumber 파리미터 번호, 특정한 UI에게 전달하기 위한 번호
+   */
+  static requestOpenUI (uiSystemID, parameterNumber = 0) {
+    this.uiSystem.open(uiSystemID, parameterNumber)
   }
 
   /** 저장 과정을 처리합니다. */
@@ -3963,7 +4267,7 @@ export class GameSystem {
     const saveDate = new Date();
     const startDate = this.UserSystem.startDate;
     const playTime = this.UserSystem.playTime;
-    const opt = this.uiOption.optionValue;
+    const opt = GameOptionSystem.optionValue;
 
     buffer[offset++] = saveDate.getFullYear();
     buffer[offset++] = saveDate.getMonth() + 1;
@@ -4124,8 +4428,8 @@ export class GameSystem {
 
     if (loadData.option) {
       // 옵션을 불러온 다음에는 적용 함수를 실행시켜야 옵션이 적용됩니다.
-      this.uiOption.optionValue = loadData.option
-      this.uiOption.optionEnable()
+      GameOptionSystem.optionValue = loadData.option
+      GameOptionSystem.optionEnable()
     }
 
     if (loadData.userData) {
@@ -4310,14 +4614,14 @@ export class GameSystem {
       group1[I1.PLAY_TIME_HOUR + 1],
       group1[I1.PLAY_TIME_HOUR + 2]
     )
-    this.uiOption.optionValue.musicOn = group1[I1.OPTION_MUSIC_ON] === 1
-    this.uiOption.optionValue.musicVolume = group1[I1.OPTION_MUSIC_VOLUME]
-    this.uiOption.optionValue.soundOn = group1[I1.OPTION_SOUND_ON] === 1
-    this.uiOption.optionValue.soundVolume = group1[I1.OPTION_SOUND_VOLUME]
-    this.uiOption.optionValue.resultAutoSkip = group1[I1.OPTION_RESULT_AUTO_SKIP] === 1
-    this.uiOption.optionValue.showEnemyHp = group1[I1.OPTION_SHOW_ENEMY_HP] === 1
-    this.uiOption.optionValue.showDamage = group1[I1.OPTION_SHOW_DAMAGE] === 1
-    this.uiOption.optionEnable() // 불러온 옵션을 적용해야 게임 옵션이 반영됩니다.
+    GameOptionSystem.optionValue.musicOn = group1[I1.OPTION_MUSIC_ON] === 1
+    GameOptionSystem.optionValue.musicVolume = group1[I1.OPTION_MUSIC_VOLUME]
+    GameOptionSystem.optionValue.soundOn = group1[I1.OPTION_SOUND_ON] === 1
+    GameOptionSystem.optionValue.soundVolume = group1[I1.OPTION_SOUND_VOLUME]
+    GameOptionSystem.optionValue.resultAutoSkip = group1[I1.OPTION_RESULT_AUTO_SKIP] === 1
+    GameOptionSystem.optionValue.showEnemyHp = group1[I1.OPTION_SHOW_ENEMY_HP] === 1
+    GameOptionSystem.optionValue.showDamage = group1[I1.OPTION_SHOW_DAMAGE] === 1
+    GameOptionSystem.optionEnable() // 불러온 옵션을 적용해야 게임 옵션이 반영됩니다.
 
     const I2 = SaveSystem.index.group2EncodeData
     if (group2 != null) {
@@ -4454,9 +4758,10 @@ export class GameSystem {
     this.processUI() // 처리 순서 문제 때문에 UI를 앞에 배치함
     // UI가 뒤에있으면 이중 선택 현상이 벌어짐
 
-    switch (this.stateId) {
-      case this.STATE_MAIN: this.mainSystem.process(); break
-      case this.STATE_FIELD: this.fieldProcess(); break
+    if (this.stateId === this.STATE_MAIN) {
+      this.mainSystem.process()
+    } else if (this.stateId === this.STATE_FIELD) {
+      this.fieldProcess()
     }
 
     this.processStatLine()
@@ -4466,18 +4771,7 @@ export class GameSystem {
   }
 
   static processUI () {
-    this.uiRoundSelect.process()
-    this.uiInventroy.process()
-    this.uiMisc.process()
-    this.uiSkillSelect.process()
-    this.uiStatUpgarde.process()
-    this.uiWeaponSelect.process()
-    this.uiOption.process()
-    this.uiDataSetting.process()
-
-    this.uiEquipmentUpgrade.process()
-    this.uiItemCrafting.process()
-    this.uiBoseokGrowth.process()
+    this.uiSystem.process()
   }
 
   static fieldProcess () {
@@ -4492,12 +4786,12 @@ export class GameSystem {
     const messageList = this.fieldSystem.messageList
     switch (this.fieldSystem.message) {
       case messageList.CHANGE_MUSICON:
-        this.uiOption.optionValue.musicOn = !this.uiOption.optionValue.musicOn
-        this.uiOption.optionEnable()
+        GameOptionSystem.optionValue.musicOn = !GameOptionSystem.optionValue.musicOn
+        GameOptionSystem.optionEnable()
         break
       case messageList.CHANGE_SOUNDON:
-        this.uiOption.optionValue.soundOn = !this.uiOption.optionValue.soundOn
-        this.uiOption.optionEnable()
+        GameOptionSystem.optionValue.soundOn = !GameOptionSystem.optionValue.soundOn
+        GameOptionSystem.optionEnable()
         break
       case messageList.STATE_MAIN:
         this.stateId = this.STATE_MAIN
@@ -4515,8 +4809,8 @@ export class GameSystem {
     this.fieldSystem.message = ''
 
     // 사운드 음악 옵션을 필드에게 전달
-    FieldSystem.option.musicOn = this.uiOption.optionValue.musicOn
-    FieldSystem.option.soundOn = this.uiOption.optionValue.soundOn
+    FieldSystem.option.musicOn = GameOptionSystem.optionValue.musicOn
+    FieldSystem.option.soundOn = GameOptionSystem.optionValue.soundOn
   }
 
   // 디버그 용도로 사용되는 함수
@@ -4592,19 +4886,7 @@ export class GameSystem {
   }
 
   static displayUI () {
-    this.uiRoundSelect.display()
-    this.uiInventroy.display()
-    this.uiMisc.display()
-    this.uiOption.display()
-    this.uiSkillSelect.display()
-    this.uiStatUpgarde.display()
-    this.uiWeaponSelect.display()
-    this.uiDataSetting.display()
-
-    // layer 2
-    this.uiEquipmentUpgrade.display()
-    this.uiItemCrafting.display()
-    this.uiBoseokGrowth.display()
+    this.uiSystem.display()
   }
 
   static displayStatLine () {

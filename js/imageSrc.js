@@ -847,12 +847,15 @@ export class imageDataInfo {
     /** 다음 페이지 */ nextPage: new ImageDataObject(280, 150, 40, 40),
     /** 다음 페이지 */ currentPage: new ImageDataObject(320, 150, 40, 40),
     
-    /** 장비창 - 뒤로 */ equipmentBack: new ImageDataObject(0, 190, 100, 50),
+    /** 장비창 - 비어있는 버튼 */ equipmentBlank: new ImageDataObject(0, 190, 100, 50),
     /** 장비창 - 장착/해제 */ equipmentEquip: new ImageDataObject(100, 190, 100, 50),
     /** 장비창 - 업그레이드 */ equipmentUpgarde: new ImageDataObject(200, 190, 100, 50),
     /** 장비창 - 다운그레이드 */ equipmentDowngarde: new ImageDataObject(300, 190, 100, 50),
 
-    /** 크래프팅 - 체크 표시 */ craftingCheck: new ImageDataObject(0, 240, 50, 50),
+    /** 크래프팅 - 체크 표시 */ craftingCheck: new ImageDataObject(0, 240, 100, 50),
+
+    /** 스탯업그레이드 - 장비 */ statUpgradeEquipment: new ImageDataObject(100, 240, 100, 50),
+    /** 스탯업그레이드 - 강화 */ statUpgradeBoseok: new ImageDataObject(200, 240, 100, 50),
 
     /** 보석창 - 보석레벨업 블루 */ boseokLevelupBlue: new ImageDataObject(0, 290, 100, 50),
     /** 보석창 - 보석레벨업 브라운 */ boseokLevelupBrown: new ImageDataObject(100, 290, 100, 50),
@@ -1086,16 +1089,20 @@ export class imageDataInfo {
     roundSelect: {x: 0, y: 0, width: 200, height: 40, frame: 1},
     weaponSelect: {x: 0, y: 40, width: 200, height: 40, frame: 1},
     skillSelect: {x: 0, y: 80, width: 200, height: 40, frame: 1},
-    upgrade: {x: 0, y: 120, width: 200, height: 40, frame: 1},
+    statUpgrade: {x: 0, y: 120, width: 200, height: 40, frame: 1},
     inventory: new ImageDataObject(0, 160, 200, 40),
     story: new ImageDataObject(0, 200, 200, 40),
     option: {x: 0, y: 240, width: 200, height: 40, frame: 1},
     data: {x: 0, y: 280, width: 200, height: 40, frame: 1},
     etc: {x: 0, y: 320, width: 200, height: 40, frame: 1},
+    
     // layer 2
     equipmentUpgarde: new ImageDataObject(200, 120, 200, 40),
     itemCrafting: new ImageDataObject(200, 160, 200, 40),
     boseokGrowth: new ImageDataObject(200, 200, 200, 40),
+    
+    // misc
+    usbExecute: new ImageDataObject(200, 80, 200, 40),
   }
 
   static system = {
