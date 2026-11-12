@@ -2723,6 +2723,7 @@ processButtonMoveCursor 함수로 작성해야 합니다.
 - 주의: 아직 이 기능은 미구현입니다. 표시를 위해서 추가한 것 뿐입니다.
 
 
-// next to list
-1. version update text standard
-버전 업데이트의 텍스트 표준을 추가하고, 이 값을 여러 곳에 연동시킬 예정
+2026/11/13 v0.59.8 - versionText
+1. 버전을 표시하는 기준 텍스트의 파일이 추가되었습니다.
+- 위 텍스트는 tamshooter4.js, standard.html, statView.html 에서 공유됩니다.
+- 내부 파일의 버전이 아닌, 게임 자체의 버전을 가리킵니다.

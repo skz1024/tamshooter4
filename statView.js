@@ -1,6 +1,13 @@
 //@ts-check
 
 import { StatItem, StatPlayerSkill, StatPlayerWeapon, StatUser, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, dataExportStatWeapon } from "./js/dataStat.js"
+import { versionText } from "./versionText.js"
+
+const spanVersionText = document.getElementById('versionText')
+if (spanVersionText) {
+  spanVersionText.textContent = versionText
+}
+
 
 /** 타입에 해당하는 클래스 값을 얻어옵니다. 이 값은 css 선택자로 활용합니다. */
 const getTypeColorClass = (balance = '') => {

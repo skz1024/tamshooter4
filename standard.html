@@ -33,7 +33,7 @@
 <body>
 
 <h1>tamshooter4 standard. 탐슈터 4 표준</h1>
-<p>version v0.59 / last edit: 2026/10/15</p>
+<span id="versionText"></span>
 
 <!-- 목차: href의 #id가 아래 섹션의 id와 연결됨 -->
 <nav>
@@ -386,3 +386,10 @@ function update() {
 
 </body>
 </html>
+<script type="module">
+import { versionText } from './versionText.js'
+const spanVersionText = document.getElementById('versionText')
+if (spanVersionText) {
+  spanVersionText.textContent = versionText
+}
+</script>

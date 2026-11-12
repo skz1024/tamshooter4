@@ -10,8 +10,8 @@ import { fieldSystem as FieldSystem } from "./field.js";
 import { game, gameFunction } from "./game.js";
 import { stringText, systemText } from "./text.js";
 import { dataExportPlayerSkill, dataExportPlayerWeapon } from "./dataPlayer.js";
+import { versionText } from "../versionText.js";
 
-const versionText = 'created by skz1024 | ver 0.57 | 2026/09/23'
 let digitalDisplay = gameFunction.digitalDisplay
 let loadComplete = false
 
