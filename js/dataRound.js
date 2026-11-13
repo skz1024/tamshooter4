@@ -7,7 +7,7 @@ import { stringText } from "./text.js"
 import { ImageDataObject, imageDataInfo, imageSrc } from "./imageSrc.js"
 import { fieldState, fieldSystem } from "./field.js"
 import { soundSrc } from "./soundSrc.js"
-import { game, gameFunction, gameVar } from "./game.js"
+import { game, gameFunction, gameVar, LoadingSystem } from "./game.js"
 import { StatRound, dataExportStatRound } from "./dataStat.js"
 import { EnemyData, dataExportEnemy } from "./dataEnemy.js"
 import { WeaponData } from "./dataWeapon.js"
@@ -1597,39 +1597,7 @@ class BaseLoad {
    * 또는 불러오기를 했을 때에도 실행되어야 합니다.
    */
   loadStart () {
-    for (let i = 0; i < this.imageList.length; i++) {
-      graphicSystem.createImage(this.imageList[i])
-    }
-    for (let i = 0; i < this.soundList.length; i++) {
-      soundSystem.createAudio(this.soundList[i])
-    }
-  }
-
-  /** 
-   * 라운드와 관련된 이미지, 사운드 파일이 전부 로딩되었는지를 확인
-   * 단, 유저가 제스쳐 행위를 하지 않는다면, 사운드가 로딩되지 않으므로 사운드 로드 여부는 판단하지 않습니다. [표시만 될 뿐...]
-   */
-  check () {
-    let imageLoadCount = graphicSystem.getImageCompleteCount(this.imageList)
-    let soundLoadCount = soundSystem.getAudioLoadCompleteCount(this.soundList)
-
-    // 이 코드는 일부 임시조치가 되어있습니다.
-    // 확정 코드가 아니지만, 기존 코드 상태를 그대로 유지하겠습니다.
-    const i = imageLoadCount === this.imageList.length ? true : false
-    // const s = soundLoadCount === this.soundList.length ? true : false
-    return i
-  }
-
-  /**
-   * 현재 로드된 상태를 출력하는 문자열 배열을 얻습니다.
-   * @returns {string[]}
-   */
-  getStatus () {
-    return [
-      'image load: ' + graphicSystem.getImageCompleteCount(this.imageList) + '/' + this.imageList.length,
-      'sound load: ' + soundSystem.getAudioLoadCompleteCount(this.soundList) + '/' + this.soundList.length,
-      'Sounds are loaded when using user gestures.'
-    ]
+    LoadingSystem.loadStart(this.imageList, this.soundList)
   }
 }
 

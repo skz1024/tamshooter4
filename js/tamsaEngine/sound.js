@@ -69,22 +69,16 @@ export class SoundSystem {
       if (this.audioContext.state !== 'running') {
         this.audioContext.resume()
       }
-
-      this.audioElementCreate()
     })
     addEventListener('touchstart', () => {
       if (this.audioContext.state !== 'running') {
         this.audioContext.resume()
       }
-
-      this.audioElementCreate()
     })
     addEventListener('keydown', () => {
       if (this.audioContext.state !== 'running') {
         this.audioContext.resume()
       }
-
-      this.audioElementCreate()
     })
 
     /** 음악을 페이드 아웃할 때 사용하는 timeout에 대한 id */
@@ -245,12 +239,32 @@ export class SoundSystem {
    * @param {string[]} src 오디오의 경로 (배열로 처리)
    */
   getAudioLoadCompleteCount (src) {
-    if (src == null) return
+    if (src == null) return 0
 
     let count = 0
     for (let i = 0; i < src.length; i++) {
       let audio = this.getCacheAudio(src[i])
-      if (audio != null && audio.networkState === audio.NETWORK_IDLE) {
+      if (audio != null && audio.readyState >= audio.HAVE_CURRENT_DATA && audio.error == null) {
+        count++
+      }
+    }
+
+    return count
+  }
+
+  /**
+   * 오디오가 로드에 실패한 개수를 표시합니다.
+   * @param {string[]} src 오디오의 경로 (배열로 처리)
+   */
+  getAudioLoadErrorCount (src) {
+    if (src == null) return 0
+
+    let count = 0
+
+    for (let i = 0; i < src.length; i++) {
+      let audio = this.cacheAudio.get(src[i])
+
+      if (audio != null && audio.error != null) {
         count++
       }
     }
@@ -270,7 +284,12 @@ export class SoundSystem {
       let audioSrc = this.createAudioSrcWaitList[i]
       if (this.cacheAudio.has(audioSrc)) continue
 
-      let newAudio = new Audio(audioSrc)
+      // 새 오디오를 생성하고 로드하도록 요청합니다.
+      let newAudio = new Audio()
+      newAudio.preload = 'auto'
+      newAudio.src = audioSrc
+      newAudio.load()
+
       this.cacheAudio.set(audioSrc, newAudio)
       let newNode = this.audioContext.createMediaElementSource(newAudio)
       newAudio.addEventListener('pause', () => {
@@ -283,6 +302,8 @@ export class SoundSystem {
     // 배열의 모든 내용을 삭제
     this.createAudioSrcWaitList.length = 0
   }
+
+  
 
   /**
    * 해당 사운드를 재생합니다. 이것은 오디오 파일을 직접 재생하는것을 목표로 만들어졌습니다.

@@ -1184,8 +1184,6 @@ export class fieldSystem {
   /** 라운드를 클리어 한 경우 */ static STATE_ROUND_CLEAR = 2
   /** 게임 오버가 된 경우 */ static STATE_GAME_OVER = 3
   /** 사용자가 라운드 진행을 중단하고 나간 경우 */ static STATE_EXIT = 4
-  /** 로딩 중인 경우 */ static STATE_LOADING = 5
-  /** 불러오기를 한 직후의 로딩 상태: 이것은 PAUSE를 유도하기 위해 만들어졌습니다. */ static STATE_LOADING_PAUSE = 6
 
   /** pause 상태일 때, 커서 번호 */ static cursor = 0
   /** 라운드 결과에 따른 지연시간이 진행된 정도 */ static exitDelayCount = 0
@@ -1267,16 +1265,15 @@ export class fieldSystem {
       return
     }
 
-    // 라운드가 시작되는 순간, 게임 상태가 필드로 변경되고, 게임이 시작됩니다.
-    // 이 과정에서 필드 데이터에 대해 초기화가 진행됩니다.
+    // 라운드 시작 시, 게임 상태는 필드로 전환합니다. 이 과정에서 로딩이 진행합니다.
+    // 로딩은 게임 시스템에서 처리합니다.
     this.roundImageSoundLoad() // 라운드 데이터 로드
-
     
     this.roundId = roundId
     this.message = this.messageList.STATE_FIELD
     fieldState.allObjectReset()
     fieldState.bindPlayerHandlers() // 플레이어의 무기와 스킬 함수를 이 시점에서 등록
-    this.stateId = this.STATE_LOADING // 로딩 먼저 시작하고, 이것이 완료되면 로딩 과정을 생략
+    this.stateId = this.STATE_NORMAL
     this.cursor = 0
     this.enimationFrame = 0
     this.exitDelayCount = 0
@@ -1285,26 +1282,12 @@ export class fieldSystem {
     this.fieldGold = 0
     this.fieldItemCountList = []
     this.fieldItemIdList = []
-
-    // 참고: 배경음악 재생 및 처리는 라운드 내부에서 처리합니다. 필드에서 처리하지 않습니다.
-    if (this.getRoundImageSoundLoadComplete()) {
-      this.stateId = this.STATE_NORMAL // 로드 완료시 자동으로 일반상태로 변경
-      // 아닌경우에는, 다시 로딩체크를 합니다. (process에서 추가로 진행)
-    }
   }
 
   /** 라운드에서 사용할 이미지와 사운드 파일을 로드합니다. */
   static roundImageSoundLoad () {
     if (this.round == null) return
     this.round.load.loadStart()
-  }
-
-  static getRoundImageSoundLoadComplete () {
-    if (this.round != null && this.round.load.check()) {
-      return true
-    } else {
-      return false
-    }
   }
 
   /**
@@ -1392,16 +1375,6 @@ export class fieldSystem {
       }
     } else if (this.round != null) {
       this.round.sound.musicPause()
-    }
-  }
-
-  static processLoad () {
-    if (this.getRoundImageSoundLoadComplete()) {
-      if (this.stateId === this.STATE_LOADING) {
-        this.stateId = this.STATE_NORMAL
-      } else {
-        this.stateId = this.STATE_PAUSE
-      }
     }
   }
 
@@ -1561,7 +1534,6 @@ export class fieldSystem {
   }
 
   static process () {
-    // game.sound.musicProcess()
     this.processRoundTimePaused()
 
     switch (this.stateId) {
@@ -1581,10 +1553,6 @@ export class fieldSystem {
         game.sound.musicStop()
         this.processExit()
         break
-      case this.STATE_LOADING:
-      case this.STATE_LOADING_PAUSE:
-        this.processLoad()
-        break
       default:
         this.processNormal()
         this.processSendUserStat()
@@ -1593,11 +1561,6 @@ export class fieldSystem {
   }
 
   static display () {
-    if (this.stateId === this.STATE_LOADING || this.stateId === this.STATE_LOADING_PAUSE) {
-      this.displayLoading()
-      return
-    }
-
     // 라운드, 필드스테이트, 필드데이터는 항상 출력됩니다.
     if (this.round) this.round.display()
     fieldState.display()
@@ -1611,20 +1574,6 @@ export class fieldSystem {
       case this.STATE_EXIT:
         this.displayResult()
         break
-      case this.STATE_LOADING:
-        break
-    }
-  }
-
-  /** 로딩 중인 하면을 출력합니다. */
-  static displayLoading () {
-    game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, 100, 'grey')
-    digitalDisplay('tamshooter4 loading system', 0, 0)
-    if (this.round != null) {
-      let loadStatus = this.round.load.getStatus()
-      digitalDisplay(loadStatus[0], 0, 20)
-      digitalDisplay(loadStatus[1], 0, 40)
-      digitalDisplay(loadStatus[2], 0, 60)
     }
   }
 
@@ -1692,11 +1641,6 @@ export class fieldSystem {
 
   static displayResultData (positionX = 200, positionY = 200) {
     gameFunction.imageObjectDisplay(imageSrc.system.fieldSystem, imageDataInfo.fieldSystem.fieldResultData, positionX, positionY)
-
-    let clearBonus = 0
-    if (this.stateId === this.STATE_ROUND_CLEAR && this.round != null) {
-      clearBonus = this.round.stat.clearBonusScore
-    }
 
     let resultText = this.getResultText()
     const TEXT_X = positionX + 10
@@ -2098,7 +2042,7 @@ export class fieldSystem {
     gameVar.statLineText2.setStatLineText(this.getFieldDataString(), this.round?.time._currentTime, this.round?.stat.finishTime, '#D5F5E3' ,'#33ff8c')
 
     // 게임을 불러오기 했다면, 일시정지 상태가 됩니다.
-    this.stateId = this.STATE_LOADING_PAUSE
+    this.stateId = this.STATE_PAUSE
 
     // 라운드의 일부 요소를 처리하기 위해서 1프레임 강제 진행
     this.round.process() 

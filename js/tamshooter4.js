@@ -5,61 +5,29 @@ import { imageSrc, imageDataInfo, ImageDataObject } from "./imageSrc.js";
 import { dataExportStatItem, dataExportStatPlayerSkill, dataExportStatPlayerWeapon, dataExportStatRound, StatItem, StatPlayerSkill, StatPlayerWeapon, StatRound, StatWeapon } from "./dataStat.js";
 import { soundSrc } from "./soundSrc.js";
 import { ID } from "./dataId.js";
-import { gameVar, UserSystem } from "./game.js";
+import { gameVar, UserSystem, game, gameFunction, LoadingSystem } from "./game.js";
 import { fieldSystem as FieldSystem } from "./field.js";
-import { game, gameFunction } from "./game.js";
 import { stringText, systemText } from "./text.js";
 import { dataExportPlayerSkill, dataExportPlayerWeapon } from "./dataPlayer.js";
 import { versionText } from "../versionText.js";
 
 let digitalDisplay = gameFunction.digitalDisplay
-let loadComplete = false
 
-/** 시스템에서 가장 먼저 로드될 이미지 목록 @type {string[]} */ let systemImageList = []
-/** 시스템에서 가장 먼저 로드될 사운드 목록 @type {string[]} */ let systemSoundList = []
-
-/** 첫번째로 불러올 함수 사용 */
-let firstLoadFunction = () => {
-  
-  // 시스템이 가진 변수명들을 모두 가져와 이미지 리스트 경로에 추가합니다.
-  systemImageList.push(...Object.values(imageSrc.system))
-  systemImageList.push(imageSrc.weapon.weapon) // 무기 이미지
-  systemImageList.push(imageSrc.system.roundIcon) // 라운드 아이콘 이미지
-  
-  // 이미지 생성 시작
-  for (let i = 0; i < systemImageList.length; i++) {
-    game.graphic.createImage(systemImageList[i])
-  }
-  
-  // 사운드 생성 시작
-  systemSoundList.push(...Object.values(soundSrc.system))
-  systemSoundList.push(...Object.values(soundSrc.skill))
-
-  for (let i = 0; i < systemSoundList.length; i++) {
-    game.sound.createAudio(systemSoundList[i])
-  }
+// body 태그 색 변경 및 자동 크기 조절
+game.graphic.setBodyColor('#181818')
+if (game.currentDevice === game.device.MOBILE) {
+  game.graphic.setAutoResize(true)
+} else {
+  game.graphic.setAutoResize(true)
 }
-firstLoadFunction() // 해당 함수 바로 실행
 
+// 게임 로직, 출력 함수 처리
 game.process = () => {
   GameSystem.process()
 }
 game.graphicFps = 60
 game.display = () => {
-  if (loadComplete) {
-    GameSystem.display()
-  } else {
-    let imageLoadCount = game.graphic.getImageCompleteCount(systemImageList)
-    let soundLoadCount = game.sound.getAudioLoadCompleteCount(systemSoundList)
-    game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, 80, 'grey')
-    digitalDisplay('tamshooter 4 loading system', 0, 0)
-    digitalDisplay('image load: ' + imageLoadCount + '/' + systemImageList.length, 0, 20)
-    digitalDisplay('sound load: ' + soundLoadCount + '/' + systemSoundList.length, 0, 40)
-    if (imageLoadCount === systemImageList.length) {
-      // 사운드는 유저 제스처를 사용하기 전까지 로드 할 수 없으므로, 이미지 로드 여부만 파악합니다.
-      loadComplete = true
-    }
-  }
+  GameSystem.display()
 }
 
 class BoxObject {
@@ -4188,6 +4156,7 @@ export class GameSystem {
   /** 스텟(게임, 필드 스탯) 표시 시스템 */ static statSystem = new StatSystem()
   /** error 시스템 */ static errorSystem = new ErrorSystem()
   /** ui 시스템 */ static uiSystem = new UISystem()
+  /** 로딩 시스템 */ static loadingSystem = LoadingSystem
 
   static {
     // debug 용도
@@ -4224,9 +4193,7 @@ export class GameSystem {
     // 그래서 확실히 필드가 끝났다는 보증이 있는 상황만 피해서 저장합니다.
     const isFieldSave = this.stateId === this.STATE_FIELD 
     && (FieldSystem.stateId === FieldSystem.STATE_NORMAL 
-      || FieldSystem.stateId === FieldSystem.STATE_PAUSE
-      || FieldSystem.stateId === FieldSystem.STATE_LOADING
-      || FieldSystem.stateId === FieldSystem.STATE_LOADING_PAUSE)
+      || FieldSystem.stateId === FieldSystem.STATE_PAUSE)
     const isMainSave = SaveSystem.processSaveConditionCheck()
     const isFieldAutoSave = SaveSystem.processfieldAutoSaveConditionCheck()
     const willSaveField = isFieldSave && (isMainSave || isFieldAutoSave)
@@ -4564,6 +4531,7 @@ export class GameSystem {
         FieldSystem.fieldSave.array.set(numberArray)
         FieldSystem.fieldSystemLoadData() // 필드 시스템에서 데이터를 로드합니다.
         this.stateId = this.STATE_FIELD // 필드를 강제로 진행하도록 상태 변경
+        FieldSystem.process() // 필드시스템의 프로세스를 강제로 진행시킵니다. (메인 화면을 건너뛰기 위해)
       }
     } catch (e) {
       alert(systemText.gameError.FILED_LOAD_ERROR)
@@ -4690,8 +4658,7 @@ export class GameSystem {
    * 불러오기 기능: 게임을 실행할 때 한번만 실행. 만약, 또 불러오기를 하려면 게임을 재시작해주세요. 
    * 
    * 이 버전은 V043을 기준으로 만들어져있으므로, 하위 호환으로만 제공됩니다.
-   * 
-   * @deprecated
+   *
    */
   static processLoadV043 () {
     // 불러오기 작업 진행, 아무것도 없으면 로드 작업 취소
@@ -4744,8 +4711,16 @@ export class GameSystem {
    * [process 함수 내에서 출력과 관련됨 모든 함수 사용금지]
    */
   static process () {
+    // 로드는 가장 먼저 처리됩니다. 이유는 필드 로딩 중, 메인 화면 노출을 막기 위해서입니다.
+    this.processLoad()
+
     if (this.stateId === this.STATE_ERROR) {
       this.errorSystem.process()
+      return
+    }
+
+    if (!this.loadingSystem.isComplete) {
+      this.loadingSystem.process()
       return
     }
     
@@ -4765,7 +4740,6 @@ export class GameSystem {
     }
 
     this.processStatLine()
-    this.processLoad()
     this.processSave()
     this.processDebug()
   }
@@ -4851,8 +4825,8 @@ export class GameSystem {
   }
 
   /**
-   * 게임에 관한 모든 출력은 여기서 진행합니다.
-   * [display 함수 내에세 게임에 관한 모든 처리 금지, 출력 함수만 사용하세요.]
+   * 게임에 관한 모든 출력은 여기서 진행합니다.  
+   * display 함수 내에서 게임에 관한 모든 처리 금지, 출력 함수만 사용하세요.
    */
   static display () {
     game.graphic.clearCanvas() // 화면 지우기
@@ -4862,9 +4836,17 @@ export class GameSystem {
       return
     }
 
+    if (!this.loadingSystem.isComplete) {
+      if (this.loadingSystem.frameCount >= 12) {
+        this.loadingSystem.display()
+      }
+      console.log('loading')
+      return
+    }
+
     // 화면 출력
     switch (this.stateId) {
-      case this.STATE_MAIN: this.mainSystem.display(); break
+      case this.STATE_MAIN: this.mainSystem.display(); console.log('main'); break
     }
 
     if (this.stateId === this.STATE_FIELD) {

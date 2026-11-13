@@ -10,15 +10,101 @@ import { systemText } from "./text.js"
 // 이 파일은 함수 및 변수를 export할 목적으로 만들어졌으며
 // 순환 참조를 구조적으로 불가능하게 하기 위해 만들어졌습니다.
 
+// game 변수의 process, display는 tamshooter4.js에 만들어져 있습니다.
 /** tamshooter4 게임 변수입니다. */
 export let game = new TamsaEngine('tamshooter4', 800, 600, 60)
 
-// body 태그 색 변경 및 자동 크기 조절
-game.graphic.setBodyColor('#181818')
-if (game.currentDevice === game.device.MOBILE) {
-  game.graphic.setAutoResize(true)
-} else {
-  game.graphic.setAutoResize(true)
+export class LoadingSystem {
+  /** 로딩 완료 여부 */ static #isComplete = false
+  /** 로딩 완료 여부 */ static get isComplete () { return this.#isComplete }
+  /** 로딩을 진행한 총 프레임 수 */ static #frameCount = 0
+  /** 로딩을 진행한 총 프레임 수 */ static get frameCount () { return this.#frameCount }
+
+  /** @type {string[]} */ static #imageList = []
+  /** @type {string[]} */ static #soundList = []
+
+  static systemImageList = [
+    ...Object.values(imageSrc.system),
+    ...Object.values(imageSrc.weapon)
+  ]
+  static systemSoundList = Object.values(soundSrc.system)
+
+  static {
+    // 초기화 함수 실행 (게임 시작 시 즉시 실행합니다.)
+    LoadingSystem.loadStart(this.systemImageList, this.systemSoundList)
+  }
+
+  static process () {
+    if (this.#isComplete) return
+
+    this.#frameCount++
+    const image = game.graphic.getImageCompleteCount(this.#imageList)
+    const sound = game.sound.getAudioLoadCompleteCount(this.#soundList)
+    const imageFail = game.graphic.getImageLoadErrorCount(this.#imageList)
+    const soundFail = game.sound.getAudioLoadErrorCount(this.#soundList)
+
+    if (image + imageFail === this.#imageList.length && sound + soundFail === this.#soundList.length) {
+      this.#isComplete = true
+    }
+  }
+
+  /**
+   * 해당 파일에 대한 로드 시작을 요청합니다.  
+   * 로드가 완료되면 isComplete가 true로 변경됩니다.
+   * 
+   * 주의: 아무 때나 이 함수를 실행하지 마세요. 로딩 과정이 표시되고 게임이 일시적으로 멈출 수 있습니다.  
+   * 이 함수를 여러 번 실행하는 경우, 가장 최근에 함수를 실행한 것을 기준으로만 로딩을 진행합니다.
+   * @param {string[]} imageList 
+   * @param {string[]} soundList 
+   */
+  static loadStart (imageList, soundList) {
+    this.#imageList = imageList
+    this.#soundList = soundList
+    this.#isComplete = false
+    this.#frameCount = 0 // 진행된 총 프레임 카운트
+
+    for (let i = 0; i < imageList.length; i++) {
+      game.graphic.createImage(imageList[i])
+    }
+
+    for (let i = 0; i < soundList.length; i++) {
+      game.sound.createAudio(soundList[i])
+    }
+
+    // 사운드를 엘리먼트에 추가하도록 요청
+    game.sound.audioElementCreate()
+
+    // 참고: 로드 시작하자마자 process를 사용하는 이유는, 
+    // 전체 로딩이 이미 완료된 경우 로딩 화면을 건너 뛰어도 되기 때문에
+    this.process()
+  }
+
+  static display () {
+    const image = game.graphic.getImageCompleteCount(this.#imageList)
+    const sound = game.sound.getAudioLoadCompleteCount(this.#soundList)
+    const imageFail = game.graphic.getImageLoadErrorCount(this.#imageList)
+    const soundFail = game.sound.getAudioLoadErrorCount(this.#soundList)
+
+    game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, 200, '#707070')
+    const textList = [
+      'tamshooter 4 loading system',
+      'Loading Elapsed Frames: ' + this.frameCount,
+      'Fail Count: ' + (soundFail + imageFail),
+      '',
+      'image loading: ' + image + '/' + this.#imageList.length,
+      '',
+      'sound loading: ' + sound + '/' + this.#soundList.length,
+      '',
+      'Sound loading may take some time.'
+    ]
+
+    for (let i = 0; i < textList.length; i++) {
+      digitalDisplay(textList[i], 0, i * 20)
+    }
+
+    game.graphic.meterRect(0, 100, game.graphic.CANVAS_WIDTH, 10, '#909090', image, this.#imageList.length, true, '#505050')
+    game.graphic.meterRect(0, 140, game.graphic.CANVAS_WIDTH, 10, '#909090', sound, this.#soundList.length, true, '#505050')
+  }
 }
 
 // 디버그용 전역변수로 만들기...

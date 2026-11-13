@@ -33,13 +33,15 @@ export class imageSrc {
     fieldSystem: './image/system/fieldSystem.png',
     mainSystem: './image/system/mainSystem.png',
     menuList: './image/system/menuList.png',
-    skillInfo: './image/system/skillInfo.png',
+    /** 스킬 선택 UI는 변경되었으므로 이 이미지는 사용되지 않습니다. @deprecated */ skillInfo: './image/system/skillInfo.png',
     weaponIcon: './image/system/weaponIcon.png',
     roundIcon: './image/system/roundIcon.png',
     tamshooter4Title:'./image/system/title.png',
     itemIcon: './image/system/itemIcon.png',
+    bitmapFont: './image/system/bitmapFont.png'
   }
 
+  /** 라운드 UI 변경으로 이 이미지는 더이상 사용되지 않습니다. @deprecated */
   static worldmap = {
     round1map: './image/worldmap/round1map.jpg',
     round1mapPath: './image/worldmap/round1mapPath.png',

@@ -168,12 +168,31 @@ export class GraphicSystem {
     let totalCount = 0
     for (let i = 0; i < src.length; i++) {
       let image = this.getCacheImage(src[i])
-      if (image != null && image.complete) {
+      if (image != null && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0) {
         totalCount++
       }
     }
 
     return totalCount
+  }
+
+  /** 
+   * 이미지 로드에 실패한 총 개수를 리턴합니다. 
+   * 
+   * @param {string[]} [src=[]] 이미지의 경로
+   */
+  getImageLoadErrorCount (src = []) {
+    if (src == null) return 0
+    let count = 0
+
+    for (let i = 0; i < src.length; i++) {
+      let image = this.getCacheImage(src[i])
+      if (image != null && image.complete && image.naturalWidth === 0) {
+        count++
+      }
+    }
+
+    return count
   }
 
   /** 현재까지 cacheImage에 등록된 모든 이미지의 entries를 가져옵니다. */
