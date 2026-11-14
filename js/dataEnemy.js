@@ -3,7 +3,7 @@
 import { DelayData, FieldData, EnimationData, collision, collisionClass, EnemyBulletData, CustomEnemyBullet } from "./dataField.js"
 import { EffectData, CustomEffect, CustomEditEffect } from "./dataEffect.js"
 import { ID } from "./dataId.js"
-import { fieldState, fieldSystem } from "./field.js"
+import { FieldState, FieldSystem } from "./field.js"
 import { ImageDataObject, imageDataInfo, imageSrc } from "./imageSrc.js"
 import { soundSrc } from "./soundSrc.js"
 import { game, gameFunction } from "./game.js"
@@ -433,7 +433,7 @@ export class EnemyData extends FieldData {
     if (this.attack === 0) return // 공격력이 0인경우 충돌검사를 할 필요가 없음
 
     if (this.collisionDelay.check(false)) {
-      const player = fieldState.getPlayerObject()
+      const player = FieldState.getPlayerObject()
       const enemyArea = this.getCollisionArea() // 적은 따로 충돌 영역을 얻습니다.
 
       for (let i = 0; i < enemyArea.length; i++) {
@@ -475,7 +475,7 @@ export class EnemyData extends FieldData {
   }
 
   processDieDefault () {
-    fieldSystem.fieldRequests.addScore(this.score) // 점수 추가
+    FieldSystem.fieldRequests.addScore(this.score) // 점수 추가
 
     // 사운드 플레이
     if (this.dieSound != null) {
@@ -484,7 +484,7 @@ export class EnemyData extends FieldData {
 
     // 이펙트 출력
     if (this.dieEffect != null) {
-      fieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
+      FieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
     }
   }
 
@@ -531,7 +531,7 @@ export class EnemyData extends FieldData {
    * 만약 그렇다면, 영역에 벗어나있는 시간을 추가하고, 이 시간이 10초(600프레임)이 되면 삭제합니다.
    */
   processOutAreaCheck () {
-    const player = fieldState.getPlayerObject()
+    const player = FieldState.getPlayerObject()
     if (this.x <= player.x - 1600 ||
      this.x >= player.x + 1600 ||
      this.y <= player.y - 1200 ||
@@ -646,7 +646,7 @@ class SpaceEnemyCar extends SpaceEnemyData {
   }
 
   processMove () {
-    const playerObject = fieldState.getPlayerObject()
+    const playerObject = FieldState.getPlayerObject()
     const playerX = playerObject.x
     const playerY = playerObject.y
     const playerHeight = playerObject.height
@@ -861,8 +861,8 @@ class SpaceEnemySusong extends SpaceEnemyData {
     if (this.dieCheck()) {
       this.processDieDefault()
       if (this.dieEffect) {
-        fieldState.createEffectObject(this.dieEffect, this.x + 40, this.y)
-        fieldState.createEffectObject(this.dieEffect, this.x + 80, this.y)
+        FieldState.createEffectObject(this.dieEffect, this.x + 40, this.y)
+        FieldState.createEffectObject(this.dieEffect, this.x + 80, this.y)
       }
     }
   }
@@ -891,8 +891,8 @@ class SpaceEnemyGamjigi extends SpaceEnemyData {
 
     // 추적 상태에서는 플레이어를 따라다님
     if (this.isChase) {
-      const playerX = fieldState.getPlayerObject().centerX
-      const playerY = fieldState.getPlayerObject().centerY
+      const playerX = FieldState.getPlayerObject().centerX
+      const playerY = FieldState.getPlayerObject().centerY
       const distanceX = playerX - this.x
       const distanceY = playerY - this.y
       this.degree = getDegreeByVector(distanceX, distanceY)
@@ -921,7 +921,7 @@ class SpaceEnemyGamjigi extends SpaceEnemyData {
 
   processPlayerCollision () {
     if (this.collisionDelay.check(false)) {
-      const player = fieldState.getPlayerObject()
+      const player = FieldState.getPlayerObject()
       if (collisionClass.collisionOBB(player, this)) {
         this.collisionDelay.count = 0
         player.addDamage(this.attack)
@@ -933,7 +933,7 @@ class SpaceEnemyGamjigi extends SpaceEnemyData {
     if (this.dieCheck()) {
       // 죽음 이펙트를 생성 후, 이 값을 가져와, 각도 값을 변경합니다.
       if (this.dieEffect != null) {
-        let changeEffect = fieldState.createEffectObject(this.dieEffect, this.x, this.y)
+        let changeEffect = FieldState.createEffectObject(this.dieEffect, this.x, this.y)
         if (changeEffect && changeEffect.enimation) changeEffect.enimation.degree = this.degree
         this.dieEffect = null
       }
@@ -1214,7 +1214,7 @@ class SpaceEnemyBoss extends SpaceEnemyData {
       soundSystem.play(this.dieSound)
 
       if (this.dieEffect == null) return
-      fieldState.createEffectObject(this.dieEffect, this.x + Math.random() * 40 - 80, this.y + Math.random() * 40 - 80)
+      FieldState.createEffectObject(this.dieEffect, this.x + Math.random() * 40 - 80, this.y + Math.random() * 40 - 80)
     }
   }
 
@@ -1781,7 +1781,7 @@ class MeteoriteBombEnemyBullet extends EnemyBulletData {
 
     // 생성된 즉시 이펙트를 생성하고 소멸
     // 충돌 검사는 진행하지만 1프레임만에 사라집니다.
-    fieldState.createEffectObject(this.customEffect, this.x + (this.width / 2), this.y + (this.height / 2))
+    FieldState.createEffectObject(this.customEffect, this.x + (this.width / 2), this.y + (this.height / 2))
     this.isDeleted = true
   }
 }
@@ -1807,7 +1807,7 @@ class MeteoriteEnemyBomb extends MeteoriteEnemyData {
       let setX = this.x + (this.width / 2) - (bombSize / 2)
       let setY = this.y + (this.height / 2) - (bombSize / 2)
 
-      fieldState.createEnemyBulletObject(new MeteoriteBombEnemyBullet(), setX, setY)
+      FieldState.createEnemyBulletObject(new MeteoriteBombEnemyBullet(), setX, setY)
     }
   }
 }
@@ -1853,22 +1853,22 @@ class MeteoriteEnemyStone extends MeteoriteEnemyData {
     if (!this.isDied) return
 
     // 조각 4개를 추가한다.
-    let a = fieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x, this.y)
+    let a = FieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x, this.y)
     if (a instanceof MeteoriteEnemyStonePiece) {
       a.stoneChange(this.stoneType, 0)
     }
 
-    let b = fieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x + (this.width / 2), this.y)
+    let b = FieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x + (this.width / 2), this.y)
     if (b instanceof MeteoriteEnemyStonePiece) {
       b.stoneChange(this.stoneType, 1)
     }
 
-    let c = fieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x + (this.width / 2), this.y + (this.height / 2))
+    let c = FieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x + (this.width / 2), this.y + (this.height / 2))
     if (c instanceof MeteoriteEnemyStonePiece) {
       c.stoneChange(this.stoneType, 2)
     }
 
-    let d = fieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x, this.y + (this.height / 2))
+    let d = FieldState.createEnemyObject(ID.enemy.meteoriteEnemy.stonePiece, this.x, this.y + (this.height / 2))
     if (d instanceof MeteoriteEnemyStonePiece) {
       d.stoneChange(this.stoneType, 3)
     }
@@ -1996,8 +1996,8 @@ class JemulEnemyRotateRocket extends JemulEnemyData {
   }
 
   changeMoveSpeed () {
-    const playerX = fieldState.getPlayerObject().centerX
-    const playerY = fieldState.getPlayerObject().centerY
+    const playerX = FieldState.getPlayerObject().centerX
+    const playerY = FieldState.getPlayerObject().centerY
     const distanceX = playerX - this.x
     const distanceY = playerY - this.y
 
@@ -2018,7 +2018,7 @@ class JemulEnemyRotateRocket extends JemulEnemyData {
 
   processPlayerCollision () {
     if (this.collisionDelay.check(false)) {
-      const player = fieldState.getPlayerObject()
+      const player = FieldState.getPlayerObject()
       if (collisionClass.collisionOBB(player, this)) {
         this.collisionDelay.count = 0
         player.addDamage(this.attack)
@@ -2059,7 +2059,7 @@ class JemulEnemyEnergyBolt extends JemulEnemyData {
         width: this.bulletSize,
         height: this.bulletSize
       }
-      const player = fieldState.getPlayerObject()
+      const player = FieldState.getPlayerObject()
       const playerPosition = {
         x: player.x,
         y: player.y,
@@ -2073,7 +2073,7 @@ class JemulEnemyEnergyBolt extends JemulEnemyData {
       }
       
       // 사운드 및 이펙트 추가
-      fieldState.createEffectObject(this.bulletEffect.getObject(), hitArea.x, hitArea.y)
+      FieldState.createEffectObject(this.bulletEffect.getObject(), hitArea.x, hitArea.y)
       soundSystem.play(soundSrc.enemyAttack.jemulEnergyBoltAttack)
     }
   }
@@ -2103,7 +2103,7 @@ class JemulEnemyHellSpike extends JemulEnemyData {
       for (let i = 0; i < 4; i++) {
         let enemyBullet = new CustomEnemyBullet(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulEnemyHellSpike, 10, 3, 3, moveDirectionX[i], moveDirectionY[i])
         enemyBullet.setAutoRotate()
-        fieldState.createEnemyBulletObject(enemyBullet, centerX, centerY)
+        FieldState.createEnemyBulletObject(enemyBullet, centerX, centerY)
       }
     }
   }
@@ -2138,7 +2138,7 @@ class JemulEnemyHellDrill extends JemulEnemyData {
         width: 300,
         height: 300
       }
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
 
       if (collision(checkArea, player)) {
         this.moveDelay.count = 0
@@ -2264,7 +2264,7 @@ class JemulEnemyHellShip extends JemulEnemyData {
   processAttack () {
     if (this.attackDelay.check()) {
       let enemyBullet = new CustomEnemyBullet(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulEnemyShip, 15, 4, 0, FieldData.direction.LEFT)
-      fieldState.createEnemyBulletObject(enemyBullet, this.x, this.y)
+      FieldState.createEnemyBulletObject(enemyBullet, this.x, this.y)
     }
   }
 
@@ -2386,7 +2386,7 @@ class JemulEnemyHellAir extends JemulEnemyData {
       let insertY = [this.y + (this.height / 4 * 0), this.y + (this.height / 4 * 2), this.y + (this.height / 4 * 3), this.y + (this.height / 4 * 4)]
       for (let i = 0; i < 4; i++) {
         let enemyBullet = new CustomEnemyBullet(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulEnemyAir, 6, bulletSpeedX, speedYList[i])
-        fieldState.createEnemyBulletObject(enemyBullet, this.x, insertY[i])
+        FieldState.createEnemyBulletObject(enemyBullet, this.x, insertY[i])
       }
     }
   }
@@ -2547,7 +2547,7 @@ class JemulEnemyBoss extends JemulEnemyData {
     if (!this.attackDelay.check()) return
 
     // 플레이어가 있는 중심쪽에서 총알 발사
-    let playerObject = fieldState.getPlayerObject()
+    let playerObject = FieldState.getPlayerObject()
     let bulletSpeedX = 0
     let bulletSpeedY = 0
     const bulletMinSpeed = 6
@@ -2564,7 +2564,7 @@ class JemulEnemyBoss extends JemulEnemyData {
     }
 
     let enemyBullet = new CustomEnemyBullet(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulEnemyShip, 20, bulletSpeedX, bulletSpeedY, 0, 0)
-    fieldState.createEnemyBulletObject(enemyBullet, this.centerX, this.centerY)
+    FieldState.createEnemyBulletObject(enemyBullet, this.centerX, this.centerY)
   }
 
   /**
@@ -2613,10 +2613,10 @@ class JemulEnemyBoss extends JemulEnemyData {
     }
 
     // 플레이어 공격 판정 (딜레이마다 공격)
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     if (this.attackDelay.check()) {
       if (collision(this.laserObject1, player) || collision(this.laserObject2, player)) {
-        fieldState.playerObject.addDamage(4)
+        FieldState.playerObject.addDamage(4)
       }
     }
   }
@@ -2638,10 +2638,10 @@ class JemulEnemyBoss extends JemulEnemyData {
     }
 
     // 플레이어 공격 판정 (딜레이마다 공격)
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     if (this.attackDelay.check()) {
       if (collisionClass.collisionOBB(player, this.laserObjectR)) {
-        fieldState.playerObject.addDamage(4)
+        FieldState.playerObject.addDamage(4)
       }
     }
   }
@@ -2830,7 +2830,7 @@ class JemulEnemyBossEye extends JemulEnemyData {
 
   processLaserAttack () {
     if (this.laserDelay.divCheck(this.LASER_DELAY)) {
-      const player = fieldState.getPlayerObject()
+      const player = FieldState.getPlayerObject()
 
       for (let i = 0; i < this.laserObject.length; i++) {
         const laser = this.laserObject[i]
@@ -2954,8 +2954,8 @@ class JemulEnemyBossEye extends JemulEnemyData {
       }
 
       // 0번 레이저는 주인공이 있는곳에 발사
-      const playerX = fieldState.getPlayerObject().centerX
-      const playerY = fieldState.getPlayerObject().centerY
+      const playerX = FieldState.getPlayerObject().centerX
+      const playerY = FieldState.getPlayerObject().centerY
       const distanceX = playerX - graphicSystem.CANVAS_WIDTH_HALF
       const distanceY = playerY - graphicSystem.CANVAS_HEIGHT_HALF
       this.laserObject[0].degree = getDegreeByVector(distanceX, distanceY)
@@ -3207,7 +3207,7 @@ class JemulEnemyRedAir extends JemulEnemyData {
       }
 
       let enemyBullet = new CustomEnemyBullet(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulEnemyAir, 6, bulletSpeedX, 0)
-      fieldState.createEnemyBulletObject(enemyBullet, bulletX, this.y + (this.height / 4 * 1))
+      FieldState.createEnemyBulletObject(enemyBullet, bulletX, this.y + (this.height / 4 * 1))
     }
 
     // attackDelay.check를 안하기 때문에 카운터를 수동으로 증가시켜야 합니다.
@@ -3264,8 +3264,8 @@ class JemulEnemyRedShip extends JemulEnemyData {
     if (this.attackDelay.check()) {
       let enemyBullet1 = new CustomEnemyBullet(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulEnemyShip, 10, 9, 0, FieldData.direction.LEFT)
       let enemyBullet2 = new CustomEnemyBullet(imageSrc.enemy.jemulEnemy, imageDataInfo.jemulEnemy.jemulEnemyShip, 10, 9, 0, FieldData.direction.RIGHT)
-      fieldState.createEnemyBulletObject(enemyBullet1, this.x, this.y)
-      fieldState.createEnemyBulletObject(enemyBullet2, this.x, this.y)
+      FieldState.createEnemyBulletObject(enemyBullet1, this.x, this.y)
+      FieldState.createEnemyBulletObject(enemyBullet2, this.x, this.y)
     }
   }
 }
@@ -3473,7 +3473,7 @@ class DonggramiEnemyExclamationMark extends DonggramiEnemy {
     // 느낌표 동그라미의 특징
     // 플레이어 개체가 자기(동그라미) 기준 500x500 근처에 있는지 확인하고 만약 있다면, 느낌표 상태가 됨
     if (this.state === DonggramiEntity.STATES.NORMAL) {
-      let playerObject = fieldState.getPlayerObject()
+      let playerObject = FieldState.getPlayerObject()
       let playerArea = {
         x: playerObject.x,
         y: playerObject.y,
@@ -3553,8 +3553,8 @@ class DonggramiEnemyQuestionMark extends DonggramiEnemy {
       }
     } else if (this.state === DonggramiEntity.STATES.QUESTION_CHASE) {
       // 플레이어 추적
-      let playerX = fieldState.getPlayerObject().x
-      let playerY = fieldState.getPlayerObject().y
+      let playerX = FieldState.getPlayerObject().x
+      let playerY = FieldState.getPlayerObject().y
       let speedX = (playerX - this.x) / 80
       let speedY = (playerY - this.y) / 80
 
@@ -3579,7 +3579,7 @@ class DonggramiEnemyQuestionMark extends DonggramiEnemy {
     // 물음표 동그라미의 특징
     // 플레이어 개체가 자기 기준 400x400 근처에 있는지 확인하고 만약 있다면, 물음표 상태가 됨.
     if (this.state === DonggramiEntity.STATES.NORMAL && this.questionMarkDelay.check()) {
-      let playerObject = fieldState.getPlayerObject()
+      let playerObject = FieldState.getPlayerObject()
       let playerArea = {
         x: playerObject.x,
         y: playerObject.y,
@@ -3650,7 +3650,7 @@ class DonggramiEnemyEmojiMini extends DonggramiEnemy {
     // 이모지를 성공적으로 던졌으므로, talkState를 변경하고, 카운터를 리셋시킴
     // 그리고 새로운 이모지는 스프라이트로 생성함
     this.entity.talkState = DonggramiEntity.TALK_STATES.NONE
-    fieldState.createSpriteObject(newEmoji, this.x, this.y - newEmoji.EMOJIHEIGHT)
+    FieldState.createSpriteObject(newEmoji, this.x, this.y - newEmoji.EMOJIHEIGHT)
     soundSystem.play(soundSrc.donggrami.throw)
     this.emojiDelay.countReset()
   }
@@ -4148,7 +4148,7 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
     // 이동 직전 프레임: 59
     if (this.stateDelay.count === 59) {
       // 플레이어가 있는 방향쪽으로 우선 이동하도록 이동 방향을 결정
-      let playerP = fieldState.getPlayerObject()
+      let playerP = FieldState.getPlayerObject()
       this.setRandomMoveSpeedMinMax(14, 1, 20, 3)
 
       if (playerP.x > this.x) {
@@ -4164,11 +4164,11 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
       this.hammerObject.degree += this.hammerObject.degreeChange // 해머의 각도는 매 프레임마다 15씩 변화
       if (this.hammerObject.degree <= -90) { // -90도 (맨 왼쪽에 뿅망치 부분이 닿으면)
         this.hammerObject.degreeChange = Math.abs(this.hammerObject.degreeChange) // 변경해야 될 각도변화값을 양수로 변경
-        fieldState.createEffectObject(this.hammerStarEffect, this.hammerObject.x, this.hammerObject.y)
+        FieldState.createEffectObject(this.hammerStarEffect, this.hammerObject.x, this.hammerObject.y)
         soundSystem.play(this.hammerSound)
       } else if (this.hammerObject.degree >= 90) { // 90도 (맨 오른쪽에 뿅망치 부분이 닿으면)
         this.hammerObject.degreeChange = -Math.abs(this.hammerObject.degreeChange) // 변경해야 될 각도변화값을 음수로 변경
-        fieldState.createEffectObject(this.hammerStarEffect, this.hammerObject.x, this.hammerObject.y)
+        FieldState.createEffectObject(this.hammerStarEffect, this.hammerObject.x, this.hammerObject.y)
         soundSystem.play(this.hammerSound)
       }
       super.processMove()
@@ -4191,13 +4191,13 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
   processMoveBoost () {
     // 부스트 이펙트 출력
     if (this.stateDelay.count % 12 === 0) {
-      fieldState.createEffectObject(this.boostEffect, this.x, this.y)
+      FieldState.createEffectObject(this.boostEffect, this.x, this.y)
     }
     
     if (this.stateDelay.count >= 60) {
       // 플레이어 오브젝트를 기준으로, 도착 지점 결정 [60프레임단위로]
       if (this.stateDelay.count === 63) {
-        let playerP = fieldState.getPlayerObject()
+        let playerP = FieldState.getPlayerObject()
         this.boostPositionX = playerP.x
         this.boostPositionY = playerP.y
       }
@@ -4236,7 +4236,7 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
   processMoveEarthQuake () {
     // 지진 대기 이펙트
     if (this.stateDelay.count <= 60 && this.stateDelay.count % 10 === 0) {
-      fieldState.createEffectObject(this.earthquakeEnergyEffect, this.x, this.y)
+      FieldState.createEffectObject(this.earthquakeEnergyEffect, this.x, this.y)
       soundSystem.play(this.earthquakeSound)
     }
 
@@ -4262,8 +4262,8 @@ class DonggramiEnemyA1Fighter extends DonggramiEnemy {
     if (this.y + this.height > graphicSystem.CANVAS_HEIGHT) {
       soundSystem.play(this.earthquakeSoundDamage)
       for (let i = 0; i < 5; i++) {
-        fieldState.createEffectObject(this.hammerStarEffect, (160 * i), graphicSystem.CANVAS_HEIGHT - 160)
-        fieldState.createEffectObject(this.hammerStarEffect, (160 * i), graphicSystem.CANVAS_HEIGHT - 320)
+        FieldState.createEffectObject(this.hammerStarEffect, (160 * i), graphicSystem.CANVAS_HEIGHT - 160)
+        FieldState.createEffectObject(this.hammerStarEffect, (160 * i), graphicSystem.CANVAS_HEIGHT - 320)
       }
     }
   }
@@ -4379,7 +4379,7 @@ class DonggramiEnemyB1Bounce extends DonggramiEnemyBounce {
       this.autoMovePositionY = Math.random() < 0.5 ? this.y + outMove : this.y - outMove
       this.movePositionFrame = 60
       this.state = DonggramiEntity.STATES.R2_3_PLAYER_COLLISION_PROCESSING
-      this.currentEffect = fieldState.createEffectObject(DonggramiEntity.exclamationMarkEffectShort, this.x, this.y - 40)
+      this.currentEffect = FieldState.createEffectObject(DonggramiEntity.exclamationMarkEffectShort, this.x, this.y - 40)
       this.playerCollisionCount++
       this.setTalkIndex()
       this.playerCollisionDelay.countReset()
@@ -4462,9 +4462,9 @@ class DonggramiEnemyA2Bomb extends DonggramiEnemyA2Brick {
   }
 
   processAttack () {
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     if (collision(player, this)) {
-      fieldState.allEnemyDie() // 자기 자신 포함 모두 죽이기
+      FieldState.allEnemyDie() // 자기 자신 포함 모두 죽이기
     }
   }
 
@@ -4562,7 +4562,7 @@ class DonggramiEnemyB2Mini extends DonggramiEnemy {
       this.autoMovePositionY = Math.random() < 0.5 ? this.y + outMove : this.y - outMove
       this.movePositionFrame = 40
       this.state = DonggramiEntity.STATES.R2_3_PLAYER_COLLISION_PROCESSING
-      this.currentEffect = fieldState.createEffectObject(DonggramiEntity.exclamationMarkEffectShort, this.x, this.y - 40)
+      this.currentEffect = FieldState.createEffectObject(DonggramiEntity.exclamationMarkEffectShort, this.x, this.y - 40)
       this.playerCollisionCount++
       this.setTalkIndex()
       this.playerCollisionDelay.countReset()
@@ -4760,7 +4760,7 @@ class DonggramiEnemyA3Collector extends DonggramiEnemy {
 
   processCatch () {
     if (this.targetObject == null) {
-      let sprite = fieldState.getSpriteObject()
+      let sprite = FieldState.getSpriteObject()
       let random = Math.floor(Math.random() * sprite.length)
       this.targetObject = sprite[random]
     } else {
@@ -4894,7 +4894,7 @@ class DonggramiEnemyB3Mini extends DonggramiEnemy {
       this.autoMovePositionX = this.x + Math.floor(Math.random() * 400) - 200
       this.autoMovePositionY = this.y + Math.floor(Math.random() * 400) - 200
       this.autoMoveFrame = 30
-      this.currentEffect = fieldState.createEffectObject(DonggramiEntity.exclamationMarkEffectShort, this.x, this.y - 40)
+      this.currentEffect = FieldState.createEffectObject(DonggramiEntity.exclamationMarkEffectShort, this.x, this.y - 40)
     }
 
     if (this.currentEffect != null) {
@@ -5030,7 +5030,7 @@ class DonggramiEnemyParty extends DonggramiEnemy {
         // 일정 시간 단위마다 촛불 생성
         if (this.stateDelay.divCheck(30)) {
           let candleBullet = new CustomEnemyBullet(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.candleFire, 12, 0, -4)
-          fieldState.createEnemyBulletObject(candleBullet, this.objX + 32, this.objY)
+          FieldState.createEnemyBulletObject(candleBullet, this.objX + 32, this.objY)
         }
         break
     }
@@ -5049,7 +5049,7 @@ class DonggramiEnemyParty extends DonggramiEnemy {
       if (this.y + this.height >= graphicSystem.CANVAS_HEIGHT || this.isDeleted) {
         let customEffect = new CustomEffect(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.plateBreak, this.width, this.height, 2)
         soundSystem.play(soundSrc.donggrami.plate)
-        fieldState.createEffectObject(customEffect, this.x, this.y)
+        FieldState.createEffectObject(customEffect, this.x, this.y)
         this.isDeleted = true
       }
     }
@@ -5075,7 +5075,7 @@ class DonggramiEnemyParty extends DonggramiEnemy {
         this.isCollisionPossible = true
         let partyEffect = new CustomEffect(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.firecrackerEffect, 100, 100, 2)
         let partyObject = { x: this.x - 25, y: this.y - 25, width: 100, height: 100}
-        fieldState.createEffectObject(partyEffect, partyObject.x, partyObject.y)
+        FieldState.createEffectObject(partyEffect, partyObject.x, partyObject.y)
         soundSystem.play(soundSrc.donggrami.firecracker)
       } else if (this.elapsedFrame >= 75) {
         this.isDeleted = true
@@ -5096,12 +5096,12 @@ class DonggramiEnemyParty extends DonggramiEnemy {
         let plateBullet = new DonggramiEnemyParty.PlateBullet()
         plateBullet.moveSpeedX = Math.random() < 0.5 ? Math.random() * 4 + 2 : Math.random() * -4 - 2
         plateBullet.moveSpeedY = Math.random() * 4 + 2
-        fieldState.createEnemyBulletObject(plateBullet, this.objX, this.objY)
+        FieldState.createEnemyBulletObject(plateBullet, this.objX, this.objY)
         soundSystem.play(soundSrc.donggrami.throw)
       }
     } else if (this.subType === DonggramiEnemyParty.subTypeList.PARTY_FIRECRACKER) {
       if (this.stateDelay.divCheck(20)) {
-        fieldState.createEnemyBulletObject(new DonggramiEnemyParty.FirecrackerBullet(10, this.x + Math.random() * 200 - 100, this.y + Math.random() * 200 - 100), this.objX, this.objY)
+        FieldState.createEnemyBulletObject(new DonggramiEnemyParty.FirecrackerBullet(10, this.x + Math.random() * 200 - 100, this.y + Math.random() * 200 - 100), this.objX, this.objY)
       }
     }
   }
@@ -5138,13 +5138,13 @@ class DonggramiEnemyParty extends DonggramiEnemy {
         customBullet = new DonggramiEnemyParty.PlateBullet()
       }
 
-      fieldState.createEnemyBulletObject(customBullet, this.objX, this.objY)
+      FieldState.createEnemyBulletObject(customBullet, this.objX, this.objY)
       soundSystem.play(soundSrc.donggrami.exclamationMark)
-      fieldState.createEffectObject(DonggramiEntity.exclamationMarkEffectShort, this.x, this.y - 40)
+      FieldState.createEffectObject(DonggramiEntity.exclamationMarkEffectShort, this.x, this.y - 40)
     }
 
     if (this.stateDelay.count === 40 || this.stateDelay.count === 80) {
-      fieldState.createEffectObject(DonggramiEntity.exclamationMarkEffectShort, this.x, this.y - 40)
+      FieldState.createEffectObject(DonggramiEntity.exclamationMarkEffectShort, this.x, this.y - 40)
     }
   }
 
@@ -5283,7 +5283,7 @@ class DonggramiEnemyFruit extends DonggramiEnemyParty {
       customBullet.moveSpeedX = speedX
       customBullet.moveSpeedY = speedY
 
-      fieldState.createEnemyBulletObject(customBullet, this.x, this.y)
+      FieldState.createEnemyBulletObject(customBullet, this.x, this.y)
       soundSystem.play(soundSrc.donggrami.throw)
     }
 
@@ -5335,7 +5335,7 @@ class DonggramiEnemyJuice extends DonggramiEnemyParty {
       orangeBullet.display = () => {
         graphicSystem.fillRect(orangeBullet.x, orangeBullet.y, orangeBullet.width, orangeBullet.height, 'orange')
       }
-      fieldState.createEnemyBulletObject(orangeBullet, this.objX, this.objY)
+      FieldState.createEnemyBulletObject(orangeBullet, this.objX, this.objY)
       soundSystem.play(soundSrc.donggrami.juiceThrow)
     } else if (this.subType === DonggramiEnemyParty.subTypeList.JUICE_COLA && (count % 2 === 0 && count <= 60)) {
       let colaBullet = new CustomEnemyBullet('', undefined, 1)
@@ -5345,11 +5345,11 @@ class DonggramiEnemyJuice extends DonggramiEnemyParty {
         graphicSystem.fillEllipse(this.x + 1, this.y + 1, 8, 8, 0, '#6e3a20') // 카라멜 색
         graphicSystem.fillEllipse(this.x + 2, this.y + 2, 6, 6, 0, '#85461e')
       }
-      fieldState.createEnemyBulletObject(colaBullet, this.objX, this.objY)
+      FieldState.createEnemyBulletObject(colaBullet, this.objX, this.objY)
     } else if (this.subType === DonggramiEnemyParty.subTypeList.JUICE_WATER && count === 1) {
       soundSystem.play(soundSrc.donggrami.throw)
       let juiceBullet = new CustomEnemyBullet(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.juiceWater, 17, Math.random() * 10 - 5, Math.random() * 10 - 5)
-      fieldState.createEnemyBulletObject(juiceBullet, this.objX, this.objY)
+      FieldState.createEnemyBulletObject(juiceBullet, this.objX, this.objY)
     }
 
     if (this.stateDelay.check()) {
@@ -5402,7 +5402,7 @@ class DonggramiEnemyTree extends EnemyData {
   processMove () {
     if (this.leafCount >= 1 && this.moveDelay.check()) {
       this.leafCount--
-      fieldState.createEnemyObject(ID.enemy.donggramiEnemy.leaf, this.x + 50, this.y + 50)
+      FieldState.createEnemyObject(ID.enemy.donggramiEnemy.leaf, this.x + 50, this.y + 50)
     }
 
     super.processMove()
@@ -5413,7 +5413,7 @@ class DonggramiEnemyTree extends EnemyData {
     for (let i = 0; i < this.leafCount + 5; i++) {
       let x = this.x + Math.random() * 100 - 50
       let y = this.y + Math.random() * 100 - 50
-      fieldState.createEnemyObject(ID.enemy.donggramiEnemy.leaf, x, y)
+      FieldState.createEnemyObject(ID.enemy.donggramiEnemy.leaf, x, y)
     }
   }
 
@@ -5770,11 +5770,11 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
         let ry = (Math.sin(radian) * x) + (Math.cos(radian) * y)
         let bullet = IntruderEnemyJemuBoss.energyBullet.getCreateObject()
         bullet.setMoveSpeed(rx, ry)
-        fieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2))
+        FieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2))
       }
       this.soundEnergy()
     } else if (this.state === IntruderEnemyJemuBoss.STATE_ENERGYP3 && this.attackDelay.divCheck(pDelay.ENERGYP3)) {
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       let speedX = (player.centerX - this.centerX) / 120
       let speedY = (player.centerY - this.centerY) / 120
       const minSpeed = 8
@@ -5788,19 +5788,19 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
       for (let i = 0; i < 3; i++) {
         let bullet = IntruderEnemyJemuBoss.energyBullet.getCreateObject()
         bullet.setMoveSpeed(speedX + (Math.random() * 2 - 1), speedY + (Math.random() * 2 - 1))
-        fieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2))
+        FieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2))
       }
 
       this.soundEnergy()
     } else if (this.state === IntruderEnemyJemuBoss.STATE_ENERGYRE && this.attackDelay.divCheck(pDelay.ENERGYRE)) {
       let bullet = new IntruderEnemyJemuBoss.EnergyReflectBullet()
       bullet.setRandomMoveSpeed(8, 8, true)
-      fieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2))
+      FieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2))
       soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergyPurple)
     } else if (this.state === IntruderEnemyJemuBoss.STATE_THUNDERLR && this.attackDelay.divCheck(pDelay.THUNDERLR)) {
       for (let i = 0; i < 6; i++) {
         let bullet = new IntruderEnemyJemuBoss.ThunderLRBullet()
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
       soundSystem.play(soundSrc.enemyAttack.intruderJemuThunderNormal)
     } else if (this.state === IntruderEnemyJemuBoss.STATE_THUNDERBIG) {
@@ -5819,8 +5819,8 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
       this.attackObjectThunder.x = this.attackObjectThunder.baseX - (this.attackObjectThunder.width / 2)
       this.attackObjectThunder.y = this.attackObjectThunder.baseY - (this.attackObjectThunder.height / 2)
 
-      let player = fieldState.getPlayerObject()
-      let sprite = fieldState.getSpriteObject()
+      let player = FieldState.getPlayerObject()
+      let sprite = FieldState.getSpriteObject()
       if (this.attackDelay.count >= 30 && this.attackDelay.divCheck(6)) {
         // 플레이어 데미지 처리
         if (collision(player, this.attackObjectThunder)) {
@@ -5852,8 +5852,8 @@ class IntruderEnemyJemuBoss extends IntruderEnemy {
       this.bigThunderEnimation.process()
 
       // 플레이어 데미지 처리
-      let player = fieldState.getPlayerObject()
-      let sprite = fieldState.getSpriteObject()
+      let player = FieldState.getPlayerObject()
+      let sprite = FieldState.getSpriteObject()
       if (this.attackDelay.count >= 60 && this.attackDelay.divCheck(6)) {
         if (collisionClass.collisionOBB(player, this.attackObject1) || collisionClass.collisionOBB(player, this.attackObject2)) {
           player.addDamage(this.ATTACK_THUNDER)
@@ -5969,7 +5969,7 @@ class IntruderEnemySquare extends IntruderEnemy {
     if (this.moveDelay.check()) {
       // 이 사각형은 좌, 우, 상, 하 로만 이동하지만, 가능하다면 플레이어를 추적하기 쉬운 경로로 이동함
       // 그리고 이동되는 방향에 따라 에니메이션이 결정됨 
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       let distanceX = player.x - this.x
       let distanceY = player.y - this.y
       const divide = 40
@@ -6052,7 +6052,7 @@ class IntruderEnemyMetal extends IntruderEnemy {
       if (this.state === IntruderEnemyMetal.STATE_MOVE) {
         this.setRandomMoveSpeed(2, 2, true)
       } else if (this.state === IntruderEnemyMetal.STATE_AFTERIMAGE) {
-        let player = fieldState.getPlayerObject()
+        let player = FieldState.getPlayerObject()
         let distanceX = player.x - this.x
         let distanceY = player.y - this.y
         const minSpeed = 4
@@ -6154,7 +6154,7 @@ class IntruderEnemyDiacore extends IntruderEnemyMetal {
       let directionLR = Math.random() < 0.5 ? FieldData.direction.LEFT : FieldData.direction.RIGHT
       let dircetionUD = Math.random() < 0.5 ? FieldData.direction.UP : FieldData.direction.DOWN
       customBullet.setMoveDirection(directionLR, dircetionUD)
-      fieldState.createEnemyBulletObject(customBullet, this.centerX - (customBullet.width / 2), this.centerY - (customBullet.height / 2))
+      FieldState.createEnemyBulletObject(customBullet, this.centerX - (customBullet.width / 2), this.centerY - (customBullet.height / 2))
       soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergy)
     }
   }
@@ -6209,7 +6209,7 @@ class IntruderEnemyRendown extends IntruderEnemy {
           let enemyBullet = new IntruderEnemyRendown.EnergyBombBullet()
           enemyBullet.x = this.x
           enemyBullet.y = graphicSystem.CANVAS_HEIGHT - enemyBullet.height
-          fieldState.createEnemyBulletObject(enemyBullet, enemyBullet.x, enemyBullet.y)
+          FieldState.createEnemyBulletObject(enemyBullet, enemyBullet.x, enemyBullet.y)
           soundSystem.play(soundSrc.enemyAttack.intruderRendownMissile)
           this.isDeleted = true
         } else {
@@ -6245,7 +6245,7 @@ class IntruderEnemyRendown extends IntruderEnemy {
 
     afterInit () {
       this.y = graphicSystem.CANVAS_HEIGHT - this.height
-      fieldState.createEffectObject(this.customEffect, this.x, this.y)
+      FieldState.createEffectObject(this.customEffect, this.x, this.y)
     }
 
     // 아무것도 출력하지 않습니다.
@@ -6267,7 +6267,7 @@ class IntruderEnemyRendown extends IntruderEnemy {
   processAttack () {
     if (this.attackDelay.check()) {
       let customBullet = Math.random() < 0.5 ? new IntruderEnemyRendown.EnergyBulletLeft() : new IntruderEnemyRendown.EnergyBulletRight()
-      fieldState.createEnemyBulletObject(customBullet, this.x, this.y + this.height)
+      FieldState.createEnemyBulletObject(customBullet, this.x, this.y + this.height)
     }
   }
 
@@ -6333,13 +6333,13 @@ class IntruderEnemyLever extends IntruderEnemy {
       if (this.state === IntruderEnemyLever.STATE_LEFT) {
         // create laser
         let bullet = new IntruderEnemyLever.LaserBullet()
-        fieldState.createEnemyBulletObject(bullet, this.x, graphicSystem.CANVAS_HEIGHT)
+        FieldState.createEnemyBulletObject(bullet, this.x, graphicSystem.CANVAS_HEIGHT)
         soundSystem.play(soundSrc.enemyAttack.intruderLeverLaser)
         this.enimationLeft.reset()
       } else if (this.state === IntruderEnemyLever.STATE_RIGHT) {
         // create Bomb
         let bullet = new IntruderEnemyRendown.EnergyBulletLeft()
-        fieldState.createEnemyBulletObject(bullet, this.x, this.y)
+        FieldState.createEnemyBulletObject(bullet, this.x, this.y)
         this.enimationRight.reset()
       }
     }
@@ -6394,7 +6394,7 @@ class IntruderEnemyFlying1 extends IntruderEnemy {
   processAttack () {
     if (this.attackDelay.check()) {
       let bullet = new IntruderEnemyFlying1.LaserBullet()
-      fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
+      FieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
       soundSystem.play(soundSrc.enemyAttack.intruderDaseokLaserGreen)
     }
   }
@@ -6405,7 +6405,7 @@ class IntruderEnemyFlying1 extends IntruderEnemy {
     }
 
     afterInit () {
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       let speedX = (player.x - this.x) / 35
       let speedY = (player.y - this.y) / 35
       if (Math.abs(speedX) < 4) {
@@ -6449,7 +6449,7 @@ class IntruderEnemyFlying2 extends IntruderEnemy {
   processAttack () {
     if (this.attackDelay.check()) {
       let bullet = new IntruderEnemyJemuBoss.EnergyReflectBullet()
-      fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
+      FieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
       soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergyHigh)
     }
   }
@@ -6466,7 +6466,7 @@ class IntruderEnemyFlyingRocket extends IntruderEnemy {
 
   processMove () {
     if (this.moveDelay.check()) {
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       let speedX = (player.centerX - this.centerX) / 90
       let speedY = (player.centerY - this.centerY) / 90
       const minSpeed = 3
@@ -6658,7 +6658,7 @@ class IntruderEnemyHanoi extends IntruderEnemy {
   processAttack () {
     if (this.attackDelay.check()) {
       let bullet = new IntruderEnemyHanoi.HanoiBullet()
-      fieldState.createEnemyBulletObject(bullet, this.x, this.y)
+      FieldState.createEnemyBulletObject(bullet, this.x, this.y)
       soundSystem.play(soundSrc.enemyAttack.intruderHanoiAttack)
     }
   }
@@ -6703,7 +6703,7 @@ class IntruderEnemyDaseok extends IntruderEnemy {
     }
     
     afterInit () {
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       let speedX = (player.x - this.x) / 65
       let speedY = (player.y - this.y) / 65
       const minSpeed = 4
@@ -6748,15 +6748,15 @@ class IntruderEnemyDaseok extends IntruderEnemy {
 
     if (this.state === IntruderEnemyDaseok.STATE_YELLOW && this.attackDelay.divCheck(6) && this.attackDelay.count <= 60) {
       let bullet = new IntruderEnemyDaseok.LaserYellowBullet()
-      fieldState.createEnemyBulletObject(bullet, this.x + (Math.random() * this.width), this.y)
+      FieldState.createEnemyBulletObject(bullet, this.x + (Math.random() * this.width), this.y)
       soundSystem.play(soundSrc.enemyAttack.intruderDaseokLaserYellow)
     } else if (this.state === IntruderEnemyDaseok.STATE_GREEN && this.attackDelay.divCheck(6) && this.attackDelay.count <= 60) {
       let bullet = new IntruderEnemyDaseok.LaserGreenBullet()
-      fieldState.createEnemyBulletObject(bullet, this.centerX, this.y)
+      FieldState.createEnemyBulletObject(bullet, this.centerX, this.y)
       soundSystem.play(soundSrc.enemyAttack.intruderDaseokLaserGreen)
     } else if (this.state === IntruderEnemyDaseok.STATE_ENERGY && this.attackDelay.divCheck(6) && this.attackDelay.count <= 60) {
       let bullet = new IntruderEnemyDaseok.EnergyBullet()
-      fieldState.createEnemyBulletObject(bullet, this.centerX, this.y)
+      FieldState.createEnemyBulletObject(bullet, this.centerX, this.y)
       soundSystem.play(soundSrc.enemyAttack.intruderJemuEnergyHigh)
     }
   }
@@ -6788,7 +6788,7 @@ class IntruderEnemyTowerLaserMini extends IntruderEnemy {
   processAttack () {
     if (this.attackDelay.check()) {
       let bullet = IntruderEnemyTowerLaserMini.laserBullet.getCreateObject()
-      fieldState.createEnemyBulletObject(bullet, this.x, this.y)
+      FieldState.createEnemyBulletObject(bullet, this.x, this.y)
     }
   }
 }
@@ -6858,7 +6858,7 @@ class TowerEnemyGroup1MoveBlue extends TowerEnemy {
   processMoveFinishPosition () {
     // 정해진 시간 마다 도착 위치를 지정, 플레이어의 위치에 따라 이동 위치가 달라짐
     if (this.moveDelay.check()) {
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       let distanceX = this.x - player.x
       let distanceY = this.y - player.y
       const MIN_MOVEMENT = this.width / 2
@@ -6904,7 +6904,7 @@ class TowerEnemyGroup1MoveViolet extends TowerEnemyGroup1MoveBlue {
   processMoveFinishPosition () {
     // 정해진 시간 마다 도착 위치를 지정, 플레이어의 위치에 따라 이동 위치가 달라짐
     if (this.moveDelay.check()) {
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       this.startX = this.x // 시작 위치 지정
       this.startY = this.y
       const RANDOM_VALUE = 50
@@ -7009,7 +7009,7 @@ class TowerEnemyGroup1MoveYellowEnergy extends TowerEnemyGroup1MoveBlue {
 
   processMoveFinishPosition () {
     if (this.moveDelay.check()) {
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       this.startX = this.x
       this.startY = this.y
       this.finishX = player.x
@@ -7129,10 +7129,10 @@ class TowerEnemyGroup1Tapo extends TowerEnemy {
     if (this.attackDelay.check()) {
       soundSystem.play(soundSrc.enemyAttack.towerAttackDaepo)
       let bullet = new TowerEnemyGroup1Tapo.RocketBullet()
-      fieldState.createEnemyBulletObject(bullet, this.x - bullet.centerX - 40, this.y - bullet.height)
+      FieldState.createEnemyBulletObject(bullet, this.x - bullet.centerX - 40, this.y - bullet.height)
 
       let bullet2 = new TowerEnemyGroup1Tapo.RocketBullet()
-      fieldState.createEnemyBulletObject(bullet2, this.x - bullet2.centerX, this.y - bullet2.height)
+      FieldState.createEnemyBulletObject(bullet2, this.x - bullet2.centerX, this.y - bullet2.height)
       this.tapoEnimation.reset()
     }
   }
@@ -7204,7 +7204,7 @@ class TowerEnemyGroup1Punch extends TowerEnemy {
 
     // 플레이어 추적 (일정시간마다)
     if (this.moveDelay.divCheck(20)) {
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       const MAX_SPEED = 3
       const MIN_SPEED = 0.5
       let speedX = (player.x - this.x) / 40
@@ -7263,9 +7263,9 @@ class TowerEnemyGroup1Punch extends TowerEnemy {
 
     // 펀치 조각들이 분해되면서 자동으로 날라감
     const T = TowerEnemyGroup1Punch
-    fieldState.createSpriteObject(new T.EffectEnemyDiePunchBall(), this.x, this.y)
-    fieldState.createSpriteObject(new T.EffectEnemyDiePunchSpring(), this.x + T.imageDataPunchBall.width, this.y)
-    fieldState.createSpriteObject(new T.EffectEnemyDiePunchModule(), this.x + T.imageDataPunchBall.width + T.imageDataPunchSpring.width, this.y)
+    FieldState.createSpriteObject(new T.EffectEnemyDiePunchBall(), this.x, this.y)
+    FieldState.createSpriteObject(new T.EffectEnemyDiePunchSpring(), this.x + T.imageDataPunchBall.width, this.y)
+    FieldState.createSpriteObject(new T.EffectEnemyDiePunchModule(), this.x + T.imageDataPunchBall.width + T.imageDataPunchSpring.width, this.y)
   }
 
   display () {
@@ -7322,7 +7322,7 @@ class TowerEnemyGroup1Daepo extends TowerEnemy {
       soundSystem.play(soundSrc.enemyAttack.towerAttackDaepo)
       bullet.moveSpeedX = Math.cos((Math.PI / 180) * this.degree) * 4
       bullet.moveSpeedY = Math.sin((Math.PI / 180) * this.degree) * 4
-      fieldState.createEnemyBulletObject(bullet, this.x, this.y)
+      FieldState.createEnemyBulletObject(bullet, this.x, this.y)
     }
   }
 
@@ -7355,8 +7355,8 @@ class TowerEnemyGroup1Daepo extends TowerEnemy {
     super.processDieAfterLogic()
 
     const T = TowerEnemyGroup1Daepo
-    fieldState.createSpriteObject(new T.EffectDieDaepoFront(), this.x, this.y)
-    fieldState.createSpriteObject(new T.EffectDieDaepoBack(), this.x + this.width - 80, this.y)
+    FieldState.createSpriteObject(new T.EffectDieDaepoFront(), this.x, this.y)
+    FieldState.createSpriteObject(new T.EffectDieDaepoBack(), this.x + this.width - 80, this.y)
   }
 }
 
@@ -7496,9 +7496,9 @@ class TowerEnemyHellTemplet extends TowerEnemy {
       let targetY = this.y + (Math.random() * this.height)
 
       switch (this.dieColor) {
-        case T.dieColorList.blue: fieldState.createEffectObject(T.DieEffectBlue.getObject(), targetX, targetY); break
-        case T.dieColorList.red: fieldState.createEffectObject(T.DieEffectRed.getObject(), targetX, targetY); break
-        case T.dieColorList.violet: fieldState.createEffectObject(T.DieEffectViolet.getObject(), targetX, targetY); break
+        case T.dieColorList.blue: FieldState.createEffectObject(T.DieEffectBlue.getObject(), targetX, targetY); break
+        case T.dieColorList.red: FieldState.createEffectObject(T.DieEffectRed.getObject(), targetX, targetY); break
+        case T.dieColorList.violet: FieldState.createEffectObject(T.DieEffectViolet.getObject(), targetX, targetY); break
       }
     }
 
@@ -7542,7 +7542,7 @@ class TowerEnemyGroup1Hellgi extends TowerEnemyHellTemplet {
       let bullet = TowerEnemy.bulletBlue.getCreateObject()
       bullet.moveSpeedX = this.moveSpeedX < 0 ? -6 : 6
       bullet.moveSpeedY = this.moveSpeedY
-      fieldState.createEnemyBulletObject(bullet, this.x, this.y)
+      FieldState.createEnemyBulletObject(bullet, this.x, this.y)
     }
   }
 
@@ -7589,7 +7589,7 @@ class TowerEnemyGroup1Helljeon extends TowerEnemyHellTemplet {
     // 카운트 관련 문제가 발생할 수 있습니다. 그래서 다른 형태로 조건을 처리합니다.
     if (this.moveDelay.count === 0) {
       // 플레이어를 추적하도록 속도 변경
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       this.targetSpeed._x = (player.centerX - this.centerX) / 150
       this.targetSpeed._y = (player.centerY - this.centerY) / 150
     }
@@ -7609,7 +7609,7 @@ class TowerEnemyGroup1Helljeon extends TowerEnemyHellTemplet {
           bullet.moveSpeedY *= mul
         }
 
-        fieldState.createEnemyBulletObject(bullet, this.x + 25, this.y + (i * 25))
+        FieldState.createEnemyBulletObject(bullet, this.x + 25, this.y + (i * 25))
       }
       this.helljeonEnimation.reset()
     }
@@ -7656,7 +7656,7 @@ class TowerEnemyGroup1Hellcho extends TowerEnemyHellTemplet {
     // 카운트 관련 문제가 발생할 수 있습니다. 그래서 다른 형태로 조건을 처리합니다.
     if (this.moveDelay.count === 0) {
       // 플레이어를 추적하도록 속도 변경
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       this.targetSpeed._x = (player.centerX - this.centerX) / 90
       this.targetSpeed._y = (player.centerY - this.centerY) / 90
     }
@@ -7691,7 +7691,7 @@ class TowerEnemyGroup1Hellba extends TowerEnemyHellTemplet {
     // 에너지오브젝트가 남아있을 때 6프레임마다 충돌 판정
     this.energyObject.leftFrame--
     if (this.energyObject.leftFrame >= 1 && this.energyObject.leftFrame % 6 === 0) {
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       if (collision(this.energyObject, player)) {
         player.addDamage(this.ENERGY_ATTACK)
       } else if (collision(this.energyObject2, player)) {
@@ -7735,13 +7735,13 @@ class TowerEnemyGroup1Hellgal extends TowerEnemyHellTemplet {
 
   processAttack () {
     if (this.attackDelay.check()) {
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       let chaseSpeed = this.getMoveSpeedChaseLineValue(player.x, player.y, this.centerX, this.centerY, 96, 4)
       for (let i = 0; i < 3; i++) {
         let bullet = TowerEnemy.bulletBlue.getCreateObject()
         bullet.moveSpeedX = chaseSpeed.speedX + (Math.random() * 2) - 1
         bullet.moveSpeedY = chaseSpeed.speedY + (Math.random() * 2) - 1
-        fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
+        FieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
       }
     }
   }
@@ -7761,7 +7761,7 @@ class TowerEnemyGroup1LaserAlpha extends TowerEnemy {
   processAttack () {
     if (this.attackDelay.check()) {
       let bullet = TowerEnemy.bulletLaser.getCreateObject()
-      fieldState.createEnemyBulletObject(bullet, this.x, this.centerY)
+      FieldState.createEnemyBulletObject(bullet, this.x, this.centerY)
     }
   }
 
@@ -7789,7 +7789,7 @@ class TowerEnemyGroup1LaserMini extends TowerEnemyGroup1LaserAlpha {
   processAttack () {
     if (this.attackDelay.check()) {
       let bullet = TowerEnemy.bulletLaserMini.getCreateObject()
-      fieldState.createEnemyBulletObject(bullet, this.x, this.centerY)
+      FieldState.createEnemyBulletObject(bullet, this.x, this.centerY)
       this.attackDelay.delay = Math.floor(Math.random() * this.RANDOM_DELAY) + this.BASE_DELAY
     }
   }
@@ -7881,7 +7881,7 @@ class TowerEnemyGroup1X extends TowerEnemy {
 
   processDieAfterLogic () {
     super.processDieAfterLogic()
-    fieldState.createEnemyBulletObject(new TowerEnemyGroup1X.bullet, this.x, this.y)
+    FieldState.createEnemyBulletObject(new TowerEnemyGroup1X.bullet, this.x, this.y)
   }
 }
 
@@ -7901,7 +7901,7 @@ class TowerEnemyGroup1gasiUp extends TowerEnemy {
 
   processPlayerCollision () {
     if (this.collisionDelay.check(false)) {
-      const player = fieldState.getPlayerObject()
+      const player = FieldState.getPlayerObject()
       const enemy = this.getCollisionArea()[0]
 
       if (collision(player, enemy)) {
@@ -8029,11 +8029,11 @@ class TowerEnemyPentaTemplete extends TowerEnemy {
   createNewEnemy () {
     let typeList = TowerEnemyPentaTemplete.subTypeList
     switch (this.subType) {
-      case typeList.DIAMOND: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.diamondMini, this.centerX, this.centerY); break
-      case typeList.SQUARE: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.octagonMini, this.centerX, this.centerY); break
-      case typeList.PENTAGON: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.squareMini, this.centerX, this.centerY); break
-      case typeList.HEXAGON: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.pentagonMini, this.centerX, this.centerY); break
-      case typeList.OCTAGON: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.hexagonMini, this.centerX, this.centerY); break
+      case typeList.DIAMOND: FieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.diamondMini, this.centerX, this.centerY); break
+      case typeList.SQUARE: FieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.octagonMini, this.centerX, this.centerY); break
+      case typeList.PENTAGON: FieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.squareMini, this.centerX, this.centerY); break
+      case typeList.HEXAGON: FieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.pentagonMini, this.centerX, this.centerY); break
+      case typeList.OCTAGON: FieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.hexagonMini, this.centerX, this.centerY); break
     }
   }
 
@@ -8283,7 +8283,7 @@ class TowerEnemyGroup1CrazyRobot extends TowerEnemy {
       if (this.attackDelay.check()) {
         soundSystem.play(soundSrc.enemyAttack.towerAttackRocket)
         const bullet = new T.RobotRocketChaseBullet()
-        fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
+        FieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
       }
     } else if (this.state === TowerEnemyGroup1CrazyRobot.STATE_ROCKET_LEFT) {
       this.attackDelay.delay = 12
@@ -8291,7 +8291,7 @@ class TowerEnemyGroup1CrazyRobot extends TowerEnemy {
         soundSystem.play(soundSrc.enemyAttack.towerAttackRocket)
         const bullet = new T.RobotRocketBullet()
         bullet.setMoveSpeed(-6, 0)
-        fieldState.createEnemyBulletObject(bullet, this.centerX, Math.random() * (graphicSystem.CANVAS_HEIGHT - 40))
+        FieldState.createEnemyBulletObject(bullet, this.centerX, Math.random() * (graphicSystem.CANVAS_HEIGHT - 40))
       }
     } else if (this.state === TowerEnemyGroup1CrazyRobot.STATE_ROBOT_MOVE) {
       // this.attackDelay.delay = 60
@@ -8316,9 +8316,9 @@ class TowerEnemyGroup1CrazyRobot extends TowerEnemy {
         subBullet2.setMoveSpeed(-4, 0)
         subBullet3.setMoveSpeed(-4, 2)
         const targetY = this.y + Math.floor(Math.random() * this.height)
-        fieldState.createEnemyBulletObject(subBullet1, this.centerX, targetY)
-        fieldState.createEnemyBulletObject(subBullet2, this.centerX, targetY)
-        fieldState.createEnemyBulletObject(subBullet3, this.centerX, targetY)
+        FieldState.createEnemyBulletObject(subBullet1, this.centerX, targetY)
+        FieldState.createEnemyBulletObject(subBullet2, this.centerX, targetY)
+        FieldState.createEnemyBulletObject(subBullet3, this.centerX, targetY)
       }
     } else if (this.state === TowerEnemyGroup1CrazyRobot.STATE_HYPER_MODE) {
       this.attackDelay.delay = 20
@@ -8327,7 +8327,7 @@ class TowerEnemyGroup1CrazyRobot extends TowerEnemy {
         for (let i = 0; i < 2; i++) {
           let subBullet = new T.RobotRocketBullet()
           subBullet.setRandomMoveSpeed(6, 6, true)
-          fieldState.createEnemyBulletObject(subBullet, this.centerX, this.centerY)
+          FieldState.createEnemyBulletObject(subBullet, this.centerX, this.centerY)
         }
       }
     }
@@ -8340,7 +8340,7 @@ class TowerEnemyGroup1CrazyRobot extends TowerEnemy {
         soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossRobot1)
         if (this.dieEffect != null) {
           this.dieEffect.setWidthHeight(40, 40)
-          fieldState.createEffectObject(this.dieEffect.getObject(), this.x + (Math.random() * this.width), this.y + (Math.random() * this.height))
+          FieldState.createEffectObject(this.dieEffect.getObject(), this.x + (Math.random() * this.width), this.y + (Math.random() * this.height))
         }
       }
 
@@ -8348,7 +8348,7 @@ class TowerEnemyGroup1CrazyRobot extends TowerEnemy {
         soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
         if (this.dieEffect != null) {
           this.dieEffect.setWidthHeight(this.width, this.height)
-          fieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
+          FieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
         }
       }
     }
@@ -8361,7 +8361,7 @@ class TowerEnemyGroup1CrazyRobot extends TowerEnemy {
 
     afterCollision () {
       const bullet = new TowerEnemyGroup1CrazyRobot.RobotRocketBomb()
-      fieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
+      FieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
       soundSystem.play(soundSrc.enemyAttack.towerAttackRocketBomb)
       this.isDeleted = true
     }
@@ -8389,7 +8389,7 @@ class TowerEnemyGroup1CrazyRobot extends TowerEnemy {
       super.processMove()
       if (this.elapsedFrame >= 20 && this.elapsedFrame <= 80) {
         // 플레이어 추적
-        let player = fieldState.getPlayerObject()
+        let player = FieldState.getPlayerObject()
         let speedX = (player.x - this.x) / 100
         let speedY = (player.y - this.y) / 100
 
@@ -8447,7 +8447,7 @@ class TowerEnemyGroup1Hellgrey extends TowerEnemyHellTemplet {
     // 50% 확률로 유저 추적을 시도, 이 헬기는 더 빠름
     if (this.moveDelay.count === 0 && Math.random() < 0.5) {
       // 플레이어를 추적하도록 속도 변경
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       this.targetSpeed._x = (player.centerX - this.centerX) / 90
       this.targetSpeed._y = (player.centerY - this.centerY) / 90
     }
@@ -8471,7 +8471,7 @@ class TowerEnemyGroup1HellgreyBoss extends TowerEnemyGroup1Hellgrey {
     this.dieAfterDeleteDelay.setDelay(180) // 다른 보스들과 똑같은 죽음 지연 시간 적용
 
     // 생성을 하자 마자 바로 플레이어에게 달려듬
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     this.targetSpeed._x = (player.centerX - this.centerX) / 60
     this.targetSpeed._y = (player.centerY - this.centerY) / 60
     this.moveDelay.delay = 30
@@ -8505,10 +8505,10 @@ class TowerEnemyGroup1HellgreyBoss extends TowerEnemyGroup1Hellgrey {
     const bullet = TowerEnemyGroup1Daepo.Daepo.getCreateObject()
     bullet.moveSpeedX = Math.cos((Math.PI / 180) * this.degree) * 4
     bullet.moveSpeedY = Math.sin((Math.PI / 180) * this.degree) * 4
-    fieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2) + 60)
+    FieldState.createEnemyBulletObject(bullet, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2) + 60)
     
     const bullet2 = bullet.getCreateObject()
-    fieldState.createEnemyBulletObject(bullet2, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2) - 60)
+    FieldState.createEnemyBulletObject(bullet2, this.centerX - (bullet.width / 2), this.centerY - (bullet.height / 2) - 60)
   }
 
   processMove () {
@@ -8527,7 +8527,7 @@ class TowerEnemyGroup1HellgreyBoss extends TowerEnemyGroup1Hellgrey {
     this.moveDelay.delay = 30
     if (this.moveDelay.count === 0 && Math.random() < 0.5) {
       // 플레이어를 추적하도록 속도 변경
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       this.targetSpeed._x = (player.centerX - this.centerX) / 90
       this.targetSpeed._y = (player.centerY - this.centerY) / 90
     }
@@ -8539,7 +8539,7 @@ class TowerEnemyGroup1HellgreyBoss extends TowerEnemyGroup1Hellgrey {
 
     if (this.moveDelay.count % 10 === 0) {
       // 플레이어 위치와 적의 위치를 기준으로 각도 조정
-      const player = fieldState.getPlayerObject()
+      const player = FieldState.getPlayerObject()
       const dx = player.x - this.x;
       const dy = player.y - this.y;
       this.degreeTarget = Math.atan2(dy, dx) * (180 / Math.PI);
@@ -8616,7 +8616,7 @@ class TowerEnemyGroup1HellgreyBoss extends TowerEnemyGroup1Hellgrey {
         soundSystem.play(soundSrc.enemyDie.enemyDieTowerHellgrey)
         if (this.dieEffect != null) {
           this.dieEffect.setWidthHeight(40, 40)
-          fieldState.createEffectObject(this.dieEffect.getObject(), this.x + (Math.random() * this.width), this.y + (Math.random() * this.height))
+          FieldState.createEffectObject(this.dieEffect.getObject(), this.x + (Math.random() * this.width), this.y + (Math.random() * this.height))
         }
       }
 
@@ -8628,7 +8628,7 @@ class TowerEnemyGroup1HellgreyBoss extends TowerEnemyGroup1Hellgrey {
         const effect = TowerEnemyHellTemplet.DieEffectRed.getObject()
         effect.width = this.width
         effect.height = this.height
-        fieldState.createEffectObject(effect, this.x, this.y)
+        FieldState.createEffectObject(effect, this.x, this.y)
       }
     }
     
@@ -8795,11 +8795,11 @@ class TowerEnemyGroup2Jagijang extends TowerEnemy {
     if (this.attackDelay.check()) {
       soundSystem.play(soundSrc.enemyAttack.towerJagijangAttack)
       let bullet = this.bullet.getCreateObject()
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       bullet.x = this.centerX - 25
       bullet.y = this.centerY - 25
       bullet.setMoveSpeedChaseLine(player.x, player.y, 120, 2)
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
     }
   }
 
@@ -8880,14 +8880,14 @@ class TowerEnemyGroup2Lightning extends TowerEnemy {
     }
 
     if (this.state === TowerEnemyGroup2Lightning.STATE_LIGHTNING && this.attackDelay.divCheck(6)) {
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       if (collision(player, this.lightObject)) {
         player.addDamage(4)
       }
     }
 
     if (this.state === TowerEnemyGroup2Lightning.STATE_LIGHTNING && this.attackDelay.divCheck(12)) {
-      fieldState.createEffectObject(this.lightEffect.getObject(), this.lightObject.x, this.lightObject.y)
+      FieldState.createEffectObject(this.lightEffect.getObject(), this.lightObject.x, this.lightObject.y)
     }
   }
 
@@ -8897,7 +8897,7 @@ class TowerEnemyGroup2Lightning extends TowerEnemy {
 
     if (this.moveDelay.count === 1) {
       // 일정시간 간격으로 플레이어가 있는 위치로 이동
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       this.finishX = player.centerX
       this.finishY = player.centerY
       this.finishMoveSpeedX = (this.centerX - player.centerX) / this.moveDelay.delay
@@ -8950,7 +8950,7 @@ class TowerEnemyGroup2Magnet extends TowerEnemy {
 
     // 타겟오브젝트가 널일때만 이 작업을 실행합니다.
     if (this.targetObject == null && this.moveDelay.check()) {
-      let target = fieldState.getRandomEnemyObject()
+      let target = FieldState.getRandomEnemyObject()
 
       // 타겟이 널이 아니고, 아이디가 다르고(같은 자석은 안됨), 생성id가 다르면(자기 자신 제외), 타겟된 적이 마그넷 상태가 아니면
       if (target != null && target.id !== this.id && target.createId !== this.createId && target.state !== TowerEnemyGroup2Magnet.STATE_MAGNET) {
@@ -8971,8 +8971,8 @@ class TowerEnemyGroup2Magnet extends TowerEnemy {
       }
 
       if (this.attackDelay.divCheck(10)) {
-        fieldState.createEffectObject(this.magnetEffectBlue, this.x - 20, this.y)
-        fieldState.createEffectObject(this.magnetEffectRed, this.x - 20, this.y + 75)
+        FieldState.createEffectObject(this.magnetEffectBlue, this.x - 20, this.y)
+        FieldState.createEffectObject(this.magnetEffectRed, this.x - 20, this.y + 75)
       }
 
       // 타겟 오브젝트가 삭제 대기 상태라면 이 오브젝트를 삭제함
@@ -9040,7 +9040,7 @@ class TowerEnemyGroup2Hellla extends TowerEnemyHellTemplet {
       this.lightObject.y += this.lightObject.speedY
 
       if (this.lightObject.elapsedFrame % 6 === 0) {
-        let player = fieldState.getPlayerObject()
+        let player = FieldState.getPlayerObject()
         if (collision(player, this.lightObject)) {
           player.addDamage(4)
         }
@@ -9050,7 +9050,7 @@ class TowerEnemyGroup2Hellla extends TowerEnemyHellTemplet {
     // 공격 주기가 되면 공격 개체가 사용되도록 변경
     if (this.attackDelay.check()) {
       soundSystem.play(soundSrc.enemyAttack.towerLightningAttack)
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       this.lightObject.elapsedFrame = 60
       this.lightObject.x = this.x - 20
       this.lightObject.y = this.y - 20
@@ -9096,7 +9096,7 @@ class TowerEnemyGroup2Hellpo extends TowerEnemyHellTemplet {
       let bullet = this.daepoBullet.getCreateObject()
       bullet.moveSpeedX = Math.cos((Math.PI / 180) * this.degree) * 6
       bullet.moveSpeedY = Math.sin((Math.PI / 180) * this.degree) * 6
-      fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
+      FieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
     }
   }
 
@@ -9202,7 +9202,7 @@ class TowerEnemyGroup2Hellpa extends TowerEnemyHellTemplet {
       }
 
       if (this.attackDelay.divCheck(6)) {
-        let player = fieldState.getPlayerObject()
+        let player = FieldState.getPlayerObject()
         if (collision(player, this.paAttackObject)) {
           player.addDamage(6)
         }
@@ -9241,7 +9241,7 @@ class TowerEnemyGroup2Hellna extends TowerEnemyHellTemplet {
       let bullet = TowerEnemy.bulletYellow.getCreateObject()
       bullet.moveSpeedX = Math.cos((Math.PI / 180) * this.degree) * 10
       bullet.moveSpeedY = Math.sin((Math.PI / 180) * this.degree) * 10
-      fieldState.createEnemyBulletObject(bullet, this.x, this.centerY)
+      FieldState.createEnemyBulletObject(bullet, this.x, this.centerY)
     }
   }
 
@@ -9283,9 +9283,9 @@ class TowerEnemyPentaShadowTemplete extends TowerEnemyPentaTemplete {
   /** 해당 객체가 죽었을 때 새로운 적을 다시 생성합니다. (단 라이트타입은 해당하지 않음) */
   createNewEnemy () {
     switch (this.subType) {
-      case TowerEnemyPentaTemplete.subTypeList.PENTA_SHADOW: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.pentaLight, this.x, this.y); break
-      case TowerEnemyPentaTemplete.subTypeList.HEXA_SHADOW: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.hexaLight, this.x, this.y); break
-      case TowerEnemyPentaTemplete.subTypeList.OCTA_SHADOW: fieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.octaLight, this.x, this.y); break
+      case TowerEnemyPentaTemplete.subTypeList.PENTA_SHADOW: FieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.pentaLight, this.x, this.y); break
+      case TowerEnemyPentaTemplete.subTypeList.HEXA_SHADOW: FieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.hexaLight, this.x, this.y); break
+      case TowerEnemyPentaTemplete.subTypeList.OCTA_SHADOW: FieldState.createEnemyObject(ID.enemy.towerEnemyGroup2.octaLight, this.x, this.y); break
     }
   }
 }
@@ -9357,7 +9357,7 @@ class TowerEnemyGroup2BossBar extends TowerEnemy {
   }
 
   processPlayerCollisionSuccessAfter () {
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     player.setAutoMove(Math.random() * graphicSystem.CANVAS_WIDTH, 0, 15)
   }
 
@@ -9367,14 +9367,14 @@ class TowerEnemyGroup2BossBar extends TowerEnemy {
 
     if (this.dieAfterDeleteDelay.count % 5 === 0) {
       soundSystem.play(this.dieSound)
-      fieldState.createEffectObject(this.customDieEffect.getObject(), this.x + (Math.random() * (this.width - 40)), this.y + (Math.random() * (this.height - 40)))
+      FieldState.createEffectObject(this.customDieEffect.getObject(), this.x + (Math.random() * (this.width - 40)), this.y + (Math.random() * (this.height - 40)))
     }
 
     if (this.dieAfterDeleteDelay.count == this.dieAfterDeleteDelay.delay - 1) {
       soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
       let effect = this.customDieEffect.getObject()
       effect.setWidthHeight(this.width, this.height)
-      fieldState.createEffectObject(effect, this.x, this.y)
+      FieldState.createEffectObject(effect, this.x, this.y)
     }
   }
 
@@ -9382,7 +9382,7 @@ class TowerEnemyGroup2BossBar extends TowerEnemy {
     if (this.attackDelay.check()) {
       let bullet = this.customBullet.getCreateObject()
       bullet.setWidthHeight(1200, 30)
-      fieldState.createEnemyBulletObject(bullet, this.x, this.centerY)
+      FieldState.createEnemyBulletObject(bullet, this.x, this.centerY)
     }
   }
 
@@ -9467,7 +9467,7 @@ class TowerEnemyGroup3Core8 extends TowerEnemyCoreTemplete {
       for (let i = 0; i < 8; i++) {
         let bullet = TowerEnemy.bulletYellow.getCreateObject()
         bullet.setMoveSpeed(speedTableX[i], speedTableY[i])
-        fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
+        FieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
       }
     }
   }
@@ -9521,7 +9521,7 @@ class TowerEnemyGroup3CoreShot extends TowerEnemyCoreTemplete {
     if (this.attackDelay.check()) {
       let bullet = TowerEnemy.bulletYellow.getCreateObject()
       bullet.setRandomMoveSpeedMinMax(-3, -3, 3, 3)
-      fieldState.createEnemyBulletObject(bullet, this.x, this.y)
+      FieldState.createEnemyBulletObject(bullet, this.x, this.y)
     }
   }
 }
@@ -9614,7 +9614,7 @@ class TowerEnemyGroup3ShipSmall extends TowerEnemy {
   equipCore () {
     if (this.coreEquipList.length >= this.coreEquipMaxCount) return
 
-    let enemyList = fieldState.getEnemyObject()
+    let enemyList = FieldState.getEnemyObject()
     let coreList = []
     let subTypeList = [this.coreType.shot, this.coreType.brown, this.coreType.core8, this.coreType.metal, this.coreType.potion, this.coreType.rainbow, this.coreType.fake]
     for (let i = 0; i < enemyList.length; i++) {
@@ -9735,7 +9735,7 @@ class TowerEnemyGroup3ShipSmall extends TowerEnemy {
       for (let i = 0; i < 8; i++) {
         let bullet = TowerEnemy.bulletYellow.getCreateObject()
         bullet.setMoveSpeed(speedTableX[i], speedTableY[i])
-        fieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
+        FieldState.createEnemyBulletObject(bullet, this.centerX, this.centerY)
       }
     }
 
@@ -9746,13 +9746,13 @@ class TowerEnemyGroup3ShipSmall extends TowerEnemy {
       let bulletB = TowerEnemy.bulletBlue.getCreateObject()
       bulletA.setRandomMoveSpeedMinMax(-3, -3, 3, 3)
 
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       bulletB.x = this.centerX // 플레이어 추적을 위한 bulletB의 좌표값 지정
       bulletB.y = this.centerY // 플레이어 추적을 위한 bulletB의 좌표값 지정
       bulletB.setMoveSpeedChaseLine(player.x, player.y, 60, 2)
 
-      fieldState.createEnemyBulletObject(bulletA, this.centerX, this.centerY)
-      fieldState.createEnemyBulletObject(bulletB, this.centerX, this.centerY)
+      FieldState.createEnemyBulletObject(bulletA, this.centerX, this.centerY)
+      FieldState.createEnemyBulletObject(bulletB, this.centerX, this.centerY)
     }
   }
 
@@ -9768,8 +9768,8 @@ class TowerEnemyGroup3ShipSmall extends TowerEnemy {
     if (this.dieCheck()) {
       this.processDieDefault()
       if (this.dieEffect) {
-        fieldState.createEffectObject(this.dieEffect, this.x + 40, this.y)
-        fieldState.createEffectObject(this.dieEffect, this.x + 80, this.y)
+        FieldState.createEffectObject(this.dieEffect, this.x + 40, this.y)
+        FieldState.createEffectObject(this.dieEffect, this.x + 80, this.y)
       }
     }
   }
@@ -10231,7 +10231,7 @@ class TowerEnemyGroup3BossDasu extends TowerEnemy {
   processMove () {
     super.processMove()
 
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     for (let i = 0; i < this.core.length; i++) {
       this.core[i].dasuX = this.centerX - (this.core[i].width / 2)
       this.core[i].dasuY = this.centerY - (this.core[i].width / 2)
@@ -10409,7 +10409,7 @@ class TowerEnemyGroup3BossDasu extends TowerEnemy {
     // 코어 충돌 딜레이값이 특정 값 미만이면 코어랑 플레이어랑 충돌하지 않음
     if (!this.coreCollisionDelay.check(false)) return
 
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     for (let i = 0; i < this.core.length; i++) {
       let currentCore = this.core[i]
       if (collision(currentCore, player)) {
@@ -10429,7 +10429,7 @@ class TowerEnemyGroup3BossDasu extends TowerEnemy {
         let bullet = TowerEnemy.bulletRed.getCreateObject()
         bullet.setRandomMoveSpeed(6, 6, true)
 
-        fieldState.createEnemyBulletObject(bullet, this.core[i].x, this.core[i].y)
+        FieldState.createEnemyBulletObject(bullet, this.core[i].x, this.core[i].y)
       }
     }
   }
@@ -10453,9 +10453,9 @@ class TowerEnemyGroup3BossDasu extends TowerEnemy {
         bullet2.setRandomMoveSpeed(4, 4, true)
         bullet3.setRandomMoveSpeed(4, 4, true)
 
-        fieldState.createEnemyBulletObject(bullet1, this.core[i].x, this.core[i].y)
-        fieldState.createEnemyBulletObject(bullet2, this.core[i].x, this.core[i].y)
-        fieldState.createEnemyBulletObject(bullet3, this.core[i].x, this.core[i].y)
+        FieldState.createEnemyBulletObject(bullet1, this.core[i].x, this.core[i].y)
+        FieldState.createEnemyBulletObject(bullet2, this.core[i].x, this.core[i].y)
+        FieldState.createEnemyBulletObject(bullet3, this.core[i].x, this.core[i].y)
       }
     }
   }
@@ -10474,9 +10474,9 @@ class TowerEnemyGroup3BossDasu extends TowerEnemy {
         bullet2.setMoveSpeed(-8, 0)
         bullet3.setMoveSpeed(-7, 0)
 
-        fieldState.createEnemyBulletObject(bullet1, this.core[i].x, this.core[i].y - 20)
-        fieldState.createEnemyBulletObject(bullet2, this.core[i].x, this.core[i].y)
-        fieldState.createEnemyBulletObject(bullet3, this.core[i].x, this.core[i].y + 20)
+        FieldState.createEnemyBulletObject(bullet1, this.core[i].x, this.core[i].y - 20)
+        FieldState.createEnemyBulletObject(bullet2, this.core[i].x, this.core[i].y)
+        FieldState.createEnemyBulletObject(bullet3, this.core[i].x, this.core[i].y + 20)
       }
     }
   }
@@ -10495,7 +10495,7 @@ class TowerEnemyGroup3BossDasu extends TowerEnemy {
         soundSystem.play(this.dieSound)
         if (this.dieEffect != null) {
           this.dieEffect.setWidthHeight(40, 40)
-          fieldState.createEffectObject(this.dieEffect.getObject(), this.x + (Math.random() * this.width), this.y + (Math.random() * this.height))
+          FieldState.createEffectObject(this.dieEffect.getObject(), this.x + (Math.random() * this.width), this.y + (Math.random() * this.height))
         }
       }
 
@@ -10503,7 +10503,7 @@ class TowerEnemyGroup3BossDasu extends TowerEnemy {
         if (this.dieEffect != null && this.core.length >= 1 && this.core[0] != null) {
           soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
           this.dieEffect.setWidthHeight(this.core[0].width, this.core[0].height)
-          fieldState.createEffectObject(this.dieEffect.getObject(), this.core[0].x, this.core[0].y)
+          FieldState.createEffectObject(this.dieEffect.getObject(), this.core[0].x, this.core[0].y)
           this.core.shift()
         }
       }
@@ -10512,7 +10512,7 @@ class TowerEnemyGroup3BossDasu extends TowerEnemy {
         soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
         if (this.dieEffect != null) {
           this.dieEffect.setWidthHeight(this.width, this.height)
-          fieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
+          FieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
         }
       }
     }
@@ -10651,7 +10651,7 @@ class TowerEnemyGroup3ClockAnalog extends TowerEnemy {
   processAttack () {
     if (this.state === TowerEnemyGroup3ClockAnalog.STATE_SKILL) {
       soundSystem.play(soundSrc.enemyAttack.towerClockAttack)
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       player.addDamage(this.SKILL_ANALOG_ATTACK) // 플레이어는 회피 불가능 무조건 데미지를 받아야 함
       this.flashFrame = 45
       this.state = TowerEnemyGroup3ClockAnalog.STATE_STOP // 공격후 상태 변경
@@ -10997,7 +10997,7 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
           bullet.setAutoMovePosition(graphicSystem.CANVAS_WIDTH - bullet.width, ((BULLET_Y_LINE * BULLET_SHOT) * i) + (BULLET_Y_LINE * j), 60)
           bullet.setNextMoveDelay(this.gasi.delayList.LOW)
           bullet.attack = this.gasi.ATTACK
-          fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+          FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
         }
       }
     }
@@ -11027,7 +11027,7 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
       bullet.setMoveSpeed(this.gasi.speedList.MID, targetSpeedY)
       bullet.setNextMoveDelay(this.gasi.delayList.LOW)
       bullet.attack = this.gasi.ATTACK
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
     }
 
     soundSystem.play(this.gasi.soundList.orange_purple)
@@ -11054,7 +11054,7 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
       bullet.setMoveSpeed(this.gasi.speedList.TURBO, 0)
       bullet.setNextMoveDelay(this.gasi.delayList.NORMAL + (i * 1))
       bullet.attack = this.gasi.ATTACK_WEAK
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
 
       // 가시 발사 사운드 재생 (사운드 너무 많이 출력을 막기위해 1/4 만큼 출력함)
       if (i % 4 === 0) {
@@ -11084,7 +11084,7 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
       bullet.setNextMoveDelay(30 + (delayNumber * 6))
       bullet.setMoveSpeed(-24, 0)
       bullet.attack = this.gasi.ATTACK_WEAK
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
 
       // 가시 발사 사운드 재생 (사운드 너무 많이 출력을 막기위해 1/4 만큼 출력함)
       if (i % 6 === 0) {
@@ -11107,7 +11107,7 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
     const RANGE = LINE_HEIGHT * 3
     let startY1 = RANGE + Math.random() * RANGE
     let startY2 = graphicSystem.CANVAS_HEIGHT - (RANGE * 2) + Math.random() * RANGE
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
 
     for (let i = 0; i < 20; i++) {
       let currentY = i % 2 === 0 ? startY1 : startY2 // 홀짝에 따라 위치 구분
@@ -11117,7 +11117,7 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
       bullet.setMoveSpeedChaseLine(player.x, player.y, 60, 6)
       bullet.setNextMoveDelay(this.gasi.delayList.NORMAL + (Math.floor(i / 2) * 2))
       bullet.attack = this.gasi.ATTACK_WEAK
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
     }
 
     soundSystem.play(this.gasi.soundList.orange_purple)
@@ -11133,7 +11133,7 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
   processAttackTypePurple6 () {
     if (!this.attackDelay.divCheck(100)) return
 
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     const canvasHeight = graphicSystem.CANVAS_HEIGHT
     const bulletHeight = (this.gasi.GASI_LINE_HEIGHT * 2)
     const bulletCount = canvasHeight / bulletHeight
@@ -11147,7 +11147,7 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
       bullet.setMoveSpeedChaseLine(player.x, player.y, 60, 6)
       bullet.setNextMoveDelay(this.gasi.delayList.NORMAL + (i * 2))
       bullet.attack = this.gasi.ATTACK_WEAK
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
     }
     
     soundSystem.play(this.gasi.soundList.orange_purple)
@@ -11176,7 +11176,7 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
       bullet.setMoveSpeed(this.gasi.speedList.LOW, 0)
       bullet.setNextMoveDelay(this.gasi.delayList.LOW)
       bullet.attack = this.gasi.ATTACK
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
     }
 
     soundSystem.play(this.gasi.soundList.blue)
@@ -11197,7 +11197,7 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
       bullet.setMoveSpeed(-6, 0)
       bullet.setNextMoveDelay(30)
       bullet.attack = this.gasi.ATTACK
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
     }
 
     soundSystem.play(this.gasi.soundList.pink)
@@ -11218,7 +11218,7 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
       bullet.setPosition(graphicSystem.CANVAS_WIDTH - bullet.width, Math.random() * (graphicSystem.CANVAS_HEIGHT - bullet.height))
       bullet.setNextMoveDelay(12)
       bullet.attack = this.gasi.ATTACK
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
     }
 
     soundSystem.play(this.gasi.soundList.green_grey)
@@ -11248,7 +11248,7 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
       bullet.setPosition(graphicSystem.CANVAS_WIDTH - bullet.width, Math.random() * (graphicSystem.CANVAS_HEIGHT - bullet.height))
       bullet.setNextMoveDelay(12)
       bullet.attack = this.gasi.ATTACK
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
     }
 
     soundSystem.play(this.gasi.soundList.green_grey)
@@ -11316,12 +11316,12 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
     super.processDieAfter()
 
     if (this.isDied && this.dieAfterDeleteDelay.divCheck(12) && this.dieEffect != null) {
-      fieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
+      FieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
       soundSystem.play(this.dieSound)
     }
     
     if (this.isDeleted) {
-      fieldState.createEnemyObject(ID.enemy.towerEnemyGroup4.nokgasi2, this.x + this.width, this.y)
+      FieldState.createEnemyObject(ID.enemy.towerEnemyGroup4.nokgasi2, this.x + this.width, this.y)
       soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
     }
   }
@@ -11477,7 +11477,7 @@ class TowerEnemyGroup4Nokgasi1 extends TowerEnemy {
           bullet.setPosition(this.x, this.y)
           bullet.attack = this.attack
           bullet.subType = this.subTypeList.gasishotSub // 가시의 타입을 다른것으로 변경 (중복 생성 방지)
-          fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+          FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
         }
       }
     }
@@ -11650,7 +11650,7 @@ class TowerEnemyGroup4Nokgasi2 extends TowerEnemy {
       bullet.setColorDirection(this.gasi.colorList.BLUE, this.gasi.directionList.UP)
       bullet.setPosition(graphicSystem.CANVAS_WIDTH - bullet.width, graphicSystem.CANVAS_HEIGHT - bullet.height)
       bullet.setPatternType(this.gasi.patternList.BOTTOM)
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
     }
 
     soundSystem.play(soundSrc.enemyAttack.towerNokgasiGasiBottom)
@@ -11670,7 +11670,7 @@ class TowerEnemyGroup4Nokgasi2 extends TowerEnemy {
       bullet.setColorDirection(this.gasi.colorList.GREEN, this.gasi.directionList.UP)
       bullet.setPosition(this.centerX, this.y + this.width)
       bullet.setPatternType(this.gasi.patternList.THROW)
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
     }
 
     soundSystem.play(soundSrc.enemyAttack.towerNokgasiGasiThrow)
@@ -11694,13 +11694,13 @@ class TowerEnemyGroup4Nokgasi2 extends TowerEnemy {
       bullet1.setColorDirection(this.gasi.colorList.PINK, this.gasi.directionList.DOWN)
       bullet1.setPosition(targetX, 0 - (bullet1.height / 2))
       bullet1.setPatternType(this.gasi.patternList.SPEAR)
-      fieldState.createEnemyBulletObject(bullet1, bullet1.x, bullet1.y)
+      FieldState.createEnemyBulletObject(bullet1, bullet1.x, bullet1.y)
 
       let bullet2 = new this.GasiShot()
       bullet2.setColorDirection(this.gasi.colorList.PINK, this.gasi.directionList.UP)
       bullet2.setPosition(targetX, graphicSystem.CANVAS_HEIGHT - (bullet2.height / 2))
       bullet2.setPatternType(this.gasi.patternList.SPEAR)
-      fieldState.createEnemyBulletObject(bullet2, bullet2.x, bullet2.y)
+      FieldState.createEnemyBulletObject(bullet2, bullet2.x, bullet2.y)
     }
 
     soundSystem.play(soundSrc.enemyAttack.towerNokgasiGasiSpear)
@@ -11724,7 +11724,7 @@ class TowerEnemyGroup4Nokgasi2 extends TowerEnemy {
       bullet.setColorDirection(this.gasi.colorList.TEAL, this.gasi.directionList.LEFT)
       bullet.setPosition(graphicSystem.CANVAS_WIDTH - 200, targetY + (i * 40))
       bullet.setPatternType(this.gasi.patternList.STING)
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
     }
 
     soundSystem.play(soundSrc.enemyAttack.towerNokgasiGasiShot)
@@ -11747,7 +11747,7 @@ class TowerEnemyGroup4Nokgasi2 extends TowerEnemy {
       bullet.setPosition((200 * i), targetY)
       bullet.setMoveSpeed(0, speedY)
       bullet.setPatternType(this.gasi.patternList.PATTERN5)
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
     }
 
     soundSystem.play(soundSrc.enemyAttack.towerNokgasiGasiPattern5)
@@ -11805,14 +11805,14 @@ class TowerEnemyGroup4Nokgasi2 extends TowerEnemy {
     this.degree = 0 // 죽었을 때 각도는 0으로 고정됨
     if (this.dieAfterDeleteDelay.count % 6 === 0 && this.dieEffect != null) {
       soundSystem.play(this.dieSound)
-      fieldState.createEffectObject(this.customEffect.getObject(), this.x + (Math.random() * (this.width - 40)), this.y + (Math.random() * (this.height - 40)))
+      FieldState.createEffectObject(this.customEffect.getObject(), this.x + (Math.random() * (this.width - 40)), this.y + (Math.random() * (this.height - 40)))
     }
 
     if (this.dieAfterDeleteDelay.count == this.dieAfterDeleteDelay.delay - 1 && this.dieEffect != null) {
       soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
       let effect = this.dieEffect.getObject()
       effect.setWidthHeight(this.width, this.height)
-      fieldState.createEffectObject(effect, this.x, this.y)
+      FieldState.createEffectObject(effect, this.x, this.y)
     }
   }
 
@@ -11842,7 +11842,7 @@ class TowerEnemyGroup4Nokgasi2 extends TowerEnemy {
       if (this.attack === 0) return
       // 플레이어랑 닿았을 때 연속 충돌을 하기 위한 함수
   
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       let playerSendXY = { x: player.x, y: player.y, width: player.width, height: player.height}
       
       if (this.collisionDelay.check(false) && collision(playerSendXY, this)) {
@@ -12107,14 +12107,14 @@ class TowerEnemyGroup4BlackSpaceArea extends TowerEnemyGroup4BlackSpaceAnti {
       soundSystem.play(soundSrc.round.r3_5_blackSpaceAreaDie)
       if (this.dieEffect != null) {
         this.dieEffect.setWidthHeight(40, 40)
-        fieldState.createEffectObject(this.dieEffect.getObject(), Math.random() * graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
+        FieldState.createEffectObject(this.dieEffect.getObject(), Math.random() * graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
       }
     }
 
     if (this.isDeleted) {
       soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
       let effect = this.dieCommonEffect.getObject()
-      fieldState.createEffectObject(effect, 0, 0)
+      FieldState.createEffectObject(effect, 0, 0)
     }
   }
 
@@ -12400,11 +12400,11 @@ class TowerEnemyGroup4AntijemulP3_1 extends TowerEnemy {
         let bullet = new this.myStatic.AntiPhase3Ring()
         bullet.x = this.centerX - (bullet.width / 2)
         bullet.y = this.centerY - (bullet.height / 2)
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
 
       // 유도 총알
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       for (let i = 0; i < chaseShotCount[this.patternLevel]; i++) {
         let bullet = new this.myStatic.AntiPhase3Ring()
         bullet.x = this.centerX - (bullet.width / 2)
@@ -12413,7 +12413,7 @@ class TowerEnemyGroup4AntijemulP3_1 extends TowerEnemy {
         bullet.setMoveSpeedChaseLine(player.x, player.y, 120, 4)
         // 하지만 약간의 오차가 있음.
         bullet.setMoveSpeed(bullet.moveSpeedX + (Math.random() * 1) - 0.5, bullet.moveSpeedY + (Math.random() * 1) - 0.5)
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
 
       soundSystem.play(soundSrc.enemyAttack.towerAntijemulRing)
@@ -12432,7 +12432,7 @@ class TowerEnemyGroup4AntijemulP3_1 extends TowerEnemy {
         let bullet = new this.myStatic.AntiPhase3RingBomb()
         bullet.x = this.centerX - (bullet.width / 2)
         bullet.y = this.centerY - (bullet.height / 2)
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
 
       soundSystem.play(soundSrc.enemyAttack.towerAntijemulRingBomb)
@@ -12455,7 +12455,7 @@ class TowerEnemyGroup4AntijemulP3_1 extends TowerEnemy {
         bullet.x = this.centerX - (bullet.width / 2)
         bullet.y = this.centerY - ((bullet.height / 2) * (-2 + Math.floor(i / 2)))
         bullet.setMoveSpeed(speedX, Math.random() * 2 - 1) // y축은 약간 어긋나있음
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
 
       for (let i = 0; i < normalShotCount[this.patternLevel]; i++) {
@@ -12465,7 +12465,7 @@ class TowerEnemyGroup4AntijemulP3_1 extends TowerEnemy {
         bullet.x = this.centerX - (bullet.width / 2) * (-2 + Math.floor(i / 2))
         bullet.y = this.centerY - (bullet.height / 2)
         bullet.setMoveSpeed(Math.random() * 2 - 1, speedY) // y축은 약간 어긋나있음
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
 
       soundSystem.play(soundSrc.enemyAttack.towerAntijemulRing)
@@ -12484,7 +12484,7 @@ class TowerEnemyGroup4AntijemulP3_1 extends TowerEnemy {
       let bullet = new this.myStatic.AntiPhase3GravityBall()
       bullet.x = this.centerX - (bullet.width / 2)
       bullet.y = this.centerY - (bullet.height / 2)
-      fieldState.createEnemyBulletObject(bullet)
+      FieldState.createEnemyBulletObject(bullet)
       soundSystem.play(soundSrc.enemyAttack.towerAntijemulGravityBall)
     }
   }
@@ -12520,7 +12520,7 @@ class TowerEnemyGroup4AntijemulP3_1 extends TowerEnemy {
           let bullet = new this.myStatic.AntiPhase3BackShot()
           bullet.x = graphicSystem.CANVAS_WIDTH + 1
           bullet.y = Math.random() * graphicSystem.CANVAS_HEIGHT
-          fieldState.createEnemyBulletObject(bullet)
+          FieldState.createEnemyBulletObject(bullet)
         }
       }
     } else if (this.attackDelay.count >= SHOT_FRAME && this.attackDelay.count <= ROLLBACK_FRAME) {
@@ -12550,7 +12550,7 @@ class TowerEnemyGroup4AntijemulP3_1 extends TowerEnemy {
         let bullet = new this.myStatic.AntiPhase3RingOrange()
         bullet.setRadius(i * 50, 270, ringSpeedTable[this.patternLevel])
         bullet.setBaseXY(this.centerX, this.centerY)
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
     }
   }
@@ -12559,7 +12559,7 @@ class TowerEnemyGroup4AntijemulP3_1 extends TowerEnemy {
     super.processMove()
     if (this.state === TowerEnemyGroup4AntijemulP3_1.STATE_BACKSHOT) return
     if (this.state === TowerEnemyGroup4AntijemulP3_1.STATE_RINGROLLING) {
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       // ringRolling 패턴은, 플레이어를 추적하면서 이동하며, 패턴 레벨이 상승하면 더욱 빠르게 이동합니다.
       const speedDivTable = [200, 170, 140]
 
@@ -12730,7 +12730,7 @@ class TowerEnemyGroup4AntijemulP3_1 extends TowerEnemy {
       // 만약 충돌 후의 상태또는 삭제 대기 상태라면 폭발하는 총알을 생성
       if (this.isDeleted) {
         let bullet = new TowerEnemyGroup4AntijemulP3_1.AntiPhase3RingBombEffect()
-        fieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
+        FieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
         soundSystem.play(soundSrc.enemyAttack.towerAntijemulRingBombEffect)
       }
     }
@@ -13051,7 +13051,7 @@ class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
         let bullet = new this.myStatic.AntiPhase3RingBlue()
         bullet.x = this.centerX - (bullet.width / 2)
         bullet.y = this.centerY - (bullet.height / 2)
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
 
       // 일반 총알 (분열)
@@ -13061,7 +13061,7 @@ class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
           let bullet = new this.myStatic.AntiPhase3RingBlue()
           bullet.x = current.centerX - (bullet.width / 2)
           bullet.y = current.centerY - (bullet.height / 2)
-          fieldState.createEnemyBulletObject(bullet)
+          FieldState.createEnemyBulletObject(bullet)
         } 
       }
 
@@ -13078,7 +13078,7 @@ class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
 
     if (this.attackDelay.divCheck(levelDelayTable[this.patternLevel])) {
       // 유도 총알
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       for (let i = 0; i < chaseShotCount[this.patternLevel]; i++) {
         let bullet = new this.myStatic.AntiPhase3RingBlue()
         bullet.x = this.centerX - (bullet.width / 2)
@@ -13087,7 +13087,7 @@ class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
         bullet.setMoveSpeedChaseLine(player.x, player.y, 120, 4)
         // 하지만 약간의 오차가 있음.
         bullet.setMoveSpeed(bullet.moveSpeedX + (Math.random() * 1) - 0.5, bullet.moveSpeedY + (Math.random() * 1) - 0.5)
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
 
       // 유도 총알 (뿐열)
@@ -13101,7 +13101,7 @@ class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
           bullet.setMoveSpeedChaseLine(player.x, player.y, 120, 4)
           // 하지만 약간의 오차가 있음.
           bullet.setMoveSpeed(bullet.moveSpeedX + (Math.random() * 1) - 0.5, bullet.moveSpeedY + (Math.random() * 1) - 0.5)
-          fieldState.createEnemyBulletObject(bullet)
+          FieldState.createEnemyBulletObject(bullet)
         }
       }
 
@@ -13121,7 +13121,7 @@ class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
         let bullet = new this.myStatic.AntiPhase3RingBomb()
         bullet.x = this.centerX - (bullet.width / 2)
         bullet.y = this.centerY - (bullet.height / 2)
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
 
       for (let i = 0; i < this.anotherAnti.length; i++) {
@@ -13130,7 +13130,7 @@ class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
           let bullet = new this.myStatic.AntiPhase3RingBomb()
           bullet.x = current.centerX - (bullet.width / 2)
           bullet.y = current.centerY - (bullet.height / 2)
-          fieldState.createEnemyBulletObject(bullet)
+          FieldState.createEnemyBulletObject(bullet)
         }
       }
 
@@ -13186,12 +13186,12 @@ class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
       }
 
       if (this.attackDelay.divCheck(levelDelayTable[this.patternLevel])) {
-        let player = fieldState.getPlayerObject()
+        let player = FieldState.getPlayerObject()
         let bullet = new this.myStatic.AntiPhase3BackShot()
         bullet.x = this.centerX
         bullet.y = this.centerY
         bullet.setMoveSpeedChaseLine(player.x, player.y, 90, 5)
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
 
         for (let i = 0; i < this.anotherAnti.length; i++) {
           let current = this.anotherAnti[i]
@@ -13199,7 +13199,7 @@ class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
           bullet.x = current.centerX
           bullet.y = current.centerY
           bullet.setMoveSpeedChaseLine(player.x, player.y, 90, 5)
-          fieldState.createEnemyBulletObject(bullet)
+          FieldState.createEnemyBulletObject(bullet)
         }
         soundSystem.play(soundSrc.enemyAttack.towerAntijemulBackshot)
       }
@@ -13228,7 +13228,7 @@ class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
         bullet.y = this.centerY
         // 원본은 3번 위치(오른쪽 위)에 있습니다.
         bullet.setMoveSpeed(this.backshotSpeedX[3], this.backshotSpeedY[3])
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
 
         for (let i = 0; i < this.anotherAnti.length; i++) {
           let current = this.anotherAnti[i]
@@ -13236,7 +13236,7 @@ class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
           bullet.x = current.centerX
           bullet.y = current.centerY
           bullet.setMoveSpeed(this.backshotSpeedX[i], this.backshotSpeedY[i])
-          fieldState.createEnemyBulletObject(bullet)
+          FieldState.createEnemyBulletObject(bullet)
         }
         soundSystem.play(soundSrc.enemyAttack.towerAntijemulBackshot)
       }
@@ -13269,7 +13269,7 @@ class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
     this.attackDelay.setDelay(this.GRAVITYBALL_DELAY)
     if (this.attackDelay.count === 1) {
       let bullet = new this.myStatic.AntiPhase3GravityRect()
-      fieldState.createEnemyBulletObject(bullet)
+      FieldState.createEnemyBulletObject(bullet)
       soundSystem.play(soundSrc.enemyAttack.towerAntijemulGravityBall)
     }
   }
@@ -13287,7 +13287,7 @@ class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
         let bullet = new this.myStatic.AntiPhase3RingOrange()
         bullet.setRadius(100, 270 + (90 * i), ringSpeedTable[this.patternLevel])
         bullet.setBaseXY(this.centerX, this.centerY)
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
 
       for (let i = 0; i < this.anotherAnti.length; i++) {
@@ -13296,7 +13296,7 @@ class TowerEnemyGroup4AntijemulP3_2 extends TowerEnemyGroup4AntijemulP3_1 {
           let bullet = new this.myStatic.AntiPhase3RingOrange()
           bullet.setRadius(100, 270 + (90 * j), ringSpeedTable[this.patternLevel])
           bullet.setBaseXY(current.centerX, current.centerY)
-          fieldState.createEnemyBulletObject(bullet)
+          FieldState.createEnemyBulletObject(bullet)
         }
       }
     }
@@ -13444,14 +13444,14 @@ class TowerEnemyGroup4AntijemulP4_1 extends TowerEnemy {
 
       bullet.attack = 2 // 총알이 너무 많기 때문에 공격력이 낮음
       bullet.setWidthHeight(10, 10) // 총알의 크기도 작아짐
-      fieldState.createEnemyBulletObject(bullet)
+      FieldState.createEnemyBulletObject(bullet)
     }
   }
 
   processDieAfterLogic () {
     super.processDieAfterLogic()
     if (this.nextEnemyId !== 0) {
-      fieldState.createEnemyObject(this.nextEnemyId, this.x, this.y)
+      FieldState.createEnemyObject(this.nextEnemyId, this.x, this.y)
     }
   }
 }
@@ -13487,7 +13487,7 @@ class TowerEnemyGroup4AntijemulP4_2 extends TowerEnemyGroup4AntijemulP4_1 {
         bullet.y = this.bulletYLineTable[i] + this.bulletYLine
         bullet.setWidthHeight(20, 8)
         bullet.setMoveSpeed(-12, 0)
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
     }
   }
@@ -13504,7 +13504,7 @@ class TowerEnemyGroup4AntijemulP4_3 extends TowerEnemyGroup4AntijemulP4_1 {
   processMove () {
     super.processMove()
 
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     this.setMoveSpeedChaseLine(player.x, player.y, 100, 4)
   }
 
@@ -13515,7 +13515,7 @@ class TowerEnemyGroup4AntijemulP4_3 extends TowerEnemyGroup4AntijemulP4_1 {
         let bullet = new TowerEnemyGroup4AntijemulP3_1.AntiPhase3RingOrange()
         bullet.setRadius(i * 40, 270, 20)
         bullet.setBaseXY(this.centerX, this.centerY)
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
     }
   }
@@ -13549,7 +13549,7 @@ class TowerEnemyGroup5Camera extends TowerEnemy {
       // enemyBullet
       let bullet = new TowerEnemyGroup5Camera.CameraBullet()
       bullet.setPosition(this.x + Math.random() * 300 - 150, this.y + Math.random() * 200 - 100)
-      fieldState.createEnemyBulletObject(bullet)
+      FieldState.createEnemyBulletObject(bullet)
       soundSystem.play(soundSrc.enemyAttack.towerCameraAttackWait)
     }
 
@@ -13621,7 +13621,7 @@ class TowerEnemyGroup5Cctv extends TowerEnemy {
       let bullet = TowerEnemy.bulletYellow.getCreateObject()
       bullet.setMoveSpeed(Math.random() * 4 - 2, 6)
       bullet.setPosition(this.x, this.y + 30)
-      fieldState.createEnemyBulletObject(bullet)
+      FieldState.createEnemyBulletObject(bullet)
     }
   }
 }
@@ -13659,7 +13659,7 @@ class TowerEnemyGroup5Radio extends TowerEnemy {
       bullet.x = this.x
       bullet.y = this.centerY
       // target 찾기 (같은 종류의 적이 있는지를 확인, 자기 자신은 제외됩니다.)
-      let list = fieldState.getEnemyObjectById(this.id)
+      let list = FieldState.getEnemyObjectById(this.id)
       if (list.length <= 1) {
         // 같은 종류의 다른 적이 없다면, 임의의 4방향중 하나에 총알 발사
         let random = Math.floor(Math.random() * 4)
@@ -13683,7 +13683,7 @@ class TowerEnemyGroup5Radio extends TowerEnemy {
       }
 
       soundSystem.play(soundSrc.enemyAttack.towerRadioAttack)
-      fieldState.createEnemyBulletObject(bullet)
+      FieldState.createEnemyBulletObject(bullet)
     }
   }
 
@@ -13703,7 +13703,7 @@ class TowerEnemyGroup5Radio extends TowerEnemy {
       if (this.elapsedFrame <= 60 || this.isCollisionReflect) return
 
       // 무전기에 해당하는 적들을 모두 가져옵니다.
-      let list = fieldState.getEnemyObjectById(ID.enemy.towerEnemyGroup5.radio)
+      let list = FieldState.getEnemyObjectById(ID.enemy.towerEnemyGroup5.radio)
       if (list.length === 0) return
 
       // 해당하는 무전기랑 이 총알이 충돌한 경우, 이동 속도를 전부 반대로 바꾸고, 더이상 반사되지 않게 합니다.
@@ -13762,7 +13762,7 @@ class TowerEnemyGroup5SirenRed extends TowerEnemy {
   }
 
   detectCheck () {
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     let detectArea = {x: this.x - 200, y: this.y - 200, width: 400, height: 400}
     if (collision(player, detectArea)) {
       return true
@@ -13785,7 +13785,7 @@ class TowerEnemyGroup5SirenRed extends TowerEnemy {
   }
 
   processMoveDetect () {
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     this.setMoveSpeedChaseLine(player.x, player.y, 240, 2)
   }
 
@@ -13830,7 +13830,7 @@ class TowerEnemyGroup5SirenGreen extends TowerEnemyGroup5SirenRed {
   detectCheck () {
     let area1 = {x: 0, y: this.y, width: 1200, height: this.height}
     let area2 = {x: this.x, y: 0, width: this.width, height: 1200}
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     if (collision(area1, player) || collision(area2, player)) {
       return true
     } else {
@@ -13888,7 +13888,7 @@ class TowerEnemyGroup5Hellnet extends TowerEnemyHellTemplet {
       bullet.y = this.centerY
       bullet.setMoveSpeed(targetSpeedX, targetSpeedY)
 
-      fieldState.createEnemyBulletObject(bullet)
+      FieldState.createEnemyBulletObject(bullet)
       soundSystem.play(soundSrc.enemyAttack.towerRadioAttack)
     }
   }
@@ -13918,7 +13918,7 @@ class TowerEnemyGroup5Helltell extends TowerEnemyHellTemplet {
       bullet.setPosition(this.centerX, this.y)
       bullet.setMoveSpeed(this.moveSpeedX * 3, this.moveSpeedY * 3)
       bullet.degree = this.degree
-      fieldState.createEnemyBulletObject(bullet)
+      FieldState.createEnemyBulletObject(bullet)
     }
   }
 
@@ -13997,7 +13997,7 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
         let speedX = Math.cos(radian) * baseSpeed
         let speedY = Math.sin(radian) * baseSpeed
         bullet.setMoveSpeed(speedX, speedY)
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
     } else if (this.state === TowerEnemyGroup5Gabudan.STATE_PROGRAM_RUN2 && this.attackDelay.check()) {
       this.attackDelay.delay = 40
@@ -14023,7 +14023,7 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
         // bullet2.setPosition((sectionX * i) + randomOffset, graphicSystem.CANVAS_HEIGHT)
         // bullet2.setMoveSpeed(0, -baseSpeed)
         
-        fieldState.createEnemyBulletObject(bullet1)
+        FieldState.createEnemyBulletObject(bullet1)
         // fieldState.createEnemyBulletObject(bullet2)
       }
 
@@ -14032,7 +14032,7 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
         let bullet2 = TowerEnemy.bulletBlue.getCreateObject()
         bullet2.setPosition(graphicSystem.CANVAS_WIDTH, (i * sectionY) + randomOffsetY)
         bullet2.setMoveSpeed(-baseSpeed, 0)
-        fieldState.createEnemyBulletObject(bullet2)
+        FieldState.createEnemyBulletObject(bullet2)
       }
     }
   }
@@ -14168,7 +14168,7 @@ class TowerEnemyGroup5Gabudan extends TowerEnemy {
       if (this.dieEffect != null) {
         let effect = this.dieEffect.getObject()
         effect.setPosition(this.x, this.y)
-        fieldState.createEffectObject(effect)
+        FieldState.createEffectObject(effect)
       }
 
       soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
@@ -14354,7 +14354,7 @@ class TowerEnemyGroup5Sujipgi extends TowerEnemy {
     // 만약 해당 쓰레기(적)가 있다면, 다음 상태는 running이고
     // 아니라면, 다음 상태는 nodetect입니다.
     let detectArea = {x: this.x - 250, y: this.y - 250, width: 500, height: 500}
-    let enemyList = fieldState.getEnemyObject()
+    let enemyList = FieldState.getEnemyObject()
     let isTargeted = false
     for (let i = 0; i < enemyList.length; i++) {
       let enemy = enemyList[i]
@@ -14393,7 +14393,7 @@ class TowerEnemyGroup5Sujipgi extends TowerEnemy {
     // 만약, running상태일경우, 특정 적이랑 이 오브젝트랑 닿았는지 확인하여, 
     // 서로 닿았다면 적은 제거됩니다.
 
-    let enemyList = fieldState.getEnemyObject()
+    let enemyList = FieldState.getEnemyObject()
     for (let i = 0; i < enemyList.length; i++) {
       let enemy = enemyList[i]
       if (enemy.mainType !== TowerEnemyGroup5Sujipgi.TRASH_MAIN_TYPE) continue
@@ -14673,13 +14673,13 @@ class TowerEnemyGroup5VaccumCleaner extends TowerEnemy {
       let bullet = new TowerEnemyGroup5VaccumCleaner.TrashBullet()
       bullet.setPosition(arrayX[i], arrayY[i])
       bullet.setMoveSpeedChaseLine(inhalerCenterX, inhalerCenterY, 120, 2)
-      fieldState.createEnemyBulletObject(bullet)
+      FieldState.createEnemyBulletObject(bullet)
     }
   }
 
   processAttackFirstInhalerCollision () {
     // 적 총알이 흡입기에 닿는지를 판정함
-    let enemyBulletList = fieldState.getEnemyBulletObject()
+    let enemyBulletList = FieldState.getEnemyBulletObject()
     for (let i = 0; i < enemyBulletList.length; i++) {
       let enemybullet = enemyBulletList[i]
       if (collision(enemybullet, this.objectList.inhaler)) {
@@ -14734,7 +14734,7 @@ class TowerEnemyGroup5VaccumCleaner extends TowerEnemy {
 
     this.attackDelay.setDelay(30)
     if (!this.attackDelay.check()) return
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     soundSystem.play(soundSrc.enemyAttack.towerVacuumCleanerTrash)
 
     for (let i = 0; i < 4; i++) {
@@ -14745,7 +14745,7 @@ class TowerEnemyGroup5VaccumCleaner extends TowerEnemy {
       } else {
         bullet.setRandomMoveSpeedMinMax(2, 0, 4, 3, true)
       }
-      fieldState.createEnemyBulletObject(bullet)
+      FieldState.createEnemyBulletObject(bullet)
     }
   }
 
@@ -14842,7 +14842,7 @@ class TowerEnemyGroup5VaccumCleaner extends TowerEnemy {
       let bullet = new TowerEnemyGroup5VaccumCleaner.TrashBullet()
       bullet.setPosition(this.centerX, this.centerY)
       bullet.setRandomMoveSpeedMinMax(1, 1, 3, 3, true)
-      fieldState.createEnemyBulletObject(bullet)
+      FieldState.createEnemyBulletObject(bullet)
     }
   }
 
@@ -14874,7 +14874,7 @@ class TowerEnemyGroup5VaccumCleaner extends TowerEnemy {
 
       if (this.dieEffect != null) {
         this.dieEffect.setWidthHeight(40, 40)
-        fieldState.createEffectObject(this.dieEffect.getObject(), this.x + Math.random() * this.width, this.y + Math.random() * this.height)
+        FieldState.createEffectObject(this.dieEffect.getObject(), this.x + Math.random() * this.width, this.y + Math.random() * this.height)
       }
     }
 
@@ -14882,7 +14882,7 @@ class TowerEnemyGroup5VaccumCleaner extends TowerEnemy {
       soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
       if (this.dieEffect != null) {
         this.dieEffect.setWidthHeight(this.width, this.height)
-        fieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
+        FieldState.createEffectObject(this.dieEffect.getObject(), this.x, this.y)
       }
     }
   }
@@ -14980,7 +14980,7 @@ class TowerEnemyGroup5GamokBangpae extends TowerEnemy {
       let bullet = new IntruderEnemyDaseok.EnergyBullet()
       bullet.setPosition(graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
       bullet.setMoveSpeed(-Math.random() * 5 - 4, Math.random() * 12 - 6)
-      fieldState.createEnemyBulletObject(bullet)
+      FieldState.createEnemyBulletObject(bullet)
     }
 
     let randomSound = Math.floor(Math.random() * 3)
@@ -15000,7 +15000,7 @@ class TowerEnemyGroup5GamokBangpae extends TowerEnemy {
       soundSystem.play(this.dieSound)
       if (this.dieEffect) {
         this.dieEffect.setWidthHeight(100, 100)
-        fieldState.createEffectObject(this.dieEffect.getObject(), Math.random() * graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
+        FieldState.createEffectObject(this.dieEffect.getObject(), Math.random() * graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
       }
     }
 
@@ -15008,7 +15008,7 @@ class TowerEnemyGroup5GamokBangpae extends TowerEnemy {
       soundSystem.play(soundSrc.enemyDie.enemyDieTowerBossCommon)
       if (this.dieEffect) {
         this.dieEffect.setWidthHeight(graphicSystem.CANVAS_WIDTH, graphicSystem.CANVAS_HEIGHT)
-        fieldState.createEffectObject(this.dieEffect.getObject(), 0, 0)
+        FieldState.createEffectObject(this.dieEffect.getObject(), 0, 0)
       }
     }
   }
@@ -15037,7 +15037,7 @@ class TowerEnemy5GroupFakeHellGreyBoss extends TowerEnemyHellTemplet{
     // 플레이어를 항상 추적합니다.
     if (this.moveDelay.count === 0) {
       // 플레이어를 추적하도록 속도 변경
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       this.targetSpeed._x = (player.centerX - this.centerX) / 20
       this.targetSpeed._y = (player.centerY - this.centerY) / 20
     }
@@ -15069,7 +15069,7 @@ class TowerEnemy5GroupFakeHellGreyBoss extends TowerEnemyHellTemplet{
         const effect = TowerEnemyHellTemplet.DieEffectRed.getObject()
         effect.width = this.width
         effect.height = this.height
-        fieldState.createEffectObject(effect, this.x, this.y)
+        FieldState.createEffectObject(effect, this.x, this.y)
       }
     }
   }

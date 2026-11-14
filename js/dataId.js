@@ -202,7 +202,7 @@ export class ID {
     skillSabangtan: 46026,
     skillHabirant: 46027,
     skillHabirantSub: 46028,
-    skillIcechaser: 46029,
+    skillIceChaser: 46029,
     skillCalibur: 46030,
     skillCaliburSub: 46031,
     skillSujikpa: 46032,

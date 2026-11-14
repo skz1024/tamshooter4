@@ -702,10 +702,10 @@ class BiosSystem {
     // image move 
     // 이동이 좌표 기반이므로 실제 조작키랑 반대로 이동하기 때문에 이 값은 의도적으로 X축과 Y축이 반전시키기 위해 -1을 곱했습니다.
     const moveSpeed = 5
-    if (buttonLeft) this.bios.imageObject.x -= moveSpeed * -1
-    if (buttonRight) this.bios.imageObject.x += moveSpeed * -1
-    if (buttonUp) this.bios.imageObject.y -= moveSpeed * -1
-    if (buttonDown) this.bios.imageObject.y += moveSpeed * -1
+    if (buttonLeft) this.bios.imageObject.x -= moveSpeed
+    if (buttonRight) this.bios.imageObject.x += moveSpeed
+    if (buttonUp) this.bios.imageObject.y -= moveSpeed
+    if (buttonDown) this.bios.imageObject.y += moveSpeed
 
     if (buttonB) { // alpha change
       this.bios.imageObject.alpha += 0.1

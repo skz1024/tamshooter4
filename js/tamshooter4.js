@@ -6,7 +6,7 @@ import { dataExportStatItem, dataExportStatPlayerSkill, dataExportStatPlayerWeap
 import { soundSrc } from "./soundSrc.js";
 import { ID } from "./dataId.js";
 import { gameVar, UserSystem, game, gameFunction, LoadingSystem } from "./game.js";
-import { fieldSystem as FieldSystem } from "./field.js";
+import { FieldSystem as FieldSystem } from "./field.js";
 import { stringText, systemText } from "./text.js";
 import { dataExportPlayerSkill, dataExportPlayerWeapon } from "./dataPlayer.js";
 import { versionText } from "../versionText.js";
@@ -4840,13 +4840,12 @@ export class GameSystem {
       if (this.loadingSystem.frameCount >= 12) {
         this.loadingSystem.display()
       }
-      console.log('loading')
       return
     }
 
     // 화면 출력
     switch (this.stateId) {
-      case this.STATE_MAIN: this.mainSystem.display(); console.log('main'); break
+      case this.STATE_MAIN: this.mainSystem.display(); break
     }
 
     if (this.stateId === this.STATE_FIELD) {

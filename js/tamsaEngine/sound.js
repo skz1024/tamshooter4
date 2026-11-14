@@ -34,6 +34,12 @@ export class SoundSystem {
   cacheBufferRequest = new Map()
 
   /**
+   * 오디오 캐시 버퍼를 요청했지만 실패한 경우, 이 변수에 기록합니다.
+   * @type {Set<string>}
+   */
+  cacheBufferFail = new Set()
+
+  /**
    * 사운드 시스템 생성 (웹 오디오 모드 기본설정)
    * 
    * 맨 처음 페이지를 로드할 때 사용자의 상호작용(터치, 클릭, 키입력등...) 없이 웹 오디오를 실행할 수 없습니다.
@@ -69,16 +75,22 @@ export class SoundSystem {
       if (this.audioContext.state !== 'running') {
         this.audioContext.resume()
       }
+
+      this.audioElementCreate()
     })
     addEventListener('touchstart', () => {
       if (this.audioContext.state !== 'running') {
         this.audioContext.resume()
       }
+
+      this.audioElementCreate()
     })
     addEventListener('keydown', () => {
       if (this.audioContext.state !== 'running') {
         this.audioContext.resume()
       }
+
+      this.audioElementCreate()
     })
 
     /** 음악을 페이드 아웃할 때 사용하는 timeout에 대한 id */
@@ -209,13 +221,25 @@ export class SoundSystem {
     // 중복 요청을 방지하기 위한 코드
     // 해당 버퍼를 이미 가지고 있다면 이 함수는 실행되지 않습니다.
     if (this.cacheBufferRequest.has(audioSrc)) return
+    if (this.cacheBuffer.has(audioSrc)) return
 
     this.cacheBufferRequest.set(audioSrc, true) // 중복 방지용 데이터 등록
 
-    // 오디오 디코드 과정 진행
-    let getFile = await (await fetch(audioSrc)).arrayBuffer()
-    let decodeFile = await this.audioContext.decodeAudioData(getFile).then((getValue) => getValue)
-    this.cacheBuffer.set(audioSrc, decodeFile)
+    try {
+      // 파일 로드 과정 진행
+      let response = await fetch(audioSrc)
+      if (!response.ok) throw new Error('Audio fetch failed')
+        
+      // 오디오 디코드 과정 진행
+      let getFile = await response.arrayBuffer()
+      let decodeFile = await this.audioContext.decodeAudioData(getFile).then((getValue) => getValue)
+      this.cacheBuffer.set(audioSrc, decodeFile)
+      this.cacheBufferFail.delete(audioSrc)
+    } catch {
+      // 로딩에 실패한 경우, 다시 요청할 수 있도록 중복 체크를 제거
+      this.cacheBufferRequest.delete(audioSrc)
+      this.cacheBufferFail.add(audioSrc)
+    }
   }
 
   /** 오디오 생성 대기열 목록(오디오 경로) */
@@ -240,8 +264,8 @@ export class SoundSystem {
    */
   getAudioLoadCompleteCount (src) {
     if (src == null) return 0
-
     let count = 0
+
     for (let i = 0; i < src.length; i++) {
       let audio = this.getCacheAudio(src[i])
       if (audio != null && audio.readyState >= audio.HAVE_CURRENT_DATA && audio.error == null) {
@@ -258,13 +282,47 @@ export class SoundSystem {
    */
   getAudioLoadErrorCount (src) {
     if (src == null) return 0
-
     let count = 0
 
     for (let i = 0; i < src.length; i++) {
       let audio = this.cacheAudio.get(src[i])
 
       if (audio != null && audio.error != null) {
+        count++
+      }
+    }
+
+    return count
+  }
+
+  /**
+   * 오디오 버퍼가 얼마나 로드가 완료되었는지에 대한 개수를 표시합니다.
+   * @param {string[]} src 오디오의 경로 (배열로 처리)
+   */
+  getBufferLoadCompleteCount (src) {
+    if (src == null) return 0
+    let count = 0
+
+    for (let i = 0; i < src.length; i++) {
+      let buffer = this.cacheBuffer.get(src[i])
+      if (buffer) {
+        count++
+      }
+    }
+
+    return count
+  }
+
+  /**
+   * 오디오 버퍼가 로드에 실패한 개수를 표시합니다.
+   * @param {string[]} src 오디오의 경로 (배열로 처리)
+   */
+  getBufferLoadErrorCount(src) {
+    if (src == null) return 0
+    let count = 0
+
+    for (let i = 0; i < src.length; i++) {
+      if (this.cacheBufferFail.has(src[i])) {
         count++
       }
     }

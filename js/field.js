@@ -6,12 +6,12 @@ import { CustomEditEffect, CustomEffect, EffectData } from './dataEffect.js'
 import { EnemyData } from './dataEnemy.js'
 import { DelayData, EnemyBulletData, EnimationData, FieldData } from './dataField.js'
 import { ID } from './dataId.js'
-import { PlayerObject, PlayerSkillData, PlayerWeaponData } from './dataPlayer.js'
+import { dataExportPlayerSkill, PlayerObject, PlayerSkillData, PlayerWeaponData } from './dataPlayer.js'
 import { RoundData } from './dataRound.js'
 import { WeaponData } from './dataWeapon.js'
 import { imageDataInfo, ImageDataObject, imageSrc } from './imageSrc.js'
 import { soundSrc } from './soundSrc.js'
-import { gameVar, UserSystem, game, gameFunction } from './game.js'
+import { gameVar, UserSystem, game, gameFunction, LoadingSystem } from './game.js'
 import { dataExportStatItem } from './dataStat.js'
 
 let digitalDisplay = gameFunction.digitalDisplay
@@ -129,7 +129,7 @@ export class ItemDropEffect extends CustomEditEffect {
     let leftFrame = DISPLAYFRAME - this.elapsedFrame
     if (leftFrame <= 0) leftFrame = 1
 
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     let speedX = (player.centerX - this.centerX) / leftFrame
     let speedY = (player.centerY - this.centerY) / leftFrame
     this.setMoveSpeed(speedX, speedY)
@@ -147,7 +147,7 @@ export class ItemDropEffect extends CustomEditEffect {
 /**
  * 필드 스테이트 (필드의 상태를 관리하는 static 클래스 - 공용, 인스턴스 없음)
  */
-export class fieldState {
+export class FieldState {
   /** @type {PlayerObject} */ static playerObject = new PlayerObject()
   /** @type {WeaponData[]} */ static weaponObject = []
   /** @type {EnemyData[]} */ static enemyObject = []
@@ -273,27 +273,27 @@ export class fieldState {
    안그러면 객체가 null이라 핸들러 함수기 적용되지 않습니다.* */
   static bindPlayerHandlers () {
     // 필드에서 플레이어오브젝트에게 함수 주입
-    for (let i = 0; i < fieldState.playerObject.weaponSlot.length; i++) {
-      const weapon = fieldState.playerObject.weaponSlot[i].weapon
+    for (let i = 0; i < FieldState.playerObject.weaponSlot.length; i++) {
+      const weapon = FieldState.playerObject.weaponSlot[i].weapon
       if (weapon) {
         weapon.setCreateHandler((selectId, x, y, shotAttack, option) => {
-          fieldState.createWeaponObject(selectId, x, y, shotAttack, option)
+          FieldState.createWeaponObject(selectId, x, y, shotAttack, option)
         })
       }
     }
 
     // 스킬도 마찬가지
-    for (let i = 0; i < fieldState.playerObject.skillSlotA.length; i++) {
-      const skillA = fieldState.playerObject.skillSlotA[i].skill
-      const skillB = fieldState.playerObject.skillSlotB[i].skill
+    for (let i = 0; i < FieldState.playerObject.skillSlotA.length; i++) {
+      const skillA = FieldState.playerObject.skillSlotA[i].skill
+      const skillB = FieldState.playerObject.skillSlotB[i].skill
       if (skillA) {
         skillA.setCreateHandler((selectId, x, y, shotAttack, option) => {
-          fieldState.createWeaponObject(selectId, x, y, shotAttack, option)
+          FieldState.createWeaponObject(selectId, x, y, shotAttack, option)
         })
       }
       if (skillB) {
         skillB.setCreateHandler((selectId, x, y, shotAttack, option) => {
-          fieldState.createWeaponObject(selectId, x, y, shotAttack, option)
+          FieldState.createWeaponObject(selectId, x, y, shotAttack, option)
         })
       }
     }
@@ -483,14 +483,14 @@ export class fieldState {
     // 아이템 이펙트가 중앙에서 출력되도록 처리
     const centerX = game.graphic.CANVAS_WIDTH_HALF - (itemEffect.width / 2)
     const centerY = game.graphic.CANVAS_HEIGHT_HALF - (itemEffect.height / 2)
-    let inputData = fieldState.createEffectObject(itemEffect, centerX, centerY)
+    let inputData = FieldState.createEffectObject(itemEffect, centerX, centerY)
     return inputData
   }
 
   static damageObjectNumber = 0
   static createDamageObject (x = 0, y = 0, attack = 1) {
     // 데미지 보여주기 없으면 데미지와 관련된 객체 작업은 동작하지 않음.
-    if (!fieldSystem.option.showDamage) return
+    if (!FieldSystem.option.showDamage) return
 
     if (this.damageObject.length < 100) {
       this.damageObject.push(new DamageObject())
@@ -634,10 +634,10 @@ export class fieldState {
     let item = targetEnemy.getItem()
     if (item.id === 0) return // 아이템이 없는 경우 무시
 
-    fieldSystem.fieldRequests.addItem(item.id, item.count) // 필드시스템에 아이템 추가
+    FieldSystem.fieldRequests.addItem(item.id, item.count) // 필드시스템에 아이템 추가
     let newEffect = new ItemDropEffect() // 이펙트 생성
     newEffect.setItemId(item.id)
-    fieldState.createEffectObject(newEffect, targetEnemy.x, targetEnemy.y) // 이펙트 추가
+    FieldState.createEffectObject(newEffect, targetEnemy.x, targetEnemy.y) // 이펙트 추가
 
     // 남은 아이템 전부 제거 (드랍이 완료되었으므로)
     targetEnemy.removeItem()
@@ -645,7 +645,7 @@ export class fieldState {
 
   static processDamageObject () {
     // 옵션에서 데미지 보여주기를 false로 하면 데미지 프로세스/출력은 처리하지 않음
-    if (!fieldSystem.option.showDamage) return
+    if (!FieldSystem.option.showDamage) return
 
     // 데미지 오브젝트는 삭제되지 않고 스택에 남아있습니다.
     // 새로 할당되면 기존 오브젝트를 변형하여 재사용합니다.
@@ -727,7 +727,7 @@ export class fieldState {
       const currentEnemy = this.enemyObject[i]
 
       currentEnemy.display()
-      if (fieldSystem.option.showEnemyHp) {
+      if (FieldSystem.option.showEnemyHp) {
         this.displayEnemyHpMeter(currentEnemy)
       }
     }
@@ -753,7 +753,7 @@ export class fieldState {
   }
 
   static displayDamageObject () {
-    if (!fieldSystem.option.showDamage) return
+    if (!FieldSystem.option.showDamage) return
 
     for (let i = 0; i < this.damageObject.length; i++) {
       const currentDamage = this.damageObject[i]
@@ -793,7 +793,7 @@ export class fieldState {
  * 
  * 이 클래스 내 변수들은 오직 fieldSystem만 사용 가능하며, 외부에서의 접근을 금지합니다.
  */
-class fieldRequestUser {
+class FieldRequestUser {
   /** 토큰이 선점되어 있는지 여부, 한 번만 등록하면 바로 끝남. */
   static #isTokenAcquired = false
 
@@ -911,11 +911,11 @@ class FieldRequests {
   static addScore (score = 0) {
     if (score < 0) return
 
-    fieldSystem.fieldScore += score
+    FieldSystem.fieldScore += score
 
     // 이 변수는 플레이어의 경험치를 즉시 증가시켜야 하기 때문에, 플레이어에게 경험치를 추가하도록 요청합니다.
     // 실제 경험치 처리는 fieldSystem 내에서 처리합니다.
-    fieldSystem.fieldRequestToPlayerScore += score
+    FieldSystem.fieldRequestToPlayerScore += score
   }
 
   /** 
@@ -925,7 +925,7 @@ class FieldRequests {
    */
   static addGold (gold = 0) {
     if (gold > 0) {
-      fieldSystem.fieldGold += gold
+      FieldSystem.fieldGold += gold
     }
   }
 
@@ -936,7 +936,7 @@ class FieldRequests {
    */
   static subtractGold (gold = 0) {
     if (gold > 0) {
-      fieldSystem.fieldGold -= gold
+      FieldSystem.fieldGold -= gold
     }
   }
 
@@ -950,17 +950,17 @@ class FieldRequests {
   static addItem (id, count) {
     if (id === 0 || count <= 0) return
 
-    const index = fieldSystem.fieldItemIdList.indexOf(id)
+    const index = FieldSystem.fieldItemIdList.indexOf(id)
     if (index === -1) {
-      fieldSystem.fieldItemIdList.push(id)
-      fieldSystem.fieldItemCountList.push(count)
+      FieldSystem.fieldItemIdList.push(id)
+      FieldSystem.fieldItemCountList.push(count)
     } else {
-      const resultCount = fieldSystem.fieldItemCountList[index] + count
+      const resultCount = FieldSystem.fieldItemCountList[index] + count
       if (resultCount !== 0) {
-        fieldSystem.fieldItemCountList[index] = resultCount
+        FieldSystem.fieldItemCountList[index] = resultCount
       } else {
-        fieldSystem.fieldItemIdList.splice(index, 1)
-        fieldSystem.fieldItemCountList.splice(index, 1)
+        FieldSystem.fieldItemIdList.splice(index, 1)
+        FieldSystem.fieldItemCountList.splice(index, 1)
       }
     }
   }
@@ -977,37 +977,37 @@ class FieldRequests {
   static removeItem (id, count) {
     if (id === 0 || count <= 0) return
 
-    const index = fieldSystem.fieldItemIdList.indexOf(id)
+    const index = FieldSystem.fieldItemIdList.indexOf(id)
 
     if (index === -1) {
       // 아이템 개수가 0이면 처리가 취소되므로, 개수가 0이되는지는 조사하지 않습니다.
       // 해당 인덱스가 없다면, 아이템이 없으므로 새로운 배열 데이터를 추가합니다.
-      fieldSystem.fieldItemIdList.push(id)
-      fieldSystem.fieldItemCountList.push(-count) // 음수로 넣어야 합니다! 개수잖아요!
+      FieldSystem.fieldItemIdList.push(id)
+      FieldSystem.fieldItemCountList.push(-count) // 음수로 넣어야 합니다! 개수잖아요!
     } else {
-      const resultCount = fieldSystem.fieldItemCountList[index] - count
+      const resultCount = FieldSystem.fieldItemCountList[index] - count
       if (resultCount !== 0) {
-        fieldSystem.fieldItemCountList[index] = resultCount
+        FieldSystem.fieldItemCountList[index] = resultCount
       } else {
-        fieldSystem.fieldItemIdList.splice(index, 1)
-        fieldSystem.fieldItemCountList.splice(index, 1)
+        FieldSystem.fieldItemIdList.splice(index, 1)
+        FieldSystem.fieldItemCountList.splice(index, 1)
       }
     }
   }
 
   /** 플레이어의 스킬을 잠금 해제하도록 필드에게 요청합니다. */
   static requestUnlockSkill (id = 0) {
-    fieldSystem.requestPlayerUnlockSkill(id)
+    FieldSystem.requestPlayerUnlockSkill(id)
   }
 }
 
-class fieldSave {
+class FieldSave {
   /** 필드에 저장할 int32 객체, 총 256 * 64 * 4바이트 = 65536바이트 */
   static array = new Int32Array(256 * 64)
 
   /** 필드 저장 데이터 리셋 */
   static reset () {
-    fieldSave.array.fill(0)
+    FieldSave.array.fill(0)
   }
 
   static HEADER_OFFSET = 0
@@ -1023,7 +1023,7 @@ class fieldSave {
 
   static index = {
     /** 헤어 영역 */ header : {
-      /** 배열의 시작 인덱스 */ START_INDEX: fieldSave.HEADER_OFFSET,
+      /** 배열의 시작 인덱스 */ START_INDEX: FieldSave.HEADER_OFFSET,
       /** 헤더의 최대 길이 */ MAX_LENGTH: 16,
       /** 버전 플래그 값, 이 값은 tamshooter saveSystem에서 직접 관리하고, 필드에서는 우선 0으로 대입합니다. */ VERSION_FLAG: 0,
       /** 저장된 필드 객체의 총 개수 (오브젝트 타입 무관) */ OBJECT_COUNT: 4,
@@ -1032,7 +1032,7 @@ class fieldSave {
     },
 
     /** 필드 시스템 영역 */ field : {
-      START_INDEX: fieldSave.FIELD_OFFSET,
+      START_INDEX: FieldSave.FIELD_OFFSET,
       MAX_LENGTH: 32,
       STATEID: 0,
       FIELD_SCORE: 1,
@@ -1046,8 +1046,8 @@ class fieldSave {
     },
 
     /** 라운드 관련 */ round : {
-      /** 배열의 시작 인덱스 */ START_INDEX: fieldSave.ROUND_OFFSET,
-      MAX_LENGTH: fieldSave.ROUND_LENGTH,
+      /** 배열의 시작 인덱스 */ START_INDEX: FieldSave.ROUND_OFFSET,
+      MAX_LENGTH: FieldSave.ROUND_LENGTH,
       ID: 0,
       STATE: 1,
       CURRENT_TIME: 2,
@@ -1081,8 +1081,8 @@ class fieldSave {
     },
 
     /** 플레이어 관련 */ player : {
-      START_INDEX: fieldSave.PLAYER_OFFSET,
-      MAX_LENGTH: fieldSave.PLAYER_LENGTH,
+      START_INDEX: FieldSave.PLAYER_OFFSET,
+      MAX_LENGTH: FieldSave.PLAYER_LENGTH,
       X: 0,
       Y: 1,
       HP: 2,
@@ -1104,8 +1104,8 @@ class fieldSave {
     },
 
     /** 오브젝트 개체 영역 */ object : {
-      START_INDEX: fieldSave.OBJECT_OFFSET,
-      MAX_LENGTH: fieldSave.OBJECT_LENGTH,
+      START_INDEX: FieldSave.OBJECT_OFFSET,
+      MAX_LENGTH: FieldSave.OBJECT_LENGTH,
 
       // --- Header & ID ---
       ID: 0,
@@ -1159,23 +1159,27 @@ class fieldSave {
   }
 }
 
-export class fieldSystem {
+class FieldLoadPack {
+  static commonEffectList = [
+    imageSrc.enemyDie.effectList
+  ]
+}
+
+export class FieldSystem {
   /**
    * 현재 진행되고 있는 라운드
    * @type {RoundData | undefined}
    */
   static round = undefined
 
-  /** 필드 저장 데이터 (export 용도) */ static fieldSave = fieldSave
+  /** 필드 저장 데이터 (export 용도) */ static fieldSave = FieldSave
   /** 필드 시스템임을 증명하는 심볼 */ static #fieldSystemSymbol = Symbol()
-  static fieldRequestUser = fieldRequestUser
+  static fieldRequestUser = FieldRequestUser
   static fieldRequests = FieldRequests
 
   static {
     // 토큰을 등록시켜서, 다른 외부 함수가 userSystem에 직접 접근하는 것을 다 막아버립니다.
-    fieldRequestUser.acquireToken(this.#fieldSystemSymbol)
-
-    
+    FieldRequestUser.acquireToken(this.#fieldSystemSymbol)
   }
 
   /** 현재 상태값을 표시하는 ID */ static stateId = 0
@@ -1265,14 +1269,11 @@ export class fieldSystem {
       return
     }
 
-    // 라운드 시작 시, 게임 상태는 필드로 전환합니다. 이 과정에서 로딩이 진행합니다.
-    // 로딩은 게임 시스템에서 처리합니다.
-    this.roundImageSoundLoad() // 라운드 데이터 로드
-    
+    // 필드 데이터 초기화
     this.roundId = roundId
     this.message = this.messageList.STATE_FIELD
-    fieldState.allObjectReset()
-    fieldState.bindPlayerHandlers() // 플레이어의 무기와 스킬 함수를 이 시점에서 등록
+    FieldState.allObjectReset()
+    FieldState.bindPlayerHandlers() // 플레이어의 무기와 스킬 함수를 이 시점에서 등록
     this.stateId = this.STATE_NORMAL
     this.cursor = 0
     this.enimationFrame = 0
@@ -1282,13 +1283,42 @@ export class fieldSystem {
     this.fieldGold = 0
     this.fieldItemCountList = []
     this.fieldItemIdList = []
+    
+
+    // 이미지와 사운드 리스트를 만들고 로딩을 요청합니다.
+    const imageList = [
+      ...FieldLoadPack.commonEffectList,
+      ...this.round.load._imageList,
+      ...this.round.bgLayer.getImageSrcList(),
+    ]
+    
+    // 참고: 배경음악 로딩은 필드에서 리스트를 추가합니다.
+    const soundList = [
+      ...this.getUserSkillSoundList(),
+      ...this.round.load._soundList,
+      ...this.round.sound.getMusicSrcList(),
+    ]
+
+    LoadingSystem.loadStart(imageList, soundList)
   }
 
-  /** 라운드에서 사용할 이미지와 사운드 파일을 로드합니다. */
-  static roundImageSoundLoad () {
-    if (this.round == null) return
-    this.round.load.loadStart()
+  /** 유저의 사운드 스킬 리스트를 얻어옵니다. */
+  static getUserSkillSoundList () {
+    const soundList = []
+    for (let i = 0; i < FieldState.playerObject.skillSlotA.length; i++) {
+      const skillAId = FieldState.playerObject.skillSlotA[i].id
+      const skillBId = FieldState.playerObject.skillSlotB[i].id
+      const dataA = dataExportPlayerSkill.get(skillAId)
+      const dataB = dataExportPlayerSkill.get(skillBId)
+
+      if (dataA) soundList.push(...dataA.getSoundList())
+      if (dataB) soundList.push(...dataB.getSoundList())
+    }
+
+    return soundList
   }
+
+  
 
   /**
    * 라운드를 나갑니다. (processExit와는 다름)
@@ -1482,12 +1512,12 @@ export class fieldSystem {
       this.stateId = this.STATE_PAUSE
     } else if (this.round.clearCheck()) {
       this.stateId = this.STATE_ROUND_CLEAR
-    } else if (fieldState.playerObject.isDied && fieldState.playerObject.dieAfterDelayCount >= 120) {
+    } else if (FieldState.playerObject.isDied && FieldState.playerObject.dieAfterDelayCount >= 120) {
       this.stateId = this.STATE_GAME_OVER
     }
 
     this.round.process()
-    fieldState.process()
+    FieldState.process()
 
     gameVar.statLineText2.setStatLineText(this.getFieldDataString(), this.round.time._currentTime, this.round.stat.finishTime, '#D5F5E3' ,'#33ff8c')
 
@@ -1495,7 +1525,7 @@ export class fieldSystem {
     // 그 다음, 중복 점수 방지를 위해 다시 필드 요청 점수를 초기화합니다.
     // 이것은 적을 죽여서 얻는 점수는 즉시 경험치를 얻도록 해야 하기 때문입니다.
     if (this.fieldRequestToPlayerScore > 0) {
-      fieldRequestUser.addExp(this.fieldRequestToPlayerScore, this.#fieldSystemSymbol)
+      FieldRequestUser.addExp(this.fieldRequestToPlayerScore, this.#fieldSystemSymbol)
       this.fieldRequestToPlayerScore = 0
     }
   }
@@ -1523,7 +1553,7 @@ export class fieldSystem {
    * 불러오기 한 직후, 또는 매 프레임 이후에 실행합니다.
    */
   static processSendUserStat () {
-    const player = fieldState.getPlayerObject()
+    const player = FieldState.getPlayerObject()
     UserSystem.setStatUiHpShield(player.hp, player.shield, player.shieldMax)
 
     const skillSlot = player.usingSkillSlotA ? player.skillSlotA : player.skillSlotB
@@ -1563,7 +1593,7 @@ export class fieldSystem {
   static display () {
     // 라운드, 필드스테이트, 필드데이터는 항상 출력됩니다.
     if (this.round) this.round.display()
-    fieldState.display()
+    FieldState.display()
 
     switch (this.stateId) {
       case this.STATE_PAUSE:
@@ -1705,103 +1735,103 @@ export class fieldSystem {
 
   static fieldSystemSaveDataV055 () {
     // header insert
-    const hs = fieldSave.index.header
-    const fe = fieldSave.index.field
-    const pl = fieldSave.index.player
-    const rd = fieldSave.index.round
-    const ob = fieldSave.index.object
-    fieldSave.array[hs.START_INDEX + hs.VERSION_FLAG] = 0
+    const hs = FieldSave.index.header
+    const fe = FieldSave.index.field
+    const pl = FieldSave.index.player
+    const rd = FieldSave.index.round
+    const ob = FieldSave.index.object
+    FieldSave.array[hs.START_INDEX + hs.VERSION_FLAG] = 0
 
     // field
-    fieldSave.array[fe.START_INDEX + fe.STATEID] = this.stateId
-    fieldSave.array[fe.START_INDEX + fe.FIELD_SCORE] = this.fieldScore
-    fieldSave.array[fe.START_INDEX + fe.FIELD_GOLD] = this.fieldGold
-    fieldSave.array[fe.START_INDEX + fe.TOTAL_SCORE] = this.totalScore
-    fieldSave.array[fe.START_INDEX + fe.ENIMATION_FRAME] = this.enimationFrame == null ? 0 : this.enimationFrame
-    fieldSave.array[fe.START_INDEX + fe.EXIT_DELAY_COUNT] = this.exitDelayCount
+    FieldSave.array[fe.START_INDEX + fe.STATEID] = this.stateId
+    FieldSave.array[fe.START_INDEX + fe.FIELD_SCORE] = this.fieldScore
+    FieldSave.array[fe.START_INDEX + fe.FIELD_GOLD] = this.fieldGold
+    FieldSave.array[fe.START_INDEX + fe.TOTAL_SCORE] = this.totalScore
+    FieldSave.array[fe.START_INDEX + fe.ENIMATION_FRAME] = this.enimationFrame == null ? 0 : this.enimationFrame
+    FieldSave.array[fe.START_INDEX + fe.EXIT_DELAY_COUNT] = this.exitDelayCount
     for (let i = 0; i < this.fieldItemIdList.length && i < (fe.MAX_LENGTH - fe.FIELD_ITEM_LIST) / 2; i++) {
       const FINDEX = fe.START_INDEX + fe.FIELD_ITEM_LIST + (i * 2)
-      fieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET] = this.fieldItemIdList[i]
-      fieldSave.array[FINDEX + fe.FIELD_ITEM_COUNT_OFFSET] = this.fieldItemCountList[i]
+      FieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET] = this.fieldItemIdList[i]
+      FieldSave.array[FINDEX + fe.FIELD_ITEM_COUNT_OFFSET] = this.fieldItemCountList[i]
     }
 
     //round
     if (this.round == null) {
-      fieldSave.array[rd.START_INDEX + rd.ID] = 0
+      FieldSave.array[rd.START_INDEX + rd.ID] = 0
     } else {
-      fieldSave.array[rd.START_INDEX + rd.ID] = this.round.stat.id ? this.round.stat.id : 0
-      fieldSave.array[rd.START_INDEX + rd.STATE] = this.round.state
-      fieldSave.array[rd.START_INDEX + rd.CURRENT_TIME] = this.round.time.currentTime
-      fieldSave.array[rd.START_INDEX + rd.CURRENT_TIME_FRAME] = this.round.time.currentTimeFrame
-      fieldSave.array[rd.START_INDEX + rd.CURRNET_TIME_TOTAL_FRAME] = this.round.time.currentTimeTotalFrame
-      fieldSave.array[rd.START_INDEX + rd.CURRENT_TIME_PAUSED] = this.round.time.currentTimePaused ? 1 : 0
-      fieldSave.array[rd.START_INDEX + rd.PLUS_TIME] = this.round.time.plusTime
-      fieldSave.array[rd.START_INDEX + rd.PLUS_TIME_FRAME] = this.round.time.plusTimeFrame
-      fieldSave.array[rd.START_INDEX + rd.CURRENT_MUSIC_INDEX] = this.round.sound.currentMusicIndex
-      fieldSave.array[rd.START_INDEX + rd.CURRENT_MUSIC_TIME] = Math.floor(game.sound.getMusicCurrentTime())
-      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_INDEX_NUMBER] = 0 // backgroundIndexNumber
+      FieldSave.array[rd.START_INDEX + rd.ID] = this.round.stat.id ? this.round.stat.id : 0
+      FieldSave.array[rd.START_INDEX + rd.STATE] = this.round.state
+      FieldSave.array[rd.START_INDEX + rd.CURRENT_TIME] = this.round.time.currentTime
+      FieldSave.array[rd.START_INDEX + rd.CURRENT_TIME_FRAME] = this.round.time.currentTimeFrame
+      FieldSave.array[rd.START_INDEX + rd.CURRNET_TIME_TOTAL_FRAME] = this.round.time.currentTimeTotalFrame
+      FieldSave.array[rd.START_INDEX + rd.CURRENT_TIME_PAUSED] = this.round.time.currentTimePaused ? 1 : 0
+      FieldSave.array[rd.START_INDEX + rd.PLUS_TIME] = this.round.time.plusTime
+      FieldSave.array[rd.START_INDEX + rd.PLUS_TIME_FRAME] = this.round.time.plusTimeFrame
+      FieldSave.array[rd.START_INDEX + rd.CURRENT_MUSIC_INDEX] = this.round.sound.currentMusicIndex
+      FieldSave.array[rd.START_INDEX + rd.CURRENT_MUSIC_TIME] = Math.floor(game.sound.getMusicCurrentTime())
+      FieldSave.array[rd.START_INDEX + rd.BACKGROUND_INDEX_NUMBER] = 0 // backgroundIndexNumber
 
       // background layer
-      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_X] = this.round.bgLayer.getBackgroundPosition().x
-      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_Y] = this.round.bgLayer.getBackgroundPosition().y
-      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDX] = this.round.bgLayer.getBackgroundSpeed().speedX
-      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDY] = this.round.bgLayer.getBackgroundSpeed().speedY
-      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_WIDTH] = this.round.bgLayer.getBackgroundWidthHeight().width
-      fieldSave.array[rd.START_INDEX + rd.BACKGROUND_HEIGHT] = this.round.bgLayer.getBackgroundWidthHeight().height
+      FieldSave.array[rd.START_INDEX + rd.BACKGROUND_X] = this.round.bgLayer.getBackgroundPosition().x
+      FieldSave.array[rd.START_INDEX + rd.BACKGROUND_Y] = this.round.bgLayer.getBackgroundPosition().y
+      FieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDX] = this.round.bgLayer.getBackgroundSpeed().speedX
+      FieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDY] = this.round.bgLayer.getBackgroundSpeed().speedY
+      FieldSave.array[rd.START_INDEX + rd.BACKGROUND_WIDTH] = this.round.bgLayer.getBackgroundWidthHeight().width
+      FieldSave.array[rd.START_INDEX + rd.BACKGROUND_HEIGHT] = this.round.bgLayer.getBackgroundWidthHeight().height
 
       // bgLayer
       const layer = this.round.bgLayer.getLayer()
       for (let i = 0; i < 10 && i < layer.length; i++) {
         const LINDEX = rd.START_INDEX + rd.BGLAYER_OFFSET_START + (i * rd.BGLAYER_OFFSET_COUNT)
-        fieldSave.array[LINDEX + rd.BGLAYER_X] = layer[i].x
-        fieldSave.array[LINDEX + rd.BGLAYER_Y] = layer[i].y
-        fieldSave.array[LINDEX + rd.BGLAYER_SPEEDX] = layer[i].speedX
-        fieldSave.array[LINDEX + rd.BGLAYER_SPEEDY] = layer[i].speedY
-        fieldSave.array[LINDEX + rd.BGLAYER_ALPHAEND] = layer[i].alphaEnd * 100 // 알파값은 0 ~ 1범위라 100배 해서 저장
-        fieldSave.array[LINDEX + rd.BGLAYER_ISSYNCHRONIZED] = layer[i].isSynchronized ? 1 : 0
+        FieldSave.array[LINDEX + rd.BGLAYER_X] = layer[i].x
+        FieldSave.array[LINDEX + rd.BGLAYER_Y] = layer[i].y
+        FieldSave.array[LINDEX + rd.BGLAYER_SPEEDX] = layer[i].speedX
+        FieldSave.array[LINDEX + rd.BGLAYER_SPEEDY] = layer[i].speedY
+        FieldSave.array[LINDEX + rd.BGLAYER_ALPHAEND] = layer[i].alphaEnd * 100 // 알파값은 0 ~ 1범위라 100배 해서 저장
+        FieldSave.array[LINDEX + rd.BGLAYER_ISSYNCHRONIZED] = layer[i].isSynchronized ? 1 : 0
       }
       
 
       // extends input (temp code)
       for (let i = 0; i < this.round.extendedMemory.length; i++) {
         const EINDEX = rd.START_INDEX + rd.EXTENDS_START + i
-        fieldSave.array[EINDEX] = this.round.extendedMemory[i]
+        FieldSave.array[EINDEX] = this.round.extendedMemory[i]
       }
     }
 
     // player area
-    fieldSave.array[pl.START_INDEX + pl.X] = fieldState.playerObject.x
-    fieldSave.array[pl.START_INDEX + pl.Y] = fieldState.playerObject.y
-    fieldSave.array[pl.START_INDEX + pl.HP] = fieldState.playerObject.hp
-    fieldSave.array[pl.START_INDEX + pl.SHIELD] = fieldState.playerObject.shield
-    fieldSave.array[pl.START_INDEX + pl.SHIELDMAX] = fieldState.playerObject.shieldMax
-    fieldSave.array[pl.START_INDEX + pl.ATTACK_DELAY_COUNT] = fieldState.playerObject.attackDelayCount
-    fieldSave.array[pl.START_INDEX + pl.DIE_AFTER_DELAY_COUNT] = fieldState.playerObject.dieAfterDelayCount
-    fieldSave.array[pl.START_INDEX + pl.USING_SKILL_SLOTA] = fieldState.playerObject.usingSkillSlotA ? 1 : 0
-    fieldSave.array[pl.START_INDEX + pl.DISABLE] = fieldState.playerObject.disable ? 1 : 0
+    FieldSave.array[pl.START_INDEX + pl.X] = FieldState.playerObject.x
+    FieldSave.array[pl.START_INDEX + pl.Y] = FieldState.playerObject.y
+    FieldSave.array[pl.START_INDEX + pl.HP] = FieldState.playerObject.hp
+    FieldSave.array[pl.START_INDEX + pl.SHIELD] = FieldState.playerObject.shield
+    FieldSave.array[pl.START_INDEX + pl.SHIELDMAX] = FieldState.playerObject.shieldMax
+    FieldSave.array[pl.START_INDEX + pl.ATTACK_DELAY_COUNT] = FieldState.playerObject.attackDelayCount
+    FieldSave.array[pl.START_INDEX + pl.DIE_AFTER_DELAY_COUNT] = FieldState.playerObject.dieAfterDelayCount
+    FieldSave.array[pl.START_INDEX + pl.USING_SKILL_SLOTA] = FieldState.playerObject.usingSkillSlotA ? 1 : 0
+    FieldSave.array[pl.START_INDEX + pl.DISABLE] = FieldState.playerObject.disable ? 1 : 0
 
     // player weapon
-    for (let i = 0; i < fieldState.playerObject.weaponSlot.length; i++) {
+    for (let i = 0; i < FieldState.playerObject.weaponSlot.length; i++) {
       const WINDEX = pl.START_INDEX + pl.WEAPON + (i * 2)
-      fieldSave.array[WINDEX + pl.WEAPON_OFFSET_ID] = fieldState.playerObject.weaponSlot[i].id
-      fieldSave.array[WINDEX + pl.WEAPON_OFFSET_DELAYCOUNT] = fieldState.playerObject.weaponSlot[i].delayCount
+      FieldSave.array[WINDEX + pl.WEAPON_OFFSET_ID] = FieldState.playerObject.weaponSlot[i].id
+      FieldSave.array[WINDEX + pl.WEAPON_OFFSET_DELAYCOUNT] = FieldState.playerObject.weaponSlot[i].delayCount
     }
 
     // player skill
-    for (let i = 0; i < fieldState.playerObject.skillSlotA.length; i++) {
+    for (let i = 0; i < FieldState.playerObject.skillSlotA.length; i++) {
       const SINDEX1 = pl.START_INDEX + pl.SKILL + (i * 4) 
       const SINDEX2 = pl.START_INDEX + pl.SKILL + (i * 4) + (4 * 4) // skill B slot Position
       // 스킬슬롯 A는 배열 0번 (0 ~ 3) 부터 시작한다고 가정함
       // 스킬슬롯 B는 배열 4번 (4 ~ 7) 부터 시작한다고 가정함
-      fieldSave.array[SINDEX1 + pl.SKILL_OFFSET_ID] = fieldState.playerObject.skillSlotA[i].id
-      fieldSave.array[SINDEX1 + pl.SKILL_OFFSET_DELAY_COUNT] = fieldState.playerObject.skillSlotA[i].delayCount
-      fieldSave.array[SINDEX1 + pl.SKILL_OFFSET_COOL_TIME_FRAME] = fieldState.playerObject.skillSlotA[i].coolTimeFrame
-      fieldSave.array[SINDEX1 + pl.SKILL_OFFSET_REPEAT_COUNT] = fieldState.playerObject.skillSlotA[i].repeatCount
+      FieldSave.array[SINDEX1 + pl.SKILL_OFFSET_ID] = FieldState.playerObject.skillSlotA[i].id
+      FieldSave.array[SINDEX1 + pl.SKILL_OFFSET_DELAY_COUNT] = FieldState.playerObject.skillSlotA[i].delayCount
+      FieldSave.array[SINDEX1 + pl.SKILL_OFFSET_COOL_TIME_FRAME] = FieldState.playerObject.skillSlotA[i].coolTimeFrame
+      FieldSave.array[SINDEX1 + pl.SKILL_OFFSET_REPEAT_COUNT] = FieldState.playerObject.skillSlotA[i].repeatCount
 
-      fieldSave.array[SINDEX2 + pl.SKILL_OFFSET_ID] = fieldState.playerObject.skillSlotB[i].id
-      fieldSave.array[SINDEX2 + pl.SKILL_OFFSET_DELAY_COUNT] = fieldState.playerObject.skillSlotB[i].delayCount
-      fieldSave.array[SINDEX2 + pl.SKILL_OFFSET_COOL_TIME_FRAME] = fieldState.playerObject.skillSlotB[i].coolTimeFrame
-      fieldSave.array[SINDEX2 + pl.SKILL_OFFSET_REPEAT_COUNT] = fieldState.playerObject.skillSlotB[i].repeatCount
+      FieldSave.array[SINDEX2 + pl.SKILL_OFFSET_ID] = FieldState.playerObject.skillSlotB[i].id
+      FieldSave.array[SINDEX2 + pl.SKILL_OFFSET_DELAY_COUNT] = FieldState.playerObject.skillSlotB[i].delayCount
+      FieldSave.array[SINDEX2 + pl.SKILL_OFFSET_COOL_TIME_FRAME] = FieldState.playerObject.skillSlotB[i].coolTimeFrame
+      FieldSave.array[SINDEX2 + pl.SKILL_OFFSET_REPEAT_COUNT] = FieldState.playerObject.skillSlotB[i].repeatCount
     }
 
     // field data input
@@ -1812,49 +1842,49 @@ export class fieldSystem {
     // sprite를 따로 처리할지 결정하지 못함.
     // 지금은 enemy만 저장
 
-    const totalEnemyCount = fieldState.enemyObject.length
-    for (let i = 0; i < fieldState.enemyObject.length; i++) {
+    const totalEnemyCount = FieldState.enemyObject.length
+    for (let i = 0; i < FieldState.enemyObject.length; i++) {
       const NINDEX = ob.START_INDEX + (ob.TOTAL_SLOT_SIZE * i)
-      const enemy = fieldState.enemyObject[i]
-      fieldSave.array[NINDEX + ob.ID] = enemy.id
-      fieldSave.array[NINDEX + ob.OBJECT_TYPE] = enemy.objectType
-      fieldSave.array[NINDEX + ob.MAIN_TYPE] = enemy.mainType
-      fieldSave.array[NINDEX + ob.SUB_TYPE] = enemy.subType
-      fieldSave.array[NINDEX + ob.CREATE_ID] = enemy.createId
-      fieldSave.array[NINDEX + ob.STATE] = enemy.state
-      fieldSave.array[NINDEX + ob.X] = enemy.x
-      fieldSave.array[NINDEX + ob.Y] = enemy.y
-      fieldSave.array[NINDEX + ob.Z] = enemy.z
-      fieldSave.array[NINDEX + ob.MOVE_SPEED_X] = enemy.moveSpeedX
-      fieldSave.array[NINDEX + ob.MOVE_SPEED_Y] = enemy.moveSpeedY
-      fieldSave.array[NINDEX + ob.MOVE_DIRECTION_X] = enemy.moveDirectionX
-      fieldSave.array[NINDEX + ob.MOVE_DIRECTION_Y] = enemy.moveDirectionY
-      fieldSave.array[NINDEX + ob.FLIP] = enemy.flip
-      fieldSave.array[NINDEX + ob.DEGREE] = enemy.degree
-      fieldSave.array[NINDEX + ob.WIDTH] = enemy.width
-      fieldSave.array[NINDEX + ob.HEIGHT] = enemy.height
-      fieldSave.array[NINDEX + ob.DELAY] = enemy.delay == null ? 0 : enemy.delay.delay
-      fieldSave.array[NINDEX + ob.DELAY_COUNT] = enemy.delay == null ? 0 : enemy.delay.count
-      fieldSave.array[NINDEX + ob.MOVE_DELAY] = enemy.moveDelay == null ? 0 : enemy.moveDelay.delay
-      fieldSave.array[NINDEX + ob.MOVE_COUNT] = enemy.moveDelay == null ? 0 : enemy.moveDelay.count
-      fieldSave.array[NINDEX + ob.ATTACK_DELAY] = enemy.attackDelay == null ? 0 : enemy.attackDelay.delay
-      fieldSave.array[NINDEX + ob.ATTACK_COUNT] = enemy.attackDelay == null ? 0 : enemy.attackDelay.count
-      fieldSave.array[NINDEX + ob.STATE_DELAY] = enemy.stateDelay == null ? 0 : enemy.stateDelay.delay
-      fieldSave.array[NINDEX + ob.STATE_COUNT] = enemy.stateDelay == null ? 0 : enemy.stateDelay.count
-      fieldSave.array[NINDEX + ob.REPEAT_DELAY] = enemy.repeatDelay == null ? 0 : enemy.repeatDelay.delay
-      fieldSave.array[NINDEX + ob.REPEAT_COUNT] = enemy.repeatDelay == null ? 0 : enemy.repeatDelay.count
-      fieldSave.array[NINDEX + ob.ATTACK] = enemy.attack
-      fieldSave.array[NINDEX + ob.DEFENSE] = enemy.defense
-      fieldSave.array[NINDEX + ob.HP] = enemy.hp
-      fieldSave.array[NINDEX + ob.HP_MAX] = enemy.hpMax
-      fieldSave.array[NINDEX + ob.ELAPSED_FRAME] = enemy.elapsedFrame
+      const enemy = FieldState.enemyObject[i]
+      FieldSave.array[NINDEX + ob.ID] = enemy.id
+      FieldSave.array[NINDEX + ob.OBJECT_TYPE] = enemy.objectType
+      FieldSave.array[NINDEX + ob.MAIN_TYPE] = enemy.mainType
+      FieldSave.array[NINDEX + ob.SUB_TYPE] = enemy.subType
+      FieldSave.array[NINDEX + ob.CREATE_ID] = enemy.createId
+      FieldSave.array[NINDEX + ob.STATE] = enemy.state
+      FieldSave.array[NINDEX + ob.X] = enemy.x
+      FieldSave.array[NINDEX + ob.Y] = enemy.y
+      FieldSave.array[NINDEX + ob.Z] = enemy.z
+      FieldSave.array[NINDEX + ob.MOVE_SPEED_X] = enemy.moveSpeedX
+      FieldSave.array[NINDEX + ob.MOVE_SPEED_Y] = enemy.moveSpeedY
+      FieldSave.array[NINDEX + ob.MOVE_DIRECTION_X] = enemy.moveDirectionX
+      FieldSave.array[NINDEX + ob.MOVE_DIRECTION_Y] = enemy.moveDirectionY
+      FieldSave.array[NINDEX + ob.FLIP] = enemy.flip
+      FieldSave.array[NINDEX + ob.DEGREE] = enemy.degree
+      FieldSave.array[NINDEX + ob.WIDTH] = enemy.width
+      FieldSave.array[NINDEX + ob.HEIGHT] = enemy.height
+      FieldSave.array[NINDEX + ob.DELAY] = enemy.delay == null ? 0 : enemy.delay.delay
+      FieldSave.array[NINDEX + ob.DELAY_COUNT] = enemy.delay == null ? 0 : enemy.delay.count
+      FieldSave.array[NINDEX + ob.MOVE_DELAY] = enemy.moveDelay == null ? 0 : enemy.moveDelay.delay
+      FieldSave.array[NINDEX + ob.MOVE_COUNT] = enemy.moveDelay == null ? 0 : enemy.moveDelay.count
+      FieldSave.array[NINDEX + ob.ATTACK_DELAY] = enemy.attackDelay == null ? 0 : enemy.attackDelay.delay
+      FieldSave.array[NINDEX + ob.ATTACK_COUNT] = enemy.attackDelay == null ? 0 : enemy.attackDelay.count
+      FieldSave.array[NINDEX + ob.STATE_DELAY] = enemy.stateDelay == null ? 0 : enemy.stateDelay.delay
+      FieldSave.array[NINDEX + ob.STATE_COUNT] = enemy.stateDelay == null ? 0 : enemy.stateDelay.count
+      FieldSave.array[NINDEX + ob.REPEAT_DELAY] = enemy.repeatDelay == null ? 0 : enemy.repeatDelay.delay
+      FieldSave.array[NINDEX + ob.REPEAT_COUNT] = enemy.repeatDelay == null ? 0 : enemy.repeatDelay.count
+      FieldSave.array[NINDEX + ob.ATTACK] = enemy.attack
+      FieldSave.array[NINDEX + ob.DEFENSE] = enemy.defense
+      FieldSave.array[NINDEX + ob.HP] = enemy.hp
+      FieldSave.array[NINDEX + ob.HP_MAX] = enemy.hpMax
+      FieldSave.array[NINDEX + ob.ELAPSED_FRAME] = enemy.elapsedFrame
     }
 
     // 
-    fieldSave.array[hs.OBJECT_COUNT] = totalEnemyCount
+    FieldSave.array[hs.OBJECT_COUNT] = totalEnemyCount
 
     // 필드 전체 길이 저장
-    fieldSave.array[hs.TOTAL_LENGTH] = ob.START_INDEX + (ob.TOTAL_SLOT_SIZE * totalEnemyCount)
+    FieldSave.array[hs.TOTAL_LENGTH] = ob.START_INDEX + (ob.TOTAL_SLOT_SIZE * totalEnemyCount)
   }
 
   /** 필드 상태를 저장합니다. */
@@ -1868,68 +1898,68 @@ export class fieldSystem {
   }
 
   static fieldSystemLoadDataV055 () {
-    const hs = fieldSave.index.header
-    const pl = fieldSave.index.player
-    const rd = fieldSave.index.round
-    const ob = fieldSave.index.object
-    const fe = fieldSave.index.field
+    const hs = FieldSave.index.header
+    const pl = FieldSave.index.player
+    const rd = FieldSave.index.round
+    const ob = FieldSave.index.object
+    const fe = FieldSave.index.field
 
-    if (fieldSave.array[rd.START_INDEX + rd.ID] === 0) return
+    if (FieldSave.array[rd.START_INDEX + rd.ID] === 0) return
     // 라운드 ID가 0이면 로드 진행 취소
 
     // 라운드 생성 및 시작, roundStart가 끝나면, round에 값이 할당됩니다.
     // 참고: 라운드 시작 함수는 라운드 필드 쵝화도 같이 담당하므로, 
     // 로드할때도 roundStart 함수를 실행해야 합니다.
-    this.roundStart(fieldSave.array[rd.START_INDEX + rd.ID])
+    this.roundStart(FieldSave.array[rd.START_INDEX + rd.ID])
 
     // this.roundStart(fieldSave.array[rd.START_INDEX + rd.ID])
     if (this.round == null) return
 
     // field data
-    this.stateId = fieldSave.array[fe.START_INDEX + fe.STATEID]
-    this.fieldScore = fieldSave.array[fe.START_INDEX + fe.FIELD_SCORE]
-    this.fieldGold = fieldSave.array[fe.START_INDEX + fe.FIELD_GOLD]
-    this.totalScore = fieldSave.array[fe.START_INDEX + fe.TOTAL_SCORE]
-    this.enimationFrame = fieldSave.array[fe.START_INDEX + fe.ENIMATION_FRAME]
-    this.exitDelayCount = fieldSave.array[fe.START_INDEX + fe.EXIT_DELAY_COUNT]
+    this.stateId = FieldSave.array[fe.START_INDEX + fe.STATEID]
+    this.fieldScore = FieldSave.array[fe.START_INDEX + fe.FIELD_SCORE]
+    this.fieldGold = FieldSave.array[fe.START_INDEX + fe.FIELD_GOLD]
+    this.totalScore = FieldSave.array[fe.START_INDEX + fe.TOTAL_SCORE]
+    this.enimationFrame = FieldSave.array[fe.START_INDEX + fe.ENIMATION_FRAME]
+    this.exitDelayCount = FieldSave.array[fe.START_INDEX + fe.EXIT_DELAY_COUNT]
     for (let i = 0; i < (fe.MAX_LENGTH - fe.FIELD_ITEM_LIST) / 2; i++) {
       // 아이템 배열은 0부터 시작하므로, 로드한 이후 새로운 데이터를 삽입해서 추가해야 합니다.
       const FINDEX = fe.START_INDEX + fe.FIELD_ITEM_LIST + (i * 2)
-      if (fieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET] === 0) continue
+      if (FieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET] === 0) continue
 
-      this.fieldItemIdList.push(fieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET])                                                               
-      this.fieldItemCountList.push(fieldSave.array[FINDEX + fe.FIELD_ITEM_COUNT_OFFSET])
+      this.fieldItemIdList.push(FieldSave.array[FINDEX + fe.FIELD_ITEM_ID_OFFSET])                                                               
+      this.fieldItemCountList.push(FieldSave.array[FINDEX + fe.FIELD_ITEM_COUNT_OFFSET])
     }
 
-    this.round.stat.id = fieldSave.array[rd.START_INDEX + rd.ID]
-    this.round.state = fieldSave.array[rd.START_INDEX + rd.STATE]
-    this.round.time.setCurrentTime(fieldSave.array[rd.START_INDEX + rd.CURRENT_TIME])
-    this.round.time.currentTimeFrame = fieldSave.array[rd.START_INDEX + rd.CURRENT_TIME_FRAME]
-    this.round.time.currentTimeTotalFrame = fieldSave.array[rd.START_INDEX + rd.CURRNET_TIME_TOTAL_FRAME]
-    this.round.time.currentTimePaused = fieldSave.array[rd.START_INDEX + rd.CURRENT_TIME_PAUSED] ? true : false
-    this.round.time.plusTime = fieldSave.array[rd.START_INDEX + rd.PLUS_TIME]
-    this.round.time.plusTimeFrame = fieldSave.array[rd.START_INDEX + rd.PLUS_TIME_FRAME]
-    this.round.sound.currentMusicIndex = fieldSave.array[rd.START_INDEX + rd.CURRENT_MUSIC_INDEX]
-    this.round.sound.loadCurrentMusicTime = fieldSave.array[rd.START_INDEX + rd.CURRENT_MUSIC_TIME]
+    this.round.stat.id = FieldSave.array[rd.START_INDEX + rd.ID]
+    this.round.state = FieldSave.array[rd.START_INDEX + rd.STATE]
+    this.round.time.setCurrentTime(FieldSave.array[rd.START_INDEX + rd.CURRENT_TIME])
+    this.round.time.currentTimeFrame = FieldSave.array[rd.START_INDEX + rd.CURRENT_TIME_FRAME]
+    this.round.time.currentTimeTotalFrame = FieldSave.array[rd.START_INDEX + rd.CURRNET_TIME_TOTAL_FRAME]
+    this.round.time.currentTimePaused = FieldSave.array[rd.START_INDEX + rd.CURRENT_TIME_PAUSED] ? true : false
+    this.round.time.plusTime = FieldSave.array[rd.START_INDEX + rd.PLUS_TIME]
+    this.round.time.plusTimeFrame = FieldSave.array[rd.START_INDEX + rd.PLUS_TIME_FRAME]
+    this.round.sound.currentMusicIndex = FieldSave.array[rd.START_INDEX + rd.CURRENT_MUSIC_INDEX]
+    this.round.sound.loadCurrentMusicTime = FieldSave.array[rd.START_INDEX + rd.CURRENT_MUSIC_TIME]
     // background index number
     // background layer
-    this.round.bgLayer.setBackgroundPosition(fieldSave.array[rd.START_INDEX + rd.BACKGROUND_X], fieldSave.array[rd.START_INDEX + rd.BACKGROUND_Y])
-    this.round.bgLayer.setBackgroundSpeed(fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDX], fieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDY])
-    this.round.bgLayer.setBackgroundWidthHeight(fieldSave.array[rd.START_INDEX + rd.BACKGROUND_WIDTH], fieldSave.array[rd.START_INDEX + rd.BACKGROUND_HEIGHT])
+    this.round.bgLayer.setBackgroundPosition(FieldSave.array[rd.START_INDEX + rd.BACKGROUND_X], FieldSave.array[rd.START_INDEX + rd.BACKGROUND_Y])
+    this.round.bgLayer.setBackgroundSpeed(FieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDX], FieldSave.array[rd.START_INDEX + rd.BACKGROUND_SPEEDY])
+    this.round.bgLayer.setBackgroundWidthHeight(FieldSave.array[rd.START_INDEX + rd.BACKGROUND_WIDTH], FieldSave.array[rd.START_INDEX + rd.BACKGROUND_HEIGHT])
 
     // 배경 레이어 (bgLayer 전용)
     let layer = this.round.bgLayer.getLayer()
     for (let i = 0; i < 10 && i < layer.length; i++) {
       const LINDEX = rd.START_INDEX + rd.BGLAYER_OFFSET_START + (i * rd.BGLAYER_OFFSET_COUNT)
-      layer[i].x = fieldSave.array[LINDEX + rd.BGLAYER_X]
-      layer[i].y = fieldSave.array[LINDEX + rd.BGLAYER_Y]
-      layer[i].speedX = fieldSave.array[LINDEX + rd.BGLAYER_SPEEDX]
-      layer[i].speedY = fieldSave.array[LINDEX + rd.BGLAYER_SPEEDY]
+      layer[i].x = FieldSave.array[LINDEX + rd.BGLAYER_X]
+      layer[i].y = FieldSave.array[LINDEX + rd.BGLAYER_Y]
+      layer[i].speedX = FieldSave.array[LINDEX + rd.BGLAYER_SPEEDX]
+      layer[i].speedY = FieldSave.array[LINDEX + rd.BGLAYER_SPEEDY]
 
       // 알파값은 100배해서 저장했기 때문에, 다시 100으로 나눠 복원
       // 참고로, 알파는 setAlpha를 통해 수정해야 정상적인 형태로 적용합니다.
-      layer[i].setAlpha(fieldSave.array[LINDEX + rd.BGLAYER_ALPHAEND] / 100) 
-      layer[i].isSynchronized = fieldSave.array[LINDEX + rd.BGLAYER_ISSYNCHRONIZED] ? true : false
+      layer[i].setAlpha(FieldSave.array[LINDEX + rd.BGLAYER_ALPHAEND] / 100) 
+      layer[i].isSynchronized = FieldSave.array[LINDEX + rd.BGLAYER_ISSYNCHRONIZED] ? true : false
     }
 
     this.round.bgLayer.process()
@@ -1937,99 +1967,99 @@ export class fieldSystem {
     // round extendedmemory
     for (let i = 0; i < this.round.extendedMemory.length; i++) {
       const EINDEX = rd.START_INDEX + rd.EXTENDS_START + i
-      this.round.extendedMemory[i] = fieldSave.array[EINDEX]
+      this.round.extendedMemory[i] = FieldSave.array[EINDEX]
     }
     this.round.readExtendedMemory() // 불러온 메모리를 읽어야 정상적으로 라운드 정보에 대입이 가능합니다.
 
-    fieldState.playerObject.x = fieldSave.array[pl.START_INDEX + pl.X]
-    fieldState.playerObject.y = fieldSave.array[pl.START_INDEX + pl.Y]
-    fieldState.playerObject.hp = fieldSave.array[pl.START_INDEX + pl.HP]
-    fieldState.playerObject.shield = fieldSave.array[pl.START_INDEX + pl.SHIELD]
-    fieldState.playerObject.shieldMax = fieldSave.array[pl.START_INDEX + pl.SHIELDMAX]
-    fieldState.playerObject.attackDelayCount = fieldSave.array[pl.START_INDEX + pl.ATTACK_DELAY_COUNT]
-    fieldState.playerObject.dieAfterDelayCount = fieldSave.array[pl.START_INDEX + pl.DIE_AFTER_DELAY_COUNT]
-    fieldState.playerObject.usingSkillSlotA = fieldSave.array[pl.START_INDEX + pl.USING_SKILL_SLOTA]
-    fieldState.playerObject.disable = fieldSave.array[pl.START_INDEX + pl.DISABLE] ? true : false
+    FieldState.playerObject.x = FieldSave.array[pl.START_INDEX + pl.X]
+    FieldState.playerObject.y = FieldSave.array[pl.START_INDEX + pl.Y]
+    FieldState.playerObject.hp = FieldSave.array[pl.START_INDEX + pl.HP]
+    FieldState.playerObject.shield = FieldSave.array[pl.START_INDEX + pl.SHIELD]
+    FieldState.playerObject.shieldMax = FieldSave.array[pl.START_INDEX + pl.SHIELDMAX]
+    FieldState.playerObject.attackDelayCount = FieldSave.array[pl.START_INDEX + pl.ATTACK_DELAY_COUNT]
+    FieldState.playerObject.dieAfterDelayCount = FieldSave.array[pl.START_INDEX + pl.DIE_AFTER_DELAY_COUNT]
+    FieldState.playerObject.usingSkillSlotA = FieldSave.array[pl.START_INDEX + pl.USING_SKILL_SLOTA]
+    FieldState.playerObject.disable = FieldSave.array[pl.START_INDEX + pl.DISABLE] ? true : false
 
     // player weapon
-    for (let i = 0; i < fieldState.playerObject.weaponSlot.length; i++) {
+    for (let i = 0; i < FieldState.playerObject.weaponSlot.length; i++) {
       const WINDEX = pl.START_INDEX + pl.WEAPON + (i * 2)
-      fieldState.playerObject.weaponSlot[i].id = fieldSave.array[WINDEX + pl.WEAPON_OFFSET_ID]
-      fieldState.playerObject.weaponSlot[i].delayCount = fieldSave.array[WINDEX + pl.WEAPON_OFFSET_DELAYCOUNT]
+      FieldState.playerObject.weaponSlot[i].id = FieldSave.array[WINDEX + pl.WEAPON_OFFSET_ID]
+      FieldState.playerObject.weaponSlot[i].delayCount = FieldSave.array[WINDEX + pl.WEAPON_OFFSET_DELAYCOUNT]
     }
 
     // player skill
-    for (let i = 0; i < fieldState.playerObject.skillSlotA.length; i++) {
+    for (let i = 0; i < FieldState.playerObject.skillSlotA.length; i++) {
       const SINDEX1 = pl.START_INDEX + pl.SKILL + (i * 4) 
       const SINDEX2 = pl.START_INDEX + pl.SKILL + (i * 4) + (4 * 4) // skill B slot Position
       // 스킬슬롯 A는 배열 0번 (0 ~ 3) 부터 시작한다고 가정함
       // 스킬슬롯 B는 배열 4번 (4 ~ 7) 부터 시작한다고 가정함
-      fieldState.playerObject.skillSlotA[i].id = fieldSave.array[SINDEX1 + pl.SKILL_OFFSET_ID]
-      fieldState.playerObject.skillSlotA[i].delayCount = fieldSave.array[SINDEX1 + pl.SKILL_OFFSET_DELAY_COUNT]
-      fieldState.playerObject.skillSlotA[i].coolTimeFrame = fieldSave.array[SINDEX1 + pl.SKILL_OFFSET_COOL_TIME_FRAME]
-      fieldState.playerObject.skillSlotA[i].repeatCount = fieldSave.array[SINDEX1 + pl.SKILL_OFFSET_REPEAT_COUNT]
+      FieldState.playerObject.skillSlotA[i].id = FieldSave.array[SINDEX1 + pl.SKILL_OFFSET_ID]
+      FieldState.playerObject.skillSlotA[i].delayCount = FieldSave.array[SINDEX1 + pl.SKILL_OFFSET_DELAY_COUNT]
+      FieldState.playerObject.skillSlotA[i].coolTimeFrame = FieldSave.array[SINDEX1 + pl.SKILL_OFFSET_COOL_TIME_FRAME]
+      FieldState.playerObject.skillSlotA[i].repeatCount = FieldSave.array[SINDEX1 + pl.SKILL_OFFSET_REPEAT_COUNT]
 
-      fieldState.playerObject.skillSlotB[i].id = fieldSave.array[SINDEX2 + pl.SKILL_OFFSET_ID]
-      fieldState.playerObject.skillSlotB[i].delayCount = fieldSave.array[SINDEX2 + pl.SKILL_OFFSET_DELAY_COUNT]
-      fieldState.playerObject.skillSlotB[i].coolTimeFrame = fieldSave.array[SINDEX2 + pl.SKILL_OFFSET_COOL_TIME_FRAME]
-      fieldState.playerObject.skillSlotB[i].repeatCount = fieldSave.array[SINDEX2 + pl.SKILL_OFFSET_REPEAT_COUNT]
+      FieldState.playerObject.skillSlotB[i].id = FieldSave.array[SINDEX2 + pl.SKILL_OFFSET_ID]
+      FieldState.playerObject.skillSlotB[i].delayCount = FieldSave.array[SINDEX2 + pl.SKILL_OFFSET_DELAY_COUNT]
+      FieldState.playerObject.skillSlotB[i].coolTimeFrame = FieldSave.array[SINDEX2 + pl.SKILL_OFFSET_COOL_TIME_FRAME]
+      FieldState.playerObject.skillSlotB[i].repeatCount = FieldSave.array[SINDEX2 + pl.SKILL_OFFSET_REPEAT_COUNT]
     }
 
-    fieldState.playerObject.setLoadData()
+    FieldState.playerObject.setLoadData()
 
     // object list
-    for (let i = 0; i < fieldSave.array[hs.OBJECT_COUNT]; i++) {
-      const OINDEX = fieldSave.OBJECT_OFFSET + (fieldSave.OBJECT_LENGTH * i)
-      const type = fieldSave.array[OINDEX + ob.OBJECT_TYPE]
+    for (let i = 0; i < FieldSave.array[hs.OBJECT_COUNT]; i++) {
+      const OINDEX = FieldSave.OBJECT_OFFSET + (FieldSave.OBJECT_LENGTH * i)
+      const type = FieldSave.array[OINDEX + ob.OBJECT_TYPE]
       let target = null
       if (type === FieldData.objectType.ENEMY) {
-        target = fieldState.createEnemyObject(fieldSave.array[OINDEX + ob.ID], fieldSave.array[OINDEX + ob.X], fieldSave.array[OINDEX + ob.Y])
+        target = FieldState.createEnemyObject(FieldSave.array[OINDEX + ob.ID], FieldSave.array[OINDEX + ob.X], FieldSave.array[OINDEX + ob.Y])
       }
 
       if (target != null) {
-        target.id = fieldSave.array[OINDEX + ob.ID]
-        target.objectType = fieldSave.array[OINDEX + ob.OBJECT_TYPE]
-        target.mainType = fieldSave.array[OINDEX + ob.MAIN_TYPE]
-        target.subType = fieldSave.array[OINDEX + ob.SUB_TYPE]
-        target.createId = fieldSave.array[OINDEX + ob.CREATE_ID]
-        target.state = fieldSave.array[OINDEX + ob.STATE]
-        target.x = fieldSave.array[OINDEX + ob.X]
-        target.y = fieldSave.array[OINDEX + ob.Y]
-        target.z = fieldSave.array[OINDEX + ob.Z]
-        target.moveSpeedX = fieldSave.array[OINDEX + ob.MOVE_SPEED_X]
-        target.moveSpeedY = fieldSave.array[OINDEX + ob.MOVE_SPEED_Y]
-        target.moveDirectionX = fieldSave.array[OINDEX + ob.MOVE_DIRECTION_X]
-        target.moveDirectionY = fieldSave.array[OINDEX + ob.MOVE_DIRECTION_Y]
-        target.flip = fieldSave.array[OINDEX + ob.FLIP]
-        target.degree = fieldSave.array[OINDEX + ob.DEGREE]
-        target.width = fieldSave.array[OINDEX + ob.WIDTH]
-        target.height = fieldSave.array[OINDEX + ob.HEIGHT]
-        if (fieldSave.array[OINDEX + ob.DELAY] !== 0) {
-          target.delay = new DelayData(fieldSave.array[OINDEX + ob.DELAY])
-          target.delay.count = fieldSave.array[OINDEX + ob.DELAY_COUNT]
+        target.id = FieldSave.array[OINDEX + ob.ID]
+        target.objectType = FieldSave.array[OINDEX + ob.OBJECT_TYPE]
+        target.mainType = FieldSave.array[OINDEX + ob.MAIN_TYPE]
+        target.subType = FieldSave.array[OINDEX + ob.SUB_TYPE]
+        target.createId = FieldSave.array[OINDEX + ob.CREATE_ID]
+        target.state = FieldSave.array[OINDEX + ob.STATE]
+        target.x = FieldSave.array[OINDEX + ob.X]
+        target.y = FieldSave.array[OINDEX + ob.Y]
+        target.z = FieldSave.array[OINDEX + ob.Z]
+        target.moveSpeedX = FieldSave.array[OINDEX + ob.MOVE_SPEED_X]
+        target.moveSpeedY = FieldSave.array[OINDEX + ob.MOVE_SPEED_Y]
+        target.moveDirectionX = FieldSave.array[OINDEX + ob.MOVE_DIRECTION_X]
+        target.moveDirectionY = FieldSave.array[OINDEX + ob.MOVE_DIRECTION_Y]
+        target.flip = FieldSave.array[OINDEX + ob.FLIP]
+        target.degree = FieldSave.array[OINDEX + ob.DEGREE]
+        target.width = FieldSave.array[OINDEX + ob.WIDTH]
+        target.height = FieldSave.array[OINDEX + ob.HEIGHT]
+        if (FieldSave.array[OINDEX + ob.DELAY] !== 0) {
+          target.delay = new DelayData(FieldSave.array[OINDEX + ob.DELAY])
+          target.delay.count = FieldSave.array[OINDEX + ob.DELAY_COUNT]
         }
-        if (fieldSave.array[OINDEX + ob.MOVE_DELAY] !== 0) {
-          target.moveDelay = new DelayData(fieldSave.array[OINDEX + ob.MOVE_DELAY])
-          target.moveDelay.count = fieldSave.array[OINDEX + ob.MOVE_COUNT]
+        if (FieldSave.array[OINDEX + ob.MOVE_DELAY] !== 0) {
+          target.moveDelay = new DelayData(FieldSave.array[OINDEX + ob.MOVE_DELAY])
+          target.moveDelay.count = FieldSave.array[OINDEX + ob.MOVE_COUNT]
         }
-        if (fieldSave.array[OINDEX + ob.ATTACK_DELAY] !== 0) {
-          target.moveDelay = new DelayData(fieldSave.array[OINDEX + ob.ATTACK_DELAY])
-          target.moveDelay.count = fieldSave.array[OINDEX + ob.ATTACK_COUNT]
+        if (FieldSave.array[OINDEX + ob.ATTACK_DELAY] !== 0) {
+          target.moveDelay = new DelayData(FieldSave.array[OINDEX + ob.ATTACK_DELAY])
+          target.moveDelay.count = FieldSave.array[OINDEX + ob.ATTACK_COUNT]
         }
-        if (fieldSave.array[OINDEX + ob.STATE_DELAY] !== 0) {
-          target.moveDelay = new DelayData(fieldSave.array[OINDEX + ob.STATE_DELAY])
-          target.moveDelay.count = fieldSave.array[OINDEX + ob.STATE_COUNT]
+        if (FieldSave.array[OINDEX + ob.STATE_DELAY] !== 0) {
+          target.moveDelay = new DelayData(FieldSave.array[OINDEX + ob.STATE_DELAY])
+          target.moveDelay.count = FieldSave.array[OINDEX + ob.STATE_COUNT]
         }
-        if (fieldSave.array[OINDEX + ob.REPEAT_DELAY] !== 0) {
-          target.moveDelay = new DelayData(fieldSave.array[OINDEX + ob.REPEAT_DELAY])
-          target.moveDelay.count = fieldSave.array[OINDEX + ob.REPEAT_COUNT]
+        if (FieldSave.array[OINDEX + ob.REPEAT_DELAY] !== 0) {
+          target.moveDelay = new DelayData(FieldSave.array[OINDEX + ob.REPEAT_DELAY])
+          target.moveDelay.count = FieldSave.array[OINDEX + ob.REPEAT_COUNT]
         }
 
-        target.attack = fieldSave.array[OINDEX + ob.ATTACK]
-        target.defense = fieldSave.array[OINDEX + ob.DEFENSE]
-        target.hp = fieldSave.array[OINDEX + ob.HP]
-        target.hpMax = fieldSave.array[OINDEX + ob.HP_MAX]
-        target.elapsedFrame = fieldSave.array[OINDEX + ob.ELAPSED_FRAME]
+        target.attack = FieldSave.array[OINDEX + ob.ATTACK]
+        target.defense = FieldSave.array[OINDEX + ob.DEFENSE]
+        target.hp = FieldSave.array[OINDEX + ob.HP]
+        target.hpMax = FieldSave.array[OINDEX + ob.HP_MAX]
+        target.elapsedFrame = FieldSave.array[OINDEX + ob.ELAPSED_FRAME]
       }
       
     } // for end

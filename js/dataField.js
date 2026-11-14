@@ -375,10 +375,11 @@ export class EnimationData {
     /** 에니메이션의 출력할 너비 */ this.outputWidth = outputWidth
     /** 에니메이션의 출력할 높이 */ this.outputHeight = outputHeight
 
-    let image = graphicSystem.getCacheImage(imageSrc)
-    /** 이미지의 너비 */ this.imageWidth = image == null ? 0 : image.width
-    /** 이미지의 높이 */ this.imageHeight = image == null ? 0 : image.height
-    /** 이미지를 정상적으로 얻어온 경우에 대한 여부 */ this.isSuccessGetImage = image == null ? false : true
+    // 참고: 생성자에서는 캐시 이미지를 로드하지 않습니다.
+    // 대신 출력되는 시점에서 이미지가 완전히 로드 되면, 너비와 높이가 자동으로 재설정됩니다.
+    /** 이미지의 너비 */ this.imageWidth = 0
+    /** 이미지의 높이 */ this.imageHeight = 0
+    /** 이미지를 정상적으로 얻어온 경우에 대한 여부 */ this.isSuccessGetImage = false
 
     /**
      * 에니메이션 프레임의 지연시간
@@ -443,12 +444,12 @@ export class EnimationData {
 
     // 만약 제대로 된 캐시이미지를 얻어오지 못해, 이미지 너비 또는 높이가 0이 된경우
     // 다시 캐시 이미지를 얻어옵니다. (얻어올 때 까지 재시도합니다.)
-    if (this.imageSrc !== '' && (this.imageWidth === 0 || this.imageHeight === 0)) {
+    if (this.imageSrc !== '' && !this.isSuccessGetImage) {
       let image = graphicSystem.getCacheImage(this.imageSrc)
-      if (image != null) {
-        // this.isSuccessGetImage = true
+      if (image != null && image.width > 0 && image.height > 0) {
         this.imageWidth = image.width
         this.imageHeight = image.height
+        this.isSuccessGetImage = true
       }
     }
   }

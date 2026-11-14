@@ -463,6 +463,7 @@ export class PlayerSkillData extends PlayerWeaponData {
 
     this.playerWeaponId = weaponId
     
+    this.coolTime = stat.coolTime
     this.statPlayerWeapon = stat
     this.delay = stat.delay
     this.shotCount = stat.shotCount
@@ -505,6 +506,19 @@ export class PlayerSkillData extends PlayerWeaponData {
    */
   getCoolTimeFrame () {
     return this.coolTime * 60
+  }
+
+  /** 해당 스킬에서 사용되는 모든 사운드 리스트를 가져옵니다. */
+  getSoundList () {
+    const soundList = []
+    if (this.useSound) soundList.push(this.useSound)
+    if (this.shotSound) soundList.push(this.shotSound)
+    if (this.weapon) {
+      if (this.weapon.hitSoundSrc) soundList.push(this.weapon.hitSoundSrc)
+      if (this.weapon.soundList.length > 0) soundList.push(...this.weapon.soundList)
+    }
+
+    return soundList
   }
 }
 

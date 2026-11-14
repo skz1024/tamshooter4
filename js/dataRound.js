@@ -5,7 +5,7 @@ import { EffectData, CustomEffect, CustomEditEffect } from "./dataEffect.js"
 import { ID } from "./dataId.js"
 import { stringText } from "./text.js"
 import { ImageDataObject, imageDataInfo, imageSrc } from "./imageSrc.js"
-import { fieldState, fieldSystem } from "./field.js"
+import { FieldState, FieldSystem } from "./field.js"
 import { soundSrc } from "./soundSrc.js"
 import { game, gameFunction, gameVar, LoadingSystem } from "./game.js"
 import { StatRound, dataExportStatRound } from "./dataStat.js"
@@ -543,6 +543,18 @@ class BgLayer {
     this._speedY = speedY
   }
 
+  /** Background, Layer에 등록된 이미지 경로를 전부 가져옵니다. */
+  getImageSrcList () {
+    const layerList = this._layer.map(layer => layer.imageSrc)
+    const backgroundList = this._background.map(background => background.imageSrc)
+
+    // 이미지 경로 중복 제거를 위하여, Set 데이터 구조를 사용합니다.
+    const setList = new Set([...layerList, ...backgroundList])
+
+    // setList을 배열로 변환하여 리턴합니다.
+    return [...setList]
+  }
+
   /** 배경을 정해진 기준점에 맞게 출력합니다. */
   display () {
     // 아무 배경도 없으면 출력하지 않음
@@ -633,10 +645,11 @@ class BaseSound {
   /** 음악의 인덱스 테이블 (0번은 음악 없음으로 간주됨)
    * int32Array 데이터를 저장하기 위해 만들어졌습니다.
    * 
-   * 기존 코드랑도 호환 되도록 임시 코드가 추가되었습니다.
-   * 다만, 새로 추가되는 라운드는 currentMusicSrc와 같은 값을 직접 사용하지 않도록 할 계획입니다.
+   * 모든 라운드가 공용 변수를 사용하기 때문에 라운드 생성자가 목록 초기화 작업을 수행합니다.  
+   * (초기화 되지 않은 경우 다른 라운드의 음악이 재생되거나 로드될 위험이 있음.)
    * 
-   * 모든 라운드가 공용 변수를 사용하기 때문에, 인덱스 값은 라운드마다 새로운 값으로 갱신해야 합니다.
+   * 여기에 있는 경로 목록을 this.load.addSoundList를 통하여 지정하지 마세요.  
+   * 이 목록은 Field에서 특정 함수를 통해 자동으로 로딩하도록 등록됩니다.
    */
   static _musicSrcIndex = ['', '', '', '', '', '', '', '', '', '']
 
@@ -665,6 +678,12 @@ class BaseSound {
     this._musicSrcIndex[index] = src
     if (isMainMusic) {
       this.currentMusicIndex = index
+    }
+  }
+
+  static musicIndexReset () {
+    for (let i = 0; i < this._musicSrcIndex.length; i++) {
+      this._musicSrcIndex[i] = ''
     }
   }
 
@@ -759,6 +778,11 @@ class BaseSound {
     soundSystem.play(soundSrc)
   }
 
+  /** 라운드에서 사용하는 음악 경로 목록을 가져옵니다.  
+   * 음악 경로가 지정되지 않은 것은 무시합니다. */
+  static getMusicSrcList () {
+    return this._musicSrcIndex.filter(src => src !== '')
+  }
 }
 
 /** fieldSystem을 간편하게 사용하기 위한 함수 집합 (모든 함수는 static입니다.) */
@@ -768,7 +792,7 @@ class BaseField {
    * @returns {boolean}
    */
   static enemyNothingCheck () {
-    let enemy = fieldState.getEnemyObject()
+    let enemy = FieldState.getEnemyObject()
     if (enemy.length <= 0) {
       return true
     } else {
@@ -781,12 +805,12 @@ class BaseField {
    * @returns {number}
    */
   static getEnemyCount () {
-    return fieldState.getEnemyObject().length
+    return FieldState.getEnemyObject().length
   }
 
   /** 필드의 모든 적 제거 */
   static allEnemyDelete () {
-    fieldState.allEnemyDelete()
+    FieldState.allEnemyDelete()
   }
 
   /**
@@ -808,22 +832,22 @@ class BaseField {
 
   /** 적의 객체를 얻어옵니다. */
   static getEnemyObject () {
-    return fieldState.getEnemyObject()
+    return FieldState.getEnemyObject()
   }
 
   /** 플레이어를 얻어옵니다. */
   static getPlayerObject () {
-    return fieldState.getPlayerObject()
+    return FieldState.getPlayerObject()
   }
 
   /** 스프라이트를 얻어옵니다. */
   static getSpriteObject () {
-    return fieldState.getSpriteObject()
+    return FieldState.getSpriteObject()
   }
 
   /** 필드 시스템에 점수 추가를 요청합니다. */
   static addScore (score = 0) {
-    fieldSystem.fieldRequests.addScore(score)
+    FieldSystem.fieldRequests.addScore(score)
   }
 
   /** 필드 객체의 특정 타입의 ID에 해당하는 메세지 버퍼를 얻어옵니다.
@@ -832,12 +856,12 @@ class BaseField {
    * @returns {number | null} 해당하는 데이터의 값
    */
   static getMessage (objectType = 0, targetId = 0, bufferIndex = 0) {
-    return fieldState.getMessage(objectType, targetId, bufferIndex)
+    return FieldState.getMessage(objectType, targetId, bufferIndex)
   }
 
   /** 필드 객체의 특정 타입의 ID에 해당하는 특정 메세지를 보냅니다.  */
   static sendMessage (objectType = 0, targetId = 0, bufferIndex = 0, value = 0) {
-    fieldState.sendMessage(objectType, targetId, bufferIndex, value)
+    FieldState.sendMessage(objectType, targetId, bufferIndex, value)
   }
 
   /**
@@ -848,7 +872,7 @@ class BaseField {
    */
   static createEnemy (enemyId = 0, x = graphicSystem.CANVAS_WIDTH + 50, y = Math.random() * graphicSystem.CANVAS_HEIGHT) {
     if (enemyId != 0) {
-      fieldState.createEnemyObject(enemyId, x, y)
+      FieldState.createEnemyObject(enemyId, x, y)
     }
   }
 
@@ -862,7 +886,7 @@ class BaseField {
    */
   static createEnemyInsertItem (enemyId = 0, itemId = [0], itemCount = [1], x = graphicSystem.CANVAS_WIDTH + 50, y = Math.random() * graphicSystem.CANVAS_HEIGHT) {
     if (enemyId != 0 && itemId.length !== 0 && itemCount.length !== 0) {
-      fieldState.createEnemyObjectInsertItem(enemyId, itemId, itemCount, x, y)
+      FieldState.createEnemyObjectInsertItem(enemyId, itemId, itemCount, x, y)
     }
   }
 
@@ -873,7 +897,7 @@ class BaseField {
    * @param {number | undefined} y y좌표, 지정하지 않으면, 커스텀 이펙트 내부의 좌표
    */
   static createEffect (customEffect, x = undefined, y = undefined) {
-    fieldState.createEffectObject(customEffect, x, y)
+    FieldState.createEffectObject(customEffect, x, y)
   }
 
   /**
@@ -883,17 +907,17 @@ class BaseField {
    * @param {number} y 좌표
    */
   static createSprite (targetSprite, x = targetSprite.x, y = targetSprite.y) {
-    fieldState.createSpriteObject(targetSprite, x, y)
+    FieldState.createSpriteObject(targetSprite, x, y)
   }
 
   /** 필드 내의 모든 총알 삭제 */
   static allEnemyBulletDelete () {
-    fieldState.allEnemyBulletDelete()
+    FieldState.allEnemyBulletDelete()
   }
 
   /** 필드 내의 모든 스프라이트 삭제 */
   static allSpriteDelete () {
-    fieldState.allSpriteDelete()
+    FieldState.allSpriteDelete()
   }
 
   /** 
@@ -910,9 +934,9 @@ class BaseField {
    * @param {number | undefined} [y=0] 생성 위치에 대한 y좌표 (단, isEffect가 true여야만 적용됨)
    */
   static addItem (id, count = 1, isEffect = false, x = undefined, y = undefined) {
-    fieldSystem.fieldRequests.addItem(id, count)
+    FieldSystem.fieldRequests.addItem(id, count)
     if (isEffect) {
-      let effect = fieldState.createEffectItem(id) // 이펙트 추가 (이펙트가 있다면)
+      let effect = FieldState.createEffectItem(id) // 이펙트 추가 (이펙트가 있다면)
       if (effect != null) { // 이펙트가 null이 아니고, x와 y좌표가 존재할때만 해당 좌표 입력
         if (x) effect.x = x
         if (y) effect.y = y
@@ -926,298 +950,136 @@ class BaseField {
    * @param {number} [count=1] 삭제할 아이템의 개수
    */
   static removeItem (id, count = 1) {
-    fieldSystem.fieldRequests.removeItem(id, count)
+    FieldSystem.fieldRequests.removeItem(id, count)
   }
   
   /** 골드를 추가합니다. 골드는 필드에서 관리합니다. */
   static addGold (amount = 0) {
     if (amount > 0) {
-      fieldSystem.fieldRequests.addGold(amount)
+      FieldSystem.fieldRequests.addGold(amount)
     }
   }
 
   /** 골드를 빼기합니다. 골드는 필드에서 관리합니다. */
   static subtractGold (amount = 0) {
     if (amount > 0) {
-      fieldSystem.fieldRequests.subtractGold(amount)
+      FieldSystem.fieldRequests.subtractGold(amount)
     }
   }
 
   /** 플레이어의 아이템의 보유 개수가 얼마인지 확인합니다. */
   static getPlayerItemCount (id = 0) {
-    return fieldSystem.fieldRequestUser.getItemCountById(id)
+    return FieldSystem.fieldRequestUser.getItemCountById(id)
   }
 
   /** 플레이어의 스킬이 언락되어있는지 확인합니다. */
   static getPlayerIsSkillUnlocked (id = 0) {
-    return fieldSystem.fieldRequestUser.isSkillUnlocked(id)
+    return FieldSystem.fieldRequestUser.isSkillUnlocked(id)
   }
 
   /** 해당 스킬을 언락하도록 요청 */
   static skillUnlock (id = 0) {
-    fieldSystem.fieldRequests.requestUnlockSkill(id)
+    FieldSystem.fieldRequests.requestUnlockSkill(id)
   }
 
   /** 특정 라운드가 클리어 되어 있는지 여부를 확인합니다. */
   static getRoundCleared (id = 0) {
-    return fieldSystem.fieldRequestUser.isRoundClear(id)
+    return FieldSystem.fieldRequestUser.isRoundClear(id)
   }
 
   static getPlayerGold () {
-    return fieldSystem.fieldRequestUser.getGold()
+    return FieldSystem.fieldRequestUser.getGold()
   }
 }
 
 
-/** 
- * 라운드에서 사용하는 추가적인 로딩 (적과 관련해서 파일이 분산되어 이 클래스에서 대신 데이터를 불러오도록 처리함)
- * 
- * 배경은 용량이 크므로 제외, 배경음악도 제외 특정 라운드에 의존되어있는 파일도 제외 (대표적인 예: 2-3)
- * 다만, 그런 파일들은 파일 이름이 round로 시작함
- */
-export class RoundPackLoad {
-  /** 라운드 1에서 사용하는 적들의 공통 이미지 데이터 */
-  static getRound1ShareImage () {
-    return [
-      // enemy
-      imageSrc.enemy.spaceEnemy,
-      imageSrc.enemy.meteoriteEnemy,
-      imageSrc.enemy.jemulEnemy,
+/** 라운드 내부의 적들이 사용하는 사운드를 그룹별로 묶은 리스트입니다. */
+const roundEnemySoundList = {
+  spaceEnemy: [
+    soundSrc.enemyDie.enemyDieSpaceCar,
+    soundSrc.enemyDie.enemyDieSpaceComet,
+    soundSrc.enemyDie.enemyDieSpaceEnergy,
+    soundSrc.enemyDie.enemyDieSpaceGamjigi,
+    soundSrc.enemyDie.enemyDieSpaceLight,
+    soundSrc.enemyDie.enemyDieSpaceRocket,
+    soundSrc.enemyDie.enemyDieSpaceSmall,
+    soundSrc.enemyDie.enemyDieSpaceSquare,
+    soundSrc.enemyDie.enemyDieSpaceSusong,
+    soundSrc.enemyDie.enemyDieDonggrami,
+  ],
 
-      // common effect
-      imageSrc.enemyDie.effectList,
-    ]
-  }
+  meteroiteEnemy: [
+    soundSrc.enemyDie.enemyDieMeteorite1,
+    soundSrc.enemyDie.enemyDieMeteorite2,
+    soundSrc.enemyDie.enemyDieMeteorite3,
+    soundSrc.enemyDie.enemyDieMeteorite4,
+    soundSrc.enemyDie.enemyDieMeteorite5,
+    soundSrc.enemyDie.enemyDieMeteoriteBomb,
+    soundSrc.enemyDie.enemyDieMeteoriteRed,
+  ],
 
-  /** 라운드 1에서 사용하는 적들의 사운드 데이터 */
-  static getRound1ShareSound () {
-    return [
-      soundSrc.enemyDie.enemyDieSpaceCar,
-      soundSrc.enemyDie.enemyDieSpaceComet,
-      soundSrc.enemyDie.enemyDieSpaceEnergy,
-      soundSrc.enemyDie.enemyDieSpaceGamjigi,
-      soundSrc.enemyDie.enemyDieSpaceLight,
-      soundSrc.enemyDie.enemyDieSpaceRocket,
-      soundSrc.enemyDie.enemyDieSpaceSmall,
-      soundSrc.enemyDie.enemyDieSpaceSquare,
-      soundSrc.enemyDie.enemyDieSpaceSusong,
-      soundSrc.enemyDie.enemyDieDonggrami,
+  jemulEnemy: [
+    soundSrc.enemyDie.enemyDieJemulBlackSpaceRing,
+    soundSrc.enemyDie.enemyDieJemulBoss,
+    soundSrc.enemyDie.enemyDieJemulBossEye,
+    soundSrc.enemyDie.enemyDieJemulDrill,
+    soundSrc.enemyDie.enemyDieJemulEnergyBolt,
+    soundSrc.enemyDie.enemyDieJemulHellAir,
+    soundSrc.enemyDie.enemyDieJemulHellShip,
+    soundSrc.enemyDie.enemyDieJemulRedAir,
+    soundSrc.enemyDie.enemyDieJemulRedJewel,
+    soundSrc.enemyDie.enemyDieJemulRocket,
+    soundSrc.enemyDie.enemyDieJemulSpike,
 
-      soundSrc.enemyDie.enemyDieMeteorite1,
-      soundSrc.enemyDie.enemyDieMeteorite2,
-      soundSrc.enemyDie.enemyDieMeteorite3,
-      soundSrc.enemyDie.enemyDieMeteorite4,
-      soundSrc.enemyDie.enemyDieMeteorite5,
-      soundSrc.enemyDie.enemyDieMeteoriteBomb,
-      soundSrc.enemyDie.enemyDieMeteoriteRed,
-      
-      soundSrc.enemyDie.enemyDieJemulBlackSpaceRing,
-      soundSrc.enemyDie.enemyDieJemulBoss,
-      soundSrc.enemyDie.enemyDieJemulBossEye,
-      soundSrc.enemyDie.enemyDieJemulDrill,
-      soundSrc.enemyDie.enemyDieJemulEnergyBolt,
-      soundSrc.enemyDie.enemyDieJemulHellAir,
-      soundSrc.enemyDie.enemyDieJemulHellShip,
-      soundSrc.enemyDie.enemyDieJemulRedAir,
-      soundSrc.enemyDie.enemyDieJemulRedJewel,
-      soundSrc.enemyDie.enemyDieJemulRocket,
-      soundSrc.enemyDie.enemyDieJemulSpike,
+    soundSrc.enemyAttack.jemulBossAttack,
+    soundSrc.enemyAttack.jemulBossAttack2,
+    soundSrc.enemyAttack.jemulBossAttack3,
+    soundSrc.enemyAttack.jemulEnergyBoltAttack,
+    soundSrc.enemyAttack.jemulHellDrillAttack,
+  ],
 
-      soundSrc.enemyAttack.jemulBossAttack,
-      soundSrc.enemyAttack.jemulBossAttack2,
-      soundSrc.enemyAttack.jemulBossAttack3,
-      soundSrc.enemyAttack.jemulEnergyBoltAttack,
-      soundSrc.enemyAttack.jemulHellDrillAttack,
-    ]
-  }
+  donggramiEnemy: [
+    soundSrc.donggrami.emoji,
+    soundSrc.donggrami.throw,
+    soundSrc.donggrami.exclamationMark,
+    soundSrc.donggrami.questionMark,
+    soundSrc.donggrami.juiceCola,
+    soundSrc.donggrami.juiceThrow,
+    soundSrc.donggrami.firecracker,
+    soundSrc.donggrami.plate,
 
-  /** 라운드 2에서 사용하는 이미지 공통 데이터
-   */
-  static getRound2ShareImage () {
-    return [
-      imageSrc.enemy.donggramiEnemy,
-      imageSrc.enemyDie.effectList,
-      imageSrc.enemy.intruderEnemy,
-    ]
-  }
+    soundSrc.enemyDie.enemyDieDonggrami,
+    soundSrc.enemyDie.enemyDieDonggramiLeaf,
+  ],
 
-  static getRound2ShareSound () {
-    return [
-      soundSrc.donggrami.emoji,
-      soundSrc.donggrami.throw,
-      soundSrc.donggrami.exclamationMark,
-      soundSrc.donggrami.questionMark,
-      soundSrc.donggrami.juiceCola,
-      soundSrc.donggrami.juiceThrow,
-      soundSrc.donggrami.firecracker,
-      soundSrc.donggrami.plate,
-      
-      soundSrc.enemyDie.enemyDieDonggrami,
-      soundSrc.enemyDie.enemyDieDonggramiLeaf,
-      soundSrc.enemyDie.enemyDieIntruderJemu,
-      soundSrc.enemyDie.enemyDieIntruderSquare,
-      soundSrc.enemyDie.enemyDieIntruderDaseok,
-      soundSrc.enemyDie.enemyDieIntruderDiacore,
-      soundSrc.enemyDie.enemyDieIntruderFlying1,
-      soundSrc.enemyDie.enemyDieIntruderFlying2,
-      soundSrc.enemyDie.enemyDieIntruderFlyingRocket,
-      soundSrc.enemyDie.enemyDieIntruderGami,
-      soundSrc.enemyDie.enemyDieIntruderHanoi,
-      soundSrc.enemyDie.enemyDieIntruderLever,
-      soundSrc.enemyDie.enemyDieIntruderMetal,
-      soundSrc.enemyDie.enemyDieIntruderMomi,
-      soundSrc.enemyDie.enemyDieIntruderRendown,
+  intruderEnemy: [
+    soundSrc.enemyDie.enemyDieIntruderJemu,
+    soundSrc.enemyDie.enemyDieIntruderSquare,
+    soundSrc.enemyDie.enemyDieIntruderDaseok,
+    soundSrc.enemyDie.enemyDieIntruderDiacore,
+    soundSrc.enemyDie.enemyDieIntruderFlying1,
+    soundSrc.enemyDie.enemyDieIntruderFlying2,
+    soundSrc.enemyDie.enemyDieIntruderFlyingRocket,
+    soundSrc.enemyDie.enemyDieIntruderGami,
+    soundSrc.enemyDie.enemyDieIntruderHanoi,
+    soundSrc.enemyDie.enemyDieIntruderLever,
+    soundSrc.enemyDie.enemyDieIntruderMetal,
+    soundSrc.enemyDie.enemyDieIntruderMomi,
+    soundSrc.enemyDie.enemyDieIntruderRendown,
 
-      soundSrc.enemyAttack.intruderJemuEnergy,
-      soundSrc.enemyAttack.intruderJemuEnergyHigh,
-      soundSrc.enemyAttack.intruderJemuEnergyLow,
-      soundSrc.enemyAttack.intruderJemuEnergyPurple,
-      soundSrc.enemyAttack.intruderJemuThunderBig,
-      soundSrc.enemyAttack.intruderJemuThunderNormal,
-      soundSrc.enemyAttack.intruderDaseokLaserGreen,
-      soundSrc.enemyAttack.intruderDaseokLaserYellow,
-      soundSrc.enemyAttack.intruderHanoiAttack,
-      soundSrc.enemyAttack.intruderHanoiReflect,
-      soundSrc.enemyAttack.intruderLeverLaser,
-      soundSrc.enemyAttack.intruderRendownMissile,
-    ]
-  }
-
-  static getRound3ShareImage () {
-    return [
-      imageSrc.round.round3_playerOption,
-      imageSrc.enemy.towerEnemyGroup1,
-      imageSrc.enemy.towerEnemyGroup2,
-      imageSrc.enemy.towerEnemyGroup3,
-      imageSrc.enemy.towerEnemyGroup4,
-    ]
-  }
-
-  /** 다운타워 특성상 불러오는 데이터가 많을 수 있음 */
-  static getRound3ShareSound () {
-    return [
-      soundSrc.round.r3_playerOption,
-      soundSrc.round.r3_bossWarning,
-      soundSrc.round.r3_bossWarningKeyboard,
-
-      // enemyDie
-      soundSrc.enemyDie.enemyDieTowerBar1,
-      soundSrc.enemyDie.enemyDieTowerBar2,
-      soundSrc.enemyDie.enemyDieTowerBar3,
-      soundSrc.enemyDie.enemyDieTowerBlub,
-      soundSrc.enemyDie.enemyDieTowerBossBar,
-      soundSrc.enemyDie.enemyDieTowerBossDasu,
-      soundSrc.enemyDie.enemyDieTowerBossRobot1,
-      soundSrc.enemyDie.enemyDieTowerBossCommon,
-      soundSrc.enemyDie.enemyDieTowerCamera,
-      soundSrc.enemyDie.enemyDieTowerCctv,
-      soundSrc.enemyDie.enemyDieTowerClockAnalog,
-      soundSrc.enemyDie.enemyDieTowerClockDigital,
-      soundSrc.enemyDie.enemyDieTowerClockJong,
-      soundSrc.enemyDie.enemyDieTowerDaepo,
-      soundSrc.enemyDie.enemyDieTowerDiamond,
-      soundSrc.enemyDie.enemyDieTowerEnergy1,
-      soundSrc.enemyDie.enemyDieTowerEnergy2,
-      soundSrc.enemyDie.enemyDieTowerFakeHell,
-      soundSrc.enemyDie.enemyDieTowerFakeShip,
-      soundSrc.enemyDie.enemyDieTowerGasi,
-      soundSrc.enemyDie.enemyDieTowerHellba,
-      soundSrc.enemyDie.enemyDieTowerHellcho,
-      soundSrc.enemyDie.enemyDieTowerHellgal,
-      soundSrc.enemyDie.enemyDieTowerHellgi,
-      soundSrc.enemyDie.enemyDieTowerHellla,
-      soundSrc.enemyDie.enemyDieTowerHellna,
-      soundSrc.enemyDie.enemyDieTowerHellnet,
-      soundSrc.enemyDie.enemyDieTowerHellpa,
-      soundSrc.enemyDie.enemyDieTowerHellpo,
-      soundSrc.enemyDie.enemyDieTowerHelltell,
-      soundSrc.enemyDie.enemyDieTowerHellgrey,
-      soundSrc.enemyDie.enemyDieTowerHexagon,
-      soundSrc.enemyDie.enemyDieTowerJagijang,
-      soundSrc.enemyDie.enemyDieTowerI,
-      soundSrc.enemyDie.enemyDieTowerLaserAlpha,
-      soundSrc.enemyDie.enemyDieTowerLaserMini,
-      soundSrc.enemyDie.enemyDieTowerLightning,
-      soundSrc.enemyDie.enemyDieTowerMoveBlue,
-      soundSrc.enemyDie.enemyDieTowerMoveDarkViolet,
-      soundSrc.enemyDie.enemyDieTowerMoveViolet,
-      soundSrc.enemyDie.enemyDieTowerMoveYellowEnergy,
-      soundSrc.enemyDie.enemyDieTowerMagnet,
-      soundSrc.enemyDie.enemyDieTowerNokgasi,
-      soundSrc.enemyDie.enemyDieTowerOctagon,
-      soundSrc.enemyDie.enemyDieTowerPentagon,
-      soundSrc.enemyDie.enemyDieTowerPentaLight,
-      soundSrc.enemyDie.enemyDieTowerPentaShadow,
-      soundSrc.enemyDie.enemyDieTowerPunch,
-      soundSrc.enemyDie.enemyDieTowerSandglass,
-      soundSrc.enemyDie.enemyDieTowerShipBig,
-      soundSrc.enemyDie.enemyDieTowerShipSmall,
-      soundSrc.enemyDie.enemyDieTowerSiren,
-      soundSrc.enemyDie.enemyDieTowerSquare,
-      soundSrc.enemyDie.enemyDieTowerStar,
-      soundSrc.enemyDie.enemyDieTowerTapo,
-      soundSrc.enemyDie.enemyDieTowerX,
-      
-
-      // enemyAttack
-      soundSrc.enemyAttack.towerAntijemulBackshot,
-      soundSrc.enemyAttack.towerAntijemulGravityBall,
-      soundSrc.enemyAttack.towerAntijemulGravityBallEffect,
-      soundSrc.enemyAttack.towerAntijemulGravityBallFall,
-      soundSrc.enemyAttack.towerAntijemulGravityRectEffect,
-      soundSrc.enemyAttack.towerAntijemulGravityRectFall,
-      soundSrc.enemyAttack.towerAntijemulRing,
-      soundSrc.enemyAttack.towerAntijemulRingBomb,
-      soundSrc.enemyAttack.towerAntijemulRingBombEffect,
-      soundSrc.enemyAttack.towerAntijemulRingRolling,
-      soundSrc.enemyAttack.towerAttackDaepo,
-      soundSrc.enemyAttack.towerAttackRocket,
-      soundSrc.enemyAttack.towerAttackRocketBomb,
-      soundSrc.enemyAttack.towerBarAttack1,
-      soundSrc.enemyAttack.towerBarAttack2,
-      soundSrc.enemyAttack.towerBarAttack3,
-      soundSrc.enemyAttack.towerBossBarCollision,
-      soundSrc.enemyAttack.towerBossDasuCoreArrangeMent,
-      soundSrc.enemyAttack.towerBossDasuCoreAttack,
-      soundSrc.enemyAttack.towerBossDasuCoreReflect,
-      soundSrc.enemyAttack.towerBossDasuCoreSummon,
-      soundSrc.enemyAttack.towerCameraAttackShot,
-      soundSrc.enemyAttack.towerCameraAttackWait,
-      soundSrc.enemyAttack.towerClockAttack,
-      soundSrc.enemyAttack.towerClockVibration,
-      soundSrc.enemyAttack.towerCoreSummonBrown,
-      soundSrc.enemyAttack.towerCoreSummonRainbow,
-      soundSrc.enemyAttack.towerFakeBarAttack,
-      soundSrc.enemyAttack.towerGabudanBooting,
-      soundSrc.enemyAttack.towerGabudanStartup,
-      soundSrc.enemyAttack.towerGabudanKernelPanic,
-      soundSrc.enemyAttack.towerHellbaAttack,
-      soundSrc.enemyAttack.towerHellpaAttack,
-      soundSrc.enemyAttack.towerJagijangAttack,
-      soundSrc.enemyAttack.towerLightningAttack,
-      soundSrc.enemyAttack.towerNokgasiGasiBottom,
-      soundSrc.enemyAttack.towerNokgasiGasiHyper,
-      soundSrc.enemyAttack.towerNokgasiGasiShot,
-      soundSrc.enemyAttack.towerNokgasiGasiSpear,
-      soundSrc.enemyAttack.towerNokgasiGasiSting,
-      soundSrc.enemyAttack.towerNokgasiGasiThrow,
-      soundSrc.enemyAttack.towerNokgasiAttackBlue,
-      soundSrc.enemyAttack.towerNokgasiAttackGreenGrey,
-      soundSrc.enemyAttack.towerNokgasiAttackOrangePurple,
-      soundSrc.enemyAttack.towerNokgasiAttackPink,
-      soundSrc.enemyAttack.towerPunchAttack,
-      soundSrc.enemyAttack.towerRadioAttack,
-      soundSrc.enemyAttack.towerShipEquipCore,
-      soundSrc.enemyAttack.towerSirenBlueMove,
-      soundSrc.enemyAttack.towerSirenGreenMove,
-      soundSrc.enemyAttack.towerSirenRedMove,
-      soundSrc.enemyAttack.towerVacuumCleanerFirst,
-      soundSrc.enemyAttack.towerVacuumCleanerHose,
-      soundSrc.enemyAttack.towerVacuumCleanerHyper,
-      soundSrc.enemyAttack.towerVacuumCleanerRush,
-      soundSrc.enemyAttack.towerVacuumCleanerTrash,
-    ]
-  }
+    soundSrc.enemyAttack.intruderJemuEnergy,
+    soundSrc.enemyAttack.intruderJemuEnergyHigh,
+    soundSrc.enemyAttack.intruderJemuEnergyLow,
+    soundSrc.enemyAttack.intruderJemuEnergyPurple,
+    soundSrc.enemyAttack.intruderJemuThunderBig,
+    soundSrc.enemyAttack.intruderJemuThunderNormal,
+    soundSrc.enemyAttack.intruderDaseokLaserGreen,
+    soundSrc.enemyAttack.intruderDaseokLaserYellow,
+    soundSrc.enemyAttack.intruderHanoiAttack,
+    soundSrc.enemyAttack.intruderHanoiReflect,
+    soundSrc.enemyAttack.intruderLeverLaser,
+    soundSrc.enemyAttack.intruderRendownMissile,
+  ],
 }
 
 /** 해당 라운드의 스탯을 정의한 클래스 */
@@ -1539,65 +1401,49 @@ class BaseLoad {
     /** 
      * 이 라운드에서 사용해야 하는 이미지들의 리스트
      * 
-     * 주의: 라운드에서는 round와 enemy도 같이 로드해야 합니다.
-     * 
-     * 이 변수를 직접 수정하기 보다는 addLoadingImageList 함수를 사용하는것을 권장합니다.
-     * 
-     * 반드시 클래스의 constructor(생성자)에서 작성해야 합니다.
+     * 주의: 이 변수를 수정하지 말고, 대신 add함수를 사용해주세요.  
+     * 반드시 클래스의 constructor(생성자)에서 작성해야 합니다.  
      * 다른곳에서 작성할경우 해당 파일을 정상적으로 로드할 수 없습니다.
      * @type {string[]}
      */
-    this.imageList = []
+    this._imageList = []
 
     /** 
      * 이 라운드에서 로드해야 하는 사운드들의 리스트
      * 
-     * 주의: 라운드에서는 round와 enemy도 같이 로드해야 합니다.
-     * 
-     * 이 변수를 직접 수정하기 보다는 addLoadingSoundList 함수를 사용하는것을 권장합니다.
-     * 
-     * 반드시 클래스의 constructor(생성자)에서 작성해야 합니다.
+     * 주의: 이 변수를 수정하지 말고, 대신 add함수를 사용해주세요.  
+     * 반드시 클래스의 constructor(생성자)에서 작성해야 합니다.  
      * 다른곳에서 작성할경우 해당 파일을 정상적으로 로드할 수 없습니다.
      * @type {string[]}
      */
-    this.soundList = []
+    this._soundList = []
   }
 
   /**
-   * loading image list를 설정하는 함수
+   * loading image list를 설정하는 함수  
+   * 라운드를 시작하기 전 미리 로딩해야 하는 파일의 목록을 지정합니다.  
    * 
-   * 주의: 라운드에서는 round와 enemy도 같이 로드해야 합니다. 
-   * packRoundLoad 클래스를 참고해 라운드에 필요한 데이터를 추가로 지정해 주세요.
+   * 단, 배경에 사용하는 이미지는 addLayer, setBackground 함수를 통해 로딩 대상에 자동 등록되므로, 
+   * 이 함수를 사용해서 지정하지 마세요.
    * 
-   * 이 함수는 반드시 각 라운드의 constructor에서 실행해야 합니다.
-   * 다른곳에서는 정상적으로 불러올 수 없습니다.
+   * 이 함수는 반드시 각 라운드의 constructor에서 실행하는 것을 권장합니다.
    * @param {string[]} src 
    */
-  addImageList (src = ['']) {
-    this.imageList = this.imageList.concat(src)
+  addImageList (src) {
+    this._imageList = this._imageList.concat(src)
   }
 
   /**
-   * loading sound list를 설정하는 함수
+   * loading sound list를 설정하는 함수  
+   * 라운드를 시작하기 전 미리 로딩해야 하는 파일의 목록을 지정합니다.
    * 
-   * 주의: 라운드에서는 round와 enemy도 같이 로드해야 합니다.
-   * packRoundLoad 클래스를 참고해 라운드에 필요한 데이터를 추가로 지정해 주세요.
+   * 단, setMusicIndex로 지정된 음악은 자동으로 로딩 대상으로 등록하므로, 이 함수를 사용하지 마세요.
    * 
-   * 이 함수는 반드시 각 라운드의 constructor에서 실행해야 합니다.
-   * 다른곳에서는 정상적으로 불러올 수 없습니다.
+   * 이 함수는 반드시 각 라운드의 constructor에서 실행하는 것을 권장합니다.
    * @param {string[]} src 
    */
-  addSoundList (src = ['']) {
-    this.soundList = this.soundList.concat(src)
-  }
-
-  /** 
-   * 이미지와 사운드를 로딩합니다. (중복으로 로드하지 않음.)
-   * 이 함수는 필드에서 라운드를 진행하기 전에 반드시 실행되어야 합니다.
-   * 또는 불러오기를 했을 때에도 실행되어야 합니다.
-   */
-  loadStart () {
-    LoadingSystem.loadStart(this.imageList, this.soundList)
+  addSoundList (src) {
+    this._soundList = this._soundList.concat(src)
   }
 }
 
@@ -1859,14 +1705,8 @@ class Round1_1 extends RoundData {
       imageSrc.round.round1_2_meteorite,
       imageSrc.enemy.spaceEnemy,
     ])
-    this.load.addSoundList([
-      soundSrc.music.music01_space_void,
-      soundSrc.music.music06_round1_boss_thema
-    ])
 
-    this.load.addImageList(RoundPackLoad.getRound1ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound1ShareSound())
-
+    this.load.addSoundList(roundEnemySoundList.spaceEnemy)
     this.sound.setMusicIndex(1, soundSrc.music.music01_space_void, true)
     this.sound.setMusicIndex(2, soundSrc.music.music06_round1_boss_thema)
   }
@@ -2077,15 +1917,11 @@ class Round1_2 extends RoundData {
       imageSrc.round.round1_2_meteorite,
       imageSrc.round.round1_3_meteoriteDeep,
       imageSrc.enemy.spaceEnemy,
+      imageSrc.enemy.meteoriteEnemy,
     ])
 
-    this.load.addSoundList([
-      soundSrc.music.music02_meteorite_zone_field,
-    ])
-
-    this.load.addImageList(RoundPackLoad.getRound1ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound1ShareSound())
-
+    this.load.addSoundList(roundEnemySoundList.spaceEnemy)
+    this.load.addSoundList(roundEnemySoundList.meteroiteEnemy)
     this.sound.setMusicIndex(1, soundSrc.music.music02_meteorite_zone_field, true)
   }
 
@@ -2277,14 +2113,9 @@ class Round1_3 extends RoundData {
       imageSrc.enemy.meteoriteEnemy,
     ])
 
-    this.load.addSoundList([
-      soundSrc.music.music02_meteorite_zone_field,
-      soundSrc.music.music03_meteorite_zone_battle,
-    ])
-
-    this.load.addImageList(RoundPackLoad.getRound1ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound1ShareSound())
-
+    this.load.addSoundList(roundEnemySoundList.spaceEnemy)
+    this.load.addSoundList(roundEnemySoundList.meteroiteEnemy)
+    this.load.addSoundList(roundEnemySoundList.jemulEnemy)
     this.sound.setMusicIndex(1, soundSrc.music.music02_meteorite_zone_field, true)
     this.sound.setMusicIndex(2, soundSrc.music.music03_meteorite_zone_battle)
   }
@@ -2623,28 +2454,19 @@ class Round1_4 extends RoundData {
     }
 
     this.load.addImageList([
-      imageSrc.round.round1_4_meteoriteDark,
-      imageSrc.round.round1_4_redzone,
-      imageSrc.round.round1_4_blackSpace,
-      imageSrc.round.round1_4_blackSpaceRedLayer,
       imageSrc.enemy.jemulEnemy,
     ])
 
     this.load.addSoundList([
-      soundSrc.music.music03_meteorite_zone_battle,
-      soundSrc.music.music06_round1_boss_thema,
-      soundSrc.music.music08_round1_4_jemul,
       this.messageSound.message1,
       this.messageSound.message2,
       this.messageSound.jemulrun,
       this.messageSound.jemulstar,
       this.messageSound.jemulstart,
       soundSrc.round.r1_4_jemulFail,
-      soundSrc.music.music26_round1_4_blackSpace
     ])
 
-    this.load.addImageList(RoundPackLoad.getRound1ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound1ShareSound())
+    this.load.addSoundList(roundEnemySoundList.jemulEnemy)
   }
 
   writeExtendedMemory () {
@@ -2790,7 +2612,7 @@ class Round1_4 extends RoundData {
     if (this.timeCheckInterval(phase2Time + 20, phase2Time + 23, 30)) {
       let boss = this.field.getEnemyObjectById(ID.enemy.jemulEnemy.bossEye)
       if (boss != null) {
-        fieldState.createEffectObject(this.effectJemulstar.getObject(), boss.x - 50, boss.y - 50)
+        FieldState.createEffectObject(this.effectJemulstar.getObject(), boss.x - 50, boss.y - 50)
       }
     }
 
@@ -2838,7 +2660,7 @@ class Round1_4 extends RoundData {
 
     // 이펙트 표시
     if (this.timeCheckInterval(phase3Time, phase3End - 5, 60)) {
-      fieldState.createEffectObject(new this.EffectJemulCreate(), graphicSystem.CANVAS_WIDTH_HALF - 100, graphicSystem.CANVAS_HEIGHT_HALF - 100)
+      FieldState.createEffectObject(new this.EffectJemulCreate(), graphicSystem.CANVAS_WIDTH_HALF - 100, graphicSystem.CANVAS_HEIGHT_HALF - 100)
     }
 
     // 사운드 출력
@@ -2984,23 +2806,16 @@ class Round1_5 extends RoundData {
     this.phase.addRoundPhase(this, this.roundPhase07, 167, 180)
 
     this.load.addImageList([
-      imageSrc.round.round1_4_meteoriteDark,
-      imageSrc.round.round1_5_meteoriteRed,
       imageSrc.enemy.jemulEnemy,
       imageSrc.enemy.spaceEnemy,
       imageSrc.enemy.meteoriteEnemy,
     ])
 
-    this.load.addSoundList([
-      soundSrc.music.music04_meteorite_zone_red,
-      soundSrc.music.music02_meteorite_zone_field,
-    ])
-
+    this.load.addSoundList(roundEnemySoundList.spaceEnemy)
+    this.load.addSoundList(roundEnemySoundList.meteroiteEnemy)
+    this.load.addSoundList(roundEnemySoundList.jemulEnemy)
     this.sound.setMusicIndex(1, soundSrc.music.music04_meteorite_zone_red, true)
     this.sound.setMusicIndex(2, soundSrc.music.music02_meteorite_zone_field)
-
-    this.load.addImageList(RoundPackLoad.getRound1ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound1ShareSound())
   }
 
   processBackground () {
@@ -3250,24 +3065,15 @@ class Round1_6 extends RoundData {
     this.planet = this.createPlanet()
 
     this.load.addImageList([
-      imageSrc.round.round1_2_meteorite,
-      imageSrc.round.round1_6_space,
       imageSrc.round.round1_6_paran_planet,
       imageSrc.enemy.jemulEnemy,
       imageSrc.enemy.spaceEnemy,
       imageSrc.enemy.meteoriteEnemy,
     ])
 
-    this.load.addSoundList([
-      soundSrc.music.music02_meteorite_zone_field,
-      soundSrc.music.music05_space_tour,
-      soundSrc.music.music06_round1_boss_thema,
-      soundSrc.music.music07_paran_planet_entry,
-    ])
-
-    this.load.addImageList(RoundPackLoad.getRound1ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound1ShareSound())
-
+    this.load.addSoundList(roundEnemySoundList.spaceEnemy)
+    this.load.addSoundList(roundEnemySoundList.meteroiteEnemy)
+    this.load.addSoundList(roundEnemySoundList.jemulEnemy)
     this.sound.setMusicIndex(1, soundSrc.music.music02_meteorite_zone_field, true)
     this.sound.setMusicIndex(2, soundSrc.music.music06_round1_boss_thema)
     this.sound.setMusicIndex(3, soundSrc.music.music05_space_tour)
@@ -3545,12 +3351,11 @@ class RTestEnemy extends RoundData {
     super()
     this.stat.setStat(ID.round.test1Enemy)
     this.bgLayer.setColor(['#999999', '#BBBBBB'])
-    this.load.addImageList(RoundPackLoad.getRound1ShareImage())
-    this.load.addImageList(RoundPackLoad.getRound2ShareImage())
-    this.load.addImageList(RoundPackLoad.getRound3ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound1ShareSound())
-    this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
-    this.load.addSoundList(RoundPackLoad.getRound3ShareSound())
+
+    // 참고: 라운드 테스트 에서는 선 로딩이 없습니다.
+    // 대신 적이 생성 될 때, 캐시에 파일이 없으면 자동으로 로딩합니다.
+    // 이에 따라, 적은 생성 즉시 효과음이나 이미지가 출력되지 못할 수 있습니다.
+
     this.saveList = {
       targetId: ID.enemy.START_ID,
       isIDSelectMode: true,
@@ -3559,6 +3364,14 @@ class RTestEnemy extends RoundData {
     }
 
     this.phase.addRoundPhase(this, this.roundPhase00, 0, 9999)
+  }
+
+  writeExtendedMemory () {
+    this.extendedMemory[0] = this.saveList.targetId
+  }
+
+  readExtendedMemory () {
+    this.saveList.targetId = this.extendedMemory[0]
   }
 
   roundPhase00 () {
@@ -3746,6 +3559,18 @@ class RTestSound extends RoundData {
     this.musicSrcList = Object.values(soundSrc.music);
   }
 
+  writeExtendedMemory () {
+    this.extendedMemory[0] = this.saveList.soundNumber
+    this.extendedMemory[1] = this.saveList.musicNumber
+    this.extendedMemory[2] = Number(this.saveList.isSoundMode)
+  }
+
+  readExtendedMemory () {
+    this.saveList.soundNumber = this.extendedMemory[0]
+    this.saveList.musicNumber = this.extendedMemory[1]
+    this.saveList.isSoundMode = Boolean(this.extendedMemory[2])
+  }
+
   process () {
     super.process()
     this.time.setCurrentTimePause(true, 'TEST')
@@ -3860,6 +3685,9 @@ class Round2_1 extends RoundData {
   constructor () {
     super()
     this.stat.setStat(ID.round.round2_1)
+
+    // 참고: maeulImage는 bgLayer가 아닌 graphicSystem 직접 출력이므로
+    // bgLayer가 관리하지 않기 때문에 로딩 목록에도 수동으로 넣어야 합니다.
     this.maeulImage = imageSrc.round.round2_2_maeul_entrance
 
     this.phase.addRoundPhase(this, this.roundPhase01, 0, 30)
@@ -3869,17 +3697,12 @@ class Round2_1 extends RoundData {
     this.phase.addRoundPhase(this, this.roundPhase05, 121, 150)
 
     this.load.addImageList([
-      imageSrc.round.round2_1_cloud,
       imageSrc.round.round2_2_maeul_entrance,
+      imageSrc.enemy.donggramiEnemy,
+      imageSrc.enemy.donggramiEnemyTalkList,
     ])
 
-    this.load.addSoundList([
-      soundSrc.music.music09_paran_planet,
-    ])
-
-    this.load.addImageList(RoundPackLoad.getRound2ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
-
+    this.load.addSoundList(roundEnemySoundList.donggramiEnemy)
     this.sound.setMusicIndex(1, soundSrc.music.music09_paran_planet, true)
 
     this.BOSSTIME = 146
@@ -4146,23 +3969,11 @@ class Round2_2 extends RoundData {
     this.phase.addRoundPhase(this, this.roundPhase06, 161, 170) // 플래카드
 
     this.load.addImageList([
-      imageSrc.round.round2_2_maeul_entrance,
-      imageSrc.round.round2_2_apartment1,
-      imageSrc.round.round2_2_apartment2,
-      imageSrc.round.round2_2_park,
-      imageSrc.round.round2_2_placard,
-      imageSrc.round.round2_2_shopping_mall,
-      imageSrc.round.round2_2_tunnel,
-      imageSrc.round.round2_2_tunnel_outload,
+      imageSrc.enemy.donggramiEnemy,
+      imageSrc.enemy.donggramiEnemyTalkList,
     ])
 
-    this.load.addSoundList([
-      soundSrc.music.music10_donggrami_maeul,
-    ])
-
-    this.load.addImageList(RoundPackLoad.getRound2ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
-    
+    this.load.addSoundList(roundEnemySoundList.donggramiEnemy)
     this.sound.setMusicIndex(1, soundSrc.music.music10_donggrami_maeul, true)
     this.setRound2_2BgLayer()
   }
@@ -4607,23 +4418,15 @@ class Round2_3 extends RoundData {
     this.load.addImageList([
       imageSrc.round.round2_3_course,
       imageSrc.round.round2_3_effect,
-      imageSrc.round.round2_3_maeul_space,
       imageSrc.round.round2_3_result,
-      imageSrc.round.round2_3_course,
       imageSrc.round.round2_3_status,
-      this.boxMap.image
+      imageSrc.enemy.donggramiEnemy,
+      imageSrc.enemy.donggramiEnemyTalkList,
     ])
 
+    this.load.addSoundList(roundEnemySoundList.donggramiEnemy)
+
     this.load.addSoundList([
-      soundSrc.music.music11A1_battle_room,
-      soundSrc.music.music11A2_break_room,
-      soundSrc.music.music11A3_power_room,
-      soundSrc.music.music11B1_jump_room,
-      soundSrc.music.music11B2_warp_room,
-      soundSrc.music.music11B3_move_room,
-      soundSrc.music.music11C1_bullet_room,
-      soundSrc.music.music11C2_square_room,
-      soundSrc.music.music11C3_trap_room,
       this.voiceList.complete,
       this.voiceList.win,
       this.voiceList.lose,
@@ -4648,9 +4451,6 @@ class Round2_3 extends RoundData {
       soundSrc.round.r2_3_c2_squarePink,
       soundSrc.round.r2_3_c2_squareRed,
     ])
-
-    this.load.addImageList(RoundPackLoad.getRound2ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
   }
 
   lightBoxProcess () {
@@ -4825,7 +4625,7 @@ class Round2_3 extends RoundData {
     this.time.setCurrentTimePause(false)
     this.playerMoveEnable()
 
-    fieldState.allEnemyDelete()
+    FieldState.allEnemyDelete()
   }
 
   /** 결과 점수를 보여주는 함수 */
@@ -5398,13 +5198,13 @@ class Round2_3 extends RoundData {
 
   /** 플레이어를 이동 불가능하게 설정 */
   playerMoveDisable () {
-    let playerP = fieldState.getPlayerObject()
+    let playerP = FieldState.getPlayerObject()
     playerP.isMoveEnable = false
   }
 
   /** (만약) 플레이어를 이동 불가능하게 설정했다면 해당 함수로 되돌려주세요. */
   playerMoveEnable () {
-    let playerP = fieldState.getPlayerObject()
+    let playerP = FieldState.getPlayerObject()
     playerP.isMoveEnable = true
   }
 
@@ -5460,7 +5260,7 @@ class Round2_3 extends RoundData {
     const STATE_BOOST = DonggramiEntity.BUFFER_R2_3_STATES.A1_BOOST
     const enemyState = this.field.getMessage(OBJ_TYPE, ENEMY_ID, BUFFER_INDEX)
     let enemy = this.field.getEnemyObjectById(ID.enemy.donggramiEnemy.a1_fighter)
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     if (enemy == null || enemyState == null) return
 
     // 각각의 판정범위를 가지는 오브젝트
@@ -5706,7 +5506,7 @@ class Round2_3 extends RoundData {
     this.time.setCurrentTime(pTime + cTime.COMPLETE)
 
     // 나머지 총알 스프라이트 전부 삭제
-    fieldState.allSpriteDelete()
+    FieldState.allSpriteDelete()
   }
 
   coursePhaseC1CreateBullet () {
@@ -5720,20 +5520,20 @@ class Round2_3 extends RoundData {
 
     // 각 시간마다 다른 종류의 총알 등장
     if (this.timeCheckInterval(pTime + 5, pTime + 11, 6)) {
-      fieldState.createSpriteObject(new BulletBase)
+      FieldState.createSpriteObject(new BulletBase)
     } else if (this.timeCheckInterval(pTime + 12, pTime + 17, 6)) {
-      fieldState.createSpriteObject(new BulletPlayer)
+      FieldState.createSpriteObject(new BulletPlayer)
     } else if (this.timeCheckInterval(pTime + 18, pTime + 23, 4)) {
-      fieldState.createSpriteObject(new BulletRain)
+      FieldState.createSpriteObject(new BulletRain)
     } else if (this.timeCheckInterval(pTime + 24, pTime + 29, 4)) {
-      fieldState.createSpriteObject(new BulletLeft)
+      FieldState.createSpriteObject(new BulletLeft)
     } else if (this.timeCheckInterval(pTime + 30, pTime + 50, 3)) {
       let random = Math.floor(Math.random() * 4)
       switch (random) {
-        case 0: fieldState.createSpriteObject(new BulletBase); break
-        case 1: fieldState.createSpriteObject(new BulletPlayer); break
-        case 2: fieldState.createSpriteObject(new BulletRain); break
-        case 3: fieldState.createSpriteObject(new BulletLeft); break
+        case 0: FieldState.createSpriteObject(new BulletBase); break
+        case 1: FieldState.createSpriteObject(new BulletPlayer); break
+        case 2: FieldState.createSpriteObject(new BulletRain); break
+        case 3: FieldState.createSpriteObject(new BulletLeft); break
       }
     }
   }
@@ -5921,7 +5721,7 @@ class Round2_3 extends RoundData {
     this.setResult(result)
     this.sound.musicStop()
     this.playerMoveEnable() // 플레이어 이동 가능하도록 강제로 처리
-    fieldState.allEnemyDie() // 모든 적 제거
+    FieldState.allEnemyDie() // 모든 적 제거
     this.addPlayerDonggramiTicket() // 동그라미 티켓 2장 추가
 
     let bonusWin = result === this.resultList.WIN ? 800 : 100
@@ -5988,7 +5788,7 @@ class Round2_3 extends RoundData {
     if (sprite.length < 24 && this.timeCheckInterval(0, 999, 6)) {
       let randomX = Math.random() * (graphicSystem.CANVAS_WIDTH - 50)
       let randomY = Math.random() * (graphicSystem.CANVAS_HEIGHT - 50)
-      fieldState.createSpriteObject(new PowerObject, randomX, randomY)
+      FieldState.createSpriteObject(new PowerObject, randomX, randomY)
     }
   }
 
@@ -6059,7 +5859,7 @@ class Round2_3 extends RoundData {
     this.addPlayerDonggramiTicket()
     
     this.time.setCurrentTime(pTime + cTime.COMPLETE)
-    fieldState.allSpriteDelete()
+    FieldState.allSpriteDelete()
 
     this.coursePhaseA3ResultEnemy()
   }
@@ -6158,7 +5958,7 @@ class Round2_3 extends RoundData {
         this.sound.play(soundSrc.round.r2_3_b2_warp)
         player.x = Math.floor(Math.random() * graphicSystem.CANVAS_WIDTH_HALF)
         player.y = Math.floor(Math.random() * graphicSystem.CANVAS_HEIGHT_HALF)
-        fieldState.allEnemyDelete()
+        FieldState.allEnemyDelete()
         this.coursePhaseB2ChangeWarp()
         this.coursePhaseB2ChangeGradient()
         this.areaStat.b2WarpCount++
@@ -6220,7 +6020,7 @@ class Round2_3 extends RoundData {
 
     // 오브젝트를 다시 생성합니다. // 좌표는 자동으로 설정되므로 지정할 필요가 없음
     for (let i = 0; i < 2; i++) {
-      fieldState.createSpriteObject(new WarpObject)
+      FieldState.createSpriteObject(new WarpObject)
     }
   }
 
@@ -6265,10 +6065,10 @@ class Round2_3 extends RoundData {
     let sprite = this.field.getSpriteObject()
     if (sprite.length === 0) {
       for (let i = 0; i < 16; i++) {
-        fieldState.createSpriteObject(new ArrowObject, Math.random() * graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
+        FieldState.createSpriteObject(new ArrowObject, Math.random() * graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
       }
       for (let i = 0; i < 4; i++) {
-        fieldState.createSpriteObject(new CubeObject, Math.random() * graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
+        FieldState.createSpriteObject(new CubeObject, Math.random() * graphicSystem.CANVAS_WIDTH, Math.random() * graphicSystem.CANVAS_HEIGHT)
       }
     }
   }
@@ -6302,7 +6102,7 @@ class Round2_3 extends RoundData {
 
     this.setResult(this.resultList.COMPLETE)
     this.time.setCurrentTime(pTime + cTime.COMPLETE)
-    fieldState.allSpriteDelete()
+    FieldState.allSpriteDelete()
 
     // 점수 처리
     let bonusFriend = 1000 - (this.areaStat.areaBcollisionCount * 20)
@@ -6457,12 +6257,12 @@ class Round2_3 extends RoundData {
       if (squareBlackCount < this.areaStat.c2SquareBlackMax) {
         let square = new SquareBlack()
         square.sqaureSpeed = squareSpeed
-        fieldState.createSpriteObject(square)
+        FieldState.createSpriteObject(square)
       }
       if (squareRedCount < 4) {
         let square = new SquareRed()
         square.sqaureSpeed = squareSpeed
-        fieldState.createSpriteObject(square)
+        FieldState.createSpriteObject(square)
       }
     }
 
@@ -6472,11 +6272,11 @@ class Round2_3 extends RoundData {
       if (random === 0) {
         let square = new SquareCyan()
         square.sqaureSpeed = squareSpeed
-        fieldState.createSpriteObject(square)
+        FieldState.createSpriteObject(square)
       } else {
         let square = new SquareLime()
         square.sqaureSpeed = squareSpeed
-        fieldState.createSpriteObject(square)
+        FieldState.createSpriteObject(square)
       }
     }
 
@@ -6484,7 +6284,7 @@ class Round2_3 extends RoundData {
     if (this.time.currentTimeTotalFrame % 359 === 0) {
       let square = new SquarePink()
       square.sqaureSpeed = squareSpeed
-      fieldState.createSpriteObject(square)
+      FieldState.createSpriteObject(square)
     }
   }
 
@@ -6533,7 +6333,7 @@ class Round2_3 extends RoundData {
         player.x = 0 // 플레이어 위치 강제 이동
         player.y = 100
         this.areaStat.c3Goal++ // 골 수 증가
-        fieldState.allSpriteDelete() // 모든 스프라이트 삭제
+        FieldState.allSpriteDelete() // 모든 스프라이트 삭제
       }
     }
   }
@@ -6556,7 +6356,7 @@ class Round2_3 extends RoundData {
     this.field.addScore(totalScore)
     this.addPlayerDonggramiTicket()
 
-    fieldState.allSpriteDelete()
+    FieldState.allSpriteDelete()
     this.time.setCurrentTime(pTime + cTime.COMPLETE)
   }
 
@@ -6584,7 +6384,7 @@ class Round2_3 extends RoundData {
 
       process () {
         super.process()
-        let player = fieldState.getPlayerObject()
+        let player = FieldState.getPlayerObject()
         if (player.y < this.y) {
           player.y = this.y + this.height + 1 // 사각형에 닿지 않게끔 y좌표 변경
         }
@@ -6602,7 +6402,7 @@ class Round2_3 extends RoundData {
 
       process () {
         super.process()
-        let player = fieldState.getPlayerObject()
+        let player = FieldState.getPlayerObject()
         if (collision(player, this)) {
           player.y = this.y - player.height - 1 // 사각형에 닿지 않게끔 y좌표 변경
         }
@@ -6619,7 +6419,7 @@ class Round2_3 extends RoundData {
 
       process () {
         super.process()
-        let player = fieldState.getPlayerObject()
+        let player = FieldState.getPlayerObject()
         // 플레이어랑 충돌한경우, 플레이어의 위치가 리셋됩니다.
         if (collision(player, this)) {
           soundSystem.play(soundSrc.round.r2_3_a1_damage)
@@ -6644,7 +6444,7 @@ class Round2_3 extends RoundData {
       
       process () {
         super.process()
-        let player = fieldState.getPlayerObject()
+        let player = FieldState.getPlayerObject()
         if (collision(player, this)) {
           soundSystem.play(soundSrc.round.r2_3_a1_damage)
           player.x = 0
@@ -6678,7 +6478,7 @@ class Round2_3 extends RoundData {
       
       process () {
         super.process()
-        let player = fieldState.getPlayerObject()
+        let player = FieldState.getPlayerObject()
         if (collision(player, this)) {
           soundSystem.play(soundSrc.round.r2_3_a1_damage)
           player.x = 0
@@ -6723,8 +6523,8 @@ class Round2_3 extends RoundData {
     let roomNumber = this.areaStat.c3Goal % 4
     
     // 공통 길막용 벽
-    fieldState.createSpriteObject(new trap.TrapWallUp)
-    fieldState.createSpriteObject(new trap.TrapWallDown)
+    FieldState.createSpriteObject(new trap.TrapWallUp)
+    FieldState.createSpriteObject(new trap.TrapWallDown)
     switch (roomNumber) {
       case 0: this.coursePhaseC3TrapType0(); break
       case 1: this.coursePhaseC3TrapType1(); break
@@ -6741,14 +6541,14 @@ class Round2_3 extends RoundData {
     //   |  |  |  |  |
     //   |  |  |  |  |
     //      |     |
-    fieldState.createSpriteObject(new trap.TrapGreen, 700, 100)
+    FieldState.createSpriteObject(new trap.TrapGreen, 700, 100)
     // 0번 룸, 빨간 색 사각형이 길을 막고만 있다.
     for (let i = 0; i < 5; i++) {
       for (let j = 0; j < 8; j++) {
         if (i % 2 === 1 && j >= 2) {
-          fieldState.createSpriteObject(new trap.TrapRed, (i * 140) + 100, 100 + j * 50)
+          FieldState.createSpriteObject(new trap.TrapRed, (i * 140) + 100, 100 + j * 50)
         } else if (i % 2 === 0 && j <= 5) {
-          fieldState.createSpriteObject(new trap.TrapRed, (i * 140) + 100, 100 + j * 50)
+          FieldState.createSpriteObject(new trap.TrapRed, (i * 140) + 100, 100 + j * 50)
         }
       }
     }
@@ -6762,18 +6562,18 @@ class Round2_3 extends RoundData {
     //      R    R    |
     //  --------------|
     //      R    R
-    fieldState.createSpriteObject(new trap.TrapGreen, 700, 100)
+    FieldState.createSpriteObject(new trap.TrapGreen, 700, 100)
     for (let i = 0; i < 11; i++) {
-      fieldState.createSpriteObject(new trap.TrapRed, (i * 50), 160)
-      fieldState.createSpriteObject(new trap.TrapRed, (i * 50) + 100, 280)
-      fieldState.createSpriteObject(new trap.TrapRed, (i * 50), 450)
+      FieldState.createSpriteObject(new trap.TrapRed, (i * 50), 160)
+      FieldState.createSpriteObject(new trap.TrapRed, (i * 50) + 100, 280)
+      FieldState.createSpriteObject(new trap.TrapRed, (i * 50), 450)
     }
     for (let i = 0; i < 7; i++) {
-      fieldState.createSpriteObject(new trap.TrapRed, 650, i * 50 + 100)
+      FieldState.createSpriteObject(new trap.TrapRed, 650, i * 50 + 100)
     }
     for (let i = 0; i < 3; i++) {
-      fieldState.createSpriteObject(new trap.TrapRedUpDown, (i * 140) + 140, 100)
-      fieldState.createSpriteObject(new trap.TrapRedUpDown, (i * 140) + 140, 300)
+      FieldState.createSpriteObject(new trap.TrapRedUpDown, (i * 140) + 140, 100)
+      FieldState.createSpriteObject(new trap.TrapRedUpDown, (i * 140) + 140, 300)
     }
   }
 
@@ -6785,19 +6585,19 @@ class Round2_3 extends RoundData {
     //   |   
     //   |  R  R  R |
     //              |
-    fieldState.createSpriteObject(new trap.TrapGreen, 700, 100)
+    FieldState.createSpriteObject(new trap.TrapGreen, 700, 100)
     for (let i = 0; i < 7; i++) {
-      fieldState.createSpriteObject(new trap.TrapRed, 150, i * 50 + 100)
-      fieldState.createSpriteObject(new trap.TrapRed, 650, i * 50 + 100)
+      FieldState.createSpriteObject(new trap.TrapRed, 150, i * 50 + 100)
+      FieldState.createSpriteObject(new trap.TrapRed, 650, i * 50 + 100)
     }
     for (let i = 0; i < 4; i++) {
-      fieldState.createSpriteObject(new trap.TrapRed, 450, i * 50 + 300)
+      FieldState.createSpriteObject(new trap.TrapRed, 450, i * 50 + 300)
     }
     for (let i = 0; i < 3; i++) {
-      fieldState.createSpriteObject(new trap.TrapRedUpDown, (i * 150) + 150, 100)
-      fieldState.createSpriteObject(new trap.TrapRedUpDown, (i * 150) + 150, 300)
-      fieldState.createSpriteObject(new trap.TrapRedLeftRight, (i * 150) + 150, 100)
-      fieldState.createSpriteObject(new trap.TrapRedLeftRight, (i * 150) + 150, 300)
+      FieldState.createSpriteObject(new trap.TrapRedUpDown, (i * 150) + 150, 100)
+      FieldState.createSpriteObject(new trap.TrapRedUpDown, (i * 150) + 150, 300)
+      FieldState.createSpriteObject(new trap.TrapRedLeftRight, (i * 150) + 150, 100)
+      FieldState.createSpriteObject(new trap.TrapRedLeftRight, (i * 150) + 150, 300)
     }
   }
 
@@ -6805,7 +6605,7 @@ class Round2_3 extends RoundData {
     const trap = this.coursePhaseC3TrapClass()
 
     // 골인지점
-    fieldState.createSpriteObject(new trap.TrapGreen, 700, 100)
+    FieldState.createSpriteObject(new trap.TrapGreen, 700, 100)
 
     // 구성 (아무렇게나 막 배치한것임. - 랜덤은 아님)
     let arrayX = [100, 20, 80, 140, 160, 160, 210, 220, 280, 330, // typaA-1
@@ -6887,7 +6687,7 @@ class Round2_3 extends RoundData {
     setPosition () {
       super.setPosition()
 
-      let playerP = fieldState.getPlayerObject()
+      let playerP = FieldState.getPlayerObject()
       let distanceX = playerP.x - this.x
       let distanceY = playerP.y - this.y
       this.moveSpeedX = distanceX / 200
@@ -7007,8 +6807,8 @@ class Round2_3 extends RoundData {
     }
 
     processCollision () {
-      let player = fieldState.getPlayerObject()
-      let enemy = fieldState.getEnemyObject()
+      let player = FieldState.getPlayerObject()
+      let enemy = FieldState.getEnemyObject()
       let addPositionX = 0
       let addPositionY = 0
 
@@ -7056,8 +6856,8 @@ class Round2_3 extends RoundData {
     }
 
     processCollision () {
-      let player = fieldState.getPlayerObject()
-      let enemy = fieldState.getEnemyObject()
+      let player = FieldState.getPlayerObject()
+      let enemy = FieldState.getEnemyObject()
       let endPositionX = Math.random() * graphicSystem.CANVAS_WIDTH
       let endPositionY = Math.random() * graphicSystem.CANVAS_HEIGHT
 
@@ -7306,29 +7106,11 @@ class Round2_4 extends RoundData {
     this.currentCourseName = this.courseName.FIRST
 
     this.load.addImageList([
-      imageSrc.round.round2_4_corridor,
-      imageSrc.round.round2_4_courseSelect,
-      imageSrc.round.round2_4_donggrami_shop,
       imageSrc.round.round2_4_elevator,
-      imageSrc.round.round2_4_elevatorFloor1,
-      imageSrc.round.round2_4_elevatorFloor3,
-      imageSrc.round.round2_4_elevatorFloor4,
-      imageSrc.round.round2_4_elevatorHall,
       imageSrc.round.round2_4_elevatorNumber,
-      imageSrc.round.round2_4_elevatorOutside,
-      imageSrc.round.round2_4_elevatorRooftop,
-      imageSrc.round.round2_4_floorB1,
-      imageSrc.round.round2_4_mountainDeep,
-      imageSrc.round.round2_4_placard,
-      imageSrc.round.round2_4_mountainPath,
-      imageSrc.round.round2_4_mountainRooftop,
-      imageSrc.round.round2_4_mountainWall,
-      imageSrc.round.round2_4_rooftop,
-      imageSrc.round.round2_4_rooftopWayout,
-      imageSrc.round.round2_4_roomBlue,
-      imageSrc.round.round2_4_roomParty,
-      imageSrc.round.round2_4_roomSky,
-      imageSrc.round.round2_4_roomYellow,
+      imageSrc.enemy.donggramiEnemy,
+      imageSrc.enemy.donggramiEnemyTalkList,
+      imageSrc.enemy.intruderEnemy,
     ])
     
     this.load.addSoundList([
@@ -7340,12 +7122,20 @@ class Round2_4 extends RoundData {
       soundSrc.round.r2_4_donggramiShopBuy,
       soundSrc.round.r2_4_donggramiShopFail,
       soundSrc.round.r2_4_donggramiShopTalk,
-      soundSrc.music.music12_donggrami_hall_outside,
-      soundSrc.music.music13_round2_4_jemu,
     ])
 
-    this.load.addImageList(RoundPackLoad.getRound2ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
+    this.load.addSoundList(roundEnemySoundList.donggramiEnemy)
+
+    // 사운드 리소스 절약을 위해, 여기서는 인투르더 에너미 사운드 중 일부만 로드합니다.
+    this.load.addSoundList([
+      soundSrc.enemyDie.enemyDieIntruderJemu,
+      soundSrc.enemyDie.enemyDieIntruderSquare,
+      soundSrc.enemyAttack.intruderJemuEnergy,
+      soundSrc.enemyAttack.intruderJemuEnergyHigh,
+      soundSrc.enemyAttack.intruderJemuEnergyLow,
+      soundSrc.enemyAttack.intruderJemuEnergyPurple,
+    ])
+
     this.spriteElevator = Round2_4.createSpriteElevator()
 
     // 참고: 기본 배경음악은 donggrami_hall_outside지만, 
@@ -8041,7 +7831,7 @@ class Round2_4 extends RoundData {
 
     // 만약 적이 남아있다면 모든 적을 삭제함
     if (this.timeCheckFrame(pTime + 39)) {
-      fieldState.allEnemyDelete()
+      FieldState.allEnemyDelete()
     }
 
     // 음악 페이드 아웃 및 정지
@@ -8091,7 +7881,7 @@ class Round2_4 extends RoundData {
     // 이 격차는 약 3000점정도 이므로, 대충 3000점을 더 주는것으로 함
     // 뒤에 프레임 값이 붙은 이유는, pTime+34 초 상황에서 점수를 중복처리 막기 위함
     if (this.timeCheckFrame(pTime + 34, 42)) {
-      fieldSystem.fieldRequests.addScore(3000)
+      FieldSystem.fieldRequests.addScore(3000)
     }
   }
 
@@ -8570,22 +8360,21 @@ class Round2_5 extends RoundData {
     this.phase.addRoundPhase(this, this.roundPhase06, 186, 190) // 마무리
 
     this.load.addImageList([
-      imageSrc.round.round2_5_floorB1Light,
-      imageSrc.round.round2_5_floorB1Dark,
-      imageSrc.round.round2_5_floorB1Break,
+      imageSrc.enemy.donggramiEnemy,
+      imageSrc.enemy.donggramiEnemyTalkList,
+      imageSrc.enemy.intruderEnemy,
     ])
 
     this.load.addSoundList([
       soundSrc.round.r2_5_start,
       soundSrc.round.r2_5_breakRoom,
-      soundSrc.music.music14_intruder_battle,
       soundSrc.round.r2_4_message1,
-      soundSrc.round.r2_3_a1_toyhammer,
+      soundSrc.round.r2_3_a1_toyhammer, // 동그라미 스프라이트 타격음
       soundSrc.round.r2_5_clear
     ])
 
-    this.load.addImageList(RoundPackLoad.getRound2ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
+    this.load.addSoundList(roundEnemySoundList.donggramiEnemy)
+    this.load.addSoundList(roundEnemySoundList.intruderEnemy)
 
     this.customRoomBreakEffect = new CustomEffect(imageSrc.enemyDie.effectList, imageDataInfo.enemyDieEffectList.squareRed, 400, 400, 2, 3)
 
@@ -8764,7 +8553,7 @@ class Round2_5 extends RoundData {
       this.sound.soundPlay(soundSrc.round.r2_5_breakRoom)
       this.bgLayer.setLayerAlphaFade(1, 0, 60)
       this.bgLayer.setLayerAlphaFade(2, 1, 60)
-      fieldState.createEffectObject(this.customRoomBreakEffect.getObject(), 200, 100)
+      FieldState.createEffectObject(this.customRoomBreakEffect.getObject(), 200, 100)
       this.bgLayer.setColor('#FF5C5C')
     } else if (this.timeCheckFrame(pTime + 5)) {
       this.bgLayer.setColor(Round2_1.getMaeulGradientColor())
@@ -9202,7 +8991,7 @@ class Round2_5 extends RoundData {
     }
 
     getTargetAndSetSpeed () {
-      let enemy = fieldState.getRandomEnemyObject()
+      let enemy = FieldState.getRandomEnemyObject()
       if (enemy != null) {
         let distanceX = enemy.centerX - this.x
         let distanceY = enemy.centerY - this.y
@@ -9297,7 +9086,7 @@ class Round2_5 extends RoundData {
 
       // 충돌 처리 (딜레이카운트는 적에게 충돌했을때에만 0으로 리셋됩니다.)
       if (this.attackDelay.check(false, true)) {
-        let enemyObject = fieldState.getEnemyObject()
+        let enemyObject = FieldState.getEnemyObject()
         for (let i = 0; i < enemyObject.length; i++) {
           let enemy = enemyObject[i]
           if (!enemy.isDied && collision(this, enemy)) {
@@ -9309,14 +9098,14 @@ class Round2_5 extends RoundData {
             // this.moveSpeedY = (this.moveSpeedY / 2) * -1 // 적과 충돌하면 이동속도 감소
             this.moveDelay.count = this.moveDelay.delay / 2
             soundSystem.play(soundSrc.round.r2_3_a1_toyhammer)
-            fieldState.createDamageObject(enemy.x, enemy.y, this.attack)
+            FieldState.createDamageObject(enemy.x, enemy.y, this.attack)
             break // 반복문 종료 (1회 공격에 1마리만 공격 가능)
           }
         }
       }
 
       // 적의 총알 대신 맞기 처리
-      let enemyBulletObject = fieldState.getEnemyBulletObject()
+      let enemyBulletObject = FieldState.getEnemyBulletObject()
       for (let i = 0; i < enemyBulletObject.length; i++) {
         let enemyBullet = enemyBulletObject[i]
         if (collision(this, enemyBullet)) {
@@ -9519,7 +9308,7 @@ class Round2_5 extends RoundData {
       this.y -= (this.imageData.height / Math.abs(this.ZBASE) / 2)
 
       if (this.z === 0) {
-        fieldState.createEnemyObject(this.id, this.x, this.y)
+        FieldState.createEnemyObject(this.id, this.x, this.y)
       }
     }
     
@@ -9565,19 +9354,11 @@ class Round2_6 extends RoundData {
 
     this.load.addImageList([
       imageSrc.round.round2_4_elevator,
-      imageSrc.round.round2_4_elevatorHall,
       imageSrc.round.round2_4_elevatorNumber,
-      imageSrc.round.round2_4_floorB1,
-      imageSrc.round.round2_5_floorB1Light,
-
-      imageSrc.round.round2_6_ruin1,
-      imageSrc.round.round2_6_ruin2,
-      imageSrc.round.round2_6_quiteRoad,
-      imageSrc.round.round2_6_downtowerEntrance,
     ])
 
-    this.load.addImageList(RoundPackLoad.getRound2ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound2ShareSound())
+    this.load.addSoundList(roundEnemySoundList.donggramiEnemy)
+    this.load.addSoundList(roundEnemySoundList.intruderEnemy)
 
     this.spriteElevator = Round2_4.createSpriteElevator()
     this.setBgLayer()
@@ -10018,7 +9799,7 @@ class Round3TempletePlayerOption extends FieldData {
   processWeaponGreenMoveCheck () {
     if (this._color !== this.colorList.green) return
 
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
 
     // 플레이어 이동속도에 변화가 있을때만 초록색 샷 방향이 변경됩니다.
     if (player.moveSpeedX === 0 && player.moveSpeedY !== 0) {
@@ -10104,7 +9885,7 @@ class Round3TempletePlayerOption extends FieldData {
   }
 
   processOption () {
-    const player = fieldState.getPlayerObject()
+    const player = FieldState.getPlayerObject()
     for (let i = 0; i < this.optionObject.length; i++) {
       let option = this.optionObject[i]
       option.process()
@@ -10328,7 +10109,7 @@ class Round3TempletePlayerOption extends FieldData {
 
     afterInit () {
       /** 적 추적 시작을 위한 함수 (참고: 생성자에서는 현재 좌표값이 0이라 현재위치에서 시작하지 않을 수 있음) */
-      let enemy = fieldState.getRandomEnemyObject()
+      let enemy = FieldState.getRandomEnemyObject()
       if (enemy != null) {
         this.setMoveSpeedChaseLine(enemy.centerX, enemy.centerY, 50, 6)
       }
@@ -10350,7 +10131,7 @@ class Round3TempletePlayerOption extends FieldData {
       super.processMove()
       if (this.state === this.STATE_FRONT && this.x > graphicSystem.CANVAS_WIDTH) {
         this.state = this.STATE_CHASE
-        let randomEnemy = fieldState.getRandomEnemyObject()
+        let randomEnemy = FieldState.getRandomEnemyObject()
         if (randomEnemy != null) {
           this.setMoveSpeedChaseLine(randomEnemy.centerX, randomEnemy.centerY, 20, 10)
         }
@@ -10374,7 +10155,7 @@ class Round3TempletePlayerOption extends FieldData {
 
       if (this.y > graphicSystem.CANVAS_HEIGHT || this.y < 0) {
         this.state = this.STATE_CHASE
-        let randomEnemy = fieldState.getRandomEnemyObject()
+        let randomEnemy = FieldState.getRandomEnemyObject()
         if (randomEnemy != null) {
           this.setMoveSpeedChaseLine(randomEnemy.centerX, randomEnemy.centerY, 30, 8)
         } else {
@@ -10671,7 +10452,7 @@ class Round3TempleteBossSprite extends FieldData {
         // createEnemy
       } else {
         if (this.elapsedFrame >= 300) {
-          fieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.crazyRobot, this.x, this.y)
+          FieldState.createEnemyObject(ID.enemy.towerEnemyGroup1.crazyRobot, this.x, this.y)
           this.subType = 0
         }
       }
@@ -10687,10 +10468,10 @@ class Round3TempleteBossSprite extends FieldData {
         bullet2.setMoveSpeed(-1, -6)
         bullet3.setMoveSpeed(1, 6)
         bullet4.setMoveSpeed(1, -6)
-        fieldState.createEnemyBulletObject(bullet1, this.x, this.y)
-        fieldState.createEnemyBulletObject(bullet2, this.x, this.y)
-        fieldState.createEnemyBulletObject(bullet3, this.x, this.centerY)
-        fieldState.createEnemyBulletObject(bullet4, this.x, this.centerY)
+        FieldState.createEnemyBulletObject(bullet1, this.x, this.y)
+        FieldState.createEnemyBulletObject(bullet2, this.x, this.y)
+        FieldState.createEnemyBulletObject(bullet3, this.x, this.centerY)
+        FieldState.createEnemyBulletObject(bullet4, this.x, this.centerY)
       }
     }
   }
@@ -10706,13 +10487,13 @@ class Round3TempleteBossSprite extends FieldData {
       soundSystem.play(soundSrc.enemyAttack.towerBossDasuCoreSummon)
       for (let i = 0; i < 24; i++) {
         let bullet = new Round3TempleteBossSprite.TowerBullet()
-        fieldState.createEnemyBulletObject(bullet, this.dasuCore[number].x, this.dasuCore[number].y)
+        FieldState.createEnemyBulletObject(bullet, this.dasuCore[number].x, this.dasuCore[number].y)
       }
     }
 
     if (this.elapsedFrame >= 300) {
       this.subType = 0
-      fieldState.createEnemyObject(ID.enemy.towerEnemyGroup3.bossDasu, this.x, this.y)
+      FieldState.createEnemyObject(ID.enemy.towerEnemyGroup3.bossDasu, this.x, this.y)
     }
   }
 
@@ -10757,7 +10538,7 @@ class Round3TempleteBossSprite extends FieldData {
           let bullet = new Round3TempleteBossSprite.AntiPhase3Ring()
           bullet.x = this.centerX - (bullet.width / 2)
           bullet.y = this.centerY - (bullet.height / 2)
-          fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+          FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
         }
       }
     } else if (this.elapsedFrame >= 660 && this.elapsedFrame <= 900) {
@@ -10767,12 +10548,12 @@ class Round3TempleteBossSprite extends FieldData {
           let bullet = new Round3TempleteBossSprite.AntiPhase3RingBomb()
           bullet.x = this.centerX - (bullet.width / 2)
           bullet.y = this.centerY - (bullet.height / 2)
-          fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+          FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
         }
       }
     } else if (this.elapsedFrame >= 960) {
       // 적 생성 후, 스프라이트 처리 종료
-      fieldState.createEnemyObject(ID.enemy.towerEnemyGroup4.antijemulP3_1, this.x, this.y)
+      FieldState.createEnemyObject(ID.enemy.towerEnemyGroup4.antijemulP3_1, this.x, this.y)
       this.subType = 0
     }
   }
@@ -10786,7 +10567,7 @@ class Round3TempleteBossSprite extends FieldData {
 
     if (this.elapsedFrame >= 720) {
       // 적 생성, 스프라이트 처리 종료
-      fieldState.createEnemyObject(ID.enemy.towerEnemyGroup4.antijemulP4_1, this.x, this.y)
+      FieldState.createEnemyObject(ID.enemy.towerEnemyGroup4.antijemulP4_1, this.x, this.y)
       this.subType = 0
     }
   }
@@ -10801,7 +10582,7 @@ class Round3TempleteBossSprite extends FieldData {
       effect.x = this.x + (Math.random() * this.width) - (effect.width / 2)
       effect.y = this.y + (Math.random() * this.height) - (effect.height / 2)
       effect.setWidthHeight(effect.width * 2, effect.height * 2)
-      fieldState.createEffectObject(effect)
+      FieldState.createEffectObject(effect)
     }
 
     // 서서히 투명해지게 하기 (그러나 완전히 사라지진 않습니다.)
@@ -10847,7 +10628,7 @@ class Round3TempleteBossSprite extends FieldData {
 
     afterCollision () {
       const bullet = new Round3TempleteBossSprite.RobotRocketBomb()
-      fieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
+      FieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
       soundSystem.play(soundSrc.enemyAttack.towerAttackRocketBomb)
     }
 
@@ -10911,7 +10692,7 @@ class Round3TempleteBossSprite extends FieldData {
       // 총알이 삭제된 순간, 폭발을 발생시킵니다.
       if (this.isDeleted) {
         let bullet = new Round3TempleteBossSprite.AntiPhase3RingBombEffect()
-        fieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
+        FieldState.createEnemyBulletObject(bullet, this.x - 10, this.y - 10)
         soundSystem.play(soundSrc.enemyAttack.towerAntijemulRingBombEffect)
       }
     }
@@ -10976,6 +10757,147 @@ class Round3TempleteBossSprite extends FieldData {
   }
 }
 
+const round3ResourceSound = {
+  towerSound1: [
+    soundSrc.enemyDie.enemyDieTowerBossRobot1,
+    soundSrc.enemyDie.enemyDieTowerDaepo,
+    soundSrc.enemyDie.enemyDieTowerDiamond,
+    soundSrc.enemyDie.enemyDieTowerGasi,
+    soundSrc.enemyDie.enemyDieTowerHellgi,
+    soundSrc.enemyDie.enemyDieTowerHellba,
+    soundSrc.enemyDie.enemyDieTowerHellcho,
+    soundSrc.enemyDie.enemyDieTowerHellgal,
+    soundSrc.enemyDie.enemyDieTowerHellgrey,
+    soundSrc.enemyDie.enemyDieTowerHexagon,
+    soundSrc.enemyDie.enemyDieTowerI,
+    soundSrc.enemyDie.enemyDieTowerLaserAlpha,
+    soundSrc.enemyDie.enemyDieTowerLaserMini,
+    soundSrc.enemyDie.enemyDieTowerMoveBlue,
+    soundSrc.enemyDie.enemyDieTowerMoveDarkViolet,
+    soundSrc.enemyDie.enemyDieTowerMoveViolet,
+    soundSrc.enemyDie.enemyDieTowerMoveYellowEnergy,
+    soundSrc.enemyDie.enemyDieTowerOctagon,
+    soundSrc.enemyDie.enemyDieTowerPentagon,
+    soundSrc.enemyDie.enemyDieTowerPunch,
+    soundSrc.enemyDie.enemyDieTowerSandglass,
+    soundSrc.enemyDie.enemyDieTowerSquare,
+    soundSrc.enemyDie.enemyDieTowerStar,
+    soundSrc.enemyDie.enemyDieTowerTapo,
+    soundSrc.enemyDie.enemyDieTowerX,
+
+    soundSrc.enemyAttack.towerAttackDaepo,
+    soundSrc.enemyAttack.towerAttackRocket,
+    soundSrc.enemyAttack.towerAttackRocketBomb,
+    soundSrc.enemyAttack.towerHellbaAttack,
+    soundSrc.enemyAttack.towerPunchAttack,
+  ],
+
+  towerSound2: [
+    soundSrc.enemyDie.enemyDieTowerBar1,
+    soundSrc.enemyDie.enemyDieTowerBar2,
+    soundSrc.enemyDie.enemyDieTowerBar3,
+    soundSrc.enemyDie.enemyDieTowerBossBar,
+    soundSrc.enemyDie.enemyDieTowerHellla,
+    soundSrc.enemyDie.enemyDieTowerHellna,
+    soundSrc.enemyDie.enemyDieTowerHellpa,
+    soundSrc.enemyDie.enemyDieTowerHellpo,
+    soundSrc.enemyDie.enemyDieTowerJagijang,
+    soundSrc.enemyDie.enemyDieTowerLightning,
+    soundSrc.enemyDie.enemyDieTowerMagnet,
+    soundSrc.enemyDie.enemyDieTowerPentaLight,
+    soundSrc.enemyDie.enemyDieTowerPentaShadow,
+
+    soundSrc.enemyAttack.towerBarAttack1,
+    soundSrc.enemyAttack.towerBarAttack2,
+    soundSrc.enemyAttack.towerBarAttack3,
+    soundSrc.enemyAttack.towerBossBarCollision,
+    soundSrc.enemyAttack.towerHellpaAttack,
+    soundSrc.enemyAttack.towerJagijangAttack,
+    soundSrc.enemyAttack.towerLightningAttack,
+  ],
+
+  towerSound3: [
+    soundSrc.enemyDie.enemyDieTowerBossDasu,
+    soundSrc.enemyDie.enemyDieTowerClockAnalog,
+    soundSrc.enemyDie.enemyDieTowerClockDigital,
+    soundSrc.enemyDie.enemyDieTowerClockJong,
+    soundSrc.enemyDie.enemyDieTowerEnergy1,
+    soundSrc.enemyDie.enemyDieTowerEnergy2,
+    soundSrc.enemyDie.enemyDieTowerFakeHell,
+    soundSrc.enemyDie.enemyDieTowerFakeShip,
+    soundSrc.enemyDie.enemyDieTowerShipBig,
+    soundSrc.enemyDie.enemyDieTowerShipSmall,
+
+    soundSrc.enemyAttack.towerBossDasuCoreArrangeMent,
+    soundSrc.enemyAttack.towerBossDasuCoreAttack,
+    soundSrc.enemyAttack.towerBossDasuCoreReflect,
+    soundSrc.enemyAttack.towerBossDasuCoreSummon,
+    soundSrc.enemyAttack.towerClockAttack,
+    soundSrc.enemyAttack.towerClockVibration,
+    soundSrc.enemyAttack.towerCoreSummonBrown,
+    soundSrc.enemyAttack.towerCoreSummonRainbow,
+    soundSrc.enemyAttack.towerFakeBarAttack,
+    soundSrc.enemyAttack.towerShipEquipCore,
+  ],
+
+  towerSound5: [
+    soundSrc.enemyDie.enemyDieTowerBlub,
+    soundSrc.enemyDie.enemyDieTowerCamera,
+    soundSrc.enemyDie.enemyDieTowerCctv,
+    soundSrc.enemyDie.enemyDieTowerHellnet,
+    soundSrc.enemyDie.enemyDieTowerHelltell,
+    soundSrc.enemyDie.enemyDieTowerSiren,
+
+    soundSrc.enemyAttack.towerCameraAttackShot,
+    soundSrc.enemyAttack.towerCameraAttackWait,
+    soundSrc.enemyAttack.towerRadioAttack,
+    soundSrc.enemyAttack.towerSirenBlueMove,
+    soundSrc.enemyAttack.towerSirenGreenMove,
+    soundSrc.enemyAttack.towerSirenRedMove,
+  ],
+
+  towerNokgasi: [
+    soundSrc.enemyDie.enemyDieTowerNokgasi,
+    soundSrc.enemyAttack.towerNokgasiGasiBottom,
+    soundSrc.enemyAttack.towerNokgasiGasiHyper,
+    soundSrc.enemyAttack.towerNokgasiGasiShot,
+    soundSrc.enemyAttack.towerNokgasiGasiSpear,
+    soundSrc.enemyAttack.towerNokgasiGasiSting,
+    soundSrc.enemyAttack.towerNokgasiGasiThrow,
+    soundSrc.enemyAttack.towerNokgasiAttackBlue,
+    soundSrc.enemyAttack.towerNokgasiAttackGreenGrey,
+    soundSrc.enemyAttack.towerNokgasiAttackOrangePurple,
+    soundSrc.enemyAttack.towerNokgasiAttackPink,
+  ],
+
+  towerAntijemul: [
+    soundSrc.enemyAttack.towerAntijemulBackshot,
+    soundSrc.enemyAttack.towerAntijemulGravityBall,
+    soundSrc.enemyAttack.towerAntijemulGravityBallEffect,
+    soundSrc.enemyAttack.towerAntijemulGravityBallFall,
+    soundSrc.enemyAttack.towerAntijemulGravityRectEffect,
+    soundSrc.enemyAttack.towerAntijemulGravityRectFall,
+    soundSrc.enemyAttack.towerAntijemulRing,
+    soundSrc.enemyAttack.towerAntijemulRingBomb,
+    soundSrc.enemyAttack.towerAntijemulRingBombEffect,
+    soundSrc.enemyAttack.towerAntijemulRingRolling,
+  ],
+
+  towerGabudan: [
+    soundSrc.enemyAttack.towerGabudanBooting,
+    soundSrc.enemyAttack.towerGabudanStartup,
+    soundSrc.enemyAttack.towerGabudanKernelPanic,
+  ],
+
+  towerVacuumCleaner: [
+    soundSrc.enemyAttack.towerVacuumCleanerFirst,
+    soundSrc.enemyAttack.towerVacuumCleanerHose,
+    soundSrc.enemyAttack.towerVacuumCleanerHyper,
+    soundSrc.enemyAttack.towerVacuumCleanerRush,
+    soundSrc.enemyAttack.towerVacuumCleanerTrash,
+  ],
+}
+
 class Round3Templete extends RoundData {
   static EXTEND_MEMORY_USE_OFFSET = 20
 
@@ -10988,8 +10910,86 @@ class Round3Templete extends RoundData {
     this.bossSprite = new Round3TempleteBossSprite()
     this.bossTextList = Round3TempleteBossWarning.textList
 
-    this.load.addImageList(RoundPackLoad.getRound3ShareImage())
-    this.load.addSoundList(RoundPackLoad.getRound3ShareSound())
+    this.load.addImageList([
+      imageSrc.round.round3_bossWarning,
+      imageSrc.round.round3_playerOption
+    ])
+
+    // 참고: 보스 사망 커먼 사운드는 여기서 추가하고 addResourceTowerEnemy에 추가하지 않습니다.
+    this.load.addSoundList([
+      soundSrc.enemyDie.enemyDieTowerBossCommon,
+      soundSrc.round.r3_playerOption,
+      soundSrc.round.r3_bossWarning,
+      soundSrc.round.r3_bossWarningKeyboard,
+    ])
+  }
+
+  /** 타워 에너미 관련 리소스 (이미지, 사운드)를 등록합니다.  
+   * 이 함수는, 타워 적 이미지 로딩 코드를 단순화 하기 위해 만들었습니다.  
+   * 각 라운드 생성자에서 반드시 실행해 주세요. 자동으로는 등록이 되지 않습니다.
+   * 
+   * @param {number} roundId 라운드의 ID 
+   */
+  addResourceTowerEnemy (roundId) {
+    this.#addImageTowerEnemy(roundId)
+    this.#addSoundTowerEnemy(roundId)
+  }
+
+  #getTowerEnemyGroupList (roundId = 0) {
+    switch (roundId) {
+      case ID.round.round3_1: 
+      case ID.round.round3_2: 
+      case ID.round.round3_3: 
+      case ID.round.round3_4: return [1, 2, 3] // 3-1 ~ 3-4
+      case ID.round.round3_5: return [1, 2, 3, 4] // 3-5 (1페이즈 보스 때문에 어쩔 수 없이 4번 이미지 사용)
+      case ID.round.round3_6: return [4] // 3-6
+      //---
+      case ID.round.round3_7: 
+      case ID.round.round3_8:
+      case ID.round.round3_9:
+      case ID.round.round3_10:
+      case ID.round.round3_11:
+      case ID.round.round3_12: return [1, 2, 3, 5]
+      default: return [0]
+    }
+  }
+
+  #addImageTowerEnemy (roundId = 0) {
+    let tower = this.#getTowerEnemyGroupList(roundId)
+
+    for (let i = 0; i < tower.length; i++) {
+      switch (tower[i]) {
+        case 1: this.load.addImageList([imageSrc.enemy.towerEnemyGroup1]); break
+        case 2: this.load.addImageList([imageSrc.enemy.towerEnemyGroup2]); break
+        case 3: this.load.addImageList([imageSrc.enemy.towerEnemyGroup3]); break
+        case 4: this.load.addImageList([imageSrc.enemy.towerEnemyGroup4]); break
+        case 5: this.load.addImageList([imageSrc.enemy.towerEnemyGroup5]); break
+      }
+    }
+  }
+
+  #addSoundTowerEnemy (roundId = 0) {
+    let tower = this.#getTowerEnemyGroupList(roundId)
+
+    for (let i = 0; i < tower.length; i++) {
+      switch (tower[i]) {
+        case 1: this.load.addSoundList(round3ResourceSound.towerSound1); break
+        case 2: this.load.addSoundList(round3ResourceSound.towerSound2); break
+        case 3: this.load.addSoundList(round3ResourceSound.towerSound3); break
+        // case 4는 없습니다.
+        case 5: this.load.addSoundList(round3ResourceSound.towerSound5); break
+      }
+    }
+
+    // 보스전 전용 사운드 추가
+    switch (roundId) {
+      case ID.round.round3_5: this.load.addSoundList(round3ResourceSound.towerNokgasi); break
+      case ID.round.round3_6: this.load.addSoundList(round3ResourceSound.towerAntijemul); break
+      case ID.round.round3_8: this.load.addSoundList(round3ResourceSound.towerGabudan); break
+      case ID.round.round3_10: this.load.addSoundList(round3ResourceSound.towerVacuumCleaner); break
+      // 3-12는 Round3_12 생성자에서 직접 등록하고 여기에 등록하지 않습니다.
+      // 3-12는 참조 사운드가 완전히 다른 위치 (enemyAttack.intruder) 에 있기 때문입니다.
+    }
   }
 
   /** 
@@ -11130,6 +11130,7 @@ class Round3_1 extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_1)
+    this.addResourceTowerEnemy(ID.round.round3_1)
 
     this.bgLayer.addLayerImage(imageSrc.round.round3_1_level1, 1)
     this.bgLayer.addLayerImage(imageSrc.round.round3_1_level2, 0)
@@ -11390,7 +11391,7 @@ class Round3_1 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 16)) {
       let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup1.crazyRobot)
       if ((enemy != null && enemy.isDied)) {
-        fieldState.allEnemyBulletDelete()
+        FieldState.allEnemyBulletDelete()
         this.sound.musicStop()
       }
     }
@@ -11418,6 +11419,7 @@ class Round3_2 extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_2)
+    this.addResourceTowerEnemy(ID.round.round3_2)
 
     this.bgLayer.addLayerImage(imageSrc.round.round3_2_level1, 1)
     this.bgLayer.addLayerImage(imageSrc.round.round3_2_level2, 0)
@@ -11706,7 +11708,7 @@ class Round3_2 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 7)) {
       let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup2.bossBar)
       if (enemy != null && enemy.isDied) {
-        fieldState.allEnemyBulletDelete()
+        FieldState.allEnemyBulletDelete()
         this.sound.musicStop()
       }
     }
@@ -11726,6 +11728,7 @@ class Round3_3 extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_3)
+    this.addResourceTowerEnemy(ID.round.round3_3)
 
     this.bgLayer.addLayerImage(imageSrc.round.round3_3_level1, 1)
     this.bgLayer.addLayerImage(imageSrc.round.round3_3_level2, 0)
@@ -11954,7 +11957,7 @@ class Round3_3 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 16)) {
       let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup3.bossDasu)
       if (enemy != null && enemy.isDied) {
-        fieldState.allEnemyBulletDelete()
+        FieldState.allEnemyBulletDelete()
         this.sound.musicStop()
       }
     }
@@ -11974,6 +11977,7 @@ class Round3_4 extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_4)
+    this.addResourceTowerEnemy(ID.round.round3_4)
 
     this.bgLayer.addLayerImage(imageSrc.round.round3_4_level1, 1)
     this.bgLayer.addLayerImage(imageSrc.round.round3_4_level2, 0)
@@ -12259,6 +12263,7 @@ class Round3_5 extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_5)
+    this.addResourceTowerEnemy(ID.round.round3_5)
 
     this.bgLayer.addLayerImage(imageSrc.round.round3_4_level4, 1)
     this.bgLayer.addLayerImage(imageSrc.round.round3_4_level3, 0)
@@ -12363,7 +12368,7 @@ class Round3_5 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 20)) {
       let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup1.hellgreyBoss)
       if (enemy != null && enemy.isDied) {
-        fieldState.allEnemyBulletDelete()
+        FieldState.allEnemyBulletDelete()
         this.sound.musicStop()
       }
     }
@@ -12452,7 +12457,7 @@ class Round3_5 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 78)) {
       let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.nokgasi2)
       if ((enemy != null && enemy.isDied)) {
-        fieldState.allEnemyBulletDelete()
+        FieldState.allEnemyBulletDelete()
         this.sound.musicStop()
       }
     }
@@ -12476,7 +12481,7 @@ class Round3_5 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 16)) {
       let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup1.hellgreyBoss)
       if (enemy != null && enemy.isDied) {
-        fieldState.allEnemyBulletDelete()
+        FieldState.allEnemyBulletDelete()
         this.sound.musicStop()
       }
     }
@@ -12502,6 +12507,7 @@ class Round3_6 extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_6)
+    this.addResourceTowerEnemy(ID.round.round3_6)
 
     // 이 라운드 한정으로는 오렌지 색 옵션이 강제로 지정되며, 다른 색은 등장하지 않습니다.
     this.playerOption.setColor(this.playerOption.colorList.orange)
@@ -12898,7 +12904,7 @@ class Round3_6 extends Round3Templete {
     this.areaPhase2.elapsedFrame = 0
 
     // 플레이어 중앙으로 이동
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     player.x = graphicSystem.CANVAS_WIDTH_HALF - (player.width / 2)
     player.y = graphicSystem.CANVAS_HEIGHT_HALF - (player.height / 2)
 
@@ -12908,7 +12914,7 @@ class Round3_6 extends Round3Templete {
   }
 
   roundPhase02_2PlayerSelect () {
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     let isWarp = false
 
     // 클리어하지 않은 룸에 해당하는곳에 플레이어가 이동(충돌함수로 검사)하면, 해당 공간으로 이동합니다.
@@ -13017,7 +13023,7 @@ class Round3_6 extends Round3Templete {
       let bullet = new Round3_6.BlackSpaceBulletRed()
       bullet.x = graphicSystem.CANVAS_WIDTH_HALF - (bullet.width / 2)
       bullet.y = graphicSystem.CANVAS_HEIGHT_HALF - (bullet.height / 2)
-      fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+      FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
       this.sound.play(soundSrc.round.r3_5_blackSpaceRed)
     }
 
@@ -13036,12 +13042,12 @@ class Round3_6 extends Round3Templete {
         let preSprite = new Round3_6.BlackSpacePreBulletYellow()
         preSprite.x = 0
         preSprite.y = i * 100
-        fieldState.createSpriteObject(preSprite, preSprite.x, preSprite.y)
+        FieldState.createSpriteObject(preSprite, preSprite.x, preSprite.y)
 
         let bullet = new Round3_6.BlackSpaceBulletYellow()
         bullet.x = 800
         bullet.y = i * 100
-        fieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
+        FieldState.createEnemyBulletObject(bullet, bullet.x, bullet.y)
       }
 
       this.sound.play(soundSrc.round.r3_5_blackSpaceYellowPre)
@@ -13063,7 +13069,7 @@ class Round3_6 extends Round3Templete {
         let bullet = lineNumber === 0 ? new Round3_6.BlackSpaceBulletGreenTileDown() : new Round3_6.BlackSpaceBulletGreenTileUp()
         bullet.x = (i % 8) * 100
         bullet.y = lineNumber === 0 ? 0 : graphicSystem.CANVAS_HEIGHT - bullet.height
-        fieldState.createEnemyBulletObject(bullet)
+        FieldState.createEnemyBulletObject(bullet)
       }
     }
 
@@ -13081,7 +13087,7 @@ class Round3_6 extends Round3Templete {
       bullet.x = XNumber * 100
       bullet.y = lineNumber === 0 ? 0 : graphicSystem.CANVAS_HEIGHT - bullet.height
       bullet.setMoveSpeed(0, lineNumber === 0 ? 5 : -5)
-      fieldState.createEnemyBulletObject(bullet)
+      FieldState.createEnemyBulletObject(bullet)
 
       this.sound.play(soundSrc.round.r3_5_blackSpaceGreen)
     }
@@ -13095,7 +13101,7 @@ class Round3_6 extends Round3Templete {
     // 토네이도 룸
     // 토네이도는 곧바로 생성되며, 주기적으로 토네이도를 소환하고 플레이어를 중앙으로 끌어당김
 
-    let player = fieldState.getPlayerObject()
+    let player = FieldState.getPlayerObject()
     // 플레이어를 강제로 부분적으로 이동시킴 (토네이도가 있는 쪽으로)
     if (player.x < graphicSystem.CANVAS_WIDTH_HALF) player.x += 2
     else if (player.x > graphicSystem.CANVAS_WIDTH_HALF) player.x -= 2
@@ -13112,7 +13118,7 @@ class Round3_6 extends Round3Templete {
       let bullet = new Round3_6.BlackSpaceTornadoPhase2_2()
       bullet.x = graphicSystem.CANVAS_WIDTH_HALF - (bullet.width / 2)
       bullet.y = graphicSystem.CANVAS_HEIGHT_HALF - (bullet.height / 2)
-      fieldState.createEnemyBulletObject(bullet)
+      FieldState.createEnemyBulletObject(bullet)
     }
   }
 
@@ -13143,7 +13149,7 @@ class Round3_6 extends Round3Templete {
 
     if (this.areaPhase2.spaceNumber !== 7) {
       this.time.setCurrentTimePause(true, 'box select')
-      let player = fieldState.getPlayerObject()
+      let player = FieldState.getPlayerObject()
       if (collision(this.areaBox2.boxBlack, player)) {
         // 다음 페이즈로 이동
         this.areaPhase2.roomNumber = 5
@@ -13211,7 +13217,7 @@ class Round3_6 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 24, pEnd - 1)) {
       this.timePauseWithEnemyCount(pEnd - 1) // 적이 남아있으면 페이즈 끝 시간에서 진행 시간을 일시정지
       if (this.currentBossDieCheck()) {
-        fieldState.allEnemyBulletDelete() // 모든 총알 삭제
+        FieldState.allEnemyBulletDelete() // 모든 총알 삭제
         this.time.setCurrentTime(pEnd - 1) // 다음 페이즈 시간으로 이동시킴
         this.time.setCurrentTimePause(false) // 시간 일시정지 해제
       }
@@ -13228,7 +13234,7 @@ class Round3_6 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 10, pEnd - 1)) {
       this.timePauseWithEnemyCount(pEnd - 1) // 적이 남아있으면 페이즈 끝 시간에서 진행 시간을 일시정지
       if (this.currentBossDieCheck()) {
-        fieldState.allEnemyBulletDelete() // 모든 총알 삭제
+        FieldState.allEnemyBulletDelete() // 모든 총알 삭제
         this.time.setCurrentTime(pEnd - 1) // 다음 페이즈 시간으로 이동시킴
         this.time.setCurrentTimePause(false) // 시간 일시정지 해제
         this.sound.musicStop() // 음악 정지
@@ -13256,7 +13262,7 @@ class Round3_6 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 15, pEnd - 1)) {
       let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.antijemulP4_1)
       if (enemy == null) {
-        fieldState.allEnemyBulletDelete() // 모든 총알 삭제
+        FieldState.allEnemyBulletDelete() // 모든 총알 삭제
         this.time.setCurrentTime(pEnd) // 다음 페이즈 시간으로 이동시킴
         this.time.setCurrentTimePause(false) // 시간 일시정지 해제
       } else {
@@ -13273,7 +13279,7 @@ class Round3_6 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 4, pEnd - 1)) {
       let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.antijemulP4_2)
       if (enemy == null) {
-        fieldState.allEnemyBulletDelete() // 모든 총알 삭제
+        FieldState.allEnemyBulletDelete() // 모든 총알 삭제
         this.time.setCurrentTime(pEnd) // 다음 페이즈 시간으로 이동시킴
         this.time.setCurrentTimePause(false) // 시간 일시정지 해제
       } else {
@@ -13290,7 +13296,7 @@ class Round3_6 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 4, pEnd - 1)) {
       let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup4.antijemulP4_3)
       if (enemy == null) {
-        fieldState.allEnemyBulletDelete() // 모든 총알 삭제
+        FieldState.allEnemyBulletDelete() // 모든 총알 삭제
         this.time.setCurrentTime(pEnd) // 다음 페이즈 시간으로 이동시킴
         this.time.setCurrentTimePause(false) // 시간 일시정지 해제
         this.sound.musicChange(0, 120)
@@ -13319,7 +13325,7 @@ class Round3_6 extends Round3Templete {
     let tornado = new Round3_6.BlackSpaceTornadoPhase2_1()
     let targetX = graphicSystem.CANVAS_WIDTH + tornado.width
     let targetY = Math.random() * (graphicSystem.CANVAS_HEIGHT - tornado.height)
-    fieldState.createEnemyBulletObject(tornado, targetX, targetY)
+    FieldState.createEnemyBulletObject(tornado, targetX, targetY)
   }
 
   processDebug () {
@@ -13583,6 +13589,10 @@ class Round3_7 extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_7)
+    this.addResourceTowerEnemy(ID.round.round3_7)
+
+    // 보스 부팅 과정 이미지 출력
+    this.load.addImageList([imageSrc.enemy.towerEnemyGroup5Gabudan])
 
     // 배경
     this.setBackground()
@@ -13877,6 +13887,7 @@ class Round3_8 extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_8)
+    this.addResourceTowerEnemy(ID.round.round3_8)
 
     // 배경
     this.setBackground()
@@ -14168,6 +14179,7 @@ class Round3_9 extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_9)
+    this.addResourceTowerEnemy(ID.round.round3_9)
 
     this.setBackground()
     this.phase.addRoundPhase(this, this.roundPhase00, 0, 50)
@@ -14471,6 +14483,7 @@ class Round3_10 extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_10)
+    this.addResourceTowerEnemy(ID.round.round3_10)
 
     this.setBackground()
     this.phase.addRoundPhase(this, this.roundPhase00, 0, 50)
@@ -14759,7 +14772,7 @@ class Round3_10 extends Round3Templete {
     if (this.timeCheckInterval(pEnd - 3)) {
       let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup5.vacuumCleaner)
       if ((enemy != null && enemy.isDied) || enemy == null) {
-        fieldState.allEnemyBulletDelete()
+        FieldState.allEnemyBulletDelete()
         this.sound.musicStop()
       }
     }
@@ -14778,6 +14791,8 @@ class Round3_11 extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_11)
+    this.addResourceTowerEnemy(ID.round.round3_11)
+
     this.layerList = {
       R3_9_EXITAREA: 0,
     }
@@ -15181,7 +15196,7 @@ class Round3_11 extends Round3Templete {
     if (this.timeCheckInterval(pTime + 37)) {
       let enemy = this.field.getEnemyObjectById(ID.enemy.towerEnemyGroup5.fakeHellgreyBoss)
       if ((enemy != null && enemy.isDied) || enemy == null) {
-        fieldState.allEnemyBulletDelete()
+        FieldState.allEnemyBulletDelete()
         this.sound.musicStop()
       }
     }
@@ -15204,6 +15219,10 @@ class Round3_12 extends Round3Templete {
   constructor () {
     super()
     this.stat.setStat(ID.round.round3_12)
+    this.addResourceTowerEnemy(ID.round.round3_12)
+
+    // 보스를 배경 이미지로 대신 표현하고, 타워 에너미 그룹에는 보스 이미지가 없어 따로 등록합니다.
+    this.load.addImageList([imageSrc.round.round3_10_hallB5Gamok])
 
      this.layerList = {
       DOWNTOWER3_4: 0,

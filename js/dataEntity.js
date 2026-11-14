@@ -2,7 +2,7 @@
 
 import { CustomEffect } from "./dataEffect.js"
 import { DelayData, FieldData } from "./dataField.js"
-import { fieldState } from "./field.js"
+import { FieldState } from "./field.js"
 import { game, gameFunction } from "./game.js"
 import { imageDataInfo, imageSrc } from "./imageSrc.js"
 import { soundSrc } from "./soundSrc.js"
@@ -541,7 +541,7 @@ export class DonggramiEntity {
      */
     randomTargetObject (sendObject = undefined) {
       // 적 수를 먼저 가져오고, 여기서 마지막 번호에 당첨되면, 대상을 플레이어로 변경함
-      let enemy = fieldState.getEnemyObject()
+      let enemy = FieldState.getEnemyObject()
       let targetNumber = Math.floor(Math.random() * enemy.length)
       let createIdCode = -1
       if (sendObject != null) {
@@ -552,7 +552,7 @@ export class DonggramiEntity {
       if (enemy[targetNumber] instanceof DonggramiEntity) {
         // 만약 그 대상이 자기 자신인경우에는, 플레이어에게 던짐
         if (createIdCode === enemy[targetNumber].createId) {
-          this.targetObject = fieldState.getPlayerObject()
+          this.targetObject = FieldState.getPlayerObject()
         } else {
           this.targetObject = enemy[targetNumber]
         }

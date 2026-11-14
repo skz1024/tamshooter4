@@ -22,6 +22,7 @@ export class LoadingSystem {
 
   /** @type {string[]} */ static #imageList = []
   /** @type {string[]} */ static #soundList = []
+  /** @type {string[]} */ static #bufferList = []
 
   static systemImageList = [
     ...Object.values(imageSrc.system),
@@ -54,12 +55,14 @@ export class LoadingSystem {
    * 
    * 주의: 아무 때나 이 함수를 실행하지 마세요. 로딩 과정이 표시되고 게임이 일시적으로 멈출 수 있습니다.  
    * 이 함수를 여러 번 실행하는 경우, 가장 최근에 함수를 실행한 것을 기준으로만 로딩을 진행합니다.
-   * @param {string[]} imageList 
-   * @param {string[]} soundList 
+   * @param {string[]} imageList 이미지
+   * @param {string[]} soundList 사운드 (audio, HTMLElement)
+   * @param {string[]} bufferList 사운드 버퍼
    */
-  static loadStart (imageList, soundList) {
+  static loadStart (imageList = [], soundList = [], bufferList = []) {
     this.#imageList = imageList
     this.#soundList = soundList
+    this.#bufferList = bufferList
     this.#isComplete = false
     this.#frameCount = 0 // 진행된 총 프레임 카운트
 
@@ -69,6 +72,10 @@ export class LoadingSystem {
 
     for (let i = 0; i < soundList.length; i++) {
       game.sound.createAudio(soundList[i])
+    }
+
+    for (let i = 0; i < bufferList.length; i++) {
+      game.sound.createBuffer(bufferList[i])
     }
 
     // 사운드를 엘리먼트에 추가하도록 요청
@@ -82,28 +89,33 @@ export class LoadingSystem {
   static display () {
     const image = game.graphic.getImageCompleteCount(this.#imageList)
     const sound = game.sound.getAudioLoadCompleteCount(this.#soundList)
+    const buffer = game.sound.getBufferLoadCompleteCount(this.#bufferList)
     const imageFail = game.graphic.getImageLoadErrorCount(this.#imageList)
     const soundFail = game.sound.getAudioLoadErrorCount(this.#soundList)
-
-    game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, 200, '#707070')
+    const bufferFail = game.sound.getBufferLoadErrorCount(this.#bufferList)
     const textList = [
       'tamshooter 4 loading system',
       'Loading Elapsed Frames: ' + this.frameCount,
-      'Fail Count: ' + (soundFail + imageFail),
+      'Fail Count: ' + (soundFail + imageFail + bufferFail),
       '',
       'image loading: ' + image + '/' + this.#imageList.length,
       '',
       'sound loading: ' + sound + '/' + this.#soundList.length,
       '',
+      'buffer loading: ' + buffer + '/' + this.#bufferList.length,
+      '',
       'Sound loading may take some time.'
     ]
+
+    game.graphic.fillRect(0, 0, game.graphic.CANVAS_WIDTH, 20 * textList.length + 20, '#707070')
 
     for (let i = 0; i < textList.length; i++) {
       digitalDisplay(textList[i], 0, i * 20)
     }
 
-    game.graphic.meterRect(0, 100, game.graphic.CANVAS_WIDTH, 10, '#909090', image, this.#imageList.length, true, '#505050')
-    game.graphic.meterRect(0, 140, game.graphic.CANVAS_WIDTH, 10, '#909090', sound, this.#soundList.length, true, '#505050')
+    game.graphic.meterRect(0, 20 * 5, game.graphic.CANVAS_WIDTH, 10, '#909090', image, this.#imageList.length, true, '#505050')
+    game.graphic.meterRect(0, 20 * 7, game.graphic.CANVAS_WIDTH, 10, '#909090', sound, this.#soundList.length, true, '#505050')
+    game.graphic.meterRect(0, 20 * 9, game.graphic.CANVAS_WIDTH, 10, '#909090', buffer, this.#bufferList.length, true, '#505050')
   }
 }
 
@@ -199,21 +211,6 @@ export class gameVar {
 }
 
 let digitalDisplay = gameFunction.digitalDisplay
-
-// 사운드 선 로딩
-// 나중에 후로딩 방식으로 변경할지 잘 모르겠음.
-
-for (const src of Object.values(soundSrc.system)) {
-  game.sound.createAudio(src);
-}
-
-for (const src of Object.values(soundSrc.music)) {
-  game.sound.createAudio(src);
-}
-
-for (const src of Object.values(soundSrc.skill)) {
-  game.sound.createAudio(src);
-}
 
 class InventoryItem {
   /**

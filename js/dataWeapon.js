@@ -3,7 +3,7 @@
 import { DelayData, FieldData, EnimationData, collision, collisionClass } from "./dataField.js"
 import { EffectData, CustomEffect } from "./dataEffect.js"
 import { ID } from "./dataId.js"
-import { fieldState } from "./field.js"
+import { FieldState } from "./field.js"
 import { imageDataInfo, imageSrc } from "./imageSrc.js"
 import { EnemyData } from "./dataEnemy.js"
 import { soundSrc } from "./soundSrc.js"
@@ -84,6 +84,10 @@ export class WeaponData extends FieldData {
     /** 스플래시 공격이 실행되었을 때, 나오는 이펙트
      * @type {CustomEffect | null} */
     this.splashEffect = null
+
+    /** 무기 오브젝트에서 사용하는 사운드 리스트, hitSound와는 별개입니다.
+     * @type {string[]} */
+    this.soundList = []
   }
 
   /** 스플래시 영역을 얻습니다. 스플래시 무기는 이 함수를 상속받아서 스플래시 영역을 설정해주세요.   
@@ -138,7 +142,7 @@ export class WeaponData extends FieldData {
 
     this.repeatCount--
     for (let i = 0; i < this.subCount; i++) {
-      fieldState.createWeaponObject(this.subId, this.x, this.y, this.attack, i)
+      FieldState.createWeaponObject(this.subId, this.x, this.y, this.attack, i)
     }
   }
 
@@ -205,12 +209,12 @@ export class WeaponData extends FieldData {
     }
 
     hitedTarget.hp -= damage
-    fieldState.createDamageObject(hitedTarget.x, hitedTarget.y, damage)
+    FieldState.createDamageObject(hitedTarget.x, hitedTarget.y, damage)
 
     if (this.hitEffect) {
       let hitEffect = this.hitEffect.getObject()
       hitEffect.setWidthHeight(hitedTarget.width, hitedTarget.height)
-      fieldState.createEffectObject(hitEffect, hitedTarget.x, hitedTarget.y)
+      FieldState.createEffectObject(hitEffect, hitedTarget.x, hitedTarget.y)
     }
   }
 
@@ -229,7 +233,7 @@ export class WeaponData extends FieldData {
       // 스플래시 공격이 끝난 후, 스플래시 영역에 따른 이펙트를 생성시킵니다.
       if (this.splashEffect) {
         this.splashEffect.setWidthHeight(splashArea.width, splashArea.height)
-        fieldState.createEffectObject(this.splashEffect, splashArea.x, splashArea.y)
+        FieldState.createEffectObject(this.splashEffect, splashArea.x, splashArea.y)
       }
     } else {
       // 반복딜레이거 처리되지 않으면 공격처리를 하지 않음
@@ -281,7 +285,7 @@ export class WeaponData extends FieldData {
    */
   #processHitObjectSplash (attackArea) {
     let targetCount = 0
-    const enemyObject = fieldState.getEnemyObject() // 적 오브젝트
+    const enemyObject = FieldState.getEnemyObject() // 적 오브젝트
     this.repeatCount--
 
     // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
@@ -311,7 +315,7 @@ export class WeaponData extends FieldData {
    * @param {import("./dataField.js").CollisionTarget} attackArea 
    */
   #processHitObjectNormalTarget (attackArea) {
-    const enemyObject = fieldState.getEnemyObject() // 적 오브젝트
+    const enemyObject = FieldState.getEnemyObject() // 적 오브젝트
 
     // 무기 객체와 해당 적 객체가 충돌했는지를 확인합니다.
     for (let i = 0; i < enemyObject.length; i++) {
@@ -350,7 +354,7 @@ export class WeaponData extends FieldData {
    * @returns {boolean}
    */
   enemyHitedCheck (attackArea = { x: this.x, y: this.y, width: this.width, height: this.height }) {
-    const enemyObject = fieldState.getEnemyObject() // 적 오브젝트 가져오기
+    const enemyObject = FieldState.getEnemyObject() // 적 오브젝트 가져오기
 
     for (let i = 0; i < enemyObject.length; i++) {
       const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
@@ -375,7 +379,7 @@ export class WeaponData extends FieldData {
    */
   getEnemyHitObject (attackArea = { x: this.x, y: this.y, width: this.width, height: this.height }, maxCount = -1) {
     const hitEnemyList = []
-    const enemyObject = fieldState.getEnemyObject() // 적 오브젝트 가져오기
+    const enemyObject = FieldState.getEnemyObject() // 적 오브젝트 가져오기
 
     for (let i = 0; i < enemyObject.length; i++) {
       const currentEnemy = enemyObject[i] // 현재 적의 데이터(배열 코드 실수를 방지하기 위해 이런식으로 처리함.)
@@ -451,7 +455,7 @@ export class WeaponData extends FieldData {
         }
       } else {
         // 추적하는 오브젝트가 없을 경우 추적하는 오브젝트를 설정합니다.
-        this.targetObject = fieldState.getRandomEnemyObject()
+        this.targetObject = FieldState.getRandomEnemyObject()
       }
     }
   }
@@ -825,8 +829,8 @@ class Sapia extends WeaponData {
       this.x = this.targetObject.centerX
       this.y = this.targetObject.centerY
     } else {
-      this.x = fieldState.getPlayerObject().x + 200
-      this.y = fieldState.getPlayerObject().y
+      this.x = FieldState.getPlayerObject().x + 200
+      this.y = FieldState.getPlayerObject().y
     }
   }
 
@@ -847,7 +851,7 @@ class Sapia extends WeaponData {
       }
     } else {
       // targetObject가 없다면, 새로운 적을 찾음
-      const enemyObject = fieldState.getEnemyObject()
+      const enemyObject = FieldState.getEnemyObject()
       if (enemyObject.length <= 0) return
       
       // 멘헤튼 거리 방식이므로, 생각보다 세로 방향, 대각선 방향의 적을 잘 못찾을 수도 있습니다.
@@ -873,7 +877,7 @@ class Sapia extends WeaponData {
   }
 
   display () {
-    graphicSystem.fillLine(fieldState.getPlayerObject().x, fieldState.getPlayerObject().y, this.x, this.y, 'blue')
+    graphicSystem.fillLine(FieldState.getPlayerObject().x, FieldState.getPlayerObject().y, this.x, this.y, 'blue')
     super.display()
   }
 }
@@ -899,10 +903,10 @@ class Parapo extends WeaponData {
     const enemyCenterY = this.hitEnemyCenterPosition.y
     const shockWaveSize = 100
     const shockWaveSizeHalf = shockWaveSize / 2
-    fieldState.createWeaponObject(ID.weapon.parapoSub, enemyCenterX - shockWaveSize, enemyCenterY - shockWaveSizeHalf, this.attack, 0)
-    fieldState.createWeaponObject(ID.weapon.parapoSub, enemyCenterX, enemyCenterY - shockWaveSizeHalf, this.attack, 1)
-    fieldState.createWeaponObject(ID.weapon.parapoSub, enemyCenterX - shockWaveSizeHalf, enemyCenterY - shockWaveSize, this.attack, 2)
-    fieldState.createWeaponObject(ID.weapon.parapoSub, enemyCenterX - shockWaveSizeHalf, enemyCenterY, this.attack, 3)
+    FieldState.createWeaponObject(ID.weapon.parapoSub, enemyCenterX - shockWaveSize, enemyCenterY - shockWaveSizeHalf, this.attack, 0)
+    FieldState.createWeaponObject(ID.weapon.parapoSub, enemyCenterX, enemyCenterY - shockWaveSizeHalf, this.attack, 1)
+    FieldState.createWeaponObject(ID.weapon.parapoSub, enemyCenterX - shockWaveSizeHalf, enemyCenterY - shockWaveSize, this.attack, 2)
+    FieldState.createWeaponObject(ID.weapon.parapoSub, enemyCenterX - shockWaveSizeHalf, enemyCenterY, this.attack, 3)
     this.repeatCount--
   }
 
@@ -952,7 +956,7 @@ class ParapoSub extends Parapo {
     this.repeatCount--
     this.processHitObject()
     if (this.parapoEffect) {
-      fieldState.createEffectObject(this.parapoEffect, this.x, this.y)
+      FieldState.createEffectObject(this.parapoEffect, this.x, this.y)
     }
   }
 
@@ -1257,7 +1261,7 @@ class R3TowerPink extends WeaponData {
 
   afterInit () {
     /** 적 추적 시작을 위한 함수 (참고: 생성자에서는 현재 좌표값이 0이라 현재위치에서 시작하지 않을 수 있음) */
-    let enemy = fieldState.getRandomEnemyObject()
+    let enemy = FieldState.getRandomEnemyObject()
     if (enemy != null) {
       this.setMoveSpeedChaseLine(enemy.centerX, enemy.centerY, 50, 6)
     }
@@ -1280,7 +1284,7 @@ class R3TowerPurple extends WeaponData {
     super.processMove()
     if (this.state === R3TowerPurple.STATE_FRONT && this.x > graphicSystem.CANVAS_WIDTH) {
       this.state = R3TowerPurple.STATE_CHASE
-      let randomEnemy = fieldState.getRandomEnemyObject()
+      let randomEnemy = FieldState.getRandomEnemyObject()
       if (randomEnemy != null) {
         this.setMoveSpeedChaseLine(randomEnemy.centerX, randomEnemy.centerY, 20, 10)
       }
@@ -1439,6 +1443,8 @@ class SkillMultyshot extends WeaponData {
 class SkillMissile extends WeaponData {
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillMissileHit)
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.missile, 1)
     this.splashEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillMissile)
     this.splashEffect.setWidthHeight(this.getSplashArea().width, this.getSplashArea().height)
@@ -1505,7 +1511,7 @@ class SkillLaser extends WeaponData {
       this.x = 0
     }
 
-    this.y = fieldState.getPlayerObject().centerY - (this.height / 2)
+    this.y = FieldState.getPlayerObject().centerY - (this.height / 2)
   }
 
   processAttack () {
@@ -1561,7 +1567,7 @@ class SkillSapia extends Sapia {
       }
     } else {
       // targetObject가 없다면, 새로운 적을 찾음
-      const enemyObject = fieldState.getRandomEnemyObject()
+      const enemyObject = FieldState.getRandomEnemyObject()
       if (enemyObject == null) return
       
       this.targetObject = enemyObject
@@ -1603,6 +1609,8 @@ class SkillParapo extends Parapo {
 
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillParapoHit)
     // 참고: 파라포는 스킬 이미지가 없고, 이펙트만 있습니다.
     // 따라서 객체의 크기를 이펙트 크기로 얻어옵니다.
     this.width = imageDataInfo.weaponEffect.skillParapo.width
@@ -1659,7 +1667,7 @@ class SkillParapo extends Parapo {
     }
 
     // 충격파 이펙트
-    fieldState.createEffectObject(this.parapoEffect, shockwaveArea.x, shockwaveArea.y)
+    FieldState.createEffectObject(this.parapoEffect, shockwaveArea.x, shockwaveArea.y)
     this.processHitObject(shockwaveArea) // 적 충돌 처리
   }
 
@@ -1706,6 +1714,8 @@ class SkillSword extends WeaponData {
 
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillSwordHit)
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.sword)
     this.state = SkillSword.STATE_MOVE
     this.moveDelay = new DelayData(60)
@@ -1732,7 +1742,7 @@ class SkillSword extends WeaponData {
       }
 
       if (this.repeatDelay.check()) {
-        this.targetObject = fieldState.getRandomEnemyObject()
+        this.targetObject = FieldState.getRandomEnemyObject()
         if (this.targetObject == null) return
 
         this.x = this.targetObject.centerX
@@ -1746,7 +1756,7 @@ class SkillSword extends WeaponData {
 
         // 타겟당한 적을 기준으로 이펙트 생성
         let hitEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillSwordHit, this.targetObject.width, this.targetObject.height)
-        fieldState.createEffectObject(hitEffect, this.targetObject.x, this.targetObject.y)
+        FieldState.createEffectObject(hitEffect, this.targetObject.x, this.targetObject.y)
       }
     }
   }
@@ -1807,6 +1817,8 @@ class SkillCriticalChaser extends WeaponData {
 
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillCriticalChaserHit)
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.criticalChaser)
     this.splashEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillCriticalChaser)
     this.moveDelay = new DelayData(60)
@@ -1849,7 +1861,7 @@ class SkillCriticalChaser extends WeaponData {
       this.processHitObject(splashArea)
       this.splashEffect.width = splashArea.width
       this.splashEffect.height = splashArea.height
-      fieldState.createEffectObject(this.splashEffect, splashArea.x, splashArea.y)
+      FieldState.createEffectObject(this.splashEffect, splashArea.x, splashArea.y)
     }
   }
 
@@ -1863,6 +1875,8 @@ class SkillCriticalChaser extends WeaponData {
 class SkillPileBunker extends WeaponData {
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillPileBunkerHit2, soundSrc.skill.skillPileBunkerHit3)
     this.mainType = 14
     this.subType = 24
     // no image and no enimation
@@ -1920,7 +1934,7 @@ class SkillPileBunker extends WeaponData {
         for (let j = 0; j < 2; j++) {
           let randomX = this.area[i].x + Math.floor(Math.random() * (this.area[i].width - effectWidth))
           let randomY = this.area[i].y + Math.floor(Math.random() * (this.area[i].height - effectHeight))
-          fieldState.createEffectObject(this.areaEffect[i], randomX, randomY)
+          FieldState.createEffectObject(this.areaEffect[i], randomX, randomY)
         }
       }
     }
@@ -1939,6 +1953,8 @@ class SkillSantansu extends WeaponData {
 
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillSantansuHit)
     this.mainType = 1
     this.subType = 2
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.santansu)
@@ -1985,7 +2001,7 @@ class SkillSantansu extends WeaponData {
       // 화면 위까지 닿았을 때 공격 상태로 전환
       if (this.y <= 0) {
         soundSystem.play(soundSrc.skill.skillSantansuHit)
-        fieldState.createEffectObject(SkillSantansu.santansuEffectUp, this.x, 0)
+        FieldState.createEffectObject(SkillSantansu.santansuEffectUp, this.x, 0)
         this.y = 0
         this.state = SkillSantansu.STATE_ATTACK
         this.moveSpeedX = 0
@@ -2004,17 +2020,17 @@ class SkillSantansu extends WeaponData {
         }
 
         this.processHitObject(attackArea)
-        fieldState.createEffectObject(SkillSantansu.santansuEffectUp, this.x, 0)
-        fieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 0)
-        fieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 160)
-        fieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 320)
-        fieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 480)
-        fieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 640)
-        fieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 0)
-        fieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 160)
-        fieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 320)
-        fieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 480)
-        fieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 640)
+        FieldState.createEffectObject(SkillSantansu.santansuEffectUp, this.x, 0)
+        FieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 0)
+        FieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 160)
+        FieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 320)
+        FieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 480)
+        FieldState.createEffectObject(SkillSantansu.santansuEffectDown, this.x, 640)
+        FieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 0)
+        FieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 160)
+        FieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 320)
+        FieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 480)
+        FieldState.createEffectObject(SkillSantansu.santansuEffectWater, this.x, 640)
       }
     }
   }
@@ -2096,7 +2112,7 @@ class SkillWhiteFlashSub extends SkillWhiteflash {
 
   processAttack () {
     this.processHitObject()
-    fieldState.createEffectObject(this.splashEffect, this.x, this.y)
+    FieldState.createEffectObject(this.splashEffect, this.x, this.y)
   }
 }
 
@@ -2141,26 +2157,18 @@ class SkillSeondanil extends WeaponData {
   }
 
   processMove () {
-    if (this.subType === SkillSeondanil.TYPE_MAIN) {
-      if (this.moveDelay.check()) {
-        if (this.state === SkillSeondanil.STATE_STOP) {
-          this.state = SkillSeondanil.STATE_ATTACK
-        }
+    if (this.moveDelay.check()) {
+      if (this.state === SkillSeondanil.STATE_STOP) {
+        this.state = SkillSeondanil.STATE_ATTACK
       }
-    } else if (this.subType === SkillSeondanil.TYPE_MINI) {
-      super.processMove()
     }
   }
 
   processAttack () {
-    if (this.subType === SkillSeondanil.TYPE_MAIN) {
-      if (this.state === SkillSeondanil.STATE_ATTACK) {
-        if (this.repeatDelay.check()) {
-          this.createSubWeapon()
-        }
+    if (this.state === SkillSeondanil.STATE_ATTACK) {
+      if (this.repeatDelay.check()) {
+        this.createSubWeapon()
       }
-    } else if (this.subType === SkillSeondanil.TYPE_MINI) {
-      super.processAttack()
     }
   }
 
@@ -2172,9 +2180,10 @@ class SkillSeondanil extends WeaponData {
   }
 }
 
-class SkillSeondanilSub extends SkillSeondanil {
+class SkillSeondanilSub extends WeaponData {
   constructor () {
     super()
+    this.soundList.push(soundSrc.skill.skillSeondanilHit)
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.seondanil)
     this.hitEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.skillSeondanilHit)
     this.isLineChase = true
@@ -2193,6 +2202,8 @@ class SkillSeondanilSub extends SkillSeondanil {
 class SkillHanjumeok extends WeaponData {
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillHanjumeokSplash, soundSrc.skill.skillHanjumeokHit)
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.hanjumoek, 4)
     this.setWidthHeight(300, 210)
     this.moveSpeedX = 1
@@ -2238,7 +2249,7 @@ class SkillHanjumeok extends WeaponData {
     // 사운드와 이펙트는 타격수와 관계없이 1번만 출력
     if (this.repeatCount === 8) {
       soundSystem.play(soundSrc.skill.skillHanjumeokSplash)
-      fieldState.createEffectObject(this.splashEffect, splashArea.x, splashArea.y)
+      FieldState.createEffectObject(this.splashEffect, splashArea.x, splashArea.y)
     }
 
     let hitObject = this.getEnemyHitObject(splashArea, this.maxTarget)
@@ -2268,7 +2279,7 @@ class SkillHanjumeok extends WeaponData {
       let effectY = current.y + Math.floor(Math.random() * 80) - 40
 
       // 이펙트의 각도를 수정하기 위해, 필드에서 생성된 이펙트를 가져옵니다.
-      let returnEffect = fieldState.createEffectObject(this.jumeokEffect, effectX, effectY)
+      let returnEffect = FieldState.createEffectObject(this.jumeokEffect, effectX, effectY)
 
       // 에니메이션 각도 수정 (애니메이션 형태기 때문에 에니메이션 각도를 수정해야 합니다.)
       if (returnEffect != null && returnEffect.enimation != null) {
@@ -2326,6 +2337,8 @@ class SkillMoon extends WeaponData {
 
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillMoonAttack)
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.moon)
     this.setMoveSpeed(0, 0)
     this.attackDelay = new DelayData(60)
@@ -2384,7 +2397,7 @@ class SkillMoon extends WeaponData {
     } else if (this.state === SkillMoon.STATE_ATTACK && this.repeatDelay.check()) {
 
       // 적 수에 따라 공격력 배율 재설정
-      let enemyCount = fieldState.getEnemyObjectCount()
+      let enemyCount = FieldState.getEnemyObjectCount()
       if (enemyCount >= this.attackMultipleTable.length) {
         this.attack = Math.floor(this.baseAttack * this.attackMultipleMin)
       } else {
@@ -2414,6 +2427,8 @@ class SkillMoon extends WeaponData {
 class SkillKalnal extends ReflectWeaponData {
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillKalnalHit)
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.kalnal)
     this.isLineChase = true
     this.reflectCount = 8
@@ -2430,6 +2445,8 @@ class SkillKalnal extends ReflectWeaponData {
 class SkillCogwheel extends WeaponData {
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillCogwheelHit)
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.cogwheel)
     this.setMoveSpeed(0, 0)
 
@@ -2549,6 +2566,8 @@ class SkillSabangtan extends Sabangtan {
 class SkillHabirant extends WeaponData {
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillHabirantHit)
     this.STATE_NORMAL = 1
     this.STATE_HABIRANT = 2
     this.state = this.STATE_NORMAL
@@ -2573,7 +2592,7 @@ class SkillHabirant extends WeaponData {
 
 
     if (this.repeatDelay.check(false, true)) {
-      this.targetObject = fieldState.getRandomEnemyObject()
+      this.targetObject = FieldState.getRandomEnemyObject()
       if (this.targetObject == null) return
 
       this.repeatDelay.countReset() // 카운트 리셋 (적이 있는경우 한정)
@@ -2622,6 +2641,9 @@ class SkillHabirantSub extends WeaponData {
 class SkillIceChaser extends SkillCriticalChaser {
   constructor () {
     super()
+
+    // CriticalChaser랑 다른 사운드를 사용하기 때문에 목록을 새로 만듭니다.
+    this.soundList = [soundSrc.skill.skillIceChaserHit]
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.iceChaser)
     this.splashEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.iceChaser)
     this.state = SkillCriticalChaser.STATE_NORMAL
@@ -2659,7 +2681,7 @@ class SkillIceChaser extends SkillCriticalChaser {
       this.processHitObject(splashArea)
       this.splashEffect.width = splashArea.width
       this.splashEffect.height = splashArea.height
-      fieldState.createEffectObject(this.splashEffect, splashArea.x, splashArea.y)
+      FieldState.createEffectObject(this.splashEffect, splashArea.x, splashArea.y)
     }
   }
 
@@ -2676,6 +2698,8 @@ class SkillIceChaser extends SkillCriticalChaser {
 class SkillCalibur extends WeaponData {
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillCaliburDown, soundSrc.skill.skillCaliburHit)
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.calibur)
     this.setWidthHeight(this.width * 2, this.height * 2)
 
@@ -2765,7 +2789,7 @@ class SkillSujikpa extends WeaponData {
   }
 
   afterInit () {
-    let randomEnemy = fieldState.getRandomEnemyObject()
+    let randomEnemy = FieldState.getRandomEnemyObject()
     if (randomEnemy != null) {
       this.x = randomEnemy.x
     }
@@ -2785,6 +2809,8 @@ class SkillSujikpa extends WeaponData {
 class SkillSpeaker extends WeaponData {
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillSpeakerDown, soundSrc.skill.skillSpeakerAttack)
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.speaker, 2)
     this.effectWave = EnimationData.createEnimation(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.speaker, 0, 3)
     this.effectWave.setOutputSize(this.width * 3, this.height * 3)
@@ -2862,6 +2888,8 @@ class SkillSpeaker extends WeaponData {
 class SkillEomukggochi extends WeaponData {
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillEomukggochiShot)
     this.setWidthHeight(imageDataInfo.skill.eomukggochiStick.width, 50)
     // 이미지는 여러 조합에 따른 수동 출력임, 따라서 setAutoImageData를 하지 않음.
 
@@ -2878,7 +2906,7 @@ class SkillEomukggochi extends WeaponData {
 
     this.repeatCount--
     for (let i = 0; i < this.subCount; i++) {
-      fieldState.createWeaponObject(this.subId, positionX, positionY, this.attack, eomukNumber)
+      FieldState.createWeaponObject(this.subId, positionX, positionY, this.attack, eomukNumber)
     }
   }
 
@@ -2948,6 +2976,8 @@ class SkillEomukggochiSub extends WeaponData {
 class SkillR2Firecracker extends WeaponData {
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillFirecrackerHit)
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.r2Firecracker, 2)
     this.state = WeaponData.STATE_NORMAL
     this.splashEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r2Firecraker)
@@ -3003,6 +3033,8 @@ class SkillR2Firecracker extends WeaponData {
 class SkillR2Toyhammer extends WeaponData {
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillToyhammerHit)
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.r2Toyhammer)
     this.setWidthHeight(this.width, this.height)
     this.hammerDelay = new DelayData(12) // 해머딜레이는, 각도 조절 용도로 사용됨
@@ -3099,14 +3131,15 @@ class SkillR3XSeries extends WeaponData {
     customEffect.setWidthHeight(customEffect.width * 3, customEffect.height * 3)
     const canvasCenterX = graphicSystem.CANVAS_WIDTH_HALF - (customEffect.width / 2)
     const canvasCenterY = graphicSystem.CANVAS_HEIGHT_HALF - (customEffect.height / 2)
-    fieldState.createEffectObject(customEffect.getObject(), canvasCenterX, canvasCenterY)
+    FieldState.createEffectObject(customEffect.getObject(), canvasCenterX, canvasCenterY)
   }
 }
 
 class SkillR3Xkill extends SkillR3XSeries {
   constructor () {
     super()
-    this.startSoundPlay(soundSrc.skill.skillXSound1, soundSrc.skill.skillXVoice1)
+
+    this.soundList.push(soundSrc.skill.skillXkillVoice, soundSrc.skill.skillXSound1, soundSrc.skill.skillXVoice1, soundSrc.skill.skillXkillHit)
     this.setChangeFrame(this.WAIT_FRAME_1, soundSrc.skill.skillXkillVoice)
     this.hitEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xkill)
   }
@@ -3114,6 +3147,7 @@ class SkillR3Xkill extends SkillR3XSeries {
   afterInit () {
     const centerEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xkill, undefined, undefined, 2)
     this.createCenterEffect(centerEffect)
+    this.startSoundPlay(soundSrc.skill.skillXSound1, soundSrc.skill.skillXVoice1)
   }
 
   processAttack () {
@@ -3124,7 +3158,7 @@ class SkillR3Xkill extends SkillR3XSeries {
     // 타겟된 적에게 전부 데미지
     let isSuccess = false
     for (let i = 0; i < 10; i++) {
-      let randomEnemy = fieldState.getRandomEnemyObject()
+      let randomEnemy = FieldState.getRandomEnemyObject()
       if (randomEnemy == null) { // 만약 랜덤한 적이 null이면, 임의의 무작위 적을 다시 공격함
         // 여기서는 processHitObject가 반복횟수 1 소모하므로, 추가로 소모하지 않음
         this.processHitObject({x: this.x - 10000, y: this.y - 10000, width: 20000, height: 20000})
@@ -3149,13 +3183,15 @@ class SkillR3Xkill extends SkillR3XSeries {
 class SkillR3Xshot extends SkillR3XSeries {
   constructor () {
     super()
-    this.startSoundPlay(soundSrc.skill.skillXSound2, soundSrc.skill.skillXVoice2)
+
+    this.soundList.push(soundSrc.skill.skillXshotVoice, soundSrc.skill.skillXSound2, soundSrc.skill.skillXVoice2, soundSrc.skill.skillXshotShot)
     this.setChangeFrame(this.WAIT_FRAME_2, soundSrc.skill.skillXshotVoice)
   }
 
   afterInit () {
     const centerEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xshot, undefined, undefined, 3)
     this.createCenterEffect(centerEffect)
+    this.startSoundPlay(soundSrc.skill.skillXSound2, soundSrc.skill.skillXVoice2)
   }
 
   processAttack () {
@@ -3193,7 +3229,8 @@ class SkillR3XshotSub extends WeaponData {
 class SkillR3Xbeam extends SkillR3XSeries {
   constructor () {
     super()
-    this.startSoundPlay(soundSrc.skill.skillXSound1, soundSrc.skill.skillXVoice1)
+
+    this.soundList.push(soundSrc.skill.skillXbeamVoice, soundSrc.skill.skillXSound1, soundSrc.skill.skillXVoice1, soundSrc.skill.skillXbeamShot)
     this.setChangeFrame(this.WAIT_FRAME_1, soundSrc.skill.skillXbeamVoice)
   }
 
@@ -3201,6 +3238,7 @@ class SkillR3Xbeam extends SkillR3XSeries {
     const centerEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xbeam, undefined, undefined, 3)
     this.createCenterEffect(centerEffect)
     this.setSplashAttack()
+    this.startSoundPlay(soundSrc.skill.skillXSound1, soundSrc.skill.skillXVoice1)
   }
 
   processAttack () {
@@ -3240,7 +3278,7 @@ class SkillR3XbeamSub extends WeaponData {
       this.y = Math.random() * graphicSystem.CANVAS_HEIGHT
     }
 
-    let randomEnemy = fieldState.getRandomEnemyObject()
+    let randomEnemy = FieldState.getRandomEnemyObject()
     if (randomEnemy == null) {
       let randomX = Math.random() * graphicSystem.CANVAS_WIDTH
       let randomY = Math.random() * graphicSystem.CANVAS_HEIGHT
@@ -3253,7 +3291,7 @@ class SkillR3XbeamSub extends WeaponData {
   processMove () {
     super.processMove()
     if (this.effectDelay.check()) {
-      fieldState.createEffectObject(this.effect.getObject(), this.x, this.y)
+      FieldState.createEffectObject(this.effect.getObject(), this.x, this.y)
     }
   }
 
@@ -3269,14 +3307,16 @@ class SkillR3XbeamSub extends WeaponData {
 class SkillR3Xboom extends SkillR3XSeries {
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillXboomVoice, soundSrc.skill.skillXSound2, soundSrc.skill.skillXVoice2)
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.r3Xboom)
-    this.startSoundPlay(soundSrc.skill.skillXSound2, soundSrc.skill.skillXVoice2) // 보이스 1만 재생됨
     this.setChangeFrame(this.WAIT_FRAME_2, soundSrc.skill.skillXboomVoice)
   }
 
   afterInit () {
     const centerEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xboom, undefined, undefined, 2)
     this.createCenterEffect(centerEffect)
+    this.startSoundPlay(soundSrc.skill.skillXSound2, soundSrc.skill.skillXVoice2) // 보이스 1만 재생됨
   }
 
   processMove () {
@@ -3302,6 +3342,8 @@ class SkillR3Xboom extends SkillR3XSeries {
 class SkillR3XboomSub extends WeaponData {
   constructor () {
     super()
+
+    this.soundList.push(soundSrc.skill.skillXboomHit)
     this.setAutoImageData(imageSrc.weapon.skill, imageDataInfo.skill.r3Xboom) // 출력 이미지는 에니메이션 없음
     this.splashEffect = new CustomEffect(imageSrc.weapon.weaponEffect, imageDataInfo.weaponEffect.r3Xboom)
     this.isLineChase = true
@@ -3405,7 +3447,7 @@ dataExportWeapon.set(ID.weapon.skillYeonsai, SkillYeonsai)
 dataExportWeapon.set(ID.weapon.skillSabangtan, SkillSabangtan)
 dataExportWeapon.set(ID.weapon.skillHabirant, SkillHabirant)
 dataExportWeapon.set(ID.weapon.skillHabirantSub, SkillHabirantSub)
-dataExportWeapon.set(ID.weapon.skillIcechaser, SkillIceChaser)
+dataExportWeapon.set(ID.weapon.skillIceChaser, SkillIceChaser)
 dataExportWeapon.set(ID.weapon.skillCalibur, SkillCalibur)
 dataExportWeapon.set(ID.weapon.skillCaliburSub, SkillCaliburSub)
 dataExportWeapon.set(ID.weapon.skillSujikpa, SkillSujikpa)
