@@ -1881,7 +1881,6 @@ class Round1_1 extends RoundData {
     // 레이어 이동 처리
     this.bgLayer.setLayerSpeed(0, nextSpeedX, nextSpeedY)
     this.bgLayer.setLayerSpeed(1, nextSpeedX, nextSpeedY)
-    console.log(nextSpeedX, nextSpeedY)
     super.processBackground()
   }
 
@@ -7019,7 +7018,9 @@ class Round2_4 extends RoundData {
         IDLE3: 23,
         R2_4: 2, // 2-4 라운드 대사 진행 여부
         R2_5: 3, // 2-5 라운드 대사 진행 여부
-        R3_12: 4 // 3-12 라운드 대사 진행 여부
+        R3_12: 4, // 3-12 라운드 대사 진행 여부
+        REQUIREMENT_R2_5: 5, // 조건 미충족 시 대사
+        REQUIREMENT_R3_12: 6, // 조건 미충족 시 대사
       },
 
       TALK_INDEX: {
@@ -7034,6 +7035,8 @@ class Round2_4 extends RoundData {
         R2_4: {X: 8, YA: 0, YB: 5, LENGTH: 3},
         R2_5: {X: 8, YA: 10, YB: 15, LENGTH: 5},
         R3_12: {X: 9, YA: 0, YB: 8, LENGTH: 7},
+        REQUIREMENT_R2_5: {X: 9, YA: 16, YB: 18, LENGTH: 1},
+        REQUIREMENT_R3_12: {X: 9, YA: 17, YB: 19, LENGTH: 1},
       },
 
       /** 동그라미 타입은 A형 (감정형), B형 (관찰자형) 으로 성향이 나윕니다.
@@ -7443,9 +7446,9 @@ class Round2_4 extends RoundData {
         this.setPurchaseItem(this.shop.ITEM_ID.EQUIPMENT_DONGGRAMI_MUGI)
         longTalkConditionNextState = this.shop.TALKSTATUS_VALUE.BUY_SUCCESS
       } else {
+        this.sound.play(soundSrc.round.r2_4_donggramiShopFail)
         longTalkConditionNextState = this.shop.TALKSTATUS_VALUE.NOGOLD
       }
-      
     } else if (collision(player, this.shop.BOXS.ITEM3)) {
       player.setPosition(400, 500)
       if (this.shop.hasItemDonggramiUSB) {
@@ -7455,7 +7458,8 @@ class Round2_4 extends RoundData {
         this.setPurchaseItem(this.shop.ITEM_ID.ITEM_DONGGRAMI_USB)
         longTalkConditionNextState = this.shop.TALKSTATUS_VALUE.BUY_SUCCESS
       } else {
-        longTalkConditionNextState = this.shop.TALKSTATUS_VALUE.NOGOLD
+        this.sound.play(soundSrc.round.r2_4_donggramiShopFail)
+        longTalkConditionNextState = this.shop.TALKSTATUS_VALUE.NOTICKET
       }
     } else if (collision(player, this.shop.BOXS.TALK0)) {
       this.setShopTalkStateChange(this.shop.TALKSTATUS_VALUE.R2_4)
@@ -7464,6 +7468,7 @@ class Round2_4 extends RoundData {
       if (this.shop.isR2_5Clear) {
         this.setShopTalkStateChange(this.shop.TALKSTATUS_VALUE.R2_5)
       } else {
+        this.setShopTalkStateChange(this.shop.TALKSTATUS_VALUE.REQUIREMENT_R2_5)
         this.sound.play(soundSrc.round.r2_4_donggramiShopFail)
       }
       player.setPosition(400, 500)
@@ -7471,6 +7476,7 @@ class Round2_4 extends RoundData {
       if (this.shop.isR3_12Clear) {
         this.setShopTalkStateChange(this.shop.TALKSTATUS_VALUE.R3_12)
       } else {
+        this.setShopTalkStateChange(this.shop.TALKSTATUS_VALUE.REQUIREMENT_R3_12)
         this.sound.play(soundSrc.round.r2_4_donggramiShopFail)
       }
       player.setPosition(400, 500)
@@ -7497,7 +7503,15 @@ class Round2_4 extends RoundData {
   setShopTalkIndex (x = 0, y = 0) {
     this.shopDonggramiEntity.talkIndex.x = x
     this.shopDonggramiEntity.talkIndex.y = y
-    this.sound.play(soundSrc.round.r2_4_donggramiShopTalk)
+
+    // 동그라미의 상태가 구매 성공, 구매 실패일 때는 사운드를 출력하지 않습니다.
+    const STATUS = this.shop.TALKSTATUS_VALUE
+    const noTalkList = [STATUS.BUY_SUCCESS, STATUS.NOGOLD, STATUS.NOTICKET, STATUS.ALREADY_OWNED,
+      STATUS.REQUIREMENT_R2_5, STATUS.REQUIREMENT_R3_12]
+    
+    if (!noTalkList.includes(this.shop.talkStatus)) {
+      this.sound.play(soundSrc.round.r2_4_donggramiShopTalk)
+    }
   }
 
   /** 상점의 상태를 변경합니다. 이 함수는 talkFrame도 초기화시킵니다. */
@@ -7594,6 +7608,12 @@ class Round2_4 extends RoundData {
           break
         case STATUS.IDLE3:
           this.setShopTalkIndex(INDEX.IDLE3.X, IS_TYPE_A ? INDEX.IDLE3.YA : INDEX.IDLE3.YB)
+          break
+        case STATUS.REQUIREMENT_R2_5:
+          this.setShopTalkIndex(INDEX.REQUIREMENT_R2_5.X, IS_TYPE_A ? INDEX.REQUIREMENT_R2_5.YA : INDEX.REQUIREMENT_R2_5.YB)
+          break
+        case STATUS.REQUIREMENT_R3_12:
+          this.setShopTalkIndex(INDEX.REQUIREMENT_R3_12.X, IS_TYPE_A ? INDEX.REQUIREMENT_R3_12.YA : INDEX.REQUIREMENT_R3_12.YB)
           break
       }
     }
@@ -8490,11 +8510,11 @@ class Round2_5 extends RoundData {
           sprite.setTalkIndex()
           sprite.entity.talkDelay.countReset()
           let random = Math.random() * 100
-          if (random < 33 && sprite.talkType === sprite.TALKTYPE_A) {
-            sprite.talkType = sprite.TALKTYPE_EMOJI
+          if (random < 33 && sprite.entity.talkType === sprite.TALKTYPE_A) {
+            sprite.entity.talkType = DonggramiEntity.TalkTypeList.EMOJI
             sprite.entity.talkDelay.setDelay(Math.floor(Math.random() * 40) + 10)
           } else {
-            sprite.talkState = DonggramiEntity.TALK_STATES.TALK
+            sprite.entity.talkState = DonggramiEntity.TALK_STATES.TALK
           }
         }
       }
@@ -8504,7 +8524,7 @@ class Round2_5 extends RoundData {
         sprite.roundState = sprite.ROUND_LOSE
         sprite.setTalkIndex()
         sprite.entity.talkDelay.countReset()
-        sprite.talkState = DonggramiEntity.TALK_STATES.TALK
+        sprite.entity.talkState = DonggramiEntity.TALK_STATES.TALK
       }
 
       sprite.process()
@@ -8655,7 +8675,7 @@ class Round2_5 extends RoundData {
     }
 
     // donggrami 매 초당 2마리씩 생성
-    if (this.timeCheckInterval(pTime + 6, pTime + 38, 30) && this.getDonggramiCount() < 25) {
+    if (this.timeCheckInterval(pTime + 6, pTime + 40, 30) && this.getDonggramiCount() < 25) {
       this.createSpriteDonggrami()
     }
 
@@ -8711,14 +8731,14 @@ class Round2_5 extends RoundData {
       Math.random() < 0.5 ? this.field.createEnemy(inputListB[random]) : this.createSpriteIntruder(inputListB[random])
     }
 
-    // Cgroup (momi, flying) 120%
-    if (this.timeCheckInterval(pTime + 20, pTime + 37, 20)) {
+    // Cgroup (momi, flying) 80%
+    if (this.timeCheckInterval(pTime + 20, pTime + 37, 30)) {
       let random = Math.floor(Math.random() * inputListC.length)
       this.field.createEnemy(inputListC[random])
     }
 
-    // Dgroup gami 50%
-    if (this.timeCheckInterval(pTime + 29, pTime + 37, 60)) {
+    // Dgroup gami 25%
+    if (this.timeCheckInterval(pTime + 29, pTime + 37, 120)) {
       this.field.createEnemy(ID.enemy.intruder.gami)
     }
   }
@@ -8732,7 +8752,7 @@ class Round2_5 extends RoundData {
     this.roundPhase03_3()
 
     // donggrami (1 second per 3)
-    if (this.timeCheckInterval(pTime + 0, pTime + 38, 20) && this.getDonggramiCount() < 30) {
+    if (this.timeCheckInterval(pTime + 0, pTime + 40, 20) && this.getDonggramiCount() < 30) {
       this.createSpriteDonggrami()
     }
 
@@ -8843,7 +8863,7 @@ class Round2_5 extends RoundData {
       this.field.createEnemy(ID.enemy.intruder.momi)
     }
 
-    if (this.timeCheckInterval(pTime + 0, pTime + 10, 60) && this.getDonggramiCount() < 10) {
+    if (this.timeCheckInterval(pTime + 0, pTime + 10, 60) && this.getDonggramiCount() < 20) {
       this.createSpriteDonggrami()
     }
 
@@ -8897,6 +8917,12 @@ class Round2_5 extends RoundData {
     }
   }
 
+  processDebug () {
+    if (this.timeCheckFrame(0, 5)) {
+      this.time.setCurrentTime(179)
+    }
+  }
+
   /** 라운드 2-5 전용 동그라미 (친구임...) (... 이걸 상속으로 구현하다니...)
    * 하지만 동그라미가 가진 복잡한 기능을 이 스프라이트에 다시 구현하기는
    * 너무 복잡해서 어쩔 수 없었음.
@@ -8931,12 +8957,19 @@ class Round2_5 extends RoundData {
       this.TALKTYPE_B = 68
       this.TALKTYPE_EMOJI = 69
       this.TALKTYPE_EASTEREGG = 70
+      this.TALKTYPE_UNUSED = 80
 
-      this.TALKSTATE_TALK = 1
-      this.TALKSTATE_EMOJI = 2
-
-      // 87%확률 A타입, 13%확률 B타입
-      this.talkType = Math.random() < 0.87 ? this.TALKTYPE_A : this.TALKTYPE_B
+      // 과도한 대화를 방지하기 위하여, 전체의 50%는 대화하지 않습니다.
+      const random = Math.random()
+      if (random < 0.5) {
+        this.entity.talkType = this.TALKTYPE_UNUSED
+      } else if (random < 0.9) {
+        // 남은 50% 중 40%는 A타입, 아닌 경우는 B타입으로 분류합니다.
+        // 결과적으로 A:B는 8:2 입니다.
+        this.entity.talkType = this.TALKTYPE_A
+      } else {
+        this.entity.talkType = this.TALKTYPE_B
+      }
 
       this.ROUND_MID = 66
       this.ROUND_BOSS = 67
@@ -8953,39 +8986,28 @@ class Round2_5 extends RoundData {
     }
 
     setTalkIndex () {
-      const INDEX_X = 6
-      const INDEX_TALKMID_AY = 0
-      const INDEX_TALKMID_AYLENGTH = 6
-      const INDEX_TALKMID_BY = 6
-      const INDEX_TALKBOSS_AY = 8
-      const INDEX_TALKBOSS_AYLENGTH = 3
-      const INDEX_TALKBOSS_BY = 11
-      const INDEX_TALKWIN_AY = 13
-      const INDEX_TALKWIN_AYLENGTH = 2
-      const INDEX_TALKWIN_BY = 15
-      const INDEX_TALKLOSE_Y = 17
-
-      this.entity.talkIndex.x = INDEX_X
+      const INDEXS = DonggramiEntity.TALK_INDEXS
+      this.entity.talkIndex.x = INDEXS.R2_5MID_A.X
       if (this.roundState === this.ROUND_LOSE) { // 패배한 경우
-        this.entity.talkIndex.y = INDEX_TALKLOSE_Y // 모두가 같은 말을 함
+        this.entity.talkIndex.y = INDEXS.R2_5LOSE.Y // 모두가 같은 말을 함
         return
       }
       
-      if (this.talkType === this.TALKTYPE_A) {
+      if (this.entity.talkType === this.TALKTYPE_A) {
         if (this.roundState === this.ROUND_MID) {
-          this.entity.talkIndex.y = INDEX_TALKMID_AY + Math.floor(Math.random() * INDEX_TALKMID_AYLENGTH)
+          this.entity.talkIndex.y = INDEXS.R2_5MID_A.Y + Math.floor(Math.random() * INDEXS.R2_5MID_A.LEN)
         } else if (this.roundState === this.ROUND_BOSS) {
-          this.entity.talkIndex.y = INDEX_TALKBOSS_AY + Math.floor(Math.random() * INDEX_TALKBOSS_AYLENGTH)
+          this.entity.talkIndex.y = INDEXS.R2_5BOSS_A.Y + Math.floor(Math.random() * INDEXS.R2_5BOSS_A.LEN)
         } else if (this.roundState === this.ROUND_WIN) {
-          this.entity.talkIndex.y = INDEX_TALKWIN_AY + Math.floor(Math.random() * INDEX_TALKWIN_AYLENGTH)
+          this.entity.talkIndex.y = INDEXS.R2_5WIN_A.Y + Math.floor(Math.random() * INDEXS.R2_5WIN_A.LEN)
         }
-      } else if (this.talkType === this.TALKTYPE_B) {
+      } else if (this.entity.talkType === this.TALKTYPE_B) {
         if (this.roundState === this.ROUND_MID) {
-          this.entity.talkIndex.y = INDEX_TALKMID_BY
+          this.entity.talkIndex.y = INDEXS.R2_5MID_B.Y
         } else if (this.roundState === this.ROUND_BOSS) {
-          this.entity.talkIndex.y = INDEX_TALKBOSS_BY
+          this.entity.talkIndex.y = INDEXS.R2_5BOSS_B.Y
         } else if (this.roundState === this.ROUND_WIN) {
-          this.entity.talkIndex.y = INDEX_TALKWIN_BY
+          this.entity.talkIndex.y = INDEXS.R2_5WIN_B.Y
         }
       }
     }
@@ -9012,9 +9034,9 @@ class Round2_5 extends RoundData {
     }
 
     processTalk () {
-      if (this.talkType === this.TALKSTATE_EMOJI) {
+      if (this.entity.talkType === DonggramiEntity.TalkTypeList.EMOJI) {
         if (this.entity.talkDelay.check()) { // 일정 딜레이 후 이모지 출력
-          this.talkState = this.TALKSTATE_EMOJI
+          this.entity.talkState = DonggramiEntity.TALK_STATES.EMOJI
           soundSystem.play(soundSrc.donggrami.emoji)
           this.entity.talkDelay.setDelay(480) // 딜레이 재설정으로 이모지를 중복해서 출력하지 못하게 함
         }
@@ -9024,11 +9046,11 @@ class Round2_5 extends RoundData {
       if (this.entity.talkDelay.check()) {
         // 대화 딜레이에 도달하면, 대화중인 상태에서는 대화를 끝내고, 아니라면 대화를 함
         this.entity.talkDelay.setDelay(this.entity.getTalkRandomDelay())
-        if (this.talkState === 0) {
-          this.talkState = this.TALKSTATE_TALK
+        if (this.entity.talkState === DonggramiEntity.TALK_STATES.NONE) {
+          this.entity.talkState = DonggramiEntity.TALK_STATES.TALK
           this.setTalkIndex()
-        } else if (this.talkState === this.TALKSTATE_TALK) {
-          this.talkState = 0
+        } else if (this.entity.talkState === DonggramiEntity.TALK_STATES.TALK) {
+          this.entity.talkState = 0
         }
       }
     }
@@ -9132,6 +9154,7 @@ class Round2_5 extends RoundData {
 
     process () {
       super.process()
+      this.processTalk()
       if (this.isDied) {
         this.y += DonggramiEntity.DIE_FALL_SPEED
         if (this.dieAfterDeleteDelay.check()) {
@@ -9168,7 +9191,7 @@ class Round2_5 extends RoundData {
       this.exclamationMark = EnimationData.createEnimation(imageSrc.enemy.donggramiEnemy, imageDataInfo.donggramiEnemy.exclamationMark, 4, -1)
       this.exclamationDelay = new DelayData(120)
 
-      this.talkState = this.TALKSTATE_TALK // 강제 대화 상태
+      this.entity.talkState = DonggramiEntity.TALK_STATES.TALK // 강제 대화 상태
     }
 
     processEnimation () {
@@ -9232,7 +9255,7 @@ class Round2_5 extends RoundData {
       if (this.state === this.STATE_QUSESTION || this.state === this.STATE_AUTOMOVE) {
         this.setTalkIndex()
       } else {
-        this.talkState = 0 // 대화 상태 바로 제거
+        this.entity.talkState = DonggramiEntity.TALK_STATES.NONE // 대화 상태 바로 제거
       }
     }
 

@@ -70,6 +70,16 @@ export class DonggramiEntity {
     B2_B: {X: 4, Y: 13, LEN: 2},
     B3_A: {X: 5, Y: 0, LEN: 5},
     B3_B: {X: 5, Y: 5, LEN: 2},
+
+    // R2-5에만 해당
+    R2_5MID_A: {X: 6, Y: 0, LEN: 6},
+    R2_5MID_B: {X: 6, Y: 6, LEN: 1},
+    R2_5BOSS_A: {X: 6, Y: 8, LEN: 3},
+    R2_5BOSS_B: {X: 6, Y: 11, LEN: 1},
+    R2_5WIN_A: {X: 6, Y: 13, LEN: 2},
+    R2_5WIN_B: {X: 6, Y: 15, LEN: 1},
+    R2_5LOSE: {X: 6, Y: 17, LEN: 1},
+
   }
 
   /** 동그라미가 죽을 때 나오는 사운드 */

@@ -147,10 +147,6 @@ export class GraphicSystem {
   getCacheImage (imageSrc) {
     if (!imageSrc) return
 
-    if (imageSrc === './image/enemy/donggramiEnemy.png') {
-      console.log('donggrami')
-    }
-
     if (this.cacheImage.has(imageSrc)) {
       return this.cacheImage.get(imageSrc)
     } else {
