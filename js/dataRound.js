@@ -4698,10 +4698,7 @@ class Round2_3 extends RoundData {
 
   /** 각 구역에 대한 시간 처리 */
   processAreaTime () {
-    const startTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
-    
-    // 각 페이즈 시작 시간의 4초, 54초 동안만 areaStat의 시간 감소가 적용됩니다.
-    if (!this.timeCheckInterval(startTime + 4, startTime + 54)) return
+    if (!this.areaRunningTimeCheck()) return
     if (this.areaStat.time >= 1 && this.time.currentTimeTotalFrame % 60 === 59) {
       this.areaStat.time--
     }
@@ -4721,15 +4718,19 @@ class Round2_3 extends RoundData {
   /** 
    * 현재 구역의 시간이 구역 진행 시간 범위 내에 있는지 확인합니다.
    * 
-   * 기본적으로 모든 구역들은 start ~ complete 시점까지 진행됩니다.
+   * 기본적으로 모든 구역들은 start 초과 ~ complete 미만 시점까지 진행됩니다.
    * 
    * reday (+3), start(+45), complete(+5), next(+5)
    */
   areaRunningTimeCheck () {
-    let startTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime + this.checkTimeList.START
-    let completeTime = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime + this.checkTimeList.COMPLETE
+    const phaseStart = this.phase.phaseTime[this.phase.getCurrentPhase()].startTime
+    // 완료 시점에서 1초를 빼는 이유는
+    // 시간 판정에 따른 중복 처리를 제거하기 위해서입니다.
+    // 각 시간값이 겹치지 않기 때문에, 중복 결과, 시작 처리는 발생하지 않습니다.
+    const startTime = phaseStart + this.checkTimeList.START
+    const endTime = phaseStart + this.checkTimeList.COMPLETE - 1
 
-    if (this.timeCheckInterval(startTime, completeTime)) {
+    if (this.timeCheckInterval(startTime, endTime)) {
       return true
     } else {
       return false
@@ -5222,16 +5223,23 @@ class Round2_3 extends RoundData {
   /** 적 데미지를 처리하기 위한 함수 */
   coursePhaseA1EnemyDamage () {
     // 유저 공격력을 그대로 가져와 유저가 준 데미지를 dps로 변환함
-    // 기준값은 dps의 50% (따라서 공격력 100%로 가정하고 2로 나눠서 50%로 만듬)
-    const downValue = (this.areaStat.a1UserAttack / 2)
-    let enemy = this.field.getEnemyObjectById(ID.enemy.donggramiEnemy.a1_fighter)
+    // 기준 값은 dps의 50%입니다. 적 체력이 더 감소하면, 기준 값은 dps의 100%로 올라갑니다.
+    const tierThresholdHigh = Math.floor(this.areaStat.a1UserAttack * 0.5)
+    const tierThresholdLow = Math.floor(this.areaStat.a1UserAttack * 1)
+
+    const enemy = this.field.getEnemyObjectById(ID.enemy.donggramiEnemy.a1_fighter)
     if (enemy == null) return
 
-    // 적 체력 감소가 얼마나 되어있는지 확인하고,
-    // downValue를 넘어갔다면, areaStat의 적 체력을 낮춤
-    let enemyDownHp = enemy.hpMax - enemy.hp
-    if (enemyDownHp > downValue) {
-      enemy.hp += downValue
+    // 적 체력 감소가 얼마나 되어있는지 확인하고, 기준을, areaStat의 적 체력을 낮춤
+    // dps 스킬 최대 배율이 v0.55 이후 1.3배수까지 제한되었으므로,
+    // 이론상 가능한 플레이어의 dps는 130% * 45초 = 5850%
+    // 조기 종료를 막기 위해 적의 총 체력은 75% * 50 + 25% * 100 = 6250% dps로 설정했습니다.
+    const enemyAccumulatedDamage = enemy.hpMax - enemy.hp
+    if (this.areaStat.enemyHpPercent > 25 && enemyAccumulatedDamage > tierThresholdHigh) {
+      enemy.hp += tierThresholdHigh
+      this.areaStat.enemyHpPercent--
+    } else if (enemyAccumulatedDamage > tierThresholdLow) {
+      enemy.hp += tierThresholdLow
       this.areaStat.enemyHpPercent--
     }
   }
@@ -5290,14 +5298,17 @@ class Round2_3 extends RoundData {
     const hpRange75 = this.areaStat.A1_BASE_HP / 4 * 3 // 75%
     const hpRange50 = this.areaStat.A1_BASE_HP / 2 // 50%
     const hpRange25 = this.areaStat.A1_BASE_HP / 4 // 25%
+    const hpRange10 = this.areaStat.A1_BASE_HP / 10 // 10%
     if (this.areaStat.a1UserHp > hpRange75) {
       // 변동 없음
     } else if (this.areaStat.a1UserHp > hpRange50) {
       damage = damage / 2 // 데미지 1/2로 감소
     } else if (this.areaStat.a1UserHp > hpRange25) {
       damage = damage / 4 // 데미지 1/4로 감소
-    } else {
+    } else if (this.areaStat.a1UserHp > hpRange10) {
       damage = damage / 10 // 데미지 1/10로 감소
+    } else {
+      damage = damage / 50 // 데미지 1/50로 감소
     }
 
     // 데미지 처리
@@ -6341,8 +6352,8 @@ class Round2_3 extends RoundData {
     let pTime = this.getPhaseStartTime()
     let cTime = this.checkTimeList
 
-    // 시간이 남았거나, 골인수가 5미만인경우 결과처리 없음
-    if (this.areaStat.time !== 0 && this.areaStat.c3Goal < 5) return
+    // 시간이 남으면 결과처리 없음
+    if (this.areaStat.time !== 0) return
 
     // 시간이 다 되었을 때 1개 이상의 골인경우는 컴플리트 처리, 5개를 클리어해도 마찬가지
     let result = this.areaStat.c3Goal >= 1 ? this.resultList.COMPLETE : this.resultList.LOSE

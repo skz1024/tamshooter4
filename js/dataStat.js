@@ -878,7 +878,7 @@ dataExportStatRound.set(ID.round.round1_6, new StatRound(7, '1-6', 4, 44000, 152
 // round 2
 dataExportStatRound.set(ID.round.round2_1, new StatRound(11, '2-1', 10, 50000, 150, 40000, 10).setBalance(170, 500).setRoundInfo('파란 행성 - 하늘 300km ~ 250km'))
 dataExportStatRound.set(ID.round.round2_2, new StatRound(12, '2-2', 10, 50000, 170, 36000, 10).setBalance(170, 530).setRoundInfo('동그라미 마을'))
-dataExportStatRound.set(ID.round.round2_3, new StatRound(13, '2-3', 12, 50000, 182, 40000, 10).setBalance(175, 540).setRoundInfo('동그라미 스페이스'))
+dataExportStatRound.set(ID.round.round2_3, new StatRound(13, '2-3', 12, 50000, 182, 37000, 10).setBalance(170, 540).setRoundInfo('동그라미 스페이스'))
 dataExportStatRound.set(ID.round.round2_4, new StatRound(14, '2-4', 12, 55000, 190, 52000, 10).setBalance(190, 550).setRoundInfo('동그라미 마을 홀'))
 dataExportStatRound.set(ID.round.round2_5, new StatRound(15, '2-5', 14, 55000, 190, 15000, 10).setBalance(190, 550).setRoundInfo('지하실 전투'))
 dataExportStatRound.set(ID.round.round2_6, new StatRound(16, '2-6', 14, 55000, 150, 42000, 10).setBalance(150, 550).setRoundInfo('폐허가 된 동그라미 마을'))
