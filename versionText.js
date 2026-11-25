@@ -2,4 +2,4 @@
  * 버전 텍스트를 여러 곳에서 참고하기 위해 만든 변수.  
  * 참고: 이 텍스트는 일정 주기로 교체되므로, 실제 게임 버전과 약간 다를 수도 있습니다.
  */
-export const versionText = 'created by skz1024 | ver 0.59.8 | 2026/11/13'
+export const versionText = 'created by skz1024 | ver 0.60.0 | 2026/11/25'
